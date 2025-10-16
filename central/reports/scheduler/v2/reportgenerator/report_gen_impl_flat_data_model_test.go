@@ -127,7 +127,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.Name.FullName)
+		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.GetName().GetFullName())
 		s.NoError(err)
 	}
 }

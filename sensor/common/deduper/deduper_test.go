@@ -79,8 +79,8 @@ func Test_DeduperParseKeyFromEvent(t *testing.T) {
 	syncMessage := lastEventSent.GetEvent().GetSynced()
 	require.NotNilf(t, syncMessage, "%+v", lastEventSent)
 
-	assert.Len(t, syncMessage.UnchangedIds, 1)
-	assert.Equal(t, syncMessage.UnchangedIds[0], "Deployment:1234")
+	assert.Len(t, syncMessage.GetUnchangedIds(), 1)
+	assert.Equal(t, syncMessage.GetUnchangedIds()[0], "Deployment:1234")
 
 }
 

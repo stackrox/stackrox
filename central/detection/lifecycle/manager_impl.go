@@ -110,21 +110,20 @@ func (m *managerImpl) buildIndicatorFilter() {
 		return
 	}
 
-	var processesToRemove []string
+	processesToRemove := make([]string, 0, len(deploymentIDs))
 	walkFn := func() error {
-		deploymentIDSet := set.NewStringSet(deploymentIDs...)
 		processesToRemove = processesToRemove[:0]
-		return m.processesDataStore.WalkAll(ctx, func(pi *storage.ProcessIndicator) error {
-			if !deploymentIDSet.Contains(pi.GetDeploymentId()) {
-				// Don't remove as these processes will be removed by GC
-				// but don't add to the filter
-				return nil
-			}
+
+		// Only process indicators for existing deployments
+		fn := func(pi *storage.ProcessIndicator) error {
 			if !m.processFilter.Add(pi) {
 				processesToRemove = append(processesToRemove, pi.GetId())
 			}
 			return nil
-		})
+		}
+
+		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery()
+		return m.processesDataStore.WalkByQuery(ctx, query, fn)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		utils.Should(errors.Wrap(err, "error building indicator filter"))

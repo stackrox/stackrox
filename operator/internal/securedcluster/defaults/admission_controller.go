@@ -8,24 +8,13 @@ import (
 )
 
 const (
-	FeatureDefaultKeyAdmissionControllerEnforce = "feature-defaults.platform.stackrox.io/admissionControllerEnforce"
+	FeatureDefaultKeyAdmissionControllerEnforcement = "feature-defaults.platform.stackrox.io/admissionControllerEnforcement"
 )
 
 var SecuredClusterAdmissionControllerDefaultingFlow = SecuredClusterDefaultingFlow{
 	Name:           "secured-cluster-admission-controller",
 	DefaultingFunc: securedClusterAdmissionControllerDefaulting,
 }
-
-var (
-	tableBoolMarshalling = map[bool]string{
-		true:  "true",
-		false: "false",
-	}
-	tableBoolUnmarshalling = map[string]bool{
-		"true":  true,
-		"false": false,
-	}
-)
 
 func admissionControllerDefaultingGreenField(logger logr.Logger, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
 	return admissionControllerDefaultingGreenFieldEnforce(logger, annotations, spec, defaults)
@@ -36,13 +25,13 @@ func admissionControllerDefaultingGreenFieldEnforce(_ logr.Logger, annotations m
 	if admissionControl == nil {
 		admissionControl = &platform.AdmissionControlComponentSpec{}
 	}
-	if admissionControl.Enforce != nil {
+	if admissionControl.Enforcement != nil {
 		return nil
 	}
 
-	enforceBool := true
-	defaults.AdmissionControl.Enforce = ptr.To(enforceBool)
-	annotations[FeatureDefaultKeyAdmissionControllerEnforce] = tableBoolMarshalling[enforceBool]
+	enforcement := platform.PolicyEnforcementEnabled
+	defaults.AdmissionControl.Enforcement = ptr.To(enforcement)
+	annotations[FeatureDefaultKeyAdmissionControllerEnforcement] = string(enforcement)
 	return nil
 }
 
@@ -53,17 +42,16 @@ func admissionControllerDefaultingBrownFieldEnforce(logger logr.Logger, annotati
 		admissionControl = &platform.AdmissionControlComponentSpec{}
 	}
 
-	if enforceAnnotation := annotations[FeatureDefaultKeyAdmissionControllerEnforce]; enforceAnnotation != "" {
-		enforceBool, ok := tableBoolUnmarshalling[enforceAnnotation]
-		if !ok {
-			logger.Info("Failed to unmarshal CR defaulting annotation {%q: %v} as boolean", FeatureDefaultKeyAdmissionControllerEnforce, enforceAnnotation)
-			functionErr = errors.Errorf("unexpected value %q of CR annotation %s", enforceAnnotation, FeatureDefaultKeyAdmissionControllerEnforce)
+	if enforceAnnotation := annotations[FeatureDefaultKeyAdmissionControllerEnforcement]; enforceAnnotation != "" {
+		if !(enforceAnnotation == "Enabled" || enforceAnnotation == "Disabled") {
+			logger.Info("Invalid CR defaulting annotation {%q: %v}", FeatureDefaultKeyAdmissionControllerEnforcement, enforceAnnotation)
+			functionErr = errors.Errorf("unexpected value %q of CR annotation %s", enforceAnnotation, FeatureDefaultKeyAdmissionControllerEnforcement)
 		} else {
-			defaults.AdmissionControl.Enforce = ptr.To(enforceBool)
+			defaults.AdmissionControl.Enforcement = ptr.To(platform.PolicyEnforcement(enforceAnnotation))
 		}
 	}
 
-	if defaults.AdmissionControl.Enforce == nil {
+	if defaults.AdmissionControl.Enforcement == nil {
 		// No previous annotation, implement defaulting flow.
 		// Note: we don't have fields "enforceOnCreates" and "enforceOnUpdated" in the CRD.
 		// These fields for the Helm chart were historically kept in sync with the "listenOnCreates" and the "listenOnUpdates" fields of the CRD.
@@ -76,13 +64,18 @@ func admissionControllerDefaultingBrownFieldEnforce(logger logr.Logger, annotati
 		if listenOnUpdatesPtr := admissionControl.ListenOnUpdates; listenOnUpdatesPtr != nil {
 			listenOnUpdates = *listenOnUpdatesPtr
 		}
-		defaults.AdmissionControl.Enforce = ptr.To(listenOnCreates || listenOnUpdates)
+
+		enforcement := platform.PolicyEnforcementDisabled
+		if listenOnCreates || listenOnUpdates {
+			enforcement = platform.PolicyEnforcementEnabled
+		}
+		defaults.AdmissionControl.Enforcement = ptr.To(enforcement)
 	}
 
-	if defaults.AdmissionControl.Enforce != nil {
-		enforceString := tableBoolMarshalling[*defaults.AdmissionControl.Enforce]
-		if annotations[FeatureDefaultKeyAdmissionControllerEnforce] != enforceString {
-			annotations[FeatureDefaultKeyAdmissionControllerEnforce] = enforceString
+	if enforcement := defaults.AdmissionControl.Enforcement; enforcement != nil {
+		enforcementString := string(*enforcement)
+		if annotations[FeatureDefaultKeyAdmissionControllerEnforcement] != enforcementString {
+			annotations[FeatureDefaultKeyAdmissionControllerEnforcement] = enforcementString
 		}
 	}
 

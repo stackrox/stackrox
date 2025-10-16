@@ -22,12 +22,10 @@ func TestNoPanic(t *testing.T) {
 		report.Contents = &v4.Contents{}
 		imageScan(nil, report, scannerVersion)
 
-		report.Contents.Packages = []*v4.Package{}
+		report.Contents.Packages = map[string]*v4.Package{}
 		imageScan(nil, report, scannerVersion)
 
-		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
-			Id: "1",
-		})
+		report.Contents.Packages = map[string]*v4.Package{"1": {Id: "1"}}
 		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
@@ -45,83 +43,261 @@ func TestNoPanic(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	inMetadata := &storage.ImageMetadata{
-		V2: &storage.V2Metadata{},
-		V1: &storage.V1Metadata{
-			Layers: []*storage.ImageLayer{
-				{Empty: false},
+	testcases := []struct {
+		name     string
+		metadata *storage.ImageMetadata
+		report   *v4.VulnerabilityReport
+		expected *storage.ImageScan
+	}{
+		{
+			name: "basic",
+			metadata: &storage.ImageMetadata{
+				V2: &storage.V2Metadata{},
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false},
+					},
+				},
+				LayerShas: []string{"hash"},
 			},
-		},
-		LayerShas: []string{"hash"},
-	}
-
-	inReport := &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
-			Environments: map[string]*v4.Environment_List{
-				"1": {
-					Environments: []*v4.Environment{
-						{
-							PackageDb:    "maven:opt/java/pkg.jar",
-							IntroducedIn: "hash",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:    "maven:opt/java/pkg.jar",
+									IntroducedIn: "hash",
+								},
+							},
+						},
+					},
+					Distributions: map[string]*v4.Distribution{
+						"0": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "my-java-pkg",
+							Version: "1.2.3",
 						},
 					},
 				},
-			},
-			Distributions: []*v4.Distribution{
-				{
-					Did:       "rhel",
-					VersionId: "9",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"CVE1-ID": {
+						Id:                 "CVE1-ID",
+						Name:               "CVE1-Name",
+						FixedInVersion:     "v99",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+					},
 				},
-			},
-			Packages: []*v4.Package{
-				{
-					Id:      "1",
-					Name:    "my-java-pkg",
-					Version: "1.2.3",
-				},
-			},
-		},
-		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-			"CVE1-ID": {
-				Id:                 "CVE1-ID",
-				Name:               "CVE1-Name",
-				FixedInVersion:     "v99",
-				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-			},
-		},
-		PackageVulnerabilities: map[string]*v4.StringList{
-			"1": {
-				Values: []string{"CVE1-ID"},
-			},
-		},
-	}
-
-	expected := &storage.ImageScan{
-		Components: []*storage.EmbeddedImageScanComponent{
-			{
-				Name:          "my-java-pkg",
-				Version:       "1.2.3",
-				Source:        storage.SourceType_JAVA,
-				Location:      "opt/java/pkg.jar",
-				HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
-				Vulns: []*storage.EmbeddedVulnerability{
-					{
-						Cve:               "CVE1-Name",
-						VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-						Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-						SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"1": {
+						Values: []string{"CVE1-ID"},
 					},
 				},
 			},
+			expected: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:          "my-java-pkg",
+						Version:       "1.2.3",
+						Source:        storage.SourceType_JAVA,
+						Location:      "opt/java/pkg.jar",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:               "CVE1-Name",
+								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+							},
+						},
+					},
+				},
+				OperatingSystem: "rhel:9",
+			},
 		},
-		OperatingSystem: "rhel:9",
+		{
+			name: "deprecated",
+			metadata: &storage.ImageMetadata{
+				V2: &storage.V2Metadata{},
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false},
+					},
+				},
+				LayerShas: []string{"hash"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:    "maven:opt/java/pkg.jar",
+									IntroducedIn: "hash",
+								},
+							},
+						},
+					},
+					DistributionsDEPRECATED: []*v4.Distribution{
+						{
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					PackagesDEPRECATED: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "my-java-pkg",
+							Version: "1.2.3",
+						},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"CVE1-ID": {
+						Id:                 "CVE1-ID",
+						Name:               "CVE1-Name",
+						FixedInVersion:     "v99",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"1": {
+						Values: []string{"CVE1-ID"},
+					},
+				},
+			},
+			expected: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:          "my-java-pkg",
+						Version:       "1.2.3",
+						Source:        storage.SourceType_JAVA,
+						Location:      "opt/java/pkg.jar",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:               "CVE1-Name",
+								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+							},
+						},
+					},
+				},
+				OperatingSystem: "rhel:9",
+			},
+		},
+		{
+			name: "prefer non-deprecated",
+			metadata: &storage.ImageMetadata{
+				V2: &storage.V2Metadata{},
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false},
+					},
+				},
+				LayerShas: []string{"hash"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:    "maven:opt/java/pkg.jar",
+									IntroducedIn: "hash",
+								},
+							},
+						},
+					},
+					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:    "maven:opt/java/pkg2.jar",
+									IntroducedIn: "hash",
+								},
+							},
+						},
+					},
+					Distributions: map[string]*v4.Distribution{
+						"0": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					DistributionsDEPRECATED: []*v4.Distribution{
+						{
+							Did:       "rhel",
+							VersionId: "10",
+						},
+					},
+					Packages: map[string]*v4.Package{
+						"1": {
+							Id:      "1",
+							Name:    "my-java-pkg",
+							Version: "1.2.3",
+						},
+					},
+					PackagesDEPRECATED: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "my-java-pkg",
+							Version: "1.2.4",
+						},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"CVE1-ID": {
+						Id:                 "CVE1-ID",
+						Name:               "CVE1-Name",
+						FixedInVersion:     "v99",
+						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"1": {
+						Values: []string{"CVE1-ID"},
+					},
+				},
+			},
+			expected: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:          "my-java-pkg",
+						Version:       "1.2.3",
+						Source:        storage.SourceType_JAVA,
+						Location:      "opt/java/pkg.jar",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:               "CVE1-Name",
+								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+							},
+						},
+					},
+				},
+				OperatingSystem: "rhel:9",
+			},
+		},
 	}
 
-	actual := imageScan(inMetadata, inReport, scannerVersion)
-
-	protoassert.SlicesEqual(t, expected.Components, actual.Components)
-	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
-	assert.Equal(t, scannerVersion, actual.ScannerVersion)
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := imageScan(tc.metadata, tc.report, scannerVersion)
+			protoassert.SlicesEqual(t, tc.expected.GetComponents(), got.GetComponents())
+			assert.Equal(t, tc.expected.GetOperatingSystem(), got.GetOperatingSystem())
+			assert.Equal(t, scannerVersion, got.GetScannerVersion())
+		})
+	}
 }
 
 func TestComponents(t *testing.T) {
@@ -171,15 +347,15 @@ func TestComponents(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				HashId: "hashID",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"1": {
 							Id:      "1",
 							Name:    "glib2",
 							Version: "2.68.4-14.el9",
 						},
 					},
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Id:        "1",
 							Did:       "rhel",
 							VersionId: "9",
@@ -251,15 +427,15 @@ func TestComponents(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				HashId: "hashID",
 				Contents: &v4.Contents{
-					Packages: []*v4.Package{
-						{
+					Packages: map[string]*v4.Package{
+						"1": {
 							Id:      "1",
 							Name:    "glib2",
 							Version: "2.68.4-14.el9",
 						},
 					},
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Id:        "1",
 							Did:       "rhel",
 							VersionId: "9",
@@ -286,6 +462,86 @@ func TestComponents(t *testing.T) {
 					Source:        storage.SourceType_OS,
 					Location:      "var/lib/rpm",
 					HasLayerIndex: nil,
+				},
+			},
+		},
+		{
+			name: "basic no vulns deprecated",
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Digest: "some V1 digest",
+					Layers: []*storage.ImageLayer{
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Instruction: "RUN",
+							Value:       "mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :",
+						},
+						{
+							Instruction: "COPY",
+							Value:       "--chmod=755 ./sleepforever.sh /sleepforever.sh # buildkit",
+						},
+						{
+							Empty: true,
+						},
+					},
+				},
+				V2: &storage.V2Metadata{
+					Digest: "some V2 digest",
+				},
+				LayerShas: []string{"layer1", "layer2"},
+				DataSource: &storage.DataSource{
+					Id:   "dataSourceID",
+					Name: "dataSourceName",
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				HashId: "hashID",
+				Contents: &v4.Contents{
+					PackagesDEPRECATED: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+					DistributionsDEPRECATED: []*v4.Distribution{
+						{
+							Id:        "1",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:      "sqlite:var/lib/rpm",
+									IntroducedIn:   "layer1",
+									DistributionId: "1",
+									RepositoryIds:  []string{"0"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "glib2",
+					Version:  "2.68.4-14.el9",
+					Source:   storage.SourceType_OS,
+					Location: "var/lib/rpm",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 3,
+					},
 				},
 			},
 		},
@@ -364,7 +620,7 @@ func TestSetEPSS(t *testing.T) {
 				t.Errorf("expected %+v, got nil", testcase.expected)
 				return
 			}
-			if result.EpssProbability != testcase.expected.EpssProbability || result.EpssPercentile != testcase.expected.EpssPercentile {
+			if result.GetEpssProbability() != testcase.expected.GetEpssProbability() || result.GetEpssPercentile() != testcase.expected.GetEpssPercentile() {
 				t.Errorf("expected %+v, got %+v", testcase.expected, result)
 			}
 		})
@@ -992,7 +1248,7 @@ func TestMaybeOverwriteSeverity(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			maybeOverwriteSeverity(testcase.vuln)
-			assert.Equal(t, testcase.expected, testcase.vuln.Severity)
+			assert.Equal(t, testcase.expected, testcase.vuln.GetSeverity())
 		})
 	}
 }
@@ -1073,8 +1329,8 @@ func TestOS(t *testing.T) {
 			expected: "rhel:9",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
 							Did:       "rhel",
 							VersionId: "9",
 							Version:   "9",
@@ -1087,8 +1343,8 @@ func TestOS(t *testing.T) {
 			expected: "ubuntu:22.04",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"0": {
 							Did:       "ubuntu",
 							VersionId: "22.04",
 							Version:   "22.04 (Jammy)",
@@ -1101,8 +1357,8 @@ func TestOS(t *testing.T) {
 			expected: "debian:12",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"1": {
 							Did:       "debian",
 							VersionId: "12",
 							Version:   "12 (bookworm)",
@@ -1115,8 +1371,8 @@ func TestOS(t *testing.T) {
 			expected: "alpine:3.18",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"3": {
 							Did:       "alpine",
 							VersionId: "3.18",
 							Version:   "3.18",
@@ -1129,14 +1385,28 @@ func TestOS(t *testing.T) {
 			expected: "unknown",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
-					Distributions: []*v4.Distribution{
-						{
+					Distributions: map[string]*v4.Distribution{
+						"4": {
 							Did:       "alpine",
 							VersionId: "3.18",
 							Version:   "3.18",
 						},
-						{
+						"idk": {
 							Did: "idk",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "rhel:10",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					DistributionsDEPRECATED: []*v4.Distribution{
+						{
+							Did:       "rhel",
+							VersionId: "10",
+							Version:   "10",
 						},
 					},
 				},

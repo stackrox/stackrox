@@ -8,9 +8,12 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
+	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -30,6 +33,7 @@ type PipelineTestSuite struct {
 	suite.Suite
 
 	vmDatastore *vmDatastoreMocks.MockDataStore
+	enricher    *vmEnricherMocks.MockVirtualMachineEnricher
 	pipeline    *pipelineImpl
 
 	mockCtrl *gomock.Controller
@@ -38,8 +42,10 @@ type PipelineTestSuite struct {
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.vmDatastore = vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.enricher = vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
 	suite.pipeline = &pipelineImpl{
 		vmDatastore: suite.vmDatastore,
+		enricher:    suite.enricher,
 	}
 }
 
@@ -57,6 +63,19 @@ func createVMIndexMessage(vmID string, action central.ResourceAction) *central.M
 				Resource: &central.SensorEvent_VirtualMachineIndexReport{
 					VirtualMachineIndexReport: &v1.IndexReportEvent{
 						Id: vmID,
+						Index: &v1.IndexReport{
+							IndexV4: &v4.IndexReport{
+								Contents: &v4.Contents{
+									Packages: map[string]*v4.Package{
+										"pkg-1": {
+											Id:      "pkg-1",
+											Name:    "test-package",
+											Version: "1.0.0",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -89,6 +108,7 @@ func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
 }
 
 func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -106,18 +126,24 @@ func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 	suite.Contains(err.Error(), "unexpected resource type")
 }
 
-func (suite *PipelineTestSuite) TestRun_UpsertError() {
+func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
+	// Expect enricher to be called successfully
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+
 	expectedError := errors.New("datastore error")
 	suite.vmDatastore.EXPECT().
-		UpsertVirtualMachine(ctx, gomock.Any()).
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(expectedError)
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
-	suite.Contains(err.Error(), "failed to upsert virtual machine to datstore")
+	suite.Contains(err.Error(), "failed to upsert VM vm-1 to datastore: datastore error")
 	suite.Contains(err.Error(), "datastore error")
 }
 
@@ -149,12 +175,14 @@ func (suite *PipelineTestSuite) TestGetPipeline() {
 
 func (suite *PipelineTestSuite) TestNewPipeline() {
 	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
-	pipeline := newPipeline(mockDatastore)
+	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
+	pipeline := newPipeline(mockDatastore, mockEnricher)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
 	suite.True(ok, "Should return pipelineImpl instance")
 	suite.Equal(mockDatastore, impl.vmDatastore)
+	suite.Equal(mockEnricher, impl.enricher)
 }
 
 // Test table-driven approach for different actions
@@ -162,53 +190,63 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 	tests := []struct {
 		name          string
 		action        central.ResourceAction
-		expectUpsert  bool
+		expectUpdate  bool
 		expectError   bool
 		errorContains string
 	}{
 		{
 			name:         "CREATE_RESOURCE",
 			action:       central.ResourceAction_CREATE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "UPDATE_RESOURCE",
 			action:       central.ResourceAction_UPDATE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "UNSET_ACTION_RESOURCE",
 			action:       central.ResourceAction_UNSET_ACTION_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "REMOVE_RESOURCE",
 			action:       central.ResourceAction_REMOVE_RESOURCE,
-			expectUpsert: false,
+			expectUpdate: false,
 		},
 		{
 			name:         "SYNC_RESOURCE",
 			action:       central.ResourceAction_SYNC_RESOURCE,
-			expectUpsert: true,
+			expectUpdate: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), "true")
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
-			pipeline := &pipelineImpl{vmDatastore: vmDatastore}
+			enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+			pipeline := &pipelineImpl{
+				vmDatastore: vmDatastore,
+				enricher:    enricher,
+			}
 
 			vmID := "vm-1"
 			msg := createVMIndexMessage(vmID, tt.action)
 
-			if tt.expectUpsert {
+			if tt.expectUpdate {
+				// Expect enricher to be called for action
+				enricher.EXPECT().
+					EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+					Return(nil)
+
 				vmDatastore.EXPECT().
-					UpsertVirtualMachine(ctx, gomock.Any()).
-					Do(func(ctx context.Context, vm *storage.VirtualMachine) {
-						assert.Equal(t, vmID, vm.GetId())
+					UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+					Do(func(ctx context.Context, virtualMachineID string, _ *storage.VirtualMachineScan) {
+						assert.Equal(t, vmID, virtualMachineID)
 					}).
 					Return(nil)
 			}
@@ -229,6 +267,7 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 
 // Test edge cases with malformed messages
 func TestPipelineEdgeCases(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -280,4 +319,24 @@ func TestPipelineEdgeCases(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected resource type")
 	})
+}
+
+func TestPipelineRun_DisabledFeature(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "false")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+		enricher:    enricher,
+	}
+
+	vmID := "vm-1"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_CREATE_RESOURCE)
+
+	err := pipeline.Run(ctx, testClusterID, msg, nil)
+
+	assert.NoError(t, err)
 }

@@ -34,7 +34,7 @@ func checkPoliciesContain(t *testing.T, policyNameToCheck string) bool {
 	policies, err := DefaultPolicies()
 	require.NoError(t, err)
 	for _, p := range policies {
-		if p.Name == policyNameToCheck {
+		if p.GetName() == policyNameToCheck {
 			return true
 		}
 	}

@@ -5,8 +5,9 @@ import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNa
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
 
-import { SearchFilter } from 'types/search';
-import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
+import type { SearchFilter } from 'types/search';
+import ClusterSelector from './ClusterSelector';
+import type { ClusterSelectorProps } from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
 import DeploymentSelector from './DeploymentSelector';
 

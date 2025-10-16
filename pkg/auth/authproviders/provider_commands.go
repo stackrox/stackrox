@@ -49,7 +49,7 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		if pr.storedInfo.LastUpdated == nil {
+		if pr.storedInfo.GetLastUpdated() == nil {
 			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		}
 		return store.AddAuthProvider(ctx, pr.storedInfo)

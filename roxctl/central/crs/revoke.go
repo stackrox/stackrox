@@ -27,7 +27,7 @@ func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment
 	var revokeIds []string
 	idNames := make(map[string]string)
 
-	for _, meta := range resp.Items {
+	for _, meta := range resp.GetItems() {
 		idNames[meta.GetId()] = meta.GetName()
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeIds = append(revokeIds, meta.GetId())
@@ -53,7 +53,7 @@ func printResponseResult(logger logger.Logger, idNames map[string]string, revoke
 	}
 	for _, revokeErr := range resp.GetCrsRevocationErrors() {
 		id := revokeErr.GetId()
-		logger.ErrfLn("Error revoking %s (%q): %s", id, idNames[id], revokeErr.Error)
+		logger.ErrfLn("Error revoking %s (%q): %s", id, idNames[id], revokeErr.GetError())
 	}
 
 	if len(resp.GetCrsRevocationErrors()) == 0 {

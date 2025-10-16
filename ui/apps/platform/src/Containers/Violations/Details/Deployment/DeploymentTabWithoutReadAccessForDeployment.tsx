@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
-import { AlertDeployment } from 'types/alert.proto';
+import type { AlertDeployment } from 'types/alert.proto';
 
 import DeploymentOverview from './DeploymentOverview';
 

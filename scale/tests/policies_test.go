@@ -14,7 +14,7 @@ func submitDryRunJob(service v1.PolicyServiceClient, policy *storage.Policy, job
 	return func() error {
 		res, err := service.SubmitDryRunPolicyJob(common.Context(), policy)
 		if err == nil {
-			jobChan <- res.JobId
+			jobChan <- res.GetJobId()
 		}
 
 		return err
@@ -32,7 +32,7 @@ func queryJobTillCompletion(service v1.PolicyServiceClient, jobID string) func()
 				return err
 			}
 
-			if !res.Pending {
+			if !res.GetPending() {
 				break
 			}
 		}

@@ -32,13 +32,23 @@ func NewVirtualMachineStore() *VirtualMachineStore {
 }
 
 // AddOrUpdate upserts a new VirtualMachine
-func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) {
+func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
 	if vm == nil {
-		return
+		return nil
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	oldVM := s.virtualMachines[vm.ID]
+	if oldVM != nil {
+		vm.Running = oldVM.Running
+		if oldVM.VSOCKCID != nil {
+			vSockCID := *oldVM.VSOCKCID
+			vm.VSOCKCID = &vSockCID
+		}
+		vm.GuestOS = oldVM.GuestOS
+	}
 	s.addOrUpdateNoLock(vm)
+	return vm
 }
 
 // UpdateStateOrCreate updates the VirtualMachine state
@@ -143,6 +153,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	// Update new VSOCK maps
 	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.ID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
+	prev.GuestOS = updateInfo.GuestOS
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {

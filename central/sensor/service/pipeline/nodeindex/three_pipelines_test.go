@@ -394,8 +394,8 @@ func createIndexReportWithKernel(kernelV string) *v4.IndexReport {
 		State:   "7", // IndexFinished
 		Success: true,
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"1": {
 					Id:      "1",
 					Name:    kernelComponentName,
 					Version: kernelV,
@@ -413,8 +413,8 @@ func createIndexReportWithKernel(kernelV string) *v4.IndexReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
-				{
+			Repositories: map[string]*v4.Repository{
+				"cpe:/o:redhat:enterprise_linux:9::fastdatapath": {
 					Id:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
@@ -608,7 +608,7 @@ func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanCompo
 
 type mockImageComponentScorer struct{}
 
-func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string, _ int) *storage.Risk {
 	return getDummyRisk()
 }
 

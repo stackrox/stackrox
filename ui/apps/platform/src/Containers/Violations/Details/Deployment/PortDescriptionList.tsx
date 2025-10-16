@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { portExposureLabels } from 'messages/common';
-import { PortConfig } from 'types/deployment.proto';
+import type { PortConfig } from 'types/deployment.proto';
 
 type PortDescriptionListProps = {
     port: PortConfig;

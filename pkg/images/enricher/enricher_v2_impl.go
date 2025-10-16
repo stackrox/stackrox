@@ -230,8 +230,8 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-	imageNoteSet := make(map[storage.ImageV2_Note]struct{}, len(imageV2.Notes))
-	for _, note := range imageV2.Notes {
+	imageNoteSet := make(map[storage.ImageV2_Note]struct{}, len(imageV2.GetNotes()))
+	for _, note := range imageV2.GetNotes() {
 		imageNoteSet[note] = struct{}{}
 	}
 
@@ -303,7 +303,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 }
 
 func setImageV2Notes(imageV2 *storage.ImageV2, imageNoteSet map[storage.ImageV2_Note]struct{}) {
-	imageV2.Notes = imageV2.Notes[:0]
+	imageV2.Notes = imageV2.GetNotes()[:0]
 	notes := make([]storage.ImageV2_Note, 0, len(imageNoteSet))
 	for note := range imageNoteSet {
 		notes = append(notes, note)
@@ -621,8 +621,8 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 			})
 			if currentScannerErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            scanner.DataSource().Id,
-					Name:          scanner.DataSource().Name,
+					Id:            scanner.DataSource().GetId(),
+					Name:          scanner.DataSource().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: protocompat.TimestampNow(),
@@ -653,8 +653,8 @@ func (e *enricherV2Impl) enrichWithScan(ctx context.Context, enrichmentContext E
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            scanner.DataSource().Id,
-				Name:          scanner.DataSource().Name,
+				Id:            scanner.DataSource().GetId(),
+				Name:          scanner.DataSource().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: protocompat.TimestampNow(),
@@ -765,7 +765,7 @@ func (e *enricherV2Impl) enrichWithSignature(ctx context.Context, enrichmentCont
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
 
 	// Short-circuit if
 	//	- no integrations are available, or
@@ -949,96 +949,5 @@ func enrichImageV2(imageV2 *storage.ImageV2, scan *storage.ImageScan, dataSource
 	//  scan != nil
 	//  no error scanning.
 	imageV2.Scan = scan
-	FillScanStatsV2(imageV2)
-}
-
-type cveStats struct {
-	fixable  bool
-	severity storage.VulnerabilitySeverity
-}
-
-// FillScanStatsV2 fills in the higher level stats from the scan data.
-func FillScanStatsV2(i *storage.ImageV2) {
-	if i.GetScan() == nil {
-		return
-	}
-	i.ComponentCount = int32(len(i.GetScan().GetComponents()))
-
-	var imageTopCVSS float32
-	vulns := make(map[string]*cveStats)
-
-	// This enriches the incoming component.  When enriching any additional component fields,
-	// be sure to update `ComponentIDV2` to ensure enriched fields like `TopCVSS` are not
-	// included in the hash calculation
-	for _, c := range i.GetScan().GetComponents() {
-		var componentTopCVSS float32
-		var hasVulns bool
-		for _, v := range c.GetVulns() {
-			hasVulns = true
-			if _, ok := vulns[v.GetCve()]; !ok {
-				vulns[v.GetCve()] = &cveStats{
-					fixable:  false,
-					severity: v.GetSeverity(),
-				}
-			}
-
-			if v.GetCvss() > componentTopCVSS {
-				componentTopCVSS = v.GetCvss()
-			}
-
-			if v.GetSetFixedBy() == nil {
-				continue
-			}
-
-			if v.GetFixedBy() != "" {
-				vulns[v.GetCve()].fixable = true
-			}
-		}
-
-		if hasVulns {
-			c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
-				TopCvss: componentTopCVSS,
-			}
-		}
-
-		if componentTopCVSS > imageTopCVSS {
-			imageTopCVSS = componentTopCVSS
-		}
-	}
-
-	i.CveCount = int32(len(vulns))
-	i.TopCvss = imageTopCVSS
-
-	for _, vuln := range vulns {
-		if vuln.fixable {
-			i.FixableCveCount++
-		}
-		switch vuln.severity {
-		case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:
-			i.UnknownCveCount++
-			if vuln.fixable {
-				i.FixableUnknownCveCount++
-			}
-		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			i.CriticalCveCount++
-			if vuln.fixable {
-				i.FixableCriticalCveCount++
-			}
-		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			i.ImportantCveCount++
-			if vuln.fixable {
-				i.FixableImportantCveCount++
-			}
-		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			i.ModerateCveCount++
-			if vuln.fixable {
-				i.FixableModerateCveCount++
-			}
-		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			i.LowCveCount++
-			if vuln.fixable {
-				i.FixableLowCveCount++
-			}
-		}
-	}
+	utils.FillScanStatsV2(imageV2)
 }

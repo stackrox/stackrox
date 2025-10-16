@@ -86,29 +86,28 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 	}
 
-	var processes []*views.ProcessIndicatorRiskView
 	if hasAtLeastOneLockedBaseline {
-		processes, err = e.indicators.GetProcessIndicatorsRiskView(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
+		err = e.indicators.IterateOverProcessIndicatorsRiskView(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery(), func(process *views.ProcessIndicatorRiskView) error {
+			processSet, exists := containerNameToBaselinedProcesses[process.ContainerName]
+			// If no explicit baseline, then all processes are valid.
+			if !exists {
+				return nil
+			}
+			baselineItem := processbaseline.BaselineItemFromProcessView(process)
+			if baselineItem == "" {
+				return nil
+			}
+			if processbaseline.IsStartupProcessView(process) {
+				return nil
+			}
+			if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
+				violatingProcesses = append(violatingProcesses, process)
+				containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
+			}
+			return nil
+		})
 		if err != nil {
-			return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
-		}
-	}
-	for _, process := range processes {
-		processSet, exists := containerNameToBaselinedProcesses[process.ContainerName]
-		// If no explicit baseline, then all processes are valid.
-		if !exists {
-			continue
-		}
-		baselineItem := processbaseline.BaselineItemFromProcessView(process)
-		if baselineItem == "" {
-			continue
-		}
-		if processbaseline.IsStartupProcessView(process) {
-			continue
-		}
-		if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
-			violatingProcesses = append(violatingProcesses, process)
-			containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
+			return nil, errors.Wrapf(err, "iterating over process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
 		}
 	}
 

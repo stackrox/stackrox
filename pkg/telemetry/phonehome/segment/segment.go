@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mitchellh/hashstructure/v2"
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -160,8 +160,7 @@ func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *
 		return ""
 	}
 	h, err := hashstructure.Hash([]any{
-		props, o.Traits, o.Groups, event, t.getUserID(o), t.getAnonymousID(o)},
-		hashstructure.FormatV2, nil)
+		props, o.Traits, o.Groups, event, t.getUserID(o), t.getAnonymousID(o)}, nil)
 	if err != nil {
 		log.Error("Failed to generate Segment message ID: ", err)
 		// Let Segment generate the id.

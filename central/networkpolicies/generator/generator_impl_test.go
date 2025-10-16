@@ -162,12 +162,12 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 	protoassert.ElementsMatch(s.T(), existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
 	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
-			Namespace: testNetworkPolicies[1].Namespace,
-			Name:      testNetworkPolicies[1].Name,
+			Namespace: testNetworkPolicies[1].GetNamespace(),
+			Name:      testNetworkPolicies[1].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[3].Namespace,
-			Name:      testNetworkPolicies[3].Name,
+			Namespace: testNetworkPolicies[3].GetNamespace(),
+			Name:      testNetworkPolicies[3].GetName(),
 		},
 	})
 }
@@ -180,33 +180,33 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
 	s.Empty(existing)
 	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
-			Namespace: testNetworkPolicies[0].Namespace,
-			Name:      testNetworkPolicies[0].Name,
+			Namespace: testNetworkPolicies[0].GetNamespace(),
+			Name:      testNetworkPolicies[0].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[1].Namespace,
-			Name:      testNetworkPolicies[1].Name,
+			Namespace: testNetworkPolicies[1].GetNamespace(),
+			Name:      testNetworkPolicies[1].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[2].Namespace,
-			Name:      testNetworkPolicies[2].Name,
+			Namespace: testNetworkPolicies[2].GetNamespace(),
+			Name:      testNetworkPolicies[2].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[3].Namespace,
-			Name:      testNetworkPolicies[3].Name,
+			Namespace: testNetworkPolicies[3].GetNamespace(),
+			Name:      testNetworkPolicies[3].GetName(),
 		},
 	})
 }
 
 func sortPolicies(policies []*storage.NetworkPolicy) {
 	for _, policy := range policies {
-		for _, ingressRule := range policy.Spec.Ingress {
-			sort.Slice(ingressRule.From, func(i, j int) bool {
-				return protocompat.MarshalTextString(ingressRule.From[i]) < protocompat.MarshalTextString(ingressRule.From[j])
+		for _, ingressRule := range policy.GetSpec().GetIngress() {
+			sort.Slice(ingressRule.GetFrom(), func(i, j int) bool {
+				return protocompat.MarshalTextString(ingressRule.GetFrom()[i]) < protocompat.MarshalTextString(ingressRule.GetFrom()[j])
 			})
 		}
-		sort.Slice(policy.Spec.Ingress, func(i, j int) bool {
-			return protocompat.MarshalTextString(policy.Spec.Ingress[i]) < protocompat.MarshalTextString(policy.Spec.Ingress[j])
+		sort.Slice(policy.GetSpec().GetIngress(), func(i, j int) bool {
+			return protocompat.MarshalTextString(policy.GetSpec().GetIngress()[i]) < protocompat.MarshalTextString(policy.GetSpec().GetIngress()[j])
 		})
 	}
 	sort.Slice(policies, func(i, j int) bool {

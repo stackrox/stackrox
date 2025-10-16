@@ -65,6 +65,66 @@ const rules = {
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     // TODO move rule to pluginGeneric after all errors have been fixed.
+    'no-default-import-react': {
+        // Omit default import of React because it is not needed for JSX tranform.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Omit default import of React because it is not needed for JSX tranform',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDefaultSpecifier(node) {
+                    if (node.local?.name === 'React') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].source?.value === 'react'
+                        ) {
+                            const parent = ancestors[ancestors.length - 1];
+                            context.report({
+                                node,
+                                message:
+                                    'Omit default import of React because it is not needed for JSX tranform',
+                                fix(fixer) {
+                                    const { specifiers } = parent;
+                                    if (Array.isArray(specifiers) && specifiers.length !== 0) {
+                                        // If default import only, remove import declaration.
+                                        if (specifiers.length === 1) {
+                                            // Remove node does not remove following newline.
+                                            // Command line autofixes secondary errors after primary fixes.
+                                            // Integrated development environment requires a second interaction to fix.
+                                            return fixer.remove(parent);
+                                        }
+
+                                        // Because default import precedes named imports,
+                                        // remove from beginning of default import to opening brace.
+
+                                        // Range array consists of [start, end] similar to arguments of slice method.
+                                        const startDefaultSpecifier = node.range[0];
+                                        const endDefaultSpecifier = node.range[1];
+                                        const startNextSpecifier = specifiers[1].range[0];
+                                        const end = context.sourceCode
+                                            .getText()
+                                            .indexOf('{', endDefaultSpecifier);
+                                        if (end !== -1 && end < startNextSpecifier) {
+                                            return fixer.removeRange([startDefaultSpecifier, end]);
+                                        }
+                                    }
+
+                                    return null;
+                                },
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
@@ -84,6 +144,53 @@ const rules = {
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,
                         });
+                    }
+                },
+            };
+        },
+    },
+    'no-absolute-path-within-container-in-import': {
+        // Prerequisite so import statements within same Containers subfolder can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace absolute path to same Containers subfolder with relative path',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string' && !node.value.startsWith('.')) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/src/Containers/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const indexOfSlash = filenameAfterBase.indexOf('/');
+                                if (
+                                    indexOfSlash >= 0 &&
+                                    node.value.startsWith(
+                                        `Containers/${filenameAfterBase.slice(0, indexOfSlash)}/`
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace absolute path to same Containers subfolder with relative path',
+                                    });
+                                }
+                            }
+                        }
                     }
                 },
             };

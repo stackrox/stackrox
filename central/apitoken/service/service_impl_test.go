@@ -49,5 +49,5 @@ func TestServiceImpl_ListAllowedRoles_SortsRoleAlphabetically(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := []string{"Admin", "Analyst", "Writer"}
-	assert.Equal(t, expected, actual.RoleNames)
+	assert.Equal(t, expected, actual.GetRoleNames())
 }

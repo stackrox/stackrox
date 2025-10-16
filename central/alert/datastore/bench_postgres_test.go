@@ -35,7 +35,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		ids = append(ids, id)
 		a := fixtures.GetAlertWithID(id)
 		a.Policy.Severity = storage.Severity(rand.Intn(5))
-		sevToCount[a.Policy.Severity]++
+		sevToCount[a.GetPolicy().GetSeverity()]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
 

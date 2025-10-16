@@ -9,8 +9,8 @@ import {
 } from '@patternfly/react-core';
 
 import useFetchNetworkFlows from '../api/useFetchNetworkFlows';
-import { EdgeState } from '../components/EdgeStateSelect';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import AnomalousFlows from './AnomalousFlows';
 

@@ -9,13 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-// HashingAlgo selects the algorithm for hashing the connection/endpoint/process fingerprinting.
-type HashingAlgo int
-
-const (
-	HashingAlgoString HashingAlgo = iota
-	HashingAlgoHash
-)
+// BinaryHash represents a 64-bit hash for memory-efficient key storage.
+// Using uint64 directly avoids conversion overhead and provides faster map operations
+// compared to [8]byte (single-instruction comparison vs byte-by-byte).
+// Switching to a 128-bit hash would require using [16]byte.
+type BinaryHash uint64
 
 // ProcessInfo represents process information used in indicators
 type ProcessInfo struct {
@@ -53,13 +51,8 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	return proto
 }
 
-func (i *NetworkConn) Key(h HashingAlgo) string {
-	switch h {
-	case HashingAlgoString:
-		return i.keyString()
-	default:
-		return i.keyHash()
-	}
+func (i *NetworkConn) Key() string {
+	return i.keyHash()
 }
 
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
@@ -85,13 +78,9 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 	return proto
 }
 
-func (i *ContainerEndpoint) Key(h HashingAlgo) string {
-	switch h {
-	case HashingAlgoString:
-		return i.keyString()
-	default:
-		return i.keyHash()
-	}
+// BinaryKey generates a binary hash for memory-efficient storage in dedupers
+func (i *ContainerEndpoint) BinaryKey() BinaryHash {
+	return i.binaryKeyHash()
 }
 
 // ProcessListening represents a listening process.
@@ -138,11 +127,7 @@ func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeni
 	return proto
 }
 
-func (i *ProcessListening) Key(h HashingAlgo) string {
-	switch h {
-	case HashingAlgoString:
-		return i.keyString()
-	default:
-		return i.keyHash()
-	}
+// BinaryKey generates a binary hash for memory-efficient storage in dedupers
+func (i *ProcessListening) BinaryKey() BinaryHash {
+	return i.binaryKeyHash()
 }

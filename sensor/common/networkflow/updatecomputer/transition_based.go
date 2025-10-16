@@ -2,21 +2,17 @@ package updatecomputer
 
 import (
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 )
-
-var log = logging.LoggerForModule()
 
 type deduperAction int
 
@@ -101,16 +97,13 @@ func (tt *TransitionType) String() string {
 // to avoid sending duplicate close updates to Central. In the future, after careful investigation,
 // this behavior may be made optional and hidden behind an environment variable.
 type TransitionBased struct {
-	// Algorithm used for creating fingerprints of indicators
-	hashingAlgo indicator.HashingAlgo
 
 	// State tracking for conditional updates - moved from networkFlowManager
 	connectionsDeduperMutex sync.RWMutex
 	connectionsDeduper      *set.StringSet
 
 	endpointsDeduperMutex sync.RWMutex
-	// TODO(ROX-31012): Save even more memory by changing to `type b8 [8]byte; map[b8]b8
-	endpointsDeduper map[string]string
+	endpointsDeduper      map[indicator.BinaryHash]indicator.BinaryHash
 
 	// cachedUpdates contains a list of updates to Central that cannot be sent at the given moment.
 	cachedUpdatesConn []*storage.NetworkFlow
@@ -133,24 +126,11 @@ func newStringSetPtr() *set.StringSet {
 	return &s
 }
 
-func hashingAlgoFromEnv(v env.Setting) indicator.HashingAlgo {
-	switch strings.ToLower(v.Setting()) {
-	case "fnv64":
-		return indicator.HashingAlgoHash
-	case "string":
-		return indicator.HashingAlgoString
-	default:
-		log.Warnf("Unknown hashing algorithm selected in %s: %q. Using default 'FNV64'.", v.EnvVar(), v.Setting())
-		return indicator.HashingAlgoHash
-	}
-}
-
 // NewTransitionBased creates a new instance of the transition-based update computer.
 func NewTransitionBased() *TransitionBased {
 	return &TransitionBased{
-		hashingAlgo:                hashingAlgoFromEnv(env.NetworkFlowDeduperHashingAlgorithm),
 		connectionsDeduper:         newStringSetPtr(),
-		endpointsDeduper:           make(map[string]string),
+		endpointsDeduper:           make(map[indicator.BinaryHash]indicator.BinaryHash),
 		cachedUpdatesConn:          make([]*storage.NetworkFlow, 0),
 		cachedUpdatesEp:            make([]*storage.NetworkEndpoint, 0),
 		cachedUpdatesProc:          make([]*storage.ProcessListeningOnPortFromSensor, 0),
@@ -174,7 +154,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	}
 	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
 	for conn, currTS := range current {
-		key := conn.Key(c.hashingAlgo)
+		key := conn.Key()
 
 		// Check if this connection has been closed recently.
 		prevTsFound, prevTS := c.lookupPrevTimestamp(key)
@@ -182,7 +162,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, c.connectionsDeduper, &c.connectionsDeduperMutex)
 		updateMetrics(update, transition, ee)
 		// Each transition may require updating the deduper.
-		action := getDeduperAction(transition)
+		action := getConnectionDeduperAction(transition)
 		switch action {
 		case deduperActionAdd:
 			c.connectionsDeduper.Add(key)
@@ -243,8 +223,8 @@ func categorizeUpdate(
 
 }
 
-// getDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
-func getDeduperAction(tt TransitionType) deduperAction {
+// getConnectionDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
+func getConnectionDeduperAction(tt TransitionType) deduperAction {
 	switch tt {
 	case TransitionTypeOpen2Closed:
 		// When a previously open EE is being closed, we must remove it from the deduper.
@@ -256,10 +236,6 @@ func getDeduperAction(tt TransitionType) deduperAction {
 		// Rarity. An EE was closed in the previous tick, but now is open.
 		// We treat is as a new EE and thus add it to deduper.
 		return deduperActionAdd
-	case TransitionTypeOpen2Open:
-		// Applicable to endpoints. If we get two open messages for the same endpoint, it may mean that the process
-		// has been updated, so we must update the deduper.
-		return deduperActionUpdateProcess
 	default:
 		// All other cases:
 		// 1. Closed -> Closed - the first observation of closed EE would remove it from deduper.
@@ -306,28 +282,29 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
 	for ep, p := range enrichedEndpointsProcesses {
 		currTS := p.LastSeen
-		epKey := ep.Key(c.hashingAlgo)
+		epBinaryKey := ep.BinaryKey()
+		epHashKey := ep.BinaryKey() // Same as epBinaryKey since we only support binary now
 		// Check if this endpoint has a process.
-		procKey := ""
+		var procBinaryKey indicator.BinaryHash
 		// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
 		// There is currently no way to get the old processIndicator, so we don't inform Central about the old being closed.
 		// If that is needed, this can be added in the future.
 		if p.ProcessListening != nil {
-			procKey = p.ProcessListening.Key(c.hashingAlgo)
+			procBinaryKey = p.ProcessListening.BinaryKey()
 		}
 		// Based on the categorization, we calculate the transition and whether an update should be sent.
-		sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epKey, procKey, c.deduperHasEndpointAndProcess)
+		sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epBinaryKey, procBinaryKey, c.deduperHasEndpointAndProcess)
 		updateMetrics(sendEndpointUpdate, transition, EndpointEnrichedEntity)
 		updateMetrics(sendProcessUpdate, transition, ProcessEnrichedEntity)
 
 		switch dAction {
 		case deduperActionAdd, deduperActionUpdateProcess:
 			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				c.endpointsDeduper[epKey] = procKey
+				c.endpointsDeduper[epHashKey] = procBinaryKey
 			})
 		case deduperActionRemove:
 			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				delete(c.endpointsDeduper, epKey)
+				delete(c.endpointsDeduper, epHashKey)
 			})
 		default: // noop
 		}
@@ -361,8 +338,8 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 //
 // Returns a boolean indicating whether an update should be sent and a TransitionType describing
 // the type of transition.
-func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey string,
-	deduperHas func(string, string) (bool, bool)) (updateEp, updateProc bool, tt TransitionType, da deduperAction) {
+func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey indicator.BinaryHash,
+	deduperHas func(indicator.BinaryHash, indicator.BinaryHash) (bool, bool)) (updateEp, updateProc bool, tt TransitionType, da deduperAction) {
 	// Variables for ease of reading
 	isClosed := currTS != timestamp.InfiniteFuture
 
@@ -387,13 +364,13 @@ func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey string,
 	return false, true, TransitionTypeReplaceProcess, deduperActionUpdateProcess
 }
 
-func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey string) (bool, bool) {
+func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.BinaryHash) (bool, bool) {
 	return concurrency.WithRLock2(&c.endpointsDeduperMutex, func() (bool, bool) {
-		pKey, ok := c.endpointsDeduper[epKey]
+		storedProcKey, ok := c.endpointsDeduper[epKey]
 		if !ok {
 			return false, false
 		}
-		return true, pKey == procKey
+		return true, storedProcKey == procKey
 	})
 }
 
@@ -431,7 +408,7 @@ func (c *TransitionBased) ResetState() {
 		c.connectionsDeduper = newStringSetPtr()
 	})
 	concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-		c.endpointsDeduper = make(map[string]string)
+		c.endpointsDeduper = make(map[indicator.BinaryHash]indicator.BinaryHash)
 	})
 
 	c.updateLastCleanup(time.Now())
@@ -516,14 +493,8 @@ func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
 // calculateEndpointsDeduperByteSize calculates the memory usage of the endpoints deduper.
 func (c *TransitionBased) calculateEndpointsDeduperByteSize() uintptr {
 	baseSize := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() uintptr {
-		var totalStringBytes uintptr
-		for k, v := range c.endpointsDeduper {
-			totalStringBytes += uintptr(len(k) + len(v))
-		}
-
 		return uintptr(8) + // map reference
-			uintptr(len(c.endpointsDeduper))*2*16 + // two string refs per entry (key + value), 16 bytes each
-			totalStringBytes // actual string content
+			uintptr(len(c.endpointsDeduper))*16 // 8 bytes key + 8 bytes value per entry
 	})
 	// Conservative 1.8x multiplier for Go map overhead (buckets, hash table structure, etc.)
 	// The benchmarked overhead was 1.67x, but we use a slightly higher multiplier to be safe.

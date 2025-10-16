@@ -5,7 +5,7 @@ import relatedEntitySVG from 'images/network-graph/related-entity.svg';
 import filteredEntitySVG from 'images/network-graph/filtered-entity.svg';
 
 import NetworkGraph from './NetworkGraph';
-import {
+import type {
     CIDRBlockData,
     CustomEdgeModel,
     CustomModel,
@@ -15,10 +15,10 @@ import {
     NamespaceData,
     NetworkPolicyState,
 } from './types/topology.type';
-import { Simulation } from './utils/getSimulation';
+import type { Simulation } from './utils/getSimulation';
 import { getNodeById } from './utils/networkGraphUtils';
-import { EdgeState } from './components/EdgeStateSelect';
-import { DisplayOption } from './components/DisplayOptionsSelect';
+import type { EdgeState } from './components/EdgeStateSelect';
+import type { DisplayOption } from './components/DisplayOptionsSelect';
 import {
     createExtraneousNodes,
     createExtraneousEdges,
@@ -34,7 +34,7 @@ import {
     namespaceBadgeText,
 } from './common/NetworkGraphIcons';
 import useNetworkPolicySimulator from './hooks/useNetworkPolicySimulator';
-import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 export type Models = {
     activeModel: CustomModel;

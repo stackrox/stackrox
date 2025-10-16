@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
 import {
     violationsFullViewPath,

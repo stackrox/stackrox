@@ -52,16 +52,21 @@ func makeAggregator[F Finding](md MetricDescriptors, labelOrder map[Label]int, g
 }
 
 // count the finding in the aggregation result.
-func (r *aggregator[Finding]) count(finding Finding) {
+func (r *aggregator[F]) count(finding F) {
 	labelValue := func(label Label) string {
 		return r.getters[label](finding)
 	}
+	incrementFunc := func() int { return 1 }
+	if f, ok := any(finding).(WithIncrement); ok {
+		incrementFunc = f.GetIncrement
+	}
+
 	for metric, labels := range r.md {
 		if key, labels := makeAggregationKey(labels, labelValue, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
-				rec.total += finding.GetIncrement()
+				rec.total += incrementFunc()
 			} else {
-				r.result[metric][key] = &aggregatedRecord{labels, finding.GetIncrement()}
+				r.result[metric][key] = &aggregatedRecord{labels, incrementFunc()}
 			}
 		}
 	}

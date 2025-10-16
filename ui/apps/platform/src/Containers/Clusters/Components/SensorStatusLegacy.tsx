@@ -1,10 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import { getDateTime, getDistanceStrict } from 'utils/dateUtils';
 import HealthStatus from './HealthStatus';
 import { healthStatusStylesLegacy, isDelayedSensorHealthStatus } from '../cluster.helpers';
-import { ClusterHealthStatus } from '../clusterTypes';
+import type { ClusterHealthStatus } from '../clusterTypes';
 import HealthLabelWithDelayed from './HealthLabelWithDelayed';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 

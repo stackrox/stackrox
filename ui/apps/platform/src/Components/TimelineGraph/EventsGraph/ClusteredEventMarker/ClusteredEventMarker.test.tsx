@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-import { Event } from '../eventTypes';
+import type { Event } from '../eventTypes';
 import ClusteredEventMarker from './ClusteredEventMarker';
 
 test('should show a clustered generic event marker', () => {

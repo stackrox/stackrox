@@ -41,13 +41,13 @@ func (p *ProcessPool) add(val *storage.ProcessSignal) {
 	defer p.lock.Unlock()
 
 	if p.Size < p.Capacity {
-		p.Processes[val.ContainerId] = append(p.Processes[val.ContainerId], val)
+		p.Processes[val.GetContainerId()] = append(p.Processes[val.GetContainerId()], val)
 		p.Size++
 	} else {
-		nprocess := len(p.Processes[val.ContainerId])
+		nprocess := len(p.Processes[val.GetContainerId()])
 		if nprocess > 0 {
 			randIdx := rand.Intn(nprocess)
-			p.Processes[val.ContainerId][randIdx] = val
+			p.Processes[val.GetContainerId()][randIdx] = val
 		}
 	}
 }

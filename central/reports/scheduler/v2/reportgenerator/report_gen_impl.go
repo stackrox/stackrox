@@ -143,7 +143,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters())
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
+	switch req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() {
 	case storage.ReportStatus_DOWNLOAD:
 		parentDir := req.ReportSnapshot.GetReportConfigurationId()
 		if req.ReportSnapshot.GetVulnReportFilters() == nil {
@@ -208,7 +208,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.Name
+			reportName := req.ReportSnapshot.GetName()
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 			if err != nil {
@@ -487,7 +487,7 @@ func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapsh
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
-	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}

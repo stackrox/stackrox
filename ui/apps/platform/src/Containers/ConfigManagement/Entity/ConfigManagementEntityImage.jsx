@@ -13,13 +13,14 @@ import { entityToColumns } from 'constants/listColumns';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import CVETable from 'Containers/Images/CVETable';
 import searchContext from 'Containers/searchContext';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
-import TableWidget from './widgets/TableWidget';
+
+import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
+import TableWidget from './widgets/TableWidget';
 
 const ConfigManagementEntityImage = ({
     id,
@@ -68,11 +69,11 @@ const ConfigManagementEntityImage = ({
                     tag
                 }
                 scan {
-                    components {
+                    imageComponents {
                         name
                         layerIndex
                         version
-                        vulns {
+                        imageVulnerabilities {
                             cve
                             cvss
                             link
@@ -161,9 +162,14 @@ const ConfigManagementEntityImage = ({
                     layers.forEach((layer, i) => {
                         layers[i].components = [];
                     });
-                    scan.components.forEach((component) => {
+                    scan.imageComponents.forEach((component) => {
                         if (component.layerIndex !== undefined && layers[component.layerIndex]) {
-                            layers[component.layerIndex].components.push(component);
+                            // Transform imageVulnerabilities to vulns for CVETable compatibility
+                            const transformedComponent = {
+                                ...component,
+                                vulns: component.imageVulnerabilities || [],
+                            };
+                            layers[component.layerIndex].components.push(transformedComponent);
                         }
                     });
 

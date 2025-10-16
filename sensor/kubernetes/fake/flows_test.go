@@ -76,9 +76,9 @@ func (s *flowsSuite) TestOriginatorCache_BasicCaching() {
 	for range 10 {
 		originator := cache.GetOrSetOriginator(s.endpointKey, s.containerID, 0.0, s.processPool)
 		s.NotNil(originator)
-		s.Equal("cached-process", originator.ProcessName)
-		s.Equal("/usr/bin/cached-process", originator.ProcessExecFilePath)
-		s.Equal("cached args", originator.ProcessArgs)
+		s.Equal("cached-process", originator.GetProcessName())
+		s.Equal("/usr/bin/cached-process", originator.GetProcessExecFilePath())
+		s.Equal("cached args", originator.GetProcessArgs())
 	}
 }
 

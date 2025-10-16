@@ -9,8 +9,15 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
 import { isVulnerabilitySeverityLabel } from '../types';
-import type { FixableStatus } from '../types';
+import type { FixableStatus, ScannableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
+import {
+    COMPONENT_SORT_FIELD,
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../utils/sortFields';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
@@ -25,7 +32,7 @@ export function getVirtualMachineSeveritiesCount(
         UNKNOWN_VULNERABILITY_SEVERITY: 0,
     };
 
-    virtualMachine.scan.components.forEach((component) => {
+    virtualMachine.scan?.components.forEach((component) => {
         component.vulns.forEach((vuln) => {
             severityCounts[vuln.severity] += 1;
         });
@@ -51,6 +58,20 @@ export type CveTableRow = {
     affectedComponents: CveComponentRow[];
 };
 
+export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMachine): string {
+    const components = virtualMachine.scan?.components;
+    if (!Array.isArray(components)) {
+        return 'Not available';
+    }
+
+    const totalComponents = components.length;
+    const scannedComponents = components.filter(
+        (component) => !component.notes?.includes('UNSCANNED')
+    ).length;
+
+    return `${scannedComponents}/${totalComponents} scanned packages`;
+}
+
 export function getVirtualMachineCveSeverityStatusCounts(
     cveTableData: CveTableRow[]
 ): ResourceCountByCveSeverityAndStatus {
@@ -69,10 +90,6 @@ export function getVirtualMachineCveSeverityStatusCounts(
     });
 
     return counts;
-}
-
-function defaultCveTableSort(a: CveTableRow, b: CveTableRow): number {
-    return severityRankings[b.severity] - severityRankings[a.severity] || b.cvss - a.cvss;
 }
 
 function worstSeverity(a: VulnerabilitySeverity, b: VulnerabilitySeverity): VulnerabilitySeverity {
@@ -97,7 +114,7 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
                     severity,
                     isFixable: !!fixedBy,
                     cvss,
-                    epssProbability: epss.epssProbability,
+                    epssProbability: epss?.epssProbability,
                     affectedComponents: [],
                 };
                 map.set(cve, row);
@@ -120,7 +137,7 @@ export function getVirtualMachineCveTableData(virtualMachine?: VirtualMachine): 
         });
     });
 
-    return Array.from(map.values()).sort(defaultCveTableSort);
+    return Array.from(map.values());
 }
 
 export function applyVirtualMachineCveTableFilters(
@@ -197,4 +214,145 @@ export function applyVirtualMachineCveTableFilters(
 
         return true; // passed all filter conditions
     });
+}
+
+export function applyVirtualMachineCveTableSort(
+    rows: CveTableRow[],
+    sortKey: string,
+    reversed: boolean
+): CveTableRow[] {
+    const comparator = (a: CveTableRow, b: CveTableRow) => {
+        let compareResult = 0;
+
+        switch (sortKey) {
+            case CVE_SORT_FIELD:
+                // Intl.Collator sorting would be better here, but it's not used in the backend
+                compareResult = a.cve.localeCompare(b.cve);
+                break;
+            case CVSS_SORT_FIELD:
+                compareResult = a.cvss - b.cvss;
+                break;
+            case CVE_EPSS_PROBABILITY_SORT_FIELD:
+                compareResult = a.epssProbability - b.epssProbability;
+                break;
+            case CVE_SEVERITY_SORT_FIELD:
+                compareResult = severityRankings[a.severity] - severityRankings[b.severity];
+                break;
+            default:
+                break;
+        }
+        if (compareResult !== 0) {
+            return reversed ? compareResult * -1 : compareResult;
+        }
+
+        // backup compare when rows are equal
+        // doesn't appear to be a consistent behavior in the backend between vulnerability pages
+        // however secondary sort of cve name (ignoring direction) seems to mimic node cve page behavior
+        return a.cve.localeCompare(b.cve);
+    };
+
+    return [...rows].sort(comparator);
+}
+
+export type PackageTableRow = {
+    name: ScanComponent['name'];
+    version: string;
+    isScannable: boolean;
+};
+
+export function getVirtualMachinePackagesTableData(
+    virtualMachine?: VirtualMachine
+): PackageTableRow[] {
+    if (!virtualMachine) {
+        return [];
+    }
+
+    const packagesTableData: PackageTableRow[] = [];
+
+    virtualMachine.scan?.components?.forEach((component) => {
+        packagesTableData.push({
+            name: component.name,
+            version: component.version,
+            isScannable: !component.notes.includes('UNSCANNED'),
+        });
+    });
+
+    return packagesTableData;
+}
+
+export function applyVirtualMachinePackagesTableFilters(
+    packagesTableData: PackageTableRow[],
+    searchFilter: SearchFilter
+): PackageTableRow[] {
+    if (!searchFilter || Object.keys(searchFilter).length === 0) {
+        return packagesTableData;
+    }
+
+    const componentFilters = searchValueAsArray(searchFilter.Component).map((component) =>
+        component.toLowerCase()
+    );
+    const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
+        (version) => version.toLowerCase()
+    );
+
+    const scannableFilters = searchValueAsArray(searchFilter.SCANNABLE);
+
+    return packagesTableData.filter((packageTableRow) => {
+        // "Component" filter, case insensitive and substring
+        if (componentFilters.length > 0) {
+            const componentNameLowerCase = packageTableRow.name.toLowerCase();
+            if (!componentFilters.some((filter) => componentNameLowerCase.includes(filter))) {
+                return false;
+            }
+        }
+
+        // "Component Version" filter, case insensitive and substring
+        if (componentVersionFilters.length > 0) {
+            const componentVersionLowerCase = packageTableRow.version.toLowerCase();
+            if (
+                !componentVersionFilters.some((filter) =>
+                    componentVersionLowerCase.includes(filter)
+                )
+            ) {
+                return false;
+            }
+        }
+
+        // "SCANNABLE" filter, exact
+        if (scannableFilters.length > 0) {
+            const rowScannable: ScannableStatus = packageTableRow.isScannable
+                ? 'Scanned'
+                : 'Not scanned';
+            if (!scannableFilters.includes(rowScannable)) {
+                return false;
+            }
+        }
+
+        return true; // passed all filter conditions
+    });
+}
+
+export function applyVirtualMachinePackagesTableSort(
+    rows: PackageTableRow[],
+    sortKey: string,
+    reversed: boolean
+): PackageTableRow[] {
+    const comparator = (a: PackageTableRow, b: PackageTableRow) => {
+        let compareResult = 0;
+
+        switch (sortKey) {
+            case COMPONENT_SORT_FIELD:
+                compareResult = a.name.localeCompare(b.name);
+                break;
+            default:
+                break;
+        }
+        if (compareResult !== 0) {
+            return reversed ? compareResult * -1 : compareResult;
+        }
+
+        return 0;
+    };
+
+    return [...rows].sort(comparator);
 }

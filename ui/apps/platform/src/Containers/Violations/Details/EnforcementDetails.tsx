@@ -1,10 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import uniqBy from 'lodash/uniqBy';
 import { Flex, FlexItem, Divider, Card } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { Alert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import Header from './Enforcement/Header';
 import Explanation from './Enforcement/Explanation';
 

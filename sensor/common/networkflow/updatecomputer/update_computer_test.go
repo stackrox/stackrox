@@ -354,11 +354,12 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		Protocol:      0,
 		Port:          0,
 	}
-	const (
-		ep1hash = "e2186fa0a852365c"
-		p1hash  = "b446b1d03441677f"
-		p2hash  = "8977439832a06657"
-	)
+	// Compute binary hashes for test assertions
+	ep1hash := ep1.BinaryKey()
+	p1hash := p1.BinaryKey()
+	p2hash := p2.BinaryKey()
+	emptyHash := indicator.BinaryHash(0)
+	emptyDeduper := map[indicator.BinaryHash]indicator.BinaryHash{}
 
 	closedNow := timestamp.Now()
 	open := timestamp.InfiniteFuture
@@ -369,7 +370,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
 		expectNumUpdatesEp   map[string]int
 		expectNumUpdatesProc map[string]int
-		expectedDeduperState map[string]string // evaluated only for implTransitionBased!
+		expectedDeduperState map[indicator.BinaryHash]indicator.BinaryHash // evaluated only for implTransitionBased!
 	}{
 		"Should send new closed endpoints": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
@@ -381,6 +382,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when open endpoints are closed": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -397,6 +399,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should not send an update when open endpoints remain open": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -413,7 +416,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
-			expectedDeduperState: map[string]string{ep1hash: p1hash},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"Should not send update when closed TS is updated to a past value": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -434,6 +437,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			// tracking all closed endpoints in memory for a limited time (as done for connections).
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 1},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when closed TS is updated to a younger value": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -450,12 +454,14 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should produce no updates on empty input": {
 			initialMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: emptyDeduper,
 		},
 		"Should send an update on deletion for legacy but not for TransitionBased": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -467,13 +473,14 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
-			expectedDeduperState: map[string]string{ep1hash: p1hash},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"handling nils": {
 			initialMapping:       nil,
 			currentMapping:       nil,
 			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
 			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectedDeduperState: emptyDeduper,
 		},
 		// Process-specific cases
 		"Should replace process on two open-endpoint messages": {
@@ -492,7 +499,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
 			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
-			expectedDeduperState: map[string]string{ep1hash: p2hash},
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p2hash},
 		},
 		"A replacement triggered with a close message should close the correct process": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -510,6 +517,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
 			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear (as closed).
 			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectedDeduperState: emptyDeduper,
 		},
 		"A replacement process is nil but the endpoint stays open": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -527,7 +535,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0}, // ep1 remains open
 			// Legacy sends 1 update for p1 disappearing.
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
-			expectedDeduperState: map[string]string{ep1hash: ""}, // Note that deduper gets updated with empty process
+			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: emptyHash}, // Note that deduper gets updated with empty process
 		},
 		"A replacement process is nil and the endpoint is closed": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -545,7 +553,7 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
 			// Legacy sends 1 update for p1 disappearing.
 			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
-			expectedDeduperState: map[string]string{},
+			expectedDeduperState: emptyDeduper,
 		},
 	}
 
@@ -568,9 +576,9 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 
 		// Verify protobuf conversion
 		for _, update := range updatesEp {
-			assert.NotNil(t, update.Props)
-			assert.Equal(t, uint32(8080), update.Props.Port)
-			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.Props.L4Protocol)
+			assert.NotNil(t, update.GetProps())
+			assert.Equal(t, uint32(8080), update.GetProps().GetPort())
+			assert.Equal(t, storage.L4Protocol_L4_PROTOCOL_TCP, update.GetProps().GetL4Protocol())
 		}
 	}
 
@@ -590,8 +598,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 				assert.Len(t, uc.endpointsDeduper, len(tc.expectedDeduperState))
 				for k, v := range tc.expectedDeduperState {
 					got, found := uc.endpointsDeduper[k]
-					assert.Truef(t, found, "expected to find %s in deduper", k)
-					assert.Equal(t, v, got, "expected to find %s=%s in deduper, but found %s=%s", k, v, k, got)
+					assert.Truef(t, found, "expected to find %x in deduper", k)
+					assert.Equal(t, v, got, "expected to find %x=%x in deduper, but found %x=%x", k, v, k, got)
 				}
 			})
 		})

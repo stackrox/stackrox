@@ -29,7 +29,7 @@ LABEL \
     io.k8s.display-name="operator" \
     io.openshift.tags="rhacs,operator,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-rhel8-operator" \
+    name="advanced-cluster-security/rhacs-rhel8-operator" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Operator for Red Hat Advanced Cluster Security for Kubernetes" \

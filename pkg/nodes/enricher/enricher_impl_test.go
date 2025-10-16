@@ -109,14 +109,14 @@ type fakeCVESuppressor struct{}
 func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, c := range node.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
-			if v.Cve == "CVE-2020-1234" {
+			if v.GetCve() == "CVE-2020-1234" {
 				v.Suppressed = true
 			}
 		}
 
 		// Data moved from Vulns to Vulnerabilities in Postgres.  So simply add the data here.
-		for _, v := range c.Vulnerabilities {
-			if v.CveBaseInfo.Cve == "CVE-2020-1234" {
+		for _, v := range c.GetVulnerabilities() {
+			if v.GetCveBaseInfo().GetCve() == "CVE-2020-1234" {
 				v.Snoozed = true
 			}
 		}
@@ -240,7 +240,7 @@ func TestCVESuppression(t *testing.T) {
 
 	for _, c := range node.GetScan().GetComponents() {
 		// `vulnerabilities` is the new field.
-		assert.NotNil(t, c.GetVulnerabilities()[0].Snoozed)
+		assert.NotNil(t, c.GetVulnerabilities()[0].GetSnoozed())
 	}
 }
 

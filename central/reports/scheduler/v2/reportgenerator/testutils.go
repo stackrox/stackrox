@@ -21,8 +21,8 @@ func testNamespaces(clusters []*storage.Cluster, namespacesPerCluster int) []*st
 			namespaces = append(namespaces, &storage.NamespaceMetadata{
 				Id:          uuid.NewV4().String(),
 				Name:        namespaceName,
-				ClusterId:   cluster.Id,
-				ClusterName: cluster.Name,
+				ClusterId:   cluster.GetId(),
+				ClusterName: cluster.GetName(),
 			})
 		}
 	}
@@ -45,7 +45,7 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 
 	for _, namespace := range namespaces {
 		for i := 0; i < numDeploymentsPerNamespace; i++ {
-			depName := fmt.Sprintf("%s_%s_dep%d", namespace.ClusterName, namespace.Name, i)
+			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
 			image := testImage(depName)
 			deployment := testDeployment(depName, namespace, image)
 			deployments = append(deployments, deployment)
@@ -59,10 +59,10 @@ func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata,
 	return &storage.Deployment{
 		Name:        deploymentName,
 		Id:          uuid.NewV4().String(),
-		ClusterName: namespace.ClusterName,
-		ClusterId:   namespace.ClusterId,
-		Namespace:   namespace.Name,
-		NamespaceId: namespace.Id,
+		ClusterName: namespace.GetClusterName(),
+		ClusterId:   namespace.GetClusterId(),
+		Namespace:   namespace.GetName(),
+		NamespaceId: namespace.GetId(),
 		Containers: []*storage.Container{
 			{
 				Name:  fmt.Sprintf("%s_container", deploymentName),

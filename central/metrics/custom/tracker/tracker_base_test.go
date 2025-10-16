@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"context"
-	"iter"
 	"maps"
 	"slices"
 	"strings"
@@ -34,16 +33,16 @@ func TestMakeLabelOrderMap(t *testing.T) {
 	}, testLabelOrder)
 }
 
-func nilGatherFunc(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-	return func(yield func(testFinding) bool) {}
+func nilGatherFunc(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+	return func(yield func(testFinding, error) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
-	return func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-		var finding testFinding
-		return func(yield func(testFinding) bool) {
+	return func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+		return func(yield func(testFinding, error) bool) {
+			var finding testFinding
 			for range data {
-				if !yield(finding) {
+				if !yield(finding, nil) {
 					return
 				}
 				finding++
@@ -129,6 +128,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		)
 
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 		assert.ElementsMatch(t, cfg0.toAdd, registered)
 		assert.Empty(t, unregistered)
 		assert.ElementsMatch(t, cfg0.toAdd, slices.Compact(trackedMetricNames))
@@ -150,14 +150,21 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		// Less than period since last Gather, gathering ignored:
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 		assert.Empty(t, trackedMetricNames)
 
 		{ // Reset lastGather
 			identity, _ := authn.IdentityFromContext(ctx)
-			g, _ := tracker.gatherers.Load(identity.UID())
-			g.(*gatherer).lastGather = time.Time{}
+			gRaw, ok := tracker.gatherers.Load(identity.UID())
+			require.True(t, ok)
+			g := gRaw.(*gatherer)
+			// Make it temporarily running to avoid data race on lastGather.
+			require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+			g.lastGather = time.Time{}
+			g.running.Store(false)
 		}
 		tracker.Gather(ctx)
+		tracker.cleanupWG.Wait()
 
 		assert.ElementsMatch(t, slices.Compact(trackedMetricNames), metricNames[1:])
 
@@ -244,9 +251,9 @@ func TestTrackerBase_error(t *testing.T) {
 
 	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
-		func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
-			return func(yield func(testFinding) bool) {
-				if !yield(0xbadf00d) {
+		func(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
+			return func(yield func(testFinding, error) bool) {
+				if !yield(testFinding(0xbadf00d), errox.InvariantViolation.CausedBy("bad finding")) {
 					return
 				}
 			}
@@ -331,8 +338,9 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 	g.running.Store(false)
 	_, ok := tracker.gatherers.Load("Admin")
 	assert.True(t, ok)
-	// This call should delete the "Admin" gatherer:
 	tracker.getGatherer("Donkey", cfg).running.Store(false)
+	// This call should delete the "Admin" gatherer:
+	tracker.cleanupInactiveGatherers()
 	tracker.cleanupWG.Wait()
 	_, ok = tracker.gatherers.Load("Admin")
 	assert.False(t, ok)

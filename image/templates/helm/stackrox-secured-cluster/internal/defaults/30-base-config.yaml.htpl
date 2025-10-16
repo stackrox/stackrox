@@ -115,6 +115,11 @@ collector:
     enabled: true
   [<- end >]
 
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+fact:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+[<- end >]
+
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
 

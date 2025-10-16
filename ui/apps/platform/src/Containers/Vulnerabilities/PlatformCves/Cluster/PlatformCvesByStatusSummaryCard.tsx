@@ -2,7 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { Card, CardTitle, CardBody, Flex, Text, pluralize } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
-import { FixableStatus } from '../../types';
+import type { FixableStatus } from '../../types';
 
 const disabledColor100 = 'var(--pf-v5-global--disabled-color--100)';
 

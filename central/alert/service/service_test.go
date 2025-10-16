@@ -920,7 +920,7 @@ func (s *patchAlertTests) TestResolveAlert() {
 
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)
-	s.Equal(fakeAlert.State, storage.ViolationState_RESOLVED)
+	s.Equal(fakeAlert.GetState(), storage.ViolationState_RESOLVED)
 }
 
 func (s *baseSuite) TestDeleteAlerts() {

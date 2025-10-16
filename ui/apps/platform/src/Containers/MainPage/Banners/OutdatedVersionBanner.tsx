@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Banner, Button } from '@patternfly/react-core';
 
 import useMetadata from 'hooks/useMetadata';

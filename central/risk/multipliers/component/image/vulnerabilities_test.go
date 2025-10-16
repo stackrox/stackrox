@@ -16,15 +16,15 @@ func TestVulnerabilitiesScore(t *testing.T) {
 	mult := NewVulnerabilities()
 	images := multipliers.GetMockImages()
 	result := mult.Score(ctx, scancomponent.NewFromImageComponent(images[0].GetScan().GetComponents()[0]))
-	assert.Equal(t, float32(1.22875), result.Score)
+	assert.Equal(t, float32(1.22875), result.GetScore())
 
 	// Changing CVSS no longer affects score.
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 0
 	result = mult.Score(ctx, scancomponent.NewFromImageComponent(images[0].GetScan().GetComponents()[0]))
-	assert.Equal(t, float32(1.22875), result.Score)
+	assert.Equal(t, float32(1.22875), result.GetScore())
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 10
 	result = mult.Score(ctx, scancomponent.NewFromImageComponent(images[0].GetScan().GetComponents()[0]))
-	assert.Equal(t, float32(1.22875), result.Score)
+	assert.Equal(t, float32(1.22875), result.GetScore())
 
 	// Set severity to unknown and then there should be a nil RiskResult
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY

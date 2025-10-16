@@ -10,12 +10,11 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
 import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 import { getVersionedDocs } from 'utils/versioning';
 
-import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import usePageState from '../../../hooks/usePageState';
 import useIntegrationForm from '../../useIntegrationForm';
 import type { IntegrationFormProps } from '../../integrationFormTypes';
 
@@ -24,6 +23,8 @@ import FormLabelGroup from '../../FormLabelGroup';
 import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
 import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
+
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
 export type S3Integration = {
     s3: {

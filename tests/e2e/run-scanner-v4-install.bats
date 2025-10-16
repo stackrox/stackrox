@@ -89,7 +89,6 @@ _end() {
     emit_timing_data "$test_identifier" "$current_label" "$begin_timestamp" "$end_timestamp"
     # Close post-processing stdout and stderr and restore from original fds.
     exec 1>&- 2>&- 1>&4 2>&5
-    wait "$post_processor_pid" || echo "Failed to wait for output post processor (PID ${post_processor_pid})."
     post_processor_pid=""
     current_label=""
     begin_timestamp=""

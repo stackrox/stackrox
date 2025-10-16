@@ -7,16 +7,17 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import Rules from 'Containers/ConfigManagement/Entity/widgets/Rules';
-import RulePermissions from 'Containers/ConfigManagement/Entity/widgets/RulePermissions';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { getDateTime } from 'utils/dateUtils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
-import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+
+import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
+import RulePermissions from './widgets/RulePermissions';
+import Rules from './widgets/Rules';
 
 const ConfigManagementEntityRole = ({
     id,

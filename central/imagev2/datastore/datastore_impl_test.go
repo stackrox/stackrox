@@ -98,7 +98,7 @@ func (s *ImageV2DataStoreTestSuite) TestSearch() {
 	s.NoError(err)
 	s.Len(results, 1)
 
-	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, image.GetSha()).ProtoQuery()
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, image.GetDigest()).ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
 	s.Len(results, 1)
@@ -181,7 +181,7 @@ func (s *ImageV2DataStoreTestSuite) TestUpdateVulnState() {
 
 	cloned := image.CloneVT()
 	cloned.Name.FullName = "registry.test.io/cloned:latest"
-	cloned.Id = uuid.NewV5FromNonUUIDs(cloned.GetName().GetFullName(), cloned.GetSha()).String()
+	cloned.Id = uuid.NewV5FromNonUUIDs(cloned.GetName().GetFullName(), cloned.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, cloned))
 	_, found, err = s.datastore.GetImage(ctx, cloned.GetId())
 	s.NoError(err)
@@ -251,12 +251,12 @@ func (s *ImageV2DataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
 	image := fixtures.GetImageV2WithUniqueComponents(5)
 	componentIDs := make([]string, 0, len(image.GetScan().GetComponents()))
-	for _, component := range image.GetScan().GetComponents() {
-		compID, err := scancomponent.ComponentIDV2(
+	for index, component := range image.GetScan().GetComponents() {
+		compID := scancomponent.ComponentIDV2(
 			component,
 			image.GetId(),
+			index,
 		)
-		s.NoError(err)
 		componentIDs = append(componentIDs, compID)
 	}
 
@@ -309,14 +309,12 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testImage.Scan.ScanTime = protocompat.TimestampNow()
-	testImage.Scan.Components = testImage.Scan.Components[:len(testImage.Scan.Components)-1]
+	testImage.Scan.Components = testImage.GetScan().GetComponents()[:len(testImage.GetScan().GetComponents())-1]
 	cveIDsSet := set.NewStringSet()
-	for _, component := range testImage.GetScan().GetComponents() {
-		componentID, err := scancomponent.ComponentIDV2(component, testImage.GetId())
-		s.NoError(err)
-		for _, cve := range component.GetVulns() {
-			cveID, err := pkgCVE.IDV2(cve, componentID)
-			s.NoError(err)
+	for compIndex, component := range testImage.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, testImage.GetId(), compIndex)
+		for cveIndex, cve := range component.GetVulns() {
+			cveID := pkgCVE.IDV2(cve, componentID, cveIndex)
 			cveIDsSet.Add(cveID)
 		}
 	}
@@ -332,7 +330,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	// Verify orphaned image components are removed.
 	count, err := s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.Equal(len(testImage.Scan.Components), count)
+	s.Equal(len(testImage.GetScan().GetComponents()), count)
 
 	// Verify orphaned image vulnerabilities are removed.
 	results, err := s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
@@ -341,7 +339,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 
 	testImage2 := testImage.CloneVT()
 	testImage2.Name.FullName = "registry.test.io/cloned:latest"
-	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetSha()).String()
+	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetDigest()).String()
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			// Clone brings over the time, need to empty that out
@@ -401,7 +399,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.Equal(len(testImage2.Scan.Components), count)
+	s.Equal(len(testImage2.GetScan().GetComponents()), count)
 
 	// Verify orphaned image vulnerabilities are removed.
 	results, err = s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
@@ -411,7 +409,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 
 	// Verify that new scan with fewer components cleans up the old relations correctly.
 	testImage2.Scan.ScanTime = protocompat.TimestampNow()
-	testImage2.Scan.Components = testImage2.Scan.Components[:len(testImage2.Scan.Components)-1]
+	testImage2.Scan.Components = testImage2.GetScan().GetComponents()[:len(testImage2.GetScan().GetComponents())-1]
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 
 	// Verify image is built correctly.
@@ -424,7 +422,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.Equal(len(testImage2.Scan.Components), count)
+	s.Equal(len(testImage2.GetScan().GetComponents()), count)
 
 	// Verify no vulnerability is removed since all vulns are still connected.
 	results, err = s.cveDataStore.Search(ctx, pkgSearch.EmptyQuery())
@@ -470,15 +468,15 @@ func (s *ImageV2DataStoreTestSuite) TestGetManyImageMetadata() {
 
 	testImage2 := testImage1.CloneVT()
 	testImage2.Name.FullName = "registry.test.io/img2:latest"
-	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetSha()).String()
+	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 
 	testImage3 := testImage1.CloneVT()
 	testImage3.Name.FullName = "registry.test.io/img3:latest"
-	testImage3.Id = uuid.NewV5FromNonUUIDs(testImage3.GetName().GetFullName(), testImage3.GetSha()).String()
+	testImage3.Id = uuid.NewV5FromNonUUIDs(testImage3.GetName().GetFullName(), testImage3.GetDigest()).String()
 	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
 
-	storedImages, err := s.datastore.GetManyImageMetadata(ctx, []string{testImage1.Id, testImage2.Id, testImage3.Id})
+	storedImages, err := s.datastore.GetManyImageMetadata(ctx, []string{testImage1.GetId(), testImage2.GetId(), testImage3.GetId()})
 	s.NoError(err)
 	s.Len(storedImages, 3)
 
@@ -503,8 +501,8 @@ func getTestImageV2(name string) *storage.ImageV2 {
 	imageID := uuid.NewV5FromNonUUIDs(imageName, imageSha).String()
 
 	return &storage.ImageV2{
-		Id:  imageID,
-		Sha: imageSha,
+		Id:     imageID,
+		Digest: imageSha,
 		Name: &storage.ImageName{
 			Registry: "registry.test.io",
 			Remote:   name,

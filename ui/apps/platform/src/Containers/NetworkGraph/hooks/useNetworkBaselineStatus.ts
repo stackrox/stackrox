@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 
-import { TimeWindow } from 'constants/timeWindows';
+import type { TimeWindow } from 'constants/timeWindows';
 import useRestQuery from 'hooks/useRestQuery';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { getNetworkBaselineExternalStatus } from 'services/NetworkService';
-import { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
-import { SearchFilter } from 'types/search';
+import type { NetworkBaselineExternalStatusResponse } from 'types/networkBaseline.proto';
+import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import { BaselineStatusType } from '../types/flow.type';
+import type { BaselineStatusType } from '../types/flow.type';
 import { timeWindowToISO } from '../utils/timeWindow';
 
 export function useNetworkBaselineStatus(

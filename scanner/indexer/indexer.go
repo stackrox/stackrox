@@ -509,7 +509,7 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 // RenderOptions are options that control the rendering.
@@ -32,7 +31,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ScannerSlimImageName, imageFlavor.ChartRepo, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
 	deriveScannerRemoteFromMain(mainImage, baseValues)
 	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
@@ -45,17 +44,17 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 
 // MakeClusterImageNames creates storage.ImageName objects for provided storage.Cluster main and collector images.
 func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*storage.ImageName, *storage.ImageName, error) {
-	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, flavor.MainImageTag)
+	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.GetMainImage(), flavor.MainImageTag)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "generating main image from cluster value (%s)", c.MainImage)
+		return nil, nil, errors.Wrapf(err, "generating main image from cluster value (%s)", c.GetMainImage())
 	}
 	mainImageName := mainImage.GetName()
 
 	var collectorImageName *storage.ImageName
-	if c.CollectorImage != "" {
-		collectorImage, err := utils.GenerateImageFromString(c.CollectorImage)
+	if c.GetCollectorImage() != "" {
+		collectorImage, err := utils.GenerateImageFromString(c.GetCollectorImage())
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "generating collector image from cluster value (%s)", c.CollectorImage)
+			return nil, nil, errors.Wrapf(err, "generating collector image from cluster value (%s)", c.GetCollectorImage())
 		}
 		collectorImageName = collectorImage.GetName()
 	}
@@ -65,7 +64,7 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 
 // deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
 func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
-	scannerRemoteSlice := strings.Split(mainImage.Remote, "/")
+	scannerRemoteSlice := strings.Split(mainImage.GetRemote(), "/")
 	if len(scannerRemoteSlice) > 0 {
 		scannerRemoteSlice[len(scannerRemoteSlice)-1] = metaValues.ScannerSlimImageRemote
 		metaValues.ScannerSlimImageRemote = strings.Join(scannerRemoteSlice, "/")
@@ -74,16 +73,16 @@ func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *chart
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
 func setMainOverride(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
-	metaValues.MainRegistry = mainImage.Registry
-	metaValues.ImageRemote = mainImage.Remote
-	metaValues.ImageTag = mainImage.Tag
+	metaValues.MainRegistry = mainImage.GetRegistry()
+	metaValues.ImageRemote = mainImage.GetRemote()
+	metaValues.ImageTag = mainImage.GetTag()
 }
 
 // setCollectorOverrideToMetaValues adds collector image values to meta values as defined in the provided *storage.ImageName objects.
 func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, metaValues *charts.MetaValues) {
-	metaValues.CollectorRegistry = collectorImage.Registry
-	metaValues.CollectorImageRemote = collectorImage.Remote
-	metaValues.CollectorImageTag = collectorImage.Tag
+	metaValues.CollectorRegistry = collectorImage.GetRegistry()
+	metaValues.CollectorImageRemote = collectorImage.GetRemote()
+	metaValues.CollectorImageTag = collectorImage.GetTag()
 }
 
 // determineCollectorImage is used to derive the collector image from provided main and collector values.
@@ -117,25 +116,27 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	baseRemote := baseImage.GetRemote()
 	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + imageNameWithoutNamespace
 	return &storage.ImageName{
-		Registry: baseImage.Registry,
+		Registry: baseImage.GetRegistry(),
 		Remote:   remote,
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
+	versions := imageFlavor.Versions
+
 	command := "kubectl"
-	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
+	if c.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER || c.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
 	}
 
 	return &charts.MetaValues{
-		ClusterName: c.Name,
-		ClusterType: c.Type.String(),
+		ClusterName: c.GetName(),
+		ClusterType: c.GetType().String(),
 
-		PublicEndpoint:     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
+		PublicEndpoint:     urlfmt.FormatURL(c.GetCentralApiEndpoint(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 		AdvertisedEndpoint: urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		CollectionMethod: c.CollectionMethod.String(),
+		CollectionMethod: c.GetCollectionMethod().String(),
 
 		ChartRepo: chartRepo,
 
@@ -148,8 +149,11 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
+		FactImageTag:    versions.FactVersion,
+		FactImageRemote: imageFlavor.FactImageName,
+
 		ScannerImageTag:        versions.ScannerVersion,
-		ScannerSlimImageRemote: scannerSlimImageRemote,
+		ScannerSlimImageRemote: imageFlavor.ScannerSlimImageName,
 
 		KubectlOutput: true,
 
@@ -157,7 +161,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		FeatureFlags: features.GetFeatureFlagsAsGenericMap(),
 
-		AdmissionController:              c.AdmissionController,
+		AdmissionController:              c.GetAdmissionController(),
 		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
 		AdmissionControlListenOnEvents:   c.GetAdmissionControllerEvents(),
 		DisableBypass:                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
@@ -165,7 +169,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
 		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		AdmissionControllerFailOnError:   c.AdmissionControllerFailOnError,
+		AdmissionControllerFailOnError:   c.GetAdmissionControllerFailOnError(),
 		AutoLockProcessBaselines:         c.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled(),
 		ReleaseBuild:                     buildinfo.ReleaseBuild,
 

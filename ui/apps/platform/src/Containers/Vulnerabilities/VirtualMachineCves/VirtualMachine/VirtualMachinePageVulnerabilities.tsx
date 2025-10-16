@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
     Flex,
     PageSection,
@@ -11,20 +11,20 @@ import {
 } from '@patternfly/react-core';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
 import {
     virtualMachineCVESearchFilterConfig,
     virtualMachineComponentSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
-import { getVirtualMachine } from 'services/VirtualMachineService';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { getHasSearchApplied } from 'utils/searchUtils';
 import {
     applyVirtualMachineCveTableFilters,
+    applyVirtualMachineCveTableSort,
     getVirtualMachineCveTableData,
     getVirtualMachineCveSeverityStatusCounts,
 } from '../aggregateUtils';
@@ -32,6 +32,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -39,8 +40,15 @@ import {
 } from '../../utils/searchUtils';
 import VirtualMachineVulnerabilitiesTable from './VirtualMachineVulnerabilitiesTable';
 
+// Currently we need all vm info to be fetched in the root component, hence this being passed in
+// there will likely be a call specific to this table in the future that should be made here
 export type VirtualMachinePageVulnerabilitiesProps = {
-    virtualMachineId: string;
+    virtualMachineData: VirtualMachine | undefined;
+    isLoadingVirtualMachineData: boolean;
+    errorVirtualMachineData: Error | undefined;
+    urlSearch: UseUrlSearchReturn;
+    urlSorting: UseURLSortResult;
+    urlPagination: UseURLPaginationResult;
 };
 
 const searchFilterConfig = [
@@ -49,43 +57,55 @@ const searchFilterConfig = [
 ];
 
 function VirtualMachinePageVulnerabilities({
-    virtualMachineId,
+    virtualMachineData,
+    isLoadingVirtualMachineData,
+    errorVirtualMachineData,
+    urlSearch,
+    urlSorting,
+    urlPagination,
 }: VirtualMachinePageVulnerabilitiesProps) {
-    const fetchVirtualMachines = useCallback(
-        () => getVirtualMachine(virtualMachineId),
-        [virtualMachineId]
-    );
-
-    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
-    const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { page, perPage, setPage, setPerPage } = pagination;
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = urlSearch;
+    const { sortOption, getSortParams } = urlSorting;
+    const { page, perPage, setPage, setPerPage } = urlPagination;
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const isFiltered = getHasSearchApplied(searchFilter);
 
-    const virtualMachineTableData = useMemo(() => getVirtualMachineCveTableData(data), [data]);
+    const virtualMachineTableData = useMemo(
+        () => getVirtualMachineCveTableData(virtualMachineData),
+        [virtualMachineData]
+    );
 
     const filteredVirtualMachineTableData = useMemo(
         () => applyVirtualMachineCveTableFilters(virtualMachineTableData, searchFilter),
         [virtualMachineTableData, searchFilter]
     );
 
+    const sortedVirtualMachineTableData = useMemo(
+        () =>
+            applyVirtualMachineCveTableSort(
+                filteredVirtualMachineTableData,
+                Array.isArray(sortOption) ? sortOption[0].field : sortOption.field,
+                Array.isArray(sortOption) ? sortOption[0].reversed : sortOption.reversed
+            ),
+        [filteredVirtualMachineTableData, sortOption]
+    );
+
     const paginatedVirtualMachineTableData = useMemo(() => {
-        const totalRows = filteredVirtualMachineTableData.length;
+        const totalRows = sortedVirtualMachineTableData.length;
         const maxPage = Math.max(1, Math.ceil(totalRows / perPage) || 1);
         const safePage = Math.min(page, maxPage);
 
         const start = (safePage - 1) * perPage;
         const end = start + perPage;
-        return filteredVirtualMachineTableData.slice(start, end);
-    }, [filteredVirtualMachineTableData, page, perPage]);
+        return sortedVirtualMachineTableData.slice(start, end);
+    }, [sortedVirtualMachineTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading,
+        isLoading: isLoadingVirtualMachineData,
         data: paginatedVirtualMachineTableData,
-        error,
+        error: errorVirtualMachineData,
         searchFilter,
     });
 
@@ -96,6 +116,7 @@ function VirtualMachinePageVulnerabilities({
 
     return (
         <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+            <VirtualMachineScanScopeAlert />
             <AdvancedFiltersToolbar
                 className="pf-v5-u-px-sm pf-v5-u-pb-0"
                 searchFilter={searchFilter}
@@ -105,7 +126,10 @@ function VirtualMachinePageVulnerabilities({
                     setPage(1, 'replace');
                 }}
             />
-            <SummaryCardLayout isLoading={isLoading} error={error}>
+            <SummaryCardLayout
+                isLoading={isLoadingVirtualMachineData}
+                error={errorVirtualMachineData}
+            >
                 <SummaryCard
                     loadingText={'Loading virtual machine CVEs by severity summary'}
                     data={filteredVirtualMachineTableData}
@@ -133,10 +157,10 @@ function VirtualMachinePageVulnerabilities({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {!isLoading ? (
+                                {!isLoadingVirtualMachineData ? (
                                     `${pluralize(filteredVirtualMachineTableData.length, 'result')} found`
                                 ) : (
-                                    <Skeleton screenreaderText="Loading node vulnerability count" />
+                                    <Skeleton screenreaderText="Loading virtual machine vulnerability count" />
                                 )}
                             </Title>
                             {isFiltered && <DynamicTableLabel />}
@@ -155,8 +179,9 @@ function VirtualMachinePageVulnerabilities({
                     </SplitItem>
                 </Split>
                 <VirtualMachineVulnerabilitiesTable
-                    tableState={tableState}
                     onClearFilters={onClearFilters}
+                    getSortParams={getSortParams}
+                    tableState={tableState}
                 />
             </div>
         </PageSection>

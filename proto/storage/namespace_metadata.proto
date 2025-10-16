@@ -9,8 +9,8 @@ option java_package = "io.stackrox.proto.storage";
 
 message NamespaceMetadata {
   string id = 1; // @gotags: search:"Namespace ID" sql:"pk,type(uuid)"
-  string name = 2; // @gotags: search:"Namespace,store"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string name = 2; // @gotags: search:"Namespace"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
   string cluster_name = 4; // @gotags: search:"Cluster"
   map<string, string> labels = 5; // @gotags: search:"Namespace Label"
   google.protobuf.Timestamp creation_time = 6;

@@ -89,8 +89,10 @@ func (suite *ImageV2LoaderTestSuite) TestFullImageWithID() {
 
 	// Get a non-preloaded image from id.
 	thirdImageNotFull := &storage.ImageV2{
-		Id:             sha3,
-		ComponentCount: 2,
+		Id: sha3,
+		ScanStats: &storage.ImageV2_ScanStats{
+			ComponentCount: 2,
+		},
 	}
 	thirdImageFull := &storage.ImageV2{
 		Id: sha3,

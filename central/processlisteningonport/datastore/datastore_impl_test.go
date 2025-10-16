@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -90,7 +91,7 @@ func (suite *PLOPDataStoreTestSuite) getPlopsFromDB() []*storage.ProcessListenin
 
 func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
 	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err := suite.indicatorDataStore.WalkAll(suite.hasWriteCtx,
+	err := suite.indicatorDataStore.WalkByQuery(suite.hasWriteCtx, nil,
 		func(processIndicator *storage.ProcessIndicator) error {
 			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
 			return nil
@@ -1531,7 +1532,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, fixtureconsts.Cluster1, closedPlopObjects...))
 
-	idsToDelete := []string{initialIndicators[0].Id}
+	idsToDelete := []string{initialIndicators[0].GetId()}
 
 	// Verify the state of the PLOP table after opening and closing the endpoint
 	plopsFromDB1 := suite.getPlopsFromDB()
@@ -1760,8 +1761,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 2)
 
-	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop1.Process)
-	id2 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop2.Process)
+	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop1.GetProcess())
+	id2 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop2.GetProcess())
 
 	plopMap := getPlopMap(newPlopsFromDB)
 
@@ -1796,7 +1797,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 
 	for key, expectedPlop := range expectedPlopStorageMap {
 		// We cannot know the Id in advance so set it here.
-		expectedPlop.Id = plopMap[key].Id
+		expectedPlop.Id = plopMap[key].GetId()
 		protoassert.Equal(suite.T(), expectedPlop, plopMap[key])
 	}
 
@@ -2043,11 +2044,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
 
-	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plopWithPodUID.Process)
+	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plopWithPodUID.GetProcess())
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
 		{
-			Id:                 newPlopsFromDB[0].Id,
+			Id:                 newPlopsFromDB[0].GetId(),
 			Port:               plopObjects[0].GetPort(),
 			Protocol:           plopObjects[0].GetProtocol(),
 			CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
@@ -2354,7 +2355,7 @@ func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
 	// Get a set of PodUids so that we can delete by PodUid later
 	podUids := set.NewStringSet()
 	for _, plop := range plopObjects {
-		podUids.Add(plop.PodUid)
+		podUids.Add(plop.GetPodUid())
 	}
 
 	// Add the PLOPs
@@ -2672,7 +2673,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcess
 	var indicatorIds []string
 
 	for _, indicator := range indicators {
-		indicatorIds = append(indicatorIds, indicator.Id)
+		indicatorIds = append(indicatorIds, indicator.GetId())
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
@@ -2732,14 +2733,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
 	batchSize := 30000
 
-	nplops := len(plops)
-
-	for offset := 0; offset < nplops; offset += batchSize {
-		end := offset + batchSize
-		if end > nplops {
-			end = nplops
-		}
-		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plops[offset:end]...)
+	for plopBatch := range slices.Chunk(plops, batchSize) {
+		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plopBatch...)
 		suite.NoError(err)
 	}
 }

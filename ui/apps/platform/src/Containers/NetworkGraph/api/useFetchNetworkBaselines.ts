@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import uniqBy from 'lodash/uniqBy';
 
 import { fetchNetworkBaselines } from 'services/NetworkService';
-import { NetworkBaseline } from 'types/networkBaseline.proto';
+import type { NetworkBaseline } from 'types/networkBaseline.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { Flow, FlowEntityType } from '../types/flow.type';
+import type { Flow, FlowEntityType } from '../types/flow.type';
 
 type Result = {
     isLoading: boolean;

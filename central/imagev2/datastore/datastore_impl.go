@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -225,7 +225,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2
 	defer ds.keyedMutex.Unlock(image.GetId())
 
 	ds.updateComponentRisk(image)
-	enricher.FillScanStatsV2(image)
+	utils.FillScanStatsV2(image)
 
 	if err := ds.storage.Upsert(ctx, image); err != nil {
 		return err
@@ -310,24 +310,16 @@ func (ds *datastoreImpl) initializeRankers() {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-		for _, component := range image.GetScan().GetComponents() {
-			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
+		for index, component := range image.GetScan().GetComponents() {
+			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 			component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 		}
 	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
-	for _, component := range image.GetScan().GetComponents() {
-		componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-		if err != nil {
-			log.Error(err)
-			continue
-		}
+	for index, component := range image.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 	}
 }

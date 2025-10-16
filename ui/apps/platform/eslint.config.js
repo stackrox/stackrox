@@ -134,7 +134,7 @@ module.exports = [
             'grouped-accessor-pairs': 'error',
             'guard-for-in': 'error',
             'max-classes-per-file': ['error', 1],
-            'no-alert': 'warn',
+            'no-alert': 'error', // instead of 'warn'
             'no-caller': 'error',
             'no-constructor-return': 'error',
             'no-else-return': ['error', { allowElseIf: false }], // TODO
@@ -265,7 +265,7 @@ module.exports = [
             'no-async-promise-executor': 'error',
             'no-compare-neg-zero': 'error',
             'no-cond-assign': ['error', 'always'],
-            'no-constant-condition': 'warn',
+            'no-constant-condition': 'error', // instead of 'warn'
             'no-control-regex': 'error',
             'no-debugger': 'error',
             'no-dupe-args': 'error',
@@ -678,7 +678,7 @@ module.exports = [
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
-            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error?
+            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
         },
     },
     {
@@ -741,11 +741,8 @@ module.exports = [
             'src/Components/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Dashboard/**',
             'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
@@ -767,21 +764,11 @@ module.exports = [
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
-            'src/Components/**',
-            'src/Containers/Clusters/**',
+            'src/Components/CompoundSearchFilter/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/MainPage/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
-            'src/Containers/PolicyCategories/**',
-            'src/Containers/PolicyManagement/**',
             'src/Containers/Risk/**',
-            'src/Containers/Search/**',
             'src/Containers/SystemConfig/**',
-            'src/Containers/SystemHealth/**',
-            'src/Containers/User/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
@@ -797,7 +784,77 @@ module.exports = [
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
             'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/**',
+            'src/ConsolePlugin/**',
+            'src/Containers/AccessControl/**',
+            'src/Containers/Administration/**',
+            'src/Containers/Audit/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Collections/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ComplianceEnhanced/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Dashboard/**',
+            'src/Containers/Docs/**',
+            'src/Containers/ExceptionConfiguration/**',
+            'src/Containers/Images/**',
+            'src/Containers/Integrations/**',
+            'src/Containers/Login/**',
+            'src/Containers/MainPage/**',
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/PolicyManagement/**',
+            'src/Containers/Risk/**',
+            'src/Containers/Search/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/User/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Workflow/**', // deprecated
+            'src/Containers/*.{js,jsx,ts,tsx}',
+            'src/constants/**',
+            'src/hooks/**',
+            'src/providers/**',
+            'src/test-utils/**',
+            'src/utils/**',
+            'src/*.{js,jsx,ts,tsx}',
+        ],
+
+        // After deprecated folders have been deleted:
+        // Move jsxPragma property to languageOptions at module scope.
+        // Move react rules into appropriate configuration objects.
+
+        // Set parserOptions and turn off rules explicitly,
+        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
+
+        languageOptions: {
+            parserOptions: {
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+        },
+
+        plugins: {
+            limited: pluginLimited,
+            react: pluginReact,
+        },
+        rules: {
+            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
+            'limited/no-default-import-react': 'error',
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
         },
     },
     {

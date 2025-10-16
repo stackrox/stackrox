@@ -1,11 +1,12 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement, RefObject } from 'react';
 import pluralize from 'pluralize';
 import { Popover } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import { eventTypes } from 'constants/timelineTypes';
-import { Event } from '../eventTypes';
+import type { Event } from '../eventTypes';
 import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
 import ProcessActivityTooltipFields from '../EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from '../EventTooltipFields/TerminationTooltipFields';
@@ -18,7 +19,7 @@ import TerminationEvent from '../EventMarker/TerminationEvent';
 type ClusteredEventsTooltipProps = {
     events: Event[];
     children: ReactElement;
-    popoverRef: React.RefObject<never>;
+    popoverRef: RefObject<never>;
 };
 
 const ClusteredEventsTooltip = ({

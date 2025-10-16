@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ClusterInitBundle } from 'services/ClustersService';
+import type { ClusterInitBundle } from 'services/ClustersService';
 import { clustersInitBundlesPath } from 'routePaths';
 
 export type InitBundlesTableProps = {

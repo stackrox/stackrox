@@ -59,7 +59,7 @@ func roleBindingToNamespacedBinding(roleBinding *v1.RoleBinding) (*namespacedBin
 	for _, s := range getSubjects(roleBinding.Subjects) {
 		// We only need this information for evaluating Deployment permission level,
 		// so we can keep only ServiceAccount subjects (Pods cannot run as User or Group).
-		if s.Kind == storage.SubjectKind_SERVICE_ACCOUNT {
+		if s.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT {
 			subjects = append(subjects, nsSubjectFromSubject(s))
 		}
 	}
@@ -77,7 +77,7 @@ func clusterRoleBindingToNamespacedBinding(clusterRoleBinding *v1.ClusterRoleBin
 	for _, s := range getSubjects(clusterRoleBinding.Subjects) {
 		// We only need this information for evaluating Deployment permission level,
 		// so we can keep only ServiceAccount subjects (Pods cannot run as User or Group).
-		if s.Kind == storage.SubjectKind_SERVICE_ACCOUNT {
+		if s.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT {
 			subjects = append(subjects, nsSubjectFromSubject(s))
 		}
 	}

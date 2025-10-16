@@ -6,20 +6,29 @@ import ExpandRowTh from 'Components/ExpandRowTh';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import type { CveTableRow } from '../aggregateUtils';
+import {
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
 import VirtualMachineComponentsTable from './VirtualMachineComponentsTable';
 
 export type VirtualMachineVulnerabilitiesTableProps = {
     tableState: TableUIState<CveTableRow>;
+    getSortParams: UseURLSortResult['getSortParams'];
     onClearFilters: () => void;
 };
 
 function VirtualMachineVulnerabilitiesTable({
     tableState,
+    getSortParams,
     onClearFilters,
 }: VirtualMachineVulnerabilitiesTableProps) {
     const colSpan = 7;
@@ -35,11 +44,11 @@ function VirtualMachineVulnerabilitiesTable({
             <Thead>
                 <Tr>
                     <ExpandRowTh />
-                    <Th>CVE</Th>
-                    <Th>Severity</Th>
+                    <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                    <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Severity</Th>
                     <Th>CVE status</Th>
-                    <Th>CVSS</Th>
-                    <Th>EPSS probability</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                    <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>EPSS probability</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
