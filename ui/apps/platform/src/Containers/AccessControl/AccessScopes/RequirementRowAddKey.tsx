@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { ArrowCircleDownIcon, TimesCircleIcon } from '@patternfly/react-icons';

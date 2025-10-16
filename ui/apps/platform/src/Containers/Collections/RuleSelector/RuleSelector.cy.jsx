@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import isEqual from 'lodash/isEqual';
 
 import RuleSelector from './RuleSelector';

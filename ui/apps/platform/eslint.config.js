@@ -793,11 +793,8 @@ module.exports = [
         ignores: [
             'src/Components/**',
             'src/ConsolePlugin/**',
-            'src/Containers/AccessControl/**',
-            'src/Containers/Administration/**',
             'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
