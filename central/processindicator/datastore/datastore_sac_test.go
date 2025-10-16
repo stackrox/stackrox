@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -114,6 +115,31 @@ func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicator() {
 			if c.ExpectedFound {
 				s.True(found)
 				protoassert.Equal(s.T(), processIndicator, res)
+			} else {
+				s.False(found)
+				s.Nil(res)
+			}
+		})
+	}
+}
+
+func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicators() {
+	processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
+		testconsts.NamespaceB)
+	err := s.datastore.AddProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], processIndicator)
+	s.Require().NoError(err)
+	s.testProcessIndicatorIDs = append(s.testProcessIndicatorIDs, processIndicator.GetId())
+
+	cases := sacTestUtils.GenericNamespaceSACGetTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			res, found, err := s.datastore.GetProcessIndicators(ctx, []string{processIndicator.GetId()})
+			s.Require().NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.SlicesEqual(s.T(), []*storage.ProcessIndicator{processIndicator}, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
