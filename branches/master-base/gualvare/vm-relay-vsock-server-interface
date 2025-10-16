@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/relay-concurrency-control",
     "hash": "60adac1290a841cc398d21e30043af916451fbbd"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/vm-relay-vsock-server-interface"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17320,
+        "gqlID": "PR_kwDOGd6UEM6uCnJO"
+      }
+    }
   }
 }
