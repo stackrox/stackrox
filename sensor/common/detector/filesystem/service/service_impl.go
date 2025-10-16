@@ -46,17 +46,17 @@ func (s *serviceImpl) Name() string {
 
 func (s *serviceImpl) Start() error {
 	log.Info("Start filesystem")
-        return nil
+	return nil
 }
 
 func (s *serviceImpl) Stop() {}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-        return nil
+	return nil
 }
 
 func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
-        return nil
+	return nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
