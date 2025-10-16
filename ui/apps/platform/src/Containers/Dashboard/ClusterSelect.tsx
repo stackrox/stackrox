@@ -152,7 +152,9 @@ function ClusterSelect({
                 >
                     All clusters
                 </SelectOption>
-                <Divider className="pf-v5-u-mb-0" component="div" />
+                {filteredClusters.length > 0 && (
+                    <Divider className="pf-v5-u-mb-0" component="div" />
+                )}
                 {filteredClusters.map(({ name }) => (
                     <SelectOption
                         key={name}
