@@ -7,11 +7,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	cveConverter "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -117,49 +115,39 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 		return nil, err
 	}
 
-	if features.FlattenCVEData.Enabled() {
-		// get loader
-		loader, err := loaders.GetComponentV2Loader(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		ret, err := loader.FromID(ctx, string(*args.ID))
-		if err != nil {
-			return nil, err
-		}
-
-		// With flattened model, there can be multiple component IDs for a given component name, version and OS.
-		// But the component list page on VM 1.0 groups results by name, version and OS. So on component single page,
-		// we should also show component details (like top CVSS, priority etc) and
-		// related entities (like images, CVEs and deployments) grouped by component name + version + OS.
-		query := search.NewQueryBuilder().
-			AddExactMatches(search.Component, ret.GetName()).
-			AddExactMatches(search.ComponentVersion, ret.GetVersion()).
-			AddExactMatches(search.OperatingSystem, ret.GetOperatingSystem()).
-			ProtoQuery()
-		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO(ROX-28808): The ticket referenced is the reason we can get here.  FromID will find
-		// a component ID excluded by context but the FlatView will not. We should honor the context. This
-		// will be cleaned up with 28808.
-		if len(componentFlatData) != 1 {
-			return nil, errors.New("unable to find component")
-		}
-
-		return resolver.wrapImageComponentV2FlatWithContext(ctx, ret, componentFlatData[0], true, err)
-	}
 	// get loader
-	loader, err := loaders.GetComponentLoader(ctx)
+	loader, err := loaders.GetComponentV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	ret, err := loader.FromID(ctx, string(*args.ID))
-	return resolver.wrapImageComponentWithContext(ctx, ret, true, err)
+	if err != nil {
+		return nil, err
+	}
+
+	// With flattened model, there can be multiple component IDs for a given component name, version and OS.
+	// But the component list page on VM 1.0 groups results by name, version and OS. So on component single page,
+	// we should also show component details (like top CVSS, priority etc) and
+	// related entities (like images, CVEs and deployments) grouped by component name + version + OS.
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.Component, ret.GetName()).
+		AddExactMatches(search.ComponentVersion, ret.GetVersion()).
+		AddExactMatches(search.OperatingSystem, ret.GetOperatingSystem()).
+		ProtoQuery()
+	componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(ROX-28808): The ticket referenced is the reason we can get here.  FromID will find
+	// a component ID excluded by context but the FlatView will not. We should honor the context. This
+	// will be cleaned up with 28808.
+	if len(componentFlatData) != 1 {
+		return nil, errors.New("unable to find component")
+	}
+
+	return resolver.wrapImageComponentV2FlatWithContext(ctx, ret, componentFlatData[0], true, err)
 }
 
 // ImageComponents returns image components that match the input query.
@@ -177,78 +165,56 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		return nil, err
 	}
 
-	if features.FlattenCVEData.Enabled() {
-		// Get the flattened data
-		componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-
-		componentIDs := make([]string, 0, len(componentFlatData))
-		for _, componentFlat := range componentFlatData {
-			componentIDs = append(componentIDs, componentFlat.GetComponentIDs()...)
-		}
-
-		// get loader
-		loader, err := loaders.GetComponentV2Loader(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get the Components themselves.  This will be denormalized.  So use the IDs to get them, but use
-		// the data returned from Component Flat View to keep order and set just 1 instance of a Component
-		componentQuery := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery()
-		componentQuery.Pagination = &v1.QueryPagination{
-			SortOptions: query.GetPagination().GetSortOptions(),
-		}
-		comps, err := loader.FromQuery(ctx, componentQuery)
-
-		// Stash a single instance of a Component to aid in normalizing
-		foundComponent := make(map[normalizedImageComponent]*storage.ImageComponentV2)
-		for _, comp := range comps {
-			normalized := normalizedImageComponent{
-				name:    comp.GetName(),
-				version: comp.GetVersion(),
-				os:      comp.GetOperatingSystem(),
-			}
-			if _, ok := foundComponent[normalized]; !ok {
-				foundComponent[normalized] = comp
-			}
-		}
-
-		// Normalize the Components based on the flat view to keep them in the correct paging and sort order
-		normalizedComponents := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
-		for _, componentFlat := range componentFlatData {
-			normalized := normalizedImageComponent{
-				name:    componentFlat.GetComponent(),
-				version: componentFlat.GetVersion(),
-				os:      componentFlat.GetOperatingSystem(),
-			}
-			normalizedComponents = append(normalizedComponents, foundComponent[normalized])
-		}
-
-		componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, normalizedComponents, componentFlatData, err)
-		if err != nil {
-			return nil, err
-		}
-
-		// cast as return type
-		ret := make([]ImageComponentResolver, 0, len(componentResolvers))
-		for _, res := range componentResolvers {
-			ret = append(ret, res)
-		}
-		return ret, nil
-	}
-
-	// get loader
-	loader, err := loaders.GetComponentLoader(ctx)
+	// Get the flattened data
+	componentFlatData, err := resolver.ImageComponentFlatView.Get(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	// get values
-	comps, err := loader.FromQuery(ctx, query)
-	componentResolvers, err := resolver.wrapImageComponentsWithContext(ctx, comps, err)
+	componentIDs := make([]string, 0, len(componentFlatData))
+	for _, componentFlat := range componentFlatData {
+		componentIDs = append(componentIDs, componentFlat.GetComponentIDs()...)
+	}
+
+	// get loader
+	loader, err := loaders.GetComponentV2Loader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the Components themselves.  This will be denormalized.  So use the IDs to get them, but use
+	// the data returned from Component Flat View to keep order and set just 1 instance of a Component
+	componentQuery := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery()
+	componentQuery.Pagination = &v1.QueryPagination{
+		SortOptions: query.GetPagination().GetSortOptions(),
+	}
+	comps, err := loader.FromQuery(ctx, componentQuery)
+
+	// Stash a single instance of a Component to aid in normalizing
+	foundComponent := make(map[normalizedImageComponent]*storage.ImageComponentV2)
+	for _, comp := range comps {
+		normalized := normalizedImageComponent{
+			name:    comp.GetName(),
+			version: comp.GetVersion(),
+			os:      comp.GetOperatingSystem(),
+		}
+		if _, ok := foundComponent[normalized]; !ok {
+			foundComponent[normalized] = comp
+		}
+	}
+
+	// Normalize the Components based on the flat view to keep them in the correct paging and sort order
+	normalizedComponents := make([]*storage.ImageComponentV2, 0, len(componentFlatData))
+	for _, componentFlat := range componentFlatData {
+		normalized := normalizedImageComponent{
+			name:    componentFlat.GetComponent(),
+			version: componentFlat.GetVersion(),
+			os:      componentFlat.GetOperatingSystem(),
+		}
+		normalizedComponents = append(normalizedComponents, foundComponent[normalized])
+	}
+
+	componentResolvers, err := resolver.wrapImageComponentV2sFlatWithContext(ctx, normalizedComponents, componentFlatData, err)
 	if err != nil {
 		return nil, err
 	}
@@ -275,43 +241,13 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 		return 0, err
 	}
 
-	if features.FlattenCVEData.Enabled() {
-		componentCount, err := resolver.ImageComponentFlatView.Count(ctx, query)
-		return int32(componentCount), err
-	}
-	// get loader
-	loader, err := loaders.GetComponentLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	return loader.CountFromQuery(ctx, query)
+	componentCount, err := resolver.ImageComponentFlatView.Count(ctx, query)
+	return int32(componentCount), err
 }
 
 /*
 Utility Functions
 */
-
-func (resolver *imageComponentResolver) imageComponentScopeContext(ctx context.Context) context.Context {
-	if ctx == nil {
-		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
-		if err != nil {
-			log.Error(err)
-		}
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-
-	return scoped.Context(resolver.ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGE_COMPONENTS,
-		IDs:   []string{resolver.data.GetId()},
-	})
-}
-
-func (resolver *imageComponentResolver) componentQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-}
 
 func getDeploymentIDFromQuery(q *v1.Query) string {
 	if q == nil {
