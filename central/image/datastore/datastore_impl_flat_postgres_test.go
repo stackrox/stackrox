@@ -302,12 +302,12 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())
 	image := fixtures.GetImageWithUniqueComponents(5)
 	componentIDs := make([]string, 0, len(image.GetScan().GetComponents()))
-	for _, component := range image.GetScan().GetComponents() {
-		compID, err := scancomponent.ComponentIDV2(
+	for index, component := range image.GetScan().GetComponents() {
+		compID := scancomponent.ComponentIDV2(
 			component,
 			image.GetId(),
+			index,
 		)
-		s.NoError(err)
 		componentIDs = append(componentIDs, compID)
 	}
 
@@ -362,12 +362,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	testImage.Scan.ScanTime = protocompat.TimestampNow()
 	testImage.Scan.Components = testImage.GetScan().GetComponents()[:len(testImage.GetScan().GetComponents())-1]
 	cveIDsSet := set.NewStringSet()
-	for _, component := range testImage.GetScan().GetComponents() {
-		componentID, err := scancomponent.ComponentIDV2(component, testImage.GetId())
-		s.NoError(err)
-		for _, cve := range component.GetVulns() {
-			cveID, err := pkgCVE.IDV2(cve, componentID)
-			s.NoError(err)
+	for compIndex, component := range testImage.GetScan().GetComponents() {
+		componentID := scancomponent.ComponentIDV2(component, testImage.GetId(), compIndex)
+		for cveIndex, cve := range component.GetVulns() {
+			cveID := pkgCVE.IDV2(cve, componentID, cveIndex)
 			cveIDsSet.Add(cveID)
 		}
 	}

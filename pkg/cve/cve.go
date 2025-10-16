@@ -3,7 +3,6 @@ package cve
 import (
 	"strconv"
 
-	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -25,13 +24,10 @@ func ID(cve, os string) string {
 }
 
 // IDV2 creates a CVE ID from the given cve name, component id and index of CVE within the component.
-func IDV2(cve *storage.EmbeddedVulnerability, componentID string) (string, error) {
-	hash, err := hashstructure.Hash(cve, &hashstructure.HashOptions{ZeroNil: true})
-	if err != nil {
-		return "", err
-	}
-
-	return pgSearch.IDFromPks([]string{cve.GetCve(), strconv.FormatUint(hash, 10), componentID}), nil
+func IDV2(cve *storage.EmbeddedVulnerability, componentID string, index int) string {
+	// The index it occurs in the component list is sufficient for uniqueness.  We do not need to be able to
+	// rebuild this ID at query time from an embedded object.
+	return pgSearch.IDFromPks([]string{cve.GetCve(), strconv.Itoa(index), componentID})
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.
