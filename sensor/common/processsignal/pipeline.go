@@ -91,11 +91,6 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 }
 
-func (p *Pipeline) getCurrentContext() context.Context {
-	// Use long-lived context that persists across disconnects for event buffering
-	return context.Background()
-}
-
 // Process defines processes to process a ProcessIndicator
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	indicator := &storage.ProcessIndicator{
