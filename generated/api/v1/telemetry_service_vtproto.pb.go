@@ -10,6 +10,9 @@ func (m *ConfigureTelemetryRequest) CloneVT() *ConfigureTelemetryRequest {
 }
 func (m *ConfigureTelemetryRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ConfigureTelemetryRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ConfigureTelemetryRequest) EqualVT(n *ConfigureTelemetryRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ConfigureTelemetryRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

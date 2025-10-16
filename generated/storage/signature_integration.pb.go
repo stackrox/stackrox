@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/signature_integration.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,19 +24,15 @@ const (
 )
 
 type SignatureIntegration struct {
-	state                         protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_Id                 *string                           `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name               *string                           `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Cosign             *CosignPublicKeyVerification      `protobuf:"bytes,3,opt,name=cosign"`
-	xxx_hidden_CosignCertificates *[]*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates"`
-	xxx_hidden_TransparencyLog    *TransparencyLogVerification      `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog"`
-	xxx_hidden_Traits             *Traits                           `protobuf:"bytes,6,opt,name=traits"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state              protoimpl.MessageState           `protogen:"hybrid.v1"`
+	Id                 string                           `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name               string                           `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign" json:"cosign,omitempty"`
+	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates" json:"cosign_certificates,omitempty"`
+	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog" json:"transparency_log,omitempty"`
+	Traits             *Traits                          `protobuf:"bytes,6,opt,name=traits" json:"traits,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SignatureIntegration) Reset() {
@@ -64,154 +62,108 @@ func (x *SignatureIntegration) ProtoReflect() protoreflect.Message {
 
 func (x *SignatureIntegration) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SignatureIntegration) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *SignatureIntegration) GetCosign() *CosignPublicKeyVerification {
 	if x != nil {
-		return x.xxx_hidden_Cosign
+		return x.Cosign
 	}
 	return nil
 }
 
 func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerification {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CosignCertificates) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*CosignCertificateVerification
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.CosignCertificates
 	}
 	return nil
 }
 
 func (x *SignatureIntegration) GetTransparencyLog() *TransparencyLogVerification {
 	if x != nil {
-		return x.xxx_hidden_TransparencyLog
+		return x.TransparencyLog
 	}
 	return nil
 }
 
 func (x *SignatureIntegration) GetTraits() *Traits {
 	if x != nil {
-		return x.xxx_hidden_Traits
+		return x.Traits
 	}
 	return nil
 }
 
 func (x *SignatureIntegration) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Id = v
 }
 
 func (x *SignatureIntegration) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Name = v
 }
 
 func (x *SignatureIntegration) SetCosign(v *CosignPublicKeyVerification) {
-	x.xxx_hidden_Cosign = v
+	x.Cosign = v
 }
 
 func (x *SignatureIntegration) SetCosignCertificates(v []*CosignCertificateVerification) {
-	var sv *[]*CosignCertificateVerification
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*CosignCertificateVerification{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_CosignCertificates), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.CosignCertificates = v
 }
 
 func (x *SignatureIntegration) SetTransparencyLog(v *TransparencyLogVerification) {
-	x.xxx_hidden_TransparencyLog = v
+	x.TransparencyLog = v
 }
 
 func (x *SignatureIntegration) SetTraits(v *Traits) {
-	x.xxx_hidden_Traits = v
-}
-
-func (x *SignatureIntegration) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SignatureIntegration) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Traits = v
 }
 
 func (x *SignatureIntegration) HasCosign() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Cosign != nil
+	return x.Cosign != nil
 }
 
 func (x *SignatureIntegration) HasTransparencyLog() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_TransparencyLog != nil
+	return x.TransparencyLog != nil
 }
 
 func (x *SignatureIntegration) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Traits != nil
-}
-
-func (x *SignatureIntegration) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *SignatureIntegration) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	return x.Traits != nil
 }
 
 func (x *SignatureIntegration) ClearCosign() {
-	x.xxx_hidden_Cosign = nil
+	x.Cosign = nil
 }
 
 func (x *SignatureIntegration) ClearTransparencyLog() {
-	x.xxx_hidden_TransparencyLog = nil
+	x.TransparencyLog = nil
 }
 
 func (x *SignatureIntegration) ClearTraits() {
-	x.xxx_hidden_Traits = nil
+	x.Traits = nil
 }
 
 type SignatureIntegration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                 *string
-	Name               *string
+	Id                 string
+	Name               string
 	Cosign             *CosignPublicKeyVerification
 	CosignCertificates []*CosignCertificateVerification
 	TransparencyLog    *TransparencyLogVerification
@@ -222,33 +174,20 @@ func (b0 SignatureIntegration_builder) Build() *SignatureIntegration {
 	m0 := &SignatureIntegration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_Cosign = b.Cosign
-	if b.CosignCertificates != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_CosignCertificates = &b.CosignCertificates
-	}
-	x.xxx_hidden_TransparencyLog = b.TransparencyLog
-	x.xxx_hidden_Traits = b.Traits
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Cosign = b.Cosign
+	x.CosignCertificates = b.CosignCertificates
+	x.TransparencyLog = b.TransparencyLog
+	x.Traits = b.Traits
 	return m0
 }
 
 type CosignPublicKeyVerification struct {
-	state                 protoimpl.MessageState                    `protogen:"opaque.v1"`
-	xxx_hidden_PublicKeys *[]*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                   `protogen:"hybrid.v1"`
+	PublicKeys    []*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys" json:"public_keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CosignPublicKeyVerification) Reset() {
@@ -278,27 +217,13 @@ func (x *CosignPublicKeyVerification) ProtoReflect() protoreflect.Message {
 
 func (x *CosignPublicKeyVerification) GetPublicKeys() []*CosignPublicKeyVerification_PublicKey {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PublicKeys) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*CosignPublicKeyVerification_PublicKey
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.PublicKeys
 	}
 	return nil
 }
 
 func (x *CosignPublicKeyVerification) SetPublicKeys(v []*CosignPublicKeyVerification_PublicKey) {
-	var sv *[]*CosignPublicKeyVerification_PublicKey
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*CosignPublicKeyVerification_PublicKey{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PublicKeys), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.PublicKeys = v
 }
 
 type CosignPublicKeyVerification_builder struct {
@@ -311,10 +236,7 @@ func (b0 CosignPublicKeyVerification_builder) Build() *CosignPublicKeyVerificati
 	m0 := &CosignPublicKeyVerification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.PublicKeys != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_PublicKeys = &b.PublicKeys
-	}
+	x.PublicKeys = b.PublicKeys
 	return m0
 }
 
@@ -323,16 +245,31 @@ func (b0 CosignPublicKeyVerification_builder) Build() *CosignPublicKeyVerificati
 // If only the chain is given, this will be used over the Fulcio trusted root chain for verification.
 // If no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against.
 type CosignCertificateVerification struct {
-	state                                 protoimpl.MessageState                  `protogen:"opaque.v1"`
-	xxx_hidden_CertificatePemEnc          *string                                 `protobuf:"bytes,1,opt,name=certificate_pem_enc,json=certificatePemEnc"`
-	xxx_hidden_CertificateChainPemEnc     *string                                 `protobuf:"bytes,2,opt,name=certificate_chain_pem_enc,json=certificateChainPemEnc"`
-	xxx_hidden_CertificateOidcIssuer      *string                                 `protobuf:"bytes,3,opt,name=certificate_oidc_issuer,json=certificateOidcIssuer"`
-	xxx_hidden_CertificateIdentity        *string                                 `protobuf:"bytes,4,opt,name=certificate_identity,json=certificateIdentity"`
-	xxx_hidden_CertificateTransparencyLog *CertificateTransparencyLogVerification `protobuf:"bytes,5,opt,name=certificate_transparency_log,json=certificateTransparencyLog"`
-	XXX_raceDetectHookData                protoimpl.RaceDetectHookData
-	XXX_presence                          [1]uint32
-	unknownFields                         protoimpl.UnknownFields
-	sizeCache                             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// PEM encoded certificate to use for verification. Leave empty when
+	// using short-lived certificates as issued by Fulcio.
+	CertificatePemEnc string `protobuf:"bytes,1,opt,name=certificate_pem_enc,json=certificatePemEnc" json:"certificate_pem_enc,omitempty"`
+	// PEM encoded certificate chain to use for verification. Defaults to the
+	// root certificate authority of the public Sigstore instance if left empty.
+	CertificateChainPemEnc string `protobuf:"bytes,2,opt,name=certificate_chain_pem_enc,json=certificateChainPemEnc" json:"certificate_chain_pem_enc,omitempty"`
+	// Certificate OIDC issuer to verify against.
+	// This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
+	// In case the certificate does not specify an OIDC issuer, you may use '.*' as the OIDC issuer. However,
+	// it is recommended to use Fulcio compatible certificates according to the specification:
+	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
+	CertificateOidcIssuer string `protobuf:"bytes,3,opt,name=certificate_oidc_issuer,json=certificateOidcIssuer" json:"certificate_oidc_issuer,omitempty"`
+	// Certificate identity to verify against.
+	// This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
+	// In case the certificate does not specify an identity, you may use '.*' as the identity. However, it is
+	// recommended to use Fulcio compatible certificates according to the specification:
+	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
+	CertificateIdentity string `protobuf:"bytes,4,opt,name=certificate_identity,json=certificateIdentity" json:"certificate_identity,omitempty"`
+	// Validate that the signature certificate contains a signed
+	// certificate timestamp as proof of inclusion into the certificate
+	// transparency log.
+	CertificateTransparencyLog *CertificateTransparencyLogVerification `protobuf:"bytes,5,opt,name=certificate_transparency_log,json=certificateTransparencyLog" json:"certificate_transparency_log,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *CosignCertificateVerification) Reset() {
@@ -362,132 +299,68 @@ func (x *CosignCertificateVerification) ProtoReflect() protoreflect.Message {
 
 func (x *CosignCertificateVerification) GetCertificatePemEnc() string {
 	if x != nil {
-		if x.xxx_hidden_CertificatePemEnc != nil {
-			return *x.xxx_hidden_CertificatePemEnc
-		}
-		return ""
+		return x.CertificatePemEnc
 	}
 	return ""
 }
 
 func (x *CosignCertificateVerification) GetCertificateChainPemEnc() string {
 	if x != nil {
-		if x.xxx_hidden_CertificateChainPemEnc != nil {
-			return *x.xxx_hidden_CertificateChainPemEnc
-		}
-		return ""
+		return x.CertificateChainPemEnc
 	}
 	return ""
 }
 
 func (x *CosignCertificateVerification) GetCertificateOidcIssuer() string {
 	if x != nil {
-		if x.xxx_hidden_CertificateOidcIssuer != nil {
-			return *x.xxx_hidden_CertificateOidcIssuer
-		}
-		return ""
+		return x.CertificateOidcIssuer
 	}
 	return ""
 }
 
 func (x *CosignCertificateVerification) GetCertificateIdentity() string {
 	if x != nil {
-		if x.xxx_hidden_CertificateIdentity != nil {
-			return *x.xxx_hidden_CertificateIdentity
-		}
-		return ""
+		return x.CertificateIdentity
 	}
 	return ""
 }
 
 func (x *CosignCertificateVerification) GetCertificateTransparencyLog() *CertificateTransparencyLogVerification {
 	if x != nil {
-		return x.xxx_hidden_CertificateTransparencyLog
+		return x.CertificateTransparencyLog
 	}
 	return nil
 }
 
 func (x *CosignCertificateVerification) SetCertificatePemEnc(v string) {
-	x.xxx_hidden_CertificatePemEnc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.CertificatePemEnc = v
 }
 
 func (x *CosignCertificateVerification) SetCertificateChainPemEnc(v string) {
-	x.xxx_hidden_CertificateChainPemEnc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.CertificateChainPemEnc = v
 }
 
 func (x *CosignCertificateVerification) SetCertificateOidcIssuer(v string) {
-	x.xxx_hidden_CertificateOidcIssuer = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.CertificateOidcIssuer = v
 }
 
 func (x *CosignCertificateVerification) SetCertificateIdentity(v string) {
-	x.xxx_hidden_CertificateIdentity = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.CertificateIdentity = v
 }
 
 func (x *CosignCertificateVerification) SetCertificateTransparencyLog(v *CertificateTransparencyLogVerification) {
-	x.xxx_hidden_CertificateTransparencyLog = v
-}
-
-func (x *CosignCertificateVerification) HasCertificatePemEnc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CosignCertificateVerification) HasCertificateChainPemEnc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CosignCertificateVerification) HasCertificateOidcIssuer() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CosignCertificateVerification) HasCertificateIdentity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	x.CertificateTransparencyLog = v
 }
 
 func (x *CosignCertificateVerification) HasCertificateTransparencyLog() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CertificateTransparencyLog != nil
-}
-
-func (x *CosignCertificateVerification) ClearCertificatePemEnc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_CertificatePemEnc = nil
-}
-
-func (x *CosignCertificateVerification) ClearCertificateChainPemEnc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CertificateChainPemEnc = nil
-}
-
-func (x *CosignCertificateVerification) ClearCertificateOidcIssuer() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CertificateOidcIssuer = nil
-}
-
-func (x *CosignCertificateVerification) ClearCertificateIdentity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CertificateIdentity = nil
+	return x.CertificateTransparencyLog != nil
 }
 
 func (x *CosignCertificateVerification) ClearCertificateTransparencyLog() {
-	x.xxx_hidden_CertificateTransparencyLog = nil
+	x.CertificateTransparencyLog = nil
 }
 
 type CosignCertificateVerification_builder struct {
@@ -495,22 +368,22 @@ type CosignCertificateVerification_builder struct {
 
 	// PEM encoded certificate to use for verification. Leave empty when
 	// using short-lived certificates as issued by Fulcio.
-	CertificatePemEnc *string
+	CertificatePemEnc string
 	// PEM encoded certificate chain to use for verification. Defaults to the
 	// root certificate authority of the public Sigstore instance if left empty.
-	CertificateChainPemEnc *string
+	CertificateChainPemEnc string
 	// Certificate OIDC issuer to verify against.
 	// This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
 	// In case the certificate does not specify an OIDC issuer, you may use '.*' as the OIDC issuer. However,
 	// it is recommended to use Fulcio compatible certificates according to the specification:
 	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
-	CertificateOidcIssuer *string
+	CertificateOidcIssuer string
 	// Certificate identity to verify against.
 	// This supports regular expressions following the RE2 syntax: https://github.com/google/re2/wiki/Syntax.
 	// In case the certificate does not specify an identity, you may use '.*' as the identity. However, it is
 	// recommended to use Fulcio compatible certificates according to the specification:
 	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
-	CertificateIdentity *string
+	CertificateIdentity string
 	// Validate that the signature certificate contains a signed
 	// certificate timestamp as proof of inclusion into the certificate
 	// transparency log.
@@ -521,23 +394,11 @@ func (b0 CosignCertificateVerification_builder) Build() *CosignCertificateVerifi
 	m0 := &CosignCertificateVerification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.CertificatePemEnc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_CertificatePemEnc = b.CertificatePemEnc
-	}
-	if b.CertificateChainPemEnc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_CertificateChainPemEnc = b.CertificateChainPemEnc
-	}
-	if b.CertificateOidcIssuer != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_CertificateOidcIssuer = b.CertificateOidcIssuer
-	}
-	if b.CertificateIdentity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_CertificateIdentity = b.CertificateIdentity
-	}
-	x.xxx_hidden_CertificateTransparencyLog = b.CertificateTransparencyLog
+	x.CertificatePemEnc = b.CertificatePemEnc
+	x.CertificateChainPemEnc = b.CertificateChainPemEnc
+	x.CertificateOidcIssuer = b.CertificateOidcIssuer
+	x.CertificateIdentity = b.CertificateIdentity
+	x.CertificateTransparencyLog = b.CertificateTransparencyLog
 	return m0
 }
 
@@ -545,13 +406,16 @@ func (b0 CosignCertificateVerification_builder) Build() *CosignCertificateVerifi
 // certificate timestamp as proof of inclusion into the certificate
 // transparency log.
 type CertificateTransparencyLogVerification struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled         bool                   `protobuf:"varint,1,opt,name=enabled"`
-	xxx_hidden_PublicKeyPemEnc *string                `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Validate the inclusion of certificates into a certificate transparency log.
+	// Disables validation if not enabled.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
+	// PEM encoded public key used to validate the proof of inclusion into the
+	// certificate transparency log. Defaults to the key of the public Sigstore
+	// instance if left empty.
+	PublicKeyPemEnc string `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CertificateTransparencyLogVerification) Reset() {
@@ -581,53 +445,24 @@ func (x *CertificateTransparencyLogVerification) ProtoReflect() protoreflect.Mes
 
 func (x *CertificateTransparencyLogVerification) GetEnabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Enabled
+		return x.Enabled
 	}
 	return false
 }
 
 func (x *CertificateTransparencyLogVerification) GetPublicKeyPemEnc() string {
 	if x != nil {
-		if x.xxx_hidden_PublicKeyPemEnc != nil {
-			return *x.xxx_hidden_PublicKeyPemEnc
-		}
-		return ""
+		return x.PublicKeyPemEnc
 	}
 	return ""
 }
 
 func (x *CertificateTransparencyLogVerification) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Enabled = v
 }
 
 func (x *CertificateTransparencyLogVerification) SetPublicKeyPemEnc(v string) {
-	x.xxx_hidden_PublicKeyPemEnc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *CertificateTransparencyLogVerification) HasEnabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CertificateTransparencyLogVerification) HasPublicKeyPemEnc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CertificateTransparencyLogVerification) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = false
-}
-
-func (x *CertificateTransparencyLogVerification) ClearPublicKeyPemEnc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_PublicKeyPemEnc = nil
+	x.PublicKeyPemEnc = v
 }
 
 type CertificateTransparencyLogVerification_builder struct {
@@ -635,39 +470,42 @@ type CertificateTransparencyLogVerification_builder struct {
 
 	// Validate the inclusion of certificates into a certificate transparency log.
 	// Disables validation if not enabled.
-	Enabled *bool
+	Enabled bool
 	// PEM encoded public key used to validate the proof of inclusion into the
 	// certificate transparency log. Defaults to the key of the public Sigstore
 	// instance if left empty.
-	PublicKeyPemEnc *string
+	PublicKeyPemEnc string
 }
 
 func (b0 CertificateTransparencyLogVerification_builder) Build() *CertificateTransparencyLogVerification {
 	m0 := &CertificateTransparencyLogVerification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
-	if b.PublicKeyPemEnc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_PublicKeyPemEnc = b.PublicKeyPemEnc
-	}
+	x.Enabled = b.Enabled
+	x.PublicKeyPemEnc = b.PublicKeyPemEnc
 	return m0
 }
 
 // Validate the inclusion of signature signing events into a transparency log.
 type TransparencyLogVerification struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled         bool                   `protobuf:"varint,1,opt,name=enabled"`
-	xxx_hidden_Url             *string                `protobuf:"bytes,2,opt,name=url"`
-	xxx_hidden_ValidateOffline bool                   `protobuf:"varint,3,opt,name=validate_offline,json=validateOffline"`
-	xxx_hidden_PublicKeyPemEnc *string                `protobuf:"bytes,4,opt,name=public_key_pem_enc,json=publicKeyPemEnc"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Validate the inclusion of signatures into a transparency log.
+	// Disables validation if not enabled.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
+	// The URL of the transparency log. Required for online confirmation of
+	// inclusion into the transparency log. Defaults to the Sigstore instance
+	// `rekor.sigstore.dev`.
+	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	// Force offline validation of the signature proof of inclusion into the
+	// transparency log. Do not fall back to request confirmation from the
+	// transparency log over network.
+	ValidateOffline bool `protobuf:"varint,3,opt,name=validate_offline,json=validateOffline" json:"validate_offline,omitempty"`
+	// PEM encoded public key used to validate the proof of inclusion into the
+	// transparency log. Defaults to the key of the public Sigstore instance if
+	// left empty.
+	PublicKeyPemEnc string `protobuf:"bytes,4,opt,name=public_key_pem_enc,json=publicKeyPemEnc" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *TransparencyLogVerification) Reset() {
@@ -697,104 +535,46 @@ func (x *TransparencyLogVerification) ProtoReflect() protoreflect.Message {
 
 func (x *TransparencyLogVerification) GetEnabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Enabled
+		return x.Enabled
 	}
 	return false
 }
 
 func (x *TransparencyLogVerification) GetUrl() string {
 	if x != nil {
-		if x.xxx_hidden_Url != nil {
-			return *x.xxx_hidden_Url
-		}
-		return ""
+		return x.Url
 	}
 	return ""
 }
 
 func (x *TransparencyLogVerification) GetValidateOffline() bool {
 	if x != nil {
-		return x.xxx_hidden_ValidateOffline
+		return x.ValidateOffline
 	}
 	return false
 }
 
 func (x *TransparencyLogVerification) GetPublicKeyPemEnc() string {
 	if x != nil {
-		if x.xxx_hidden_PublicKeyPemEnc != nil {
-			return *x.xxx_hidden_PublicKeyPemEnc
-		}
-		return ""
+		return x.PublicKeyPemEnc
 	}
 	return ""
 }
 
 func (x *TransparencyLogVerification) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Enabled = v
 }
 
 func (x *TransparencyLogVerification) SetUrl(v string) {
-	x.xxx_hidden_Url = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Url = v
 }
 
 func (x *TransparencyLogVerification) SetValidateOffline(v bool) {
-	x.xxx_hidden_ValidateOffline = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ValidateOffline = v
 }
 
 func (x *TransparencyLogVerification) SetPublicKeyPemEnc(v string) {
-	x.xxx_hidden_PublicKeyPemEnc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *TransparencyLogVerification) HasEnabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TransparencyLogVerification) HasUrl() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TransparencyLogVerification) HasValidateOffline() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TransparencyLogVerification) HasPublicKeyPemEnc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TransparencyLogVerification) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = false
-}
-
-func (x *TransparencyLogVerification) ClearUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Url = nil
-}
-
-func (x *TransparencyLogVerification) ClearValidateOffline() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ValidateOffline = false
-}
-
-func (x *TransparencyLogVerification) ClearPublicKeyPemEnc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_PublicKeyPemEnc = nil
+	x.PublicKeyPemEnc = v
 }
 
 type TransparencyLogVerification_builder struct {
@@ -802,52 +582,38 @@ type TransparencyLogVerification_builder struct {
 
 	// Validate the inclusion of signatures into a transparency log.
 	// Disables validation if not enabled.
-	Enabled *bool
+	Enabled bool
 	// The URL of the transparency log. Required for online confirmation of
 	// inclusion into the transparency log. Defaults to the Sigstore instance
 	// `rekor.sigstore.dev`.
-	Url *string
+	Url string
 	// Force offline validation of the signature proof of inclusion into the
 	// transparency log. Do not fall back to request confirmation from the
 	// transparency log over network.
-	ValidateOffline *bool
+	ValidateOffline bool
 	// PEM encoded public key used to validate the proof of inclusion into the
 	// transparency log. Defaults to the key of the public Sigstore instance if
 	// left empty.
-	PublicKeyPemEnc *string
+	PublicKeyPemEnc string
 }
 
 func (b0 TransparencyLogVerification_builder) Build() *TransparencyLogVerification {
 	m0 := &TransparencyLogVerification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
-	if b.Url != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Url = b.Url
-	}
-	if b.ValidateOffline != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ValidateOffline = *b.ValidateOffline
-	}
-	if b.PublicKeyPemEnc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_PublicKeyPemEnc = b.PublicKeyPemEnc
-	}
+	x.Enabled = b.Enabled
+	x.Url = b.Url
+	x.ValidateOffline = b.ValidateOffline
+	x.PublicKeyPemEnc = b.PublicKeyPemEnc
 	return m0
 }
 
 type CosignPublicKeyVerification_PublicKey struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name            *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_PublicKeyPemEnc *string                `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name            string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	PublicKeyPemEnc string                 `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CosignPublicKeyVerification_PublicKey) Reset() {
@@ -877,77 +643,39 @@ func (x *CosignPublicKeyVerification_PublicKey) ProtoReflect() protoreflect.Mess
 
 func (x *CosignPublicKeyVerification_PublicKey) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *CosignPublicKeyVerification_PublicKey) GetPublicKeyPemEnc() string {
 	if x != nil {
-		if x.xxx_hidden_PublicKeyPemEnc != nil {
-			return *x.xxx_hidden_PublicKeyPemEnc
-		}
-		return ""
+		return x.PublicKeyPemEnc
 	}
 	return ""
 }
 
 func (x *CosignPublicKeyVerification_PublicKey) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *CosignPublicKeyVerification_PublicKey) SetPublicKeyPemEnc(v string) {
-	x.xxx_hidden_PublicKeyPemEnc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *CosignPublicKeyVerification_PublicKey) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CosignPublicKeyVerification_PublicKey) HasPublicKeyPemEnc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CosignPublicKeyVerification_PublicKey) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *CosignPublicKeyVerification_PublicKey) ClearPublicKeyPemEnc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_PublicKeyPemEnc = nil
+	x.PublicKeyPemEnc = v
 }
 
 type CosignPublicKeyVerification_PublicKey_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name            *string
-	PublicKeyPemEnc *string
+	Name            string
+	PublicKeyPemEnc string
 }
 
 func (b0 CosignPublicKeyVerification_PublicKey_builder) Build() *CosignPublicKeyVerification_PublicKey {
 	m0 := &CosignPublicKeyVerification_PublicKey{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.PublicKeyPemEnc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_PublicKeyPemEnc = b.PublicKeyPemEnc
-	}
+	x.Name = b.Name
+	x.PublicKeyPemEnc = b.PublicKeyPemEnc
 	return m0
 }
 
@@ -982,8 +710,8 @@ const file_storage_signature_integration_proto_rawDesc = "" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x12)\n" +
 	"\x10validate_offline\x18\x03 \x01(\bR\x0fvalidateOffline\x12+\n" +
-	"\x12public_key_pem_enc\x18\x04 \x01(\tR\x0fpublicKeyPemEncB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x12public_key_pem_enc\x18\x04 \x01(\tR\x0fpublicKeyPemEncB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_signature_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_storage_signature_integration_proto_goTypes = []any{

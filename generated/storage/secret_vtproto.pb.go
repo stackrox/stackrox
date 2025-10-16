@@ -8,6 +8,7 @@ func (m *Secret) SizeVT() int                   { return proto.Size(m) }
 func (m *Secret) CloneVT() *Secret              { return proto.Clone(m).(*Secret) }
 func (m *Secret) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Secret) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Secret) EqualVT(n *Secret) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Secret) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *ListSecret) SizeVT() int                   { return proto.Size(m) }
 func (m *ListSecret) CloneVT() *ListSecret          { return proto.Clone(m).(*ListSecret) }
 func (m *ListSecret) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListSecret) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListSecret) EqualVT(n *ListSecret) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListSecret) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *SecretRelationship) SizeVT() int { return proto.Size(m) }
 func (m *SecretRelationship) CloneVT() *SecretRelationship {
 	return proto.Clone(m).(*SecretRelationship)
 }
-func (m *SecretRelationship) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SecretRelationship) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecretRelationship) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *SecretRelationship) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *SecretRelationship) EqualVT(n *SecretRelationship) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecretRelationship) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -37,6 +40,9 @@ func (m *SecretDeploymentRelationship) CloneVT() *SecretDeploymentRelationship {
 func (m *SecretDeploymentRelationship) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *SecretDeploymentRelationship) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *SecretDeploymentRelationship) EqualVT(n *SecretDeploymentRelationship) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -50,16 +56,20 @@ func (m *SecretContainerRelationship) CloneVT() *SecretContainerRelationship {
 }
 func (m *SecretContainerRelationship) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SecretContainerRelationship) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecretContainerRelationship) EqualVT(n *SecretContainerRelationship) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecretContainerRelationship) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *ImagePullSecret) SizeVT() int                   { return proto.Size(m) }
-func (m *ImagePullSecret) CloneVT() *ImagePullSecret     { return proto.Clone(m).(*ImagePullSecret) }
-func (m *ImagePullSecret) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImagePullSecret) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImagePullSecret) SizeVT() int                     { return proto.Size(m) }
+func (m *ImagePullSecret) CloneVT() *ImagePullSecret       { return proto.Clone(m).(*ImagePullSecret) }
+func (m *ImagePullSecret) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ImagePullSecret) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ImagePullSecret) EqualVT(n *ImagePullSecret) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImagePullSecret) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -70,14 +80,18 @@ func (m *ImagePullSecret_Registry) CloneVT() *ImagePullSecret_Registry {
 }
 func (m *ImagePullSecret_Registry) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImagePullSecret_Registry) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImagePullSecret_Registry) EqualVT(n *ImagePullSecret_Registry) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImagePullSecret_Registry) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *SecretDataFile) SizeVT() int                   { return proto.Size(m) }
-func (m *SecretDataFile) CloneVT() *SecretDataFile      { return proto.Clone(m).(*SecretDataFile) }
-func (m *SecretDataFile) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SecretDataFile) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecretDataFile) SizeVT() int                    { return proto.Size(m) }
+func (m *SecretDataFile) CloneVT() *SecretDataFile       { return proto.Clone(m).(*SecretDataFile) }
+func (m *SecretDataFile) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *SecretDataFile) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *SecretDataFile) EqualVT(n *SecretDataFile) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecretDataFile) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -86,6 +100,7 @@ func (m *Cert) SizeVT() int                   { return proto.Size(m) }
 func (m *Cert) CloneVT() *Cert                { return proto.Clone(m).(*Cert) }
 func (m *Cert) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Cert) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Cert) EqualVT(n *Cert) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Cert) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -94,6 +109,7 @@ func (m *CertName) SizeVT() int                   { return proto.Size(m) }
 func (m *CertName) CloneVT() *CertName            { return proto.Clone(m).(*CertName) }
 func (m *CertName) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CertName) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CertName) EqualVT(n *CertName) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CertName) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

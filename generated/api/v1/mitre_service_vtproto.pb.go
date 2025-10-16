@@ -12,6 +12,9 @@ func (m *ListMitreAttackVectorsResponse) MarshalVT() ([]byte, error) { return pr
 func (m *ListMitreAttackVectorsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListMitreAttackVectorsResponse) EqualVT(n *ListMitreAttackVectorsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListMitreAttackVectorsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -22,8 +25,9 @@ func (m *GetMitreVectorResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetMitreVectorResponse) CloneVT() *GetMitreVectorResponse {
 	return proto.Clone(m).(*GetMitreVectorResponse)
 }
-func (m *GetMitreVectorResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetMitreVectorResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetMitreVectorResponse) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *GetMitreVectorResponse) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *GetMitreVectorResponse) EqualVT(n *GetMitreVectorResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetMitreVectorResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

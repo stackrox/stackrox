@@ -4,10 +4,11 @@ package v2
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ComplianceProfile) SizeVT() int                   { return proto.Size(m) }
-func (m *ComplianceProfile) CloneVT() *ComplianceProfile   { return proto.Clone(m).(*ComplianceProfile) }
-func (m *ComplianceProfile) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceProfile) SizeVT() int                       { return proto.Size(m) }
+func (m *ComplianceProfile) CloneVT() *ComplianceProfile       { return proto.Clone(m).(*ComplianceProfile) }
+func (m *ComplianceProfile) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceProfile) EqualVT(n *ComplianceProfile) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceProfile) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -19,6 +20,9 @@ func (m *ListComplianceProfilesResponse) CloneVT() *ListComplianceProfilesRespon
 func (m *ListComplianceProfilesResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ListComplianceProfilesResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ListComplianceProfilesResponse) EqualVT(n *ListComplianceProfilesResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -34,6 +38,9 @@ func (m *ListComplianceProfileSummaryResponse) MarshalVT() ([]byte, error) { ret
 func (m *ListComplianceProfileSummaryResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListComplianceProfileSummaryResponse) EqualVT(n *ListComplianceProfileSummaryResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListComplianceProfileSummaryResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -46,6 +53,9 @@ func (m *ProfilesForClusterRequest) CloneVT() *ProfilesForClusterRequest {
 }
 func (m *ProfilesForClusterRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProfilesForClusterRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProfilesForClusterRequest) EqualVT(n *ProfilesForClusterRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProfilesForClusterRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -57,6 +67,9 @@ func (m *ClustersProfileSummaryRequest) CloneVT() *ClustersProfileSummaryRequest
 func (m *ClustersProfileSummaryRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ClustersProfileSummaryRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ClustersProfileSummaryRequest) EqualVT(n *ClustersProfileSummaryRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

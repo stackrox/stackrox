@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/common.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,13 +24,11 @@ const (
 )
 
 type KeyValuePair struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KeyValuePair) Reset() {
@@ -58,77 +58,39 @@ func (x *KeyValuePair) ProtoReflect() protoreflect.Message {
 
 func (x *KeyValuePair) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *KeyValuePair) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *KeyValuePair) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Key = v
 }
 
 func (x *KeyValuePair) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *KeyValuePair) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *KeyValuePair) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *KeyValuePair) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *KeyValuePair) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Value = nil
+	x.Value = v
 }
 
 type KeyValuePair_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key   *string
-	Value *string
+	Key   string
+	Value string
 }
 
 func (b0 KeyValuePair_builder) Build() *KeyValuePair {
 	m0 := &KeyValuePair{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Value = b.Value
-	}
+	x.Key = b.Key
+	x.Value = b.Value
 	return m0
 }
 
@@ -139,8 +101,8 @@ const file_storage_common_proto_rawDesc = "" +
 	"\x14storage/common.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"6\n" +
 	"\fKeyValuePair\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05valueB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\tR\x05valueB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_common_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_common_proto_goTypes = []any{

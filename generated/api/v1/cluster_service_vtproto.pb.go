@@ -12,16 +12,20 @@ func (m *DecommissionedClusterRetentionInfo) MarshalVT() ([]byte, error) { retur
 func (m *DecommissionedClusterRetentionInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DecommissionedClusterRetentionInfo) EqualVT(n *DecommissionedClusterRetentionInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DecommissionedClusterRetentionInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *ClusterResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *ClusterResponse) CloneVT() *ClusterResponse     { return proto.Clone(m).(*ClusterResponse) }
-func (m *ClusterResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterResponse) SizeVT() int                     { return proto.Size(m) }
+func (m *ClusterResponse) CloneVT() *ClusterResponse       { return proto.Clone(m).(*ClusterResponse) }
+func (m *ClusterResponse) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterResponse) EqualVT(n *ClusterResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,8 +34,9 @@ func (m *ClusterDefaultsResponse) SizeVT() int { return proto.Size(m) }
 func (m *ClusterDefaultsResponse) CloneVT() *ClusterDefaultsResponse {
 	return proto.Clone(m).(*ClusterDefaultsResponse)
 }
-func (m *ClusterDefaultsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterDefaultsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterDefaultsResponse) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *ClusterDefaultsResponse) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterDefaultsResponse) EqualVT(n *ClusterDefaultsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterDefaultsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,6 +45,7 @@ func (m *ClustersList) SizeVT() int                   { return proto.Size(m) }
 func (m *ClustersList) CloneVT() *ClustersList        { return proto.Clone(m).(*ClustersList) }
 func (m *ClustersList) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ClustersList) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClustersList) EqualVT(n *ClustersList) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClustersList) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -48,8 +54,9 @@ func (m *GetClustersRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetClustersRequest) CloneVT() *GetClustersRequest {
 	return proto.Clone(m).(*GetClustersRequest)
 }
-func (m *GetClustersRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetClustersRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetClustersRequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *GetClustersRequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *GetClustersRequest) EqualVT(n *GetClustersRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetClustersRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -61,6 +68,9 @@ func (m *KernelSupportAvailableResponse) CloneVT() *KernelSupportAvailableRespon
 func (m *KernelSupportAvailableResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *KernelSupportAvailableResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *KernelSupportAvailableResponse) EqualVT(n *KernelSupportAvailableResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

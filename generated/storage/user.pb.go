@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/user.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,13 +24,11 @@ const (
 )
 
 type SlimUser struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"User ID"`     // @gotags: search:"User ID"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"User Name"` // @gotags: search:"User Name"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SlimUser) Reset() {
@@ -58,93 +58,51 @@ func (x *SlimUser) ProtoReflect() protoreflect.Message {
 
 func (x *SlimUser) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SlimUser) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *SlimUser) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *SlimUser) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *SlimUser) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SlimUser) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SlimUser) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *SlimUser) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type SlimUser_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id   *string
-	Name *string
+	Id   string
+	Name string
 }
 
 func (b0 SlimUser_builder) Build() *SlimUser {
 	m0 := &SlimUser{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Id = b.Id
+	x.Name = b.Name
 	return m0
 }
 
 // User is an object that allows us to track the roles a user is tied to, and how they logged in.
 type User struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_AuthProviderId *string                `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId"`
-	xxx_hidden_Attributes     *[]*UserAttribute      `protobuf:"bytes,3,rep,name=attributes"`
-	xxx_hidden_IdpToken       *string                `protobuf:"bytes,4,opt,name=idp_token,json=idpToken"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	AuthProviderId string                 `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId" json:"auth_provider_id,omitempty"`
+	Attributes     []*UserAttribute       `protobuf:"bytes,3,rep,name=attributes" json:"attributes,omitempty"`
+	IdpToken       string                 `protobuf:"bytes,4,opt,name=idp_token,json=idpToken" json:"idp_token,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -174,150 +132,74 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 func (x *User) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *User) GetAuthProviderId() string {
 	if x != nil {
-		if x.xxx_hidden_AuthProviderId != nil {
-			return *x.xxx_hidden_AuthProviderId
-		}
-		return ""
+		return x.AuthProviderId
 	}
 	return ""
 }
 
 func (x *User) GetAttributes() []*UserAttribute {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Attributes) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*UserAttribute
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Attributes
 	}
 	return nil
 }
 
 func (x *User) GetIdpToken() string {
 	if x != nil {
-		if x.xxx_hidden_IdpToken != nil {
-			return *x.xxx_hidden_IdpToken
-		}
-		return ""
+		return x.IdpToken
 	}
 	return ""
 }
 
 func (x *User) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *User) SetAuthProviderId(v string) {
-	x.xxx_hidden_AuthProviderId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.AuthProviderId = v
 }
 
 func (x *User) SetAttributes(v []*UserAttribute) {
-	var sv *[]*UserAttribute
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*UserAttribute{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Attributes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Attributes = v
 }
 
 func (x *User) SetIdpToken(v string) {
-	x.xxx_hidden_IdpToken = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *User) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *User) HasAuthProviderId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *User) HasIdpToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *User) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *User) ClearAuthProviderId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_AuthProviderId = nil
-}
-
-func (x *User) ClearIdpToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_IdpToken = nil
+	x.IdpToken = v
 }
 
 type User_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id             *string
-	AuthProviderId *string
+	Id             string
+	AuthProviderId string
 	Attributes     []*UserAttribute
-	IdpToken       *string
+	IdpToken       string
 }
 
 func (b0 User_builder) Build() *User {
 	m0 := &User{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.AuthProviderId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_AuthProviderId = b.AuthProviderId
-	}
-	if b.Attributes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Attributes = &b.Attributes
-	}
-	if b.IdpToken != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_IdpToken = b.IdpToken
-	}
+	x.Id = b.Id
+	x.AuthProviderId = b.AuthProviderId
+	x.Attributes = b.Attributes
+	x.IdpToken = b.IdpToken
 	return m0
 }
 
 type UserAttribute struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserAttribute) Reset() {
@@ -347,92 +229,50 @@ func (x *UserAttribute) ProtoReflect() protoreflect.Message {
 
 func (x *UserAttribute) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *UserAttribute) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *UserAttribute) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Key = v
 }
 
 func (x *UserAttribute) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *UserAttribute) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UserAttribute) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *UserAttribute) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *UserAttribute) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Value = nil
+	x.Value = v
 }
 
 type UserAttribute_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key   *string
-	Value *string
+	Key   string
+	Value string
 }
 
 func (b0 UserAttribute_builder) Build() *UserAttribute {
 	m0 := &UserAttribute{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Value = b.Value
-	}
+	x.Key = b.Key
+	x.Value = b.Value
 	return m0
 }
 
 type UserInfo struct {
-	state                   protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Username     *string                    `protobuf:"bytes,1,opt,name=username"`
-	xxx_hidden_FriendlyName *string                    `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName"`
-	xxx_hidden_Permissions  *UserInfo_ResourceToAccess `protobuf:"bytes,4,opt,name=permissions"`
-	xxx_hidden_Roles        *[]*UserInfo_Role          `protobuf:"bytes,5,rep,name=roles"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
+	Username      string                     `protobuf:"bytes,1,opt,name=username" json:"username,omitempty"`
+	FriendlyName  string                     `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName" json:"friendly_name,omitempty"`
+	Permissions   *UserInfo_ResourceToAccess `protobuf:"bytes,4,opt,name=permissions" json:"permissions,omitempty"`
+	Roles         []*UserInfo_Role           `protobuf:"bytes,5,rep,name=roles" json:"roles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserInfo) Reset() {
@@ -462,110 +302,64 @@ func (x *UserInfo) ProtoReflect() protoreflect.Message {
 
 func (x *UserInfo) GetUsername() string {
 	if x != nil {
-		if x.xxx_hidden_Username != nil {
-			return *x.xxx_hidden_Username
-		}
-		return ""
+		return x.Username
 	}
 	return ""
 }
 
 func (x *UserInfo) GetFriendlyName() string {
 	if x != nil {
-		if x.xxx_hidden_FriendlyName != nil {
-			return *x.xxx_hidden_FriendlyName
-		}
-		return ""
+		return x.FriendlyName
 	}
 	return ""
 }
 
 func (x *UserInfo) GetPermissions() *UserInfo_ResourceToAccess {
 	if x != nil {
-		return x.xxx_hidden_Permissions
+		return x.Permissions
 	}
 	return nil
 }
 
 func (x *UserInfo) GetRoles() []*UserInfo_Role {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Roles) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *[]*UserInfo_Role
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Roles
 	}
 	return nil
 }
 
 func (x *UserInfo) SetUsername(v string) {
-	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Username = v
 }
 
 func (x *UserInfo) SetFriendlyName(v string) {
-	x.xxx_hidden_FriendlyName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.FriendlyName = v
 }
 
 func (x *UserInfo) SetPermissions(v *UserInfo_ResourceToAccess) {
-	x.xxx_hidden_Permissions = v
+	x.Permissions = v
 }
 
 func (x *UserInfo) SetRoles(v []*UserInfo_Role) {
-	var sv *[]*UserInfo_Role
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*UserInfo_Role{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Roles), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *UserInfo) HasUsername() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UserInfo) HasFriendlyName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Roles = v
 }
 
 func (x *UserInfo) HasPermissions() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Permissions != nil
-}
-
-func (x *UserInfo) ClearUsername() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Username = nil
-}
-
-func (x *UserInfo) ClearFriendlyName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_FriendlyName = nil
+	return x.Permissions != nil
 }
 
 func (x *UserInfo) ClearPermissions() {
-	x.xxx_hidden_Permissions = nil
+	x.Permissions = nil
 }
 
 type UserInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Username     *string
-	FriendlyName *string
+	Username     string
+	FriendlyName string
 	Permissions  *UserInfo_ResourceToAccess
 	Roles        []*UserInfo_Role
 }
@@ -574,34 +368,21 @@ func (b0 UserInfo_builder) Build() *UserInfo {
 	m0 := &UserInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Username = b.Username
-	}
-	if b.FriendlyName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_FriendlyName = b.FriendlyName
-	}
-	x.xxx_hidden_Permissions = b.Permissions
-	if b.Roles != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Roles = &b.Roles
-	}
+	x.Username = b.Username
+	x.FriendlyName = b.FriendlyName
+	x.Permissions = b.Permissions
+	x.Roles = b.Roles
 	return m0
 }
 
 // Role is wire compatible with the old format of storage.Role and
 // hence only includes role name and associated permissions.
 type UserInfo_Role struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name             *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name             string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *UserInfo_Role) Reset() {
@@ -631,46 +412,30 @@ func (x *UserInfo_Role) ProtoReflect() protoreflect.Message {
 
 func (x *UserInfo_Role) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *UserInfo_Role) GetResourceToAccess() map[string]Access {
 	if x != nil {
-		return x.xxx_hidden_ResourceToAccess
+		return x.ResourceToAccess
 	}
 	return nil
 }
 
 func (x *UserInfo_Role) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *UserInfo_Role) SetResourceToAccess(v map[string]Access) {
-	x.xxx_hidden_ResourceToAccess = v
-}
-
-func (x *UserInfo_Role) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UserInfo_Role) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
+	x.ResourceToAccess = v
 }
 
 type UserInfo_Role_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name             *string
+	Name             string
 	ResourceToAccess map[string]Access
 }
 
@@ -678,11 +443,8 @@ func (b0 UserInfo_Role_builder) Build() *UserInfo_Role {
 	m0 := &UserInfo_Role{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_ResourceToAccess = b.ResourceToAccess
+	x.Name = b.Name
+	x.ResourceToAccess = b.ResourceToAccess
 	return m0
 }
 
@@ -690,10 +452,10 @@ func (b0 UserInfo_Role_builder) Build() *UserInfo_Role {
 // compatible with the old format of storage.Role and replaces it in
 // places where only aggregated permissions are required.
 type UserInfo_ResourceToAccess struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
+	ResourceToAccess map[string]Access      `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=storage.Access"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *UserInfo_ResourceToAccess) Reset() {
@@ -723,13 +485,13 @@ func (x *UserInfo_ResourceToAccess) ProtoReflect() protoreflect.Message {
 
 func (x *UserInfo_ResourceToAccess) GetResourceToAccess() map[string]Access {
 	if x != nil {
-		return x.xxx_hidden_ResourceToAccess
+		return x.ResourceToAccess
 	}
 	return nil
 }
 
 func (x *UserInfo_ResourceToAccess) SetResourceToAccess(v map[string]Access) {
-	x.xxx_hidden_ResourceToAccess = v
+	x.ResourceToAccess = v
 }
 
 type UserInfo_ResourceToAccess_builder struct {
@@ -742,7 +504,7 @@ func (b0 UserInfo_ResourceToAccess_builder) Build() *UserInfo_ResourceToAccess {
 	m0 := &UserInfo_ResourceToAccess{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ResourceToAccess = b.ResourceToAccess
+	x.ResourceToAccess = b.ResourceToAccess
 	return m0
 }
 
@@ -779,8 +541,8 @@ const file_storage_user_proto_rawDesc = "" +
 	"\x12resource_to_access\x18\x03 \x03(\v28.storage.UserInfo.ResourceToAccess.ResourceToAccessEntryB\x02(\x01R\x10resourceToAccess\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01J\x04\b\x01\x10\x02J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_user_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_storage_user_proto_goTypes = []any{

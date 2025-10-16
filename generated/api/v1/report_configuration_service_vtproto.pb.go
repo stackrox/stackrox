@@ -12,6 +12,9 @@ func (m *GetReportConfigurationsResponse) MarshalVT() ([]byte, error) { return p
 func (m *GetReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetReportConfigurationsResponse) EqualVT(n *GetReportConfigurationsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetReportConfigurationsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -25,6 +28,9 @@ func (m *GetReportConfigurationResponse) CloneVT() *GetReportConfigurationRespon
 func (m *GetReportConfigurationResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetReportConfigurationResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetReportConfigurationResponse) EqualVT(n *GetReportConfigurationResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -40,6 +46,9 @@ func (m *PostReportConfigurationResponse) MarshalVT() ([]byte, error) { return p
 func (m *PostReportConfigurationResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *PostReportConfigurationResponse) EqualVT(n *PostReportConfigurationResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PostReportConfigurationResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -53,6 +62,9 @@ func (m *PostReportConfigurationRequest) CloneVT() *PostReportConfigurationReque
 func (m *PostReportConfigurationRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *PostReportConfigurationRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *PostReportConfigurationRequest) EqualVT(n *PostReportConfigurationRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -68,6 +80,9 @@ func (m *UpdateReportConfigurationRequest) MarshalVT() ([]byte, error) { return 
 func (m *UpdateReportConfigurationRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpdateReportConfigurationRequest) EqualVT(n *UpdateReportConfigurationRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateReportConfigurationRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -81,6 +96,9 @@ func (m *CountReportConfigurationsResponse) CloneVT() *CountReportConfigurations
 func (m *CountReportConfigurationsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *CountReportConfigurationsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CountReportConfigurationsResponse) EqualVT(n *CountReportConfigurationsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

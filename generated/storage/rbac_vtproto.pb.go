@@ -8,6 +8,7 @@ func (m *K8SRole) SizeVT() int                   { return proto.Size(m) }
 func (m *K8SRole) CloneVT() *K8SRole             { return proto.Clone(m).(*K8SRole) }
 func (m *K8SRole) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *K8SRole) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *K8SRole) EqualVT(n *K8SRole) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *K8SRole) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,14 +17,16 @@ func (m *PolicyRule) SizeVT() int                   { return proto.Size(m) }
 func (m *PolicyRule) CloneVT() *PolicyRule          { return proto.Clone(m).(*PolicyRule) }
 func (m *PolicyRule) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PolicyRule) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyRule) EqualVT(n *PolicyRule) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PolicyRule) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *K8SRoleBinding) SizeVT() int                   { return proto.Size(m) }
-func (m *K8SRoleBinding) CloneVT() *K8SRoleBinding      { return proto.Clone(m).(*K8SRoleBinding) }
-func (m *K8SRoleBinding) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *K8SRoleBinding) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *K8SRoleBinding) SizeVT() int                    { return proto.Size(m) }
+func (m *K8SRoleBinding) CloneVT() *K8SRoleBinding       { return proto.Clone(m).(*K8SRoleBinding) }
+func (m *K8SRoleBinding) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *K8SRoleBinding) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *K8SRoleBinding) EqualVT(n *K8SRoleBinding) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *K8SRoleBinding) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,6 +35,7 @@ func (m *Subject) SizeVT() int                   { return proto.Size(m) }
 func (m *Subject) CloneVT() *Subject             { return proto.Clone(m).(*Subject) }
 func (m *Subject) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Subject) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Subject) EqualVT(n *Subject) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Subject) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/process_listening_on_port.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -24,23 +26,19 @@ const (
 
 // The API returns an array of these
 type ProcessListeningOnPort struct {
-	state                         protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Endpoint           *ProcessListeningOnPort_Endpoint `protobuf:"bytes,1,opt,name=endpoint"`
-	xxx_hidden_DeploymentId       *string                          `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_ContainerName      *string                          `protobuf:"bytes,3,opt,name=container_name,json=containerName"`
-	xxx_hidden_PodId              *string                          `protobuf:"bytes,4,opt,name=pod_id,json=podId"`
-	xxx_hidden_PodUid             *string                          `protobuf:"bytes,5,opt,name=pod_uid,json=podUid"`
-	xxx_hidden_Signal             *ProcessSignal                   `protobuf:"bytes,6,opt,name=signal"`
-	xxx_hidden_ClusterId          *string                          `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace          *string                          `protobuf:"bytes,8,opt,name=namespace"`
-	xxx_hidden_ContainerStartTime *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime"`
-	xxx_hidden_ImageId            *string                          `protobuf:"bytes,10,opt,name=image_id,json=imageId"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state              protoimpl.MessageState           `protogen:"hybrid.v1"`
+	Endpoint           *ProcessListeningOnPort_Endpoint `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`
+	DeploymentId       string                           `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	ContainerName      string                           `protobuf:"bytes,3,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
+	PodId              string                           `protobuf:"bytes,4,opt,name=pod_id,json=podId" json:"pod_id,omitempty"`
+	PodUid             string                           `protobuf:"bytes,5,opt,name=pod_uid,json=podUid" json:"pod_uid,omitempty"`
+	Signal             *ProcessSignal                   `protobuf:"bytes,6,opt,name=signal" json:"signal,omitempty"`
+	ClusterId          string                           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	Namespace          string                           `protobuf:"bytes,8,opt,name=namespace" json:"namespace,omitempty"`
+	ContainerStartTime *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime" json:"container_start_time,omitempty"`
+	ImageId            string                           `protobuf:"bytes,10,opt,name=image_id,json=imageId" json:"image_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPort) Reset() {
@@ -70,345 +68,192 @@ func (x *ProcessListeningOnPort) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessListeningOnPort) GetEndpoint() *ProcessListeningOnPort_Endpoint {
 	if x != nil {
-		return x.xxx_hidden_Endpoint
+		return x.Endpoint
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPort) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetContainerName() string {
 	if x != nil {
-		if x.xxx_hidden_ContainerName != nil {
-			return *x.xxx_hidden_ContainerName
-		}
-		return ""
+		return x.ContainerName
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetPodId() string {
 	if x != nil {
-		if x.xxx_hidden_PodId != nil {
-			return *x.xxx_hidden_PodId
-		}
-		return ""
+		return x.PodId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetPodUid() string {
 	if x != nil {
-		if x.xxx_hidden_PodUid != nil {
-			return *x.xxx_hidden_PodUid
-		}
-		return ""
+		return x.PodUid
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetSignal() *ProcessSignal {
 	if x != nil {
-		return x.xxx_hidden_Signal
+		return x.Signal
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPort) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) GetContainerStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ContainerStartTime) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ContainerStartTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ContainerStartTime
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPort) GetImageId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageId != nil {
-			return *x.xxx_hidden_ImageId
-		}
-		return ""
+		return x.ImageId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPort) SetEndpoint(v *ProcessListeningOnPort_Endpoint) {
-	x.xxx_hidden_Endpoint = v
+	x.Endpoint = v
 }
 
 func (x *ProcessListeningOnPort) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
+	x.DeploymentId = v
 }
 
 func (x *ProcessListeningOnPort) SetContainerName(v string) {
-	x.xxx_hidden_ContainerName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	x.ContainerName = v
 }
 
 func (x *ProcessListeningOnPort) SetPodId(v string) {
-	x.xxx_hidden_PodId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
+	x.PodId = v
 }
 
 func (x *ProcessListeningOnPort) SetPodUid(v string) {
-	x.xxx_hidden_PodUid = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
+	x.PodUid = v
 }
 
 func (x *ProcessListeningOnPort) SetSignal(v *ProcessSignal) {
-	x.xxx_hidden_Signal = v
+	x.Signal = v
 }
 
 func (x *ProcessListeningOnPort) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
+	x.ClusterId = v
 }
 
 func (x *ProcessListeningOnPort) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
+	x.Namespace = v
 }
 
 func (x *ProcessListeningOnPort) SetContainerStartTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
-	}
+	x.ContainerStartTime = v
 }
 
 func (x *ProcessListeningOnPort) SetImageId(v string) {
-	x.xxx_hidden_ImageId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
+	x.ImageId = v
 }
 
 func (x *ProcessListeningOnPort) HasEndpoint() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Endpoint != nil
-}
-
-func (x *ProcessListeningOnPort) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessListeningOnPort) HasContainerName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ProcessListeningOnPort) HasPodId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ProcessListeningOnPort) HasPodUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	return x.Endpoint != nil
 }
 
 func (x *ProcessListeningOnPort) HasSignal() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Signal != nil
-}
-
-func (x *ProcessListeningOnPort) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ProcessListeningOnPort) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.Signal != nil
 }
 
 func (x *ProcessListeningOnPort) HasContainerStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ProcessListeningOnPort) HasImageId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.ContainerStartTime != nil
 }
 
 func (x *ProcessListeningOnPort) ClearEndpoint() {
-	x.xxx_hidden_Endpoint = nil
-}
-
-func (x *ProcessListeningOnPort) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *ProcessListeningOnPort) ClearContainerName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ContainerName = nil
-}
-
-func (x *ProcessListeningOnPort) ClearPodId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_PodId = nil
-}
-
-func (x *ProcessListeningOnPort) ClearPodUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_PodUid = nil
+	x.Endpoint = nil
 }
 
 func (x *ProcessListeningOnPort) ClearSignal() {
-	x.xxx_hidden_Signal = nil
-}
-
-func (x *ProcessListeningOnPort) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ProcessListeningOnPort) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Namespace = nil
+	x.Signal = nil
 }
 
 func (x *ProcessListeningOnPort) ClearContainerStartTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ContainerStartTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ProcessListeningOnPort) ClearImageId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_ImageId = nil
+	x.ContainerStartTime = nil
 }
 
 type ProcessListeningOnPort_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Endpoint           *ProcessListeningOnPort_Endpoint
-	DeploymentId       *string
-	ContainerName      *string
-	PodId              *string
-	PodUid             *string
+	DeploymentId       string
+	ContainerName      string
+	PodId              string
+	PodUid             string
 	Signal             *ProcessSignal
-	ClusterId          *string
-	Namespace          *string
+	ClusterId          string
+	Namespace          string
 	ContainerStartTime *timestamppb.Timestamp
-	ImageId            *string
+	ImageId            string
 }
 
 func (b0 ProcessListeningOnPort_builder) Build() *ProcessListeningOnPort {
 	m0 := &ProcessListeningOnPort{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Endpoint = b.Endpoint
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.ContainerName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
-		x.xxx_hidden_ContainerName = b.ContainerName
-	}
-	if b.PodId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
-		x.xxx_hidden_PodId = b.PodId
-	}
-	if b.PodUid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
-		x.xxx_hidden_PodUid = b.PodUid
-	}
-	x.xxx_hidden_Signal = b.Signal
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ContainerStartTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
-		x.xxx_hidden_ContainerStartTime = b.ContainerStartTime
-	}
-	if b.ImageId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
-		x.xxx_hidden_ImageId = b.ImageId
-	}
+	x.Endpoint = b.Endpoint
+	x.DeploymentId = b.DeploymentId
+	x.ContainerName = b.ContainerName
+	x.PodId = b.PodId
+	x.PodUid = b.PodUid
+	x.Signal = b.Signal
+	x.ClusterId = b.ClusterId
+	x.Namespace = b.Namespace
+	x.ContainerStartTime = b.ContainerStartTime
+	x.ImageId = b.ImageId
 	return m0
 }
 
 // This is what sensor sends to central
 type ProcessListeningOnPortFromSensor struct {
-	state                     protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Port           uint32                     `protobuf:"varint,1,opt,name=port"`
-	xxx_hidden_Protocol       L4Protocol                 `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol"`
-	xxx_hidden_Process        *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process"`
-	xxx_hidden_CloseTimestamp *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp"`
-	xxx_hidden_ClusterId      *string                    `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_DeploymentId   *string                    `protobuf:"bytes,7,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_PodUid         *string                    `protobuf:"bytes,8,opt,name=pod_uid,json=podUid"`
-	xxx_hidden_Namespace      *string                    `protobuf:"bytes,9,opt,name=namespace"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState     `protogen:"hybrid.v1"`
+	Port           uint32                     `protobuf:"varint,1,opt,name=port" json:"port,omitempty"`
+	Protocol       L4Protocol                 `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	Process        *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process" json:"process,omitempty"`
+	CloseTimestamp *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp" json:"close_timestamp,omitempty"`
+	ClusterId      string                     `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	DeploymentId   string                     `protobuf:"bytes,7,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	PodUid         string                     `protobuf:"bytes,8,opt,name=pod_uid,json=podUid" json:"pod_uid,omitempty"`
+	Namespace      string                     `protobuf:"bytes,9,opt,name=namespace" json:"namespace,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPortFromSensor) Reset() {
@@ -438,288 +283,164 @@ func (x *ProcessListeningOnPortFromSensor) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessListeningOnPortFromSensor) GetPort() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Port
+		return x.Port
 	}
 	return 0
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetProtocol() L4Protocol {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Protocol
-		}
+		return x.Protocol
 	}
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetProcess() *ProcessIndicatorUniqueKey {
 	if x != nil {
-		return x.xxx_hidden_Process
+		return x.Process
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CloseTimestamp
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetPodUid() string {
 	if x != nil {
-		if x.xxx_hidden_PodUid != nil {
-			return *x.xxx_hidden_PodUid
-		}
-		return ""
+		return x.PodUid
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortFromSensor) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetPort(v uint32) {
-	x.xxx_hidden_Port = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Port = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetProtocol(v L4Protocol) {
-	x.xxx_hidden_Protocol = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.Protocol = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetProcess(v *ProcessIndicatorUniqueKey) {
-	x.xxx_hidden_Process = v
+	x.Process = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
-	}
+	x.CloseTimestamp = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.ClusterId = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	x.DeploymentId = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetPodUid(v string) {
-	x.xxx_hidden_PodUid = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	x.PodUid = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasPort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasProtocol() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Namespace = v
 }
 
 func (x *ProcessListeningOnPortFromSensor) HasProcess() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Process != nil
+	return x.Process != nil
 }
 
 func (x *ProcessListeningOnPortFromSensor) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasPodUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ProcessListeningOnPortFromSensor) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearPort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Port = 0
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearProtocol() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Protocol = L4Protocol_L4_PROTOCOL_UNKNOWN
+	return x.CloseTimestamp != nil
 }
 
 func (x *ProcessListeningOnPortFromSensor) ClearProcess() {
-	x.xxx_hidden_Process = nil
+	x.Process = nil
 }
 
 func (x *ProcessListeningOnPortFromSensor) ClearCloseTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearPodUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_PodUid = nil
-}
-
-func (x *ProcessListeningOnPortFromSensor) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Namespace = nil
+	x.CloseTimestamp = nil
 }
 
 type ProcessListeningOnPortFromSensor_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Port           *uint32
-	Protocol       *L4Protocol
+	Port           uint32
+	Protocol       L4Protocol
 	Process        *ProcessIndicatorUniqueKey
 	CloseTimestamp *timestamppb.Timestamp
-	ClusterId      *string
-	DeploymentId   *string
-	PodUid         *string
-	Namespace      *string
+	ClusterId      string
+	DeploymentId   string
+	PodUid         string
+	Namespace      string
 }
 
 func (b0 ProcessListeningOnPortFromSensor_builder) Build() *ProcessListeningOnPortFromSensor {
 	m0 := &ProcessListeningOnPortFromSensor{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Port != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Port = *b.Port
-	}
-	if b.Protocol != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_Protocol = *b.Protocol
-	}
-	x.xxx_hidden_Process = b.Process
-	if b.CloseTimestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.PodUid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_PodUid = b.PodUid
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.Port = b.Port
+	x.Protocol = b.Protocol
+	x.Process = b.Process
+	x.CloseTimestamp = b.CloseTimestamp
+	x.ClusterId = b.ClusterId
+	x.DeploymentId = b.DeploymentId
+	x.PodUid = b.PodUid
+	x.Namespace = b.Namespace
 	return m0
 }
 
 // This is what is stored in the database
 type ProcessListeningOnPortStorage struct {
-	state                         protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Id                 *string                    `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Port               uint32                     `protobuf:"varint,2,opt,name=port"`
-	xxx_hidden_Protocol           L4Protocol                 `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol"`
-	xxx_hidden_CloseTimestamp     *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp"`
-	xxx_hidden_ProcessIndicatorId *string                    `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId"`
-	xxx_hidden_Closed             bool                       `protobuf:"varint,6,opt,name=closed"`
-	xxx_hidden_Process            *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process"`
-	xxx_hidden_DeploymentId       *string                    `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_PodUid             *string                    `protobuf:"bytes,9,opt,name=pod_uid,json=podUid"`
-	xxx_hidden_ClusterId          *string                    `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace          *string                    `protobuf:"bytes,11,opt,name=namespace"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
+	// bigint with a sequence. Unfortunately at the moment some bits of store
+	// generator assume an id has to be a string.
+	Id                 string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"`                                                             // @gotags: sql:"pk,type(uuid)"
+	Port               uint32                 `protobuf:"varint,2,opt,name=port" json:"port,omitempty" search:"Port,store"`                                                        // @gotags: search:"Port,store"
+	Protocol           L4Protocol             `protobuf:"varint,3,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"`                        // @gotags: search:"Port Protocol,store"
+	CloseTimestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp" json:"close_timestamp,omitempty" search:"Closed Time,hidden"`               // @gotags: search:"Closed Time,hidden"
+	ProcessIndicatorId string                 `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
+	// XXX: Make it a partial index on only active, not closed, PLOP
+	Closed bool `protobuf:"varint,6,opt,name=closed" json:"closed,omitempty" search:"Closed,store" sql:"index=btree"` // @gotags: search:"Closed,store" sql:"index=btree"
+	// ProcessIndicator will be not empty only for those cases when we were not
+	// able to find references process in the database
+	Process       *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process" json:"process,omitempty"`
+	DeploymentId  string                     `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
+	PodUid        string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                   // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+	ClusterId     string                     `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`         // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	Namespace     string                     `protobuf:"bytes,11,opt,name=namespace" json:"namespace,omitempty" search:"Namespace"`                          // @gotags: search:"Namespace"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPortStorage) Reset() {
@@ -749,295 +470,145 @@ func (x *ProcessListeningOnPortStorage) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessListeningOnPortStorage) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) GetPort() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Port
+		return x.Port
 	}
 	return 0
 }
 
 func (x *ProcessListeningOnPortStorage) GetProtocol() L4Protocol {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Protocol
-		}
+		return x.Protocol
 	}
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *ProcessListeningOnPortStorage) GetCloseTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CloseTimestamp) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CloseTimestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CloseTimestamp
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPortStorage) GetProcessIndicatorId() string {
 	if x != nil {
-		if x.xxx_hidden_ProcessIndicatorId != nil {
-			return *x.xxx_hidden_ProcessIndicatorId
-		}
-		return ""
+		return x.ProcessIndicatorId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) GetClosed() bool {
 	if x != nil {
-		return x.xxx_hidden_Closed
+		return x.Closed
 	}
 	return false
 }
 
 func (x *ProcessListeningOnPortStorage) GetProcess() *ProcessIndicatorUniqueKey {
 	if x != nil {
-		return x.xxx_hidden_Process
+		return x.Process
 	}
 	return nil
 }
 
 func (x *ProcessListeningOnPortStorage) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) GetPodUid() string {
 	if x != nil {
-		if x.xxx_hidden_PodUid != nil {
-			return *x.xxx_hidden_PodUid
-		}
-		return ""
+		return x.PodUid
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ProcessListeningOnPortStorage) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetPort(v uint32) {
-	x.xxx_hidden_Port = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.Port = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetProtocol(v L4Protocol) {
-	x.xxx_hidden_Protocol = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.Protocol = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetCloseTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
-	}
+	x.CloseTimestamp = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetProcessIndicatorId(v string) {
-	x.xxx_hidden_ProcessIndicatorId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.ProcessIndicatorId = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetClosed(v bool) {
-	x.xxx_hidden_Closed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	x.Closed = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetProcess(v *ProcessIndicatorUniqueKey) {
-	x.xxx_hidden_Process = v
+	x.Process = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	x.DeploymentId = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetPodUid(v string) {
-	x.xxx_hidden_PodUid = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.PodUid = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.ClusterId = v
 }
 
 func (x *ProcessListeningOnPortStorage) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *ProcessListeningOnPortStorage) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessListeningOnPortStorage) HasPort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessListeningOnPortStorage) HasProtocol() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.Namespace = v
 }
 
 func (x *ProcessListeningOnPortStorage) HasCloseTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ProcessListeningOnPortStorage) HasProcessIndicatorId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ProcessListeningOnPortStorage) HasClosed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return x.CloseTimestamp != nil
 }
 
 func (x *ProcessListeningOnPortStorage) HasProcess() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Process != nil
-}
-
-func (x *ProcessListeningOnPortStorage) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ProcessListeningOnPortStorage) HasPodUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ProcessListeningOnPortStorage) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ProcessListeningOnPortStorage) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *ProcessListeningOnPortStorage) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearPort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Port = 0
-}
-
-func (x *ProcessListeningOnPortStorage) ClearProtocol() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Protocol = L4Protocol_L4_PROTOCOL_UNKNOWN
+	return x.Process != nil
 }
 
 func (x *ProcessListeningOnPortStorage) ClearCloseTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CloseTimestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ProcessListeningOnPortStorage) ClearProcessIndicatorId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ProcessIndicatorId = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearClosed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Closed = false
+	x.CloseTimestamp = nil
 }
 
 func (x *ProcessListeningOnPortStorage) ClearProcess() {
-	x.xxx_hidden_Process = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearPodUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_PodUid = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ProcessListeningOnPortStorage) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_Namespace = nil
+	x.Process = nil
 }
 
 type ProcessListeningOnPortStorage_builder struct {
@@ -1046,78 +617,46 @@ type ProcessListeningOnPortStorage_builder struct {
 	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
 	// bigint with a sequence. Unfortunately at the moment some bits of store
 	// generator assume an id has to be a string.
-	Id                 *string
-	Port               *uint32
-	Protocol           *L4Protocol
+	Id                 string
+	Port               uint32
+	Protocol           L4Protocol
 	CloseTimestamp     *timestamppb.Timestamp
-	ProcessIndicatorId *string
+	ProcessIndicatorId string
 	// XXX: Make it a partial index on only active, not closed, PLOP
-	Closed *bool
+	Closed bool
 	// ProcessIndicator will be not empty only for those cases when we were not
 	// able to find references process in the database
 	Process      *ProcessIndicatorUniqueKey
-	DeploymentId *string
-	PodUid       *string
-	ClusterId    *string
-	Namespace    *string
+	DeploymentId string
+	PodUid       string
+	ClusterId    string
+	Namespace    string
 }
 
 func (b0 ProcessListeningOnPortStorage_builder) Build() *ProcessListeningOnPortStorage {
 	m0 := &ProcessListeningOnPortStorage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Port != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Port = *b.Port
-	}
-	if b.Protocol != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_Protocol = *b.Protocol
-	}
-	if b.CloseTimestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_CloseTimestamp = b.CloseTimestamp
-	}
-	if b.ProcessIndicatorId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_ProcessIndicatorId = b.ProcessIndicatorId
-	}
-	if b.Closed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_Closed = *b.Closed
-	}
-	x.xxx_hidden_Process = b.Process
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.PodUid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_PodUid = b.PodUid
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.Id = b.Id
+	x.Port = b.Port
+	x.Protocol = b.Protocol
+	x.CloseTimestamp = b.CloseTimestamp
+	x.ProcessIndicatorId = b.ProcessIndicatorId
+	x.Closed = b.Closed
+	x.Process = b.Process
+	x.DeploymentId = b.DeploymentId
+	x.PodUid = b.PodUid
+	x.ClusterId = b.ClusterId
+	x.Namespace = b.Namespace
 	return m0
 }
 
 type ProcessListeningOnPort_Endpoint struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Port        uint32                 `protobuf:"varint,1,opt,name=port"`
-	xxx_hidden_Protocol    L4Protocol             `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Port          uint32                 `protobuf:"varint,1,opt,name=port" json:"port,omitempty"`
+	Protocol      L4Protocol             `protobuf:"varint,2,opt,name=protocol,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPort_Endpoint) Reset() {
@@ -1147,73 +686,39 @@ func (x *ProcessListeningOnPort_Endpoint) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessListeningOnPort_Endpoint) GetPort() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Port
+		return x.Port
 	}
 	return 0
 }
 
 func (x *ProcessListeningOnPort_Endpoint) GetProtocol() L4Protocol {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Protocol
-		}
+		return x.Protocol
 	}
 	return L4Protocol_L4_PROTOCOL_UNKNOWN
 }
 
 func (x *ProcessListeningOnPort_Endpoint) SetPort(v uint32) {
-	x.xxx_hidden_Port = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Port = v
 }
 
 func (x *ProcessListeningOnPort_Endpoint) SetProtocol(v L4Protocol) {
-	x.xxx_hidden_Protocol = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ProcessListeningOnPort_Endpoint) HasPort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessListeningOnPort_Endpoint) HasProtocol() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessListeningOnPort_Endpoint) ClearPort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Port = 0
-}
-
-func (x *ProcessListeningOnPort_Endpoint) ClearProtocol() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Protocol = L4Protocol_L4_PROTOCOL_UNKNOWN
+	x.Protocol = v
 }
 
 type ProcessListeningOnPort_Endpoint_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Port     *uint32
-	Protocol *L4Protocol
+	Port     uint32
+	Protocol L4Protocol
 }
 
 func (b0 ProcessListeningOnPort_Endpoint_builder) Build() *ProcessListeningOnPort_Endpoint {
 	m0 := &ProcessListeningOnPort_Endpoint{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Port != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Port = *b.Port
-	}
-	if b.Protocol != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Protocol = *b.Protocol
-	}
+	x.Port = b.Port
+	x.Protocol = b.Protocol
 	return m0
 }
 
@@ -1261,7 +766,7 @@ const file_storage_process_listening_on_port_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\n" +
 	" \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\v \x01(\tR\tnamespaceB\x1eZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\tnamespace\x18\v \x01(\tR\tnamespaceB&Z\x11./storage;storage\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_process_listening_on_port_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_process_listening_on_port_proto_goTypes = []any{

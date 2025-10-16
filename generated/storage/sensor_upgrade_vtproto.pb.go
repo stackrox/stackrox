@@ -8,8 +8,9 @@ func (m *SensorUpgradeConfig) SizeVT() int { return proto.Size(m) }
 func (m *SensorUpgradeConfig) CloneVT() *SensorUpgradeConfig {
 	return proto.Clone(m).(*SensorUpgradeConfig)
 }
-func (m *SensorUpgradeConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SensorUpgradeConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorUpgradeConfig) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *SensorUpgradeConfig) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *SensorUpgradeConfig) EqualVT(n *SensorUpgradeConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorUpgradeConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

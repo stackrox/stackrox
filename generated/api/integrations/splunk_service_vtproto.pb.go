@@ -10,14 +10,18 @@ func (m *SplunkViolationsResponse) CloneVT() *SplunkViolationsResponse {
 }
 func (m *SplunkViolationsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SplunkViolationsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolationsResponse) EqualVT(n *SplunkViolationsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolationsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *SplunkViolation) SizeVT() int                   { return proto.Size(m) }
-func (m *SplunkViolation) CloneVT() *SplunkViolation     { return proto.Clone(m).(*SplunkViolation) }
-func (m *SplunkViolation) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolation) SizeVT() int                     { return proto.Size(m) }
+func (m *SplunkViolation) CloneVT() *SplunkViolation       { return proto.Clone(m).(*SplunkViolation) }
+func (m *SplunkViolation) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolation) EqualVT(n *SplunkViolation) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolation) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -29,6 +33,9 @@ func (m *SplunkViolation_ViolationInfo) CloneVT() *SplunkViolation_ViolationInfo
 func (m *SplunkViolation_ViolationInfo) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *SplunkViolation_ViolationInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *SplunkViolation_ViolationInfo) EqualVT(n *SplunkViolation_ViolationInfo) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -42,6 +49,9 @@ func (m *SplunkViolation_AlertInfo) CloneVT() *SplunkViolation_AlertInfo {
 }
 func (m *SplunkViolation_AlertInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SplunkViolation_AlertInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolation_AlertInfo) EqualVT(n *SplunkViolation_AlertInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolation_AlertInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -52,6 +62,9 @@ func (m *SplunkViolation_ProcessInfo) CloneVT() *SplunkViolation_ProcessInfo {
 }
 func (m *SplunkViolation_ProcessInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SplunkViolation_ProcessInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolation_ProcessInfo) EqualVT(n *SplunkViolation_ProcessInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolation_ProcessInfo) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -65,6 +78,9 @@ func (m *SplunkViolation_DeploymentInfo) CloneVT() *SplunkViolation_DeploymentIn
 func (m *SplunkViolation_DeploymentInfo) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *SplunkViolation_DeploymentInfo) EqualVT(n *SplunkViolation_DeploymentInfo) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -80,6 +96,9 @@ func (m *SplunkViolation_ResourceInfo) MarshalVT() ([]byte, error) { return prot
 func (m *SplunkViolation_ResourceInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *SplunkViolation_ResourceInfo) EqualVT(n *SplunkViolation_ResourceInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolation_ResourceInfo) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -92,6 +111,9 @@ func (m *SplunkViolation_PolicyInfo) CloneVT() *SplunkViolation_PolicyInfo {
 }
 func (m *SplunkViolation_PolicyInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SplunkViolation_PolicyInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkViolation_PolicyInfo) EqualVT(n *SplunkViolation_PolicyInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkViolation_PolicyInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

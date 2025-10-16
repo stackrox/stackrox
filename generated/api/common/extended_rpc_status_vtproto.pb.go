@@ -4,10 +4,11 @@ package common
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ExtendedRpcStatus) SizeVT() int                   { return proto.Size(m) }
-func (m *ExtendedRpcStatus) CloneVT() *ExtendedRpcStatus   { return proto.Clone(m).(*ExtendedRpcStatus) }
-func (m *ExtendedRpcStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExtendedRpcStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExtendedRpcStatus) SizeVT() int                       { return proto.Size(m) }
+func (m *ExtendedRpcStatus) CloneVT() *ExtendedRpcStatus       { return proto.Clone(m).(*ExtendedRpcStatus) }
+func (m *ExtendedRpcStatus) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ExtendedRpcStatus) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ExtendedRpcStatus) EqualVT(n *ExtendedRpcStatus) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExtendedRpcStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

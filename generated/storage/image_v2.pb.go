@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/image_v2.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -71,28 +73,25 @@ func (x ImageV2_Note) Number() protoreflect.EnumNumber {
 
 // Next tag: 28
 type ImageV2 struct {
-	state                                protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Id                        *string                         `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Digest                    *string                         `protobuf:"bytes,2,opt,name=digest"`
-	xxx_hidden_Name                      *ImageName                      `protobuf:"bytes,3,opt,name=name"`
-	xxx_hidden_Metadata                  *ImageMetadata                  `protobuf:"bytes,4,opt,name=metadata"`
-	xxx_hidden_Scan                      *ImageScan                      `protobuf:"bytes,5,opt,name=scan"`
-	xxx_hidden_SignatureVerificationData *ImageSignatureVerificationData `protobuf:"bytes,6,opt,name=signature_verification_data,json=signatureVerificationData"`
-	xxx_hidden_Signature                 *ImageSignature                 `protobuf:"bytes,7,opt,name=signature"`
-	xxx_hidden_ScanStats                 *ImageV2_ScanStats              `protobuf:"bytes,8,opt,name=scan_stats,json=scanStats"`
-	xxx_hidden_LastUpdated               *timestamppb.Timestamp          `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_NotPullable               bool                            `protobuf:"varint,10,opt,name=not_pullable,json=notPullable"`
-	xxx_hidden_IsClusterLocal            bool                            `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal"`
-	xxx_hidden_Priority                  int64                           `protobuf:"varint,12,opt,name=priority"`
-	xxx_hidden_RiskScore                 float32                         `protobuf:"fixed32,13,opt,name=risk_score,json=riskScore"`
-	xxx_hidden_TopCvss                   float32                         `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss"`
-	xxx_hidden_Notes                     []ImageV2_Note                  `protobuf:"varint,15,rep,packed,name=notes,enum=storage.ImageV2_Note"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                     protoimpl.MessageState          `protogen:"hybrid.v1"`
+	Id                        string                          `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Image ID,hidden" sql:"pk"`         // @gotags: search:"Image ID,hidden" sql:"pk"
+	Digest                    string                          `protobuf:"bytes,2,opt,name=digest" json:"digest,omitempty" search:"Image Sha"` // @gotags: search:"Image Sha"
+	Name                      *ImageName                      `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	Metadata                  *ImageMetadata                  `protobuf:"bytes,4,opt,name=metadata" json:"metadata,omitempty"`
+	Scan                      *ImageScan                      `protobuf:"bytes,5,opt,name=scan" json:"scan,omitempty" policy:"Image Scan"` // @gotags: policy:"Image Scan"
+	SignatureVerificationData *ImageSignatureVerificationData `protobuf:"bytes,6,opt,name=signature_verification_data,json=signatureVerificationData" json:"signature_verification_data,omitempty"`
+	Signature                 *ImageSignature                 `protobuf:"bytes,7,opt,name=signature" json:"signature,omitempty"`
+	ScanStats                 *ImageV2_ScanStats              `protobuf:"bytes,8,opt,name=scan_stats,json=scanStats" json:"scan_stats,omitempty"`
+	LastUpdated               *timestamppb.Timestamp          `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	NotPullable               bool                            `protobuf:"varint,10,opt,name=not_pullable,json=notPullable" json:"not_pullable,omitempty"`
+	IsClusterLocal            bool                            `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal" json:"is_cluster_local,omitempty"`
+	Priority                  int64                           `protobuf:"varint,12,opt,name=priority" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
+	RiskScore                 float32                         `protobuf:"fixed32,13,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
+	// Caching top cvss to avoid re-calculating it by joining on the cve table.
+	TopCvss       float32        `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss" json:"top_cvss,omitempty" search:"Image Top CVSS,store"` // @gotags: search:"Image Top CVSS,store"
+	Notes         []ImageV2_Note `protobuf:"varint,15,rep,packed,name=notes,enum=storage.ImageV2_Note" json:"notes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageV2) Reset() {
@@ -122,361 +121,251 @@ func (x *ImageV2) ProtoReflect() protoreflect.Message {
 
 func (x *ImageV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ImageV2) GetDigest() string {
 	if x != nil {
-		if x.xxx_hidden_Digest != nil {
-			return *x.xxx_hidden_Digest
-		}
-		return ""
+		return x.Digest
 	}
 	return ""
 }
 
 func (x *ImageV2) GetName() *ImageName {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return nil
 }
 
 func (x *ImageV2) GetMetadata() *ImageMetadata {
 	if x != nil {
-		return x.xxx_hidden_Metadata
+		return x.Metadata
 	}
 	return nil
 }
 
 func (x *ImageV2) GetScan() *ImageScan {
 	if x != nil {
-		return x.xxx_hidden_Scan
+		return x.Scan
 	}
 	return nil
 }
 
 func (x *ImageV2) GetSignatureVerificationData() *ImageSignatureVerificationData {
 	if x != nil {
-		return x.xxx_hidden_SignatureVerificationData
+		return x.SignatureVerificationData
 	}
 	return nil
 }
 
 func (x *ImageV2) GetSignature() *ImageSignature {
 	if x != nil {
-		return x.xxx_hidden_Signature
+		return x.Signature
 	}
 	return nil
 }
 
 func (x *ImageV2) GetScanStats() *ImageV2_ScanStats {
 	if x != nil {
-		return x.xxx_hidden_ScanStats
+		return x.ScanStats
 	}
 	return nil
 }
 
 func (x *ImageV2) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *ImageV2) GetNotPullable() bool {
 	if x != nil {
-		return x.xxx_hidden_NotPullable
+		return x.NotPullable
 	}
 	return false
 }
 
 func (x *ImageV2) GetIsClusterLocal() bool {
 	if x != nil {
-		return x.xxx_hidden_IsClusterLocal
+		return x.IsClusterLocal
 	}
 	return false
 }
 
 func (x *ImageV2) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *ImageV2) GetRiskScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_RiskScore
+		return x.RiskScore
 	}
 	return 0
 }
 
 func (x *ImageV2) GetTopCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_TopCvss
+		return x.TopCvss
 	}
 	return 0
 }
 
 func (x *ImageV2) GetNotes() []ImageV2_Note {
 	if x != nil {
-		return x.xxx_hidden_Notes
+		return x.Notes
 	}
 	return nil
 }
 
 func (x *ImageV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 15)
+	x.Id = v
 }
 
 func (x *ImageV2) SetDigest(v string) {
-	x.xxx_hidden_Digest = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 15)
+	x.Digest = v
 }
 
 func (x *ImageV2) SetName(v *ImageName) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *ImageV2) SetMetadata(v *ImageMetadata) {
-	x.xxx_hidden_Metadata = v
+	x.Metadata = v
 }
 
 func (x *ImageV2) SetScan(v *ImageScan) {
-	x.xxx_hidden_Scan = v
+	x.Scan = v
 }
 
 func (x *ImageV2) SetSignatureVerificationData(v *ImageSignatureVerificationData) {
-	x.xxx_hidden_SignatureVerificationData = v
+	x.SignatureVerificationData = v
 }
 
 func (x *ImageV2) SetSignature(v *ImageSignature) {
-	x.xxx_hidden_Signature = v
+	x.Signature = v
 }
 
 func (x *ImageV2) SetScanStats(v *ImageV2_ScanStats) {
-	x.xxx_hidden_ScanStats = v
+	x.ScanStats = v
 }
 
 func (x *ImageV2) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 15)
-	}
+	x.LastUpdated = v
 }
 
 func (x *ImageV2) SetNotPullable(v bool) {
-	x.xxx_hidden_NotPullable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 15)
+	x.NotPullable = v
 }
 
 func (x *ImageV2) SetIsClusterLocal(v bool) {
-	x.xxx_hidden_IsClusterLocal = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 15)
+	x.IsClusterLocal = v
 }
 
 func (x *ImageV2) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 15)
+	x.Priority = v
 }
 
 func (x *ImageV2) SetRiskScore(v float32) {
-	x.xxx_hidden_RiskScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 15)
+	x.RiskScore = v
 }
 
 func (x *ImageV2) SetTopCvss(v float32) {
-	x.xxx_hidden_TopCvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 15)
+	x.TopCvss = v
 }
 
 func (x *ImageV2) SetNotes(v []ImageV2_Note) {
-	x.xxx_hidden_Notes = v
-}
-
-func (x *ImageV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ImageV2) HasDigest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Notes = v
 }
 
 func (x *ImageV2) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Name != nil
+	return x.Name != nil
 }
 
 func (x *ImageV2) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Metadata != nil
+	return x.Metadata != nil
 }
 
 func (x *ImageV2) HasScan() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Scan != nil
+	return x.Scan != nil
 }
 
 func (x *ImageV2) HasSignatureVerificationData() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SignatureVerificationData != nil
+	return x.SignatureVerificationData != nil
 }
 
 func (x *ImageV2) HasSignature() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Signature != nil
+	return x.Signature != nil
 }
 
 func (x *ImageV2) HasScanStats() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanStats != nil
+	return x.ScanStats != nil
 }
 
 func (x *ImageV2) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ImageV2) HasNotPullable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ImageV2) HasIsClusterLocal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *ImageV2) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ImageV2) HasRiskScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *ImageV2) HasTopCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
-}
-
-func (x *ImageV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ImageV2) ClearDigest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Digest = nil
+	return x.LastUpdated != nil
 }
 
 func (x *ImageV2) ClearName() {
-	x.xxx_hidden_Name = nil
+	x.Name = nil
 }
 
 func (x *ImageV2) ClearMetadata() {
-	x.xxx_hidden_Metadata = nil
+	x.Metadata = nil
 }
 
 func (x *ImageV2) ClearScan() {
-	x.xxx_hidden_Scan = nil
+	x.Scan = nil
 }
 
 func (x *ImageV2) ClearSignatureVerificationData() {
-	x.xxx_hidden_SignatureVerificationData = nil
+	x.SignatureVerificationData = nil
 }
 
 func (x *ImageV2) ClearSignature() {
-	x.xxx_hidden_Signature = nil
+	x.Signature = nil
 }
 
 func (x *ImageV2) ClearScanStats() {
-	x.xxx_hidden_ScanStats = nil
+	x.ScanStats = nil
 }
 
 func (x *ImageV2) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ImageV2) ClearNotPullable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_NotPullable = false
-}
-
-func (x *ImageV2) ClearIsClusterLocal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_IsClusterLocal = false
-}
-
-func (x *ImageV2) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_Priority = 0
-}
-
-func (x *ImageV2) ClearRiskScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_RiskScore = 0
-}
-
-func (x *ImageV2) ClearTopCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
-	x.xxx_hidden_TopCvss = 0
+	x.LastUpdated = nil
 }
 
 type ImageV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                        *string
-	Digest                    *string
+	Id                        string
+	Digest                    string
 	Name                      *ImageName
 	Metadata                  *ImageMetadata
 	Scan                      *ImageScan
@@ -484,12 +373,12 @@ type ImageV2_builder struct {
 	Signature                 *ImageSignature
 	ScanStats                 *ImageV2_ScanStats
 	LastUpdated               *timestamppb.Timestamp
-	NotPullable               *bool
-	IsClusterLocal            *bool
-	Priority                  *int64
-	RiskScore                 *float32
+	NotPullable               bool
+	IsClusterLocal            bool
+	Priority                  int64
+	RiskScore                 float32
 	// Caching top cvss to avoid re-calculating it by joining on the cve table.
-	TopCvss *float32
+	TopCvss float32
 	Notes   []ImageV2_Note
 }
 
@@ -497,64 +386,36 @@ func (b0 ImageV2_builder) Build() *ImageV2 {
 	m0 := &ImageV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 15)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Digest != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 15)
-		x.xxx_hidden_Digest = b.Digest
-	}
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Metadata = b.Metadata
-	x.xxx_hidden_Scan = b.Scan
-	x.xxx_hidden_SignatureVerificationData = b.SignatureVerificationData
-	x.xxx_hidden_Signature = b.Signature
-	x.xxx_hidden_ScanStats = b.ScanStats
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 15)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	if b.NotPullable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 15)
-		x.xxx_hidden_NotPullable = *b.NotPullable
-	}
-	if b.IsClusterLocal != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 15)
-		x.xxx_hidden_IsClusterLocal = *b.IsClusterLocal
-	}
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 15)
-		x.xxx_hidden_Priority = *b.Priority
-	}
-	if b.RiskScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 15)
-		x.xxx_hidden_RiskScore = *b.RiskScore
-	}
-	if b.TopCvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 15)
-		x.xxx_hidden_TopCvss = *b.TopCvss
-	}
-	x.xxx_hidden_Notes = b.Notes
+	x.Id = b.Id
+	x.Digest = b.Digest
+	x.Name = b.Name
+	x.Metadata = b.Metadata
+	x.Scan = b.Scan
+	x.SignatureVerificationData = b.SignatureVerificationData
+	x.Signature = b.Signature
+	x.ScanStats = b.ScanStats
+	x.LastUpdated = b.LastUpdated
+	x.NotPullable = b.NotPullable
+	x.IsClusterLocal = b.IsClusterLocal
+	x.Priority = b.Priority
+	x.RiskScore = b.RiskScore
+	x.TopCvss = b.TopCvss
+	x.Notes = b.Notes
 	return m0
 }
 
 type ListImageV2 struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,7,opt,name=id"`
-	xxx_hidden_Name            *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ComponentCount  int32                  `protobuf:"varint,3,opt,name=component_count,json=componentCount"`
-	xxx_hidden_CveCount        int32                  `protobuf:"varint,4,opt,name=cve_count,json=cveCount"`
-	xxx_hidden_FixableCveCount int32                  `protobuf:"varint,5,opt,name=fixable_cve_count,json=fixableCveCount"`
-	xxx_hidden_Created         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created"`
-	xxx_hidden_LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_Priority        int64                  `protobuf:"varint,10,opt,name=priority"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id              string                 `protobuf:"bytes,7,opt,name=id" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	ComponentCount  int32                  `protobuf:"varint,3,opt,name=component_count,json=componentCount" json:"component_count,omitempty"`
+	CveCount        int32                  `protobuf:"varint,4,opt,name=cve_count,json=cveCount" json:"cve_count,omitempty"`
+	FixableCveCount int32                  `protobuf:"varint,5,opt,name=fixable_cve_count,json=fixableCveCount" json:"fixable_cve_count,omitempty"`
+	Created         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created" json:"created,omitempty"`
+	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
+	Priority        int64                  `protobuf:"varint,10,opt,name=priority" json:"priority,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListImageV2) Reset() {
@@ -584,295 +445,172 @@ func (x *ListImageV2) ProtoReflect() protoreflect.Message {
 
 func (x *ListImageV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ListImageV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ListImageV2) GetComponentCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_ComponentCount
+		return x.ComponentCount
 	}
 	return 0
 }
 
 func (x *ListImageV2) GetCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_CveCount
+		return x.CveCount
 	}
 	return 0
 }
 
 func (x *ListImageV2) GetFixableCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableCveCount
+		return x.FixableCveCount
 	}
 	return 0
 }
 
 func (x *ListImageV2) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Created
 	}
 	return nil
 }
 
 func (x *ListImageV2) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *ListImageV2) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *ListImageV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Id = v
 }
 
 func (x *ListImageV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.Name = v
 }
 
 func (x *ListImageV2) SetComponentCount(v int32) {
-	x.xxx_hidden_ComponentCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.ComponentCount = v
 }
 
 func (x *ListImageV2) SetCveCount(v int32) {
-	x.xxx_hidden_CveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.CveCount = v
 }
 
 func (x *ListImageV2) SetFixableCveCount(v int32) {
-	x.xxx_hidden_FixableCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.FixableCveCount = v
 }
 
 func (x *ListImageV2) SetCreated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
-	}
+	x.Created = v
 }
 
 func (x *ListImageV2) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
-	}
+	x.LastUpdated = v
 }
 
 func (x *ListImageV2) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
-}
-
-func (x *ListImageV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ListImageV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ListImageV2) HasComponentCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ListImageV2) HasCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ListImageV2) HasFixableCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.Priority = v
 }
 
 func (x *ListImageV2) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return x.Created != nil
 }
 
 func (x *ListImageV2) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ListImageV2) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ListImageV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ListImageV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ListImageV2) ClearComponentCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ComponentCount = 0
-}
-
-func (x *ListImageV2) ClearCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CveCount = 0
-}
-
-func (x *ListImageV2) ClearFixableCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_FixableCveCount = 0
+	return x.LastUpdated != nil
 }
 
 func (x *ListImageV2) ClearCreated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
+	x.Created = nil
 }
 
 func (x *ListImageV2) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ListImageV2) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Priority = 0
+	x.LastUpdated = nil
 }
 
 type ListImageV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
-	Name            *string
-	ComponentCount  *int32
-	CveCount        *int32
-	FixableCveCount *int32
+	Id              string
+	Name            string
+	ComponentCount  int32
+	CveCount        int32
+	FixableCveCount int32
 	Created         *timestamppb.Timestamp
 	LastUpdated     *timestamppb.Timestamp
-	Priority        *int64
+	Priority        int64
 }
 
 func (b0 ListImageV2_builder) Build() *ListImageV2 {
 	m0 := &ListImageV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ComponentCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_ComponentCount = *b.ComponentCount
-	}
-	if b.CveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_CveCount = *b.CveCount
-	}
-	if b.FixableCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_FixableCveCount = *b.FixableCveCount
-	}
-	if b.Created != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_Created = b.Created
-	}
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
-		x.xxx_hidden_Priority = *b.Priority
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ComponentCount = b.ComponentCount
+	x.CveCount = b.CveCount
+	x.FixableCveCount = b.FixableCveCount
+	x.Created = b.Created
+	x.LastUpdated = b.LastUpdated
+	x.Priority = b.Priority
 	return m0
 }
 
 type ImageV2_ScanStats struct {
-	state                               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ComponentCount           int32                  `protobuf:"varint,1,opt,name=component_count,json=componentCount"`
-	xxx_hidden_CveCount                 int32                  `protobuf:"varint,2,opt,name=cve_count,json=cveCount"`
-	xxx_hidden_FixableCveCount          int32                  `protobuf:"varint,3,opt,name=fixable_cve_count,json=fixableCveCount"`
-	xxx_hidden_UnknownCveCount          int32                  `protobuf:"varint,4,opt,name=unknown_cve_count,json=unknownCveCount"`
-	xxx_hidden_FixableUnknownCveCount   int32                  `protobuf:"varint,5,opt,name=fixable_unknown_cve_count,json=fixableUnknownCveCount"`
-	xxx_hidden_CriticalCveCount         int32                  `protobuf:"varint,6,opt,name=critical_cve_count,json=criticalCveCount"`
-	xxx_hidden_FixableCriticalCveCount  int32                  `protobuf:"varint,7,opt,name=fixable_critical_cve_count,json=fixableCriticalCveCount"`
-	xxx_hidden_ImportantCveCount        int32                  `protobuf:"varint,8,opt,name=important_cve_count,json=importantCveCount"`
-	xxx_hidden_FixableImportantCveCount int32                  `protobuf:"varint,9,opt,name=fixable_important_cve_count,json=fixableImportantCveCount"`
-	xxx_hidden_ModerateCveCount         int32                  `protobuf:"varint,10,opt,name=moderate_cve_count,json=moderateCveCount"`
-	xxx_hidden_FixableModerateCveCount  int32                  `protobuf:"varint,11,opt,name=fixable_moderate_cve_count,json=fixableModerateCveCount"`
-	xxx_hidden_LowCveCount              int32                  `protobuf:"varint,12,opt,name=low_cve_count,json=lowCveCount"`
-	xxx_hidden_FixableLowCveCount       int32                  `protobuf:"varint,13,opt,name=fixable_low_cve_count,json=fixableLowCveCount"`
-	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
-	XXX_presence                        [1]uint32
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Caching component count to avoid re-calculating it by joining on the component table.
+	ComponentCount int32 `protobuf:"varint,1,opt,name=component_count,json=componentCount" json:"component_count,omitempty" search:"Component Count,hidden"` // @gotags: search:"Component Count,hidden"
+	// Caching cve count to avoid re-calculating it by joining on the cve table.
+	CveCount int32 `protobuf:"varint,2,opt,name=cve_count,json=cveCount" json:"cve_count,omitempty" search:"Image CVE Count,hidden"` // @gotags: search:"Image CVE Count,hidden"
+	// Caching fixable cve count to avoid re-calculating it by joining on the cve table.
+	FixableCveCount int32 `protobuf:"varint,3,opt,name=fixable_cve_count,json=fixableCveCount" json:"fixable_cve_count,omitempty" search:"Fixable CVE Count,hidden"` // @gotags: search:"Fixable CVE Count,hidden"
+	// Caching unknown cve count to avoid re-calculating it by joining on the cve table.
+	UnknownCveCount int32 `protobuf:"varint,4,opt,name=unknown_cve_count,json=unknownCveCount" json:"unknown_cve_count,omitempty" search:"Unknown CVE Count,hidden"` // @gotags: search:"Unknown CVE Count,hidden"
+	// Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
+	FixableUnknownCveCount int32 `protobuf:"varint,5,opt,name=fixable_unknown_cve_count,json=fixableUnknownCveCount" json:"fixable_unknown_cve_count,omitempty" search:"Fixable Unknown CVE Count,hidden"` // @gotags: search:"Fixable Unknown CVE Count,hidden"
+	// Caching critical cve count to avoid re-calculating it by joining on the cve table.
+	CriticalCveCount int32 `protobuf:"varint,6,opt,name=critical_cve_count,json=criticalCveCount" json:"critical_cve_count,omitempty" search:"Critical CVE Count,hidden"` // @gotags: search:"Critical CVE Count,hidden"
+	// Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
+	FixableCriticalCveCount int32 `protobuf:"varint,7,opt,name=fixable_critical_cve_count,json=fixableCriticalCveCount" json:"fixable_critical_cve_count,omitempty" search:"Fixable Critical CVE Count,hidden"` // @gotags: search:"Fixable Critical CVE Count,hidden"
+	// Caching important cve count to avoid re-calculating it by joining on the cve table.
+	ImportantCveCount int32 `protobuf:"varint,8,opt,name=important_cve_count,json=importantCveCount" json:"important_cve_count,omitempty" search:"Important CVE Count,hidden"` // @gotags: search:"Important CVE Count,hidden"
+	// Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
+	FixableImportantCveCount int32 `protobuf:"varint,9,opt,name=fixable_important_cve_count,json=fixableImportantCveCount" json:"fixable_important_cve_count,omitempty" search:"Fixable Important CVE Count,hidden"` // @gotags: search:"Fixable Important CVE Count,hidden"
+	// Caching moderate cve count to avoid re-calculating it by joining on the cve table.
+	ModerateCveCount int32 `protobuf:"varint,10,opt,name=moderate_cve_count,json=moderateCveCount" json:"moderate_cve_count,omitempty" search:"Moderate CVE Count,hidden"` // @gotags: search:"Moderate CVE Count,hidden"
+	// Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
+	FixableModerateCveCount int32 `protobuf:"varint,11,opt,name=fixable_moderate_cve_count,json=fixableModerateCveCount" json:"fixable_moderate_cve_count,omitempty" search:"Fixable Moderate CVE Count,hidden"` // @gotags: search:"Fixable Moderate CVE Count,hidden"
+	// Caching low cve count to avoid re-calculating it by joining on the cve table.
+	LowCveCount int32 `protobuf:"varint,12,opt,name=low_cve_count,json=lowCveCount" json:"low_cve_count,omitempty" search:"Low CVE Count,hidden"` // @gotags: search:"Low CVE Count,hidden"
+	// Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
+	FixableLowCveCount int32 `protobuf:"varint,13,opt,name=fixable_low_cve_count,json=fixableLowCveCount" json:"fixable_low_cve_count,omitempty" search:"Fixable Low CVE Count,hidden"` // @gotags: search:"Fixable Low CVE Count,hidden"
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ImageV2_ScanStats) Reset() {
@@ -902,403 +640,195 @@ func (x *ImageV2_ScanStats) ProtoReflect() protoreflect.Message {
 
 func (x *ImageV2_ScanStats) GetComponentCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_ComponentCount
+		return x.ComponentCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_CveCount
+		return x.CveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableCveCount
+		return x.FixableCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetUnknownCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_UnknownCveCount
+		return x.UnknownCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableUnknownCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableUnknownCveCount
+		return x.FixableUnknownCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetCriticalCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_CriticalCveCount
+		return x.CriticalCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableCriticalCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableCriticalCveCount
+		return x.FixableCriticalCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetImportantCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_ImportantCveCount
+		return x.ImportantCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableImportantCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableImportantCveCount
+		return x.FixableImportantCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetModerateCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_ModerateCveCount
+		return x.ModerateCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableModerateCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableModerateCveCount
+		return x.FixableModerateCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetLowCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_LowCveCount
+		return x.LowCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) GetFixableLowCveCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_FixableLowCveCount
+		return x.FixableLowCveCount
 	}
 	return 0
 }
 
 func (x *ImageV2_ScanStats) SetComponentCount(v int32) {
-	x.xxx_hidden_ComponentCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 13)
+	x.ComponentCount = v
 }
 
 func (x *ImageV2_ScanStats) SetCveCount(v int32) {
-	x.xxx_hidden_CveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 13)
+	x.CveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableCveCount(v int32) {
-	x.xxx_hidden_FixableCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 13)
+	x.FixableCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetUnknownCveCount(v int32) {
-	x.xxx_hidden_UnknownCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 13)
+	x.UnknownCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableUnknownCveCount(v int32) {
-	x.xxx_hidden_FixableUnknownCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 13)
+	x.FixableUnknownCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetCriticalCveCount(v int32) {
-	x.xxx_hidden_CriticalCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 13)
+	x.CriticalCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableCriticalCveCount(v int32) {
-	x.xxx_hidden_FixableCriticalCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 13)
+	x.FixableCriticalCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetImportantCveCount(v int32) {
-	x.xxx_hidden_ImportantCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 13)
+	x.ImportantCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableImportantCveCount(v int32) {
-	x.xxx_hidden_FixableImportantCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 13)
+	x.FixableImportantCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetModerateCveCount(v int32) {
-	x.xxx_hidden_ModerateCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 13)
+	x.ModerateCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableModerateCveCount(v int32) {
-	x.xxx_hidden_FixableModerateCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 13)
+	x.FixableModerateCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetLowCveCount(v int32) {
-	x.xxx_hidden_LowCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
+	x.LowCveCount = v
 }
 
 func (x *ImageV2_ScanStats) SetFixableLowCveCount(v int32) {
-	x.xxx_hidden_FixableLowCveCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 13)
-}
-
-func (x *ImageV2_ScanStats) HasComponentCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ImageV2_ScanStats) HasCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ImageV2_ScanStats) HasFixableCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ImageV2_ScanStats) HasUnknownCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ImageV2_ScanStats) HasFixableUnknownCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ImageV2_ScanStats) HasCriticalCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ImageV2_ScanStats) HasFixableCriticalCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ImageV2_ScanStats) HasImportantCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ImageV2_ScanStats) HasFixableImportantCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ImageV2_ScanStats) HasModerateCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ImageV2_ScanStats) HasFixableModerateCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *ImageV2_ScanStats) HasLowCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ImageV2_ScanStats) HasFixableLowCveCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *ImageV2_ScanStats) ClearComponentCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ComponentCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_FixableCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearUnknownCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_UnknownCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableUnknownCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_FixableUnknownCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearCriticalCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_CriticalCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableCriticalCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_FixableCriticalCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearImportantCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_ImportantCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableImportantCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_FixableImportantCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearModerateCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_ModerateCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableModerateCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_FixableModerateCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearLowCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_LowCveCount = 0
-}
-
-func (x *ImageV2_ScanStats) ClearFixableLowCveCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_FixableLowCveCount = 0
+	x.FixableLowCveCount = v
 }
 
 type ImageV2_ScanStats_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Caching component count to avoid re-calculating it by joining on the component table.
-	ComponentCount *int32
+	ComponentCount int32
 	// Caching cve count to avoid re-calculating it by joining on the cve table.
-	CveCount *int32
+	CveCount int32
 	// Caching fixable cve count to avoid re-calculating it by joining on the cve table.
-	FixableCveCount *int32
+	FixableCveCount int32
 	// Caching unknown cve count to avoid re-calculating it by joining on the cve table.
-	UnknownCveCount *int32
+	UnknownCveCount int32
 	// Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
-	FixableUnknownCveCount *int32
+	FixableUnknownCveCount int32
 	// Caching critical cve count to avoid re-calculating it by joining on the cve table.
-	CriticalCveCount *int32
+	CriticalCveCount int32
 	// Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
-	FixableCriticalCveCount *int32
+	FixableCriticalCveCount int32
 	// Caching important cve count to avoid re-calculating it by joining on the cve table.
-	ImportantCveCount *int32
+	ImportantCveCount int32
 	// Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
-	FixableImportantCveCount *int32
+	FixableImportantCveCount int32
 	// Caching moderate cve count to avoid re-calculating it by joining on the cve table.
-	ModerateCveCount *int32
+	ModerateCveCount int32
 	// Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
-	FixableModerateCveCount *int32
+	FixableModerateCveCount int32
 	// Caching low cve count to avoid re-calculating it by joining on the cve table.
-	LowCveCount *int32
+	LowCveCount int32
 	// Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
-	FixableLowCveCount *int32
+	FixableLowCveCount int32
 }
 
 func (b0 ImageV2_ScanStats_builder) Build() *ImageV2_ScanStats {
 	m0 := &ImageV2_ScanStats{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ComponentCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 13)
-		x.xxx_hidden_ComponentCount = *b.ComponentCount
-	}
-	if b.CveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 13)
-		x.xxx_hidden_CveCount = *b.CveCount
-	}
-	if b.FixableCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 13)
-		x.xxx_hidden_FixableCveCount = *b.FixableCveCount
-	}
-	if b.UnknownCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 13)
-		x.xxx_hidden_UnknownCveCount = *b.UnknownCveCount
-	}
-	if b.FixableUnknownCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 13)
-		x.xxx_hidden_FixableUnknownCveCount = *b.FixableUnknownCveCount
-	}
-	if b.CriticalCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 13)
-		x.xxx_hidden_CriticalCveCount = *b.CriticalCveCount
-	}
-	if b.FixableCriticalCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 13)
-		x.xxx_hidden_FixableCriticalCveCount = *b.FixableCriticalCveCount
-	}
-	if b.ImportantCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 13)
-		x.xxx_hidden_ImportantCveCount = *b.ImportantCveCount
-	}
-	if b.FixableImportantCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 13)
-		x.xxx_hidden_FixableImportantCveCount = *b.FixableImportantCveCount
-	}
-	if b.ModerateCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 13)
-		x.xxx_hidden_ModerateCveCount = *b.ModerateCveCount
-	}
-	if b.FixableModerateCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
-		x.xxx_hidden_FixableModerateCveCount = *b.FixableModerateCveCount
-	}
-	if b.LowCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
-		x.xxx_hidden_LowCveCount = *b.LowCveCount
-	}
-	if b.FixableLowCveCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 13)
-		x.xxx_hidden_FixableLowCveCount = *b.FixableLowCveCount
-	}
+	x.ComponentCount = b.ComponentCount
+	x.CveCount = b.CveCount
+	x.FixableCveCount = b.FixableCveCount
+	x.UnknownCveCount = b.UnknownCveCount
+	x.FixableUnknownCveCount = b.FixableUnknownCveCount
+	x.CriticalCveCount = b.CriticalCveCount
+	x.FixableCriticalCveCount = b.FixableCriticalCveCount
+	x.ImportantCveCount = b.ImportantCveCount
+	x.FixableImportantCveCount = b.FixableImportantCveCount
+	x.ModerateCveCount = b.ModerateCveCount
+	x.FixableModerateCveCount = b.FixableModerateCveCount
+	x.LowCveCount = b.LowCveCount
+	x.FixableLowCveCount = b.FixableLowCveCount
 	return m0
 }
 
@@ -1356,8 +886,8 @@ const file_storage_image_v2_proto_rawDesc = "" +
 	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\vlastUpdated\x12\x1a\n" +
 	"\bpriority\x18\n" +
 	" \x01(\x03R\bpriorityJ\x04\b\t\x10\n" +
-	"B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_image_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_image_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

@@ -4,18 +4,20 @@ package sensor
 
 import "google.golang.org/protobuf/proto"
 
-func (m *MsgFromCollector) SizeVT() int                   { return proto.Size(m) }
-func (m *MsgFromCollector) CloneVT() *MsgFromCollector    { return proto.Clone(m).(*MsgFromCollector) }
-func (m *MsgFromCollector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MsgFromCollector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MsgFromCollector) SizeVT() int                      { return proto.Size(m) }
+func (m *MsgFromCollector) CloneVT() *MsgFromCollector       { return proto.Clone(m).(*MsgFromCollector) }
+func (m *MsgFromCollector) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *MsgFromCollector) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *MsgFromCollector) EqualVT(n *MsgFromCollector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MsgFromCollector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MsgToCollector) SizeVT() int                   { return proto.Size(m) }
-func (m *MsgToCollector) CloneVT() *MsgToCollector      { return proto.Clone(m).(*MsgToCollector) }
-func (m *MsgToCollector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MsgToCollector) SizeVT() int                    { return proto.Size(m) }
+func (m *MsgToCollector) CloneVT() *MsgToCollector       { return proto.Clone(m).(*MsgToCollector) }
+func (m *MsgToCollector) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *MsgToCollector) EqualVT(n *MsgToCollector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MsgToCollector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

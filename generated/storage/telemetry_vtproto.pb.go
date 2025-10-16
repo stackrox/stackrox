@@ -8,8 +8,9 @@ func (m *TelemetryConfiguration) SizeVT() int { return proto.Size(m) }
 func (m *TelemetryConfiguration) CloneVT() *TelemetryConfiguration {
 	return proto.Clone(m).(*TelemetryConfiguration)
 }
-func (m *TelemetryConfiguration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TelemetryConfiguration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TelemetryConfiguration) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *TelemetryConfiguration) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *TelemetryConfiguration) EqualVT(n *TelemetryConfiguration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryConfiguration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

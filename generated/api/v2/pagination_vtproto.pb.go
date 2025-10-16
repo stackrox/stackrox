@@ -8,6 +8,7 @@ func (m *AggregateBy) SizeVT() int                   { return proto.Size(m) }
 func (m *AggregateBy) CloneVT() *AggregateBy         { return proto.Clone(m).(*AggregateBy) }
 func (m *AggregateBy) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AggregateBy) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AggregateBy) EqualVT(n *AggregateBy) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AggregateBy) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *SortOption) SizeVT() int                   { return proto.Size(m) }
 func (m *SortOption) CloneVT() *SortOption          { return proto.Clone(m).(*SortOption) }
 func (m *SortOption) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SortOption) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SortOption) EqualVT(n *SortOption) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SortOption) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *Pagination) SizeVT() int                   { return proto.Size(m) }
 func (m *Pagination) CloneVT() *Pagination          { return proto.Clone(m).(*Pagination) }
 func (m *Pagination) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Pagination) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Pagination) EqualVT(n *Pagination) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Pagination) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

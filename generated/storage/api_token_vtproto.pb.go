@@ -8,6 +8,7 @@ func (m *TokenMetadata) SizeVT() int                   { return proto.Size(m) }
 func (m *TokenMetadata) CloneVT() *TokenMetadata       { return proto.Clone(m).(*TokenMetadata) }
 func (m *TokenMetadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TokenMetadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TokenMetadata) EqualVT(n *TokenMetadata) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TokenMetadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

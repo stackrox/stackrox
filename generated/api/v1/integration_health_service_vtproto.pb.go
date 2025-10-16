@@ -12,6 +12,9 @@ func (m *GetIntegrationHealthResponse) MarshalVT() ([]byte, error) { return prot
 func (m *GetIntegrationHealthResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetIntegrationHealthResponse) EqualVT(n *GetIntegrationHealthResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetIntegrationHealthResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *VulnDefinitionsInfoRequest) CloneVT() *VulnDefinitionsInfoRequest {
 }
 func (m *VulnDefinitionsInfoRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *VulnDefinitionsInfoRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VulnDefinitionsInfoRequest) EqualVT(n *VulnDefinitionsInfoRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnDefinitionsInfoRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,8 +38,9 @@ func (m *VulnDefinitionsInfo) SizeVT() int { return proto.Size(m) }
 func (m *VulnDefinitionsInfo) CloneVT() *VulnDefinitionsInfo {
 	return proto.Clone(m).(*VulnDefinitionsInfo)
 }
-func (m *VulnDefinitionsInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *VulnDefinitionsInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VulnDefinitionsInfo) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *VulnDefinitionsInfo) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *VulnDefinitionsInfo) EqualVT(n *VulnDefinitionsInfo) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnDefinitionsInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

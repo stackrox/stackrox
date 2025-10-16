@@ -10,6 +10,9 @@ func (m *NetworkBaselinePeerEntity) CloneVT() *NetworkBaselinePeerEntity {
 }
 func (m *NetworkBaselinePeerEntity) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NetworkBaselinePeerEntity) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaselinePeerEntity) EqualVT(n *NetworkBaselinePeerEntity) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselinePeerEntity) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +23,9 @@ func (m *NetworkBaselineStatusPeer) CloneVT() *NetworkBaselineStatusPeer {
 }
 func (m *NetworkBaselineStatusPeer) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NetworkBaselineStatusPeer) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaselineStatusPeer) EqualVT(n *NetworkBaselineStatusPeer) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselineStatusPeer) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,6 +36,9 @@ func (m *NetworkBaselinePeerStatus) CloneVT() *NetworkBaselinePeerStatus {
 }
 func (m *NetworkBaselinePeerStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NetworkBaselinePeerStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaselinePeerStatus) EqualVT(n *NetworkBaselinePeerStatus) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselinePeerStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -41,6 +50,9 @@ func (m *NetworkBaselineStatusRequest) CloneVT() *NetworkBaselineStatusRequest {
 func (m *NetworkBaselineStatusRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NetworkBaselineStatusRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NetworkBaselineStatusRequest) EqualVT(n *NetworkBaselineStatusRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -56,6 +68,9 @@ func (m *NetworkBaselineStatusResponse) MarshalVT() ([]byte, error) { return pro
 func (m *NetworkBaselineStatusResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkBaselineStatusResponse) EqualVT(n *NetworkBaselineStatusResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselineStatusResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -69,6 +84,9 @@ func (m *NetworkBaselineExternalStatusRequest) CloneVT() *NetworkBaselineExterna
 func (m *NetworkBaselineExternalStatusRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NetworkBaselineExternalStatusRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NetworkBaselineExternalStatusRequest) EqualVT(n *NetworkBaselineExternalStatusRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -84,6 +102,9 @@ func (m *NetworkBaselineExternalStatusResponse) MarshalVT() ([]byte, error) { re
 func (m *NetworkBaselineExternalStatusResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkBaselineExternalStatusResponse) EqualVT(n *NetworkBaselineExternalStatusResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselineExternalStatusResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -97,6 +118,9 @@ func (m *ModifyBaselineStatusForPeersRequest) CloneVT() *ModifyBaselineStatusFor
 func (m *ModifyBaselineStatusForPeersRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ModifyBaselineStatusForPeersRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ModifyBaselineStatusForPeersRequest) EqualVT(n *ModifyBaselineStatusForPeersRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

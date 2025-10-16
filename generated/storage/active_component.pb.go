@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/active_component.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,18 +25,16 @@ const (
 
 // Next available tag: 3
 type ActiveComponent struct {
-	state                               protoimpl.MessageState                    `protogen:"opaque.v1"`
-	xxx_hidden_Id                       *string                                   `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_DeploymentId             *string                                   `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_ComponentId              *string                                   `protobuf:"bytes,4,opt,name=component_id,json=componentId"`
-	xxx_hidden_DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext `protobuf:"bytes,2,rep,name=DEPRECATED_active_contexts,json=DEPRECATEDActiveContexts" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_ActiveContextsSlice      *[]*ActiveComponent_ActiveContext         `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// base 64 encoded Deployment:ActiveComponent ids.
+	Id           string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Image Sha,hidden" sql:"pk"`                                         // @gotags: search:"Image Sha,hidden" sql:"pk"
+	DeploymentId string `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"
+	ComponentId  string `protobuf:"bytes,4,opt,name=component_id,json=componentId" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"`    // @gotags: search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"
+	// Map from container name to the active context of an edge.
+	DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext `protobuf:"bytes,2,rep,name=DEPRECATED_active_contexts,json=DEPRECATEDActiveContexts" json:"DEPRECATED_active_contexts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"-"` // @gotags: search:"-"
+	ActiveContextsSlice      []*ActiveComponent_ActiveContext          `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice" json:"active_contexts_slice,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ActiveComponent) Reset() {
@@ -64,128 +64,66 @@ func (x *ActiveComponent) ProtoReflect() protoreflect.Message {
 
 func (x *ActiveComponent) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ActiveComponent) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *ActiveComponent) GetComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_ComponentId != nil {
-			return *x.xxx_hidden_ComponentId
-		}
-		return ""
+		return x.ComponentId
 	}
 	return ""
 }
 
 func (x *ActiveComponent) GetDEPRECATEDActiveContexts() map[string]*ActiveComponent_ActiveContext {
 	if x != nil {
-		return x.xxx_hidden_DEPRECATEDActiveContexts
+		return x.DEPRECATEDActiveContexts
 	}
 	return nil
 }
 
 func (x *ActiveComponent) GetActiveContextsSlice() []*ActiveComponent_ActiveContext {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ActiveContextsSlice) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *[]*ActiveComponent_ActiveContext
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ActiveContextsSlice
 	}
 	return nil
 }
 
 func (x *ActiveComponent) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *ActiveComponent) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.DeploymentId = v
 }
 
 func (x *ActiveComponent) SetComponentId(v string) {
-	x.xxx_hidden_ComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.ComponentId = v
 }
 
 func (x *ActiveComponent) SetDEPRECATEDActiveContexts(v map[string]*ActiveComponent_ActiveContext) {
-	x.xxx_hidden_DEPRECATEDActiveContexts = v
+	x.DEPRECATEDActiveContexts = v
 }
 
 func (x *ActiveComponent) SetActiveContextsSlice(v []*ActiveComponent_ActiveContext) {
-	var sv *[]*ActiveComponent_ActiveContext
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ActiveComponent_ActiveContext{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ActiveContextsSlice), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ActiveComponent) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ActiveComponent) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ActiveComponent) HasComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ActiveComponent) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ActiveComponent) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *ActiveComponent) ClearComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ComponentId = nil
+	x.ActiveContextsSlice = v
 }
 
 type ActiveComponent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// base 64 encoded Deployment:ActiveComponent ids.
-	Id           *string
-	DeploymentId *string
-	ComponentId  *string
+	Id           string
+	DeploymentId string
+	ComponentId  string
 	// Map from container name to the active context of an edge.
 	DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext
 	ActiveContextsSlice      []*ActiveComponent_ActiveContext
@@ -195,35 +133,21 @@ func (b0 ActiveComponent_builder) Build() *ActiveComponent {
 	m0 := &ActiveComponent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.ComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_ComponentId = b.ComponentId
-	}
-	x.xxx_hidden_DEPRECATEDActiveContexts = b.DEPRECATEDActiveContexts
-	if b.ActiveContextsSlice != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_ActiveContextsSlice = &b.ActiveContextsSlice
-	}
+	x.Id = b.Id
+	x.DeploymentId = b.DeploymentId
+	x.ComponentId = b.ComponentId
+	x.DEPRECATEDActiveContexts = b.DEPRECATEDActiveContexts
+	x.ActiveContextsSlice = b.ActiveContextsSlice
 	return m0
 }
 
 // Represent a context of the active edge.
 type ActiveComponent_ActiveContext struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ContainerName *string                `protobuf:"bytes,1,opt,name=container_name,json=containerName"`
-	xxx_hidden_ImageId       *string                `protobuf:"bytes,2,opt,name=image_id,json=imageId"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ContainerName string                 `protobuf:"bytes,1,opt,name=container_name,json=containerName" json:"container_name,omitempty" search:"Container Name,hidden"` // @gotags: search:"Container Name,hidden"
+	ImageId       string                 `protobuf:"bytes,2,opt,name=image_id,json=imageId" json:"image_id,omitempty" search:"Image Sha,hidden"`                   // @gotags: search:"Image Sha,hidden"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ActiveComponent_ActiveContext) Reset() {
@@ -253,77 +177,39 @@ func (x *ActiveComponent_ActiveContext) ProtoReflect() protoreflect.Message {
 
 func (x *ActiveComponent_ActiveContext) GetContainerName() string {
 	if x != nil {
-		if x.xxx_hidden_ContainerName != nil {
-			return *x.xxx_hidden_ContainerName
-		}
-		return ""
+		return x.ContainerName
 	}
 	return ""
 }
 
 func (x *ActiveComponent_ActiveContext) GetImageId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageId != nil {
-			return *x.xxx_hidden_ImageId
-		}
-		return ""
+		return x.ImageId
 	}
 	return ""
 }
 
 func (x *ActiveComponent_ActiveContext) SetContainerName(v string) {
-	x.xxx_hidden_ContainerName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ContainerName = v
 }
 
 func (x *ActiveComponent_ActiveContext) SetImageId(v string) {
-	x.xxx_hidden_ImageId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ActiveComponent_ActiveContext) HasContainerName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ActiveComponent_ActiveContext) HasImageId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ActiveComponent_ActiveContext) ClearContainerName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ContainerName = nil
-}
-
-func (x *ActiveComponent_ActiveContext) ClearImageId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ImageId = nil
+	x.ImageId = v
 }
 
 type ActiveComponent_ActiveContext_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ContainerName *string
-	ImageId       *string
+	ContainerName string
+	ImageId       string
 }
 
 func (b0 ActiveComponent_ActiveContext_builder) Build() *ActiveComponent_ActiveContext {
 	m0 := &ActiveComponent_ActiveContext{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ContainerName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ContainerName = b.ContainerName
-	}
-	if b.ImageId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ImageId = b.ImageId
-	}
+	x.ContainerName = b.ContainerName
+	x.ImageId = b.ImageId
 	return m0
 }
 
@@ -343,8 +229,8 @@ const file_storage_active_component_proto_rawDesc = "" +
 	"\bimage_id\x18\x02 \x01(\tR\aimageId\x1as\n" +
 	"\x1dDEPRECATEDActiveContextsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
-	"\x05value\x18\x02 \x01(\v2&.storage.ActiveComponent.ActiveContextR\x05value:\x028\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\v2&.storage.ActiveComponent.ActiveContextR\x05value:\x028\x01B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_active_component_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_active_component_proto_goTypes = []any{

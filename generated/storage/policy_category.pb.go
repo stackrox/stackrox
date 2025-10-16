@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/policy_category.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,14 +24,12 @@ const (
 )
 
 type PolicyCategory struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_IsDefault   bool                   `protobuf:"varint,3,opt,name=isDefault"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Policy Category,store,hidden" sql:"unique"` // @gotags: search:"Policy Category,store,hidden" sql:"unique"
+	IsDefault     bool                   `protobuf:"varint,3,opt,name=isDefault" json:"isDefault,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicyCategory) Reset() {
@@ -59,106 +59,52 @@ func (x *PolicyCategory) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyCategory) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *PolicyCategory) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *PolicyCategory) GetIsDefault() bool {
 	if x != nil {
-		return x.xxx_hidden_IsDefault
+		return x.IsDefault
 	}
 	return false
 }
 
 func (x *PolicyCategory) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *PolicyCategory) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Name = v
 }
 
 func (x *PolicyCategory) SetIsDefault(v bool) {
-	x.xxx_hidden_IsDefault = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *PolicyCategory) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PolicyCategory) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PolicyCategory) HasIsDefault() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *PolicyCategory) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *PolicyCategory) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *PolicyCategory) ClearIsDefault() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_IsDefault = false
+	x.IsDefault = v
 }
 
 type PolicyCategory_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
-	Name      *string
-	IsDefault *bool
+	Id        string
+	Name      string
+	IsDefault bool
 }
 
 func (b0 PolicyCategory_builder) Build() *PolicyCategory {
 	m0 := &PolicyCategory{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.IsDefault != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_IsDefault = *b.IsDefault
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.IsDefault = b.IsDefault
 	return m0
 }
 
@@ -170,8 +116,8 @@ const file_storage_policy_category_proto_rawDesc = "" +
 	"\x0ePolicyCategory\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
-	"\tisDefault\x18\x03 \x01(\bR\tisDefaultB9\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\tisDefault\x18\x03 \x01(\bR\tisDefaultBA\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_policy_category_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_policy_category_proto_goTypes = []any{

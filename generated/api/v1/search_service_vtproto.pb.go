@@ -8,22 +8,25 @@ func (m *RawQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *RawQuery) CloneVT() *RawQuery            { return proto.Clone(m).(*RawQuery) }
 func (m *RawQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RawQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RawQuery) EqualVT(n *RawQuery) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RawQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *RawSearchRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *RawSearchRequest) CloneVT() *RawSearchRequest    { return proto.Clone(m).(*RawSearchRequest) }
-func (m *RawSearchRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *RawSearchRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RawSearchRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *RawSearchRequest) CloneVT() *RawSearchRequest       { return proto.Clone(m).(*RawSearchRequest) }
+func (m *RawSearchRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *RawSearchRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *RawSearchRequest) EqualVT(n *RawSearchRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RawSearchRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *QuerySortOption) SizeVT() int                   { return proto.Size(m) }
-func (m *QuerySortOption) CloneVT() *QuerySortOption     { return proto.Clone(m).(*QuerySortOption) }
-func (m *QuerySortOption) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *QuerySortOption) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QuerySortOption) SizeVT() int                     { return proto.Size(m) }
+func (m *QuerySortOption) CloneVT() *QuerySortOption       { return proto.Clone(m).(*QuerySortOption) }
+func (m *QuerySortOption) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *QuerySortOption) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *QuerySortOption) EqualVT(n *QuerySortOption) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QuerySortOption) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,14 +35,16 @@ func (m *QueryField) SizeVT() int                   { return proto.Size(m) }
 func (m *QueryField) CloneVT() *QueryField          { return proto.Clone(m).(*QueryField) }
 func (m *QueryField) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *QueryField) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QueryField) EqualVT(n *QueryField) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QueryField) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *QuerySelectFilter) SizeVT() int                   { return proto.Size(m) }
-func (m *QuerySelectFilter) CloneVT() *QuerySelectFilter   { return proto.Clone(m).(*QuerySelectFilter) }
-func (m *QuerySelectFilter) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *QuerySelectFilter) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QuerySelectFilter) SizeVT() int                       { return proto.Size(m) }
+func (m *QuerySelectFilter) CloneVT() *QuerySelectFilter       { return proto.Clone(m).(*QuerySelectFilter) }
+func (m *QuerySelectFilter) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *QuerySelectFilter) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *QuerySelectFilter) EqualVT(n *QuerySelectFilter) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QuerySelectFilter) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -48,6 +53,7 @@ func (m *QuerySelect) SizeVT() int                   { return proto.Size(m) }
 func (m *QuerySelect) CloneVT() *QuerySelect         { return proto.Clone(m).(*QuerySelect) }
 func (m *QuerySelect) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *QuerySelect) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QuerySelect) EqualVT(n *QuerySelect) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QuerySelect) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -56,14 +62,16 @@ func (m *QueryGroupBy) SizeVT() int                   { return proto.Size(m) }
 func (m *QueryGroupBy) CloneVT() *QueryGroupBy        { return proto.Clone(m).(*QueryGroupBy) }
 func (m *QueryGroupBy) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *QueryGroupBy) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QueryGroupBy) EqualVT(n *QueryGroupBy) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QueryGroupBy) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *QueryPagination) SizeVT() int                   { return proto.Size(m) }
-func (m *QueryPagination) CloneVT() *QueryPagination     { return proto.Clone(m).(*QueryPagination) }
-func (m *QueryPagination) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *QueryPagination) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *QueryPagination) SizeVT() int                     { return proto.Size(m) }
+func (m *QueryPagination) CloneVT() *QueryPagination       { return proto.Clone(m).(*QueryPagination) }
+func (m *QueryPagination) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *QueryPagination) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *QueryPagination) EqualVT(n *QueryPagination) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *QueryPagination) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -72,6 +80,7 @@ func (m *BooleanQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *BooleanQuery) CloneVT() *BooleanQuery        { return proto.Clone(m).(*BooleanQuery) }
 func (m *BooleanQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *BooleanQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BooleanQuery) EqualVT(n *BooleanQuery) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BooleanQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -80,6 +89,7 @@ func (m *Query) SizeVT() int                   { return proto.Size(m) }
 func (m *Query) CloneVT() *Query               { return proto.Clone(m).(*Query) }
 func (m *Query) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Query) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Query) EqualVT(n *Query) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Query) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -88,14 +98,16 @@ func (m *StringQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *StringQuery) CloneVT() *StringQuery         { return proto.Clone(m).(*StringQuery) }
 func (m *StringQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *StringQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *StringQuery) EqualVT(n *StringQuery) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *StringQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MatchFieldQuery) SizeVT() int                   { return proto.Size(m) }
-func (m *MatchFieldQuery) CloneVT() *MatchFieldQuery     { return proto.Clone(m).(*MatchFieldQuery) }
-func (m *MatchFieldQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MatchFieldQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MatchFieldQuery) SizeVT() int                     { return proto.Size(m) }
+func (m *MatchFieldQuery) CloneVT() *MatchFieldQuery       { return proto.Clone(m).(*MatchFieldQuery) }
+func (m *MatchFieldQuery) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *MatchFieldQuery) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *MatchFieldQuery) EqualVT(n *MatchFieldQuery) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MatchFieldQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -104,8 +116,9 @@ func (m *MatchLinkedFieldsQuery) SizeVT() int { return proto.Size(m) }
 func (m *MatchLinkedFieldsQuery) CloneVT() *MatchLinkedFieldsQuery {
 	return proto.Clone(m).(*MatchLinkedFieldsQuery)
 }
-func (m *MatchLinkedFieldsQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MatchLinkedFieldsQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MatchLinkedFieldsQuery) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *MatchLinkedFieldsQuery) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *MatchLinkedFieldsQuery) EqualVT(n *MatchLinkedFieldsQuery) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MatchLinkedFieldsQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -114,6 +127,7 @@ func (m *DocIDQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *DocIDQuery) CloneVT() *DocIDQuery          { return proto.Clone(m).(*DocIDQuery) }
 func (m *DocIDQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DocIDQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DocIDQuery) EqualVT(n *DocIDQuery) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DocIDQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -122,30 +136,34 @@ func (m *BaseQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *BaseQuery) CloneVT() *BaseQuery           { return proto.Clone(m).(*BaseQuery) }
 func (m *BaseQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *BaseQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BaseQuery) EqualVT(n *BaseQuery) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BaseQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ConjunctionQuery) SizeVT() int                   { return proto.Size(m) }
-func (m *ConjunctionQuery) CloneVT() *ConjunctionQuery    { return proto.Clone(m).(*ConjunctionQuery) }
-func (m *ConjunctionQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ConjunctionQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ConjunctionQuery) SizeVT() int                      { return proto.Size(m) }
+func (m *ConjunctionQuery) CloneVT() *ConjunctionQuery       { return proto.Clone(m).(*ConjunctionQuery) }
+func (m *ConjunctionQuery) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ConjunctionQuery) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ConjunctionQuery) EqualVT(n *ConjunctionQuery) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ConjunctionQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *DisjunctionQuery) SizeVT() int                   { return proto.Size(m) }
-func (m *DisjunctionQuery) CloneVT() *DisjunctionQuery    { return proto.Clone(m).(*DisjunctionQuery) }
-func (m *DisjunctionQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DisjunctionQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DisjunctionQuery) SizeVT() int                      { return proto.Size(m) }
+func (m *DisjunctionQuery) CloneVT() *DisjunctionQuery       { return proto.Clone(m).(*DisjunctionQuery) }
+func (m *DisjunctionQuery) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *DisjunctionQuery) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *DisjunctionQuery) EqualVT(n *DisjunctionQuery) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DisjunctionQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MatchNoneQuery) SizeVT() int                   { return proto.Size(m) }
-func (m *MatchNoneQuery) CloneVT() *MatchNoneQuery      { return proto.Clone(m).(*MatchNoneQuery) }
-func (m *MatchNoneQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MatchNoneQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MatchNoneQuery) SizeVT() int                    { return proto.Size(m) }
+func (m *MatchNoneQuery) CloneVT() *MatchNoneQuery       { return proto.Clone(m).(*MatchNoneQuery) }
+func (m *MatchNoneQuery) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *MatchNoneQuery) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *MatchNoneQuery) EqualVT(n *MatchNoneQuery) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MatchNoneQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -154,6 +172,7 @@ func (m *SearchResult) SizeVT() int                   { return proto.Size(m) }
 func (m *SearchResult) CloneVT() *SearchResult        { return proto.Clone(m).(*SearchResult) }
 func (m *SearchResult) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SearchResult) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResult) EqualVT(n *SearchResult) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchResult) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -162,16 +181,18 @@ func (m *SearchResult_Matches) SizeVT() int { return proto.Size(m) }
 func (m *SearchResult_Matches) CloneVT() *SearchResult_Matches {
 	return proto.Clone(m).(*SearchResult_Matches)
 }
-func (m *SearchResult_Matches) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SearchResult_Matches) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResult_Matches) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *SearchResult_Matches) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResult_Matches) EqualVT(n *SearchResult_Matches) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchResult_Matches) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *SearchResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *SearchResponse) CloneVT() *SearchResponse      { return proto.Clone(m).(*SearchResponse) }
-func (m *SearchResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SearchResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResponse) SizeVT() int                    { return proto.Size(m) }
+func (m *SearchResponse) CloneVT() *SearchResponse       { return proto.Clone(m).(*SearchResponse) }
+func (m *SearchResponse) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *SearchResponse) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResponse) EqualVT(n *SearchResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -180,8 +201,9 @@ func (m *SearchResponse_Count) SizeVT() int { return proto.Size(m) }
 func (m *SearchResponse_Count) CloneVT() *SearchResponse_Count {
 	return proto.Clone(m).(*SearchResponse_Count)
 }
-func (m *SearchResponse_Count) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SearchResponse_Count) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResponse_Count) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *SearchResponse_Count) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *SearchResponse_Count) EqualVT(n *SearchResponse_Count) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchResponse_Count) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -190,8 +212,9 @@ func (m *SearchOptionsRequest) SizeVT() int { return proto.Size(m) }
 func (m *SearchOptionsRequest) CloneVT() *SearchOptionsRequest {
 	return proto.Clone(m).(*SearchOptionsRequest)
 }
-func (m *SearchOptionsRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SearchOptionsRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchOptionsRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *SearchOptionsRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *SearchOptionsRequest) EqualVT(n *SearchOptionsRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchOptionsRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -200,8 +223,9 @@ func (m *SearchOptionsResponse) SizeVT() int { return proto.Size(m) }
 func (m *SearchOptionsResponse) CloneVT() *SearchOptionsResponse {
 	return proto.Clone(m).(*SearchOptionsResponse)
 }
-func (m *SearchOptionsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SearchOptionsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SearchOptionsResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *SearchOptionsResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *SearchOptionsResponse) EqualVT(n *SearchOptionsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SearchOptionsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -210,8 +234,9 @@ func (m *AutocompleteResponse) SizeVT() int { return proto.Size(m) }
 func (m *AutocompleteResponse) CloneVT() *AutocompleteResponse {
 	return proto.Clone(m).(*AutocompleteResponse)
 }
-func (m *AutocompleteResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *AutocompleteResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AutocompleteResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *AutocompleteResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *AutocompleteResponse) EqualVT(n *AutocompleteResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AutocompleteResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

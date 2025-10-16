@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/network_policy.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -114,24 +116,20 @@ func (x NetworkPolicyType) Number() protoreflect.EnumNumber {
 }
 
 type NetworkPolicy struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,5,opt,name=namespace"`
-	xxx_hidden_Labels      map[string]string      `protobuf:"bytes,6,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations map[string]string      `protobuf:"bytes,7,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Spec        *NetworkPolicySpec     `protobuf:"bytes,8,opt,name=spec"`
-	xxx_hidden_Yaml        *string                `protobuf:"bytes,9,opt,name=yaml"`
-	xxx_hidden_ApiVersion  *string                `protobuf:"bytes,10,opt,name=api_version,json=apiVersion"`
-	xxx_hidden_Created     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
+	Namespace     string                 `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
+	Labels        map[string]string      `protobuf:"bytes,6,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string      `protobuf:"bytes,7,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Spec          *NetworkPolicySpec     `protobuf:"bytes,8,opt,name=spec" json:"spec,omitempty"`
+	Yaml          string                 `protobuf:"bytes,9,opt,name=yaml" json:"yaml,omitempty"`
+	ApiVersion    string                 `protobuf:"bytes,10,opt,name=api_version,json=apiVersion" json:"api_version,omitempty"`
+	Created       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created" json:"created,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicy) Reset() {
@@ -161,285 +159,160 @@ func (x *NetworkPolicy) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicy) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *NetworkPolicy) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *NetworkPolicy) GetSpec() *NetworkPolicySpec {
 	if x != nil {
-		return x.xxx_hidden_Spec
+		return x.Spec
 	}
 	return nil
 }
 
 func (x *NetworkPolicy) GetYaml() string {
 	if x != nil {
-		if x.xxx_hidden_Yaml != nil {
-			return *x.xxx_hidden_Yaml
-		}
-		return ""
+		return x.Yaml
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetApiVersion() string {
 	if x != nil {
-		if x.xxx_hidden_ApiVersion != nil {
-			return *x.xxx_hidden_ApiVersion
-		}
-		return ""
+		return x.ApiVersion
 	}
 	return ""
 }
 
 func (x *NetworkPolicy) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Created
 	}
 	return nil
 }
 
 func (x *NetworkPolicy) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *NetworkPolicy) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.Name = v
 }
 
 func (x *NetworkPolicy) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.ClusterId = v
 }
 
 func (x *NetworkPolicy) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.ClusterName = v
 }
 
 func (x *NetworkPolicy) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.Namespace = v
 }
 
 func (x *NetworkPolicy) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *NetworkPolicy) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *NetworkPolicy) SetSpec(v *NetworkPolicySpec) {
-	x.xxx_hidden_Spec = v
+	x.Spec = v
 }
 
 func (x *NetworkPolicy) SetYaml(v string) {
-	x.xxx_hidden_Yaml = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.Yaml = v
 }
 
 func (x *NetworkPolicy) SetApiVersion(v string) {
-	x.xxx_hidden_ApiVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.ApiVersion = v
 }
 
 func (x *NetworkPolicy) SetCreated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-	}
-}
-
-func (x *NetworkPolicy) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicy) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPolicy) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *NetworkPolicy) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *NetworkPolicy) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.Created = v
 }
 
 func (x *NetworkPolicy) HasSpec() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Spec != nil
-}
-
-func (x *NetworkPolicy) HasYaml() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *NetworkPolicy) HasApiVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.Spec != nil
 }
 
 func (x *NetworkPolicy) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *NetworkPolicy) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *NetworkPolicy) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *NetworkPolicy) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *NetworkPolicy) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *NetworkPolicy) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Namespace = nil
+	return x.Created != nil
 }
 
 func (x *NetworkPolicy) ClearSpec() {
-	x.xxx_hidden_Spec = nil
-}
-
-func (x *NetworkPolicy) ClearYaml() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Yaml = nil
-}
-
-func (x *NetworkPolicy) ClearApiVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_ApiVersion = nil
+	x.Spec = nil
 }
 
 func (x *NetworkPolicy) ClearCreated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
+	x.Created = nil
 }
 
 type NetworkPolicy_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	ClusterId   *string
-	ClusterName *string
-	Namespace   *string
+	Id          string
+	Name        string
+	ClusterId   string
+	ClusterName string
+	Namespace   string
 	Labels      map[string]string
 	Annotations map[string]string
 	Spec        *NetworkPolicySpec
-	Yaml        *string
-	ApiVersion  *string
+	Yaml        string
+	ApiVersion  string
 	Created     *timestamppb.Timestamp
 }
 
@@ -447,56 +320,28 @@ func (b0 NetworkPolicy_builder) Build() *NetworkPolicy {
 	m0 := &NetworkPolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_Spec = b.Spec
-	if b.Yaml != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_Yaml = b.Yaml
-	}
-	if b.ApiVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_ApiVersion = b.ApiVersion
-	}
-	if b.Created != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_Created = b.Created
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.Namespace = b.Namespace
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.Spec = b.Spec
+	x.Yaml = b.Yaml
+	x.ApiVersion = b.ApiVersion
+	x.Created = b.Created
 	return m0
 }
 
 type NetworkPolicySpec struct {
-	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_PodSelector *LabelSelector               `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector"`
-	xxx_hidden_Ingress     *[]*NetworkPolicyIngressRule `protobuf:"bytes,2,rep,name=ingress"`
-	xxx_hidden_Egress      *[]*NetworkPolicyEgressRule  `protobuf:"bytes,3,rep,name=egress"`
-	xxx_hidden_PolicyTypes []NetworkPolicyType          `protobuf:"varint,4,rep,packed,name=policy_types,json=policyTypes,enum=storage.NetworkPolicyType"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	PodSelector   *LabelSelector              `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector" json:"pod_selector,omitempty"`
+	Ingress       []*NetworkPolicyIngressRule `protobuf:"bytes,2,rep,name=ingress" json:"ingress,omitempty"`
+	Egress        []*NetworkPolicyEgressRule  `protobuf:"bytes,3,rep,name=egress" json:"egress,omitempty"`
+	PolicyTypes   []NetworkPolicyType         `protobuf:"varint,4,rep,packed,name=policy_types,json=policyTypes,enum=storage.NetworkPolicyType" json:"policy_types,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicySpec) Reset() {
@@ -526,85 +371,57 @@ func (x *NetworkPolicySpec) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicySpec) GetPodSelector() *LabelSelector {
 	if x != nil {
-		return x.xxx_hidden_PodSelector
+		return x.PodSelector
 	}
 	return nil
 }
 
 func (x *NetworkPolicySpec) GetIngress() []*NetworkPolicyIngressRule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ingress) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*NetworkPolicyIngressRule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Ingress
 	}
 	return nil
 }
 
 func (x *NetworkPolicySpec) GetEgress() []*NetworkPolicyEgressRule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Egress) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*NetworkPolicyEgressRule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Egress
 	}
 	return nil
 }
 
 func (x *NetworkPolicySpec) GetPolicyTypes() []NetworkPolicyType {
 	if x != nil {
-		return x.xxx_hidden_PolicyTypes
+		return x.PolicyTypes
 	}
 	return nil
 }
 
 func (x *NetworkPolicySpec) SetPodSelector(v *LabelSelector) {
-	x.xxx_hidden_PodSelector = v
+	x.PodSelector = v
 }
 
 func (x *NetworkPolicySpec) SetIngress(v []*NetworkPolicyIngressRule) {
-	var sv *[]*NetworkPolicyIngressRule
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyIngressRule{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ingress), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Ingress = v
 }
 
 func (x *NetworkPolicySpec) SetEgress(v []*NetworkPolicyEgressRule) {
-	var sv *[]*NetworkPolicyEgressRule
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyEgressRule{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Egress), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Egress = v
 }
 
 func (x *NetworkPolicySpec) SetPolicyTypes(v []NetworkPolicyType) {
-	x.xxx_hidden_PolicyTypes = v
+	x.PolicyTypes = v
 }
 
 func (x *NetworkPolicySpec) HasPodSelector() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PodSelector != nil
+	return x.PodSelector != nil
 }
 
 func (x *NetworkPolicySpec) ClearPodSelector() {
-	x.xxx_hidden_PodSelector = nil
+	x.PodSelector = nil
 }
 
 type NetworkPolicySpec_builder struct {
@@ -620,29 +437,19 @@ func (b0 NetworkPolicySpec_builder) Build() *NetworkPolicySpec {
 	m0 := &NetworkPolicySpec{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PodSelector = b.PodSelector
-	if b.Ingress != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Ingress = &b.Ingress
-	}
-	if b.Egress != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Egress = &b.Egress
-	}
-	x.xxx_hidden_PolicyTypes = b.PolicyTypes
+	x.PodSelector = b.PodSelector
+	x.Ingress = b.Ingress
+	x.Egress = b.Egress
+	x.PolicyTypes = b.PolicyTypes
 	return m0
 }
 
 type NetworkPolicyEgressRule struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Ports *[]*NetworkPolicyPort  `protobuf:"bytes,1,rep,name=ports"`
-	xxx_hidden_To    *[]*NetworkPolicyPeer  `protobuf:"bytes,2,rep,name=to"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Ports         []*NetworkPolicyPort   `protobuf:"bytes,1,rep,name=ports" json:"ports,omitempty"`
+	To            []*NetworkPolicyPeer   `protobuf:"bytes,2,rep,name=to" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyEgressRule) Reset() {
@@ -672,52 +479,24 @@ func (x *NetworkPolicyEgressRule) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyEgressRule) GetPorts() []*NetworkPolicyPort {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*NetworkPolicyPort
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Ports
 	}
 	return nil
 }
 
 func (x *NetworkPolicyEgressRule) GetTo() []*NetworkPolicyPeer {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_To) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*NetworkPolicyPeer
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.To
 	}
 	return nil
 }
 
 func (x *NetworkPolicyEgressRule) SetPorts(v []*NetworkPolicyPort) {
-	var sv *[]*NetworkPolicyPort
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyPort{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Ports = v
 }
 
 func (x *NetworkPolicyEgressRule) SetTo(v []*NetworkPolicyPeer) {
-	var sv *[]*NetworkPolicyPeer
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyPeer{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.To = v
 }
 
 type NetworkPolicyEgressRule_builder struct {
@@ -731,24 +510,18 @@ func (b0 NetworkPolicyEgressRule_builder) Build() *NetworkPolicyEgressRule {
 	m0 := &NetworkPolicyEgressRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Ports != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Ports = &b.Ports
-	}
-	if b.To != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_To = &b.To
-	}
+	x.Ports = b.Ports
+	x.To = b.To
 	return m0
 }
 
 type NetworkPolicyPeer struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PodSelector       *LabelSelector         `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector"`
-	xxx_hidden_NamespaceSelector *LabelSelector         `protobuf:"bytes,2,opt,name=namespace_selector,json=namespaceSelector"`
-	xxx_hidden_IpBlock           *IPBlock               `protobuf:"bytes,3,opt,name=ip_block,json=ipBlock"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"hybrid.v1"`
+	PodSelector       *LabelSelector         `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector" json:"pod_selector,omitempty"`
+	NamespaceSelector *LabelSelector         `protobuf:"bytes,2,opt,name=namespace_selector,json=namespaceSelector" json:"namespace_selector,omitempty"`
+	IpBlock           *IPBlock               `protobuf:"bytes,3,opt,name=ip_block,json=ipBlock" json:"ip_block,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyPeer) Reset() {
@@ -778,68 +551,68 @@ func (x *NetworkPolicyPeer) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyPeer) GetPodSelector() *LabelSelector {
 	if x != nil {
-		return x.xxx_hidden_PodSelector
+		return x.PodSelector
 	}
 	return nil
 }
 
 func (x *NetworkPolicyPeer) GetNamespaceSelector() *LabelSelector {
 	if x != nil {
-		return x.xxx_hidden_NamespaceSelector
+		return x.NamespaceSelector
 	}
 	return nil
 }
 
 func (x *NetworkPolicyPeer) GetIpBlock() *IPBlock {
 	if x != nil {
-		return x.xxx_hidden_IpBlock
+		return x.IpBlock
 	}
 	return nil
 }
 
 func (x *NetworkPolicyPeer) SetPodSelector(v *LabelSelector) {
-	x.xxx_hidden_PodSelector = v
+	x.PodSelector = v
 }
 
 func (x *NetworkPolicyPeer) SetNamespaceSelector(v *LabelSelector) {
-	x.xxx_hidden_NamespaceSelector = v
+	x.NamespaceSelector = v
 }
 
 func (x *NetworkPolicyPeer) SetIpBlock(v *IPBlock) {
-	x.xxx_hidden_IpBlock = v
+	x.IpBlock = v
 }
 
 func (x *NetworkPolicyPeer) HasPodSelector() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PodSelector != nil
+	return x.PodSelector != nil
 }
 
 func (x *NetworkPolicyPeer) HasNamespaceSelector() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_NamespaceSelector != nil
+	return x.NamespaceSelector != nil
 }
 
 func (x *NetworkPolicyPeer) HasIpBlock() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_IpBlock != nil
+	return x.IpBlock != nil
 }
 
 func (x *NetworkPolicyPeer) ClearPodSelector() {
-	x.xxx_hidden_PodSelector = nil
+	x.PodSelector = nil
 }
 
 func (x *NetworkPolicyPeer) ClearNamespaceSelector() {
-	x.xxx_hidden_NamespaceSelector = nil
+	x.NamespaceSelector = nil
 }
 
 func (x *NetworkPolicyPeer) ClearIpBlock() {
-	x.xxx_hidden_IpBlock = nil
+	x.IpBlock = nil
 }
 
 type NetworkPolicyPeer_builder struct {
@@ -854,20 +627,18 @@ func (b0 NetworkPolicyPeer_builder) Build() *NetworkPolicyPeer {
 	m0 := &NetworkPolicyPeer{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_PodSelector = b.PodSelector
-	x.xxx_hidden_NamespaceSelector = b.NamespaceSelector
-	x.xxx_hidden_IpBlock = b.IpBlock
+	x.PodSelector = b.PodSelector
+	x.NamespaceSelector = b.NamespaceSelector
+	x.IpBlock = b.IpBlock
 	return m0
 }
 
 type IPBlock struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cidr        *string                `protobuf:"bytes,1,opt,name=cidr"`
-	xxx_hidden_Except      []string               `protobuf:"bytes,2,rep,name=except"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Cidr          string                 `protobuf:"bytes,1,opt,name=cidr" json:"cidr,omitempty"`
+	Except        []string               `protobuf:"bytes,2,rep,name=except" json:"except,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IPBlock) Reset() {
@@ -897,46 +668,30 @@ func (x *IPBlock) ProtoReflect() protoreflect.Message {
 
 func (x *IPBlock) GetCidr() string {
 	if x != nil {
-		if x.xxx_hidden_Cidr != nil {
-			return *x.xxx_hidden_Cidr
-		}
-		return ""
+		return x.Cidr
 	}
 	return ""
 }
 
 func (x *IPBlock) GetExcept() []string {
 	if x != nil {
-		return x.xxx_hidden_Except
+		return x.Except
 	}
 	return nil
 }
 
 func (x *IPBlock) SetCidr(v string) {
-	x.xxx_hidden_Cidr = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Cidr = v
 }
 
 func (x *IPBlock) SetExcept(v []string) {
-	x.xxx_hidden_Except = v
-}
-
-func (x *IPBlock) HasCidr() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *IPBlock) ClearCidr() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Cidr = nil
+	x.Except = v
 }
 
 type IPBlock_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Cidr   *string
+	Cidr   string
 	Except []string
 }
 
@@ -944,22 +699,21 @@ func (b0 IPBlock_builder) Build() *IPBlock {
 	m0 := &IPBlock{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Cidr != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Cidr = b.Cidr
-	}
-	x.xxx_hidden_Except = b.Except
+	x.Cidr = b.Cidr
+	x.Except = b.Except
 	return m0
 }
 
 type NetworkPolicyPort struct {
-	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Protocol    Protocol                    `protobuf:"varint,1,opt,name=protocol,enum=storage.Protocol"`
-	xxx_hidden_PortRef     isNetworkPolicyPort_PortRef `protobuf_oneof:"port_ref"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	Protocol Protocol               `protobuf:"varint,1,opt,name=protocol,enum=storage.Protocol" json:"protocol,omitempty"`
+	// Types that are valid to be assigned to PortRef:
+	//
+	//	*NetworkPolicyPort_Port
+	//	*NetworkPolicyPort_PortName
+	PortRef       isNetworkPolicyPort_PortRef `protobuf_oneof:"port_ref"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyPort) Reset() {
@@ -989,16 +743,21 @@ func (x *NetworkPolicyPort) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyPort) GetProtocol() Protocol {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Protocol
-		}
+		return x.Protocol
 	}
 	return Protocol_UNSET_PROTOCOL
 }
 
+func (x *NetworkPolicyPort) GetPortRef() isNetworkPolicyPort_PortRef {
+	if x != nil {
+		return x.PortRef
+	}
+	return nil
+}
+
 func (x *NetworkPolicyPort) GetPort() int32 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_Port); ok {
+		if x, ok := x.PortRef.(*NetworkPolicyPort_Port); ok {
 			return x.Port
 		}
 	}
@@ -1007,7 +766,7 @@ func (x *NetworkPolicyPort) GetPort() int32 {
 
 func (x *NetworkPolicyPort) GetPortName() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_PortName); ok {
+		if x, ok := x.PortRef.(*NetworkPolicyPort_PortName); ok {
 			return x.PortName
 		}
 	}
@@ -1015,37 +774,29 @@ func (x *NetworkPolicyPort) GetPortName() string {
 }
 
 func (x *NetworkPolicyPort) SetProtocol(v Protocol) {
-	x.xxx_hidden_Protocol = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Protocol = v
 }
 
 func (x *NetworkPolicyPort) SetPort(v int32) {
-	x.xxx_hidden_PortRef = &networkPolicyPort_Port{v}
+	x.PortRef = &NetworkPolicyPort_Port{v}
 }
 
 func (x *NetworkPolicyPort) SetPortName(v string) {
-	x.xxx_hidden_PortRef = &networkPolicyPort_PortName{v}
-}
-
-func (x *NetworkPolicyPort) HasProtocol() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.PortRef = &NetworkPolicyPort_PortName{v}
 }
 
 func (x *NetworkPolicyPort) HasPortRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PortRef != nil
+	return x.PortRef != nil
 }
 
 func (x *NetworkPolicyPort) HasPort() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_Port)
+	_, ok := x.PortRef.(*NetworkPolicyPort_Port)
 	return ok
 }
 
@@ -1053,28 +804,23 @@ func (x *NetworkPolicyPort) HasPortName() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_PortName)
+	_, ok := x.PortRef.(*NetworkPolicyPort_PortName)
 	return ok
 }
 
-func (x *NetworkPolicyPort) ClearProtocol() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Protocol = Protocol_UNSET_PROTOCOL
-}
-
 func (x *NetworkPolicyPort) ClearPortRef() {
-	x.xxx_hidden_PortRef = nil
+	x.PortRef = nil
 }
 
 func (x *NetworkPolicyPort) ClearPort() {
-	if _, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_Port); ok {
-		x.xxx_hidden_PortRef = nil
+	if _, ok := x.PortRef.(*NetworkPolicyPort_Port); ok {
+		x.PortRef = nil
 	}
 }
 
 func (x *NetworkPolicyPort) ClearPortName() {
-	if _, ok := x.xxx_hidden_PortRef.(*networkPolicyPort_PortName); ok {
-		x.xxx_hidden_PortRef = nil
+	if _, ok := x.PortRef.(*NetworkPolicyPort_PortName); ok {
+		x.PortRef = nil
 	}
 }
 
@@ -1086,10 +832,10 @@ func (x *NetworkPolicyPort) WhichPortRef() case_NetworkPolicyPort_PortRef {
 	if x == nil {
 		return NetworkPolicyPort_PortRef_not_set_case
 	}
-	switch x.xxx_hidden_PortRef.(type) {
-	case *networkPolicyPort_Port:
+	switch x.PortRef.(type) {
+	case *NetworkPolicyPort_Port:
 		return NetworkPolicyPort_Port_case
-	case *networkPolicyPort_PortName:
+	case *NetworkPolicyPort_PortName:
 		return NetworkPolicyPort_PortName_case
 	default:
 		return NetworkPolicyPort_PortRef_not_set_case
@@ -1099,26 +845,23 @@ func (x *NetworkPolicyPort) WhichPortRef() case_NetworkPolicyPort_PortRef {
 type NetworkPolicyPort_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Protocol *Protocol
-	// Fields of oneof xxx_hidden_PortRef:
+	Protocol Protocol
+	// Fields of oneof PortRef:
 	Port     *int32
 	PortName *string
-	// -- end of xxx_hidden_PortRef
+	// -- end of PortRef
 }
 
 func (b0 NetworkPolicyPort_builder) Build() *NetworkPolicyPort {
 	m0 := &NetworkPolicyPort{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Protocol != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Protocol = *b.Protocol
-	}
+	x.Protocol = b.Protocol
 	if b.Port != nil {
-		x.xxx_hidden_PortRef = &networkPolicyPort_Port{*b.Port}
+		x.PortRef = &NetworkPolicyPort_Port{*b.Port}
 	}
 	if b.PortName != nil {
-		x.xxx_hidden_PortRef = &networkPolicyPort_PortName{*b.PortName}
+		x.PortRef = &NetworkPolicyPort_PortName{*b.PortName}
 	}
 	return m0
 }
@@ -1137,28 +880,24 @@ type isNetworkPolicyPort_PortRef interface {
 	isNetworkPolicyPort_PortRef()
 }
 
-type networkPolicyPort_Port struct {
+type NetworkPolicyPort_Port struct {
 	Port int32 `protobuf:"varint,2,opt,name=port,oneof"`
 }
 
-type networkPolicyPort_PortName struct {
+type NetworkPolicyPort_PortName struct {
 	PortName string `protobuf:"bytes,3,opt,name=port_name,json=portName,oneof"`
 }
 
-func (*networkPolicyPort_Port) isNetworkPolicyPort_PortRef() {}
+func (*NetworkPolicyPort_Port) isNetworkPolicyPort_PortRef() {}
 
-func (*networkPolicyPort_PortName) isNetworkPolicyPort_PortRef() {}
+func (*NetworkPolicyPort_PortName) isNetworkPolicyPort_PortRef() {}
 
 type NetworkPolicyIngressRule struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Ports *[]*NetworkPolicyPort  `protobuf:"bytes,1,rep,name=ports"`
-	xxx_hidden_From  *[]*NetworkPolicyPeer  `protobuf:"bytes,2,rep,name=from"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Ports         []*NetworkPolicyPort   `protobuf:"bytes,1,rep,name=ports" json:"ports,omitempty"`
+	From          []*NetworkPolicyPeer   `protobuf:"bytes,2,rep,name=from" json:"from,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyIngressRule) Reset() {
@@ -1188,52 +927,24 @@ func (x *NetworkPolicyIngressRule) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyIngressRule) GetPorts() []*NetworkPolicyPort {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*NetworkPolicyPort
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Ports
 	}
 	return nil
 }
 
 func (x *NetworkPolicyIngressRule) GetFrom() []*NetworkPolicyPeer {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_From) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*NetworkPolicyPeer
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.From
 	}
 	return nil
 }
 
 func (x *NetworkPolicyIngressRule) SetPorts(v []*NetworkPolicyPort) {
-	var sv *[]*NetworkPolicyPort
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyPort{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Ports = v
 }
 
 func (x *NetworkPolicyIngressRule) SetFrom(v []*NetworkPolicyPeer) {
-	var sv *[]*NetworkPolicyPeer
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyPeer{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.From = v
 }
 
 type NetworkPolicyIngressRule_builder struct {
@@ -1247,26 +958,18 @@ func (b0 NetworkPolicyIngressRule_builder) Build() *NetworkPolicyIngressRule {
 	m0 := &NetworkPolicyIngressRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Ports != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Ports = &b.Ports
-	}
-	if b.From != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_From = &b.From
-	}
+	x.Ports = b.Ports
+	x.From = b.From
 	return m0
 }
 
 // Next available tag: 3
 type NetworkPolicyReference struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,1,opt,name=namespace"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Namespace     string                 `protobuf:"bytes,1,opt,name=namespace" json:"namespace,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyReference) Reset() {
@@ -1296,91 +999,49 @@ func (x *NetworkPolicyReference) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyReference) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *NetworkPolicyReference) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *NetworkPolicyReference) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Namespace = v
 }
 
 func (x *NetworkPolicyReference) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *NetworkPolicyReference) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicyReference) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPolicyReference) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *NetworkPolicyReference) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type NetworkPolicyReference_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Namespace *string
-	Name      *string
+	Namespace string
+	Name      string
 }
 
 func (b0 NetworkPolicyReference_builder) Build() *NetworkPolicyReference {
 	m0 := &NetworkPolicyReference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Namespace = b.Namespace
+	x.Name = b.Name
 	return m0
 }
 
 // Next available tag: 3
 type NetworkPolicyModification struct {
-	state                protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_ApplyYaml *string                    `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml"`
-	xxx_hidden_ToDelete  *[]*NetworkPolicyReference `protobuf:"bytes,2,rep,name=to_delete,json=toDelete"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
+	ApplyYaml     string                    `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml" json:"apply_yaml,omitempty"`
+	ToDelete      []*NetworkPolicyReference `protobuf:"bytes,2,rep,name=to_delete,json=toDelete" json:"to_delete,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyModification) Reset() {
@@ -1410,60 +1071,30 @@ func (x *NetworkPolicyModification) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyModification) GetApplyYaml() string {
 	if x != nil {
-		if x.xxx_hidden_ApplyYaml != nil {
-			return *x.xxx_hidden_ApplyYaml
-		}
-		return ""
+		return x.ApplyYaml
 	}
 	return ""
 }
 
 func (x *NetworkPolicyModification) GetToDelete() []*NetworkPolicyReference {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ToDelete) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*NetworkPolicyReference
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ToDelete
 	}
 	return nil
 }
 
 func (x *NetworkPolicyModification) SetApplyYaml(v string) {
-	x.xxx_hidden_ApplyYaml = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ApplyYaml = v
 }
 
 func (x *NetworkPolicyModification) SetToDelete(v []*NetworkPolicyReference) {
-	var sv *[]*NetworkPolicyReference
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NetworkPolicyReference{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ToDelete), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *NetworkPolicyModification) HasApplyYaml() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicyModification) ClearApplyYaml() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ApplyYaml = nil
+	x.ToDelete = v
 }
 
 type NetworkPolicyModification_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ApplyYaml *string
+	ApplyYaml string
 	ToDelete  []*NetworkPolicyReference
 }
 
@@ -1471,30 +1102,20 @@ func (b0 NetworkPolicyModification_builder) Build() *NetworkPolicyModification {
 	m0 := &NetworkPolicyModification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ApplyYaml != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ApplyYaml = b.ApplyYaml
-	}
-	if b.ToDelete != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ToDelete = &b.ToDelete
-	}
+	x.ApplyYaml = b.ApplyYaml
+	x.ToDelete = b.ToDelete
 	return m0
 }
 
 type NetworkPolicyApplicationUndoRecord struct {
-	state                           protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId            *string                    `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_User                 *string                    `protobuf:"bytes,1,opt,name=user"`
-	xxx_hidden_ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp"`
-	xxx_hidden_OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification"`
-	xxx_hidden_UndoModification     *NetworkPolicyModification `protobuf:"bytes,4,opt,name=undo_modification,json=undoModification"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                protoimpl.MessageState     `protogen:"hybrid.v1"`
+	ClusterId            string                     `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	User                 string                     `protobuf:"bytes,1,opt,name=user" json:"user,omitempty"`
+	ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp" json:"apply_timestamp,omitempty"`
+	OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification" json:"original_modification,omitempty"`
+	UndoModification     *NetworkPolicyModification `protobuf:"bytes,4,opt,name=undo_modification,json=undoModification" json:"undo_modification,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) Reset() {
@@ -1524,142 +1145,97 @@ func (x *NetworkPolicyApplicationUndoRecord) ProtoReflect() protoreflect.Message
 
 func (x *NetworkPolicyApplicationUndoRecord) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) GetUser() string {
 	if x != nil {
-		if x.xxx_hidden_User != nil {
-			return *x.xxx_hidden_User
-		}
-		return ""
+		return x.User
 	}
 	return ""
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) GetApplyTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ApplyTimestamp) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ApplyTimestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ApplyTimestamp
 	}
 	return nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) GetOriginalModification() *NetworkPolicyModification {
 	if x != nil {
-		return x.xxx_hidden_OriginalModification
+		return x.OriginalModification
 	}
 	return nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) GetUndoModification() *NetworkPolicyModification {
 	if x != nil {
-		return x.xxx_hidden_UndoModification
+		return x.UndoModification
 	}
 	return nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.ClusterId = v
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetUser(v string) {
-	x.xxx_hidden_User = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.User = v
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetApplyTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ApplyTimestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
-	}
+	x.ApplyTimestamp = v
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetOriginalModification(v *NetworkPolicyModification) {
-	x.xxx_hidden_OriginalModification = v
+	x.OriginalModification = v
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) SetUndoModification(v *NetworkPolicyModification) {
-	x.xxx_hidden_UndoModification = v
-}
-
-func (x *NetworkPolicyApplicationUndoRecord) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicyApplicationUndoRecord) HasUser() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.UndoModification = v
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) HasApplyTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.ApplyTimestamp != nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) HasOriginalModification() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_OriginalModification != nil
+	return x.OriginalModification != nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) HasUndoModification() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UndoModification != nil
-}
-
-func (x *NetworkPolicyApplicationUndoRecord) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *NetworkPolicyApplicationUndoRecord) ClearUser() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_User = nil
+	return x.UndoModification != nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) ClearApplyTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ApplyTimestamp, (*timestamppb.Timestamp)(nil))
+	x.ApplyTimestamp = nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) ClearOriginalModification() {
-	x.xxx_hidden_OriginalModification = nil
+	x.OriginalModification = nil
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) ClearUndoModification() {
-	x.xxx_hidden_UndoModification = nil
+	x.UndoModification = nil
 }
 
 type NetworkPolicyApplicationUndoRecord_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId            *string
-	User                 *string
+	ClusterId            string
+	User                 string
 	ApplyTimestamp       *timestamppb.Timestamp
 	OriginalModification *NetworkPolicyModification
 	UndoModification     *NetworkPolicyModification
@@ -1669,33 +1245,23 @@ func (b0 NetworkPolicyApplicationUndoRecord_builder) Build() *NetworkPolicyAppli
 	m0 := &NetworkPolicyApplicationUndoRecord{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.User != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_User = b.User
-	}
-	if b.ApplyTimestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_ApplyTimestamp = b.ApplyTimestamp
-	}
-	x.xxx_hidden_OriginalModification = b.OriginalModification
-	x.xxx_hidden_UndoModification = b.UndoModification
+	x.ClusterId = b.ClusterId
+	x.User = b.User
+	x.ApplyTimestamp = b.ApplyTimestamp
+	x.OriginalModification = b.OriginalModification
+	x.UndoModification = b.UndoModification
 	return m0
 }
 
 type NetworkPolicyApplicationUndoDeploymentRecord struct {
-	state                   protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_DeploymentId *string                             `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_ClusterId    *string                             `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace    *string                             `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_UndoRecord   *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	DeploymentId string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	// For SAC
+	ClusterId     string                              `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	Namespace     string                              `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
+	UndoRecord    *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord" json:"undo_record,omitempty" sql:"-"` // @gotags: sql:"-"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) Reset() {
@@ -1725,114 +1291,66 @@ func (x *NetworkPolicyApplicationUndoDeploymentRecord) ProtoReflect() protorefle
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) GetUndoRecord() *NetworkPolicyApplicationUndoRecord {
 	if x != nil {
-		return x.xxx_hidden_UndoRecord
+		return x.UndoRecord
 	}
 	return nil
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.DeploymentId = v
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ClusterId = v
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Namespace = v
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) SetUndoRecord(v *NetworkPolicyApplicationUndoRecord) {
-	x.xxx_hidden_UndoRecord = v
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.UndoRecord = v
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) HasUndoRecord() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UndoRecord != nil
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *NetworkPolicyApplicationUndoDeploymentRecord) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Namespace = nil
+	return x.UndoRecord != nil
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) ClearUndoRecord() {
-	x.xxx_hidden_UndoRecord = nil
+	x.UndoRecord = nil
 }
 
 type NetworkPolicyApplicationUndoDeploymentRecord_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	DeploymentId *string
+	DeploymentId string
 	// For SAC
-	ClusterId  *string
-	Namespace  *string
+	ClusterId  string
+	Namespace  string
 	UndoRecord *NetworkPolicyApplicationUndoRecord
 }
 
@@ -1840,19 +1358,10 @@ func (b0 NetworkPolicyApplicationUndoDeploymentRecord_builder) Build() *NetworkP
 	m0 := &NetworkPolicyApplicationUndoDeploymentRecord{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	x.xxx_hidden_UndoRecord = b.UndoRecord
+	x.DeploymentId = b.DeploymentId
+	x.ClusterId = b.ClusterId
+	x.Namespace = b.Namespace
+	x.UndoRecord = b.UndoRecord
 	return m0
 }
 
@@ -1935,8 +1444,8 @@ const file_storage_network_policy_proto_rawDesc = "" +
 	"\x11NetworkPolicyType\x12\x1d\n" +
 	"\x19UNSET_NETWORK_POLICY_TYPE\x10\x00\x12\x1f\n" +
 	"\x1bINGRESS_NETWORK_POLICY_TYPE\x10\x01\x12\x1e\n" +
-	"\x1aEGRESS_NETWORK_POLICY_TYPE\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x1aEGRESS_NETWORK_POLICY_TYPE\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_network_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_network_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
@@ -1995,8 +1504,8 @@ func file_storage_network_policy_proto_init() {
 	}
 	file_storage_labels_proto_init()
 	file_storage_network_policy_proto_msgTypes[5].OneofWrappers = []any{
-		(*networkPolicyPort_Port)(nil),
-		(*networkPolicyPort_PortName)(nil),
+		(*NetworkPolicyPort_Port)(nil),
+		(*NetworkPolicyPort_PortName)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

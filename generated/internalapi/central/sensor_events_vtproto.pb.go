@@ -8,8 +8,9 @@ func (m *ReprocessDeploymentRisk) SizeVT() int { return proto.Size(m) }
 func (m *ReprocessDeploymentRisk) CloneVT() *ReprocessDeploymentRisk {
 	return proto.Clone(m).(*ReprocessDeploymentRisk)
 }
-func (m *ReprocessDeploymentRisk) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ReprocessDeploymentRisk) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ReprocessDeploymentRisk) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *ReprocessDeploymentRisk) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *ReprocessDeploymentRisk) EqualVT(n *ReprocessDeploymentRisk) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ReprocessDeploymentRisk) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,7 @@ func (m *AlertResults) SizeVT() int                   { return proto.Size(m) }
 func (m *AlertResults) CloneVT() *AlertResults        { return proto.Clone(m).(*AlertResults) }
 func (m *AlertResults) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AlertResults) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AlertResults) EqualVT(n *AlertResults) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AlertResults) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,6 +28,7 @@ func (m *Timing) SizeVT() int                   { return proto.Size(m) }
 func (m *Timing) CloneVT() *Timing              { return proto.Clone(m).(*Timing) }
 func (m *Timing) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Timing) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Timing) EqualVT(n *Timing) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Timing) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,7 @@ func (m *SensorEvent) SizeVT() int                   { return proto.Size(m) }
 func (m *SensorEvent) CloneVT() *SensorEvent         { return proto.Clone(m).(*SensorEvent) }
 func (m *SensorEvent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SensorEvent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorEvent) EqualVT(n *SensorEvent) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -44,16 +48,20 @@ func (m *SensorEvent_ResourcesSynced) CloneVT() *SensorEvent_ResourcesSynced {
 }
 func (m *SensorEvent_ResourcesSynced) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SensorEvent_ResourcesSynced) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorEvent_ResourcesSynced) EqualVT(n *SensorEvent_ResourcesSynced) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorEvent_ResourcesSynced) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *SensorEnforcement) SizeVT() int                   { return proto.Size(m) }
-func (m *SensorEnforcement) CloneVT() *SensorEnforcement   { return proto.Clone(m).(*SensorEnforcement) }
-func (m *SensorEnforcement) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SensorEnforcement) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorEnforcement) SizeVT() int                       { return proto.Size(m) }
+func (m *SensorEnforcement) CloneVT() *SensorEnforcement       { return proto.Clone(m).(*SensorEnforcement) }
+func (m *SensorEnforcement) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *SensorEnforcement) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *SensorEnforcement) EqualVT(n *SensorEnforcement) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorEnforcement) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -62,8 +70,9 @@ func (m *DeploymentEnforcement) SizeVT() int { return proto.Size(m) }
 func (m *DeploymentEnforcement) CloneVT() *DeploymentEnforcement {
 	return proto.Clone(m).(*DeploymentEnforcement)
 }
-func (m *DeploymentEnforcement) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeploymentEnforcement) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeploymentEnforcement) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *DeploymentEnforcement) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *DeploymentEnforcement) EqualVT(n *DeploymentEnforcement) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeploymentEnforcement) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -76,6 +85,9 @@ func (m *ContainerInstanceEnforcement) MarshalVT() ([]byte, error) { return prot
 func (m *ContainerInstanceEnforcement) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ContainerInstanceEnforcement) EqualVT(n *ContainerInstanceEnforcement) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ContainerInstanceEnforcement) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -86,6 +98,7 @@ func (m *ScrapeCommand) SizeVT() int                   { return proto.Size(m) }
 func (m *ScrapeCommand) CloneVT() *ScrapeCommand       { return proto.Clone(m).(*ScrapeCommand) }
 func (m *ScrapeCommand) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScrapeCommand) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScrapeCommand) EqualVT(n *ScrapeCommand) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScrapeCommand) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -94,6 +107,7 @@ func (m *StartScrape) SizeVT() int                   { return proto.Size(m) }
 func (m *StartScrape) CloneVT() *StartScrape         { return proto.Clone(m).(*StartScrape) }
 func (m *StartScrape) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *StartScrape) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *StartScrape) EqualVT(n *StartScrape) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *StartScrape) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -102,6 +116,7 @@ func (m *KillScrape) SizeVT() int                   { return proto.Size(m) }
 func (m *KillScrape) CloneVT() *KillScrape          { return proto.Clone(m).(*KillScrape) }
 func (m *KillScrape) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *KillScrape) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KillScrape) EqualVT(n *KillScrape) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KillScrape) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -110,6 +125,7 @@ func (m *ScrapeUpdate) SizeVT() int                   { return proto.Size(m) }
 func (m *ScrapeUpdate) CloneVT() *ScrapeUpdate        { return proto.Clone(m).(*ScrapeUpdate) }
 func (m *ScrapeUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScrapeUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScrapeUpdate) EqualVT(n *ScrapeUpdate) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScrapeUpdate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -118,6 +134,7 @@ func (m *ScrapeStarted) SizeVT() int                   { return proto.Size(m) }
 func (m *ScrapeStarted) CloneVT() *ScrapeStarted       { return proto.Clone(m).(*ScrapeStarted) }
 func (m *ScrapeStarted) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScrapeStarted) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScrapeStarted) EqualVT(n *ScrapeStarted) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScrapeStarted) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -126,6 +143,7 @@ func (m *ScrapeKilled) SizeVT() int                   { return proto.Size(m) }
 func (m *ScrapeKilled) CloneVT() *ScrapeKilled        { return proto.Clone(m).(*ScrapeKilled) }
 func (m *ScrapeKilled) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScrapeKilled) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScrapeKilled) EqualVT(n *ScrapeKilled) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScrapeKilled) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -134,8 +152,9 @@ func (m *NetworkPoliciesCommand) SizeVT() int { return proto.Size(m) }
 func (m *NetworkPoliciesCommand) CloneVT() *NetworkPoliciesCommand {
 	return proto.Clone(m).(*NetworkPoliciesCommand)
 }
-func (m *NetworkPoliciesCommand) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkPoliciesCommand) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkPoliciesCommand) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *NetworkPoliciesCommand) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkPoliciesCommand) EqualVT(n *NetworkPoliciesCommand) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkPoliciesCommand) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -147,6 +166,9 @@ func (m *NetworkPoliciesCommand_Apply) CloneVT() *NetworkPoliciesCommand_Apply {
 func (m *NetworkPoliciesCommand_Apply) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NetworkPoliciesCommand_Apply) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NetworkPoliciesCommand_Apply) EqualVT(n *NetworkPoliciesCommand_Apply) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -162,6 +184,9 @@ func (m *NetworkPoliciesCommand_Payload) MarshalVT() ([]byte, error) { return pr
 func (m *NetworkPoliciesCommand_Payload) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkPoliciesCommand_Payload) EqualVT(n *NetworkPoliciesCommand_Payload) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkPoliciesCommand_Payload) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -172,8 +197,9 @@ func (m *NetworkPoliciesResponse) SizeVT() int { return proto.Size(m) }
 func (m *NetworkPoliciesResponse) CloneVT() *NetworkPoliciesResponse {
 	return proto.Clone(m).(*NetworkPoliciesResponse)
 }
-func (m *NetworkPoliciesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkPoliciesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkPoliciesResponse) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *NetworkPoliciesResponse) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkPoliciesResponse) EqualVT(n *NetworkPoliciesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkPoliciesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -185,6 +211,9 @@ func (m *NetworkPoliciesResponse_Apply) CloneVT() *NetworkPoliciesResponse_Apply
 func (m *NetworkPoliciesResponse_Apply) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NetworkPoliciesResponse_Apply) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NetworkPoliciesResponse_Apply) EqualVT(n *NetworkPoliciesResponse_Apply) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -200,6 +229,9 @@ func (m *NetworkPoliciesResponse_Error) MarshalVT() ([]byte, error) { return pro
 func (m *NetworkPoliciesResponse_Error) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkPoliciesResponse_Error) EqualVT(n *NetworkPoliciesResponse_Error) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkPoliciesResponse_Error) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -213,6 +245,9 @@ func (m *NetworkPoliciesResponse_Payload) CloneVT() *NetworkPoliciesResponse_Pay
 func (m *NetworkPoliciesResponse_Payload) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NetworkPoliciesResponse_Payload) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NetworkPoliciesResponse_Payload) EqualVT(n *NetworkPoliciesResponse_Payload) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

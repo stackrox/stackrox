@@ -8,6 +8,7 @@ func (m *CloudSource) SizeVT() int                   { return proto.Size(m) }
 func (m *CloudSource) CloneVT() *CloudSource         { return proto.Clone(m).(*CloudSource) }
 func (m *CloudSource) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CloudSource) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource) EqualVT(n *CloudSource) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CloudSource) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *CloudSource_Credentials) SizeVT() int { return proto.Size(m) }
 func (m *CloudSource_Credentials) CloneVT() *CloudSource_Credentials {
 	return proto.Clone(m).(*CloudSource_Credentials)
 }
-func (m *CloudSource_Credentials) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CloudSource_Credentials) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource_Credentials) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *CloudSource_Credentials) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource_Credentials) EqualVT(n *CloudSource_Credentials) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CloudSource_Credentials) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *PaladinCloudConfig) SizeVT() int { return proto.Size(m) }
 func (m *PaladinCloudConfig) CloneVT() *PaladinCloudConfig {
 	return proto.Clone(m).(*PaladinCloudConfig)
 }
-func (m *PaladinCloudConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PaladinCloudConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PaladinCloudConfig) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *PaladinCloudConfig) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *PaladinCloudConfig) EqualVT(n *PaladinCloudConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PaladinCloudConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -36,6 +39,7 @@ func (m *OCMConfig) SizeVT() int                   { return proto.Size(m) }
 func (m *OCMConfig) CloneVT() *OCMConfig           { return proto.Clone(m).(*OCMConfig) }
 func (m *OCMConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *OCMConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *OCMConfig) EqualVT(n *OCMConfig) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *OCMConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -44,8 +48,9 @@ func (m *CloudSourcesFilter) SizeVT() int { return proto.Size(m) }
 func (m *CloudSourcesFilter) CloneVT() *CloudSourcesFilter {
 	return proto.Clone(m).(*CloudSourcesFilter)
 }
-func (m *CloudSourcesFilter) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CloudSourcesFilter) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSourcesFilter) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *CloudSourcesFilter) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSourcesFilter) EqualVT(n *CloudSourcesFilter) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CloudSourcesFilter) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -56,6 +61,9 @@ func (m *CountCloudSourcesRequest) CloneVT() *CountCloudSourcesRequest {
 }
 func (m *CountCloudSourcesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CountCloudSourcesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CountCloudSourcesRequest) EqualVT(n *CountCloudSourcesRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountCloudSourcesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -66,6 +74,9 @@ func (m *CountCloudSourcesResponse) CloneVT() *CountCloudSourcesResponse {
 }
 func (m *CountCloudSourcesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CountCloudSourcesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CountCloudSourcesResponse) EqualVT(n *CountCloudSourcesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountCloudSourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -74,8 +85,9 @@ func (m *GetCloudSourceRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetCloudSourceRequest) CloneVT() *GetCloudSourceRequest {
 	return proto.Clone(m).(*GetCloudSourceRequest)
 }
-func (m *GetCloudSourceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCloudSourceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCloudSourceRequest) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GetCloudSourceRequest) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GetCloudSourceRequest) EqualVT(n *GetCloudSourceRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCloudSourceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -84,8 +96,9 @@ func (m *GetCloudSourceResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetCloudSourceResponse) CloneVT() *GetCloudSourceResponse {
 	return proto.Clone(m).(*GetCloudSourceResponse)
 }
-func (m *GetCloudSourceResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCloudSourceResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCloudSourceResponse) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *GetCloudSourceResponse) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *GetCloudSourceResponse) EqualVT(n *GetCloudSourceResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCloudSourceResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -94,8 +107,9 @@ func (m *ListCloudSourcesRequest) SizeVT() int { return proto.Size(m) }
 func (m *ListCloudSourcesRequest) CloneVT() *ListCloudSourcesRequest {
 	return proto.Clone(m).(*ListCloudSourcesRequest)
 }
-func (m *ListCloudSourcesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListCloudSourcesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListCloudSourcesRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *ListCloudSourcesRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *ListCloudSourcesRequest) EqualVT(n *ListCloudSourcesRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListCloudSourcesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -106,6 +120,9 @@ func (m *ListCloudSourcesResponse) CloneVT() *ListCloudSourcesResponse {
 }
 func (m *ListCloudSourcesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListCloudSourcesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListCloudSourcesResponse) EqualVT(n *ListCloudSourcesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListCloudSourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -116,6 +133,9 @@ func (m *CreateCloudSourceRequest) CloneVT() *CreateCloudSourceRequest {
 }
 func (m *CreateCloudSourceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CreateCloudSourceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateCloudSourceRequest) EqualVT(n *CreateCloudSourceRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateCloudSourceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -126,6 +146,9 @@ func (m *CreateCloudSourceResponse) CloneVT() *CreateCloudSourceResponse {
 }
 func (m *CreateCloudSourceResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CreateCloudSourceResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateCloudSourceResponse) EqualVT(n *CreateCloudSourceResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateCloudSourceResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -136,6 +159,9 @@ func (m *UpdateCloudSourceRequest) CloneVT() *UpdateCloudSourceRequest {
 }
 func (m *UpdateCloudSourceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *UpdateCloudSourceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateCloudSourceRequest) EqualVT(n *UpdateCloudSourceRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateCloudSourceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -146,6 +172,9 @@ func (m *DeleteCloudSourceRequest) CloneVT() *DeleteCloudSourceRequest {
 }
 func (m *DeleteCloudSourceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DeleteCloudSourceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteCloudSourceRequest) EqualVT(n *DeleteCloudSourceRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteCloudSourceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -154,8 +183,9 @@ func (m *TestCloudSourceRequest) SizeVT() int { return proto.Size(m) }
 func (m *TestCloudSourceRequest) CloneVT() *TestCloudSourceRequest {
 	return proto.Clone(m).(*TestCloudSourceRequest)
 }
-func (m *TestCloudSourceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestCloudSourceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestCloudSourceRequest) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *TestCloudSourceRequest) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *TestCloudSourceRequest) EqualVT(n *TestCloudSourceRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestCloudSourceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

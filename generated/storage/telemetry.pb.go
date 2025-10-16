@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/telemetry.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,13 +25,12 @@ const (
 )
 
 type TelemetryConfiguration struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled     bool                   `protobuf:"varint,1,opt,name=enabled"`
-	xxx_hidden_LastSetTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state   protoimpl.MessageState `protogen:"hybrid.v1"`
+	Enabled bool                   `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
+	// Deprecated: Marked as deprecated in storage/telemetry.proto.
+	LastSetTime   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime" json:"last_set_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TelemetryConfiguration) Reset() {
@@ -59,7 +60,7 @@ func (x *TelemetryConfiguration) ProtoReflect() protoreflect.Message {
 
 func (x *TelemetryConfiguration) GetEnabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Enabled
+		return x.Enabled
 	}
 	return false
 }
@@ -67,26 +68,18 @@ func (x *TelemetryConfiguration) GetEnabled() bool {
 // Deprecated: Marked as deprecated in storage/telemetry.proto.
 func (x *TelemetryConfiguration) GetLastSetTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastSetTime
+		return x.LastSetTime
 	}
 	return nil
 }
 
 func (x *TelemetryConfiguration) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Enabled = v
 }
 
 // Deprecated: Marked as deprecated in storage/telemetry.proto.
 func (x *TelemetryConfiguration) SetLastSetTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastSetTime = v
-}
-
-func (x *TelemetryConfiguration) HasEnabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.LastSetTime = v
 }
 
 // Deprecated: Marked as deprecated in storage/telemetry.proto.
@@ -94,23 +87,18 @@ func (x *TelemetryConfiguration) HasLastSetTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastSetTime != nil
-}
-
-func (x *TelemetryConfiguration) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = false
+	return x.LastSetTime != nil
 }
 
 // Deprecated: Marked as deprecated in storage/telemetry.proto.
 func (x *TelemetryConfiguration) ClearLastSetTime() {
-	x.xxx_hidden_LastSetTime = nil
+	x.LastSetTime = nil
 }
 
 type TelemetryConfiguration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Enabled *bool
+	Enabled bool
 	// Deprecated: Marked as deprecated in storage/telemetry.proto.
 	LastSetTime *timestamppb.Timestamp
 }
@@ -119,11 +107,8 @@ func (b0 TelemetryConfiguration_builder) Build() *TelemetryConfiguration {
 	m0 := &TelemetryConfiguration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
-	x.xxx_hidden_LastSetTime = b.LastSetTime
+	x.Enabled = b.Enabled
+	x.LastSetTime = b.LastSetTime
 	return m0
 }
 
@@ -134,8 +119,8 @@ const file_storage_telemetry_proto_rawDesc = "" +
 	"\x17storage/telemetry.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a!google/protobuf/go_features.proto\"v\n" +
 	"\x16TelemetryConfiguration\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12B\n" +
-	"\rlast_set_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02\x18\x01R\vlastSetTimeB9\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\rlast_set_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02\x18\x01R\vlastSetTimeBA\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_telemetry_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_telemetry_proto_goTypes = []any{

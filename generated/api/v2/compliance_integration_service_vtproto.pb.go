@@ -8,8 +8,9 @@ func (m *ComplianceIntegration) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceIntegration) CloneVT() *ComplianceIntegration {
 	return proto.Clone(m).(*ComplianceIntegration)
 }
-func (m *ComplianceIntegration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceIntegration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceIntegration) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceIntegration) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceIntegration) EqualVT(n *ComplianceIntegration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceIntegration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *ComplianceIntegrationStatusRequest) CloneVT() *ComplianceIntegrationSta
 func (m *ComplianceIntegrationStatusRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ComplianceIntegrationStatusRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ComplianceIntegrationStatusRequest) EqualVT(n *ComplianceIntegrationStatusRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -35,6 +39,9 @@ func (m *ListComplianceIntegrationsResponse) CloneVT() *ListComplianceIntegratio
 func (m *ListComplianceIntegrationsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ListComplianceIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ListComplianceIntegrationsResponse) EqualVT(n *ListComplianceIntegrationsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

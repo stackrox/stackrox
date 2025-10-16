@@ -12,6 +12,9 @@ func (m *ListCollectionSelectorsResponse) MarshalVT() ([]byte, error) { return p
 func (m *ListCollectionSelectorsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListCollectionSelectorsResponse) EqualVT(n *ListCollectionSelectorsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListCollectionSelectorsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -22,8 +25,9 @@ func (m *GetCollectionRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetCollectionRequest) CloneVT() *GetCollectionRequest {
 	return proto.Clone(m).(*GetCollectionRequest)
 }
-func (m *GetCollectionRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCollectionRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GetCollectionRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionRequest) EqualVT(n *GetCollectionRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -36,6 +40,9 @@ func (m *CollectionDeploymentMatchOptions) MarshalVT() ([]byte, error) { return 
 func (m *CollectionDeploymentMatchOptions) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CollectionDeploymentMatchOptions) EqualVT(n *CollectionDeploymentMatchOptions) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectionDeploymentMatchOptions) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -46,8 +53,9 @@ func (m *GetCollectionResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetCollectionResponse) CloneVT() *GetCollectionResponse {
 	return proto.Clone(m).(*GetCollectionResponse)
 }
-func (m *GetCollectionResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionResponse) EqualVT(n *GetCollectionResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -58,6 +66,9 @@ func (m *GetCollectionCountRequest) CloneVT() *GetCollectionCountRequest {
 }
 func (m *GetCollectionCountRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetCollectionCountRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionCountRequest) EqualVT(n *GetCollectionCountRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCollectionCountRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -68,6 +79,9 @@ func (m *GetCollectionCountResponse) CloneVT() *GetCollectionCountResponse {
 }
 func (m *GetCollectionCountResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetCollectionCountResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCollectionCountResponse) EqualVT(n *GetCollectionCountResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCollectionCountResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -76,8 +90,9 @@ func (m *CreateCollectionRequest) SizeVT() int { return proto.Size(m) }
 func (m *CreateCollectionRequest) CloneVT() *CreateCollectionRequest {
 	return proto.Clone(m).(*CreateCollectionRequest)
 }
-func (m *CreateCollectionRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateCollectionRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *CreateCollectionRequest) EqualVT(n *CreateCollectionRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -88,6 +103,9 @@ func (m *CreateCollectionResponse) CloneVT() *CreateCollectionResponse {
 }
 func (m *CreateCollectionResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CreateCollectionResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateCollectionResponse) EqualVT(n *CreateCollectionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -96,8 +114,9 @@ func (m *UpdateCollectionRequest) SizeVT() int { return proto.Size(m) }
 func (m *UpdateCollectionRequest) CloneVT() *UpdateCollectionRequest {
 	return proto.Clone(m).(*UpdateCollectionRequest)
 }
-func (m *UpdateCollectionRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateCollectionRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateCollectionRequest) EqualVT(n *UpdateCollectionRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -108,6 +127,9 @@ func (m *UpdateCollectionResponse) CloneVT() *UpdateCollectionResponse {
 }
 func (m *UpdateCollectionResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *UpdateCollectionResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateCollectionResponse) EqualVT(n *UpdateCollectionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -116,8 +138,9 @@ func (m *DryRunCollectionRequest) SizeVT() int { return proto.Size(m) }
 func (m *DryRunCollectionRequest) CloneVT() *DryRunCollectionRequest {
 	return proto.Clone(m).(*DryRunCollectionRequest)
 }
-func (m *DryRunCollectionRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DryRunCollectionRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *DryRunCollectionRequest) EqualVT(n *DryRunCollectionRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DryRunCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -128,6 +151,9 @@ func (m *DryRunCollectionResponse) CloneVT() *DryRunCollectionResponse {
 }
 func (m *DryRunCollectionResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DryRunCollectionResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DryRunCollectionResponse) EqualVT(n *DryRunCollectionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DryRunCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -136,8 +162,9 @@ func (m *ListCollectionsRequest) SizeVT() int { return proto.Size(m) }
 func (m *ListCollectionsRequest) CloneVT() *ListCollectionsRequest {
 	return proto.Clone(m).(*ListCollectionsRequest)
 }
-func (m *ListCollectionsRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListCollectionsRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListCollectionsRequest) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *ListCollectionsRequest) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *ListCollectionsRequest) EqualVT(n *ListCollectionsRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListCollectionsRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -146,8 +173,9 @@ func (m *ListCollectionsResponse) SizeVT() int { return proto.Size(m) }
 func (m *ListCollectionsResponse) CloneVT() *ListCollectionsResponse {
 	return proto.Clone(m).(*ListCollectionsResponse)
 }
-func (m *ListCollectionsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListCollectionsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListCollectionsResponse) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *ListCollectionsResponse) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *ListCollectionsResponse) EqualVT(n *ListCollectionsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListCollectionsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/authprovider_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,12 +26,10 @@ const (
 )
 
 type GetAuthProviderRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAuthProviderRequest) Reset() {
@@ -59,56 +59,35 @@ func (x *GetAuthProviderRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetAuthProviderRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetAuthProviderRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *GetAuthProviderRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetAuthProviderRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	x.Id = v
 }
 
 type GetAuthProviderRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
+	Id string
 }
 
 func (b0 GetAuthProviderRequest_builder) Build() *GetAuthProviderRequest {
 	m0 := &GetAuthProviderRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	return m0
 }
 
 type GetAuthProvidersRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Type        *string                `protobuf:"bytes,2,opt,name=type"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAuthProvidersRequest) Reset() {
@@ -138,89 +117,47 @@ func (x *GetAuthProvidersRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetAuthProvidersRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetAuthProvidersRequest) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *GetAuthProvidersRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *GetAuthProvidersRequest) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetAuthProvidersRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetAuthProvidersRequest) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetAuthProvidersRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *GetAuthProvidersRequest) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = nil
+	x.Type = v
 }
 
 type GetAuthProvidersRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name *string
-	Type *string
+	Name string
+	Type string
 }
 
 func (b0 GetAuthProvidersRequest_builder) Build() *GetAuthProvidersRequest {
 	m0 := &GetAuthProvidersRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Type = b.Type
-	}
+	x.Name = b.Name
+	x.Type = b.Type
 	return m0
 }
 
 type GetLoginAuthProvidersResponse struct {
-	state                    protoimpl.MessageState                              `protogen:"opaque.v1"`
-	xxx_hidden_AuthProviders *[]*GetLoginAuthProvidersResponse_LoginAuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                             `protogen:"hybrid.v1"`
+	AuthProviders []*GetLoginAuthProvidersResponse_LoginAuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders" json:"auth_providers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetLoginAuthProvidersResponse) Reset() {
@@ -250,27 +187,13 @@ func (x *GetLoginAuthProvidersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetLoginAuthProvidersResponse) GetAuthProviders() []*GetLoginAuthProvidersResponse_LoginAuthProvider {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviders) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*GetLoginAuthProvidersResponse_LoginAuthProvider
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.AuthProviders
 	}
 	return nil
 }
 
 func (x *GetLoginAuthProvidersResponse) SetAuthProviders(v []*GetLoginAuthProvidersResponse_LoginAuthProvider) {
-	var sv *[]*GetLoginAuthProvidersResponse_LoginAuthProvider
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*GetLoginAuthProvidersResponse_LoginAuthProvider{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.AuthProviders = v
 }
 
 type GetLoginAuthProvidersResponse_builder struct {
@@ -283,22 +206,15 @@ func (b0 GetLoginAuthProvidersResponse_builder) Build() *GetLoginAuthProvidersRe
 	m0 := &GetLoginAuthProvidersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.AuthProviders != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_AuthProviders = &b.AuthProviders
-	}
+	x.AuthProviders = b.AuthProviders
 	return m0
 }
 
 type GetAuthProvidersResponse struct {
-	state                    protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_AuthProviders *[]*storage.AuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	AuthProviders []*storage.AuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders" json:"auth_providers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAuthProvidersResponse) Reset() {
@@ -328,27 +244,13 @@ func (x *GetAuthProvidersResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAuthProvidersResponse) GetAuthProviders() []*storage.AuthProvider {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviders) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.AuthProvider
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.AuthProviders
 	}
 	return nil
 }
 
 func (x *GetAuthProvidersResponse) SetAuthProviders(v []*storage.AuthProvider) {
-	var sv *[]*storage.AuthProvider
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.AuthProvider{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviders), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.AuthProviders = v
 }
 
 type GetAuthProvidersResponse_builder struct {
@@ -361,22 +263,15 @@ func (b0 GetAuthProvidersResponse_builder) Build() *GetAuthProvidersResponse {
 	m0 := &GetAuthProvidersResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.AuthProviders != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_AuthProviders = &b.AuthProviders
-	}
+	x.AuthProviders = b.AuthProviders
 	return m0
 }
 
 type PostAuthProviderRequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Provider *storage.AuthProvider  `protobuf:"bytes,1,opt,name=provider"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Provider      *storage.AuthProvider  `protobuf:"bytes,1,opt,name=provider" json:"provider,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PostAuthProviderRequest) Reset() {
@@ -406,37 +301,24 @@ func (x *PostAuthProviderRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostAuthProviderRequest) GetProvider() *storage.AuthProvider {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Provider) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.AuthProvider
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Provider), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Provider
 	}
 	return nil
 }
 
 func (x *PostAuthProviderRequest) SetProvider(v *storage.AuthProvider) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Provider, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Provider = v
 }
 
 func (x *PostAuthProviderRequest) HasProvider() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Provider != nil
 }
 
 func (x *PostAuthProviderRequest) ClearProvider() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Provider, (*storage.AuthProvider)(nil))
+	x.Provider = nil
 }
 
 type PostAuthProviderRequest_builder struct {
@@ -449,22 +331,23 @@ func (b0 PostAuthProviderRequest_builder) Build() *PostAuthProviderRequest {
 	m0 := &PostAuthProviderRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Provider != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Provider = b.Provider
-	}
+	x.Provider = b.Provider
 	return m0
 }
 
 type UpdateAuthProviderRequest struct {
-	state                  protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_NameOpt     isUpdateAuthProviderRequest_NameOpt    `protobuf_oneof:"name_opt"`
-	xxx_hidden_EnabledOpt  isUpdateAuthProviderRequest_EnabledOpt `protobuf_oneof:"enabled_opt"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to NameOpt:
+	//
+	//	*UpdateAuthProviderRequest_Name
+	NameOpt isUpdateAuthProviderRequest_NameOpt `protobuf_oneof:"name_opt"`
+	// Types that are valid to be assigned to EnabledOpt:
+	//
+	//	*UpdateAuthProviderRequest_Enabled
+	EnabledOpt    isUpdateAuthProviderRequest_EnabledOpt `protobuf_oneof:"enabled_opt"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateAuthProviderRequest) Reset() {
@@ -494,26 +377,37 @@ func (x *UpdateAuthProviderRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateAuthProviderRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *UpdateAuthProviderRequest) GetNameOpt() isUpdateAuthProviderRequest_NameOpt {
+	if x != nil {
+		return x.NameOpt
+	}
+	return nil
+}
+
 func (x *UpdateAuthProviderRequest) GetName() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_NameOpt.(*updateAuthProviderRequest_Name); ok {
+		if x, ok := x.NameOpt.(*UpdateAuthProviderRequest_Name); ok {
 			return x.Name
 		}
 	}
 	return ""
 }
 
+func (x *UpdateAuthProviderRequest) GetEnabledOpt() isUpdateAuthProviderRequest_EnabledOpt {
+	if x != nil {
+		return x.EnabledOpt
+	}
+	return nil
+}
+
 func (x *UpdateAuthProviderRequest) GetEnabled() bool {
 	if x != nil {
-		if x, ok := x.xxx_hidden_EnabledOpt.(*updateAuthProviderRequest_Enabled); ok {
+		if x, ok := x.EnabledOpt.(*UpdateAuthProviderRequest_Enabled); ok {
 			return x.Enabled
 		}
 	}
@@ -521,37 +415,29 @@ func (x *UpdateAuthProviderRequest) GetEnabled() bool {
 }
 
 func (x *UpdateAuthProviderRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *UpdateAuthProviderRequest) SetName(v string) {
-	x.xxx_hidden_NameOpt = &updateAuthProviderRequest_Name{v}
+	x.NameOpt = &UpdateAuthProviderRequest_Name{v}
 }
 
 func (x *UpdateAuthProviderRequest) SetEnabled(v bool) {
-	x.xxx_hidden_EnabledOpt = &updateAuthProviderRequest_Enabled{v}
-}
-
-func (x *UpdateAuthProviderRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.EnabledOpt = &UpdateAuthProviderRequest_Enabled{v}
 }
 
 func (x *UpdateAuthProviderRequest) HasNameOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_NameOpt != nil
+	return x.NameOpt != nil
 }
 
 func (x *UpdateAuthProviderRequest) HasName() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_NameOpt.(*updateAuthProviderRequest_Name)
+	_, ok := x.NameOpt.(*UpdateAuthProviderRequest_Name)
 	return ok
 }
 
@@ -559,39 +445,34 @@ func (x *UpdateAuthProviderRequest) HasEnabledOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_EnabledOpt != nil
+	return x.EnabledOpt != nil
 }
 
 func (x *UpdateAuthProviderRequest) HasEnabled() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_EnabledOpt.(*updateAuthProviderRequest_Enabled)
+	_, ok := x.EnabledOpt.(*UpdateAuthProviderRequest_Enabled)
 	return ok
 }
 
-func (x *UpdateAuthProviderRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *UpdateAuthProviderRequest) ClearNameOpt() {
-	x.xxx_hidden_NameOpt = nil
+	x.NameOpt = nil
 }
 
 func (x *UpdateAuthProviderRequest) ClearName() {
-	if _, ok := x.xxx_hidden_NameOpt.(*updateAuthProviderRequest_Name); ok {
-		x.xxx_hidden_NameOpt = nil
+	if _, ok := x.NameOpt.(*UpdateAuthProviderRequest_Name); ok {
+		x.NameOpt = nil
 	}
 }
 
 func (x *UpdateAuthProviderRequest) ClearEnabledOpt() {
-	x.xxx_hidden_EnabledOpt = nil
+	x.EnabledOpt = nil
 }
 
 func (x *UpdateAuthProviderRequest) ClearEnabled() {
-	if _, ok := x.xxx_hidden_EnabledOpt.(*updateAuthProviderRequest_Enabled); ok {
-		x.xxx_hidden_EnabledOpt = nil
+	if _, ok := x.EnabledOpt.(*UpdateAuthProviderRequest_Enabled); ok {
+		x.EnabledOpt = nil
 	}
 }
 
@@ -602,8 +483,8 @@ func (x *UpdateAuthProviderRequest) WhichNameOpt() case_UpdateAuthProviderReques
 	if x == nil {
 		return UpdateAuthProviderRequest_NameOpt_not_set_case
 	}
-	switch x.xxx_hidden_NameOpt.(type) {
-	case *updateAuthProviderRequest_Name:
+	switch x.NameOpt.(type) {
+	case *UpdateAuthProviderRequest_Name:
 		return UpdateAuthProviderRequest_Name_case
 	default:
 		return UpdateAuthProviderRequest_NameOpt_not_set_case
@@ -617,8 +498,8 @@ func (x *UpdateAuthProviderRequest) WhichEnabledOpt() case_UpdateAuthProviderReq
 	if x == nil {
 		return UpdateAuthProviderRequest_EnabledOpt_not_set_case
 	}
-	switch x.xxx_hidden_EnabledOpt.(type) {
-	case *updateAuthProviderRequest_Enabled:
+	switch x.EnabledOpt.(type) {
+	case *UpdateAuthProviderRequest_Enabled:
 		return UpdateAuthProviderRequest_Enabled_case
 	default:
 		return UpdateAuthProviderRequest_EnabledOpt_not_set_case
@@ -628,28 +509,25 @@ func (x *UpdateAuthProviderRequest) WhichEnabledOpt() case_UpdateAuthProviderReq
 type UpdateAuthProviderRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_NameOpt:
+	Id string
+	// Fields of oneof NameOpt:
 	Name *string
-	// -- end of xxx_hidden_NameOpt
-	// Fields of oneof xxx_hidden_EnabledOpt:
+	// -- end of NameOpt
+	// Fields of oneof EnabledOpt:
 	Enabled *bool
-	// -- end of xxx_hidden_EnabledOpt
+	// -- end of EnabledOpt
 }
 
 func (b0 UpdateAuthProviderRequest_builder) Build() *UpdateAuthProviderRequest {
 	m0 := &UpdateAuthProviderRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.Name != nil {
-		x.xxx_hidden_NameOpt = &updateAuthProviderRequest_Name{*b.Name}
+		x.NameOpt = &UpdateAuthProviderRequest_Name{*b.Name}
 	}
 	if b.Enabled != nil {
-		x.xxx_hidden_EnabledOpt = &updateAuthProviderRequest_Enabled{*b.Enabled}
+		x.EnabledOpt = &UpdateAuthProviderRequest_Enabled{*b.Enabled}
 	}
 	return m0
 }
@@ -678,31 +556,30 @@ type isUpdateAuthProviderRequest_NameOpt interface {
 	isUpdateAuthProviderRequest_NameOpt()
 }
 
-type updateAuthProviderRequest_Name struct {
+type UpdateAuthProviderRequest_Name struct {
 	Name string `protobuf:"bytes,2,opt,name=name,oneof"`
 }
 
-func (*updateAuthProviderRequest_Name) isUpdateAuthProviderRequest_NameOpt() {}
+func (*UpdateAuthProviderRequest_Name) isUpdateAuthProviderRequest_NameOpt() {}
 
 type isUpdateAuthProviderRequest_EnabledOpt interface {
 	isUpdateAuthProviderRequest_EnabledOpt()
 }
 
-type updateAuthProviderRequest_Enabled struct {
+type UpdateAuthProviderRequest_Enabled struct {
 	Enabled bool `protobuf:"varint,3,opt,name=enabled,oneof"`
 }
 
-func (*updateAuthProviderRequest_Enabled) isUpdateAuthProviderRequest_EnabledOpt() {}
+func (*UpdateAuthProviderRequest_Enabled) isUpdateAuthProviderRequest_EnabledOpt() {}
 
 type ExchangeTokenRequest struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ExternalToken *string                `protobuf:"bytes,1,opt,name=external_token,json=externalToken"`
-	xxx_hidden_Type          *string                `protobuf:"bytes,2,opt,name=type"`
-	xxx_hidden_State         *string                `protobuf:"bytes,3,opt,name=state"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The external authentication token. The server will mask the value of this credential in responses and logs.
+	ExternalToken string `protobuf:"bytes,1,opt,name=external_token,json=externalToken" json:"external_token,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Type          string `protobuf:"bytes,2,opt,name=type" json:"type,omitempty"`
+	State         string `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExchangeTokenRequest) Reset() {
@@ -732,125 +609,64 @@ func (x *ExchangeTokenRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ExchangeTokenRequest) GetExternalToken() string {
 	if x != nil {
-		if x.xxx_hidden_ExternalToken != nil {
-			return *x.xxx_hidden_ExternalToken
-		}
-		return ""
+		return x.ExternalToken
 	}
 	return ""
 }
 
 func (x *ExchangeTokenRequest) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *ExchangeTokenRequest) GetState() string {
 	if x != nil {
-		if x.xxx_hidden_State != nil {
-			return *x.xxx_hidden_State
-		}
-		return ""
+		return x.State
 	}
 	return ""
 }
 
 func (x *ExchangeTokenRequest) SetExternalToken(v string) {
-	x.xxx_hidden_ExternalToken = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.ExternalToken = v
 }
 
 func (x *ExchangeTokenRequest) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Type = v
 }
 
 func (x *ExchangeTokenRequest) SetState(v string) {
-	x.xxx_hidden_State = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *ExchangeTokenRequest) HasExternalToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ExchangeTokenRequest) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ExchangeTokenRequest) HasState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ExchangeTokenRequest) ClearExternalToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ExternalToken = nil
-}
-
-func (x *ExchangeTokenRequest) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *ExchangeTokenRequest) ClearState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_State = nil
+	x.State = v
 }
 
 type ExchangeTokenRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The external authentication token. The server will mask the value of this credential in responses and logs.
-	ExternalToken *string
-	Type          *string
-	State         *string
+	ExternalToken string
+	Type          string
+	State         string
 }
 
 func (b0 ExchangeTokenRequest_builder) Build() *ExchangeTokenRequest {
 	m0 := &ExchangeTokenRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ExternalToken != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_ExternalToken = b.ExternalToken
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.State != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_State = b.State
-	}
+	x.ExternalToken = b.ExternalToken
+	x.Type = b.Type
+	x.State = b.State
 	return m0
 }
 
 type ExchangeTokenResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Token       *string                `protobuf:"bytes,1,opt,name=token"`
-	xxx_hidden_ClientState *string                `protobuf:"bytes,2,opt,name=client_state,json=clientState"`
-	xxx_hidden_Test        bool                   `protobuf:"varint,3,opt,name=test"`
-	xxx_hidden_User        *AuthStatus            `protobuf:"bytes,4,opt,name=user"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token" json:"token,omitempty"`
+	ClientState   string                 `protobuf:"bytes,2,opt,name=client_state,json=clientState" json:"client_state,omitempty"`
+	Test          bool                   `protobuf:"varint,3,opt,name=test" json:"test,omitempty"`
+	User          *AuthStatus            `protobuf:"bytes,4,opt,name=user" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExchangeTokenResponse) Reset() {
@@ -880,123 +696,65 @@ func (x *ExchangeTokenResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExchangeTokenResponse) GetToken() string {
 	if x != nil {
-		if x.xxx_hidden_Token != nil {
-			return *x.xxx_hidden_Token
-		}
-		return ""
+		return x.Token
 	}
 	return ""
 }
 
 func (x *ExchangeTokenResponse) GetClientState() string {
 	if x != nil {
-		if x.xxx_hidden_ClientState != nil {
-			return *x.xxx_hidden_ClientState
-		}
-		return ""
+		return x.ClientState
 	}
 	return ""
 }
 
 func (x *ExchangeTokenResponse) GetTest() bool {
 	if x != nil {
-		return x.xxx_hidden_Test
+		return x.Test
 	}
 	return false
 }
 
 func (x *ExchangeTokenResponse) GetUser() *AuthStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_User) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *AuthStatus
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_User), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.User
 	}
 	return nil
 }
 
 func (x *ExchangeTokenResponse) SetToken(v string) {
-	x.xxx_hidden_Token = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Token = v
 }
 
 func (x *ExchangeTokenResponse) SetClientState(v string) {
-	x.xxx_hidden_ClientState = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ClientState = v
 }
 
 func (x *ExchangeTokenResponse) SetTest(v bool) {
-	x.xxx_hidden_Test = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Test = v
 }
 
 func (x *ExchangeTokenResponse) SetUser(v *AuthStatus) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-	}
-}
-
-func (x *ExchangeTokenResponse) HasToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ExchangeTokenResponse) HasClientState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ExchangeTokenResponse) HasTest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.User = v
 }
 
 func (x *ExchangeTokenResponse) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ExchangeTokenResponse) ClearToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Token = nil
-}
-
-func (x *ExchangeTokenResponse) ClearClientState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ClientState = nil
-}
-
-func (x *ExchangeTokenResponse) ClearTest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Test = false
+	return x.User != nil
 }
 
 func (x *ExchangeTokenResponse) ClearUser() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_User, (*AuthStatus)(nil))
+	x.User = nil
 }
 
 type ExchangeTokenResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Token       *string
-	ClientState *string
-	Test        *bool
+	Token       string
+	ClientState string
+	Test        bool
 	User        *AuthStatus
 }
 
@@ -1004,34 +762,18 @@ func (b0 ExchangeTokenResponse_builder) Build() *ExchangeTokenResponse {
 	m0 := &ExchangeTokenResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Token != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Token = b.Token
-	}
-	if b.ClientState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ClientState = b.ClientState
-	}
-	if b.Test != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Test = *b.Test
-	}
-	if b.User != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_User = b.User
-	}
+	x.Token = b.Token
+	x.ClientState = b.ClientState
+	x.Test = b.Test
+	x.User = b.User
 	return m0
 }
 
 type AvailableProviderTypesResponse struct {
-	state                        protoimpl.MessageState                              `protogen:"opaque.v1"`
-	xxx_hidden_AuthProviderTypes *[]*AvailableProviderTypesResponse_AuthProviderType `protobuf:"bytes,1,rep,name=auth_provider_types,json=authProviderTypes"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state             protoimpl.MessageState                             `protogen:"hybrid.v1"`
+	AuthProviderTypes []*AvailableProviderTypesResponse_AuthProviderType `protobuf:"bytes,1,rep,name=auth_provider_types,json=authProviderTypes" json:"auth_provider_types,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *AvailableProviderTypesResponse) Reset() {
@@ -1061,27 +803,13 @@ func (x *AvailableProviderTypesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *AvailableProviderTypesResponse) GetAuthProviderTypes() []*AvailableProviderTypesResponse_AuthProviderType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AuthProviderTypes) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*AvailableProviderTypesResponse_AuthProviderType
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.AuthProviderTypes
 	}
 	return nil
 }
 
 func (x *AvailableProviderTypesResponse) SetAuthProviderTypes(v []*AvailableProviderTypesResponse_AuthProviderType) {
-	var sv *[]*AvailableProviderTypesResponse_AuthProviderType
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*AvailableProviderTypesResponse_AuthProviderType{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AuthProviderTypes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.AuthProviderTypes = v
 }
 
 type AvailableProviderTypesResponse_builder struct {
@@ -1094,23 +822,18 @@ func (b0 AvailableProviderTypesResponse_builder) Build() *AvailableProviderTypes
 	m0 := &AvailableProviderTypesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.AuthProviderTypes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_AuthProviderTypes = &b.AuthProviderTypes
-	}
+	x.AuthProviderTypes = b.AuthProviderTypes
 	return m0
 }
 
 type GetLoginAuthProvidersResponse_LoginAuthProvider struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Type        *string                `protobuf:"bytes,3,opt,name=type"`
-	xxx_hidden_LoginUrl    *string                `protobuf:"bytes,5,opt,name=login_url,json=loginUrl"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
+	LoginUrl      string                 `protobuf:"bytes,5,opt,name=login_url,json=loginUrl" json:"login_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) Reset() {
@@ -1140,152 +863,74 @@ func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ProtoReflect() protore
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) GetLoginUrl() string {
 	if x != nil {
-		if x.xxx_hidden_LoginUrl != nil {
-			return *x.xxx_hidden_LoginUrl
-		}
-		return ""
+		return x.LoginUrl
 	}
 	return ""
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Name = v
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Type = v
 }
 
 func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) SetLoginUrl(v string) {
-	x.xxx_hidden_LoginUrl = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) HasLoginUrl() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) ClearLoginUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_LoginUrl = nil
+	x.LoginUrl = v
 }
 
 type GetLoginAuthProvidersResponse_LoginAuthProvider_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	Name     *string
-	Type     *string
-	LoginUrl *string
+	Id       string
+	Name     string
+	Type     string
+	LoginUrl string
 }
 
 func (b0 GetLoginAuthProvidersResponse_LoginAuthProvider_builder) Build() *GetLoginAuthProvidersResponse_LoginAuthProvider {
 	m0 := &GetLoginAuthProvidersResponse_LoginAuthProvider{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.LoginUrl != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_LoginUrl = b.LoginUrl
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Type = b.Type
+	x.LoginUrl = b.LoginUrl
 	return m0
 }
 
 type AvailableProviderTypesResponse_AuthProviderType struct {
-	state                          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Type                *string                `protobuf:"bytes,1,opt,name=type"`
-	xxx_hidden_SuggestedAttributes []string               `protobuf:"bytes,2,rep,name=suggested_attributes,json=suggestedAttributes"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"hybrid.v1"`
+	Type                string                 `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	SuggestedAttributes []string               `protobuf:"bytes,2,rep,name=suggested_attributes,json=suggestedAttributes" json:"suggested_attributes,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) Reset() {
@@ -1315,46 +960,30 @@ func (x *AvailableProviderTypesResponse_AuthProviderType) ProtoReflect() protore
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) GetSuggestedAttributes() []string {
 	if x != nil {
-		return x.xxx_hidden_SuggestedAttributes
+		return x.SuggestedAttributes
 	}
 	return nil
 }
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Type = v
 }
 
 func (x *AvailableProviderTypesResponse_AuthProviderType) SetSuggestedAttributes(v []string) {
-	x.xxx_hidden_SuggestedAttributes = v
-}
-
-func (x *AvailableProviderTypesResponse_AuthProviderType) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AvailableProviderTypesResponse_AuthProviderType) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Type = nil
+	x.SuggestedAttributes = v
 }
 
 type AvailableProviderTypesResponse_AuthProviderType_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Type                *string
+	Type                string
 	SuggestedAttributes []string
 }
 
@@ -1362,11 +991,8 @@ func (b0 AvailableProviderTypesResponse_AuthProviderType_builder) Build() *Avail
 	m0 := &AvailableProviderTypesResponse_AuthProviderType{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Type = b.Type
-	}
-	x.xxx_hidden_SuggestedAttributes = b.SuggestedAttributes
+	x.Type = b.Type
+	x.SuggestedAttributes = b.SuggestedAttributes
 	return m0
 }
 
@@ -1421,8 +1047,8 @@ const file_api_v1_authprovider_service_proto_rawDesc = "" +
 	"\x12UpdateAuthProvider\x12\x1d.v1.UpdateAuthProviderRequest\x1a\x15.storage.AuthProvider\"!\x82\xd3\xe4\x93\x02\x1b:\x01*2\x16/v1/authProviders/{id}\x12b\n" +
 	"\x0fPutAuthProvider\x12\x15.storage.AuthProvider\x1a\x15.storage.AuthProvider\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/v1/authProviders/{id}\x12X\n" +
 	"\x12DeleteAuthProvider\x12\x17.v1.DeleteByIDWithForce\x1a\t.v1.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/v1/authProviders/{id}\x12p\n" +
-	"\rExchangeToken\x12\x18.v1.ExchangeTokenRequest\x1a\x19.v1.ExchangeTokenResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/authProviders/exchangeTokenB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
+	"\rExchangeToken\x12\x18.v1.ExchangeTokenRequest\x1a\x19.v1.ExchangeTokenResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/v1/authProviders/exchangeTokenB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_authprovider_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_api_v1_authprovider_service_proto_goTypes = []any{
@@ -1482,8 +1108,8 @@ func file_api_v1_authprovider_service_proto_init() {
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
 	file_api_v1_authprovider_service_proto_msgTypes[5].OneofWrappers = []any{
-		(*updateAuthProviderRequest_Name)(nil),
-		(*updateAuthProviderRequest_Enabled)(nil),
+		(*UpdateAuthProviderRequest_Name)(nil),
+		(*UpdateAuthProviderRequest_Enabled)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

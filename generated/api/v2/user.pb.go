@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v2/user.proto
 
+//go:build !protoopaque
+
 package v2
 
 import (
@@ -22,13 +24,11 @@ const (
 )
 
 type SlimUser struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SlimUser) Reset() {
@@ -58,77 +58,39 @@ func (x *SlimUser) ProtoReflect() protoreflect.Message {
 
 func (x *SlimUser) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SlimUser) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *SlimUser) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *SlimUser) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *SlimUser) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SlimUser) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SlimUser) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *SlimUser) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type SlimUser_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id   *string
-	Name *string
+	Id   string
+	Name string
 }
 
 func (b0 SlimUser_builder) Build() *SlimUser {
 	m0 := &SlimUser{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Id = b.Id
+	x.Name = b.Name
 	return m0
 }
 
@@ -139,8 +101,8 @@ const file_api_v2_user_proto_rawDesc = "" +
 	"\x11api/v2/user.proto\x12\x02v2\x1a!google/protobuf/go_features.proto\".\n" +
 	"\bSlimUser\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04nameB/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x04name\x18\x02 \x01(\tR\x04nameB7\n" +
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_v2_user_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v2_user_proto_goTypes = []any{

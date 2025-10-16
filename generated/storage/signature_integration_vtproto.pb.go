@@ -8,8 +8,9 @@ func (m *SignatureIntegration) SizeVT() int { return proto.Size(m) }
 func (m *SignatureIntegration) CloneVT() *SignatureIntegration {
 	return proto.Clone(m).(*SignatureIntegration)
 }
-func (m *SignatureIntegration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SignatureIntegration) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *SignatureIntegration) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *SignatureIntegration) EqualVT(n *SignatureIntegration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SignatureIntegration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *CosignPublicKeyVerification) CloneVT() *CosignPublicKeyVerification {
 }
 func (m *CosignPublicKeyVerification) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CosignPublicKeyVerification) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CosignPublicKeyVerification) EqualVT(n *CosignPublicKeyVerification) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CosignPublicKeyVerification) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -33,6 +37,9 @@ func (m *CosignPublicKeyVerification_PublicKey) CloneVT() *CosignPublicKeyVerifi
 func (m *CosignPublicKeyVerification_PublicKey) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *CosignPublicKeyVerification_PublicKey) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CosignPublicKeyVerification_PublicKey) EqualVT(n *CosignPublicKeyVerification_PublicKey) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -48,6 +55,9 @@ func (m *CosignCertificateVerification) MarshalVT() ([]byte, error) { return pro
 func (m *CosignCertificateVerification) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CosignCertificateVerification) EqualVT(n *CosignCertificateVerification) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CosignCertificateVerification) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -62,6 +72,9 @@ func (m *CertificateTransparencyLogVerification) MarshalVT() ([]byte, error) { r
 func (m *CertificateTransparencyLogVerification) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CertificateTransparencyLogVerification) EqualVT(n *CertificateTransparencyLogVerification) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CertificateTransparencyLogVerification) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -74,6 +87,9 @@ func (m *TransparencyLogVerification) CloneVT() *TransparencyLogVerification {
 }
 func (m *TransparencyLogVerification) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TransparencyLogVerification) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TransparencyLogVerification) EqualVT(n *TransparencyLogVerification) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TransparencyLogVerification) UnmarshalVTUnsafe(dAtA []byte) error {

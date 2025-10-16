@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/kube_event.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -151,24 +153,29 @@ func (x KubernetesEvent_Object_Resource) Number() protoreflect.EnumNumber {
 }
 
 type KubernetesEvent struct {
-	state                       protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Id               *string                         `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Object           *KubernetesEvent_Object         `protobuf:"bytes,2,opt,name=object"`
-	xxx_hidden_Timestamp        *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=timestamp"`
-	xxx_hidden_ApiVerb          KubernetesEvent_APIVerb         `protobuf:"varint,4,opt,name=api_verb,json=apiVerb,enum=storage.KubernetesEvent_APIVerb"`
-	xxx_hidden_ObjectArgs       isKubernetesEvent_ObjectArgs    `protobuf_oneof:"ObjectArgs"`
-	xxx_hidden_User             *KubernetesEvent_User           `protobuf:"bytes,15,opt,name=user"`
-	xxx_hidden_ImpersonatedUser *KubernetesEvent_User           `protobuf:"bytes,16,opt,name=impersonated_user,json=impersonatedUser"`
-	xxx_hidden_SourceIps        []string                        `protobuf:"bytes,17,rep,name=source_ips,json=sourceIps"`
-	xxx_hidden_UserAgent        *string                         `protobuf:"bytes,18,opt,name=user_agent,json=userAgent"`
-	xxx_hidden_ResponseStatus   *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus"`
-	xxx_hidden_RequestUri       *string                         `protobuf:"bytes,20,opt,name=request_uri,json=requestUri"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state     protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Id        string                  `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Object    *KubernetesEvent_Object `protobuf:"bytes,2,opt,name=object" json:"object,omitempty"`
+	Timestamp *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=timestamp" json:"timestamp,omitempty"`
+	ApiVerb   KubernetesEvent_APIVerb `protobuf:"varint,4,opt,name=api_verb,json=apiVerb,enum=storage.KubernetesEvent_APIVerb" json:"api_verb,omitempty" policy:"Kubernetes API Verb"` // @gotags: policy:"Kubernetes API Verb"
+	// tags 5-14 reserved for ObjectArgs
+	// Next available tag: 7
+	//
+	// Types that are valid to be assigned to ObjectArgs:
+	//
+	//	*KubernetesEvent_PodExecArgs_
+	//	*KubernetesEvent_PodPortForwardArgs_
+	ObjectArgs isKubernetesEvent_ObjectArgs `protobuf_oneof:"ObjectArgs"`
+	// Extended arguments. May not be available for pod exec and port forward events.
+	// These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
+	User             *KubernetesEvent_User           `protobuf:"bytes,15,opt,name=user" json:"user,omitempty"`
+	ImpersonatedUser *KubernetesEvent_User           `protobuf:"bytes,16,opt,name=impersonated_user,json=impersonatedUser" json:"impersonated_user,omitempty" policy:",ignore"` // this field is optional if the request wasn't an impersonated request // @gotags: policy:",ignore"
+	SourceIps        []string                        `protobuf:"bytes,17,rep,name=source_ips,json=sourceIps" json:"source_ips,omitempty" policy:"Source IP Address"`                      // @gotags: policy:"Source IP Address"
+	UserAgent        string                          `protobuf:"bytes,18,opt,name=user_agent,json=userAgent" json:"user_agent,omitempty" policy:"User Agent"`                      // @gotags: policy:"User Agent"
+	ResponseStatus   *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus" json:"response_status,omitempty"`
+	RequestUri       string                          `protobuf:"bytes,20,opt,name=request_uri,json=requestUri" json:"request_uri,omitempty"` // Field will not be used for policy detection
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent) Reset() {
@@ -198,47 +205,42 @@ func (x *KubernetesEvent) ProtoReflect() protoreflect.Message {
 
 func (x *KubernetesEvent) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *KubernetesEvent) GetObject() *KubernetesEvent_Object {
 	if x != nil {
-		return x.xxx_hidden_Object
+		return x.Object
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetApiVerb() KubernetesEvent_APIVerb {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_ApiVerb
-		}
+		return x.ApiVerb
 	}
 	return KubernetesEvent_UNKNOWN
 }
 
+func (x *KubernetesEvent) GetObjectArgs() isKubernetesEvent_ObjectArgs {
+	if x != nil {
+		return x.ObjectArgs
+	}
+	return nil
+}
+
 func (x *KubernetesEvent) GetPodExecArgs() *KubernetesEvent_PodExecArgs {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodExecArgs_); ok {
+		if x, ok := x.ObjectArgs.(*KubernetesEvent_PodExecArgs_); ok {
 			return x.PodExecArgs
 		}
 	}
@@ -247,7 +249,7 @@ func (x *KubernetesEvent) GetPodExecArgs() *KubernetesEvent_PodExecArgs {
 
 func (x *KubernetesEvent) GetPodPortForwardArgs() *KubernetesEvent_PodPortForwardArgs {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodPortForwardArgs_); ok {
+		if x, ok := x.ObjectArgs.(*KubernetesEvent_PodPortForwardArgs_); ok {
 			return x.PodPortForwardArgs
 		}
 	}
@@ -256,157 +258,128 @@ func (x *KubernetesEvent) GetPodPortForwardArgs() *KubernetesEvent_PodPortForwar
 
 func (x *KubernetesEvent) GetUser() *KubernetesEvent_User {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetImpersonatedUser() *KubernetesEvent_User {
 	if x != nil {
-		return x.xxx_hidden_ImpersonatedUser
+		return x.ImpersonatedUser
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetSourceIps() []string {
 	if x != nil {
-		return x.xxx_hidden_SourceIps
+		return x.SourceIps
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetUserAgent() string {
 	if x != nil {
-		if x.xxx_hidden_UserAgent != nil {
-			return *x.xxx_hidden_UserAgent
-		}
-		return ""
+		return x.UserAgent
 	}
 	return ""
 }
 
 func (x *KubernetesEvent) GetResponseStatus() *KubernetesEvent_ResponseStatus {
 	if x != nil {
-		return x.xxx_hidden_ResponseStatus
+		return x.ResponseStatus
 	}
 	return nil
 }
 
 func (x *KubernetesEvent) GetRequestUri() string {
 	if x != nil {
-		if x.xxx_hidden_RequestUri != nil {
-			return *x.xxx_hidden_RequestUri
-		}
-		return ""
+		return x.RequestUri
 	}
 	return ""
 }
 
 func (x *KubernetesEvent) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *KubernetesEvent) SetObject(v *KubernetesEvent_Object) {
-	x.xxx_hidden_Object = v
+	x.Object = v
 }
 
 func (x *KubernetesEvent) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
-	}
+	x.Timestamp = v
 }
 
 func (x *KubernetesEvent) SetApiVerb(v KubernetesEvent_APIVerb) {
-	x.xxx_hidden_ApiVerb = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.ApiVerb = v
 }
 
 func (x *KubernetesEvent) SetPodExecArgs(v *KubernetesEvent_PodExecArgs) {
 	if v == nil {
-		x.xxx_hidden_ObjectArgs = nil
+		x.ObjectArgs = nil
 		return
 	}
-	x.xxx_hidden_ObjectArgs = &kubernetesEvent_PodExecArgs_{v}
+	x.ObjectArgs = &KubernetesEvent_PodExecArgs_{v}
 }
 
 func (x *KubernetesEvent) SetPodPortForwardArgs(v *KubernetesEvent_PodPortForwardArgs) {
 	if v == nil {
-		x.xxx_hidden_ObjectArgs = nil
+		x.ObjectArgs = nil
 		return
 	}
-	x.xxx_hidden_ObjectArgs = &kubernetesEvent_PodPortForwardArgs_{v}
+	x.ObjectArgs = &KubernetesEvent_PodPortForwardArgs_{v}
 }
 
 func (x *KubernetesEvent) SetUser(v *KubernetesEvent_User) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *KubernetesEvent) SetImpersonatedUser(v *KubernetesEvent_User) {
-	x.xxx_hidden_ImpersonatedUser = v
+	x.ImpersonatedUser = v
 }
 
 func (x *KubernetesEvent) SetSourceIps(v []string) {
-	x.xxx_hidden_SourceIps = v
+	x.SourceIps = v
 }
 
 func (x *KubernetesEvent) SetUserAgent(v string) {
-	x.xxx_hidden_UserAgent = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.UserAgent = v
 }
 
 func (x *KubernetesEvent) SetResponseStatus(v *KubernetesEvent_ResponseStatus) {
-	x.xxx_hidden_ResponseStatus = v
+	x.ResponseStatus = v
 }
 
 func (x *KubernetesEvent) SetRequestUri(v string) {
-	x.xxx_hidden_RequestUri = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *KubernetesEvent) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.RequestUri = v
 }
 
 func (x *KubernetesEvent) HasObject() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Object != nil
+	return x.Object != nil
 }
 
 func (x *KubernetesEvent) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *KubernetesEvent) HasApiVerb() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.Timestamp != nil
 }
 
 func (x *KubernetesEvent) HasObjectArgs() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ObjectArgs != nil
+	return x.ObjectArgs != nil
 }
 
 func (x *KubernetesEvent) HasPodExecArgs() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodExecArgs_)
+	_, ok := x.ObjectArgs.(*KubernetesEvent_PodExecArgs_)
 	return ok
 }
 
@@ -414,7 +387,7 @@ func (x *KubernetesEvent) HasPodPortForwardArgs() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodPortForwardArgs_)
+	_, ok := x.ObjectArgs.(*KubernetesEvent_PodPortForwardArgs_)
 	return ok
 }
 
@@ -422,92 +395,57 @@ func (x *KubernetesEvent) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *KubernetesEvent) HasImpersonatedUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImpersonatedUser != nil
-}
-
-func (x *KubernetesEvent) HasUserAgent() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return x.ImpersonatedUser != nil
 }
 
 func (x *KubernetesEvent) HasResponseStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ResponseStatus != nil
-}
-
-func (x *KubernetesEvent) HasRequestUri() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *KubernetesEvent) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.ResponseStatus != nil
 }
 
 func (x *KubernetesEvent) ClearObject() {
-	x.xxx_hidden_Object = nil
+	x.Object = nil
 }
 
 func (x *KubernetesEvent) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *KubernetesEvent) ClearApiVerb() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ApiVerb = KubernetesEvent_UNKNOWN
+	x.Timestamp = nil
 }
 
 func (x *KubernetesEvent) ClearObjectArgs() {
-	x.xxx_hidden_ObjectArgs = nil
+	x.ObjectArgs = nil
 }
 
 func (x *KubernetesEvent) ClearPodExecArgs() {
-	if _, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodExecArgs_); ok {
-		x.xxx_hidden_ObjectArgs = nil
+	if _, ok := x.ObjectArgs.(*KubernetesEvent_PodExecArgs_); ok {
+		x.ObjectArgs = nil
 	}
 }
 
 func (x *KubernetesEvent) ClearPodPortForwardArgs() {
-	if _, ok := x.xxx_hidden_ObjectArgs.(*kubernetesEvent_PodPortForwardArgs_); ok {
-		x.xxx_hidden_ObjectArgs = nil
+	if _, ok := x.ObjectArgs.(*KubernetesEvent_PodPortForwardArgs_); ok {
+		x.ObjectArgs = nil
 	}
 }
 
 func (x *KubernetesEvent) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 func (x *KubernetesEvent) ClearImpersonatedUser() {
-	x.xxx_hidden_ImpersonatedUser = nil
-}
-
-func (x *KubernetesEvent) ClearUserAgent() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_UserAgent = nil
+	x.ImpersonatedUser = nil
 }
 
 func (x *KubernetesEvent) ClearResponseStatus() {
-	x.xxx_hidden_ResponseStatus = nil
-}
-
-func (x *KubernetesEvent) ClearRequestUri() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_RequestUri = nil
+	x.ResponseStatus = nil
 }
 
 const KubernetesEvent_ObjectArgs_not_set_case case_KubernetesEvent_ObjectArgs = 0
@@ -518,10 +456,10 @@ func (x *KubernetesEvent) WhichObjectArgs() case_KubernetesEvent_ObjectArgs {
 	if x == nil {
 		return KubernetesEvent_ObjectArgs_not_set_case
 	}
-	switch x.xxx_hidden_ObjectArgs.(type) {
-	case *kubernetesEvent_PodExecArgs_:
+	switch x.ObjectArgs.(type) {
+	case *KubernetesEvent_PodExecArgs_:
 		return KubernetesEvent_PodExecArgs_case
-	case *kubernetesEvent_PodPortForwardArgs_:
+	case *KubernetesEvent_PodPortForwardArgs_:
 		return KubernetesEvent_PodPortForwardArgs_case
 	default:
 		return KubernetesEvent_ObjectArgs_not_set_case
@@ -531,62 +469,47 @@ func (x *KubernetesEvent) WhichObjectArgs() case_KubernetesEvent_ObjectArgs {
 type KubernetesEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
+	Id        string
 	Object    *KubernetesEvent_Object
 	Timestamp *timestamppb.Timestamp
-	ApiVerb   *KubernetesEvent_APIVerb
+	ApiVerb   KubernetesEvent_APIVerb
 	// tags 5-14 reserved for ObjectArgs
 	// Next available tag: 7
 
-	// Fields of oneof xxx_hidden_ObjectArgs:
+	// Fields of oneof ObjectArgs:
 	PodExecArgs        *KubernetesEvent_PodExecArgs
 	PodPortForwardArgs *KubernetesEvent_PodPortForwardArgs
-	// -- end of xxx_hidden_ObjectArgs
+	// -- end of ObjectArgs
 	// Extended arguments. May not be available for pod exec and port forward events.
 	// These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
 	User             *KubernetesEvent_User
 	ImpersonatedUser *KubernetesEvent_User
 	SourceIps        []string
-	UserAgent        *string
+	UserAgent        string
 	ResponseStatus   *KubernetesEvent_ResponseStatus
-	RequestUri       *string
+	RequestUri       string
 }
 
 func (b0 KubernetesEvent_builder) Build() *KubernetesEvent {
 	m0 := &KubernetesEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_Object = b.Object
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.ApiVerb != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_ApiVerb = *b.ApiVerb
-	}
+	x.Id = b.Id
+	x.Object = b.Object
+	x.Timestamp = b.Timestamp
+	x.ApiVerb = b.ApiVerb
 	if b.PodExecArgs != nil {
-		x.xxx_hidden_ObjectArgs = &kubernetesEvent_PodExecArgs_{b.PodExecArgs}
+		x.ObjectArgs = &KubernetesEvent_PodExecArgs_{b.PodExecArgs}
 	}
 	if b.PodPortForwardArgs != nil {
-		x.xxx_hidden_ObjectArgs = &kubernetesEvent_PodPortForwardArgs_{b.PodPortForwardArgs}
+		x.ObjectArgs = &KubernetesEvent_PodPortForwardArgs_{b.PodPortForwardArgs}
 	}
-	x.xxx_hidden_User = b.User
-	x.xxx_hidden_ImpersonatedUser = b.ImpersonatedUser
-	x.xxx_hidden_SourceIps = b.SourceIps
-	if b.UserAgent != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_UserAgent = b.UserAgent
-	}
-	x.xxx_hidden_ResponseStatus = b.ResponseStatus
-	if b.RequestUri != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_RequestUri = b.RequestUri
-	}
+	x.User = b.User
+	x.ImpersonatedUser = b.ImpersonatedUser
+	x.SourceIps = b.SourceIps
+	x.UserAgent = b.UserAgent
+	x.ResponseStatus = b.ResponseStatus
+	x.RequestUri = b.RequestUri
 	return m0
 }
 
@@ -604,28 +527,26 @@ type isKubernetesEvent_ObjectArgs interface {
 	isKubernetesEvent_ObjectArgs()
 }
 
-type kubernetesEvent_PodExecArgs_ struct {
+type KubernetesEvent_PodExecArgs_ struct {
 	PodExecArgs *KubernetesEvent_PodExecArgs `protobuf:"bytes,5,opt,name=pod_exec_args,json=podExecArgs,oneof"`
 }
 
-type kubernetesEvent_PodPortForwardArgs_ struct {
+type KubernetesEvent_PodPortForwardArgs_ struct {
 	PodPortForwardArgs *KubernetesEvent_PodPortForwardArgs `protobuf:"bytes,6,opt,name=pod_port_forward_args,json=podPortForwardArgs,oneof"`
 }
 
-func (*kubernetesEvent_PodExecArgs_) isKubernetesEvent_ObjectArgs() {}
+func (*KubernetesEvent_PodExecArgs_) isKubernetesEvent_ObjectArgs() {}
 
-func (*kubernetesEvent_PodPortForwardArgs_) isKubernetesEvent_ObjectArgs() {}
+func (*KubernetesEvent_PodPortForwardArgs_) isKubernetesEvent_ObjectArgs() {}
 
 type KubernetesEvent_Object struct {
-	state                  protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                         `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Resource    KubernetesEvent_Object_Resource `protobuf:"varint,2,opt,name=resource,enum=storage.KubernetesEvent_Object_Resource"`
-	xxx_hidden_ClusterId   *string                         `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace   *string                         `protobuf:"bytes,4,opt,name=namespace"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
+	Name          string                          `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" policy:"Kubernetes Resource Name"`                                                       // @gotags: policy:"Kubernetes Resource Name"
+	Resource      KubernetesEvent_Object_Resource `protobuf:"varint,2,opt,name=resource,enum=storage.KubernetesEvent_Object_Resource" json:"resource,omitempty" policy:"Kubernetes Resource"` // @gotags: policy:"Kubernetes Resource"
+	ClusterId     string                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	Namespace     string                          `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_Object) Reset() {
@@ -655,151 +576,74 @@ func (x *KubernetesEvent_Object) ProtoReflect() protoreflect.Message {
 
 func (x *KubernetesEvent_Object) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_Object) GetResource() KubernetesEvent_Object_Resource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Resource
-		}
+		return x.Resource
 	}
 	return KubernetesEvent_Object_UNKNOWN
 }
 
 func (x *KubernetesEvent_Object) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_Object) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_Object) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Name = v
 }
 
 func (x *KubernetesEvent_Object) SetResource(v KubernetesEvent_Object_Resource) {
-	x.xxx_hidden_Resource = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Resource = v
 }
 
 func (x *KubernetesEvent_Object) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ClusterId = v
 }
 
 func (x *KubernetesEvent_Object) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *KubernetesEvent_Object) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *KubernetesEvent_Object) HasResource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *KubernetesEvent_Object) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *KubernetesEvent_Object) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *KubernetesEvent_Object) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *KubernetesEvent_Object) ClearResource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Resource = KubernetesEvent_Object_UNKNOWN
-}
-
-func (x *KubernetesEvent_Object) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *KubernetesEvent_Object) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Namespace = nil
+	x.Namespace = v
 }
 
 type KubernetesEvent_Object_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name      *string
-	Resource  *KubernetesEvent_Object_Resource
-	ClusterId *string
-	Namespace *string
+	Name      string
+	Resource  KubernetesEvent_Object_Resource
+	ClusterId string
+	Namespace string
 }
 
 func (b0 KubernetesEvent_Object_builder) Build() *KubernetesEvent_Object {
 	m0 := &KubernetesEvent_Object{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Resource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Resource = *b.Resource
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.Name = b.Name
+	x.Resource = b.Resource
+	x.ClusterId = b.ClusterId
+	x.Namespace = b.Namespace
 	return m0
 }
 
 type KubernetesEvent_PodExecArgs struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Container   *string                `protobuf:"bytes,1,opt,name=container"`
-	xxx_hidden_Commands    []string               `protobuf:"bytes,2,rep,name=commands"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Container     string                 `protobuf:"bytes,1,opt,name=container" json:"container,omitempty"`
+	Commands      []string               `protobuf:"bytes,2,rep,name=commands" json:"commands,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_PodExecArgs) Reset() {
@@ -829,46 +673,30 @@ func (x *KubernetesEvent_PodExecArgs) ProtoReflect() protoreflect.Message {
 
 func (x *KubernetesEvent_PodExecArgs) GetContainer() string {
 	if x != nil {
-		if x.xxx_hidden_Container != nil {
-			return *x.xxx_hidden_Container
-		}
-		return ""
+		return x.Container
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_PodExecArgs) GetCommands() []string {
 	if x != nil {
-		return x.xxx_hidden_Commands
+		return x.Commands
 	}
 	return nil
 }
 
 func (x *KubernetesEvent_PodExecArgs) SetContainer(v string) {
-	x.xxx_hidden_Container = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Container = v
 }
 
 func (x *KubernetesEvent_PodExecArgs) SetCommands(v []string) {
-	x.xxx_hidden_Commands = v
-}
-
-func (x *KubernetesEvent_PodExecArgs) HasContainer() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *KubernetesEvent_PodExecArgs) ClearContainer() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Container = nil
+	x.Commands = v
 }
 
 type KubernetesEvent_PodExecArgs_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Container *string
+	Container string
 	Commands  []string
 }
 
@@ -876,19 +704,16 @@ func (b0 KubernetesEvent_PodExecArgs_builder) Build() *KubernetesEvent_PodExecAr
 	m0 := &KubernetesEvent_PodExecArgs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Container != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Container = b.Container
-	}
-	x.xxx_hidden_Commands = b.Commands
+	x.Container = b.Container
+	x.Commands = b.Commands
 	return m0
 }
 
 type KubernetesEvent_PodPortForwardArgs struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Ports []int32                `protobuf:"varint,1,rep,packed,name=ports"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Ports         []int32                `protobuf:"varint,1,rep,packed,name=ports" json:"ports,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_PodPortForwardArgs) Reset() {
@@ -918,13 +743,13 @@ func (x *KubernetesEvent_PodPortForwardArgs) ProtoReflect() protoreflect.Message
 
 func (x *KubernetesEvent_PodPortForwardArgs) GetPorts() []int32 {
 	if x != nil {
-		return x.xxx_hidden_Ports
+		return x.Ports
 	}
 	return nil
 }
 
 func (x *KubernetesEvent_PodPortForwardArgs) SetPorts(v []int32) {
-	x.xxx_hidden_Ports = v
+	x.Ports = v
 }
 
 type KubernetesEvent_PodPortForwardArgs_builder struct {
@@ -937,18 +762,16 @@ func (b0 KubernetesEvent_PodPortForwardArgs_builder) Build() *KubernetesEvent_Po
 	m0 := &KubernetesEvent_PodPortForwardArgs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Ports = b.Ports
+	x.Ports = b.Ports
 	return m0
 }
 
 type KubernetesEvent_ResponseStatus struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_StatusCode  int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode"`
-	xxx_hidden_Reason      *string                `protobuf:"bytes,2,opt,name=reason"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode" json:"status_code,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_ResponseStatus) Reset() {
@@ -978,85 +801,48 @@ func (x *KubernetesEvent_ResponseStatus) ProtoReflect() protoreflect.Message {
 
 func (x *KubernetesEvent_ResponseStatus) GetStatusCode() int32 {
 	if x != nil {
-		return x.xxx_hidden_StatusCode
+		return x.StatusCode
 	}
 	return 0
 }
 
 func (x *KubernetesEvent_ResponseStatus) GetReason() string {
 	if x != nil {
-		if x.xxx_hidden_Reason != nil {
-			return *x.xxx_hidden_Reason
-		}
-		return ""
+		return x.Reason
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_ResponseStatus) SetStatusCode(v int32) {
-	x.xxx_hidden_StatusCode = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.StatusCode = v
 }
 
 func (x *KubernetesEvent_ResponseStatus) SetReason(v string) {
-	x.xxx_hidden_Reason = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *KubernetesEvent_ResponseStatus) HasStatusCode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *KubernetesEvent_ResponseStatus) HasReason() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *KubernetesEvent_ResponseStatus) ClearStatusCode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_StatusCode = 0
-}
-
-func (x *KubernetesEvent_ResponseStatus) ClearReason() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Reason = nil
+	x.Reason = v
 }
 
 type KubernetesEvent_ResponseStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	StatusCode *int32
-	Reason     *string
+	StatusCode int32
+	Reason     string
 }
 
 func (b0 KubernetesEvent_ResponseStatus_builder) Build() *KubernetesEvent_ResponseStatus {
 	m0 := &KubernetesEvent_ResponseStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.StatusCode != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_StatusCode = *b.StatusCode
-	}
-	if b.Reason != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Reason = b.Reason
-	}
+	x.StatusCode = b.StatusCode
+	x.Reason = b.Reason
 	return m0
 }
 
 type KubernetesEvent_User struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username    *string                `protobuf:"bytes,1,opt,name=username"`
-	xxx_hidden_Groups      []string               `protobuf:"bytes,2,rep,name=groups"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username" json:"username,omitempty" policy:"Kubernetes User Name"` // @gotags: policy:"Kubernetes User Name"
+	Groups        []string               `protobuf:"bytes,2,rep,name=groups" json:"groups,omitempty" policy:"Kubernetes User Groups"`     // @gotags: policy:"Kubernetes User Groups"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_User) Reset() {
@@ -1086,46 +872,30 @@ func (x *KubernetesEvent_User) ProtoReflect() protoreflect.Message {
 
 func (x *KubernetesEvent_User) GetUsername() string {
 	if x != nil {
-		if x.xxx_hidden_Username != nil {
-			return *x.xxx_hidden_Username
-		}
-		return ""
+		return x.Username
 	}
 	return ""
 }
 
 func (x *KubernetesEvent_User) GetGroups() []string {
 	if x != nil {
-		return x.xxx_hidden_Groups
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *KubernetesEvent_User) SetUsername(v string) {
-	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Username = v
 }
 
 func (x *KubernetesEvent_User) SetGroups(v []string) {
-	x.xxx_hidden_Groups = v
-}
-
-func (x *KubernetesEvent_User) HasUsername() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *KubernetesEvent_User) ClearUsername() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Username = nil
+	x.Groups = v
 }
 
 type KubernetesEvent_User_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Username *string
+	Username string
 	Groups   []string
 }
 
@@ -1133,11 +903,8 @@ func (b0 KubernetesEvent_User_builder) Build() *KubernetesEvent_User {
 	m0 := &KubernetesEvent_User{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Username = b.Username
-	}
-	x.xxx_hidden_Groups = b.Groups
+	x.Username = b.Username
+	x.Groups = b.Groups
 	return m0
 }
 
@@ -1206,8 +973,8 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"\x05WATCH\x10\a\x12\t\n" +
 	"\x05PROXY\x10\bB\f\n" +
 	"\n" +
-	"ObjectArgsB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"ObjectArgsB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_kube_event_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_kube_event_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
@@ -1245,8 +1012,8 @@ func file_storage_kube_event_proto_init() {
 		return
 	}
 	file_storage_kube_event_proto_msgTypes[0].OneofWrappers = []any{
-		(*kubernetesEvent_PodExecArgs_)(nil),
-		(*kubernetesEvent_PodPortForwardArgs_)(nil),
+		(*KubernetesEvent_PodExecArgs_)(nil),
+		(*KubernetesEvent_PodPortForwardArgs_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -8,8 +8,9 @@ func (m *TestSingleKeyStruct) SizeVT() int { return proto.Size(m) }
 func (m *TestSingleKeyStruct) CloneVT() *TestSingleKeyStruct {
 	return proto.Clone(m).(*TestSingleKeyStruct)
 }
-func (m *TestSingleKeyStruct) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestSingleKeyStruct) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *TestSingleKeyStruct) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *TestSingleKeyStruct) EqualVT(n *TestSingleKeyStruct) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleKeyStruct) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *TestSingleKeyStruct_Embedded) CloneVT() *TestSingleKeyStruct_Embedded {
 func (m *TestSingleKeyStruct_Embedded) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleKeyStruct_Embedded) EqualVT(n *TestSingleKeyStruct_Embedded) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -36,6 +40,9 @@ func (m *TestSingleKeyStruct_Embedded_Embedded2) MarshalVT() ([]byte, error) { r
 func (m *TestSingleKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestSingleKeyStruct_Embedded_Embedded2) EqualVT(n *TestSingleKeyStruct_Embedded_Embedded2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleKeyStruct_Embedded_Embedded2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -48,6 +55,9 @@ func (m *TestSingleKeyStruct_Nested) CloneVT() *TestSingleKeyStruct_Nested {
 }
 func (m *TestSingleKeyStruct_Nested) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestSingleKeyStruct_Nested) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestSingleKeyStruct_Nested) EqualVT(n *TestSingleKeyStruct_Nested) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleKeyStruct_Nested) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -59,6 +69,9 @@ func (m *TestSingleKeyStruct_Nested_Nested2) CloneVT() *TestSingleKeyStruct_Nest
 func (m *TestSingleKeyStruct_Nested_Nested2) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleKeyStruct_Nested_Nested2) EqualVT(n *TestSingleKeyStruct_Nested_Nested2) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -73,6 +86,9 @@ func (m *TestSingleKeyStruct_OneOfNested) CloneVT() *TestSingleKeyStruct_OneOfNe
 func (m *TestSingleKeyStruct_OneOfNested) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleKeyStruct_OneOfNested) EqualVT(n *TestSingleKeyStruct_OneOfNested) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -90,6 +106,9 @@ func (m *TestSingleKeyStruct_OneOfNested_Nested2) MarshalVT() ([]byte, error) {
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestSingleKeyStruct_OneOfNested_Nested2) EqualVT(n *TestSingleKeyStruct_OneOfNested_Nested2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleKeyStruct_OneOfNested_Nested2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -100,8 +119,9 @@ func (m *TestSingleUUIDKeyStruct) SizeVT() int { return proto.Size(m) }
 func (m *TestSingleUUIDKeyStruct) CloneVT() *TestSingleUUIDKeyStruct {
 	return proto.Clone(m).(*TestSingleUUIDKeyStruct)
 }
-func (m *TestSingleUUIDKeyStruct) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestSingleUUIDKeyStruct) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *TestSingleUUIDKeyStruct) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *TestSingleUUIDKeyStruct) EqualVT(n *TestSingleUUIDKeyStruct) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleUUIDKeyStruct) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -113,6 +133,9 @@ func (m *TestSingleUUIDKeyStruct_Embedded) CloneVT() *TestSingleUUIDKeyStruct_Em
 func (m *TestSingleUUIDKeyStruct_Embedded) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleUUIDKeyStruct_Embedded) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleUUIDKeyStruct_Embedded) EqualVT(n *TestSingleUUIDKeyStruct_Embedded) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -130,6 +153,9 @@ func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) MarshalVT() ([]byte, error)
 func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) EqualVT(n *TestSingleUUIDKeyStruct_Embedded_Embedded2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleUUIDKeyStruct_Embedded_Embedded2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -143,6 +169,9 @@ func (m *TestSingleUUIDKeyStruct_Nested) CloneVT() *TestSingleUUIDKeyStruct_Nest
 func (m *TestSingleUUIDKeyStruct_Nested) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleUUIDKeyStruct_Nested) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleUUIDKeyStruct_Nested) EqualVT(n *TestSingleUUIDKeyStruct_Nested) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -158,6 +187,9 @@ func (m *TestSingleUUIDKeyStruct_Nested_Nested2) MarshalVT() ([]byte, error) { r
 func (m *TestSingleUUIDKeyStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestSingleUUIDKeyStruct_Nested_Nested2) EqualVT(n *TestSingleUUIDKeyStruct_Nested_Nested2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleUUIDKeyStruct_Nested_Nested2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -171,6 +203,9 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested) CloneVT() *TestSingleUUIDKeyStruct
 func (m *TestSingleUUIDKeyStruct_OneOfNested) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TestSingleUUIDKeyStruct_OneOfNested) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TestSingleUUIDKeyStruct_OneOfNested) EqualVT(n *TestSingleUUIDKeyStruct_OneOfNested) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -188,6 +223,9 @@ func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) MarshalVT() ([]byte, error
 func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) EqualVT(n *TestSingleUUIDKeyStruct_OneOfNested_Nested2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestSingleUUIDKeyStruct_OneOfNested_Nested2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -198,6 +236,7 @@ func (m *TestStruct) SizeVT() int                   { return proto.Size(m) }
 func (m *TestStruct) CloneVT() *TestStruct          { return proto.Clone(m).(*TestStruct) }
 func (m *TestStruct) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestStruct) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct) EqualVT(n *TestStruct) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -206,8 +245,9 @@ func (m *TestStruct_Embedded) SizeVT() int { return proto.Size(m) }
 func (m *TestStruct_Embedded) CloneVT() *TestStruct_Embedded {
 	return proto.Clone(m).(*TestStruct_Embedded)
 }
-func (m *TestStruct_Embedded) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestStruct_Embedded) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_Embedded) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *TestStruct_Embedded) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_Embedded) EqualVT(n *TestStruct_Embedded) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_Embedded) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -220,16 +260,20 @@ func (m *TestStruct_Embedded_Embedded2) MarshalVT() ([]byte, error) { return pro
 func (m *TestStruct_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestStruct_Embedded_Embedded2) EqualVT(n *TestStruct_Embedded_Embedded2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_Embedded_Embedded2) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *TestStruct_Nested) SizeVT() int                   { return proto.Size(m) }
-func (m *TestStruct_Nested) CloneVT() *TestStruct_Nested   { return proto.Clone(m).(*TestStruct_Nested) }
-func (m *TestStruct_Nested) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestStruct_Nested) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_Nested) SizeVT() int                       { return proto.Size(m) }
+func (m *TestStruct_Nested) CloneVT() *TestStruct_Nested       { return proto.Clone(m).(*TestStruct_Nested) }
+func (m *TestStruct_Nested) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *TestStruct_Nested) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_Nested) EqualVT(n *TestStruct_Nested) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_Nested) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -240,6 +284,9 @@ func (m *TestStruct_Nested_Nested2) CloneVT() *TestStruct_Nested_Nested2 {
 }
 func (m *TestStruct_Nested_Nested2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestStruct_Nested_Nested2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_Nested_Nested2) EqualVT(n *TestStruct_Nested_Nested2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_Nested_Nested2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -248,8 +295,9 @@ func (m *TestStruct_OneOfNested) SizeVT() int { return proto.Size(m) }
 func (m *TestStruct_OneOfNested) CloneVT() *TestStruct_OneOfNested {
 	return proto.Clone(m).(*TestStruct_OneOfNested)
 }
-func (m *TestStruct_OneOfNested) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestStruct_OneOfNested) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_OneOfNested) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *TestStruct_OneOfNested) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *TestStruct_OneOfNested) EqualVT(n *TestStruct_OneOfNested) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_OneOfNested) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -262,16 +310,20 @@ func (m *TestStruct_OneOfNested_Nested2) MarshalVT() ([]byte, error) { return pr
 func (m *TestStruct_OneOfNested_Nested2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestStruct_OneOfNested_Nested2) EqualVT(n *TestStruct_OneOfNested_Nested2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestStruct_OneOfNested_Nested2) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *TestGrandparent) SizeVT() int                   { return proto.Size(m) }
-func (m *TestGrandparent) CloneVT() *TestGrandparent     { return proto.Clone(m).(*TestGrandparent) }
-func (m *TestGrandparent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestGrandparent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestGrandparent) SizeVT() int                     { return proto.Size(m) }
+func (m *TestGrandparent) CloneVT() *TestGrandparent       { return proto.Clone(m).(*TestGrandparent) }
+func (m *TestGrandparent) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *TestGrandparent) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *TestGrandparent) EqualVT(n *TestGrandparent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestGrandparent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -282,6 +334,9 @@ func (m *TestGrandparent_Embedded) CloneVT() *TestGrandparent_Embedded {
 }
 func (m *TestGrandparent_Embedded) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestGrandparent_Embedded) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestGrandparent_Embedded) EqualVT(n *TestGrandparent_Embedded) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestGrandparent_Embedded) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -294,6 +349,9 @@ func (m *TestGrandparent_Embedded_Embedded2) MarshalVT() ([]byte, error) { retur
 func (m *TestGrandparent_Embedded_Embedded2) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TestGrandparent_Embedded_Embedded2) EqualVT(n *TestGrandparent_Embedded_Embedded2) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestGrandparent_Embedded_Embedded2) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -304,6 +362,7 @@ func (m *TestParent1) SizeVT() int                   { return proto.Size(m) }
 func (m *TestParent1) CloneVT() *TestParent1         { return proto.Clone(m).(*TestParent1) }
 func (m *TestParent1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestParent1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent1) EqualVT(n *TestParent1) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestParent1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -312,8 +371,9 @@ func (m *TestParent1_Child1Ref) SizeVT() int { return proto.Size(m) }
 func (m *TestParent1_Child1Ref) CloneVT() *TestParent1_Child1Ref {
 	return proto.Clone(m).(*TestParent1_Child1Ref)
 }
-func (m *TestParent1_Child1Ref) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestParent1_Child1Ref) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent1_Child1Ref) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *TestParent1_Child1Ref) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent1_Child1Ref) EqualVT(n *TestParent1_Child1Ref) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestParent1_Child1Ref) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -322,38 +382,43 @@ func (m *TestChild1) SizeVT() int                   { return proto.Size(m) }
 func (m *TestChild1) CloneVT() *TestChild1          { return proto.Clone(m).(*TestChild1) }
 func (m *TestChild1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestChild1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestChild1) EqualVT(n *TestChild1) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestChild1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TestGrandChild1) SizeVT() int                   { return proto.Size(m) }
-func (m *TestGrandChild1) CloneVT() *TestGrandChild1     { return proto.Clone(m).(*TestGrandChild1) }
-func (m *TestGrandChild1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestGrandChild1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestGrandChild1) SizeVT() int                     { return proto.Size(m) }
+func (m *TestGrandChild1) CloneVT() *TestGrandChild1       { return proto.Clone(m).(*TestGrandChild1) }
+func (m *TestGrandChild1) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *TestGrandChild1) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *TestGrandChild1) EqualVT(n *TestGrandChild1) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestGrandChild1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TestGGrandChild1) SizeVT() int                   { return proto.Size(m) }
-func (m *TestGGrandChild1) CloneVT() *TestGGrandChild1    { return proto.Clone(m).(*TestGGrandChild1) }
-func (m *TestGGrandChild1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestGGrandChild1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestGGrandChild1) SizeVT() int                      { return proto.Size(m) }
+func (m *TestGGrandChild1) CloneVT() *TestGGrandChild1       { return proto.Clone(m).(*TestGGrandChild1) }
+func (m *TestGGrandChild1) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *TestGGrandChild1) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *TestGGrandChild1) EqualVT(n *TestGGrandChild1) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestGGrandChild1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TestG2GrandChild1) SizeVT() int                   { return proto.Size(m) }
-func (m *TestG2GrandChild1) CloneVT() *TestG2GrandChild1   { return proto.Clone(m).(*TestG2GrandChild1) }
-func (m *TestG2GrandChild1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestG2GrandChild1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestG2GrandChild1) SizeVT() int                       { return proto.Size(m) }
+func (m *TestG2GrandChild1) CloneVT() *TestG2GrandChild1       { return proto.Clone(m).(*TestG2GrandChild1) }
+func (m *TestG2GrandChild1) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *TestG2GrandChild1) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *TestG2GrandChild1) EqualVT(n *TestG2GrandChild1) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestG2GrandChild1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TestG3GrandChild1) SizeVT() int                   { return proto.Size(m) }
-func (m *TestG3GrandChild1) CloneVT() *TestG3GrandChild1   { return proto.Clone(m).(*TestG3GrandChild1) }
-func (m *TestG3GrandChild1) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestG3GrandChild1) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestG3GrandChild1) SizeVT() int                       { return proto.Size(m) }
+func (m *TestG3GrandChild1) CloneVT() *TestG3GrandChild1       { return proto.Clone(m).(*TestG3GrandChild1) }
+func (m *TestG3GrandChild1) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *TestG3GrandChild1) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *TestG3GrandChild1) EqualVT(n *TestG3GrandChild1) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestG3GrandChild1) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -362,6 +427,7 @@ func (m *TestParent2) SizeVT() int                   { return proto.Size(m) }
 func (m *TestParent2) CloneVT() *TestParent2         { return proto.Clone(m).(*TestParent2) }
 func (m *TestParent2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestParent2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent2) EqualVT(n *TestParent2) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestParent2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -370,6 +436,7 @@ func (m *TestChild2) SizeVT() int                   { return proto.Size(m) }
 func (m *TestChild2) CloneVT() *TestChild2          { return proto.Clone(m).(*TestChild2) }
 func (m *TestChild2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestChild2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestChild2) EqualVT(n *TestChild2) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestChild2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -378,6 +445,7 @@ func (m *TestParent3) SizeVT() int                   { return proto.Size(m) }
 func (m *TestParent3) CloneVT() *TestParent3         { return proto.Clone(m).(*TestParent3) }
 func (m *TestParent3) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestParent3) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent3) EqualVT(n *TestParent3) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestParent3) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -386,6 +454,7 @@ func (m *TestParent4) SizeVT() int                   { return proto.Size(m) }
 func (m *TestParent4) CloneVT() *TestParent4         { return proto.Clone(m).(*TestParent4) }
 func (m *TestParent4) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestParent4) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestParent4) EqualVT(n *TestParent4) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestParent4) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -394,14 +463,16 @@ func (m *TestChild1P4) SizeVT() int                   { return proto.Size(m) }
 func (m *TestChild1P4) CloneVT() *TestChild1P4        { return proto.Clone(m).(*TestChild1P4) }
 func (m *TestChild1P4) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestChild1P4) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestChild1P4) EqualVT(n *TestChild1P4) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestChild1P4) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TestShortCircuit) SizeVT() int                   { return proto.Size(m) }
-func (m *TestShortCircuit) CloneVT() *TestShortCircuit    { return proto.Clone(m).(*TestShortCircuit) }
-func (m *TestShortCircuit) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestShortCircuit) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestShortCircuit) SizeVT() int                      { return proto.Size(m) }
+func (m *TestShortCircuit) CloneVT() *TestShortCircuit       { return proto.Clone(m).(*TestShortCircuit) }
+func (m *TestShortCircuit) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *TestShortCircuit) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *TestShortCircuit) EqualVT(n *TestShortCircuit) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestShortCircuit) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

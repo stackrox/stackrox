@@ -8,6 +8,7 @@ func (m *BackupInfo) SizeVT() int                   { return proto.Size(m) }
 func (m *BackupInfo) CloneVT() *BackupInfo          { return proto.Clone(m).(*BackupInfo) }
 func (m *BackupInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *BackupInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BackupInfo) EqualVT(n *BackupInfo) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BackupInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *SystemInfo) SizeVT() int                   { return proto.Size(m) }
 func (m *SystemInfo) CloneVT() *SystemInfo          { return proto.Clone(m).(*SystemInfo) }
 func (m *SystemInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SystemInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SystemInfo) EqualVT(n *SystemInfo) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SystemInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

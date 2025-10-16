@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/local_scanner.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -23,12 +25,10 @@ const (
 )
 
 type LocalScannerCertsIssueError struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LocalScannerCertsIssueError) Reset() {
@@ -58,55 +58,34 @@ func (x *LocalScannerCertsIssueError) ProtoReflect() protoreflect.Message {
 
 func (x *LocalScannerCertsIssueError) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *LocalScannerCertsIssueError) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *LocalScannerCertsIssueError) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *LocalScannerCertsIssueError) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Message = nil
+	x.Message = v
 }
 
 type LocalScannerCertsIssueError_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Message *string
+	Message string
 }
 
 func (b0 LocalScannerCertsIssueError_builder) Build() *LocalScannerCertsIssueError {
 	m0 := &LocalScannerCertsIssueError{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Message = b.Message
-	}
+	x.Message = b.Message
 	return m0
 }
 
 type IssueLocalScannerCertsRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RequestId   *string                `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IssueLocalScannerCertsRequest) Reset() {
@@ -136,58 +115,39 @@ func (x *IssueLocalScannerCertsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *IssueLocalScannerCertsRequest) GetRequestId() string {
 	if x != nil {
-		if x.xxx_hidden_RequestId != nil {
-			return *x.xxx_hidden_RequestId
-		}
-		return ""
+		return x.RequestId
 	}
 	return ""
 }
 
 func (x *IssueLocalScannerCertsRequest) SetRequestId(v string) {
-	x.xxx_hidden_RequestId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *IssueLocalScannerCertsRequest) HasRequestId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *IssueLocalScannerCertsRequest) ClearRequestId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RequestId = nil
+	x.RequestId = v
 }
 
 type IssueLocalScannerCertsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RequestId *string
+	RequestId string
 }
 
 func (b0 IssueLocalScannerCertsRequest_builder) Build() *IssueLocalScannerCertsRequest {
 	m0 := &IssueLocalScannerCertsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RequestId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_RequestId = b.RequestId
-	}
+	x.RequestId = b.RequestId
 	return m0
 }
 
 type IssueLocalScannerCertsResponse struct {
-	state                protoimpl.MessageState                    `protogen:"opaque.v1"`
-	xxx_hidden_RequestId *string                                   `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	xxx_hidden_Response  isIssueLocalScannerCertsResponse_Response `protobuf_oneof:"response"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"hybrid.v1"`
+	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
+	// Types that are valid to be assigned to Response:
+	//
+	//	*IssueLocalScannerCertsResponse_Certificates
+	//	*IssueLocalScannerCertsResponse_Error
+	Response      isIssueLocalScannerCertsResponse_Response `protobuf_oneof:"response"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IssueLocalScannerCertsResponse) Reset() {
@@ -217,17 +177,21 @@ func (x *IssueLocalScannerCertsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *IssueLocalScannerCertsResponse) GetRequestId() string {
 	if x != nil {
-		if x.xxx_hidden_RequestId != nil {
-			return *x.xxx_hidden_RequestId
-		}
-		return ""
+		return x.RequestId
 	}
 	return ""
 }
 
+func (x *IssueLocalScannerCertsResponse) GetResponse() isIssueLocalScannerCertsResponse_Response {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
 func (x *IssueLocalScannerCertsResponse) GetCertificates() *storage.TypedServiceCertificateSet {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Certificates); ok {
+		if x, ok := x.Response.(*IssueLocalScannerCertsResponse_Certificates); ok {
 			return x.Certificates
 		}
 	}
@@ -236,7 +200,7 @@ func (x *IssueLocalScannerCertsResponse) GetCertificates() *storage.TypedService
 
 func (x *IssueLocalScannerCertsResponse) GetError() *LocalScannerCertsIssueError {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Error); ok {
+		if x, ok := x.Response.(*IssueLocalScannerCertsResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -244,45 +208,37 @@ func (x *IssueLocalScannerCertsResponse) GetError() *LocalScannerCertsIssueError
 }
 
 func (x *IssueLocalScannerCertsResponse) SetRequestId(v string) {
-	x.xxx_hidden_RequestId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.RequestId = v
 }
 
 func (x *IssueLocalScannerCertsResponse) SetCertificates(v *storage.TypedServiceCertificateSet) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &issueLocalScannerCertsResponse_Certificates{v}
+	x.Response = &IssueLocalScannerCertsResponse_Certificates{v}
 }
 
 func (x *IssueLocalScannerCertsResponse) SetError(v *LocalScannerCertsIssueError) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &issueLocalScannerCertsResponse_Error{v}
-}
-
-func (x *IssueLocalScannerCertsResponse) HasRequestId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Response = &IssueLocalScannerCertsResponse_Error{v}
 }
 
 func (x *IssueLocalScannerCertsResponse) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Response != nil
+	return x.Response != nil
 }
 
 func (x *IssueLocalScannerCertsResponse) HasCertificates() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Certificates)
+	_, ok := x.Response.(*IssueLocalScannerCertsResponse_Certificates)
 	return ok
 }
 
@@ -290,28 +246,23 @@ func (x *IssueLocalScannerCertsResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Error)
+	_, ok := x.Response.(*IssueLocalScannerCertsResponse_Error)
 	return ok
 }
 
-func (x *IssueLocalScannerCertsResponse) ClearRequestId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RequestId = nil
-}
-
 func (x *IssueLocalScannerCertsResponse) ClearResponse() {
-	x.xxx_hidden_Response = nil
+	x.Response = nil
 }
 
 func (x *IssueLocalScannerCertsResponse) ClearCertificates() {
-	if _, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Certificates); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*IssueLocalScannerCertsResponse_Certificates); ok {
+		x.Response = nil
 	}
 }
 
 func (x *IssueLocalScannerCertsResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Response.(*issueLocalScannerCertsResponse_Error); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*IssueLocalScannerCertsResponse_Error); ok {
+		x.Response = nil
 	}
 }
 
@@ -323,10 +274,10 @@ func (x *IssueLocalScannerCertsResponse) WhichResponse() case_IssueLocalScannerC
 	if x == nil {
 		return IssueLocalScannerCertsResponse_Response_not_set_case
 	}
-	switch x.xxx_hidden_Response.(type) {
-	case *issueLocalScannerCertsResponse_Certificates:
+	switch x.Response.(type) {
+	case *IssueLocalScannerCertsResponse_Certificates:
 		return IssueLocalScannerCertsResponse_Certificates_case
-	case *issueLocalScannerCertsResponse_Error:
+	case *IssueLocalScannerCertsResponse_Error:
 		return IssueLocalScannerCertsResponse_Error_case
 	default:
 		return IssueLocalScannerCertsResponse_Response_not_set_case
@@ -336,26 +287,23 @@ func (x *IssueLocalScannerCertsResponse) WhichResponse() case_IssueLocalScannerC
 type IssueLocalScannerCertsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RequestId *string
-	// Fields of oneof xxx_hidden_Response:
+	RequestId string
+	// Fields of oneof Response:
 	Certificates *storage.TypedServiceCertificateSet
 	Error        *LocalScannerCertsIssueError
-	// -- end of xxx_hidden_Response
+	// -- end of Response
 }
 
 func (b0 IssueLocalScannerCertsResponse_builder) Build() *IssueLocalScannerCertsResponse {
 	m0 := &IssueLocalScannerCertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RequestId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_RequestId = b.RequestId
-	}
+	x.RequestId = b.RequestId
 	if b.Certificates != nil {
-		x.xxx_hidden_Response = &issueLocalScannerCertsResponse_Certificates{b.Certificates}
+		x.Response = &IssueLocalScannerCertsResponse_Certificates{b.Certificates}
 	}
 	if b.Error != nil {
-		x.xxx_hidden_Response = &issueLocalScannerCertsResponse_Error{b.Error}
+		x.Response = &IssueLocalScannerCertsResponse_Error{b.Error}
 	}
 	return m0
 }
@@ -374,17 +322,17 @@ type isIssueLocalScannerCertsResponse_Response interface {
 	isIssueLocalScannerCertsResponse_Response()
 }
 
-type issueLocalScannerCertsResponse_Certificates struct {
+type IssueLocalScannerCertsResponse_Certificates struct {
 	Certificates *storage.TypedServiceCertificateSet `protobuf:"bytes,2,opt,name=certificates,oneof"`
 }
 
-type issueLocalScannerCertsResponse_Error struct {
+type IssueLocalScannerCertsResponse_Error struct {
 	Error *LocalScannerCertsIssueError `protobuf:"bytes,3,opt,name=error,oneof"`
 }
 
-func (*issueLocalScannerCertsResponse_Certificates) isIssueLocalScannerCertsResponse_Response() {}
+func (*IssueLocalScannerCertsResponse_Certificates) isIssueLocalScannerCertsResponse_Response() {}
 
-func (*issueLocalScannerCertsResponse_Error) isIssueLocalScannerCertsResponse_Response() {}
+func (*IssueLocalScannerCertsResponse_Error) isIssueLocalScannerCertsResponse_Response() {}
 
 var File_internalapi_central_local_scanner_proto protoreflect.FileDescriptor
 
@@ -402,7 +350,7 @@ const file_internalapi_central_local_scanner_proto_rawDesc = "" +
 	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetB\x02(\x01H\x00R\fcertificates\x12<\n" +
 	"\x05error\x18\x03 \x01(\v2$.central.LocalScannerCertsIssueErrorH\x00R\x05errorB\n" +
 	"\n" +
-	"\bresponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\bresponseB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_local_scanner_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_local_scanner_proto_goTypes = []any{
@@ -427,8 +375,8 @@ func file_internalapi_central_local_scanner_proto_init() {
 		return
 	}
 	file_internalapi_central_local_scanner_proto_msgTypes[2].OneofWrappers = []any{
-		(*issueLocalScannerCertsResponse_Certificates)(nil),
-		(*issueLocalScannerCertsResponse_Error)(nil),
+		(*IssueLocalScannerCertsResponse_Certificates)(nil),
+		(*IssueLocalScannerCertsResponse_Error)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

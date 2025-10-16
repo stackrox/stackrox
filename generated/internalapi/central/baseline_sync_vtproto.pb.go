@@ -8,6 +8,7 @@ func (m *BaselineSync) SizeVT() int                   { return proto.Size(m) }
 func (m *BaselineSync) CloneVT() *BaselineSync        { return proto.Clone(m).(*BaselineSync) }
 func (m *BaselineSync) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *BaselineSync) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BaselineSync) EqualVT(n *BaselineSync) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BaselineSync) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

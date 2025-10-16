@@ -8,8 +8,9 @@ func (m *ProcessListeningOnPort) SizeVT() int { return proto.Size(m) }
 func (m *ProcessListeningOnPort) CloneVT() *ProcessListeningOnPort {
 	return proto.Clone(m).(*ProcessListeningOnPort)
 }
-func (m *ProcessListeningOnPort) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessListeningOnPort) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *ProcessListeningOnPort) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessListeningOnPort) EqualVT(n *ProcessListeningOnPort) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessListeningOnPort) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *ProcessListeningOnPort_Endpoint) CloneVT() *ProcessListeningOnPort_Endp
 func (m *ProcessListeningOnPort_Endpoint) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ProcessListeningOnPort_Endpoint) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ProcessListeningOnPort_Endpoint) EqualVT(n *ProcessListeningOnPort_Endpoint) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -36,6 +40,9 @@ func (m *ProcessListeningOnPortFromSensor) MarshalVT() ([]byte, error) { return 
 func (m *ProcessListeningOnPortFromSensor) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ProcessListeningOnPortFromSensor) EqualVT(n *ProcessListeningOnPortFromSensor) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessListeningOnPortFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -49,6 +56,9 @@ func (m *ProcessListeningOnPortStorage) CloneVT() *ProcessListeningOnPortStorage
 func (m *ProcessListeningOnPortStorage) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ProcessListeningOnPortStorage) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ProcessListeningOnPortStorage) EqualVT(n *ProcessListeningOnPortStorage) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

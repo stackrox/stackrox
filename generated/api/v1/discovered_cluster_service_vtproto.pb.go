@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *DiscoveredCluster) SizeVT() int                   { return proto.Size(m) }
-func (m *DiscoveredCluster) CloneVT() *DiscoveredCluster   { return proto.Clone(m).(*DiscoveredCluster) }
-func (m *DiscoveredCluster) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster) SizeVT() int                       { return proto.Size(m) }
+func (m *DiscoveredCluster) CloneVT() *DiscoveredCluster       { return proto.Clone(m).(*DiscoveredCluster) }
+func (m *DiscoveredCluster) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster) EqualVT(n *DiscoveredCluster) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DiscoveredCluster) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *DiscoveredCluster_Metadata) CloneVT() *DiscoveredCluster_Metadata {
 }
 func (m *DiscoveredCluster_Metadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DiscoveredCluster_Metadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster_Metadata) EqualVT(n *DiscoveredCluster_Metadata) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DiscoveredCluster_Metadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -29,6 +33,9 @@ func (m *DiscoveredCluster_CloudSource) CloneVT() *DiscoveredCluster_CloudSource
 func (m *DiscoveredCluster_CloudSource) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *DiscoveredCluster_CloudSource) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DiscoveredCluster_CloudSource) EqualVT(n *DiscoveredCluster_CloudSource) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -42,6 +49,9 @@ func (m *DiscoveredClustersFilter) CloneVT() *DiscoveredClustersFilter {
 }
 func (m *DiscoveredClustersFilter) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DiscoveredClustersFilter) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredClustersFilter) EqualVT(n *DiscoveredClustersFilter) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DiscoveredClustersFilter) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -53,6 +63,9 @@ func (m *CountDiscoveredClustersRequest) CloneVT() *CountDiscoveredClustersReque
 func (m *CountDiscoveredClustersRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *CountDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CountDiscoveredClustersRequest) EqualVT(n *CountDiscoveredClustersRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -68,6 +81,9 @@ func (m *CountDiscoveredClustersResponse) MarshalVT() ([]byte, error) { return p
 func (m *CountDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CountDiscoveredClustersResponse) EqualVT(n *CountDiscoveredClustersResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountDiscoveredClustersResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -80,6 +96,9 @@ func (m *GetDiscoveredClusterRequest) CloneVT() *GetDiscoveredClusterRequest {
 }
 func (m *GetDiscoveredClusterRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetDiscoveredClusterRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetDiscoveredClusterRequest) EqualVT(n *GetDiscoveredClusterRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetDiscoveredClusterRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -93,6 +112,9 @@ func (m *GetDiscoveredClusterResponse) CloneVT() *GetDiscoveredClusterResponse {
 func (m *GetDiscoveredClusterResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetDiscoveredClusterResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetDiscoveredClusterResponse) EqualVT(n *GetDiscoveredClusterResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -108,6 +130,9 @@ func (m *ListDiscoveredClustersRequest) MarshalVT() ([]byte, error) { return pro
 func (m *ListDiscoveredClustersRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListDiscoveredClustersRequest) EqualVT(n *ListDiscoveredClustersRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListDiscoveredClustersRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -121,6 +146,9 @@ func (m *ListDiscoveredClustersResponse) CloneVT() *ListDiscoveredClustersRespon
 func (m *ListDiscoveredClustersResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ListDiscoveredClustersResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ListDiscoveredClustersResponse) EqualVT(n *ListDiscoveredClustersResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

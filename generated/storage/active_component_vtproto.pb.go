@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ActiveComponent) SizeVT() int                   { return proto.Size(m) }
-func (m *ActiveComponent) CloneVT() *ActiveComponent     { return proto.Clone(m).(*ActiveComponent) }
-func (m *ActiveComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ActiveComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ActiveComponent) SizeVT() int                     { return proto.Size(m) }
+func (m *ActiveComponent) CloneVT() *ActiveComponent       { return proto.Clone(m).(*ActiveComponent) }
+func (m *ActiveComponent) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ActiveComponent) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ActiveComponent) EqualVT(n *ActiveComponent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ActiveComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -19,6 +20,9 @@ func (m *ActiveComponent_ActiveContext) CloneVT() *ActiveComponent_ActiveContext
 func (m *ActiveComponent_ActiveContext) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ActiveComponent_ActiveContext) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ActiveComponent_ActiveContext) EqualVT(n *ActiveComponent_ActiveContext) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

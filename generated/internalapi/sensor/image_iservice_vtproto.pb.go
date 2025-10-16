@@ -4,18 +4,20 @@ package sensor
 
 import "google.golang.org/protobuf/proto"
 
-func (m *GetImageRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *GetImageRequest) CloneVT() *GetImageRequest     { return proto.Clone(m).(*GetImageRequest) }
-func (m *GetImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageRequest) SizeVT() int                     { return proto.Size(m) }
+func (m *GetImageRequest) CloneVT() *GetImageRequest       { return proto.Clone(m).(*GetImageRequest) }
+func (m *GetImageRequest) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageRequest) EqualVT(n *GetImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetImageResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *GetImageResponse) CloneVT() *GetImageResponse    { return proto.Clone(m).(*GetImageResponse) }
-func (m *GetImageResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetImageResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageResponse) SizeVT() int                      { return proto.Size(m) }
+func (m *GetImageResponse) CloneVT() *GetImageResponse       { return proto.Clone(m).(*GetImageResponse) }
+func (m *GetImageResponse) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *GetImageResponse) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageResponse) EqualVT(n *GetImageResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetImageResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

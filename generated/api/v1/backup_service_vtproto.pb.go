@@ -10,6 +10,9 @@ func (m *GetExternalBackupsResponse) CloneVT() *GetExternalBackupsResponse {
 }
 func (m *GetExternalBackupsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetExternalBackupsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetExternalBackupsResponse) EqualVT(n *GetExternalBackupsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetExternalBackupsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +23,9 @@ func (m *UpdateExternalBackupRequest) CloneVT() *UpdateExternalBackupRequest {
 }
 func (m *UpdateExternalBackupRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *UpdateExternalBackupRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateExternalBackupRequest) EqualVT(n *UpdateExternalBackupRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateExternalBackupRequest) UnmarshalVTUnsafe(dAtA []byte) error {

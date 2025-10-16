@@ -8,8 +8,9 @@ func (m *NotificationSchedule) SizeVT() int { return proto.Size(m) }
 func (m *NotificationSchedule) CloneVT() *NotificationSchedule {
 	return proto.Clone(m).(*NotificationSchedule)
 }
-func (m *NotificationSchedule) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NotificationSchedule) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NotificationSchedule) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *NotificationSchedule) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *NotificationSchedule) EqualVT(n *NotificationSchedule) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NotificationSchedule) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

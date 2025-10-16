@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v2/compliance_integration_service.proto
 
+//go:build !protoopaque
+
 package v2
 
 import (
@@ -172,21 +174,20 @@ func (x ClusterPlatformType) Number() protoreflect.EnumNumber {
 
 // Next Tag: 11
 type ComplianceIntegration struct {
-	state                          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                  *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Version             *string                `protobuf:"bytes,2,opt,name=version"`
-	xxx_hidden_ClusterId           *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName         *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_Namespace           *string                `protobuf:"bytes,5,opt,name=namespace"`
-	xxx_hidden_StatusErrors        []string               `protobuf:"bytes,6,rep,name=status_errors,json=statusErrors"`
-	xxx_hidden_OperatorInstalled   bool                   `protobuf:"varint,7,opt,name=operator_installed,json=operatorInstalled"`
-	xxx_hidden_Status              COStatus               `protobuf:"varint,8,opt,name=status,enum=v2.COStatus"`
-	xxx_hidden_ClusterPlatformType ClusterPlatformType    `protobuf:"varint,9,opt,name=cluster_platform_type,json=clusterPlatformType,enum=v2.ClusterPlatformType"`
-	xxx_hidden_ClusterProviderType ClusterProviderType    `protobuf:"varint,10,opt,name=cluster_provider_type,json=clusterProviderType,enum=v2.ClusterProviderType"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Version     string                 `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
+	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
+	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"`
+	// Collection of errors that occurred while trying to obtain compliance operator health info.
+	StatusErrors        []string            `protobuf:"bytes,6,rep,name=status_errors,json=statusErrors" json:"status_errors,omitempty"`
+	OperatorInstalled   bool                `protobuf:"varint,7,opt,name=operator_installed,json=operatorInstalled" json:"operator_installed,omitempty"`
+	Status              COStatus            `protobuf:"varint,8,opt,name=status,enum=v2.COStatus" json:"status,omitempty"`
+	ClusterPlatformType ClusterPlatformType `protobuf:"varint,9,opt,name=cluster_platform_type,json=clusterPlatformType,enum=v2.ClusterPlatformType" json:"cluster_platform_type,omitempty"`
+	ClusterProviderType ClusterProviderType `protobuf:"varint,10,opt,name=cluster_provider_type,json=clusterProviderType,enum=v2.ClusterProviderType" json:"cluster_provider_type,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ComplianceIntegration) Reset() {
@@ -216,319 +217,152 @@ func (x *ComplianceIntegration) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceIntegration) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ComplianceIntegration) GetStatusErrors() []string {
 	if x != nil {
-		return x.xxx_hidden_StatusErrors
+		return x.StatusErrors
 	}
 	return nil
 }
 
 func (x *ComplianceIntegration) GetOperatorInstalled() bool {
 	if x != nil {
-		return x.xxx_hidden_OperatorInstalled
+		return x.OperatorInstalled
 	}
 	return false
 }
 
 func (x *ComplianceIntegration) GetStatus() COStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			return x.xxx_hidden_Status
-		}
+		return x.Status
 	}
 	return COStatus_HEALTHY
 }
 
 func (x *ComplianceIntegration) GetClusterPlatformType() ClusterPlatformType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			return x.xxx_hidden_ClusterPlatformType
-		}
+		return x.ClusterPlatformType
 	}
 	return ClusterPlatformType_GENERIC_CLUSTER
 }
 
 func (x *ComplianceIntegration) GetClusterProviderType() ClusterProviderType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_ClusterProviderType
-		}
+		return x.ClusterProviderType
 	}
 	return ClusterProviderType_UNSPECIFIED
 }
 
 func (x *ComplianceIntegration) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
+	x.Id = v
 }
 
 func (x *ComplianceIntegration) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
+	x.Version = v
 }
 
 func (x *ComplianceIntegration) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	x.ClusterId = v
 }
 
 func (x *ComplianceIntegration) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
+	x.ClusterName = v
 }
 
 func (x *ComplianceIntegration) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
+	x.Namespace = v
 }
 
 func (x *ComplianceIntegration) SetStatusErrors(v []string) {
-	x.xxx_hidden_StatusErrors = v
+	x.StatusErrors = v
 }
 
 func (x *ComplianceIntegration) SetOperatorInstalled(v bool) {
-	x.xxx_hidden_OperatorInstalled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
+	x.OperatorInstalled = v
 }
 
 func (x *ComplianceIntegration) SetStatus(v COStatus) {
-	x.xxx_hidden_Status = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
+	x.Status = v
 }
 
 func (x *ComplianceIntegration) SetClusterPlatformType(v ClusterPlatformType) {
-	x.xxx_hidden_ClusterPlatformType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	x.ClusterPlatformType = v
 }
 
 func (x *ComplianceIntegration) SetClusterProviderType(v ClusterProviderType) {
-	x.xxx_hidden_ClusterProviderType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
-}
-
-func (x *ComplianceIntegration) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceIntegration) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceIntegration) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceIntegration) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceIntegration) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceIntegration) HasOperatorInstalled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ComplianceIntegration) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ComplianceIntegration) HasClusterPlatformType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ComplianceIntegration) HasClusterProviderType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ComplianceIntegration) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceIntegration) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Version = nil
-}
-
-func (x *ComplianceIntegration) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ComplianceIntegration) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *ComplianceIntegration) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *ComplianceIntegration) ClearOperatorInstalled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_OperatorInstalled = false
-}
-
-func (x *ComplianceIntegration) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Status = COStatus_HEALTHY
-}
-
-func (x *ComplianceIntegration) ClearClusterPlatformType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_ClusterPlatformType = ClusterPlatformType_GENERIC_CLUSTER
-}
-
-func (x *ComplianceIntegration) ClearClusterProviderType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_ClusterProviderType = ClusterProviderType_UNSPECIFIED
+	x.ClusterProviderType = v
 }
 
 type ComplianceIntegration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Version     *string
-	ClusterId   *string
-	ClusterName *string
-	Namespace   *string
+	Id          string
+	Version     string
+	ClusterId   string
+	ClusterName string
+	Namespace   string
 	// Collection of errors that occurred while trying to obtain compliance operator health info.
 	StatusErrors        []string
-	OperatorInstalled   *bool
-	Status              *COStatus
-	ClusterPlatformType *ClusterPlatformType
-	ClusterProviderType *ClusterProviderType
+	OperatorInstalled   bool
+	Status              COStatus
+	ClusterPlatformType ClusterPlatformType
+	ClusterProviderType ClusterProviderType
 }
 
 func (b0 ComplianceIntegration_builder) Build() *ComplianceIntegration {
 	m0 := &ComplianceIntegration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
-		x.xxx_hidden_Version = b.Version
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	x.xxx_hidden_StatusErrors = b.StatusErrors
-	if b.OperatorInstalled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
-		x.xxx_hidden_OperatorInstalled = *b.OperatorInstalled
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
-		x.xxx_hidden_Status = *b.Status
-	}
-	if b.ClusterPlatformType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
-		x.xxx_hidden_ClusterPlatformType = *b.ClusterPlatformType
-	}
-	if b.ClusterProviderType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
-		x.xxx_hidden_ClusterProviderType = *b.ClusterProviderType
-	}
+	x.Id = b.Id
+	x.Version = b.Version
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.Namespace = b.Namespace
+	x.StatusErrors = b.StatusErrors
+	x.OperatorInstalled = b.OperatorInstalled
+	x.Status = b.Status
+	x.ClusterPlatformType = b.ClusterPlatformType
+	x.ClusterProviderType = b.ClusterProviderType
 	return m0
 }
 
 type ComplianceIntegrationStatusRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceIntegrationStatusRequest) Reset() {
@@ -558,58 +392,35 @@ func (x *ComplianceIntegrationStatusRequest) ProtoReflect() protoreflect.Message
 
 func (x *ComplianceIntegrationStatusRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ComplianceIntegrationStatusRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ComplianceIntegrationStatusRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceIntegrationStatusRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
+	x.ClusterId = v
 }
 
 type ComplianceIntegrationStatusRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId *string
+	ClusterId string
 }
 
 func (b0 ComplianceIntegrationStatusRequest_builder) Build() *ComplianceIntegrationStatusRequest {
 	m0 := &ComplianceIntegrationStatusRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
+	x.ClusterId = b.ClusterId
 	return m0
 }
 
 type ListComplianceIntegrationsResponse struct {
-	state                   protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Integrations *[]*ComplianceIntegration `protobuf:"bytes,1,rep,name=integrations"`
-	xxx_hidden_TotalCount   int32                     `protobuf:"varint,2,opt,name=total_count,json=totalCount"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Integrations  []*ComplianceIntegration `protobuf:"bytes,1,rep,name=integrations" json:"integrations,omitempty"`
+	TotalCount    int32                    `protobuf:"varint,2,opt,name=total_count,json=totalCount" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListComplianceIntegrationsResponse) Reset() {
@@ -639,72 +450,39 @@ func (x *ListComplianceIntegrationsResponse) ProtoReflect() protoreflect.Message
 
 func (x *ListComplianceIntegrationsResponse) GetIntegrations() []*ComplianceIntegration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Integrations) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ComplianceIntegration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Integrations
 	}
 	return nil
 }
 
 func (x *ListComplianceIntegrationsResponse) GetTotalCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_TotalCount
+		return x.TotalCount
 	}
 	return 0
 }
 
 func (x *ListComplianceIntegrationsResponse) SetIntegrations(v []*ComplianceIntegration) {
-	var sv *[]*ComplianceIntegration
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceIntegration{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Integrations = v
 }
 
 func (x *ListComplianceIntegrationsResponse) SetTotalCount(v int32) {
-	x.xxx_hidden_TotalCount = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ListComplianceIntegrationsResponse) HasTotalCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ListComplianceIntegrationsResponse) ClearTotalCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_TotalCount = 0
+	x.TotalCount = v
 }
 
 type ListComplianceIntegrationsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Integrations []*ComplianceIntegration
-	TotalCount   *int32
+	TotalCount   int32
 }
 
 func (b0 ListComplianceIntegrationsResponse_builder) Build() *ListComplianceIntegrationsResponse {
 	m0 := &ListComplianceIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Integrations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Integrations = &b.Integrations
-	}
-	if b.TotalCount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_TotalCount = *b.TotalCount
-	}
+	x.Integrations = b.Integrations
+	x.TotalCount = b.TotalCount
 	return m0
 }
 
@@ -751,8 +529,8 @@ const file_api_v2_compliance_integration_service_proto_rawDesc = "" +
 	"\x11OPENSHIFT_CLUSTER\x10\x02\x12\x16\n" +
 	"\x12OPENSHIFT4_CLUSTER\x10\x05\"\x04\b\x03\x10\x03\"\x04\b\x04\x10\x042\x97\x01\n" +
 	"\x1cComplianceIntegrationService\x12w\n" +
-	"\x1aListComplianceIntegrations\x12\f.v2.RawQuery\x1a&.v2.ListComplianceIntegrationsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v2/compliance/integrationsB/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x1aListComplianceIntegrations\x12\f.v2.RawQuery\x1a&.v2.ListComplianceIntegrationsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v2/compliance/integrationsB7\n" +
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v2_compliance_integration_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_api_v2_compliance_integration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

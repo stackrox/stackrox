@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/deployment_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,11 +26,11 @@ const (
 )
 
 type DeploymentLabelsResponse struct {
-	state             protoimpl.MessageState                           `protogen:"opaque.v1"`
-	xxx_hidden_Labels map[string]*DeploymentLabelsResponse_LabelValues `protobuf:"bytes,1,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Values []string                                         `protobuf:"bytes,2,rep,name=values"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState                           `protogen:"hybrid.v1"`
+	Labels        map[string]*DeploymentLabelsResponse_LabelValues `protobuf:"bytes,1,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Values        []string                                         `protobuf:"bytes,2,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeploymentLabelsResponse) Reset() {
@@ -58,24 +60,24 @@ func (x *DeploymentLabelsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentLabelsResponse) GetLabels() map[string]*DeploymentLabelsResponse_LabelValues {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *DeploymentLabelsResponse) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *DeploymentLabelsResponse) SetLabels(v map[string]*DeploymentLabelsResponse_LabelValues) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *DeploymentLabelsResponse) SetValues(v []string) {
-	x.xxx_hidden_Values = v
+	x.Values = v
 }
 
 type DeploymentLabelsResponse_builder struct {
@@ -89,20 +91,16 @@ func (b0 DeploymentLabelsResponse_builder) Build() *DeploymentLabelsResponse {
 	m0 := &DeploymentLabelsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Values = b.Values
+	x.Labels = b.Labels
+	x.Values = b.Values
 	return m0
 }
 
 type ListDeploymentsResponse struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Deployments *[]*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Deployments   []*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments" json:"deployments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListDeploymentsResponse) Reset() {
@@ -132,27 +130,13 @@ func (x *ListDeploymentsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListDeploymentsResponse) GetDeployments() []*storage.ListDeployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.ListDeployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Deployments
 	}
 	return nil
 }
 
 func (x *ListDeploymentsResponse) SetDeployments(v []*storage.ListDeployment) {
-	var sv *[]*storage.ListDeployment
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ListDeployment{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Deployments = v
 }
 
 type ListDeploymentsResponse_builder struct {
@@ -165,20 +149,15 @@ func (b0 ListDeploymentsResponse_builder) Build() *ListDeploymentsResponse {
 	m0 := &ListDeploymentsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Deployments = &b.Deployments
-	}
+	x.Deployments = b.Deployments
 	return m0
 }
 
 type CountDeploymentsResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountDeploymentsResponse) Reset() {
@@ -208,54 +187,34 @@ func (x *CountDeploymentsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CountDeploymentsResponse) GetCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *CountDeploymentsResponse) SetCount(v int32) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *CountDeploymentsResponse) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CountDeploymentsResponse) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type CountDeploymentsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Count *int32
+	Count int32
 }
 
 func (b0 CountDeploymentsResponse_builder) Build() *CountDeploymentsResponse {
 	m0 := &CountDeploymentsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Count = b.Count
 	return m0
 }
 
 type ListDeploymentsWithProcessInfoResponse struct {
-	state                  protoimpl.MessageState                                               `protogen:"opaque.v1"`
-	xxx_hidden_Deployments *[]*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo `protobuf:"bytes,1,rep,name=deployments"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                                              `protogen:"hybrid.v1"`
+	Deployments   []*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo `protobuf:"bytes,1,rep,name=deployments" json:"deployments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse) Reset() {
@@ -285,27 +244,13 @@ func (x *ListDeploymentsWithProcessInfoResponse) ProtoReflect() protoreflect.Mes
 
 func (x *ListDeploymentsWithProcessInfoResponse) GetDeployments() []*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Deployments
 	}
 	return nil
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse) SetDeployments(v []*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) {
-	var sv *[]*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Deployments = v
 }
 
 type ListDeploymentsWithProcessInfoResponse_builder struct {
@@ -318,23 +263,16 @@ func (b0 ListDeploymentsWithProcessInfoResponse_builder) Build() *ListDeployment
 	m0 := &ListDeploymentsWithProcessInfoResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Deployments = &b.Deployments
-	}
+	x.Deployments = b.Deployments
 	return m0
 }
 
 type GetDeploymentWithRiskResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deployment *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment"`
-	xxx_hidden_Risk       *storage.Risk          `protobuf:"bytes,2,opt,name=risk"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment" json:"deployment,omitempty"`
+	Risk          *storage.Risk          `protobuf:"bytes,2,opt,name=risk" json:"risk,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetDeploymentWithRiskResponse) Reset() {
@@ -364,72 +302,46 @@ func (x *GetDeploymentWithRiskResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetDeploymentWithRiskResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployment) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.Deployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployment), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Deployment
 	}
 	return nil
 }
 
 func (x *GetDeploymentWithRiskResponse) GetRisk() *storage.Risk {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Risk) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *storage.Risk
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Risk), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Risk
 	}
 	return nil
 }
 
 func (x *GetDeploymentWithRiskResponse) SetDeployment(v *storage.Deployment) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Deployment = v
 }
 
 func (x *GetDeploymentWithRiskResponse) SetRisk(v *storage.Risk) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Risk, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.Risk = v
 }
 
 func (x *GetDeploymentWithRiskResponse) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Deployment != nil
 }
 
 func (x *GetDeploymentWithRiskResponse) HasRisk() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Risk != nil
 }
 
 func (x *GetDeploymentWithRiskResponse) ClearDeployment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, (*storage.Deployment)(nil))
+	x.Deployment = nil
 }
 
 func (x *GetDeploymentWithRiskResponse) ClearRisk() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Risk, (*storage.Risk)(nil))
+	x.Risk = nil
 }
 
 type GetDeploymentWithRiskResponse_builder struct {
@@ -443,25 +355,17 @@ func (b0 GetDeploymentWithRiskResponse_builder) Build() *GetDeploymentWithRiskRe
 	m0 := &GetDeploymentWithRiskResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Deployment = b.Deployment
-	}
-	if b.Risk != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Risk = b.Risk
-	}
+	x.Deployment = b.Deployment
+	x.Risk = b.Risk
 	return m0
 }
 
 type ExportDeploymentRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Timeout     int32                  `protobuf:"varint,1,opt,name=timeout"`
-	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout" json:"timeout,omitempty"`
+	Query         string                 `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExportDeploymentRequest) Reset() {
@@ -491,86 +395,47 @@ func (x *ExportDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ExportDeploymentRequest) GetTimeout() int32 {
 	if x != nil {
-		return x.xxx_hidden_Timeout
+		return x.Timeout
 	}
 	return 0
 }
 
 func (x *ExportDeploymentRequest) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *ExportDeploymentRequest) SetTimeout(v int32) {
-	x.xxx_hidden_Timeout = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Timeout = v
 }
 
 func (x *ExportDeploymentRequest) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ExportDeploymentRequest) HasTimeout() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ExportDeploymentRequest) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ExportDeploymentRequest) ClearTimeout() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Timeout = 0
-}
-
-func (x *ExportDeploymentRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Query = nil
+	x.Query = v
 }
 
 type ExportDeploymentRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Timeout *int32
-	Query   *string
+	Timeout int32
+	Query   string
 }
 
 func (b0 ExportDeploymentRequest_builder) Build() *ExportDeploymentRequest {
 	m0 := &ExportDeploymentRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Timeout != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Timeout = *b.Timeout
-	}
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Timeout = b.Timeout
+	x.Query = b.Query
 	return m0
 }
 
 type ExportDeploymentResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Deployment *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment" json:"deployment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExportDeploymentResponse) Reset() {
@@ -600,37 +465,24 @@ func (x *ExportDeploymentResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportDeploymentResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployment) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.Deployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployment), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Deployment
 	}
 	return nil
 }
 
 func (x *ExportDeploymentResponse) SetDeployment(v *storage.Deployment) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Deployment = v
 }
 
 func (x *ExportDeploymentResponse) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Deployment != nil
 }
 
 func (x *ExportDeploymentResponse) ClearDeployment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, (*storage.Deployment)(nil))
+	x.Deployment = nil
 }
 
 type ExportDeploymentResponse_builder struct {
@@ -643,18 +495,15 @@ func (b0 ExportDeploymentResponse_builder) Build() *ExportDeploymentResponse {
 	m0 := &ExportDeploymentResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Deployment = b.Deployment
-	}
+	x.Deployment = b.Deployment
 	return m0
 }
 
 type DeploymentLabelsResponse_LabelValues struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Values []string               `protobuf:"bytes,1,rep,name=values"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeploymentLabelsResponse_LabelValues) Reset() {
@@ -684,13 +533,13 @@ func (x *DeploymentLabelsResponse_LabelValues) ProtoReflect() protoreflect.Messa
 
 func (x *DeploymentLabelsResponse_LabelValues) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *DeploymentLabelsResponse_LabelValues) SetValues(v []string) {
-	x.xxx_hidden_Values = v
+	x.Values = v
 }
 
 type DeploymentLabelsResponse_LabelValues_builder struct {
@@ -703,20 +552,16 @@ func (b0 DeploymentLabelsResponse_LabelValues_builder) Build() *DeploymentLabels
 	m0 := &DeploymentLabelsResponse_LabelValues{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Values = b.Values
+	x.Values = b.Values
 	return m0
 }
 
 type ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo struct {
-	state                       protoimpl.MessageState                     `protogen:"opaque.v1"`
-	xxx_hidden_Deployment       *storage.ListDeployment                    `protobuf:"bytes,1,opt,name=deployment"`
-	xxx_hidden_BaselineStatuses *[]*storage.ContainerNameAndBaselineStatus `protobuf:"bytes,3,rep,name=baseline_statuses,json=baselineStatuses"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState                    `protogen:"hybrid.v1"`
+	Deployment       *storage.ListDeployment                   `protobuf:"bytes,1,opt,name=deployment" json:"deployment,omitempty"`
+	BaselineStatuses []*storage.ContainerNameAndBaselineStatus `protobuf:"bytes,3,rep,name=baseline_statuses,json=baselineStatuses" json:"baseline_statuses,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Reset() {
@@ -746,62 +591,35 @@ func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Proto
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) GetDeployment() *storage.ListDeployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployment) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ListDeployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployment), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Deployment
 	}
 	return nil
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) GetBaselineStatuses() []*storage.ContainerNameAndBaselineStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BaselineStatuses) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*storage.ContainerNameAndBaselineStatus
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.BaselineStatuses
 	}
 	return nil
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) SetDeployment(v *storage.ListDeployment) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Deployment = v
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) SetBaselineStatuses(v []*storage.ContainerNameAndBaselineStatus) {
-	var sv *[]*storage.ContainerNameAndBaselineStatus
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ContainerNameAndBaselineStatus{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_BaselineStatuses), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.BaselineStatuses = v
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Deployment != nil
 }
 
 func (x *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) ClearDeployment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Deployment, (*storage.ListDeployment)(nil))
+	x.Deployment = nil
 }
 
 type ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo_builder struct {
@@ -815,14 +633,8 @@ func (b0 ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo_builde
 	m0 := &ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Deployment = b.Deployment
-	}
-	if b.BaselineStatuses != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_BaselineStatuses = &b.BaselineStatuses
-	}
+	x.Deployment = b.Deployment
+	x.BaselineStatuses = b.BaselineStatuses
 	return m0
 }
 
@@ -869,8 +681,8 @@ const file_api_v1_deployment_service_proto_rawDesc = "" +
 	"\x0fListDeployments\x12\f.v1.RawQuery\x1a\x1b.v1.ListDeploymentsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/deployments\x12\x82\x01\n" +
 	"\x1eListDeploymentsWithProcessInfo\x12\f.v1.RawQuery\x1a*.v1.ListDeploymentsWithProcessInfoResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/deploymentswithprocessinfo\x12]\n" +
 	"\tGetLabels\x12\t.v1.Empty\x1a\x1c.v1.DeploymentLabelsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/deployments/metadata/labels\x12p\n" +
-	"\x11ExportDeployments\x12\x1b.v1.ExportDeploymentRequest\x1a\x1c.v1.ExportDeploymentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/export/deployments0\x01B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
+	"\x11ExportDeployments\x12\x1b.v1.ExportDeploymentRequest\x1a\x1c.v1.ExportDeploymentResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/export/deployments0\x01B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_deployment_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_v1_deployment_service_proto_goTypes = []any{

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/namespace_metadata.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,21 +25,17 @@ const (
 )
 
 type NamespaceMetadata struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id           *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name         *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ClusterId    *string                `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName  *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_Labels       map[string]string      `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreationTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=creation_time,json=creationTime"`
-	xxx_hidden_Priority     int64                  `protobuf:"varint,7,opt,name=priority"`
-	xxx_hidden_Annotations  map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Namespace ID" sql:"pk,type(uuid)"`                                                                                   // @gotags: search:"Namespace ID" sql:"pk,type(uuid)"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Namespace,store"`                                                                               // @gotags: search:"Namespace,store"
+	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                    // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster"`                                              // @gotags: search:"Cluster"
+	Labels        map[string]string      `protobuf:"bytes,5,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Namespace Label"` // @gotags: search:"Namespace Label"
+	CreationTime  *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=creation_time,json=creationTime" json:"creation_time,omitempty"`
+	Priority      int64                  `protobuf:"varint,7,opt,name=priority" json:"priority,omitempty"`
+	Annotations   map[string]string      `protobuf:"bytes,8,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Namespace Annotation"` // @gotags: search:"Namespace Annotation"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NamespaceMetadata) Reset() {
@@ -67,203 +65,113 @@ func (x *NamespaceMetadata) ProtoReflect() protoreflect.Message {
 
 func (x *NamespaceMetadata) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *NamespaceMetadata) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *NamespaceMetadata) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *NamespaceMetadata) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *NamespaceMetadata) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *NamespaceMetadata) GetCreationTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreationTime) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreationTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreationTime
 	}
 	return nil
 }
 
 func (x *NamespaceMetadata) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *NamespaceMetadata) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *NamespaceMetadata) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Id = v
 }
 
 func (x *NamespaceMetadata) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.Name = v
 }
 
 func (x *NamespaceMetadata) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.ClusterId = v
 }
 
 func (x *NamespaceMetadata) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.ClusterName = v
 }
 
 func (x *NamespaceMetadata) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *NamespaceMetadata) SetCreationTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
-	}
+	x.CreationTime = v
 }
 
 func (x *NamespaceMetadata) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	x.Priority = v
 }
 
 func (x *NamespaceMetadata) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
-}
-
-func (x *NamespaceMetadata) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NamespaceMetadata) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NamespaceMetadata) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *NamespaceMetadata) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	x.Annotations = v
 }
 
 func (x *NamespaceMetadata) HasCreationTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *NamespaceMetadata) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *NamespaceMetadata) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *NamespaceMetadata) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *NamespaceMetadata) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *NamespaceMetadata) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterName = nil
+	return x.CreationTime != nil
 }
 
 func (x *NamespaceMetadata) ClearCreationTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *NamespaceMetadata) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Priority = 0
+	x.CreationTime = nil
 }
 
 type NamespaceMetadata_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
-	Name         *string
-	ClusterId    *string
-	ClusterName  *string
+	Id           string
+	Name         string
+	ClusterId    string
+	ClusterName  string
 	Labels       map[string]string
 	CreationTime *timestamppb.Timestamp
-	Priority     *int64
+	Priority     int64
 	Annotations  map[string]string
 }
 
@@ -271,32 +179,14 @@ func (b0 NamespaceMetadata_builder) Build() *NamespaceMetadata {
 	m0 := &NamespaceMetadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	x.xxx_hidden_Labels = b.Labels
-	if b.CreationTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_CreationTime = b.CreationTime
-	}
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_Priority = *b.Priority
-	}
-	x.xxx_hidden_Annotations = b.Annotations
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.Labels = b.Labels
+	x.CreationTime = b.CreationTime
+	x.Priority = b.Priority
+	x.Annotations = b.Annotations
 	return m0
 }
 
@@ -320,8 +210,8 @@ const file_storage_namespace_metadata_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_namespace_metadata_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_namespace_metadata_proto_goTypes = []any{

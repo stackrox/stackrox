@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *KubernetesEvent) SizeVT() int                   { return proto.Size(m) }
-func (m *KubernetesEvent) CloneVT() *KubernetesEvent     { return proto.Clone(m).(*KubernetesEvent) }
-func (m *KubernetesEvent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *KubernetesEvent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent) SizeVT() int                     { return proto.Size(m) }
+func (m *KubernetesEvent) CloneVT() *KubernetesEvent       { return proto.Clone(m).(*KubernetesEvent) }
+func (m *KubernetesEvent) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *KubernetesEvent) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent) EqualVT(n *KubernetesEvent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KubernetesEvent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *KubernetesEvent_Object) SizeVT() int { return proto.Size(m) }
 func (m *KubernetesEvent_Object) CloneVT() *KubernetesEvent_Object {
 	return proto.Clone(m).(*KubernetesEvent_Object)
 }
-func (m *KubernetesEvent_Object) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *KubernetesEvent_Object) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent_Object) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *KubernetesEvent_Object) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent_Object) EqualVT(n *KubernetesEvent_Object) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KubernetesEvent_Object) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,6 +30,9 @@ func (m *KubernetesEvent_PodExecArgs) CloneVT() *KubernetesEvent_PodExecArgs {
 }
 func (m *KubernetesEvent_PodExecArgs) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *KubernetesEvent_PodExecArgs) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent_PodExecArgs) EqualVT(n *KubernetesEvent_PodExecArgs) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KubernetesEvent_PodExecArgs) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -41,6 +46,9 @@ func (m *KubernetesEvent_PodPortForwardArgs) CloneVT() *KubernetesEvent_PodPortF
 func (m *KubernetesEvent_PodPortForwardArgs) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *KubernetesEvent_PodPortForwardArgs) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *KubernetesEvent_PodPortForwardArgs) EqualVT(n *KubernetesEvent_PodPortForwardArgs) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -56,6 +64,9 @@ func (m *KubernetesEvent_ResponseStatus) MarshalVT() ([]byte, error) { return pr
 func (m *KubernetesEvent_ResponseStatus) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *KubernetesEvent_ResponseStatus) EqualVT(n *KubernetesEvent_ResponseStatus) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KubernetesEvent_ResponseStatus) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -66,8 +77,9 @@ func (m *KubernetesEvent_User) SizeVT() int { return proto.Size(m) }
 func (m *KubernetesEvent_User) CloneVT() *KubernetesEvent_User {
 	return proto.Clone(m).(*KubernetesEvent_User)
 }
-func (m *KubernetesEvent_User) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *KubernetesEvent_User) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent_User) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *KubernetesEvent_User) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *KubernetesEvent_User) EqualVT(n *KubernetesEvent_User) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KubernetesEvent_User) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

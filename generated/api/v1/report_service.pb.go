@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/report_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -28,8 +30,8 @@ const file_api_v1_report_service_proto_rawDesc = "" +
 	"\n" +
 	"\x1bapi/v1/report_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a!google/protobuf/go_features.proto2V\n" +
 	"\rReportService\x12E\n" +
-	"\tRunReport\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15\"\x13/v1/report/run/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\tRunReport\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15\"\x13/v1/report/run/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_report_service_proto_goTypes = []any{
 	(*ResourceByID)(nil), // 0: v1.ResourceByID

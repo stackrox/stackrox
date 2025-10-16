@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/administration_events_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -123,23 +125,35 @@ func (x AdministrationEventLevel) Number() protoreflect.EnumNumber {
 // transparency for users for asynchronous, background tasks. Events are part of Central's
 // system health view.
 type AdministrationEvent struct {
-	state                     protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Type           AdministrationEventType       `protobuf:"varint,2,opt,name=type,enum=v1.AdministrationEventType"`
-	xxx_hidden_Level          AdministrationEventLevel      `protobuf:"varint,3,opt,name=level,enum=v1.AdministrationEventLevel"`
-	xxx_hidden_Message        *string                       `protobuf:"bytes,4,opt,name=message"`
-	xxx_hidden_Hint           *string                       `protobuf:"bytes,5,opt,name=hint"`
-	xxx_hidden_Domain         *string                       `protobuf:"bytes,6,opt,name=domain"`
-	xxx_hidden_Resource       *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource"`
-	xxx_hidden_NumOccurrences int64                         `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences"`
-	xxx_hidden_LastOccurredAt *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt"`
-	xxx_hidden_CreatedAt      *timestamppb.Timestamp        `protobuf:"bytes,10,opt,name=created_at,json=createdAt"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// UUID of the event.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Type of the event.
+	Type AdministrationEventType `protobuf:"varint,2,opt,name=type,enum=v1.AdministrationEventType" json:"type,omitempty"`
+	// Level associated with the event. The level is categorized into danger, warn, info,
+	// success.
+	Level AdministrationEventLevel `protobuf:"varint,3,opt,name=level,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	// Message associated with the event. The message may include detailed information
+	// for this particular event.
+	Message string `protobuf:"bytes,4,opt,name=message" json:"message,omitempty"`
+	// Hint associated with the event. The hint may include different information based
+	// on the type of event. It can include instructions to resolve an event, or
+	// informational hints.
+	Hint string `protobuf:"bytes,5,opt,name=hint" json:"hint,omitempty"`
+	// Domain associated with the event. An event's domain outlines the feature domain where
+	// the event was created from. As an example, this might be "Image Scanning".
+	// In case of events that cannot be tied to a specific domain, this will be "General".
+	Domain   string                        `protobuf:"bytes,6,opt,name=domain" json:"domain,omitempty"`
+	Resource *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource" json:"resource,omitempty"`
+	// Occurrences associated with the event. When events may occur multiple times, the
+	// occurrences track the amount.
+	NumOccurrences int64 `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences" json:"num_occurrences,omitempty"`
+	// Specifies the time when the event has last occurred.
+	LastOccurredAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt" json:"last_occurred_at,omitempty"`
+	// Specifies the time when the event has been created.
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AdministrationEvent) Reset() {
@@ -169,318 +183,172 @@ func (x *AdministrationEvent) ProtoReflect() protoreflect.Message {
 
 func (x *AdministrationEvent) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *AdministrationEvent) GetType() AdministrationEventType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN
 }
 
 func (x *AdministrationEvent) GetLevel() AdministrationEventLevel {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Level
-		}
+		return x.Level
 	}
 	return AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
 }
 
 func (x *AdministrationEvent) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *AdministrationEvent) GetHint() string {
 	if x != nil {
-		if x.xxx_hidden_Hint != nil {
-			return *x.xxx_hidden_Hint
-		}
-		return ""
+		return x.Hint
 	}
 	return ""
 }
 
 func (x *AdministrationEvent) GetDomain() string {
 	if x != nil {
-		if x.xxx_hidden_Domain != nil {
-			return *x.xxx_hidden_Domain
-		}
-		return ""
+		return x.Domain
 	}
 	return ""
 }
 
 func (x *AdministrationEvent) GetResource() *AdministrationEvent_Resource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Resource) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *AdministrationEvent_Resource
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Resource), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Resource
 	}
 	return nil
 }
 
 func (x *AdministrationEvent) GetNumOccurrences() int64 {
 	if x != nil {
-		return x.xxx_hidden_NumOccurrences
+		return x.NumOccurrences
 	}
 	return 0
 }
 
 func (x *AdministrationEvent) GetLastOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastOccurredAt) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastOccurredAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastOccurredAt
 	}
 	return nil
 }
 
 func (x *AdministrationEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *AdministrationEvent) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
+	x.Id = v
 }
 
 func (x *AdministrationEvent) SetType(v AdministrationEventType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
+	x.Type = v
 }
 
 func (x *AdministrationEvent) SetLevel(v AdministrationEventLevel) {
-	x.xxx_hidden_Level = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	x.Level = v
 }
 
 func (x *AdministrationEvent) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
+	x.Message = v
 }
 
 func (x *AdministrationEvent) SetHint(v string) {
-	x.xxx_hidden_Hint = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
+	x.Hint = v
 }
 
 func (x *AdministrationEvent) SetDomain(v string) {
-	x.xxx_hidden_Domain = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
+	x.Domain = v
 }
 
 func (x *AdministrationEvent) SetResource(v *AdministrationEvent_Resource) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Resource, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
-	}
+	x.Resource = v
 }
 
 func (x *AdministrationEvent) SetNumOccurrences(v int64) {
-	x.xxx_hidden_NumOccurrences = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
+	x.NumOccurrences = v
 }
 
 func (x *AdministrationEvent) SetLastOccurredAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastOccurredAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
-	}
+	x.LastOccurredAt = v
 }
 
 func (x *AdministrationEvent) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
-	}
-}
-
-func (x *AdministrationEvent) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AdministrationEvent) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *AdministrationEvent) HasLevel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *AdministrationEvent) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *AdministrationEvent) HasHint() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *AdministrationEvent) HasDomain() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.CreatedAt = v
 }
 
 func (x *AdministrationEvent) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *AdministrationEvent) HasNumOccurrences() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.Resource != nil
 }
 
 func (x *AdministrationEvent) HasLastOccurredAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return x.LastOccurredAt != nil
 }
 
 func (x *AdministrationEvent) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *AdministrationEvent) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *AdministrationEvent) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN
-}
-
-func (x *AdministrationEvent) ClearLevel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Level = AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
-}
-
-func (x *AdministrationEvent) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Message = nil
-}
-
-func (x *AdministrationEvent) ClearHint() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Hint = nil
-}
-
-func (x *AdministrationEvent) ClearDomain() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Domain = nil
+	return x.CreatedAt != nil
 }
 
 func (x *AdministrationEvent) ClearResource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Resource, (*AdministrationEvent_Resource)(nil))
-}
-
-func (x *AdministrationEvent) ClearNumOccurrences() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_NumOccurrences = 0
+	x.Resource = nil
 }
 
 func (x *AdministrationEvent) ClearLastOccurredAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastOccurredAt, (*timestamppb.Timestamp)(nil))
+	x.LastOccurredAt = nil
 }
 
 func (x *AdministrationEvent) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
+	x.CreatedAt = nil
 }
 
 type AdministrationEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// UUID of the event.
-	Id *string
+	Id string
 	// Type of the event.
-	Type *AdministrationEventType
+	Type AdministrationEventType
 	// Level associated with the event. The level is categorized into danger, warn, info,
 	// success.
-	Level *AdministrationEventLevel
+	Level AdministrationEventLevel
 	// Message associated with the event. The message may include detailed information
 	// for this particular event.
-	Message *string
+	Message string
 	// Hint associated with the event. The hint may include different information based
 	// on the type of event. It can include instructions to resolve an event, or
 	// informational hints.
-	Hint *string
+	Hint string
 	// Domain associated with the event. An event's domain outlines the feature domain where
 	// the event was created from. As an example, this might be "Image Scanning".
 	// In case of events that cannot be tied to a specific domain, this will be "General".
-	Domain   *string
+	Domain   string
 	Resource *AdministrationEvent_Resource
 	// Occurrences associated with the event. When events may occur multiple times, the
 	// occurrences track the amount.
-	NumOccurrences *int64
+	NumOccurrences int64
 	// Specifies the time when the event has last occurred.
 	LastOccurredAt *timestamppb.Timestamp
 	// Specifies the time when the event has been created.
@@ -491,63 +359,35 @@ func (b0 AdministrationEvent_builder) Build() *AdministrationEvent {
 	m0 := &AdministrationEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
-		x.xxx_hidden_Type = *b.Type
-	}
-	if b.Level != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
-		x.xxx_hidden_Level = *b.Level
-	}
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
-		x.xxx_hidden_Message = b.Message
-	}
-	if b.Hint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
-		x.xxx_hidden_Hint = b.Hint
-	}
-	if b.Domain != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
-		x.xxx_hidden_Domain = b.Domain
-	}
-	if b.Resource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
-		x.xxx_hidden_Resource = b.Resource
-	}
-	if b.NumOccurrences != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
-		x.xxx_hidden_NumOccurrences = *b.NumOccurrences
-	}
-	if b.LastOccurredAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
-		x.xxx_hidden_LastOccurredAt = b.LastOccurredAt
-	}
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
+	x.Id = b.Id
+	x.Type = b.Type
+	x.Level = b.Level
+	x.Message = b.Message
+	x.Hint = b.Hint
+	x.Domain = b.Domain
+	x.Resource = b.Resource
+	x.NumOccurrences = b.NumOccurrences
+	x.LastOccurredAt = b.LastOccurredAt
+	x.CreatedAt = b.CreatedAt
 	return m0
 }
 
 type AdministrationEventsFilter struct {
-	state                   protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_From         *timestamppb.Timestamp     `protobuf:"bytes,1,opt,name=from"`
-	xxx_hidden_Until        *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=until"`
-	xxx_hidden_Domain       []string                   `protobuf:"bytes,3,rep,name=domain"`
-	xxx_hidden_ResourceType []string                   `protobuf:"bytes,4,rep,name=resource_type,json=resourceType"`
-	xxx_hidden_Type         []AdministrationEventType  `protobuf:"varint,5,rep,packed,name=type,enum=v1.AdministrationEventType"`
-	xxx_hidden_Level        []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,enum=v1.AdministrationEventLevel"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
+	From *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from" json:"from,omitempty"`
+	// Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
+	Until *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=until" json:"until,omitempty"`
+	// Matches events from a specific domain.
+	Domain []string `protobuf:"bytes,3,rep,name=domain" json:"domain,omitempty"`
+	// Matches events associated with a specific resource type.
+	ResourceType []string `protobuf:"bytes,4,rep,name=resource_type,json=resourceType" json:"resource_type,omitempty"`
+	// Matches events based on their type.
+	Type []AdministrationEventType `protobuf:"varint,5,rep,packed,name=type,enum=v1.AdministrationEventType" json:"type,omitempty"`
+	// Matches events based on their level.
+	Level         []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AdministrationEventsFilter) Reset() {
@@ -577,116 +417,90 @@ func (x *AdministrationEventsFilter) ProtoReflect() protoreflect.Message {
 
 func (x *AdministrationEventsFilter) GetFrom() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_From) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.From
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) GetUntil() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Until) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Until), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Until
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) GetDomain() []string {
 	if x != nil {
-		return x.xxx_hidden_Domain
+		return x.Domain
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) GetResourceType() []string {
 	if x != nil {
-		return x.xxx_hidden_ResourceType
+		return x.ResourceType
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) GetType() []AdministrationEventType {
 	if x != nil {
-		return x.xxx_hidden_Type
+		return x.Type
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) GetLevel() []AdministrationEventLevel {
 	if x != nil {
-		return x.xxx_hidden_Level
+		return x.Level
 	}
 	return nil
 }
 
 func (x *AdministrationEventsFilter) SetFrom(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_From, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
-	}
+	x.From = v
 }
 
 func (x *AdministrationEventsFilter) SetUntil(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Until, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
-	}
+	x.Until = v
 }
 
 func (x *AdministrationEventsFilter) SetDomain(v []string) {
-	x.xxx_hidden_Domain = v
+	x.Domain = v
 }
 
 func (x *AdministrationEventsFilter) SetResourceType(v []string) {
-	x.xxx_hidden_ResourceType = v
+	x.ResourceType = v
 }
 
 func (x *AdministrationEventsFilter) SetType(v []AdministrationEventType) {
-	x.xxx_hidden_Type = v
+	x.Type = v
 }
 
 func (x *AdministrationEventsFilter) SetLevel(v []AdministrationEventLevel) {
-	x.xxx_hidden_Level = v
+	x.Level = v
 }
 
 func (x *AdministrationEventsFilter) HasFrom() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.From != nil
 }
 
 func (x *AdministrationEventsFilter) HasUntil() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Until != nil
 }
 
 func (x *AdministrationEventsFilter) ClearFrom() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_From, (*timestamppb.Timestamp)(nil))
+	x.From = nil
 }
 
 func (x *AdministrationEventsFilter) ClearUntil() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Until, (*timestamppb.Timestamp)(nil))
+	x.Until = nil
 }
 
 type AdministrationEventsFilter_builder struct {
@@ -710,30 +524,21 @@ func (b0 AdministrationEventsFilter_builder) Build() *AdministrationEventsFilter
 	m0 := &AdministrationEventsFilter{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.From != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_From = b.From
-	}
-	if b.Until != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Until = b.Until
-	}
-	x.xxx_hidden_Domain = b.Domain
-	x.xxx_hidden_ResourceType = b.ResourceType
-	x.xxx_hidden_Type = b.Type
-	x.xxx_hidden_Level = b.Level
+	x.From = b.From
+	x.Until = b.Until
+	x.Domain = b.Domain
+	x.ResourceType = b.ResourceType
+	x.Type = b.Type
+	x.Level = b.Level
 	return m0
 }
 
 type CountAdministrationEventsRequest struct {
-	state             protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Filter *AdministrationEventsFilter `protobuf:"bytes,1,opt,name=filter"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// For filtering the events based on the requested fields.
+	Filter        *AdministrationEventsFilter `protobuf:"bytes,1,opt,name=filter" json:"filter,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountAdministrationEventsRequest) Reset() {
@@ -763,37 +568,24 @@ func (x *CountAdministrationEventsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CountAdministrationEventsRequest) GetFilter() *AdministrationEventsFilter {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *AdministrationEventsFilter
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Filter
 	}
 	return nil
 }
 
 func (x *CountAdministrationEventsRequest) SetFilter(v *AdministrationEventsFilter) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Filter = v
 }
 
 func (x *CountAdministrationEventsRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Filter != nil
 }
 
 func (x *CountAdministrationEventsRequest) ClearFilter() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*AdministrationEventsFilter)(nil))
+	x.Filter = nil
 }
 
 type CountAdministrationEventsRequest_builder struct {
@@ -807,20 +599,16 @@ func (b0 CountAdministrationEventsRequest_builder) Build() *CountAdministrationE
 	m0 := &CountAdministrationEventsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Filter != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Filter = b.Filter
-	}
+	x.Filter = b.Filter
 	return m0
 }
 
 type CountAdministrationEventsResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The total number of events after filtering and deduplication.
+	Count         int32 `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountAdministrationEventsResponse) Reset() {
@@ -850,55 +638,35 @@ func (x *CountAdministrationEventsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *CountAdministrationEventsResponse) GetCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *CountAdministrationEventsResponse) SetCount(v int32) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *CountAdministrationEventsResponse) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CountAdministrationEventsResponse) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type CountAdministrationEventsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The total number of events after filtering and deduplication.
-	Count *int32
+	Count int32
 }
 
 func (b0 CountAdministrationEventsResponse_builder) Build() *CountAdministrationEventsResponse {
 	m0 := &CountAdministrationEventsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Count = b.Count
 	return m0
 }
 
 type GetAdministrationEventResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Event *AdministrationEvent   `protobuf:"bytes,1,opt,name=event"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Event         *AdministrationEvent   `protobuf:"bytes,1,opt,name=event" json:"event,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAdministrationEventResponse) Reset() {
@@ -928,37 +696,24 @@ func (x *GetAdministrationEventResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetAdministrationEventResponse) GetEvent() *AdministrationEvent {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Event) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *AdministrationEvent
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Event), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Event
 	}
 	return nil
 }
 
 func (x *GetAdministrationEventResponse) SetEvent(v *AdministrationEvent) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Event, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Event = v
 }
 
 func (x *GetAdministrationEventResponse) HasEvent() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Event != nil
 }
 
 func (x *GetAdministrationEventResponse) ClearEvent() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Event, (*AdministrationEvent)(nil))
+	x.Event = nil
 }
 
 type GetAdministrationEventResponse_builder struct {
@@ -971,23 +726,18 @@ func (b0 GetAdministrationEventResponse_builder) Build() *GetAdministrationEvent
 	m0 := &GetAdministrationEventResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Event != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Event = b.Event
-	}
+	x.Event = b.Event
 	return m0
 }
 
 type ListAdministrationEventsRequest struct {
-	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Pagination *Pagination                 `protobuf:"bytes,1,opt,name=pagination"`
-	xxx_hidden_Filter     *AdministrationEventsFilter `protobuf:"bytes,2,opt,name=filter"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// For dividing the events response into chunks.
+	Pagination *Pagination `protobuf:"bytes,1,opt,name=pagination" json:"pagination,omitempty"`
+	// For filtering the events based on the requested fields.
+	Filter        *AdministrationEventsFilter `protobuf:"bytes,2,opt,name=filter" json:"filter,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListAdministrationEventsRequest) Reset() {
@@ -1017,72 +767,46 @@ func (x *ListAdministrationEventsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListAdministrationEventsRequest) GetPagination() *Pagination {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *Pagination
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Pagination
 	}
 	return nil
 }
 
 func (x *ListAdministrationEventsRequest) GetFilter() *AdministrationEventsFilter {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *AdministrationEventsFilter
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Filter
 	}
 	return nil
 }
 
 func (x *ListAdministrationEventsRequest) SetPagination(v *Pagination) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Pagination = v
 }
 
 func (x *ListAdministrationEventsRequest) SetFilter(v *AdministrationEventsFilter) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.Filter = v
 }
 
 func (x *ListAdministrationEventsRequest) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Pagination != nil
 }
 
 func (x *ListAdministrationEventsRequest) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Filter != nil
 }
 
 func (x *ListAdministrationEventsRequest) ClearPagination() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*Pagination)(nil))
+	x.Pagination = nil
 }
 
 func (x *ListAdministrationEventsRequest) ClearFilter() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*AdministrationEventsFilter)(nil))
+	x.Filter = nil
 }
 
 type ListAdministrationEventsRequest_builder struct {
@@ -1098,26 +822,16 @@ func (b0 ListAdministrationEventsRequest_builder) Build() *ListAdministrationEve
 	m0 := &ListAdministrationEventsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Pagination != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Pagination = b.Pagination
-	}
-	if b.Filter != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Filter = b.Filter
-	}
+	x.Pagination = b.Pagination
+	x.Filter = b.Filter
 	return m0
 }
 
 type ListAdministrationEventsResponse struct {
-	state             protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Events *[]*AdministrationEvent `protobuf:"bytes,1,rep,name=events"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Events        []*AdministrationEvent `protobuf:"bytes,1,rep,name=events" json:"events,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListAdministrationEventsResponse) Reset() {
@@ -1147,27 +861,13 @@ func (x *ListAdministrationEventsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListAdministrationEventsResponse) GetEvents() []*AdministrationEvent {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Events) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*AdministrationEvent
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Events
 	}
 	return nil
 }
 
 func (x *ListAdministrationEventsResponse) SetEvents(v []*AdministrationEvent) {
-	var sv *[]*AdministrationEvent
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*AdministrationEvent{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Events = v
 }
 
 type ListAdministrationEventsResponse_builder struct {
@@ -1180,23 +880,26 @@ func (b0 ListAdministrationEventsResponse_builder) Build() *ListAdministrationEv
 	m0 := &ListAdministrationEventsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Events != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Events = &b.Events
-	}
+	x.Events = b.Events
 	return m0
 }
 
 // Resource holds all information about the resource associated with the event.
 type AdministrationEvent_Resource struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Type        *string                `protobuf:"bytes,1,opt,name=type"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,2,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Resource type associated with the event. An event may refer to an underlying resource
+	// such as a particular image. In that case, the resource type will be filled here.
+	Type string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	// Resource ID associated with the event. If an event refers to an underlying resource,
+	// the resource ID identifies the underlying resource. The resource ID is not guaranteed
+	// to be set, depending on the context of the administration event.
+	Id string `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	// Resource name associated with the event. If an event refers to an underlying resource,
+	// the resource name identifies the underlying resource. The resource name is not guaranteed
+	// to be set, depending on the context of the administration event.
+	Name          string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AdministrationEvent_Resource) Reset() {
@@ -1226,83 +929,35 @@ func (x *AdministrationEvent_Resource) ProtoReflect() protoreflect.Message {
 
 func (x *AdministrationEvent_Resource) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *AdministrationEvent_Resource) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *AdministrationEvent_Resource) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *AdministrationEvent_Resource) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Type = v
 }
 
 func (x *AdministrationEvent_Resource) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Id = v
 }
 
 func (x *AdministrationEvent_Resource) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *AdministrationEvent_Resource) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AdministrationEvent_Resource) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *AdministrationEvent_Resource) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *AdministrationEvent_Resource) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *AdministrationEvent_Resource) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *AdministrationEvent_Resource) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type AdministrationEvent_Resource_builder struct {
@@ -1310,33 +965,24 @@ type AdministrationEvent_Resource_builder struct {
 
 	// Resource type associated with the event. An event may refer to an underlying resource
 	// such as a particular image. In that case, the resource type will be filled here.
-	Type *string
+	Type string
 	// Resource ID associated with the event. If an event refers to an underlying resource,
 	// the resource ID identifies the underlying resource. The resource ID is not guaranteed
 	// to be set, depending on the context of the administration event.
-	Id *string
+	Id string
 	// Resource name associated with the event. If an event refers to an underlying resource,
 	// the resource name identifies the underlying resource. The resource name is not guaranteed
 	// to be set, depending on the context of the administration event.
-	Name *string
+	Name string
 }
 
 func (b0 AdministrationEvent_Resource_builder) Build() *AdministrationEvent_Resource {
 	m0 := &AdministrationEvent_Resource{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Type = b.Type
+	x.Id = b.Id
+	x.Name = b.Name
 	return m0
 }
 
@@ -1395,8 +1041,8 @@ const file_api_v1_administration_events_service_proto_rawDesc = "" +
 	"\x1aAdministrationEventService\x12\x91\x01\n" +
 	"\x19CountAdministrationEvents\x12$.v1.CountAdministrationEventsRequest\x1a%.v1.CountAdministrationEventsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/count/administration/events\x12v\n" +
 	"\x16GetAdministrationEvent\x12\x10.v1.ResourceByID\x1a\".v1.GetAdministrationEventResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/administration/events/{id}\x12\x88\x01\n" +
-	"\x18ListAdministrationEvents\x12#.v1.ListAdministrationEventsRequest\x1a$.v1.ListAdministrationEventsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/administration/eventsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\x18ListAdministrationEvents\x12#.v1.ListAdministrationEventsRequest\x1a$.v1.ListAdministrationEventsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/administration/eventsB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_administration_events_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v1_administration_events_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)

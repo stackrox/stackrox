@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *InitBundleMeta) SizeVT() int                   { return proto.Size(m) }
-func (m *InitBundleMeta) CloneVT() *InitBundleMeta      { return proto.Clone(m).(*InitBundleMeta) }
-func (m *InitBundleMeta) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMeta) SizeVT() int                    { return proto.Size(m) }
+func (m *InitBundleMeta) CloneVT() *InitBundleMeta       { return proto.Clone(m).(*InitBundleMeta) }
+func (m *InitBundleMeta) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMeta) EqualVT(n *InitBundleMeta) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *InitBundleMeta_ImpactedCluster) MarshalVT() ([]byte, error) { return pr
 func (m *InitBundleMeta_ImpactedCluster) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *InitBundleMeta_ImpactedCluster) EqualVT(n *InitBundleMeta_ImpactedCluster) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleMeta_ImpactedCluster) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -30,6 +34,7 @@ func (m *CRSMeta) SizeVT() int                   { return proto.Size(m) }
 func (m *CRSMeta) CloneVT() *CRSMeta             { return proto.Clone(m).(*CRSMeta) }
 func (m *CRSMeta) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CRSMeta) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSMeta) EqualVT(n *CRSMeta) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,16 +43,18 @@ func (m *InitBundleGenResponse) SizeVT() int { return proto.Size(m) }
 func (m *InitBundleGenResponse) CloneVT() *InitBundleGenResponse {
 	return proto.Clone(m).(*InitBundleGenResponse)
 }
-func (m *InitBundleGenResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleGenResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleGenResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *InitBundleGenResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleGenResponse) EqualVT(n *InitBundleGenResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleGenResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CRSGenResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *CRSGenResponse) CloneVT() *CRSGenResponse      { return proto.Clone(m).(*CRSGenResponse) }
-func (m *CRSGenResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CRSGenResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSGenResponse) SizeVT() int                    { return proto.Size(m) }
+func (m *CRSGenResponse) CloneVT() *CRSGenResponse       { return proto.Clone(m).(*CRSGenResponse) }
+func (m *CRSGenResponse) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *CRSGenResponse) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *CRSGenResponse) EqualVT(n *CRSGenResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSGenResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -56,8 +63,9 @@ func (m *GetCAConfigResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetCAConfigResponse) CloneVT() *GetCAConfigResponse {
 	return proto.Clone(m).(*GetCAConfigResponse)
 }
-func (m *GetCAConfigResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCAConfigResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCAConfigResponse) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *GetCAConfigResponse) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *GetCAConfigResponse) EqualVT(n *GetCAConfigResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCAConfigResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -66,16 +74,18 @@ func (m *InitBundleMetasResponse) SizeVT() int { return proto.Size(m) }
 func (m *InitBundleMetasResponse) CloneVT() *InitBundleMetasResponse {
 	return proto.Clone(m).(*InitBundleMetasResponse)
 }
-func (m *InitBundleMetasResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleMetasResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMetasResponse) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *InitBundleMetasResponse) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMetasResponse) EqualVT(n *InitBundleMetasResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleMetasResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CRSMetasResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *CRSMetasResponse) CloneVT() *CRSMetasResponse    { return proto.Clone(m).(*CRSMetasResponse) }
-func (m *CRSMetasResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CRSMetasResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSMetasResponse) SizeVT() int                      { return proto.Size(m) }
+func (m *CRSMetasResponse) CloneVT() *CRSMetasResponse       { return proto.Clone(m).(*CRSMetasResponse) }
+func (m *CRSMetasResponse) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *CRSMetasResponse) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *CRSMetasResponse) EqualVT(n *CRSMetasResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSMetasResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -84,8 +94,9 @@ func (m *InitBundleGenRequest) SizeVT() int { return proto.Size(m) }
 func (m *InitBundleGenRequest) CloneVT() *InitBundleGenRequest {
 	return proto.Clone(m).(*InitBundleGenRequest)
 }
-func (m *InitBundleGenRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleGenRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleGenRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *InitBundleGenRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleGenRequest) EqualVT(n *InitBundleGenRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleGenRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -94,6 +105,7 @@ func (m *CRSGenRequest) SizeVT() int                   { return proto.Size(m) }
 func (m *CRSGenRequest) CloneVT() *CRSGenRequest       { return proto.Clone(m).(*CRSGenRequest) }
 func (m *CRSGenRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CRSGenRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSGenRequest) EqualVT(n *CRSGenRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSGenRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -102,8 +114,9 @@ func (m *CRSGenRequestExtended) SizeVT() int { return proto.Size(m) }
 func (m *CRSGenRequestExtended) CloneVT() *CRSGenRequestExtended {
 	return proto.Clone(m).(*CRSGenRequestExtended)
 }
-func (m *CRSGenRequestExtended) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CRSGenRequestExtended) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSGenRequestExtended) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *CRSGenRequestExtended) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *CRSGenRequestExtended) EqualVT(n *CRSGenRequestExtended) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSGenRequestExtended) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -112,16 +125,18 @@ func (m *InitBundleRevokeRequest) SizeVT() int { return proto.Size(m) }
 func (m *InitBundleRevokeRequest) CloneVT() *InitBundleRevokeRequest {
 	return proto.Clone(m).(*InitBundleRevokeRequest)
 }
-func (m *InitBundleRevokeRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleRevokeRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleRevokeRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *InitBundleRevokeRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleRevokeRequest) EqualVT(n *InitBundleRevokeRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleRevokeRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CRSRevokeRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *CRSRevokeRequest) CloneVT() *CRSRevokeRequest    { return proto.Clone(m).(*CRSRevokeRequest) }
-func (m *CRSRevokeRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CRSRevokeRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSRevokeRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *CRSRevokeRequest) CloneVT() *CRSRevokeRequest       { return proto.Clone(m).(*CRSRevokeRequest) }
+func (m *CRSRevokeRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *CRSRevokeRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *CRSRevokeRequest) EqualVT(n *CRSRevokeRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSRevokeRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -132,6 +147,9 @@ func (m *InitBundleRevokeResponse) CloneVT() *InitBundleRevokeResponse {
 }
 func (m *InitBundleRevokeResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *InitBundleRevokeResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleRevokeResponse) EqualVT(n *InitBundleRevokeResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleRevokeResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -146,16 +164,20 @@ func (m *InitBundleRevokeResponse_InitBundleRevocationError) MarshalVT() ([]byte
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *InitBundleRevokeResponse_InitBundleRevocationError) EqualVT(n *InitBundleRevokeResponse_InitBundleRevocationError) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleRevokeResponse_InitBundleRevocationError) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *CRSRevokeResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *CRSRevokeResponse) CloneVT() *CRSRevokeResponse   { return proto.Clone(m).(*CRSRevokeResponse) }
-func (m *CRSRevokeResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CRSRevokeResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CRSRevokeResponse) SizeVT() int                       { return proto.Size(m) }
+func (m *CRSRevokeResponse) CloneVT() *CRSRevokeResponse       { return proto.Clone(m).(*CRSRevokeResponse) }
+func (m *CRSRevokeResponse) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *CRSRevokeResponse) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *CRSRevokeResponse) EqualVT(n *CRSRevokeResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CRSRevokeResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -167,6 +189,9 @@ func (m *CRSRevokeResponse_CRSRevocationError) CloneVT() *CRSRevokeResponse_CRSR
 func (m *CRSRevokeResponse_CRSRevocationError) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *CRSRevokeResponse_CRSRevocationError) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CRSRevokeResponse_CRSRevocationError) EqualVT(n *CRSRevokeResponse_CRSRevocationError) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

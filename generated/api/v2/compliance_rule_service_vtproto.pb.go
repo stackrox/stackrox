@@ -8,6 +8,7 @@ func (m *RuleRequest) SizeVT() int                   { return proto.Size(m) }
 func (m *RuleRequest) CloneVT() *RuleRequest         { return proto.Clone(m).(*RuleRequest) }
 func (m *RuleRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RuleRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RuleRequest) EqualVT(n *RuleRequest) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RuleRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

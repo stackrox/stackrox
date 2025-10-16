@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/metadata_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -169,15 +171,16 @@ func (x CentralServicesCapabilities_CapabilityStatus) Number() protoreflect.Enum
 }
 
 type Metadata struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Version       *string                `protobuf:"bytes,1,opt,name=version"`
-	xxx_hidden_BuildFlavor   *string                `protobuf:"bytes,2,opt,name=build_flavor,json=buildFlavor"`
-	xxx_hidden_ReleaseBuild  bool                   `protobuf:"varint,3,opt,name=release_build,json=releaseBuild"`
-	xxx_hidden_LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,enum=v1.Metadata_LicenseStatus"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state        protoimpl.MessageState `protogen:"hybrid.v1"`
+	Version      string                 `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
+	BuildFlavor  string                 `protobuf:"bytes,2,opt,name=build_flavor,json=buildFlavor" json:"build_flavor,omitempty"`
+	ReleaseBuild bool                   `protobuf:"varint,3,opt,name=release_build,json=releaseBuild" json:"release_build,omitempty"`
+	// Do not use this field. It will always contain "VALID"
+	//
+	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
+	LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -207,27 +210,21 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 
 func (x *Metadata) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *Metadata) GetBuildFlavor() string {
 	if x != nil {
-		if x.xxx_hidden_BuildFlavor != nil {
-			return *x.xxx_hidden_BuildFlavor
-		}
-		return ""
+		return x.BuildFlavor
 	}
 	return ""
 }
 
 func (x *Metadata) GetReleaseBuild() bool {
 	if x != nil {
-		return x.xxx_hidden_ReleaseBuild
+		return x.ReleaseBuild
 	}
 	return false
 }
@@ -235,130 +232,65 @@ func (x *Metadata) GetReleaseBuild() bool {
 // Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
 func (x *Metadata) GetLicenseStatus() Metadata_LicenseStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_LicenseStatus
-		}
+		return x.LicenseStatus
 	}
 	return Metadata_NONE
 }
 
 func (x *Metadata) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Version = v
 }
 
 func (x *Metadata) SetBuildFlavor(v string) {
-	x.xxx_hidden_BuildFlavor = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.BuildFlavor = v
 }
 
 func (x *Metadata) SetReleaseBuild(v bool) {
-	x.xxx_hidden_ReleaseBuild = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ReleaseBuild = v
 }
 
 // Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
 func (x *Metadata) SetLicenseStatus(v Metadata_LicenseStatus) {
-	x.xxx_hidden_LicenseStatus = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Metadata) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Metadata) HasBuildFlavor() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Metadata) HasReleaseBuild() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
-func (x *Metadata) HasLicenseStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Metadata) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Version = nil
-}
-
-func (x *Metadata) ClearBuildFlavor() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_BuildFlavor = nil
-}
-
-func (x *Metadata) ClearReleaseBuild() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ReleaseBuild = false
-}
-
-// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
-func (x *Metadata) ClearLicenseStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_LicenseStatus = Metadata_NONE
+	x.LicenseStatus = v
 }
 
 type Metadata_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Version      *string
-	BuildFlavor  *string
-	ReleaseBuild *bool
+	Version      string
+	BuildFlavor  string
+	ReleaseBuild bool
 	// Do not use this field. It will always contain "VALID"
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
-	LicenseStatus *Metadata_LicenseStatus
+	LicenseStatus Metadata_LicenseStatus
 }
 
 func (b0 Metadata_builder) Build() *Metadata {
 	m0 := &Metadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Version = b.Version
-	}
-	if b.BuildFlavor != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_BuildFlavor = b.BuildFlavor
-	}
-	if b.ReleaseBuild != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ReleaseBuild = *b.ReleaseBuild
-	}
-	if b.LicenseStatus != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_LicenseStatus = *b.LicenseStatus
-	}
+	x.Version = b.Version
+	x.BuildFlavor = b.BuildFlavor
+	x.ReleaseBuild = b.ReleaseBuild
+	x.LicenseStatus = b.LicenseStatus
 	return m0
 }
 
 type TrustInfo struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_CertChain          [][]byte               `protobuf:"bytes,1,rep,name=cert_chain,json=certChain"`
-	xxx_hidden_SensorChallenge    *string                `protobuf:"bytes,2,opt,name=sensor_challenge,json=sensorChallenge"`
-	xxx_hidden_CentralChallenge   *string                `protobuf:"bytes,3,opt,name=central_challenge,json=centralChallenge"`
-	xxx_hidden_AdditionalCas      [][]byte               `protobuf:"bytes,4,rep,name=additional_cas,json=additionalCas"`
-	xxx_hidden_SecondaryCertChain [][]byte               `protobuf:"bytes,5,rep,name=secondary_cert_chain,json=secondaryCertChain"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// holds the certificate chain held by Central
+	CertChain [][]byte `protobuf:"bytes,1,rep,name=cert_chain,json=certChain" json:"cert_chain,omitempty"`
+	// Sensor challenge string
+	SensorChallenge string `protobuf:"bytes,2,opt,name=sensor_challenge,json=sensorChallenge" json:"sensor_challenge,omitempty"`
+	// Central challenge string
+	CentralChallenge string `protobuf:"bytes,3,opt,name=central_challenge,json=centralChallenge" json:"central_challenge,omitempty"`
+	// additional CA certs configured in Central in DER format
+	AdditionalCas [][]byte `protobuf:"bytes,4,rep,name=additional_cas,json=additionalCas" json:"additional_cas,omitempty"`
+	// an optional certificate chain, if Central has a secondary CA
+	SecondaryCertChain [][]byte `protobuf:"bytes,5,rep,name=secondary_cert_chain,json=secondaryCertChain" json:"secondary_cert_chain,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *TrustInfo) Reset() {
@@ -388,89 +320,57 @@ func (x *TrustInfo) ProtoReflect() protoreflect.Message {
 
 func (x *TrustInfo) GetCertChain() [][]byte {
 	if x != nil {
-		return x.xxx_hidden_CertChain
+		return x.CertChain
 	}
 	return nil
 }
 
 func (x *TrustInfo) GetSensorChallenge() string {
 	if x != nil {
-		if x.xxx_hidden_SensorChallenge != nil {
-			return *x.xxx_hidden_SensorChallenge
-		}
-		return ""
+		return x.SensorChallenge
 	}
 	return ""
 }
 
 func (x *TrustInfo) GetCentralChallenge() string {
 	if x != nil {
-		if x.xxx_hidden_CentralChallenge != nil {
-			return *x.xxx_hidden_CentralChallenge
-		}
-		return ""
+		return x.CentralChallenge
 	}
 	return ""
 }
 
 func (x *TrustInfo) GetAdditionalCas() [][]byte {
 	if x != nil {
-		return x.xxx_hidden_AdditionalCas
+		return x.AdditionalCas
 	}
 	return nil
 }
 
 func (x *TrustInfo) GetSecondaryCertChain() [][]byte {
 	if x != nil {
-		return x.xxx_hidden_SecondaryCertChain
+		return x.SecondaryCertChain
 	}
 	return nil
 }
 
 func (x *TrustInfo) SetCertChain(v [][]byte) {
-	x.xxx_hidden_CertChain = v
+	x.CertChain = v
 }
 
 func (x *TrustInfo) SetSensorChallenge(v string) {
-	x.xxx_hidden_SensorChallenge = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.SensorChallenge = v
 }
 
 func (x *TrustInfo) SetCentralChallenge(v string) {
-	x.xxx_hidden_CentralChallenge = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.CentralChallenge = v
 }
 
 func (x *TrustInfo) SetAdditionalCas(v [][]byte) {
-	x.xxx_hidden_AdditionalCas = v
+	x.AdditionalCas = v
 }
 
 func (x *TrustInfo) SetSecondaryCertChain(v [][]byte) {
-	x.xxx_hidden_SecondaryCertChain = v
-}
-
-func (x *TrustInfo) HasSensorChallenge() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TrustInfo) HasCentralChallenge() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TrustInfo) ClearSensorChallenge() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_SensorChallenge = nil
-}
-
-func (x *TrustInfo) ClearCentralChallenge() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CentralChallenge = nil
+	x.SecondaryCertChain = v
 }
 
 type TrustInfo_builder struct {
@@ -479,9 +379,9 @@ type TrustInfo_builder struct {
 	// holds the certificate chain held by Central
 	CertChain [][]byte
 	// Sensor challenge string
-	SensorChallenge *string
+	SensorChallenge string
 	// Central challenge string
-	CentralChallenge *string
+	CentralChallenge string
 	// additional CA certs configured in Central in DER format
 	AdditionalCas [][]byte
 	// an optional certificate chain, if Central has a secondary CA
@@ -492,29 +392,24 @@ func (b0 TrustInfo_builder) Build() *TrustInfo {
 	m0 := &TrustInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CertChain = b.CertChain
-	if b.SensorChallenge != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_SensorChallenge = b.SensorChallenge
-	}
-	if b.CentralChallenge != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_CentralChallenge = b.CentralChallenge
-	}
-	x.xxx_hidden_AdditionalCas = b.AdditionalCas
-	x.xxx_hidden_SecondaryCertChain = b.SecondaryCertChain
+	x.CertChain = b.CertChain
+	x.SensorChallenge = b.SensorChallenge
+	x.CentralChallenge = b.CentralChallenge
+	x.AdditionalCas = b.AdditionalCas
+	x.SecondaryCertChain = b.SecondaryCertChain
 	return m0
 }
 
 type TLSChallengeResponse struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_TrustInfoSerialized  []byte                 `protobuf:"bytes,1,opt,name=trust_info_serialized,json=trustInfoSerialized"`
-	xxx_hidden_Signature            []byte                 `protobuf:"bytes,2,opt,name=signature"`
-	xxx_hidden_SignatureSecondaryCa []byte                 `protobuf:"bytes,3,opt,name=signature_secondary_ca,json=signatureSecondaryCa"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// signed data which is returned to the caller, is validated against the signature
+	TrustInfoSerialized []byte `protobuf:"bytes,1,opt,name=trust_info_serialized,json=trustInfoSerialized" json:"trust_info_serialized,omitempty"`
+	// primary signature (by key from TrustInfo.cert_chain[0])
+	Signature []byte `protobuf:"bytes,2,opt,name=signature" json:"signature,omitempty"`
+	// optional signature by key from TrustInfo.secondary_cert_chain[0].
+	SignatureSecondaryCa []byte `protobuf:"bytes,3,opt,name=signature_secondary_ca,json=signatureSecondaryCa" json:"signature_secondary_ca,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *TLSChallengeResponse) Reset() {
@@ -544,21 +439,21 @@ func (x *TLSChallengeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *TLSChallengeResponse) GetTrustInfoSerialized() []byte {
 	if x != nil {
-		return x.xxx_hidden_TrustInfoSerialized
+		return x.TrustInfoSerialized
 	}
 	return nil
 }
 
 func (x *TLSChallengeResponse) GetSignature() []byte {
 	if x != nil {
-		return x.xxx_hidden_Signature
+		return x.Signature
 	}
 	return nil
 }
 
 func (x *TLSChallengeResponse) GetSignatureSecondaryCa() []byte {
 	if x != nil {
-		return x.xxx_hidden_SignatureSecondaryCa
+		return x.SignatureSecondaryCa
 	}
 	return nil
 }
@@ -567,60 +462,21 @@ func (x *TLSChallengeResponse) SetTrustInfoSerialized(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_TrustInfoSerialized = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.TrustInfoSerialized = v
 }
 
 func (x *TLSChallengeResponse) SetSignature(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Signature = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Signature = v
 }
 
 func (x *TLSChallengeResponse) SetSignatureSecondaryCa(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_SignatureSecondaryCa = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TLSChallengeResponse) HasTrustInfoSerialized() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TLSChallengeResponse) HasSignature() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TLSChallengeResponse) HasSignatureSecondaryCa() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TLSChallengeResponse) ClearTrustInfoSerialized() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_TrustInfoSerialized = nil
-}
-
-func (x *TLSChallengeResponse) ClearSignature() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Signature = nil
-}
-
-func (x *TLSChallengeResponse) ClearSignatureSecondaryCa() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_SignatureSecondaryCa = nil
+	x.SignatureSecondaryCa = v
 }
 
 type TLSChallengeResponse_builder struct {
@@ -638,28 +494,18 @@ func (b0 TLSChallengeResponse_builder) Build() *TLSChallengeResponse {
 	m0 := &TLSChallengeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.TrustInfoSerialized != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_TrustInfoSerialized = b.TrustInfoSerialized
-	}
-	if b.Signature != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Signature = b.Signature
-	}
-	if b.SignatureSecondaryCa != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_SignatureSecondaryCa = b.SignatureSecondaryCa
-	}
+	x.TrustInfoSerialized = b.TrustInfoSerialized
+	x.Signature = b.Signature
+	x.SignatureSecondaryCa = b.SignatureSecondaryCa
 	return m0
 }
 
 type TLSChallengeRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ChallengeToken *string                `protobuf:"bytes,1,opt,name=challenge_token,json=challengeToken"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// generated challenge token by the service asking for TLS certs
+	ChallengeToken string `protobuf:"bytes,1,opt,name=challenge_token,json=challengeToken" json:"challenge_token,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TLSChallengeRequest) Reset() {
@@ -689,59 +535,41 @@ func (x *TLSChallengeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *TLSChallengeRequest) GetChallengeToken() string {
 	if x != nil {
-		if x.xxx_hidden_ChallengeToken != nil {
-			return *x.xxx_hidden_ChallengeToken
-		}
-		return ""
+		return x.ChallengeToken
 	}
 	return ""
 }
 
 func (x *TLSChallengeRequest) SetChallengeToken(v string) {
-	x.xxx_hidden_ChallengeToken = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TLSChallengeRequest) HasChallengeToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TLSChallengeRequest) ClearChallengeToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ChallengeToken = nil
+	x.ChallengeToken = v
 }
 
 type TLSChallengeRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// generated challenge token by the service asking for TLS certs
-	ChallengeToken *string
+	ChallengeToken string
 }
 
 func (b0 TLSChallengeRequest_builder) Build() *TLSChallengeRequest {
 	m0 := &TLSChallengeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ChallengeToken != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ChallengeToken = b.ChallengeToken
-	}
+	x.ChallengeToken = b.ChallengeToken
 	return m0
 }
 
 type DatabaseStatus struct {
-	state                         protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_DatabaseAvailable  bool                        `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable"`
-	xxx_hidden_DatabaseType       DatabaseStatus_DatabaseType `protobuf:"varint,2,opt,name=database_type,json=databaseType,enum=v1.DatabaseStatus_DatabaseType"`
-	xxx_hidden_DatabaseVersion    *string                     `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion"`
-	xxx_hidden_DatabaseIsExternal bool                        `protobuf:"varint,4,opt,name=database_is_external,json=databaseIsExternal"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// indicates whether or not central can communicate with the database
+	DatabaseAvailable bool `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable" json:"database_available,omitempty"`
+	// type of database serving central
+	DatabaseType DatabaseStatus_DatabaseType `protobuf:"varint,2,opt,name=database_type,json=databaseType,enum=v1.DatabaseStatus_DatabaseType" json:"database_type,omitempty"`
+	// version of the database
+	DatabaseVersion    string `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion" json:"database_version,omitempty"`
+	DatabaseIsExternal bool   `protobuf:"varint,4,opt,name=database_is_external,json=databaseIsExternal" json:"database_is_external,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DatabaseStatus) Reset() {
@@ -771,149 +599,76 @@ func (x *DatabaseStatus) ProtoReflect() protoreflect.Message {
 
 func (x *DatabaseStatus) GetDatabaseAvailable() bool {
 	if x != nil {
-		return x.xxx_hidden_DatabaseAvailable
+		return x.DatabaseAvailable
 	}
 	return false
 }
 
 func (x *DatabaseStatus) GetDatabaseType() DatabaseStatus_DatabaseType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_DatabaseType
-		}
+		return x.DatabaseType
 	}
 	return DatabaseStatus_Hidden
 }
 
 func (x *DatabaseStatus) GetDatabaseVersion() string {
 	if x != nil {
-		if x.xxx_hidden_DatabaseVersion != nil {
-			return *x.xxx_hidden_DatabaseVersion
-		}
-		return ""
+		return x.DatabaseVersion
 	}
 	return ""
 }
 
 func (x *DatabaseStatus) GetDatabaseIsExternal() bool {
 	if x != nil {
-		return x.xxx_hidden_DatabaseIsExternal
+		return x.DatabaseIsExternal
 	}
 	return false
 }
 
 func (x *DatabaseStatus) SetDatabaseAvailable(v bool) {
-	x.xxx_hidden_DatabaseAvailable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.DatabaseAvailable = v
 }
 
 func (x *DatabaseStatus) SetDatabaseType(v DatabaseStatus_DatabaseType) {
-	x.xxx_hidden_DatabaseType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.DatabaseType = v
 }
 
 func (x *DatabaseStatus) SetDatabaseVersion(v string) {
-	x.xxx_hidden_DatabaseVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.DatabaseVersion = v
 }
 
 func (x *DatabaseStatus) SetDatabaseIsExternal(v bool) {
-	x.xxx_hidden_DatabaseIsExternal = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *DatabaseStatus) HasDatabaseAvailable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DatabaseStatus) HasDatabaseType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DatabaseStatus) HasDatabaseVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *DatabaseStatus) HasDatabaseIsExternal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *DatabaseStatus) ClearDatabaseAvailable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DatabaseAvailable = false
-}
-
-func (x *DatabaseStatus) ClearDatabaseType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_DatabaseType = DatabaseStatus_Hidden
-}
-
-func (x *DatabaseStatus) ClearDatabaseVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_DatabaseVersion = nil
-}
-
-func (x *DatabaseStatus) ClearDatabaseIsExternal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_DatabaseIsExternal = false
+	x.DatabaseIsExternal = v
 }
 
 type DatabaseStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// indicates whether or not central can communicate with the database
-	DatabaseAvailable *bool
+	DatabaseAvailable bool
 	// type of database serving central
-	DatabaseType *DatabaseStatus_DatabaseType
+	DatabaseType DatabaseStatus_DatabaseType
 	// version of the database
-	DatabaseVersion    *string
-	DatabaseIsExternal *bool
+	DatabaseVersion    string
+	DatabaseIsExternal bool
 }
 
 func (b0 DatabaseStatus_builder) Build() *DatabaseStatus {
 	m0 := &DatabaseStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DatabaseAvailable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_DatabaseAvailable = *b.DatabaseAvailable
-	}
-	if b.DatabaseType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_DatabaseType = *b.DatabaseType
-	}
-	if b.DatabaseVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_DatabaseVersion = b.DatabaseVersion
-	}
-	if b.DatabaseIsExternal != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_DatabaseIsExternal = *b.DatabaseIsExternal
-	}
+	x.DatabaseAvailable = b.DatabaseAvailable
+	x.DatabaseType = b.DatabaseType
+	x.DatabaseVersion = b.DatabaseVersion
+	x.DatabaseIsExternal = b.DatabaseIsExternal
 	return m0
 }
 
 type DatabaseBackupStatus struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_BackupInfo *storage.BackupInfo    `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	BackupInfo    *storage.BackupInfo    `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo" json:"backup_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DatabaseBackupStatus) Reset() {
@@ -943,37 +698,24 @@ func (x *DatabaseBackupStatus) ProtoReflect() protoreflect.Message {
 
 func (x *DatabaseBackupStatus) GetBackupInfo() *storage.BackupInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BackupInfo) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.BackupInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BackupInfo), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.BackupInfo
 	}
 	return nil
 }
 
 func (x *DatabaseBackupStatus) SetBackupInfo(v *storage.BackupInfo) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupInfo, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.BackupInfo = v
 }
 
 func (x *DatabaseBackupStatus) HasBackupInfo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.BackupInfo != nil
 }
 
 func (x *DatabaseBackupStatus) ClearBackupInfo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupInfo, (*storage.BackupInfo)(nil))
+	x.BackupInfo = nil
 }
 
 type DatabaseBackupStatus_builder struct {
@@ -986,26 +728,32 @@ func (b0 DatabaseBackupStatus_builder) Build() *DatabaseBackupStatus {
 	m0 := &DatabaseBackupStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.BackupInfo != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_BackupInfo = b.BackupInfo
-	}
+	x.BackupInfo = b.BackupInfo
 	return m0
 }
 
 // Provides availability of certain functionality of Central Services in the current configuration.
 // The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
 type CentralServicesCapabilities struct {
-	state                                                  protoimpl.MessageState                       `protogen:"opaque.v1"`
-	xxx_hidden_CentralScanningCanUseContainerIamRoleForEcr CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,1,opt,name=central_scanning_can_use_container_iam_role_for_ecr,json=centralScanningCanUseContainerIamRoleForEcr,enum=v1.CentralServicesCapabilities_CapabilityStatus"`
-	xxx_hidden_CentralCanUseCloudBackupIntegrations        CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,2,opt,name=central_can_use_cloud_backup_integrations,json=centralCanUseCloudBackupIntegrations,enum=v1.CentralServicesCapabilities_CapabilityStatus"`
-	xxx_hidden_CentralCanDisplayDeclarativeConfigHealth    CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,3,opt,name=central_can_display_declarative_config_health,json=centralCanDisplayDeclarativeConfigHealth,enum=v1.CentralServicesCapabilities_CapabilityStatus"`
-	xxx_hidden_CentralCanUpdateCert                        CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,4,opt,name=central_can_update_cert,json=centralCanUpdateCert,enum=v1.CentralServicesCapabilities_CapabilityStatus"`
-	xxx_hidden_CentralCanUseAcscsEmailIntegration          CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,5,opt,name=central_can_use_acscs_email_integration,json=centralCanUseAcscsEmailIntegration,enum=v1.CentralServicesCapabilities_CapabilityStatus"`
-	XXX_raceDetectHookData                                 protoimpl.RaceDetectHookData
-	XXX_presence                                           [1]uint32
-	unknownFields                                          protoimpl.UnknownFields
-	sizeCache                                              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
+	// Services.
+	// Note that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such
+	// check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
+	// the role is not actually there. It's user's responsibility to check the presence of role and integration status
+	// when the corresponding setting is enabled.
+	CentralScanningCanUseContainerIamRoleForEcr CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,1,opt,name=central_scanning_can_use_container_iam_role_for_ecr,json=centralScanningCanUseContainerIamRoleForEcr,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_scanning_can_use_container_iam_role_for_ecr,omitempty"`
+	// Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
+	CentralCanUseCloudBackupIntegrations CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,2,opt,name=central_can_use_cloud_backup_integrations,json=centralCanUseCloudBackupIntegrations,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_use_cloud_backup_integrations,omitempty"`
+	// Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
+	// sets, notifiers) to the user.
+	CentralCanDisplayDeclarativeConfigHealth CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,3,opt,name=central_can_display_declarative_config_health,json=centralCanDisplayDeclarativeConfigHealth,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_display_declarative_config_health,omitempty"`
+	// Ability to trigger generation of new certificates
+	CentralCanUpdateCert CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,4,opt,name=central_can_update_cert,json=centralCanUpdateCert,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_update_cert,omitempty"`
+	// Ability to use integration of type acscsEmail
+	CentralCanUseAcscsEmailIntegration CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,5,opt,name=central_can_use_acscs_email_integration,json=centralCanUseAcscsEmailIntegration,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_use_acscs_email_integration,omitempty"`
+	unknownFields                      protoimpl.UnknownFields
+	sizeCache                          protoimpl.SizeCache
 }
 
 func (x *CentralServicesCapabilities) Reset() {
@@ -1035,132 +783,57 @@ func (x *CentralServicesCapabilities) ProtoReflect() protoreflect.Message {
 
 func (x *CentralServicesCapabilities) GetCentralScanningCanUseContainerIamRoleForEcr() CentralServicesCapabilities_CapabilityStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_CentralScanningCanUseContainerIamRoleForEcr
-		}
+		return x.CentralScanningCanUseContainerIamRoleForEcr
 	}
 	return CentralServicesCapabilities_CapabilityAvailable
 }
 
 func (x *CentralServicesCapabilities) GetCentralCanUseCloudBackupIntegrations() CentralServicesCapabilities_CapabilityStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_CentralCanUseCloudBackupIntegrations
-		}
+		return x.CentralCanUseCloudBackupIntegrations
 	}
 	return CentralServicesCapabilities_CapabilityAvailable
 }
 
 func (x *CentralServicesCapabilities) GetCentralCanDisplayDeclarativeConfigHealth() CentralServicesCapabilities_CapabilityStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_CentralCanDisplayDeclarativeConfigHealth
-		}
+		return x.CentralCanDisplayDeclarativeConfigHealth
 	}
 	return CentralServicesCapabilities_CapabilityAvailable
 }
 
 func (x *CentralServicesCapabilities) GetCentralCanUpdateCert() CentralServicesCapabilities_CapabilityStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_CentralCanUpdateCert
-		}
+		return x.CentralCanUpdateCert
 	}
 	return CentralServicesCapabilities_CapabilityAvailable
 }
 
 func (x *CentralServicesCapabilities) GetCentralCanUseAcscsEmailIntegration() CentralServicesCapabilities_CapabilityStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_CentralCanUseAcscsEmailIntegration
-		}
+		return x.CentralCanUseAcscsEmailIntegration
 	}
 	return CentralServicesCapabilities_CapabilityAvailable
 }
 
 func (x *CentralServicesCapabilities) SetCentralScanningCanUseContainerIamRoleForEcr(v CentralServicesCapabilities_CapabilityStatus) {
-	x.xxx_hidden_CentralScanningCanUseContainerIamRoleForEcr = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.CentralScanningCanUseContainerIamRoleForEcr = v
 }
 
 func (x *CentralServicesCapabilities) SetCentralCanUseCloudBackupIntegrations(v CentralServicesCapabilities_CapabilityStatus) {
-	x.xxx_hidden_CentralCanUseCloudBackupIntegrations = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.CentralCanUseCloudBackupIntegrations = v
 }
 
 func (x *CentralServicesCapabilities) SetCentralCanDisplayDeclarativeConfigHealth(v CentralServicesCapabilities_CapabilityStatus) {
-	x.xxx_hidden_CentralCanDisplayDeclarativeConfigHealth = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.CentralCanDisplayDeclarativeConfigHealth = v
 }
 
 func (x *CentralServicesCapabilities) SetCentralCanUpdateCert(v CentralServicesCapabilities_CapabilityStatus) {
-	x.xxx_hidden_CentralCanUpdateCert = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.CentralCanUpdateCert = v
 }
 
 func (x *CentralServicesCapabilities) SetCentralCanUseAcscsEmailIntegration(v CentralServicesCapabilities_CapabilityStatus) {
-	x.xxx_hidden_CentralCanUseAcscsEmailIntegration = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *CentralServicesCapabilities) HasCentralScanningCanUseContainerIamRoleForEcr() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CentralServicesCapabilities) HasCentralCanUseCloudBackupIntegrations() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CentralServicesCapabilities) HasCentralCanDisplayDeclarativeConfigHealth() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CentralServicesCapabilities) HasCentralCanUpdateCert() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *CentralServicesCapabilities) HasCentralCanUseAcscsEmailIntegration() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *CentralServicesCapabilities) ClearCentralScanningCanUseContainerIamRoleForEcr() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_CentralScanningCanUseContainerIamRoleForEcr = CentralServicesCapabilities_CapabilityAvailable
-}
-
-func (x *CentralServicesCapabilities) ClearCentralCanUseCloudBackupIntegrations() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CentralCanUseCloudBackupIntegrations = CentralServicesCapabilities_CapabilityAvailable
-}
-
-func (x *CentralServicesCapabilities) ClearCentralCanDisplayDeclarativeConfigHealth() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CentralCanDisplayDeclarativeConfigHealth = CentralServicesCapabilities_CapabilityAvailable
-}
-
-func (x *CentralServicesCapabilities) ClearCentralCanUpdateCert() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CentralCanUpdateCert = CentralServicesCapabilities_CapabilityAvailable
-}
-
-func (x *CentralServicesCapabilities) ClearCentralCanUseAcscsEmailIntegration() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_CentralCanUseAcscsEmailIntegration = CentralServicesCapabilities_CapabilityAvailable
+	x.CentralCanUseAcscsEmailIntegration = v
 }
 
 type CentralServicesCapabilities_builder struct {
@@ -1172,42 +845,27 @@ type CentralServicesCapabilities_builder struct {
 	// check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
 	// the role is not actually there. It's user's responsibility to check the presence of role and integration status
 	// when the corresponding setting is enabled.
-	CentralScanningCanUseContainerIamRoleForEcr *CentralServicesCapabilities_CapabilityStatus
+	CentralScanningCanUseContainerIamRoleForEcr CentralServicesCapabilities_CapabilityStatus
 	// Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
-	CentralCanUseCloudBackupIntegrations *CentralServicesCapabilities_CapabilityStatus
+	CentralCanUseCloudBackupIntegrations CentralServicesCapabilities_CapabilityStatus
 	// Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
 	// sets, notifiers) to the user.
-	CentralCanDisplayDeclarativeConfigHealth *CentralServicesCapabilities_CapabilityStatus
+	CentralCanDisplayDeclarativeConfigHealth CentralServicesCapabilities_CapabilityStatus
 	// Ability to trigger generation of new certificates
-	CentralCanUpdateCert *CentralServicesCapabilities_CapabilityStatus
+	CentralCanUpdateCert CentralServicesCapabilities_CapabilityStatus
 	// Ability to use integration of type acscsEmail
-	CentralCanUseAcscsEmailIntegration *CentralServicesCapabilities_CapabilityStatus
+	CentralCanUseAcscsEmailIntegration CentralServicesCapabilities_CapabilityStatus
 }
 
 func (b0 CentralServicesCapabilities_builder) Build() *CentralServicesCapabilities {
 	m0 := &CentralServicesCapabilities{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.CentralScanningCanUseContainerIamRoleForEcr != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_CentralScanningCanUseContainerIamRoleForEcr = *b.CentralScanningCanUseContainerIamRoleForEcr
-	}
-	if b.CentralCanUseCloudBackupIntegrations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_CentralCanUseCloudBackupIntegrations = *b.CentralCanUseCloudBackupIntegrations
-	}
-	if b.CentralCanDisplayDeclarativeConfigHealth != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_CentralCanDisplayDeclarativeConfigHealth = *b.CentralCanDisplayDeclarativeConfigHealth
-	}
-	if b.CentralCanUpdateCert != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_CentralCanUpdateCert = *b.CentralCanUpdateCert
-	}
-	if b.CentralCanUseAcscsEmailIntegration != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_CentralCanUseAcscsEmailIntegration = *b.CentralCanUseAcscsEmailIntegration
-	}
+	x.CentralScanningCanUseContainerIamRoleForEcr = b.CentralScanningCanUseContainerIamRoleForEcr
+	x.CentralCanUseCloudBackupIntegrations = b.CentralCanUseCloudBackupIntegrations
+	x.CentralCanDisplayDeclarativeConfigHealth = b.CentralCanDisplayDeclarativeConfigHealth
+	x.CentralCanUpdateCert = b.CentralCanUpdateCert
+	x.CentralCanUseAcscsEmailIntegration = b.CentralCanUseAcscsEmailIntegration
 	return m0
 }
 
@@ -1269,8 +927,8 @@ const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\fTLSChallenge\x12\x17.v1.TLSChallengeRequest\x1a\x18.v1.TLSChallengeResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/tls-challenge\x12O\n" +
 	"\x11GetDatabaseStatus\x12\t.v1.Empty\x1a\x12.v1.DatabaseStatus\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/database/status\x12Y\n" +
 	"\x17GetDatabaseBackupStatus\x12\t.v1.Empty\x1a\x18.v1.DatabaseBackupStatus\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/backup/status\x12f\n" +
-	"\x16GetCentralCapabilities\x12\t.v1.Empty\x1a\x1f.v1.CentralServicesCapabilities\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/central-capabilitiesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x16GetCentralCapabilities\x12\t.v1.Empty\x1a\x1f.v1.CentralServicesCapabilities\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/central-capabilitiesB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_metadata_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_api_v1_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)

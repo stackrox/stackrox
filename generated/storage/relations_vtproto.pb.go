@@ -8,16 +8,18 @@ func (m *ImageComponentEdge) SizeVT() int { return proto.Size(m) }
 func (m *ImageComponentEdge) CloneVT() *ImageComponentEdge {
 	return proto.Clone(m).(*ImageComponentEdge)
 }
-func (m *ImageComponentEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImageComponentEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponentEdge) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ImageComponentEdge) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponentEdge) EqualVT(n *ImageComponentEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageComponentEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ComponentCVEEdge) SizeVT() int                   { return proto.Size(m) }
-func (m *ComponentCVEEdge) CloneVT() *ComponentCVEEdge    { return proto.Clone(m).(*ComponentCVEEdge) }
-func (m *ComponentCVEEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComponentCVEEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComponentCVEEdge) SizeVT() int                      { return proto.Size(m) }
+func (m *ComponentCVEEdge) CloneVT() *ComponentCVEEdge       { return proto.Clone(m).(*ComponentCVEEdge) }
+func (m *ComponentCVEEdge) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ComponentCVEEdge) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ComponentCVEEdge) EqualVT(n *ComponentCVEEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComponentCVEEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,14 +28,16 @@ func (m *ImageCVEEdge) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageCVEEdge) CloneVT() *ImageCVEEdge        { return proto.Clone(m).(*ImageCVEEdge) }
 func (m *ImageCVEEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageCVEEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageCVEEdge) EqualVT(n *ImageCVEEdge) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageCVEEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *NodeComponentEdge) SizeVT() int                   { return proto.Size(m) }
-func (m *NodeComponentEdge) CloneVT() *NodeComponentEdge   { return proto.Clone(m).(*NodeComponentEdge) }
-func (m *NodeComponentEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NodeComponentEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeComponentEdge) SizeVT() int                       { return proto.Size(m) }
+func (m *NodeComponentEdge) CloneVT() *NodeComponentEdge       { return proto.Clone(m).(*NodeComponentEdge) }
+func (m *NodeComponentEdge) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *NodeComponentEdge) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *NodeComponentEdge) EqualVT(n *NodeComponentEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeComponentEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,16 +46,18 @@ func (m *NodeComponentCVEEdge) SizeVT() int { return proto.Size(m) }
 func (m *NodeComponentCVEEdge) CloneVT() *NodeComponentCVEEdge {
 	return proto.Clone(m).(*NodeComponentCVEEdge)
 }
-func (m *NodeComponentCVEEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NodeComponentCVEEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeComponentCVEEdge) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *NodeComponentCVEEdge) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *NodeComponentCVEEdge) EqualVT(n *NodeComponentCVEEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeComponentCVEEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ClusterCVEEdge) SizeVT() int                   { return proto.Size(m) }
-func (m *ClusterCVEEdge) CloneVT() *ClusterCVEEdge      { return proto.Clone(m).(*ClusterCVEEdge) }
-func (m *ClusterCVEEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterCVEEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterCVEEdge) SizeVT() int                    { return proto.Size(m) }
+func (m *ClusterCVEEdge) CloneVT() *ClusterCVEEdge       { return proto.Clone(m).(*ClusterCVEEdge) }
+func (m *ClusterCVEEdge) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ClusterCVEEdge) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterCVEEdge) EqualVT(n *ClusterCVEEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterCVEEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -60,8 +66,9 @@ func (m *PolicyCategoryEdge) SizeVT() int { return proto.Size(m) }
 func (m *PolicyCategoryEdge) CloneVT() *PolicyCategoryEdge {
 	return proto.Clone(m).(*PolicyCategoryEdge)
 }
-func (m *PolicyCategoryEdge) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PolicyCategoryEdge) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategoryEdge) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *PolicyCategoryEdge) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategoryEdge) EqualVT(n *PolicyCategoryEdge) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PolicyCategoryEdge) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

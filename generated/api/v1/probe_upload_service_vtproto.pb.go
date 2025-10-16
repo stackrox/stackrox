@@ -8,8 +8,9 @@ func (m *ProbeUploadManifest) SizeVT() int { return proto.Size(m) }
 func (m *ProbeUploadManifest) CloneVT() *ProbeUploadManifest {
 	return proto.Clone(m).(*ProbeUploadManifest)
 }
-func (m *ProbeUploadManifest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProbeUploadManifest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProbeUploadManifest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ProbeUploadManifest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ProbeUploadManifest) EqualVT(n *ProbeUploadManifest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProbeUploadManifest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *ProbeUploadManifest_File) CloneVT() *ProbeUploadManifest_File {
 }
 func (m *ProbeUploadManifest_File) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProbeUploadManifest_File) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProbeUploadManifest_File) EqualVT(n *ProbeUploadManifest_File) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProbeUploadManifest_File) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,6 +34,9 @@ func (m *GetExistingProbesRequest) CloneVT() *GetExistingProbesRequest {
 }
 func (m *GetExistingProbesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetExistingProbesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetExistingProbesRequest) EqualVT(n *GetExistingProbesRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetExistingProbesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,6 +47,9 @@ func (m *GetExistingProbesResponse) CloneVT() *GetExistingProbesResponse {
 }
 func (m *GetExistingProbesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetExistingProbesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetExistingProbesResponse) EqualVT(n *GetExistingProbesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetExistingProbesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

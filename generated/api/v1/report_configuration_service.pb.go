@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/report_configuration_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,14 +26,10 @@ const (
 )
 
 type GetReportConfigurationsResponse struct {
-	state                    protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_ReportConfigs *[]*storage.ReportConfiguration `protobuf:"bytes,1,rep,name=report_configs,json=reportConfigs"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
+	ReportConfigs []*storage.ReportConfiguration `protobuf:"bytes,1,rep,name=report_configs,json=reportConfigs" json:"report_configs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReportConfigurationsResponse) Reset() {
@@ -61,27 +59,13 @@ func (x *GetReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetReportConfigurationsResponse) GetReportConfigs() []*storage.ReportConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ReportConfigs) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.ReportConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfigs), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ReportConfigs
 	}
 	return nil
 }
 
 func (x *GetReportConfigurationsResponse) SetReportConfigs(v []*storage.ReportConfiguration) {
-	var sv *[]*storage.ReportConfiguration
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfigs), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ReportConfiguration{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfigs), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.ReportConfigs = v
 }
 
 type GetReportConfigurationsResponse_builder struct {
@@ -94,22 +78,15 @@ func (b0 GetReportConfigurationsResponse_builder) Build() *GetReportConfiguratio
 	m0 := &GetReportConfigurationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportConfigs != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ReportConfigs = &b.ReportConfigs
-	}
+	x.ReportConfigs = b.ReportConfigs
 	return m0
 }
 
 type GetReportConfigurationResponse struct {
-	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_ReportConfig *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig" json:"report_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReportConfigurationResponse) Reset() {
@@ -139,37 +116,24 @@ func (x *GetReportConfigurationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetReportConfigurationResponse) GetReportConfig() *storage.ReportConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ReportConfig) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ReportConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfig), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ReportConfig
 	}
 	return nil
 }
 
 func (x *GetReportConfigurationResponse) SetReportConfig(v *storage.ReportConfiguration) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.ReportConfig = v
 }
 
 func (x *GetReportConfigurationResponse) HasReportConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.ReportConfig != nil
 }
 
 func (x *GetReportConfigurationResponse) ClearReportConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, (*storage.ReportConfiguration)(nil))
+	x.ReportConfig = nil
 }
 
 type GetReportConfigurationResponse_builder struct {
@@ -182,22 +146,15 @@ func (b0 GetReportConfigurationResponse_builder) Build() *GetReportConfiguration
 	m0 := &GetReportConfigurationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportConfig != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ReportConfig = b.ReportConfig
-	}
+	x.ReportConfig = b.ReportConfig
 	return m0
 }
 
 type PostReportConfigurationResponse struct {
-	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_ReportConfig *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig" json:"report_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PostReportConfigurationResponse) Reset() {
@@ -227,37 +184,24 @@ func (x *PostReportConfigurationResponse) ProtoReflect() protoreflect.Message {
 
 func (x *PostReportConfigurationResponse) GetReportConfig() *storage.ReportConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ReportConfig) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ReportConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfig), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ReportConfig
 	}
 	return nil
 }
 
 func (x *PostReportConfigurationResponse) SetReportConfig(v *storage.ReportConfiguration) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.ReportConfig = v
 }
 
 func (x *PostReportConfigurationResponse) HasReportConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.ReportConfig != nil
 }
 
 func (x *PostReportConfigurationResponse) ClearReportConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, (*storage.ReportConfiguration)(nil))
+	x.ReportConfig = nil
 }
 
 type PostReportConfigurationResponse_builder struct {
@@ -270,22 +214,15 @@ func (b0 PostReportConfigurationResponse_builder) Build() *PostReportConfigurati
 	m0 := &PostReportConfigurationResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportConfig != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ReportConfig = b.ReportConfig
-	}
+	x.ReportConfig = b.ReportConfig
 	return m0
 }
 
 type PostReportConfigurationRequest struct {
-	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_ReportConfig *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig" json:"report_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PostReportConfigurationRequest) Reset() {
@@ -315,37 +252,24 @@ func (x *PostReportConfigurationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PostReportConfigurationRequest) GetReportConfig() *storage.ReportConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ReportConfig) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ReportConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfig), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ReportConfig
 	}
 	return nil
 }
 
 func (x *PostReportConfigurationRequest) SetReportConfig(v *storage.ReportConfiguration) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.ReportConfig = v
 }
 
 func (x *PostReportConfigurationRequest) HasReportConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.ReportConfig != nil
 }
 
 func (x *PostReportConfigurationRequest) ClearReportConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, (*storage.ReportConfiguration)(nil))
+	x.ReportConfig = nil
 }
 
 type PostReportConfigurationRequest_builder struct {
@@ -358,23 +282,16 @@ func (b0 PostReportConfigurationRequest_builder) Build() *PostReportConfiguratio
 	m0 := &PostReportConfigurationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportConfig != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ReportConfig = b.ReportConfig
-	}
+	x.ReportConfig = b.ReportConfig
 	return m0
 }
 
 type UpdateReportConfigurationRequest struct {
-	state                   protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Id           *string                      `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ReportConfig *storage.ReportConfiguration `protobuf:"bytes,2,opt,name=report_config,json=reportConfig"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	Id            string                       `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,2,opt,name=report_config,json=reportConfig" json:"report_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateReportConfigurationRequest) Reset() {
@@ -404,70 +321,41 @@ func (x *UpdateReportConfigurationRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateReportConfigurationRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *UpdateReportConfigurationRequest) GetReportConfig() *storage.ReportConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ReportConfig) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *storage.ReportConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ReportConfig), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ReportConfig
 	}
 	return nil
 }
 
 func (x *UpdateReportConfigurationRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *UpdateReportConfigurationRequest) SetReportConfig(v *storage.ReportConfiguration) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *UpdateReportConfigurationRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ReportConfig = v
 }
 
 func (x *UpdateReportConfigurationRequest) HasReportConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *UpdateReportConfigurationRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.ReportConfig != nil
 }
 
 func (x *UpdateReportConfigurationRequest) ClearReportConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ReportConfig, (*storage.ReportConfiguration)(nil))
+	x.ReportConfig = nil
 }
 
 type UpdateReportConfigurationRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
+	Id           string
 	ReportConfig *storage.ReportConfiguration
 }
 
@@ -475,24 +363,16 @@ func (b0 UpdateReportConfigurationRequest_builder) Build() *UpdateReportConfigur
 	m0 := &UpdateReportConfigurationRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ReportConfig != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ReportConfig = b.ReportConfig
-	}
+	x.Id = b.Id
+	x.ReportConfig = b.ReportConfig
 	return m0
 }
 
 type CountReportConfigurationsResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountReportConfigurationsResponse) Reset() {
@@ -522,42 +402,26 @@ func (x *CountReportConfigurationsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *CountReportConfigurationsResponse) GetCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *CountReportConfigurationsResponse) SetCount(v int32) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *CountReportConfigurationsResponse) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CountReportConfigurationsResponse) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type CountReportConfigurationsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Count *int32
+	Count int32
 }
 
 func (b0 CountReportConfigurationsResponse_builder) Build() *CountReportConfigurationsResponse {
 	m0 := &CountReportConfigurationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Count = b.Count
 	return m0
 }
 
@@ -585,8 +449,8 @@ const file_api_v1_report_configuration_service_proto_rawDesc = "" +
 	"\x17PostReportConfiguration\x12\".v1.PostReportConfigurationRequest\x1a#.v1.PostReportConfigurationResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/report/configurations\x12w\n" +
 	"\x19UpdateReportConfiguration\x12$.v1.UpdateReportConfigurationRequest\x1a\t.v1.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/report/configurations/{id}\x12`\n" +
 	"\x19DeleteReportConfiguration\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/v1/report/configurations/{id}\x12y\n" +
-	"\x19CountReportConfigurations\x12\f.v1.RawQuery\x1a%.v1.CountReportConfigurationsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/report-configurations-countB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
+	"\x19CountReportConfigurations\x12\f.v1.RawQuery\x1a%.v1.CountReportConfigurationsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/report-configurations-countB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_report_configuration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_v1_report_configuration_service_proto_goTypes = []any{

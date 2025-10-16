@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/system_info.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,16 +25,12 @@ const (
 )
 
 type BackupInfo struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_BackupLastRunAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt"`
-	xxx_hidden_Status          OperationStatus        `protobuf:"varint,2,opt,name=status,enum=storage.OperationStatus"`
-	xxx_hidden_Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	BackupLastRunAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt" json:"backup_last_run_at,omitempty"`
+	Status          OperationStatus        `protobuf:"varint,2,opt,name=status,enum=storage.OperationStatus" json:"status,omitempty"`
+	Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *BackupInfo) Reset() {
@@ -62,92 +60,64 @@ func (x *BackupInfo) ProtoReflect() protoreflect.Message {
 
 func (x *BackupInfo) GetBackupLastRunAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_BackupLastRunAt) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_BackupLastRunAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.BackupLastRunAt
 	}
 	return nil
 }
 
 func (x *BackupInfo) GetStatus() OperationStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Status
-		}
+		return x.Status
 	}
 	return OperationStatus_FAIL
 }
 
 func (x *BackupInfo) GetRequestor() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_Requestor
+		return x.Requestor
 	}
 	return nil
 }
 
 func (x *BackupInfo) SetBackupLastRunAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupLastRunAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
-	}
+	x.BackupLastRunAt = v
 }
 
 func (x *BackupInfo) SetStatus(v OperationStatus) {
-	x.xxx_hidden_Status = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Status = v
 }
 
 func (x *BackupInfo) SetRequestor(v *SlimUser) {
-	x.xxx_hidden_Requestor = v
+	x.Requestor = v
 }
 
 func (x *BackupInfo) HasBackupLastRunAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *BackupInfo) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.BackupLastRunAt != nil
 }
 
 func (x *BackupInfo) HasRequestor() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Requestor != nil
+	return x.Requestor != nil
 }
 
 func (x *BackupInfo) ClearBackupLastRunAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_BackupLastRunAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *BackupInfo) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Status = OperationStatus_FAIL
+	x.BackupLastRunAt = nil
 }
 
 func (x *BackupInfo) ClearRequestor() {
-	x.xxx_hidden_Requestor = nil
+	x.Requestor = nil
 }
 
 type BackupInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	BackupLastRunAt *timestamppb.Timestamp
-	Status          *OperationStatus
+	Status          OperationStatus
 	Requestor       *SlimUser
 }
 
@@ -155,23 +125,17 @@ func (b0 BackupInfo_builder) Build() *BackupInfo {
 	m0 := &BackupInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.BackupLastRunAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_BackupLastRunAt = b.BackupLastRunAt
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Status = *b.Status
-	}
-	x.xxx_hidden_Requestor = b.Requestor
+	x.BackupLastRunAt = b.BackupLastRunAt
+	x.Status = b.Status
+	x.Requestor = b.Requestor
 	return m0
 }
 
 type SystemInfo struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_BackupInfo *BackupInfo            `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	BackupInfo    *BackupInfo            `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo" json:"backup_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SystemInfo) Reset() {
@@ -201,24 +165,24 @@ func (x *SystemInfo) ProtoReflect() protoreflect.Message {
 
 func (x *SystemInfo) GetBackupInfo() *BackupInfo {
 	if x != nil {
-		return x.xxx_hidden_BackupInfo
+		return x.BackupInfo
 	}
 	return nil
 }
 
 func (x *SystemInfo) SetBackupInfo(v *BackupInfo) {
-	x.xxx_hidden_BackupInfo = v
+	x.BackupInfo = v
 }
 
 func (x *SystemInfo) HasBackupInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_BackupInfo != nil
+	return x.BackupInfo != nil
 }
 
 func (x *SystemInfo) ClearBackupInfo() {
-	x.xxx_hidden_BackupInfo = nil
+	x.BackupInfo = nil
 }
 
 type SystemInfo_builder struct {
@@ -231,7 +195,7 @@ func (b0 SystemInfo_builder) Build() *SystemInfo {
 	m0 := &SystemInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_BackupInfo = b.BackupInfo
+	x.BackupInfo = b.BackupInfo
 	return m0
 }
 
@@ -248,8 +212,8 @@ const file_storage_system_info_proto_rawDesc = "" +
 	"\n" +
 	"SystemInfo\x124\n" +
 	"\vbackup_info\x18\x01 \x01(\v2\x13.storage.BackupInfoR\n" +
-	"backupInfoB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"backupInfoB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_system_info_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_system_info_proto_goTypes = []any{

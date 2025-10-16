@@ -12,6 +12,9 @@ func (m *GetDeclarativeConfigHealthsResponse) MarshalVT() ([]byte, error) { retu
 func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetDeclarativeConfigHealthsResponse) EqualVT(n *GetDeclarativeConfigHealthsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVTUnsafe(dAtA []byte) error {

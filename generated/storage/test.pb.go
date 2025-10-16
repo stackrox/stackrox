@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/test.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -155,28 +157,31 @@ func (x TestStruct_Enum) Number() protoreflect.EnumNumber {
 }
 
 type TestSingleKeyStruct struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                        `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Name        *string                        `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_StringSlice []string                       `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice"`
-	xxx_hidden_Bool        bool                           `protobuf:"varint,4,opt,name=bool"`
-	xxx_hidden_Uint64      uint64                         `protobuf:"varint,5,opt,name=uint64"`
-	xxx_hidden_Int64       int64                          `protobuf:"varint,6,opt,name=int64"`
-	xxx_hidden_Float       float32                        `protobuf:"fixed32,7,opt,name=float"`
-	xxx_hidden_Labels      map[string]string              `protobuf:"bytes,8,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Timestamp   *timestamppb.Timestamp         `protobuf:"bytes,9,opt,name=timestamp"`
-	xxx_hidden_Enum        TestSingleKeyStruct_Enum       `protobuf:"varint,10,opt,name=enum,enum=storage.TestSingleKeyStruct_Enum"`
-	xxx_hidden_Enums       []TestSingleKeyStruct_Enum     `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestSingleKeyStruct_Enum"`
-	xxx_hidden_Embedded    *TestSingleKeyStruct_Embedded  `protobuf:"bytes,12,opt,name=embedded"`
-	xxx_hidden_Nested      *[]*TestSingleKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested"`
-	xxx_hidden_Oneof       isTestSingleKeyStruct_Oneof    `protobuf_oneof:"oneof"`
-	xxx_hidden_Bytess      []byte                         `protobuf:"bytes,16,opt,name=bytess"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key         string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty" sql:"pk,index=hash" search:"Test Key"`                                    // @gotags: sql:"pk,index=hash" search:"Test Key"
+	Name        string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique" search:"Test Name"`                                  // @gotags: sql:"unique" search:"Test Name"
+	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice" json:"string_slice,omitempty" search:"Test String Slice"` // @gotags: search:"Test String Slice"
+	Bool        bool                   `protobuf:"varint,4,opt,name=bool" json:"bool,omitempty" search:"Test Bool"`                                 // @gotags: search:"Test Bool"
+	// When using this ensure your precision needs are met and accounted for.  This will use a
+	// BigInt which may require you to convert from uint64 to int64 OR update
+	// the handling to use numerics.
+	Uint64    uint64                        `protobuf:"varint,5,opt,name=uint64" json:"uint64,omitempty" search:"Test Uint64"`                                                                          // @gotags: search:"Test Uint64"
+	Int64     int64                         `protobuf:"varint,6,opt,name=int64" json:"int64,omitempty" search:"Test Int64"`                                                                            // @gotags: search:"Test Int64"
+	Float     float32                       `protobuf:"fixed32,7,opt,name=float" json:"float,omitempty" search:"Test Float"`                                                                           // @gotags: search:"Test Float"
+	Labels    map[string]string             `protobuf:"bytes,8,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Test Labels"` // @gotags: search:"Test Labels"
+	Timestamp *timestamppb.Timestamp        `protobuf:"bytes,9,opt,name=timestamp" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                     // @gotags: search:"Test Timestamp"
+	Enum      TestSingleKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,enum=storage.TestSingleKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                       // @gotags: search:"Test Enum"
+	Enums     []TestSingleKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestSingleKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                              // @gotags: search:"Test Enum Slice"
+	Embedded  *TestSingleKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded" json:"embedded,omitempty"`
+	Nested    []*TestSingleKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested" json:"nested,omitempty"`
+	// Types that are valid to be assigned to Oneof:
+	//
+	//	*TestSingleKeyStruct_Oneofstring
+	//	*TestSingleKeyStruct_Oneofnested
+	Oneof         isTestSingleKeyStruct_Oneof `protobuf_oneof:"oneof"`
+	Bytess        []byte                      `protobuf:"bytes,16,opt,name=bytess" json:"bytess,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct) Reset() {
@@ -206,120 +211,105 @@ func (x *TestSingleKeyStruct) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleKeyStruct) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct) GetStringSlice() []string {
 	if x != nil {
-		return x.xxx_hidden_StringSlice
+		return x.StringSlice
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetBool() bool {
 	if x != nil {
-		return x.xxx_hidden_Bool
+		return x.Bool
 	}
 	return false
 }
 
 func (x *TestSingleKeyStruct) GetUint64() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Uint64
+		return x.Uint64
 	}
 	return 0
 }
 
 func (x *TestSingleKeyStruct) GetInt64() int64 {
 	if x != nil {
-		return x.xxx_hidden_Int64
+		return x.Int64
 	}
 	return 0
 }
 
 func (x *TestSingleKeyStruct) GetFloat() float32 {
 	if x != nil {
-		return x.xxx_hidden_Float
+		return x.Float
 	}
 	return 0
 }
 
 func (x *TestSingleKeyStruct) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetEnum() TestSingleKeyStruct_Enum {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_Enum
-		}
+		return x.Enum
 	}
 	return TestSingleKeyStruct_ENUM0
 }
 
 func (x *TestSingleKeyStruct) GetEnums() []TestSingleKeyStruct_Enum {
 	if x != nil {
-		return x.xxx_hidden_Enums
+		return x.Enums
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetEmbedded() *TestSingleKeyStruct_Embedded {
 	if x != nil {
-		return x.xxx_hidden_Embedded
+		return x.Embedded
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetNested() []*TestSingleKeyStruct_Nested {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
-				protoimpl.X.UnmarshalField(x, 13)
-			}
-			var rv *[]*TestSingleKeyStruct_Nested
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Nested
+	}
+	return nil
+}
+
+func (x *TestSingleKeyStruct) GetOneof() isTestSingleKeyStruct_Oneof {
+	if x != nil {
+		return x.Oneof
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) GetOneofstring() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofstring); ok {
+		if x, ok := x.Oneof.(*TestSingleKeyStruct_Oneofstring); ok {
 			return x.Oneofstring
 		}
 	}
@@ -328,7 +318,7 @@ func (x *TestSingleKeyStruct) GetOneofstring() string {
 
 func (x *TestSingleKeyStruct) GetOneofnested() *TestSingleKeyStruct_OneOfNested {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofnested); ok {
+		if x, ok := x.Oneof.(*TestSingleKeyStruct_Oneofnested); ok {
 			return x.Oneofnested
 		}
 	}
@@ -337,177 +327,108 @@ func (x *TestSingleKeyStruct) GetOneofnested() *TestSingleKeyStruct_OneOfNested 
 
 func (x *TestSingleKeyStruct) GetBytess() []byte {
 	if x != nil {
-		return x.xxx_hidden_Bytess
+		return x.Bytess
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 15)
+	x.Key = v
 }
 
 func (x *TestSingleKeyStruct) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 15)
+	x.Name = v
 }
 
 func (x *TestSingleKeyStruct) SetStringSlice(v []string) {
-	x.xxx_hidden_StringSlice = v
+	x.StringSlice = v
 }
 
 func (x *TestSingleKeyStruct) SetBool(v bool) {
-	x.xxx_hidden_Bool = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 15)
+	x.Bool = v
 }
 
 func (x *TestSingleKeyStruct) SetUint64(v uint64) {
-	x.xxx_hidden_Uint64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 15)
+	x.Uint64 = v
 }
 
 func (x *TestSingleKeyStruct) SetInt64(v int64) {
-	x.xxx_hidden_Int64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 15)
+	x.Int64 = v
 }
 
 func (x *TestSingleKeyStruct) SetFloat(v float32) {
-	x.xxx_hidden_Float = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 15)
+	x.Float = v
 }
 
 func (x *TestSingleKeyStruct) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *TestSingleKeyStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 15)
-	}
+	x.Timestamp = v
 }
 
 func (x *TestSingleKeyStruct) SetEnum(v TestSingleKeyStruct_Enum) {
-	x.xxx_hidden_Enum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 15)
+	x.Enum = v
 }
 
 func (x *TestSingleKeyStruct) SetEnums(v []TestSingleKeyStruct_Enum) {
-	x.xxx_hidden_Enums = v
+	x.Enums = v
 }
 
 func (x *TestSingleKeyStruct) SetEmbedded(v *TestSingleKeyStruct_Embedded) {
-	x.xxx_hidden_Embedded = v
+	x.Embedded = v
 }
 
 func (x *TestSingleKeyStruct) SetNested(v []*TestSingleKeyStruct_Nested) {
-	var sv *[]*TestSingleKeyStruct_Nested
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestSingleKeyStruct_Nested{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 15)
+	x.Nested = v
 }
 
 func (x *TestSingleKeyStruct) SetOneofstring(v string) {
-	x.xxx_hidden_Oneof = &testSingleKeyStruct_Oneofstring{v}
+	x.Oneof = &TestSingleKeyStruct_Oneofstring{v}
 }
 
 func (x *TestSingleKeyStruct) SetOneofnested(v *TestSingleKeyStruct_OneOfNested) {
 	if v == nil {
-		x.xxx_hidden_Oneof = nil
+		x.Oneof = nil
 		return
 	}
-	x.xxx_hidden_Oneof = &testSingleKeyStruct_Oneofnested{v}
+	x.Oneof = &TestSingleKeyStruct_Oneofnested{v}
 }
 
 func (x *TestSingleKeyStruct) SetBytess(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Bytess = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 15)
-}
-
-func (x *TestSingleKeyStruct) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleKeyStruct) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestSingleKeyStruct) HasBool() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestSingleKeyStruct) HasUint64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *TestSingleKeyStruct) HasInt64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *TestSingleKeyStruct) HasFloat() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	x.Bytess = v
 }
 
 func (x *TestSingleKeyStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *TestSingleKeyStruct) HasEnum() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.Timestamp != nil
 }
 
 func (x *TestSingleKeyStruct) HasEmbedded() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Embedded != nil
+	return x.Embedded != nil
 }
 
 func (x *TestSingleKeyStruct) HasOneof() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Oneof != nil
+	return x.Oneof != nil
 }
 
 func (x *TestSingleKeyStruct) HasOneofstring() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofstring)
+	_, ok := x.Oneof.(*TestSingleKeyStruct_Oneofstring)
 	return ok
 }
 
@@ -515,80 +436,32 @@ func (x *TestSingleKeyStruct) HasOneofnested() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofnested)
+	_, ok := x.Oneof.(*TestSingleKeyStruct_Oneofnested)
 	return ok
 }
 
-func (x *TestSingleKeyStruct) HasBytess() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
-}
-
-func (x *TestSingleKeyStruct) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *TestSingleKeyStruct) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *TestSingleKeyStruct) ClearBool() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Bool = false
-}
-
-func (x *TestSingleKeyStruct) ClearUint64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Uint64 = 0
-}
-
-func (x *TestSingleKeyStruct) ClearInt64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Int64 = 0
-}
-
-func (x *TestSingleKeyStruct) ClearFloat() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Float = 0
-}
-
 func (x *TestSingleKeyStruct) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *TestSingleKeyStruct) ClearEnum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Enum = TestSingleKeyStruct_ENUM0
+	x.Timestamp = nil
 }
 
 func (x *TestSingleKeyStruct) ClearEmbedded() {
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = nil
 }
 
 func (x *TestSingleKeyStruct) ClearOneof() {
-	x.xxx_hidden_Oneof = nil
+	x.Oneof = nil
 }
 
 func (x *TestSingleKeyStruct) ClearOneofstring() {
-	if _, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofstring); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestSingleKeyStruct_Oneofstring); ok {
+		x.Oneof = nil
 	}
 }
 
 func (x *TestSingleKeyStruct) ClearOneofnested() {
-	if _, ok := x.xxx_hidden_Oneof.(*testSingleKeyStruct_Oneofnested); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestSingleKeyStruct_Oneofnested); ok {
+		x.Oneof = nil
 	}
-}
-
-func (x *TestSingleKeyStruct) ClearBytess() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	x.xxx_hidden_Bytess = nil
 }
 
 const TestSingleKeyStruct_Oneof_not_set_case case_TestSingleKeyStruct_Oneof = 0
@@ -599,10 +472,10 @@ func (x *TestSingleKeyStruct) WhichOneof() case_TestSingleKeyStruct_Oneof {
 	if x == nil {
 		return TestSingleKeyStruct_Oneof_not_set_case
 	}
-	switch x.xxx_hidden_Oneof.(type) {
-	case *testSingleKeyStruct_Oneofstring:
+	switch x.Oneof.(type) {
+	case *TestSingleKeyStruct_Oneofstring:
 		return TestSingleKeyStruct_Oneofstring_case
-	case *testSingleKeyStruct_Oneofnested:
+	case *TestSingleKeyStruct_Oneofnested:
 		return TestSingleKeyStruct_Oneofnested_case
 	default:
 		return TestSingleKeyStruct_Oneof_not_set_case
@@ -612,26 +485,26 @@ func (x *TestSingleKeyStruct) WhichOneof() case_TestSingleKeyStruct_Oneof {
 type TestSingleKeyStruct_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key         *string
-	Name        *string
+	Key         string
+	Name        string
 	StringSlice []string
-	Bool        *bool
+	Bool        bool
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    *uint64
-	Int64     *int64
-	Float     *float32
+	Uint64    uint64
+	Int64     int64
+	Float     float32
 	Labels    map[string]string
 	Timestamp *timestamppb.Timestamp
-	Enum      *TestSingleKeyStruct_Enum
+	Enum      TestSingleKeyStruct_Enum
 	Enums     []TestSingleKeyStruct_Enum
 	Embedded  *TestSingleKeyStruct_Embedded
 	Nested    []*TestSingleKeyStruct_Nested
-	// Fields of oneof xxx_hidden_Oneof:
+	// Fields of oneof Oneof:
 	Oneofstring *string
 	Oneofnested *TestSingleKeyStruct_OneOfNested
-	// -- end of xxx_hidden_Oneof
+	// -- end of Oneof
 	Bytess []byte
 }
 
@@ -639,56 +512,26 @@ func (b0 TestSingleKeyStruct_builder) Build() *TestSingleKeyStruct {
 	m0 := &TestSingleKeyStruct{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 15)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 15)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_StringSlice = b.StringSlice
-	if b.Bool != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 15)
-		x.xxx_hidden_Bool = *b.Bool
-	}
-	if b.Uint64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 15)
-		x.xxx_hidden_Uint64 = *b.Uint64
-	}
-	if b.Int64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 15)
-		x.xxx_hidden_Int64 = *b.Int64
-	}
-	if b.Float != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 15)
-		x.xxx_hidden_Float = *b.Float
-	}
-	x.xxx_hidden_Labels = b.Labels
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 15)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.Enum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 15)
-		x.xxx_hidden_Enum = *b.Enum
-	}
-	x.xxx_hidden_Enums = b.Enums
-	x.xxx_hidden_Embedded = b.Embedded
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 15)
-		x.xxx_hidden_Nested = &b.Nested
-	}
+	x.Key = b.Key
+	x.Name = b.Name
+	x.StringSlice = b.StringSlice
+	x.Bool = b.Bool
+	x.Uint64 = b.Uint64
+	x.Int64 = b.Int64
+	x.Float = b.Float
+	x.Labels = b.Labels
+	x.Timestamp = b.Timestamp
+	x.Enum = b.Enum
+	x.Enums = b.Enums
+	x.Embedded = b.Embedded
+	x.Nested = b.Nested
 	if b.Oneofstring != nil {
-		x.xxx_hidden_Oneof = &testSingleKeyStruct_Oneofstring{*b.Oneofstring}
+		x.Oneof = &TestSingleKeyStruct_Oneofstring{*b.Oneofstring}
 	}
 	if b.Oneofnested != nil {
-		x.xxx_hidden_Oneof = &testSingleKeyStruct_Oneofnested{b.Oneofnested}
+		x.Oneof = &TestSingleKeyStruct_Oneofnested{b.Oneofnested}
 	}
-	if b.Bytess != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 15)
-		x.xxx_hidden_Bytess = b.Bytess
-	}
+	x.Bytess = b.Bytess
 	return m0
 }
 
@@ -706,42 +549,49 @@ type isTestSingleKeyStruct_Oneof interface {
 	isTestSingleKeyStruct_Oneof()
 }
 
-type testSingleKeyStruct_Oneofstring struct {
+type TestSingleKeyStruct_Oneofstring struct {
 	Oneofstring string `protobuf:"bytes,14,opt,name=oneofstring,oneof"`
 }
 
-type testSingleKeyStruct_Oneofnested struct {
+type TestSingleKeyStruct_Oneofnested struct {
 	Oneofnested *TestSingleKeyStruct_OneOfNested `protobuf:"bytes,15,opt,name=oneofnested,oneof"`
 }
 
-func (*testSingleKeyStruct_Oneofstring) isTestSingleKeyStruct_Oneof() {}
+func (*TestSingleKeyStruct_Oneofstring) isTestSingleKeyStruct_Oneof() {}
 
-func (*testSingleKeyStruct_Oneofnested) isTestSingleKeyStruct_Oneof() {}
+func (*TestSingleKeyStruct_Oneofnested) isTestSingleKeyStruct_Oneof() {}
 
 type TestSingleUUIDKeyStruct struct {
-	state                  protoimpl.MessageState             `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                            `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Name        *string                            `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_StringSlice []string                           `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice"`
-	xxx_hidden_Bool        bool                               `protobuf:"varint,4,opt,name=bool"`
-	xxx_hidden_Uint64      uint64                             `protobuf:"varint,5,opt,name=uint64"`
-	xxx_hidden_Int64       int64                              `protobuf:"varint,6,opt,name=int64"`
-	xxx_hidden_Float       float32                            `protobuf:"fixed32,7,opt,name=float"`
-	xxx_hidden_Labels      map[string]string                  `protobuf:"bytes,8,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Timestamp   *timestamppb.Timestamp             `protobuf:"bytes,9,opt,name=timestamp"`
-	xxx_hidden_Enum        TestSingleUUIDKeyStruct_Enum       `protobuf:"varint,10,opt,name=enum,enum=storage.TestSingleUUIDKeyStruct_Enum"`
-	xxx_hidden_Enums       []TestSingleUUIDKeyStruct_Enum     `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestSingleUUIDKeyStruct_Enum"`
-	xxx_hidden_Embedded    *TestSingleUUIDKeyStruct_Embedded  `protobuf:"bytes,12,opt,name=embedded"`
-	xxx_hidden_Nested      *[]*TestSingleUUIDKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested"`
-	xxx_hidden_Oneof       isTestSingleUUIDKeyStruct_Oneof    `protobuf_oneof:"oneof"`
-	xxx_hidden_Bytess      []byte                             `protobuf:"bytes,16,opt,name=bytess"`
-	xxx_hidden_OneofTwo    isTestSingleUUIDKeyStruct_OneofTwo `protobuf_oneof:"oneof_two"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key         string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty" sql:"pk,index=hash,type(uuid)" search:"Test Key"`                                    // @gotags: sql:"pk,index=hash,type(uuid)" search:"Test Key"
+	Name        string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" sql:"unique" search:"Test Name"`                                  // @gotags: sql:"unique" search:"Test Name"
+	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice" json:"string_slice,omitempty" search:"Test String Slice"` // @gotags: search:"Test String Slice"
+	Bool        bool                   `protobuf:"varint,4,opt,name=bool" json:"bool,omitempty" search:"Test Bool"`                                 // @gotags: search:"Test Bool"
+	// When using this ensure your precision needs are met and accounted for.  This will use a
+	// BigInt which may require you to convert from uint64 to int64 OR update
+	// the handling to use numerics.
+	Uint64    uint64                            `protobuf:"varint,5,opt,name=uint64" json:"uint64,omitempty" search:"Test Uint64"`                                                                          // @gotags: search:"Test Uint64"
+	Int64     int64                             `protobuf:"varint,6,opt,name=int64" json:"int64,omitempty" search:"Test Int64"`                                                                            // @gotags: search:"Test Int64"
+	Float     float32                           `protobuf:"fixed32,7,opt,name=float" json:"float,omitempty" search:"Test Float"`                                                                           // @gotags: search:"Test Float"
+	Labels    map[string]string                 `protobuf:"bytes,8,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Test Labels"` // @gotags: search:"Test Labels"
+	Timestamp *timestamppb.Timestamp            `protobuf:"bytes,9,opt,name=timestamp" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                     // @gotags: search:"Test Timestamp"
+	Enum      TestSingleUUIDKeyStruct_Enum      `protobuf:"varint,10,opt,name=enum,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                   // @gotags: search:"Test Enum"
+	Enums     []TestSingleUUIDKeyStruct_Enum    `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestSingleUUIDKeyStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                          // @gotags: search:"Test Enum Slice"
+	Embedded  *TestSingleUUIDKeyStruct_Embedded `protobuf:"bytes,12,opt,name=embedded" json:"embedded,omitempty"`
+	Nested    []*TestSingleUUIDKeyStruct_Nested `protobuf:"bytes,13,rep,name=nested" json:"nested,omitempty"`
+	// Types that are valid to be assigned to Oneof:
+	//
+	//	*TestSingleUUIDKeyStruct_Oneofstring
+	//	*TestSingleUUIDKeyStruct_Oneofnested
+	Oneof  isTestSingleUUIDKeyStruct_Oneof `protobuf_oneof:"oneof"`
+	Bytess []byte                          `protobuf:"bytes,16,opt,name=bytess" json:"bytess,omitempty"`
+	// Types that are valid to be assigned to OneofTwo:
+	//
+	//	*TestSingleUUIDKeyStruct_OneofTwoString
+	//	*TestSingleUUIDKeyStruct_OneofTwoInt
+	OneofTwo      isTestSingleUUIDKeyStruct_OneofTwo `protobuf_oneof:"oneof_two"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct) Reset() {
@@ -771,120 +621,105 @@ func (x *TestSingleUUIDKeyStruct) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleUUIDKeyStruct) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct) GetStringSlice() []string {
 	if x != nil {
-		return x.xxx_hidden_StringSlice
+		return x.StringSlice
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetBool() bool {
 	if x != nil {
-		return x.xxx_hidden_Bool
+		return x.Bool
 	}
 	return false
 }
 
 func (x *TestSingleUUIDKeyStruct) GetUint64() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Uint64
+		return x.Uint64
 	}
 	return 0
 }
 
 func (x *TestSingleUUIDKeyStruct) GetInt64() int64 {
 	if x != nil {
-		return x.xxx_hidden_Int64
+		return x.Int64
 	}
 	return 0
 }
 
 func (x *TestSingleUUIDKeyStruct) GetFloat() float32 {
 	if x != nil {
-		return x.xxx_hidden_Float
+		return x.Float
 	}
 	return 0
 }
 
 func (x *TestSingleUUIDKeyStruct) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetEnum() TestSingleUUIDKeyStruct_Enum {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_Enum
-		}
+		return x.Enum
 	}
 	return TestSingleUUIDKeyStruct_ENUM0
 }
 
 func (x *TestSingleUUIDKeyStruct) GetEnums() []TestSingleUUIDKeyStruct_Enum {
 	if x != nil {
-		return x.xxx_hidden_Enums
+		return x.Enums
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetEmbedded() *TestSingleUUIDKeyStruct_Embedded {
 	if x != nil {
-		return x.xxx_hidden_Embedded
+		return x.Embedded
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetNested() []*TestSingleUUIDKeyStruct_Nested {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
-				protoimpl.X.UnmarshalField(x, 13)
-			}
-			var rv *[]*TestSingleUUIDKeyStruct_Nested
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Nested
+	}
+	return nil
+}
+
+func (x *TestSingleUUIDKeyStruct) GetOneof() isTestSingleUUIDKeyStruct_Oneof {
+	if x != nil {
+		return x.Oneof
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetOneofstring() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofstring); ok {
+		if x, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofstring); ok {
 			return x.Oneofstring
 		}
 	}
@@ -893,7 +728,7 @@ func (x *TestSingleUUIDKeyStruct) GetOneofstring() string {
 
 func (x *TestSingleUUIDKeyStruct) GetOneofnested() *TestSingleUUIDKeyStruct_OneOfNested {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofnested); ok {
+		if x, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofnested); ok {
 			return x.Oneofnested
 		}
 	}
@@ -902,14 +737,21 @@ func (x *TestSingleUUIDKeyStruct) GetOneofnested() *TestSingleUUIDKeyStruct_OneO
 
 func (x *TestSingleUUIDKeyStruct) GetBytess() []byte {
 	if x != nil {
-		return x.xxx_hidden_Bytess
+		return x.Bytess
+	}
+	return nil
+}
+
+func (x *TestSingleUUIDKeyStruct) GetOneofTwo() isTestSingleUUIDKeyStruct_OneofTwo {
+	if x != nil {
+		return x.OneofTwo
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct) GetOneofTwoString() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoString); ok {
+		if x, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoString); ok {
 			return x.OneofTwoString
 		}
 	}
@@ -918,7 +760,7 @@ func (x *TestSingleUUIDKeyStruct) GetOneofTwoString() string {
 
 func (x *TestSingleUUIDKeyStruct) GetOneofTwoInt() int64 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoInt); ok {
+		if x, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoInt); ok {
 			return x.OneofTwoInt
 		}
 	}
@@ -926,179 +768,110 @@ func (x *TestSingleUUIDKeyStruct) GetOneofTwoInt() int64 {
 }
 
 func (x *TestSingleUUIDKeyStruct) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 16)
+	x.Key = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 16)
+	x.Name = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetStringSlice(v []string) {
-	x.xxx_hidden_StringSlice = v
+	x.StringSlice = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetBool(v bool) {
-	x.xxx_hidden_Bool = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 16)
+	x.Bool = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetUint64(v uint64) {
-	x.xxx_hidden_Uint64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 16)
+	x.Uint64 = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetInt64(v int64) {
-	x.xxx_hidden_Int64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 16)
+	x.Int64 = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetFloat(v float32) {
-	x.xxx_hidden_Float = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 16)
+	x.Float = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 16)
-	}
+	x.Timestamp = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetEnum(v TestSingleUUIDKeyStruct_Enum) {
-	x.xxx_hidden_Enum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 16)
+	x.Enum = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetEnums(v []TestSingleUUIDKeyStruct_Enum) {
-	x.xxx_hidden_Enums = v
+	x.Enums = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetEmbedded(v *TestSingleUUIDKeyStruct_Embedded) {
-	x.xxx_hidden_Embedded = v
+	x.Embedded = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetNested(v []*TestSingleUUIDKeyStruct_Nested) {
-	var sv *[]*TestSingleUUIDKeyStruct_Nested
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestSingleUUIDKeyStruct_Nested{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 16)
+	x.Nested = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetOneofstring(v string) {
-	x.xxx_hidden_Oneof = &testSingleUUIDKeyStruct_Oneofstring{v}
+	x.Oneof = &TestSingleUUIDKeyStruct_Oneofstring{v}
 }
 
 func (x *TestSingleUUIDKeyStruct) SetOneofnested(v *TestSingleUUIDKeyStruct_OneOfNested) {
 	if v == nil {
-		x.xxx_hidden_Oneof = nil
+		x.Oneof = nil
 		return
 	}
-	x.xxx_hidden_Oneof = &testSingleUUIDKeyStruct_Oneofnested{v}
+	x.Oneof = &TestSingleUUIDKeyStruct_Oneofnested{v}
 }
 
 func (x *TestSingleUUIDKeyStruct) SetBytess(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Bytess = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 16)
+	x.Bytess = v
 }
 
 func (x *TestSingleUUIDKeyStruct) SetOneofTwoString(v string) {
-	x.xxx_hidden_OneofTwo = &testSingleUUIDKeyStruct_OneofTwoString{v}
+	x.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoString{v}
 }
 
 func (x *TestSingleUUIDKeyStruct) SetOneofTwoInt(v int64) {
-	x.xxx_hidden_OneofTwo = &testSingleUUIDKeyStruct_OneofTwoInt{v}
-}
-
-func (x *TestSingleUUIDKeyStruct) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasBool() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasUint64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasInt64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasFloat() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	x.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoInt{v}
 }
 
 func (x *TestSingleUUIDKeyStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *TestSingleUUIDKeyStruct) HasEnum() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.Timestamp != nil
 }
 
 func (x *TestSingleUUIDKeyStruct) HasEmbedded() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Embedded != nil
+	return x.Embedded != nil
 }
 
 func (x *TestSingleUUIDKeyStruct) HasOneof() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Oneof != nil
+	return x.Oneof != nil
 }
 
 func (x *TestSingleUUIDKeyStruct) HasOneofstring() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofstring)
+	_, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofstring)
 	return ok
 }
 
@@ -1106,29 +879,22 @@ func (x *TestSingleUUIDKeyStruct) HasOneofnested() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofnested)
+	_, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofnested)
 	return ok
-}
-
-func (x *TestSingleUUIDKeyStruct) HasBytess() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
 }
 
 func (x *TestSingleUUIDKeyStruct) HasOneofTwo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_OneofTwo != nil
+	return x.OneofTwo != nil
 }
 
 func (x *TestSingleUUIDKeyStruct) HasOneofTwoString() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoString)
+	_, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoString)
 	return ok
 }
 
@@ -1136,88 +902,47 @@ func (x *TestSingleUUIDKeyStruct) HasOneofTwoInt() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoInt)
+	_, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoInt)
 	return ok
 }
 
-func (x *TestSingleUUIDKeyStruct) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearBool() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Bool = false
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearUint64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Uint64 = 0
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearInt64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Int64 = 0
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearFloat() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Float = 0
-}
-
 func (x *TestSingleUUIDKeyStruct) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *TestSingleUUIDKeyStruct) ClearEnum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Enum = TestSingleUUIDKeyStruct_ENUM0
+	x.Timestamp = nil
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearEmbedded() {
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = nil
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearOneof() {
-	x.xxx_hidden_Oneof = nil
+	x.Oneof = nil
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearOneofstring() {
-	if _, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofstring); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofstring); ok {
+		x.Oneof = nil
 	}
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearOneofnested() {
-	if _, ok := x.xxx_hidden_Oneof.(*testSingleUUIDKeyStruct_Oneofnested); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestSingleUUIDKeyStruct_Oneofnested); ok {
+		x.Oneof = nil
 	}
 }
 
-func (x *TestSingleUUIDKeyStruct) ClearBytess() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	x.xxx_hidden_Bytess = nil
-}
-
 func (x *TestSingleUUIDKeyStruct) ClearOneofTwo() {
-	x.xxx_hidden_OneofTwo = nil
+	x.OneofTwo = nil
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearOneofTwoString() {
-	if _, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoString); ok {
-		x.xxx_hidden_OneofTwo = nil
+	if _, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoString); ok {
+		x.OneofTwo = nil
 	}
 }
 
 func (x *TestSingleUUIDKeyStruct) ClearOneofTwoInt() {
-	if _, ok := x.xxx_hidden_OneofTwo.(*testSingleUUIDKeyStruct_OneofTwoInt); ok {
-		x.xxx_hidden_OneofTwo = nil
+	if _, ok := x.OneofTwo.(*TestSingleUUIDKeyStruct_OneofTwoInt); ok {
+		x.OneofTwo = nil
 	}
 }
 
@@ -1229,10 +954,10 @@ func (x *TestSingleUUIDKeyStruct) WhichOneof() case_TestSingleUUIDKeyStruct_Oneo
 	if x == nil {
 		return TestSingleUUIDKeyStruct_Oneof_not_set_case
 	}
-	switch x.xxx_hidden_Oneof.(type) {
-	case *testSingleUUIDKeyStruct_Oneofstring:
+	switch x.Oneof.(type) {
+	case *TestSingleUUIDKeyStruct_Oneofstring:
 		return TestSingleUUIDKeyStruct_Oneofstring_case
-	case *testSingleUUIDKeyStruct_Oneofnested:
+	case *TestSingleUUIDKeyStruct_Oneofnested:
 		return TestSingleUUIDKeyStruct_Oneofnested_case
 	default:
 		return TestSingleUUIDKeyStruct_Oneof_not_set_case
@@ -1247,10 +972,10 @@ func (x *TestSingleUUIDKeyStruct) WhichOneofTwo() case_TestSingleUUIDKeyStruct_O
 	if x == nil {
 		return TestSingleUUIDKeyStruct_OneofTwo_not_set_case
 	}
-	switch x.xxx_hidden_OneofTwo.(type) {
-	case *testSingleUUIDKeyStruct_OneofTwoString:
+	switch x.OneofTwo.(type) {
+	case *TestSingleUUIDKeyStruct_OneofTwoString:
 		return TestSingleUUIDKeyStruct_OneofTwoString_case
-	case *testSingleUUIDKeyStruct_OneofTwoInt:
+	case *TestSingleUUIDKeyStruct_OneofTwoInt:
 		return TestSingleUUIDKeyStruct_OneofTwoInt_case
 	default:
 		return TestSingleUUIDKeyStruct_OneofTwo_not_set_case
@@ -1260,92 +985,62 @@ func (x *TestSingleUUIDKeyStruct) WhichOneofTwo() case_TestSingleUUIDKeyStruct_O
 type TestSingleUUIDKeyStruct_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key         *string
-	Name        *string
+	Key         string
+	Name        string
 	StringSlice []string
-	Bool        *bool
+	Bool        bool
 	// When using this ensure your precision needs are met and accounted for.  This will use a
 	// BigInt which may require you to convert from uint64 to int64 OR update
 	// the handling to use numerics.
-	Uint64    *uint64
-	Int64     *int64
-	Float     *float32
+	Uint64    uint64
+	Int64     int64
+	Float     float32
 	Labels    map[string]string
 	Timestamp *timestamppb.Timestamp
-	Enum      *TestSingleUUIDKeyStruct_Enum
+	Enum      TestSingleUUIDKeyStruct_Enum
 	Enums     []TestSingleUUIDKeyStruct_Enum
 	Embedded  *TestSingleUUIDKeyStruct_Embedded
 	Nested    []*TestSingleUUIDKeyStruct_Nested
-	// Fields of oneof xxx_hidden_Oneof:
+	// Fields of oneof Oneof:
 	Oneofstring *string
 	Oneofnested *TestSingleUUIDKeyStruct_OneOfNested
-	// -- end of xxx_hidden_Oneof
+	// -- end of Oneof
 	Bytess []byte
-	// Fields of oneof xxx_hidden_OneofTwo:
+	// Fields of oneof OneofTwo:
 	OneofTwoString *string
 	OneofTwoInt    *int64
-	// -- end of xxx_hidden_OneofTwo
+	// -- end of OneofTwo
 }
 
 func (b0 TestSingleUUIDKeyStruct_builder) Build() *TestSingleUUIDKeyStruct {
 	m0 := &TestSingleUUIDKeyStruct{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 16)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 16)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_StringSlice = b.StringSlice
-	if b.Bool != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 16)
-		x.xxx_hidden_Bool = *b.Bool
-	}
-	if b.Uint64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 16)
-		x.xxx_hidden_Uint64 = *b.Uint64
-	}
-	if b.Int64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 16)
-		x.xxx_hidden_Int64 = *b.Int64
-	}
-	if b.Float != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 16)
-		x.xxx_hidden_Float = *b.Float
-	}
-	x.xxx_hidden_Labels = b.Labels
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 16)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.Enum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 16)
-		x.xxx_hidden_Enum = *b.Enum
-	}
-	x.xxx_hidden_Enums = b.Enums
-	x.xxx_hidden_Embedded = b.Embedded
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 16)
-		x.xxx_hidden_Nested = &b.Nested
-	}
+	x.Key = b.Key
+	x.Name = b.Name
+	x.StringSlice = b.StringSlice
+	x.Bool = b.Bool
+	x.Uint64 = b.Uint64
+	x.Int64 = b.Int64
+	x.Float = b.Float
+	x.Labels = b.Labels
+	x.Timestamp = b.Timestamp
+	x.Enum = b.Enum
+	x.Enums = b.Enums
+	x.Embedded = b.Embedded
+	x.Nested = b.Nested
 	if b.Oneofstring != nil {
-		x.xxx_hidden_Oneof = &testSingleUUIDKeyStruct_Oneofstring{*b.Oneofstring}
+		x.Oneof = &TestSingleUUIDKeyStruct_Oneofstring{*b.Oneofstring}
 	}
 	if b.Oneofnested != nil {
-		x.xxx_hidden_Oneof = &testSingleUUIDKeyStruct_Oneofnested{b.Oneofnested}
+		x.Oneof = &TestSingleUUIDKeyStruct_Oneofnested{b.Oneofnested}
 	}
-	if b.Bytess != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 16)
-		x.xxx_hidden_Bytess = b.Bytess
-	}
+	x.Bytess = b.Bytess
 	if b.OneofTwoString != nil {
-		x.xxx_hidden_OneofTwo = &testSingleUUIDKeyStruct_OneofTwoString{*b.OneofTwoString}
+		x.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoString{*b.OneofTwoString}
 	}
 	if b.OneofTwoInt != nil {
-		x.xxx_hidden_OneofTwo = &testSingleUUIDKeyStruct_OneofTwoInt{*b.OneofTwoInt}
+		x.OneofTwo = &TestSingleUUIDKeyStruct_OneofTwoInt{*b.OneofTwoInt}
 	}
 	return m0
 }
@@ -1374,59 +1069,62 @@ type isTestSingleUUIDKeyStruct_Oneof interface {
 	isTestSingleUUIDKeyStruct_Oneof()
 }
 
-type testSingleUUIDKeyStruct_Oneofstring struct {
+type TestSingleUUIDKeyStruct_Oneofstring struct {
 	Oneofstring string `protobuf:"bytes,14,opt,name=oneofstring,oneof"`
 }
 
-type testSingleUUIDKeyStruct_Oneofnested struct {
+type TestSingleUUIDKeyStruct_Oneofnested struct {
 	Oneofnested *TestSingleUUIDKeyStruct_OneOfNested `protobuf:"bytes,15,opt,name=oneofnested,oneof"`
 }
 
-func (*testSingleUUIDKeyStruct_Oneofstring) isTestSingleUUIDKeyStruct_Oneof() {}
+func (*TestSingleUUIDKeyStruct_Oneofstring) isTestSingleUUIDKeyStruct_Oneof() {}
 
-func (*testSingleUUIDKeyStruct_Oneofnested) isTestSingleUUIDKeyStruct_Oneof() {}
+func (*TestSingleUUIDKeyStruct_Oneofnested) isTestSingleUUIDKeyStruct_Oneof() {}
 
 type isTestSingleUUIDKeyStruct_OneofTwo interface {
 	isTestSingleUUIDKeyStruct_OneofTwo()
 }
 
-type testSingleUUIDKeyStruct_OneofTwoString struct {
+type TestSingleUUIDKeyStruct_OneofTwoString struct {
 	OneofTwoString string `protobuf:"bytes,17,opt,name=oneof_two_string,json=oneofTwoString,oneof"`
 }
 
-type testSingleUUIDKeyStruct_OneofTwoInt struct {
+type TestSingleUUIDKeyStruct_OneofTwoInt struct {
 	OneofTwoInt int64 `protobuf:"varint,18,opt,name=oneof_two_int,json=oneofTwoInt,oneof"`
 }
 
-func (*testSingleUUIDKeyStruct_OneofTwoString) isTestSingleUUIDKeyStruct_OneofTwo() {}
+func (*TestSingleUUIDKeyStruct_OneofTwoString) isTestSingleUUIDKeyStruct_OneofTwo() {}
 
-func (*testSingleUUIDKeyStruct_OneofTwoInt) isTestSingleUUIDKeyStruct_OneofTwo() {}
+func (*TestSingleUUIDKeyStruct_OneofTwoInt) isTestSingleUUIDKeyStruct_OneofTwo() {}
 
 type TestStruct struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key1               *string                `protobuf:"bytes,1,opt,name=key1"`
-	xxx_hidden_Key2               *string                `protobuf:"bytes,2,opt,name=key2"`
-	xxx_hidden_StringSlice        []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice"`
-	xxx_hidden_Bool               bool                   `protobuf:"varint,4,opt,name=bool"`
-	xxx_hidden_Uint64             uint64                 `protobuf:"varint,5,opt,name=uint64"`
-	xxx_hidden_Int64              int64                  `protobuf:"varint,6,opt,name=int64"`
-	xxx_hidden_Float              float32                `protobuf:"fixed32,7,opt,name=float"`
-	xxx_hidden_Labels             map[string]string      `protobuf:"bytes,8,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Timestamp          *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=timestamp"`
-	xxx_hidden_Enum               TestStruct_Enum        `protobuf:"varint,10,opt,name=enum,enum=storage.TestStruct_Enum"`
-	xxx_hidden_Enums              []TestStruct_Enum      `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestStruct_Enum"`
-	xxx_hidden_String_            *string                `protobuf:"bytes,16,opt,name=string"`
-	xxx_hidden_IntSliceDeprecated []int64                `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated"`
-	xxx_hidden_Int32Slice         []int32                `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice"`
-	xxx_hidden_Embedded           *TestStruct_Embedded   `protobuf:"bytes,12,opt,name=embedded"`
-	xxx_hidden_Nested             *[]*TestStruct_Nested  `protobuf:"bytes,13,rep,name=nested"`
-	xxx_hidden_Oneof              isTestStruct_Oneof     `protobuf_oneof:"oneof"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key1        string                 `protobuf:"bytes,1,opt,name=key1" json:"key1,omitempty" sql:"pk,id" search:"Test Key"`                                                                               // @gotags: sql:"pk,id" search:"Test Key"
+	Key2        string                 `protobuf:"bytes,2,opt,name=key2" json:"key2,omitempty" search:"Test Key 2,store,hidden"`                                                                               // @gotags: search:"Test Key 2,store,hidden"
+	StringSlice []string               `protobuf:"bytes,3,rep,name=string_slice,json=stringSlice" json:"string_slice,omitempty" search:"Test String Slice"`                                              // @gotags: search:"Test String Slice"
+	Bool        bool                   `protobuf:"varint,4,opt,name=bool" json:"bool,omitempty" search:"Test Bool"`                                                                              // @gotags: search:"Test Bool"
+	Uint64      uint64                 `protobuf:"varint,5,opt,name=uint64" json:"uint64,omitempty" search:"Test Uint64"`                                                                          // @gotags: search:"Test Uint64"
+	Int64       int64                  `protobuf:"varint,6,opt,name=int64" json:"int64,omitempty" search:"Test Int64"`                                                                            // @gotags: search:"Test Int64"
+	Float       float32                `protobuf:"fixed32,7,opt,name=float" json:"float,omitempty" search:"Test Float"`                                                                           // @gotags: search:"Test Float"
+	Labels      map[string]string      `protobuf:"bytes,8,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Test Labels"` // @gotags: search:"Test Labels"
+	Timestamp   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=timestamp" json:"timestamp,omitempty" search:"Test Timestamp"`                                                                     // @gotags: search:"Test Timestamp"
+	Enum        TestStruct_Enum        `protobuf:"varint,10,opt,name=enum,enum=storage.TestStruct_Enum" json:"enum,omitempty" search:"Test Enum"`                                                // @gotags: search:"Test Enum"
+	Enums       []TestStruct_Enum      `protobuf:"varint,11,rep,packed,name=enums,enum=storage.TestStruct_Enum" json:"enums,omitempty" search:"Test Enum Slice"`                                       // @gotags: search:"Test Enum Slice"
+	String_     string                 `protobuf:"bytes,16,opt,name=string" json:"string,omitempty" search:"Test String"`                                                                          // @gotags: search:"Test String"
+	// repeated int64: currently unsupported
+	//
+	// Deprecated: Marked as deprecated in storage/test.proto.
+	IntSliceDeprecated []int64              `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated" json:"int_slice_deprecated,omitempty" sql:"-"` // @gotags: sql:"-"
+	Int32Slice         []int32              `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice" json:"int32_slice,omitempty" search:"Test Int32 Slice"`                           // @gotags: search:"Test Int32 Slice"
+	Embedded           *TestStruct_Embedded `protobuf:"bytes,12,opt,name=embedded" json:"embedded,omitempty"`
+	Nested             []*TestStruct_Nested `protobuf:"bytes,13,rep,name=nested" json:"nested,omitempty"`
+	// Types that are valid to be assigned to Oneof:
+	//
+	//	*TestStruct_Oneofstring
+	//	*TestStruct_Oneofnested
+	Oneof         isTestStruct_Oneof `protobuf_oneof:"oneof"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct) Reset() {
@@ -1456,145 +1154,132 @@ func (x *TestStruct) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct) GetKey1() string {
 	if x != nil {
-		if x.xxx_hidden_Key1 != nil {
-			return *x.xxx_hidden_Key1
-		}
-		return ""
+		return x.Key1
 	}
 	return ""
 }
 
 func (x *TestStruct) GetKey2() string {
 	if x != nil {
-		if x.xxx_hidden_Key2 != nil {
-			return *x.xxx_hidden_Key2
-		}
-		return ""
+		return x.Key2
 	}
 	return ""
 }
 
 func (x *TestStruct) GetStringSlice() []string {
 	if x != nil {
-		return x.xxx_hidden_StringSlice
+		return x.StringSlice
 	}
 	return nil
 }
 
 func (x *TestStruct) GetBool() bool {
 	if x != nil {
-		return x.xxx_hidden_Bool
+		return x.Bool
 	}
 	return false
 }
 
 func (x *TestStruct) GetUint64() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Uint64
+		return x.Uint64
 	}
 	return 0
 }
 
 func (x *TestStruct) GetInt64() int64 {
 	if x != nil {
-		return x.xxx_hidden_Int64
+		return x.Int64
 	}
 	return 0
 }
 
 func (x *TestStruct) GetFloat() float32 {
 	if x != nil {
-		return x.xxx_hidden_Float
+		return x.Float
 	}
 	return 0
 }
 
 func (x *TestStruct) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *TestStruct) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *TestStruct) GetEnum() TestStruct_Enum {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_Enum
-		}
+		return x.Enum
 	}
 	return TestStruct_ENUM0
 }
 
 func (x *TestStruct) GetEnums() []TestStruct_Enum {
 	if x != nil {
-		return x.xxx_hidden_Enums
+		return x.Enums
 	}
 	return nil
 }
 
 func (x *TestStruct) GetString() string {
 	if x != nil {
-		if x.xxx_hidden_String_ != nil {
-			return *x.xxx_hidden_String_
-		}
-		return ""
+		return x.String_
 	}
 	return ""
+}
+
+// Deprecated: Use GetString instead.
+func (x *TestStruct) GetString_() string {
+	return x.GetString()
 }
 
 // Deprecated: Marked as deprecated in storage/test.proto.
 func (x *TestStruct) GetIntSliceDeprecated() []int64 {
 	if x != nil {
-		return x.xxx_hidden_IntSliceDeprecated
+		return x.IntSliceDeprecated
 	}
 	return nil
 }
 
 func (x *TestStruct) GetInt32Slice() []int32 {
 	if x != nil {
-		return x.xxx_hidden_Int32Slice
+		return x.Int32Slice
 	}
 	return nil
 }
 
 func (x *TestStruct) GetEmbedded() *TestStruct_Embedded {
 	if x != nil {
-		return x.xxx_hidden_Embedded
+		return x.Embedded
 	}
 	return nil
 }
 
 func (x *TestStruct) GetNested() []*TestStruct_Nested {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 15) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nested) {
-				protoimpl.X.UnmarshalField(x, 13)
-			}
-			var rv *[]*TestStruct_Nested
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Nested
+	}
+	return nil
+}
+
+func (x *TestStruct) GetOneof() isTestStruct_Oneof {
+	if x != nil {
+		return x.Oneof
 	}
 	return nil
 }
 
 func (x *TestStruct) GetOneofstring() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofstring); ok {
+		if x, ok := x.Oneof.(*TestStruct_Oneofstring); ok {
 			return x.Oneofstring
 		}
 	}
@@ -1603,7 +1288,7 @@ func (x *TestStruct) GetOneofstring() string {
 
 func (x *TestStruct) GetOneofnested() *TestStruct_OneOfNested {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofnested); ok {
+		if x, ok := x.Oneof.(*TestStruct_Oneofnested); ok {
 			return x.Oneofnested
 		}
 	}
@@ -1611,184 +1296,108 @@ func (x *TestStruct) GetOneofnested() *TestStruct_OneOfNested {
 }
 
 func (x *TestStruct) SetKey1(v string) {
-	x.xxx_hidden_Key1 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 17)
+	x.Key1 = v
 }
 
 func (x *TestStruct) SetKey2(v string) {
-	x.xxx_hidden_Key2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 17)
+	x.Key2 = v
 }
 
 func (x *TestStruct) SetStringSlice(v []string) {
-	x.xxx_hidden_StringSlice = v
+	x.StringSlice = v
 }
 
 func (x *TestStruct) SetBool(v bool) {
-	x.xxx_hidden_Bool = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 17)
+	x.Bool = v
 }
 
 func (x *TestStruct) SetUint64(v uint64) {
-	x.xxx_hidden_Uint64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 17)
+	x.Uint64 = v
 }
 
 func (x *TestStruct) SetInt64(v int64) {
-	x.xxx_hidden_Int64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 17)
+	x.Int64 = v
 }
 
 func (x *TestStruct) SetFloat(v float32) {
-	x.xxx_hidden_Float = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 17)
+	x.Float = v
 }
 
 func (x *TestStruct) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *TestStruct) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 17)
-	}
+	x.Timestamp = v
 }
 
 func (x *TestStruct) SetEnum(v TestStruct_Enum) {
-	x.xxx_hidden_Enum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 17)
+	x.Enum = v
 }
 
 func (x *TestStruct) SetEnums(v []TestStruct_Enum) {
-	x.xxx_hidden_Enums = v
+	x.Enums = v
 }
 
 func (x *TestStruct) SetString(v string) {
-	x.xxx_hidden_String_ = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 17)
+	x.String_ = v
 }
 
 // Deprecated: Marked as deprecated in storage/test.proto.
 func (x *TestStruct) SetIntSliceDeprecated(v []int64) {
-	x.xxx_hidden_IntSliceDeprecated = v
+	x.IntSliceDeprecated = v
 }
 
 func (x *TestStruct) SetInt32Slice(v []int32) {
-	x.xxx_hidden_Int32Slice = v
+	x.Int32Slice = v
 }
 
 func (x *TestStruct) SetEmbedded(v *TestStruct_Embedded) {
-	x.xxx_hidden_Embedded = v
+	x.Embedded = v
 }
 
 func (x *TestStruct) SetNested(v []*TestStruct_Nested) {
-	var sv *[]*TestStruct_Nested
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestStruct_Nested{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nested), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 17)
+	x.Nested = v
 }
 
 func (x *TestStruct) SetOneofstring(v string) {
-	x.xxx_hidden_Oneof = &testStruct_Oneofstring{v}
+	x.Oneof = &TestStruct_Oneofstring{v}
 }
 
 func (x *TestStruct) SetOneofnested(v *TestStruct_OneOfNested) {
 	if v == nil {
-		x.xxx_hidden_Oneof = nil
+		x.Oneof = nil
 		return
 	}
-	x.xxx_hidden_Oneof = &testStruct_Oneofnested{v}
-}
-
-func (x *TestStruct) HasKey1() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct) HasKey2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestStruct) HasBool() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestStruct) HasUint64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *TestStruct) HasInt64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *TestStruct) HasFloat() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	x.Oneof = &TestStruct_Oneofnested{v}
 }
 
 func (x *TestStruct) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *TestStruct) HasEnum() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *TestStruct) HasString() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
+	return x.Timestamp != nil
 }
 
 func (x *TestStruct) HasEmbedded() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Embedded != nil
+	return x.Embedded != nil
 }
 
 func (x *TestStruct) HasOneof() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Oneof != nil
+	return x.Oneof != nil
 }
 
 func (x *TestStruct) HasOneofstring() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofstring)
+	_, ok := x.Oneof.(*TestStruct_Oneofstring)
 	return ok
 }
 
@@ -1796,72 +1405,31 @@ func (x *TestStruct) HasOneofnested() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofnested)
+	_, ok := x.Oneof.(*TestStruct_Oneofnested)
 	return ok
 }
 
-func (x *TestStruct) ClearKey1() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key1 = nil
-}
-
-func (x *TestStruct) ClearKey2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Key2 = nil
-}
-
-func (x *TestStruct) ClearBool() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Bool = false
-}
-
-func (x *TestStruct) ClearUint64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Uint64 = 0
-}
-
-func (x *TestStruct) ClearInt64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Int64 = 0
-}
-
-func (x *TestStruct) ClearFloat() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Float = 0
-}
-
 func (x *TestStruct) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *TestStruct) ClearEnum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Enum = TestStruct_ENUM0
-}
-
-func (x *TestStruct) ClearString() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_String_ = nil
+	x.Timestamp = nil
 }
 
 func (x *TestStruct) ClearEmbedded() {
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = nil
 }
 
 func (x *TestStruct) ClearOneof() {
-	x.xxx_hidden_Oneof = nil
+	x.Oneof = nil
 }
 
 func (x *TestStruct) ClearOneofstring() {
-	if _, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofstring); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestStruct_Oneofstring); ok {
+		x.Oneof = nil
 	}
 }
 
 func (x *TestStruct) ClearOneofnested() {
-	if _, ok := x.xxx_hidden_Oneof.(*testStruct_Oneofnested); ok {
-		x.xxx_hidden_Oneof = nil
+	if _, ok := x.Oneof.(*TestStruct_Oneofnested); ok {
+		x.Oneof = nil
 	}
 }
 
@@ -1873,10 +1441,10 @@ func (x *TestStruct) WhichOneof() case_TestStruct_Oneof {
 	if x == nil {
 		return TestStruct_Oneof_not_set_case
 	}
-	switch x.xxx_hidden_Oneof.(type) {
-	case *testStruct_Oneofstring:
+	switch x.Oneof.(type) {
+	case *TestStruct_Oneofstring:
 		return TestStruct_Oneofstring_case
-	case *testStruct_Oneofnested:
+	case *TestStruct_Oneofnested:
 		return TestStruct_Oneofnested_case
 	default:
 		return TestStruct_Oneof_not_set_case
@@ -1886,18 +1454,18 @@ func (x *TestStruct) WhichOneof() case_TestStruct_Oneof {
 type TestStruct_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key1        *string
-	Key2        *string
+	Key1        string
+	Key2        string
 	StringSlice []string
-	Bool        *bool
-	Uint64      *uint64
-	Int64       *int64
-	Float       *float32
+	Bool        bool
+	Uint64      uint64
+	Int64       int64
+	Float       float32
 	Labels      map[string]string
 	Timestamp   *timestamppb.Timestamp
-	Enum        *TestStruct_Enum
+	Enum        TestStruct_Enum
 	Enums       []TestStruct_Enum
-	String      *string
+	String      string
 	// repeated int64: currently unsupported
 	//
 	// Deprecated: Marked as deprecated in storage/test.proto.
@@ -1905,67 +1473,37 @@ type TestStruct_builder struct {
 	Int32Slice         []int32
 	Embedded           *TestStruct_Embedded
 	Nested             []*TestStruct_Nested
-	// Fields of oneof xxx_hidden_Oneof:
+	// Fields of oneof Oneof:
 	Oneofstring *string
 	Oneofnested *TestStruct_OneOfNested
-	// -- end of xxx_hidden_Oneof
+	// -- end of Oneof
 }
 
 func (b0 TestStruct_builder) Build() *TestStruct {
 	m0 := &TestStruct{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key1 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 17)
-		x.xxx_hidden_Key1 = b.Key1
-	}
-	if b.Key2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 17)
-		x.xxx_hidden_Key2 = b.Key2
-	}
-	x.xxx_hidden_StringSlice = b.StringSlice
-	if b.Bool != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 17)
-		x.xxx_hidden_Bool = *b.Bool
-	}
-	if b.Uint64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 17)
-		x.xxx_hidden_Uint64 = *b.Uint64
-	}
-	if b.Int64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 17)
-		x.xxx_hidden_Int64 = *b.Int64
-	}
-	if b.Float != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 17)
-		x.xxx_hidden_Float = *b.Float
-	}
-	x.xxx_hidden_Labels = b.Labels
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 17)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.Enum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 17)
-		x.xxx_hidden_Enum = *b.Enum
-	}
-	x.xxx_hidden_Enums = b.Enums
-	if b.String != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 17)
-		x.xxx_hidden_String_ = b.String
-	}
-	x.xxx_hidden_IntSliceDeprecated = b.IntSliceDeprecated
-	x.xxx_hidden_Int32Slice = b.Int32Slice
-	x.xxx_hidden_Embedded = b.Embedded
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 17)
-		x.xxx_hidden_Nested = &b.Nested
-	}
+	x.Key1 = b.Key1
+	x.Key2 = b.Key2
+	x.StringSlice = b.StringSlice
+	x.Bool = b.Bool
+	x.Uint64 = b.Uint64
+	x.Int64 = b.Int64
+	x.Float = b.Float
+	x.Labels = b.Labels
+	x.Timestamp = b.Timestamp
+	x.Enum = b.Enum
+	x.Enums = b.Enums
+	x.String_ = b.String
+	x.IntSliceDeprecated = b.IntSliceDeprecated
+	x.Int32Slice = b.Int32Slice
+	x.Embedded = b.Embedded
+	x.Nested = b.Nested
 	if b.Oneofstring != nil {
-		x.xxx_hidden_Oneof = &testStruct_Oneofstring{*b.Oneofstring}
+		x.Oneof = &TestStruct_Oneofstring{*b.Oneofstring}
 	}
 	if b.Oneofnested != nil {
-		x.xxx_hidden_Oneof = &testStruct_Oneofnested{b.Oneofnested}
+		x.Oneof = &TestStruct_Oneofnested{b.Oneofnested}
 	}
 	return m0
 }
@@ -1984,17 +1522,17 @@ type isTestStruct_Oneof interface {
 	isTestStruct_Oneof()
 }
 
-type testStruct_Oneofstring struct {
+type TestStruct_Oneofstring struct {
 	Oneofstring string `protobuf:"bytes,14,opt,name=oneofstring,oneof"`
 }
 
-type testStruct_Oneofnested struct {
+type TestStruct_Oneofnested struct {
 	Oneofnested *TestStruct_OneOfNested `protobuf:"bytes,15,opt,name=oneofnested,oneof"`
 }
 
-func (*testStruct_Oneofstring) isTestStruct_Oneof() {}
+func (*TestStruct_Oneofstring) isTestStruct_Oneof() {}
 
-func (*testStruct_Oneofnested) isTestStruct_Oneof() {}
+func (*TestStruct_Oneofnested) isTestStruct_Oneof() {}
 
 // The test graph is as below. The numbers next to the edges
 // indicate the cardinality of the relationship, either n-1, 1-n or n-n.
@@ -2014,18 +1552,14 @@ func (*testStruct_Oneofnested) isTestStruct_Oneof() {}
 //	 (n-1)   |
 //	 TestG3GrandChild1
 type TestGrandparent struct {
-	state                protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Id        *string                      `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Val       *string                      `protobuf:"bytes,2,opt,name=val"`
-	xxx_hidden_Embedded  *[]*TestGrandparent_Embedded `protobuf:"bytes,3,rep,name=embedded"`
-	xxx_hidden_Priority  int64                        `protobuf:"varint,4,opt,name=priority"`
-	xxx_hidden_RiskScore float32                      `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Id            string                      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Grandparent ID" sql:"pk"`   // @gotags: search:"Test Grandparent ID" sql:"pk"
+	Val           string                      `protobuf:"bytes,2,opt,name=val" json:"val,omitempty" search:"Test Grandparent Val"` // @gotags: search:"Test Grandparent Val"
+	Embedded      []*TestGrandparent_Embedded `protobuf:"bytes,3,rep,name=embedded" json:"embedded,omitempty"`
+	Priority      int64                       `protobuf:"varint,4,opt,name=priority" json:"priority,omitempty" search:"Test Grandparent Priority"`                     // @gotags: search:"Test Grandparent Priority"
+	RiskScore     float32                     `protobuf:"fixed32,5,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Test Grandparent Risk Score"` // @gotags: search:"Test Grandparent Risk Score"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestGrandparent) Reset() {
@@ -2055,181 +1589,90 @@ func (x *TestGrandparent) ProtoReflect() protoreflect.Message {
 
 func (x *TestGrandparent) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestGrandparent) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestGrandparent) GetEmbedded() []*TestGrandparent_Embedded {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Embedded) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*TestGrandparent_Embedded
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Embedded
 	}
 	return nil
 }
 
 func (x *TestGrandparent) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *TestGrandparent) GetRiskScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_RiskScore
+		return x.RiskScore
 	}
 	return 0
 }
 
 func (x *TestGrandparent) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *TestGrandparent) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Val = v
 }
 
 func (x *TestGrandparent) SetEmbedded(v []*TestGrandparent_Embedded) {
-	var sv *[]*TestGrandparent_Embedded
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestGrandparent_Embedded{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Embedded), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Embedded = v
 }
 
 func (x *TestGrandparent) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Priority = v
 }
 
 func (x *TestGrandparent) SetRiskScore(v float32) {
-	x.xxx_hidden_RiskScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *TestGrandparent) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestGrandparent) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestGrandparent) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestGrandparent) HasRiskScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *TestGrandparent) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestGrandparent) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Val = nil
-}
-
-func (x *TestGrandparent) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Priority = 0
-}
-
-func (x *TestGrandparent) ClearRiskScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_RiskScore = 0
+	x.RiskScore = v
 }
 
 type TestGrandparent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
-	Val       *string
+	Id        string
+	Val       string
 	Embedded  []*TestGrandparent_Embedded
-	Priority  *int64
-	RiskScore *float32
+	Priority  int64
+	RiskScore float32
 }
 
 func (b0 TestGrandparent_builder) Build() *TestGrandparent {
 	m0 := &TestGrandparent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Val = b.Val
-	}
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Embedded = &b.Embedded
-	}
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Priority = *b.Priority
-	}
-	if b.RiskScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_RiskScore = *b.RiskScore
-	}
+	x.Id = b.Id
+	x.Val = b.Val
+	x.Embedded = b.Embedded
+	x.Priority = b.Priority
+	x.RiskScore = b.RiskScore
 	return m0
 }
 
 type TestParent1 struct {
-	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                   `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                   `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_Children    *[]*TestParent1_Child1Ref `protobuf:"bytes,3,rep,name=children"`
-	xxx_hidden_Val         *string                   `protobuf:"bytes,4,opt,name=val"`
-	xxx_hidden_StringSlice []string                  `protobuf:"bytes,5,rep,name=string_slice,json=stringSlice"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Id            string                   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Parent1 ID" sql:"pk"`                             // @gotags: search:"Test Parent1 ID" sql:"pk"
+	ParentId      string                   `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Children      []*TestParent1_Child1Ref `protobuf:"bytes,3,rep,name=children" json:"children,omitempty"`
+	Val           string                   `protobuf:"bytes,4,opt,name=val" json:"val,omitempty" search:"Test Parent1 Val"`                                    // @gotags: search:"Test Parent1 Val"
+	StringSlice   []string                 `protobuf:"bytes,5,rep,name=string_slice,json=stringSlice" json:"string_slice,omitempty" search:"Test Parent1 String Slice"` // @gotags: search:"Test Parent1 String Slice"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestParent1) Reset() {
@@ -2259,128 +1702,66 @@ func (x *TestParent1) ProtoReflect() protoreflect.Message {
 
 func (x *TestParent1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestParent1) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestParent1) GetChildren() []*TestParent1_Child1Ref {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Children) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*TestParent1_Child1Ref
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Children
 	}
 	return nil
 }
 
 func (x *TestParent1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestParent1) GetStringSlice() []string {
 	if x != nil {
-		return x.xxx_hidden_StringSlice
+		return x.StringSlice
 	}
 	return nil
 }
 
 func (x *TestParent1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *TestParent1) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.ParentId = v
 }
 
 func (x *TestParent1) SetChildren(v []*TestParent1_Child1Ref) {
-	var sv *[]*TestParent1_Child1Ref
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestParent1_Child1Ref{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Children), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Children = v
 }
 
 func (x *TestParent1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Val = v
 }
 
 func (x *TestParent1) SetStringSlice(v []string) {
-	x.xxx_hidden_StringSlice = v
-}
-
-func (x *TestParent1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestParent1) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestParent1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestParent1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestParent1) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestParent1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Val = nil
+	x.StringSlice = v
 }
 
 type TestParent1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	ParentId    *string
+	Id          string
+	ParentId    string
 	Children    []*TestParent1_Child1Ref
-	Val         *string
+	Val         string
 	StringSlice []string
 }
 
@@ -2388,34 +1769,20 @@ func (b0 TestParent1_builder) Build() *TestParent1 {
 	m0 := &TestParent1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.Children != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Children = &b.Children
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Val = b.Val
-	}
-	x.xxx_hidden_StringSlice = b.StringSlice
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.Children = b.Children
+	x.Val = b.Val
+	x.StringSlice = b.StringSlice
 	return m0
 }
 
 type TestChild1 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,2,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Child1 ID" sql:"pk"`   // @gotags: search:"Test Child1 ID" sql:"pk"
+	Val           string                 `protobuf:"bytes,2,opt,name=val" json:"val,omitempty" search:"Test Child1 Val"` // @gotags: search:"Test Child1 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestChild1) Reset() {
@@ -2445,90 +1812,50 @@ func (x *TestChild1) ProtoReflect() protoreflect.Message {
 
 func (x *TestChild1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestChild1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestChild1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *TestChild1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *TestChild1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestChild1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestChild1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestChild1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestChild1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id  *string
-	Val *string
+	Id  string
+	Val string
 }
 
 func (b0 TestChild1_builder) Build() *TestChild1 {
 	m0 := &TestChild1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.Val = b.Val
 	return m0
 }
 
 type TestGrandChild1 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_ChildId     *string                `protobuf:"bytes,3,opt,name=child_id,json=childId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,4,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Grandchild1 ID" sql:"pk"`                             // @gotags: search:"Test Grandchild1 ID" sql:"pk"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestChild1:id)"` // @gotags: sql:"fk(TestChild1:id)"
+	ChildId       string                 `protobuf:"bytes,3,opt,name=child_id,json=childId" json:"child_id,omitempty" sql:"fk(TestGGrandChild1:id),no-fk-constraint"`    // @gotags: sql:"fk(TestGGrandChild1:id),no-fk-constraint"
+	Val           string                 `protobuf:"bytes,4,opt,name=val" json:"val,omitempty" search:"Test Grandchild1 Val"`                           // @gotags: search:"Test Grandchild1 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestGrandChild1) Reset() {
@@ -2558,152 +1885,74 @@ func (x *TestGrandChild1) ProtoReflect() protoreflect.Message {
 
 func (x *TestGrandChild1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestGrandChild1) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestGrandChild1) GetChildId() string {
 	if x != nil {
-		if x.xxx_hidden_ChildId != nil {
-			return *x.xxx_hidden_ChildId
-		}
-		return ""
+		return x.ChildId
 	}
 	return ""
 }
 
 func (x *TestGrandChild1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestGrandChild1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *TestGrandChild1) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ParentId = v
 }
 
 func (x *TestGrandChild1) SetChildId(v string) {
-	x.xxx_hidden_ChildId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ChildId = v
 }
 
 func (x *TestGrandChild1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *TestGrandChild1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestGrandChild1) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestGrandChild1) HasChildId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestGrandChild1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestGrandChild1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestGrandChild1) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestGrandChild1) ClearChildId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ChildId = nil
-}
-
-func (x *TestGrandChild1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestGrandChild1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	ChildId  *string
-	Val      *string
+	Id       string
+	ParentId string
+	ChildId  string
+	Val      string
 }
 
 func (b0 TestGrandChild1_builder) Build() *TestGrandChild1 {
 	m0 := &TestGrandChild1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.ChildId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ChildId = b.ChildId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.ChildId = b.ChildId
+	x.Val = b.Val
 	return m0
 }
 
 type TestGGrandChild1 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,2,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test GGrandchild1 ID" sql:"pk"`   // @gotags: search:"Test GGrandchild1 ID" sql:"pk"
+	Val           string                 `protobuf:"bytes,2,opt,name=val" json:"val,omitempty" search:"Test GGrandchild1 Val"` // @gotags: search:"Test GGrandchild1 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestGGrandChild1) Reset() {
@@ -2733,90 +1982,50 @@ func (x *TestGGrandChild1) ProtoReflect() protoreflect.Message {
 
 func (x *TestGGrandChild1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestGGrandChild1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestGGrandChild1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *TestGGrandChild1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *TestGGrandChild1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestGGrandChild1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestGGrandChild1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestGGrandChild1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestGGrandChild1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id  *string
-	Val *string
+	Id  string
+	Val string
 }
 
 func (b0 TestGGrandChild1_builder) Build() *TestGGrandChild1 {
 	m0 := &TestGGrandChild1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.Val = b.Val
 	return m0
 }
 
 type TestG2GrandChild1 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_ChildId     *string                `protobuf:"bytes,3,opt,name=child_id,json=childId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,4,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test G2Grandchild1 ID" sql:"pk"`                             // @gotags: search:"Test G2Grandchild1 ID" sql:"pk"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestGGrandChild1:id)"` // @gotags: sql:"fk(TestGGrandChild1:id)"
+	ChildId       string                 `protobuf:"bytes,3,opt,name=child_id,json=childId" json:"child_id,omitempty" sql:"fk(TestG3GrandChild1:id),no-fk-constraint"`    // @gotags: sql:"fk(TestG3GrandChild1:id),no-fk-constraint"
+	Val           string                 `protobuf:"bytes,4,opt,name=val" json:"val,omitempty" search:"Test G2Grandchild1 Val"`                           // @gotags: search:"Test G2Grandchild1 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestG2GrandChild1) Reset() {
@@ -2846,152 +2055,74 @@ func (x *TestG2GrandChild1) ProtoReflect() protoreflect.Message {
 
 func (x *TestG2GrandChild1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestG2GrandChild1) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestG2GrandChild1) GetChildId() string {
 	if x != nil {
-		if x.xxx_hidden_ChildId != nil {
-			return *x.xxx_hidden_ChildId
-		}
-		return ""
+		return x.ChildId
 	}
 	return ""
 }
 
 func (x *TestG2GrandChild1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestG2GrandChild1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *TestG2GrandChild1) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ParentId = v
 }
 
 func (x *TestG2GrandChild1) SetChildId(v string) {
-	x.xxx_hidden_ChildId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ChildId = v
 }
 
 func (x *TestG2GrandChild1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *TestG2GrandChild1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestG2GrandChild1) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestG2GrandChild1) HasChildId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestG2GrandChild1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestG2GrandChild1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestG2GrandChild1) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestG2GrandChild1) ClearChildId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ChildId = nil
-}
-
-func (x *TestG2GrandChild1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestG2GrandChild1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	ChildId  *string
-	Val      *string
+	Id       string
+	ParentId string
+	ChildId  string
+	Val      string
 }
 
 func (b0 TestG2GrandChild1_builder) Build() *TestG2GrandChild1 {
 	m0 := &TestG2GrandChild1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.ChildId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ChildId = b.ChildId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.ChildId = b.ChildId
+	x.Val = b.Val
 	return m0
 }
 
 type TestG3GrandChild1 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,2,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test G3Grandchild1 ID" sql:"pk"`   // @gotags: search:"Test G3Grandchild1 ID" sql:"pk"
+	Val           string                 `protobuf:"bytes,2,opt,name=val" json:"val,omitempty" search:"Test G3Grandchild1 Val"` // @gotags: search:"Test G3Grandchild1 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestG3GrandChild1) Reset() {
@@ -3021,89 +2152,49 @@ func (x *TestG3GrandChild1) ProtoReflect() protoreflect.Message {
 
 func (x *TestG3GrandChild1) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestG3GrandChild1) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestG3GrandChild1) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *TestG3GrandChild1) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *TestG3GrandChild1) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestG3GrandChild1) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestG3GrandChild1) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestG3GrandChild1) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestG3GrandChild1_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id  *string
-	Val *string
+	Id  string
+	Val string
 }
 
 func (b0 TestG3GrandChild1_builder) Build() *TestG3GrandChild1 {
 	m0 := &TestG3GrandChild1{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.Val = b.Val
 	return m0
 }
 
 type TestParent2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,3,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Parent2 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Parent2 ID" sql:"pk,type(uuid)"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val           string                 `protobuf:"bytes,3,opt,name=val" json:"val,omitempty" search:"Test Parent2 Val"`                           // @gotags: search:"Test Parent2 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestParent2) Reset() {
@@ -3133,122 +2224,64 @@ func (x *TestParent2) ProtoReflect() protoreflect.Message {
 
 func (x *TestParent2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestParent2) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestParent2) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestParent2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *TestParent2) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ParentId = v
 }
 
 func (x *TestParent2) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestParent2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestParent2) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestParent2) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestParent2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestParent2) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestParent2) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestParent2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	Val      *string
+	Id       string
+	ParentId string
+	Val      string
 }
 
 func (b0 TestParent2_builder) Build() *TestParent2 {
 	m0 := &TestParent2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.Val = b.Val
 	return m0
 }
 
 type TestChild2 struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id            *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId      *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_GrandparentId *string                `protobuf:"bytes,3,opt,name=grandparent_id,json=grandparentId"`
-	xxx_hidden_Val           *string                `protobuf:"bytes,4,opt,name=val"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Child2 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Child2 ID" sql:"pk,type(uuid)"
+	ParentId string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestParent2:id)"` // @gotags: sql:"fk(TestParent2:id)"
+	// For a potential optimization, insert a direct link from child to grandparent.
+	GrandparentId string `protobuf:"bytes,3,opt,name=grandparent_id,json=grandparentId" json:"grandparent_id,omitempty" sql:"fk(TestGrandparent:id),no-fk-constraint"` // @gotags: sql:"fk(TestGrandparent:id),no-fk-constraint"
+	Val           string `protobuf:"bytes,4,opt,name=val" json:"val,omitempty" search:"Test Child2 Val"`                                          // @gotags: search:"Test Child2 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestChild2) Reset() {
@@ -3278,154 +2311,76 @@ func (x *TestChild2) ProtoReflect() protoreflect.Message {
 
 func (x *TestChild2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestChild2) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestChild2) GetGrandparentId() string {
 	if x != nil {
-		if x.xxx_hidden_GrandparentId != nil {
-			return *x.xxx_hidden_GrandparentId
-		}
-		return ""
+		return x.GrandparentId
 	}
 	return ""
 }
 
 func (x *TestChild2) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestChild2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *TestChild2) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ParentId = v
 }
 
 func (x *TestChild2) SetGrandparentId(v string) {
-	x.xxx_hidden_GrandparentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.GrandparentId = v
 }
 
 func (x *TestChild2) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *TestChild2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestChild2) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestChild2) HasGrandparentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestChild2) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *TestChild2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestChild2) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestChild2) ClearGrandparentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_GrandparentId = nil
-}
-
-func (x *TestChild2) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestChild2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
+	Id       string
+	ParentId string
 	// For a potential optimization, insert a direct link from child to grandparent.
-	GrandparentId *string
-	Val           *string
+	GrandparentId string
+	Val           string
 }
 
 func (b0 TestChild2_builder) Build() *TestChild2 {
 	m0 := &TestChild2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.GrandparentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_GrandparentId = b.GrandparentId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.GrandparentId = b.GrandparentId
+	x.Val = b.Val
 	return m0
 }
 
 type TestParent3 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,3,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Parent3 ID" sql:"pk"`                             // @gotags: search:"Test Parent3 ID" sql:"pk"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val           string                 `protobuf:"bytes,3,opt,name=val" json:"val,omitempty" search:"Test Parent3 Val"`                           // @gotags: search:"Test Parent3 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestParent3) Reset() {
@@ -3455,121 +2410,62 @@ func (x *TestParent3) ProtoReflect() protoreflect.Message {
 
 func (x *TestParent3) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestParent3) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestParent3) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestParent3) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *TestParent3) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ParentId = v
 }
 
 func (x *TestParent3) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestParent3) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestParent3) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestParent3) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestParent3) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestParent3) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestParent3) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestParent3_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	Val      *string
+	Id       string
+	ParentId string
+	Val      string
 }
 
 func (b0 TestParent3_builder) Build() *TestParent3 {
 	m0 := &TestParent3{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.Val = b.Val
 	return m0
 }
 
 type TestParent4 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,3,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Parent4 ID" sql:"pk,type(uuid)"`                             // @gotags: search:"Test Parent4 ID" sql:"pk,type(uuid)"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestGrandparent:id)"` // @gotags: sql:"fk(TestGrandparent:id)"
+	Val           string                 `protobuf:"bytes,3,opt,name=val" json:"val,omitempty" search:"Test Parent4 Val"`                           // @gotags: search:"Test Parent4 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestParent4) Reset() {
@@ -3599,121 +2495,62 @@ func (x *TestParent4) ProtoReflect() protoreflect.Message {
 
 func (x *TestParent4) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestParent4) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestParent4) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestParent4) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *TestParent4) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ParentId = v
 }
 
 func (x *TestParent4) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestParent4) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestParent4) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestParent4) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestParent4) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestParent4) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestParent4) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestParent4_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	Val      *string
+	Id       string
+	ParentId string
+	Val      string
 }
 
 func (b0 TestParent4_builder) Build() *TestParent4 {
 	m0 := &TestParent4{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.Val = b.Val
 	return m0
 }
 
 type TestChild1P4 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ParentId    *string                `protobuf:"bytes,2,opt,name=parent_id,json=parentId"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,3,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test Child1P4 ID" sql:"pk"`                             // @gotags: search:"Test Child1P4 ID" sql:"pk"
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId" json:"parent_id,omitempty" sql:"fk(TestParent4:id),type(uuid)"` // @gotags: sql:"fk(TestParent4:id),type(uuid)"
+	Val           string                 `protobuf:"bytes,3,opt,name=val" json:"val,omitempty" search:"Test Child1P4 Val"`                           // @gotags: search:"Test Child1P4 Val"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestChild1P4) Reset() {
@@ -3743,121 +2580,62 @@ func (x *TestChild1P4) ProtoReflect() protoreflect.Message {
 
 func (x *TestChild1P4) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestChild1P4) GetParentId() string {
 	if x != nil {
-		if x.xxx_hidden_ParentId != nil {
-			return *x.xxx_hidden_ParentId
-		}
-		return ""
+		return x.ParentId
 	}
 	return ""
 }
 
 func (x *TestChild1P4) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestChild1P4) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *TestChild1P4) SetParentId(v string) {
-	x.xxx_hidden_ParentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ParentId = v
 }
 
 func (x *TestChild1P4) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestChild1P4) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestChild1P4) HasParentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestChild1P4) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestChild1P4) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestChild1P4) ClearParentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentId = nil
-}
-
-func (x *TestChild1P4) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestChild1P4_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id       *string
-	ParentId *string
-	Val      *string
+	Id       string
+	ParentId string
+	Val      string
 }
 
 func (b0 TestChild1P4_builder) Build() *TestChild1P4 {
 	m0 := &TestChild1P4{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ParentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ParentId = b.ParentId
-	}
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Id = b.Id
+	x.ParentId = b.ParentId
+	x.Val = b.Val
 	return m0
 }
 
 type TestShortCircuit struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ChildId        *string                `protobuf:"bytes,2,opt,name=child_id,json=childId"`
-	xxx_hidden_G2GrandchildId *string                `protobuf:"bytes,3,opt,name=g2_grandchild_id,json=g2GrandchildId"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Test ShortCircuit ID" sql:"pk"`                                                 // @gotags: search:"Test ShortCircuit ID" sql:"pk"
+	ChildId        string                 `protobuf:"bytes,2,opt,name=child_id,json=childId" json:"child_id,omitempty" search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"`                        // @gotags: search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"
+	G2GrandchildId string                 `protobuf:"bytes,3,opt,name=g2_grandchild_id,json=g2GrandchildId" json:"g2_grandchild_id,omitempty" search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"` // @gotags: search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TestShortCircuit) Reset() {
@@ -3887,119 +2665,60 @@ func (x *TestShortCircuit) ProtoReflect() protoreflect.Message {
 
 func (x *TestShortCircuit) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *TestShortCircuit) GetChildId() string {
 	if x != nil {
-		if x.xxx_hidden_ChildId != nil {
-			return *x.xxx_hidden_ChildId
-		}
-		return ""
+		return x.ChildId
 	}
 	return ""
 }
 
 func (x *TestShortCircuit) GetG2GrandchildId() string {
 	if x != nil {
-		if x.xxx_hidden_G2GrandchildId != nil {
-			return *x.xxx_hidden_G2GrandchildId
-		}
-		return ""
+		return x.G2GrandchildId
 	}
 	return ""
 }
 
 func (x *TestShortCircuit) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *TestShortCircuit) SetChildId(v string) {
-	x.xxx_hidden_ChildId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ChildId = v
 }
 
 func (x *TestShortCircuit) SetG2GrandchildId(v string) {
-	x.xxx_hidden_G2GrandchildId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestShortCircuit) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestShortCircuit) HasChildId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestShortCircuit) HasG2GrandchildId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestShortCircuit) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *TestShortCircuit) ClearChildId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ChildId = nil
-}
-
-func (x *TestShortCircuit) ClearG2GrandchildId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_G2GrandchildId = nil
+	x.G2GrandchildId = v
 }
 
 type TestShortCircuit_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id             *string
-	ChildId        *string
-	G2GrandchildId *string
+	Id             string
+	ChildId        string
+	G2GrandchildId string
 }
 
 func (b0 TestShortCircuit_builder) Build() *TestShortCircuit {
 	m0 := &TestShortCircuit{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ChildId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ChildId = b.ChildId
-	}
-	if b.G2GrandchildId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_G2GrandchildId = b.G2GrandchildId
-	}
+	x.Id = b.Id
+	x.ChildId = b.ChildId
+	x.G2GrandchildId = b.G2GrandchildId
 	return m0
 }
 
 type TestSingleKeyStruct_Embedded struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,1,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,1,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_Embedded) Reset() {
@@ -4029,56 +2748,35 @@ func (x *TestSingleKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleKeyStruct_Embedded) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_Embedded) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleKeyStruct_Embedded) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleKeyStruct_Embedded) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestSingleKeyStruct_Embedded_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestSingleKeyStruct_Embedded_builder) Build() *TestSingleKeyStruct_Embedded {
 	m0 := &TestSingleKeyStruct_Embedded{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestSingleKeyStruct_Nested struct {
-	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                             `protobuf:"bytes,1,opt,name=nested"`
-	xxx_hidden_Nested2     *TestSingleKeyStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState              `protogen:"hybrid.v1"`
+	Nested        string                              `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty"`
+	Nested2       *TestSingleKeyStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_Nested) Reset() {
@@ -4108,57 +2806,41 @@ func (x *TestSingleKeyStruct_Nested) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleKeyStruct_Nested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_Nested) GetNested2() *TestSingleKeyStruct_Nested_Nested2 {
 	if x != nil {
-		return x.xxx_hidden_Nested2
+		return x.Nested2
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct_Nested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Nested = v
 }
 
 func (x *TestSingleKeyStruct_Nested) SetNested2(v *TestSingleKeyStruct_Nested_Nested2) {
-	x.xxx_hidden_Nested2 = v
-}
-
-func (x *TestSingleKeyStruct_Nested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Nested2 = v
 }
 
 func (x *TestSingleKeyStruct_Nested) HasNested2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Nested2 != nil
-}
-
-func (x *TestSingleKeyStruct_Nested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
+	return x.Nested2 != nil
 }
 
 func (x *TestSingleKeyStruct_Nested) ClearNested2() {
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = nil
 }
 
 type TestSingleKeyStruct_Nested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested  *string
+	Nested  string
 	Nested2 *TestSingleKeyStruct_Nested_Nested2
 }
 
@@ -4166,22 +2848,17 @@ func (b0 TestSingleKeyStruct_Nested_builder) Build() *TestSingleKeyStruct_Nested
 	m0 := &TestSingleKeyStruct_Nested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Nested = b.Nested
-	}
-	x.xxx_hidden_Nested2 = b.Nested2
+	x.Nested = b.Nested
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleKeyStruct_OneOfNested struct {
-	state                  protoimpl.MessageState                   `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                                  `protobuf:"bytes,1,opt,name=nested"`
-	xxx_hidden_Nested2     *TestSingleKeyStruct_OneOfNested_Nested2 `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                   `protogen:"hybrid.v1"`
+	Nested        string                                   `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty"`
+	Nested2       *TestSingleKeyStruct_OneOfNested_Nested2 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) Reset() {
@@ -4211,57 +2888,41 @@ func (x *TestSingleKeyStruct_OneOfNested) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleKeyStruct_OneOfNested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) GetNested2() *TestSingleKeyStruct_OneOfNested_Nested2 {
 	if x != nil {
-		return x.xxx_hidden_Nested2
+		return x.Nested2
 	}
 	return nil
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Nested = v
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) SetNested2(v *TestSingleKeyStruct_OneOfNested_Nested2) {
-	x.xxx_hidden_Nested2 = v
-}
-
-func (x *TestSingleKeyStruct_OneOfNested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Nested2 = v
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) HasNested2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Nested2 != nil
-}
-
-func (x *TestSingleKeyStruct_OneOfNested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
+	return x.Nested2 != nil
 }
 
 func (x *TestSingleKeyStruct_OneOfNested) ClearNested2() {
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = nil
 }
 
 type TestSingleKeyStruct_OneOfNested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested  *string
+	Nested  string
 	Nested2 *TestSingleKeyStruct_OneOfNested_Nested2
 }
 
@@ -4269,21 +2930,16 @@ func (b0 TestSingleKeyStruct_OneOfNested_builder) Build() *TestSingleKeyStruct_O
 	m0 := &TestSingleKeyStruct_OneOfNested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Nested = b.Nested
-	}
-	x.xxx_hidden_Nested2 = b.Nested2
+	x.Nested = b.Nested
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleKeyStruct_Embedded_Embedded2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,2,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,2,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) Reset() {
@@ -4313,55 +2969,34 @@ func (x *TestSingleKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Mes
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleKeyStruct_Embedded_Embedded2) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleKeyStruct_Embedded_Embedded2) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestSingleKeyStruct_Embedded_Embedded2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestSingleKeyStruct_Embedded_Embedded2_builder) Build() *TestSingleKeyStruct_Embedded_Embedded2 {
 	m0 := &TestSingleKeyStruct_Embedded_Embedded2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestSingleKeyStruct_Nested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_Nested_Nested2) Reset() {
@@ -4391,55 +3026,34 @@ func (x *TestSingleKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Message
 
 func (x *TestSingleKeyStruct_Nested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_Nested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleKeyStruct_Nested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleKeyStruct_Nested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = v
 }
 
 type TestSingleKeyStruct_Nested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2 *string
+	Nested2 string
 }
 
 func (b0 TestSingleKeyStruct_Nested_Nested2_builder) Build() *TestSingleKeyStruct_Nested_Nested2 {
 	m0 := &TestSingleKeyStruct_Nested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleKeyStruct_OneOfNested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) Reset() {
@@ -4469,55 +3083,34 @@ func (x *TestSingleKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Me
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleKeyStruct_OneOfNested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleKeyStruct_OneOfNested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = v
 }
 
 type TestSingleKeyStruct_OneOfNested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2 *string
+	Nested2 string
 }
 
 func (b0 TestSingleKeyStruct_OneOfNested_Nested2_builder) Build() *TestSingleKeyStruct_OneOfNested_Nested2 {
 	m0 := &TestSingleKeyStruct_OneOfNested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_Embedded struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,1,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,1,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_Embedded) Reset() {
@@ -4547,56 +3140,35 @@ func (x *TestSingleUUIDKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleUUIDKeyStruct_Embedded) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_Embedded) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleUUIDKeyStruct_Embedded) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleUUIDKeyStruct_Embedded) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestSingleUUIDKeyStruct_Embedded_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestSingleUUIDKeyStruct_Embedded_builder) Build() *TestSingleUUIDKeyStruct_Embedded {
 	m0 := &TestSingleUUIDKeyStruct_Embedded{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_Nested struct {
-	state                  protoimpl.MessageState                  `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                                 `protobuf:"bytes,1,opt,name=nested"`
-	xxx_hidden_Nested2     *TestSingleUUIDKeyStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                  `protogen:"hybrid.v1"`
+	Nested        string                                  `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty"`
+	Nested2       *TestSingleUUIDKeyStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) Reset() {
@@ -4626,57 +3198,41 @@ func (x *TestSingleUUIDKeyStruct_Nested) ProtoReflect() protoreflect.Message {
 
 func (x *TestSingleUUIDKeyStruct_Nested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) GetNested2() *TestSingleUUIDKeyStruct_Nested_Nested2 {
 	if x != nil {
-		return x.xxx_hidden_Nested2
+		return x.Nested2
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Nested = v
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) SetNested2(v *TestSingleUUIDKeyStruct_Nested_Nested2) {
-	x.xxx_hidden_Nested2 = v
-}
-
-func (x *TestSingleUUIDKeyStruct_Nested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Nested2 = v
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) HasNested2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Nested2 != nil
-}
-
-func (x *TestSingleUUIDKeyStruct_Nested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
+	return x.Nested2 != nil
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested) ClearNested2() {
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = nil
 }
 
 type TestSingleUUIDKeyStruct_Nested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested  *string
+	Nested  string
 	Nested2 *TestSingleUUIDKeyStruct_Nested_Nested2
 }
 
@@ -4684,22 +3240,17 @@ func (b0 TestSingleUUIDKeyStruct_Nested_builder) Build() *TestSingleUUIDKeyStruc
 	m0 := &TestSingleUUIDKeyStruct_Nested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Nested = b.Nested
-	}
-	x.xxx_hidden_Nested2 = b.Nested2
+	x.Nested = b.Nested
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_OneOfNested struct {
-	state                  protoimpl.MessageState                       `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                                      `protobuf:"bytes,1,opt,name=nested"`
-	xxx_hidden_Nested2     *TestSingleUUIDKeyStruct_OneOfNested_Nested2 `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                       `protogen:"hybrid.v1"`
+	Nested        string                                       `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty"`
+	Nested2       *TestSingleUUIDKeyStruct_OneOfNested_Nested2 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) Reset() {
@@ -4729,57 +3280,41 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested) ProtoReflect() protoreflect.Messag
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) GetNested2() *TestSingleUUIDKeyStruct_OneOfNested_Nested2 {
 	if x != nil {
-		return x.xxx_hidden_Nested2
+		return x.Nested2
 	}
 	return nil
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Nested = v
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) SetNested2(v *TestSingleUUIDKeyStruct_OneOfNested_Nested2) {
-	x.xxx_hidden_Nested2 = v
-}
-
-func (x *TestSingleUUIDKeyStruct_OneOfNested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Nested2 = v
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) HasNested2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Nested2 != nil
-}
-
-func (x *TestSingleUUIDKeyStruct_OneOfNested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
+	return x.Nested2 != nil
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) ClearNested2() {
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = nil
 }
 
 type TestSingleUUIDKeyStruct_OneOfNested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested  *string
+	Nested  string
 	Nested2 *TestSingleUUIDKeyStruct_OneOfNested_Nested2
 }
 
@@ -4787,21 +3322,16 @@ func (b0 TestSingleUUIDKeyStruct_OneOfNested_builder) Build() *TestSingleUUIDKey
 	m0 := &TestSingleUUIDKeyStruct_OneOfNested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Nested = b.Nested
-	}
-	x.xxx_hidden_Nested2 = b.Nested2
+	x.Nested = b.Nested
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_Embedded_Embedded2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,2,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,2,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) Reset() {
@@ -4831,55 +3361,34 @@ func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestSingleUUIDKeyStruct_Embedded_Embedded2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestSingleUUIDKeyStruct_Embedded_Embedded2_builder) Build() *TestSingleUUIDKeyStruct_Embedded_Embedded2 {
 	m0 := &TestSingleUUIDKeyStruct_Embedded_Embedded2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_Nested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) Reset() {
@@ -4909,55 +3418,34 @@ func (x *TestSingleUUIDKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Mes
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleUUIDKeyStruct_Nested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleUUIDKeyStruct_Nested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = v
 }
 
 type TestSingleUUIDKeyStruct_Nested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2 *string
+	Nested2 string
 }
 
 func (b0 TestSingleUUIDKeyStruct_Nested_Nested2_builder) Build() *TestSingleUUIDKeyStruct_Nested_Nested2 {
 	m0 := &TestSingleUUIDKeyStruct_Nested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestSingleUUIDKeyStruct_OneOfNested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Reset() {
@@ -4987,55 +3475,34 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflec
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = v
 }
 
 type TestSingleUUIDKeyStruct_OneOfNested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2 *string
+	Nested2 string
 }
 
 func (b0 TestSingleUUIDKeyStruct_OneOfNested_Nested2_builder) Build() *TestSingleUUIDKeyStruct_OneOfNested_Nested2 {
 	m0 := &TestSingleUUIDKeyStruct_OneOfNested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestStruct_Embedded struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,1,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,1,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_Embedded) Reset() {
@@ -5065,58 +3532,37 @@ func (x *TestStruct_Embedded) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_Embedded) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestStruct_Embedded) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestStruct_Embedded) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_Embedded) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestStruct_Embedded_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestStruct_Embedded_builder) Build() *TestStruct_Embedded {
 	m0 := &TestStruct_Embedded{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestStruct_Nested struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                    `protobuf:"bytes,1,opt,name=nested"`
-	xxx_hidden_IsNested    bool                       `protobuf:"varint,3,opt,name=is_nested,json=isNested"`
-	xxx_hidden_Int64       int64                      `protobuf:"varint,4,opt,name=int64"`
-	xxx_hidden_Nested2     *TestStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState     `protogen:"hybrid.v1"`
+	Nested        string                     `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty" search:"Test Nested String"`                      // @gotags: search:"Test Nested String"
+	IsNested      bool                       `protobuf:"varint,3,opt,name=is_nested,json=isNested" json:"is_nested,omitempty" search:"Test Nested Bool"` // @gotags: search:"Test Nested Bool"
+	Int64         int64                      `protobuf:"varint,4,opt,name=int64" json:"int64,omitempty" search:"Test Nested Int64"`                       // @gotags: search:"Test Nested Int64"
+	Nested2       *TestStruct_Nested_Nested2 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_Nested) Reset() {
@@ -5146,107 +3592,65 @@ func (x *TestStruct_Nested) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_Nested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestStruct_Nested) GetIsNested() bool {
 	if x != nil {
-		return x.xxx_hidden_IsNested
+		return x.IsNested
 	}
 	return false
 }
 
 func (x *TestStruct_Nested) GetInt64() int64 {
 	if x != nil {
-		return x.xxx_hidden_Int64
+		return x.Int64
 	}
 	return 0
 }
 
 func (x *TestStruct_Nested) GetNested2() *TestStruct_Nested_Nested2 {
 	if x != nil {
-		return x.xxx_hidden_Nested2
+		return x.Nested2
 	}
 	return nil
 }
 
 func (x *TestStruct_Nested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Nested = v
 }
 
 func (x *TestStruct_Nested) SetIsNested(v bool) {
-	x.xxx_hidden_IsNested = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.IsNested = v
 }
 
 func (x *TestStruct_Nested) SetInt64(v int64) {
-	x.xxx_hidden_Int64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Int64 = v
 }
 
 func (x *TestStruct_Nested) SetNested2(v *TestStruct_Nested_Nested2) {
-	x.xxx_hidden_Nested2 = v
-}
-
-func (x *TestStruct_Nested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_Nested) HasIsNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestStruct_Nested) HasInt64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.Nested2 = v
 }
 
 func (x *TestStruct_Nested) HasNested2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Nested2 != nil
-}
-
-func (x *TestStruct_Nested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
-}
-
-func (x *TestStruct_Nested) ClearIsNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsNested = false
-}
-
-func (x *TestStruct_Nested) ClearInt64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Int64 = 0
+	return x.Nested2 != nil
 }
 
 func (x *TestStruct_Nested) ClearNested2() {
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = nil
 }
 
 type TestStruct_Nested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested   *string
-	IsNested *bool
-	Int64    *int64
+	Nested   string
+	IsNested bool
+	Int64    int64
 	Nested2  *TestStruct_Nested_Nested2
 }
 
@@ -5254,29 +3658,18 @@ func (b0 TestStruct_Nested_builder) Build() *TestStruct_Nested {
 	m0 := &TestStruct_Nested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Nested = b.Nested
-	}
-	if b.IsNested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_IsNested = *b.IsNested
-	}
-	if b.Int64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Int64 = *b.Int64
-	}
-	x.xxx_hidden_Nested2 = b.Nested2
+	x.Nested = b.Nested
+	x.IsNested = b.IsNested
+	x.Int64 = b.Int64
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestStruct_OneOfNested struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested      *string                `protobuf:"bytes,1,opt,name=nested"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested        string                 `protobuf:"bytes,1,opt,name=nested" json:"nested,omitempty" search:"Test Oneof Nested String"` // @gotags: search:"Test Oneof Nested String"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_OneOfNested) Reset() {
@@ -5306,55 +3699,34 @@ func (x *TestStruct_OneOfNested) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_OneOfNested) GetNested() string {
 	if x != nil {
-		if x.xxx_hidden_Nested != nil {
-			return *x.xxx_hidden_Nested
-		}
-		return ""
+		return x.Nested
 	}
 	return ""
 }
 
 func (x *TestStruct_OneOfNested) SetNested(v string) {
-	x.xxx_hidden_Nested = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestStruct_OneOfNested) HasNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_OneOfNested) ClearNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested = nil
+	x.Nested = v
 }
 
 type TestStruct_OneOfNested_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested *string
+	Nested string
 }
 
 func (b0 TestStruct_OneOfNested_builder) Build() *TestStruct_OneOfNested {
 	m0 := &TestStruct_OneOfNested{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested = b.Nested
-	}
+	x.Nested = b.Nested
 	return m0
 }
 
 type TestStruct_Embedded_Embedded2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Embedded    *string                `protobuf:"bytes,2,opt,name=embedded"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Embedded      string                 `protobuf:"bytes,2,opt,name=embedded" json:"embedded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_Embedded_Embedded2) Reset() {
@@ -5384,57 +3756,36 @@ func (x *TestStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_Embedded_Embedded2) GetEmbedded() string {
 	if x != nil {
-		if x.xxx_hidden_Embedded != nil {
-			return *x.xxx_hidden_Embedded
-		}
-		return ""
+		return x.Embedded
 	}
 	return ""
 }
 
 func (x *TestStruct_Embedded_Embedded2) SetEmbedded(v string) {
-	x.xxx_hidden_Embedded = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestStruct_Embedded_Embedded2) HasEmbedded() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_Embedded_Embedded2) ClearEmbedded() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Embedded = nil
+	x.Embedded = v
 }
 
 type TestStruct_Embedded_Embedded2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Embedded *string
+	Embedded string
 }
 
 func (b0 TestStruct_Embedded_Embedded2_builder) Build() *TestStruct_Embedded_Embedded2 {
 	m0 := &TestStruct_Embedded_Embedded2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Embedded != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Embedded = b.Embedded
-	}
+	x.Embedded = b.Embedded
 	return m0
 }
 
 type TestStruct_Nested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	xxx_hidden_IsNested    bool                   `protobuf:"varint,3,opt,name=is_nested,json=isNested"`
-	xxx_hidden_Int64       int64                  `protobuf:"varint,4,opt,name=int64"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty" search:"Test Nested String 2"`                    // @gotags: search:"Test Nested String 2"
+	IsNested      bool                   `protobuf:"varint,3,opt,name=is_nested,json=isNested" json:"is_nested,omitempty" search:"Test Nested Bool 2"` // @gotags: search:"Test Nested Bool 2"
+	Int64         int64                  `protobuf:"varint,4,opt,name=int64" json:"int64,omitempty" search:"Test Nested Int64 2"`                       // @gotags: search:"Test Nested Int64 2"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_Nested_Nested2) Reset() {
@@ -5464,113 +3815,60 @@ func (x *TestStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_Nested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestStruct_Nested_Nested2) GetIsNested() bool {
 	if x != nil {
-		return x.xxx_hidden_IsNested
+		return x.IsNested
 	}
 	return false
 }
 
 func (x *TestStruct_Nested_Nested2) GetInt64() int64 {
 	if x != nil {
-		return x.xxx_hidden_Int64
+		return x.Int64
 	}
 	return 0
 }
 
 func (x *TestStruct_Nested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Nested2 = v
 }
 
 func (x *TestStruct_Nested_Nested2) SetIsNested(v bool) {
-	x.xxx_hidden_IsNested = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.IsNested = v
 }
 
 func (x *TestStruct_Nested_Nested2) SetInt64(v int64) {
-	x.xxx_hidden_Int64 = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *TestStruct_Nested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_Nested_Nested2) HasIsNested() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TestStruct_Nested_Nested2) HasInt64() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *TestStruct_Nested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
-}
-
-func (x *TestStruct_Nested_Nested2) ClearIsNested() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsNested = false
-}
-
-func (x *TestStruct_Nested_Nested2) ClearInt64() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Int64 = 0
+	x.Int64 = v
 }
 
 type TestStruct_Nested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2  *string
-	IsNested *bool
-	Int64    *int64
+	Nested2  string
+	IsNested bool
+	Int64    int64
 }
 
 func (b0 TestStruct_Nested_Nested2_builder) Build() *TestStruct_Nested_Nested2 {
 	m0 := &TestStruct_Nested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
-	if b.IsNested != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_IsNested = *b.IsNested
-	}
-	if b.Int64 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Int64 = *b.Int64
-	}
+	x.Nested2 = b.Nested2
+	x.IsNested = b.IsNested
+	x.Int64 = b.Int64
 	return m0
 }
 
 type TestStruct_OneOfNested_Nested2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nested2     *string                `protobuf:"bytes,2,opt,name=nested2"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nested2       string                 `protobuf:"bytes,2,opt,name=nested2" json:"nested2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestStruct_OneOfNested_Nested2) Reset() {
@@ -5600,58 +3898,35 @@ func (x *TestStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
 
 func (x *TestStruct_OneOfNested_Nested2) GetNested2() string {
 	if x != nil {
-		if x.xxx_hidden_Nested2 != nil {
-			return *x.xxx_hidden_Nested2
-		}
-		return ""
+		return x.Nested2
 	}
 	return ""
 }
 
 func (x *TestStruct_OneOfNested_Nested2) SetNested2(v string) {
-	x.xxx_hidden_Nested2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestStruct_OneOfNested_Nested2) HasNested2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestStruct_OneOfNested_Nested2) ClearNested2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Nested2 = nil
+	x.Nested2 = v
 }
 
 type TestStruct_OneOfNested_Nested2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Nested2 *string
+	Nested2 string
 }
 
 func (b0 TestStruct_OneOfNested_Nested2_builder) Build() *TestStruct_OneOfNested_Nested2 {
 	m0 := &TestStruct_OneOfNested_Nested2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nested2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nested2 = b.Nested2
-	}
+	x.Nested2 = b.Nested2
 	return m0
 }
 
 type TestGrandparent_Embedded struct {
-	state                protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_Val       *string                                `protobuf:"bytes,1,opt,name=val"`
-	xxx_hidden_Embedded2 *[]*TestGrandparent_Embedded_Embedded2 `protobuf:"bytes,2,rep,name=embedded2"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                `protogen:"hybrid.v1"`
+	Val           string                                `protobuf:"bytes,1,opt,name=val" json:"val,omitempty" search:"Test Grandparent Embedded"` // @gotags: search:"Test Grandparent Embedded"
+	Embedded2     []*TestGrandparent_Embedded_Embedded2 `protobuf:"bytes,2,rep,name=embedded2" json:"embedded2,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestGrandparent_Embedded) Reset() {
@@ -5681,60 +3956,30 @@ func (x *TestGrandparent_Embedded) ProtoReflect() protoreflect.Message {
 
 func (x *TestGrandparent_Embedded) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestGrandparent_Embedded) GetEmbedded2() []*TestGrandparent_Embedded_Embedded2 {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Embedded2) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*TestGrandparent_Embedded_Embedded2
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Embedded2
 	}
 	return nil
 }
 
 func (x *TestGrandparent_Embedded) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Val = v
 }
 
 func (x *TestGrandparent_Embedded) SetEmbedded2(v []*TestGrandparent_Embedded_Embedded2) {
-	var sv *[]*TestGrandparent_Embedded_Embedded2
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*TestGrandparent_Embedded_Embedded2{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Embedded2), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *TestGrandparent_Embedded) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestGrandparent_Embedded) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Val = nil
+	x.Embedded2 = v
 }
 
 type TestGrandparent_Embedded_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Val       *string
+	Val       string
 	Embedded2 []*TestGrandparent_Embedded_Embedded2
 }
 
@@ -5742,24 +3987,16 @@ func (b0 TestGrandparent_Embedded_builder) Build() *TestGrandparent_Embedded {
 	m0 := &TestGrandparent_Embedded{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Val = b.Val
-	}
-	if b.Embedded2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Embedded2 = &b.Embedded2
-	}
+	x.Val = b.Val
+	x.Embedded2 = b.Embedded2
 	return m0
 }
 
 type TestGrandparent_Embedded_Embedded2 struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Val         *string                `protobuf:"bytes,1,opt,name=val"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Val           string                 `protobuf:"bytes,1,opt,name=val" json:"val,omitempty" search:"Test Grandparent Embedded2"` // @gotags: search:"Test Grandparent Embedded2"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestGrandparent_Embedded_Embedded2) Reset() {
@@ -5789,55 +4026,34 @@ func (x *TestGrandparent_Embedded_Embedded2) ProtoReflect() protoreflect.Message
 
 func (x *TestGrandparent_Embedded_Embedded2) GetVal() string {
 	if x != nil {
-		if x.xxx_hidden_Val != nil {
-			return *x.xxx_hidden_Val
-		}
-		return ""
+		return x.Val
 	}
 	return ""
 }
 
 func (x *TestGrandparent_Embedded_Embedded2) SetVal(v string) {
-	x.xxx_hidden_Val = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestGrandparent_Embedded_Embedded2) HasVal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestGrandparent_Embedded_Embedded2) ClearVal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Val = nil
+	x.Val = v
 }
 
 type TestGrandparent_Embedded_Embedded2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Val *string
+	Val string
 }
 
 func (b0 TestGrandparent_Embedded_Embedded2_builder) Build() *TestGrandparent_Embedded_Embedded2 {
 	m0 := &TestGrandparent_Embedded_Embedded2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Val != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Val = b.Val
-	}
+	x.Val = b.Val
 	return m0
 }
 
 type TestParent1_Child1Ref struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ChildId     *string                `protobuf:"bytes,1,opt,name=child_id,json=childId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ChildId       string                 `protobuf:"bytes,1,opt,name=child_id,json=childId" json:"child_id,omitempty" sql:"fk(TestChild1:id),no-fk-constraint"` // @gotags: sql:"fk(TestChild1:id),no-fk-constraint"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestParent1_Child1Ref) Reset() {
@@ -5867,45 +4083,26 @@ func (x *TestParent1_Child1Ref) ProtoReflect() protoreflect.Message {
 
 func (x *TestParent1_Child1Ref) GetChildId() string {
 	if x != nil {
-		if x.xxx_hidden_ChildId != nil {
-			return *x.xxx_hidden_ChildId
-		}
-		return ""
+		return x.ChildId
 	}
 	return ""
 }
 
 func (x *TestParent1_Child1Ref) SetChildId(v string) {
-	x.xxx_hidden_ChildId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *TestParent1_Child1Ref) HasChildId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TestParent1_Child1Ref) ClearChildId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ChildId = nil
+	x.ChildId = v
 }
 
 type TestParent1_Child1Ref_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ChildId *string
+	ChildId string
 }
 
 func (b0 TestParent1_Child1Ref_builder) Build() *TestParent1_Child1Ref {
 	m0 := &TestParent1_Child1Ref{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ChildId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ChildId = b.ChildId
-	}
+	x.ChildId = b.ChildId
 	return m0
 }
 
@@ -6110,8 +4307,8 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x10TestShortCircuit\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bchild_id\x18\x02 \x01(\tR\achildId\x12(\n" +
-	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildIdB9\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildIdBA\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_test_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_storage_test_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
@@ -6204,18 +4401,18 @@ func file_storage_test_proto_init() {
 		return
 	}
 	file_storage_test_proto_msgTypes[0].OneofWrappers = []any{
-		(*testSingleKeyStruct_Oneofstring)(nil),
-		(*testSingleKeyStruct_Oneofnested)(nil),
+		(*TestSingleKeyStruct_Oneofstring)(nil),
+		(*TestSingleKeyStruct_Oneofnested)(nil),
 	}
 	file_storage_test_proto_msgTypes[1].OneofWrappers = []any{
-		(*testSingleUUIDKeyStruct_Oneofstring)(nil),
-		(*testSingleUUIDKeyStruct_Oneofnested)(nil),
-		(*testSingleUUIDKeyStruct_OneofTwoString)(nil),
-		(*testSingleUUIDKeyStruct_OneofTwoInt)(nil),
+		(*TestSingleUUIDKeyStruct_Oneofstring)(nil),
+		(*TestSingleUUIDKeyStruct_Oneofnested)(nil),
+		(*TestSingleUUIDKeyStruct_OneofTwoString)(nil),
+		(*TestSingleUUIDKeyStruct_OneofTwoInt)(nil),
 	}
 	file_storage_test_proto_msgTypes[2].OneofWrappers = []any{
-		(*testStruct_Oneofstring)(nil),
-		(*testStruct_Oneofnested)(nil),
+		(*TestStruct_Oneofstring)(nil),
+		(*TestStruct_Oneofnested)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

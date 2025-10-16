@@ -8,8 +8,9 @@ func (m *DelegatedRegistryConfig) SizeVT() int { return proto.Size(m) }
 func (m *DelegatedRegistryConfig) CloneVT() *DelegatedRegistryConfig {
 	return proto.Clone(m).(*DelegatedRegistryConfig)
 }
-func (m *DelegatedRegistryConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DelegatedRegistryConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DelegatedRegistryConfig) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *DelegatedRegistryConfig) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *DelegatedRegistryConfig) EqualVT(n *DelegatedRegistryConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DelegatedRegistryConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -23,6 +24,9 @@ func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalVT() ([]byte, error) 
 }
 func (m *DelegatedRegistryConfig_DelegatedRegistry) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DelegatedRegistryConfig_DelegatedRegistry) EqualVT(n *DelegatedRegistryConfig_DelegatedRegistry) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

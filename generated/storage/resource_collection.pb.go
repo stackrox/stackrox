@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/resource_collection.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -64,22 +66,19 @@ func (x MatchType) Number() protoreflect.EnumNumber {
 }
 
 type ResourceCollection struct {
-	state                          protoimpl.MessageState                            `protogen:"opaque.v1"`
-	xxx_hidden_Id                  *string                                           `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                *string                                           `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Description         *string                                           `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_CreatedAt           *timestamppb.Timestamp                            `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
-	xxx_hidden_LastUpdated         *timestamppb.Timestamp                            `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_CreatedBy           *SlimUser                                         `protobuf:"bytes,6,opt,name=created_by,json=createdBy"`
-	xxx_hidden_UpdatedBy           *SlimUser                                         `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy"`
-	xxx_hidden_ResourceSelectors   *[]*ResourceSelector                              `protobuf:"bytes,8,rep,name=resource_selectors,json=resourceSelectors"`
-	xxx_hidden_EmbeddedCollections *[]*ResourceCollection_EmbeddedResourceCollection `protobuf:"bytes,9,rep,name=embedded_collections,json=embeddedCollections"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Collection ID" sql:"pk"`     // @gotags: search:"Collection ID" sql:"pk"
+	Name        string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Collection Name" sql:"unique"` // @gotags: search:"Collection Name" sql:"unique"
+	Description string                 `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
+	CreatedBy   *SlimUser              `protobuf:"bytes,6,opt,name=created_by,json=createdBy" json:"created_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	UpdatedBy   *SlimUser              `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy" json:"updated_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	// `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
+	ResourceSelectors   []*ResourceSelector                              `protobuf:"bytes,8,rep,name=resource_selectors,json=resourceSelectors" json:"resource_selectors,omitempty"`
+	EmbeddedCollections []*ResourceCollection_EmbeddedResourceCollection `protobuf:"bytes,9,rep,name=embedded_collections,json=embeddedCollections" json:"embedded_collections,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ResourceCollection) Reset() {
@@ -109,255 +108,153 @@ func (x *ResourceCollection) ProtoReflect() protoreflect.Message {
 
 func (x *ResourceCollection) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ResourceCollection) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ResourceCollection) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ResourceCollection) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetCreatedBy() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_CreatedBy
+		return x.CreatedBy
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetUpdatedBy() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_UpdatedBy
+		return x.UpdatedBy
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetResourceSelectors() []*ResourceSelector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResourceSelectors) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *[]*ResourceSelector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ResourceSelectors
 	}
 	return nil
 }
 
 func (x *ResourceCollection) GetEmbeddedCollections() []*ResourceCollection_EmbeddedResourceCollection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_EmbeddedCollections) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *[]*ResourceCollection_EmbeddedResourceCollection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.EmbeddedCollections
 	}
 	return nil
 }
 
 func (x *ResourceCollection) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
+	x.Id = v
 }
 
 func (x *ResourceCollection) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	x.Name = v
 }
 
 func (x *ResourceCollection) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	x.Description = v
 }
 
 func (x *ResourceCollection) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
-	}
+	x.CreatedAt = v
 }
 
 func (x *ResourceCollection) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
-	}
+	x.LastUpdated = v
 }
 
 func (x *ResourceCollection) SetCreatedBy(v *SlimUser) {
-	x.xxx_hidden_CreatedBy = v
+	x.CreatedBy = v
 }
 
 func (x *ResourceCollection) SetUpdatedBy(v *SlimUser) {
-	x.xxx_hidden_UpdatedBy = v
+	x.UpdatedBy = v
 }
 
 func (x *ResourceCollection) SetResourceSelectors(v []*ResourceSelector) {
-	var sv *[]*ResourceSelector
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ResourceSelector{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	x.ResourceSelectors = v
 }
 
 func (x *ResourceCollection) SetEmbeddedCollections(v []*ResourceCollection_EmbeddedResourceCollection) {
-	var sv *[]*ResourceCollection_EmbeddedResourceCollection
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ResourceCollection_EmbeddedResourceCollection{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_EmbeddedCollections), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
-}
-
-func (x *ResourceCollection) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ResourceCollection) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ResourceCollection) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.EmbeddedCollections = v
 }
 
 func (x *ResourceCollection) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.CreatedAt != nil
 }
 
 func (x *ResourceCollection) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	return x.LastUpdated != nil
 }
 
 func (x *ResourceCollection) HasCreatedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedBy != nil
+	return x.CreatedBy != nil
 }
 
 func (x *ResourceCollection) HasUpdatedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpdatedBy != nil
-}
-
-func (x *ResourceCollection) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ResourceCollection) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ResourceCollection) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
+	return x.UpdatedBy != nil
 }
 
 func (x *ResourceCollection) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
+	x.CreatedAt = nil
 }
 
 func (x *ResourceCollection) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
+	x.LastUpdated = nil
 }
 
 func (x *ResourceCollection) ClearCreatedBy() {
-	x.xxx_hidden_CreatedBy = nil
+	x.CreatedBy = nil
 }
 
 func (x *ResourceCollection) ClearUpdatedBy() {
-	x.xxx_hidden_UpdatedBy = nil
+	x.UpdatedBy = nil
 }
 
 type ResourceCollection_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	Description *string
+	Id          string
+	Name        string
+	Description string
 	CreatedAt   *timestamppb.Timestamp
 	LastUpdated *timestamppb.Timestamp
 	CreatedBy   *SlimUser
@@ -371,48 +268,24 @@ func (b0 ResourceCollection_builder) Build() *ResourceCollection {
 	m0 := &ResourceCollection{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	x.xxx_hidden_CreatedBy = b.CreatedBy
-	x.xxx_hidden_UpdatedBy = b.UpdatedBy
-	if b.ResourceSelectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
-		x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
-	}
-	if b.EmbeddedCollections != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
-		x.xxx_hidden_EmbeddedCollections = &b.EmbeddedCollections
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Description = b.Description
+	x.CreatedAt = b.CreatedAt
+	x.LastUpdated = b.LastUpdated
+	x.CreatedBy = b.CreatedBy
+	x.UpdatedBy = b.UpdatedBy
+	x.ResourceSelectors = b.ResourceSelectors
+	x.EmbeddedCollections = b.EmbeddedCollections
 	return m0
 }
 
 type ResourceSelector struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Rules *[]*SelectorRule       `protobuf:"bytes,1,rep,name=rules"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// `rules` resolve as a conjunction (AND).
+	Rules         []*SelectorRule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResourceSelector) Reset() {
@@ -442,27 +315,13 @@ func (x *ResourceSelector) ProtoReflect() protoreflect.Message {
 
 func (x *ResourceSelector) GetRules() []*SelectorRule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*SelectorRule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Rules
 	}
 	return nil
 }
 
 func (x *ResourceSelector) SetRules(v []*SelectorRule) {
-	var sv *[]*SelectorRule
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SelectorRule{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Rules = v
 }
 
 type ResourceSelector_builder struct {
@@ -476,24 +335,28 @@ func (b0 ResourceSelector_builder) Build() *ResourceSelector {
 	m0 := &ResourceSelector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Rules != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Rules = &b.Rules
-	}
+	x.Rules = b.Rules
 	return m0
 }
 
 type SelectorRule struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FieldName *string                `protobuf:"bytes,1,opt,name=field_name,json=fieldName"`
-	xxx_hidden_Operator  BooleanOperator        `protobuf:"varint,2,opt,name=operator,enum=storage.BooleanOperator"`
-	xxx_hidden_Values    *[]*RuleValue          `protobuf:"bytes,3,rep,name=values"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// `field_name` can be one of the following:
+	// - Cluster
+	// - Cluster Label
+	// - Namespace
+	// - Namespace Label
+	// - Namespace Annotation
+	// - Deployment
+	// - Deployment Label
+	// - Deployment Annotation
+	FieldName string `protobuf:"bytes,1,opt,name=field_name,json=fieldName" json:"field_name,omitempty"`
+	// 'operator' only supports disjunction (OR) currently
+	Operator BooleanOperator `protobuf:"varint,2,opt,name=operator,enum=storage.BooleanOperator" json:"operator,omitempty"`
+	// `values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint.
+	Values        []*RuleValue `protobuf:"bytes,3,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SelectorRule) Reset() {
@@ -523,80 +386,35 @@ func (x *SelectorRule) ProtoReflect() protoreflect.Message {
 
 func (x *SelectorRule) GetFieldName() string {
 	if x != nil {
-		if x.xxx_hidden_FieldName != nil {
-			return *x.xxx_hidden_FieldName
-		}
-		return ""
+		return x.FieldName
 	}
 	return ""
 }
 
 func (x *SelectorRule) GetOperator() BooleanOperator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Operator
-		}
+		return x.Operator
 	}
 	return BooleanOperator_OR
 }
 
 func (x *SelectorRule) GetValues() []*RuleValue {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Values) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*RuleValue
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Values
 	}
 	return nil
 }
 
 func (x *SelectorRule) SetFieldName(v string) {
-	x.xxx_hidden_FieldName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.FieldName = v
 }
 
 func (x *SelectorRule) SetOperator(v BooleanOperator) {
-	x.xxx_hidden_Operator = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Operator = v
 }
 
 func (x *SelectorRule) SetValues(v []*RuleValue) {
-	var sv *[]*RuleValue
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*RuleValue{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *SelectorRule) HasFieldName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SelectorRule) HasOperator() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SelectorRule) ClearFieldName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_FieldName = nil
-}
-
-func (x *SelectorRule) ClearOperator() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Operator = BooleanOperator_OR
+	x.Values = v
 }
 
 type SelectorRule_builder struct {
@@ -611,9 +429,9 @@ type SelectorRule_builder struct {
 	// - Deployment
 	// - Deployment Label
 	// - Deployment Annotation
-	FieldName *string
+	FieldName string
 	// 'operator' only supports disjunction (OR) currently
-	Operator *BooleanOperator
+	Operator BooleanOperator
 	// `values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint.
 	Values []*RuleValue
 }
@@ -622,29 +440,18 @@ func (b0 SelectorRule_builder) Build() *SelectorRule {
 	m0 := &SelectorRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.FieldName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_FieldName = b.FieldName
-	}
-	if b.Operator != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Operator = *b.Operator
-	}
-	if b.Values != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Values = &b.Values
-	}
+	x.FieldName = b.FieldName
+	x.Operator = b.Operator
+	x.Values = b.Values
 	return m0
 }
 
 type RuleValue struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,1,opt,name=value"`
-	xxx_hidden_MatchType   MatchType              `protobuf:"varint,2,opt,name=match_type,json=matchType,enum=storage.MatchType"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+	MatchType     MatchType              `protobuf:"varint,2,opt,name=match_type,json=matchType,enum=storage.MatchType" json:"match_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RuleValue) Reset() {
@@ -674,86 +481,48 @@ func (x *RuleValue) ProtoReflect() protoreflect.Message {
 
 func (x *RuleValue) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *RuleValue) GetMatchType() MatchType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_MatchType
-		}
+		return x.MatchType
 	}
 	return MatchType_EXACT
 }
 
 func (x *RuleValue) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Value = v
 }
 
 func (x *RuleValue) SetMatchType(v MatchType) {
-	x.xxx_hidden_MatchType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *RuleValue) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *RuleValue) HasMatchType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *RuleValue) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *RuleValue) ClearMatchType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_MatchType = MatchType_EXACT
+	x.MatchType = v
 }
 
 type RuleValue_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Value     *string
-	MatchType *MatchType
+	Value     string
+	MatchType MatchType
 }
 
 func (b0 RuleValue_builder) Build() *RuleValue {
 	m0 := &RuleValue{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.MatchType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_MatchType = *b.MatchType
-	}
+	x.Value = b.Value
+	x.MatchType = b.MatchType
 	return m0
 }
 
 type ResourceCollection_EmbeddedResourceCollection struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// 'id' is searchable to force a separate table
+	Id            string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"` // @gotags: search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResourceCollection_EmbeddedResourceCollection) Reset() {
@@ -783,46 +552,27 @@ func (x *ResourceCollection_EmbeddedResourceCollection) ProtoReflect() protorefl
 
 func (x *ResourceCollection_EmbeddedResourceCollection) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ResourceCollection_EmbeddedResourceCollection) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ResourceCollection_EmbeddedResourceCollection) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ResourceCollection_EmbeddedResourceCollection) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	x.Id = v
 }
 
 type ResourceCollection_EmbeddedResourceCollection_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// 'id' is searchable to force a separate table
-	Id *string
+	Id string
 }
 
 func (b0 ResourceCollection_EmbeddedResourceCollection_builder) Build() *ResourceCollection_EmbeddedResourceCollection {
 	m0 := &ResourceCollection_EmbeddedResourceCollection{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	return m0
 }
 
@@ -859,8 +609,8 @@ const file_storage_resource_collection_proto_rawDesc = "" +
 	"match_type\x18\x02 \x01(\x0e2\x12.storage.MatchTypeR\tmatchType*!\n" +
 	"\tMatchType\x12\t\n" +
 	"\x05EXACT\x10\x00\x12\t\n" +
-	"\x05REGEX\x10\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05REGEX\x10\x01B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_resource_collection_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_resource_collection_proto_msgTypes = make([]protoimpl.MessageInfo, 5)

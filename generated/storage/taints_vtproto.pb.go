@@ -8,6 +8,7 @@ func (m *Taint) SizeVT() int                   { return proto.Size(m) }
 func (m *Taint) CloneVT() *Taint               { return proto.Clone(m).(*Taint) }
 func (m *Taint) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Taint) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Taint) EqualVT(n *Taint) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Taint) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *Toleration) SizeVT() int                   { return proto.Size(m) }
 func (m *Toleration) CloneVT() *Toleration          { return proto.Clone(m).(*Toleration) }
 func (m *Toleration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Toleration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Toleration) EqualVT(n *Toleration) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Toleration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

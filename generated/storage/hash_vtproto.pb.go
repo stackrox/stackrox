@@ -8,6 +8,7 @@ func (m *Hash) SizeVT() int                   { return proto.Size(m) }
 func (m *Hash) CloneVT() *Hash                { return proto.Clone(m).(*Hash) }
 func (m *Hash) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Hash) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Hash) EqualVT(n *Hash) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Hash) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

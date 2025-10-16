@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/traits.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -180,14 +182,12 @@ func (x Traits_Origin) Number() protoreflect.EnumNumber {
 }
 
 type Traits struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_MutabilityMode Traits_MutabilityMode  `protobuf:"varint,1,opt,name=mutability_mode,json=mutabilityMode,enum=storage.Traits_MutabilityMode"`
-	xxx_hidden_Visibility     Traits_Visibility      `protobuf:"varint,2,opt,name=visibility,enum=storage.Traits_Visibility"`
-	xxx_hidden_Origin         Traits_Origin          `protobuf:"varint,3,opt,name=origin,enum=storage.Traits_Origin"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	MutabilityMode Traits_MutabilityMode  `protobuf:"varint,1,opt,name=mutability_mode,json=mutabilityMode,enum=storage.Traits_MutabilityMode" json:"mutability_mode,omitempty"`
+	Visibility     Traits_Visibility      `protobuf:"varint,2,opt,name=visibility,enum=storage.Traits_Visibility" json:"visibility,omitempty"`
+	Origin         Traits_Origin          `protobuf:"varint,3,opt,name=origin,enum=storage.Traits_Origin" json:"origin,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Traits) Reset() {
@@ -217,106 +217,52 @@ func (x *Traits) ProtoReflect() protoreflect.Message {
 
 func (x *Traits) GetMutabilityMode() Traits_MutabilityMode {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_MutabilityMode
-		}
+		return x.MutabilityMode
 	}
 	return Traits_ALLOW_MUTATE
 }
 
 func (x *Traits) GetVisibility() Traits_Visibility {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Visibility
-		}
+		return x.Visibility
 	}
 	return Traits_VISIBLE
 }
 
 func (x *Traits) GetOrigin() Traits_Origin {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Origin
-		}
+		return x.Origin
 	}
 	return Traits_IMPERATIVE
 }
 
 func (x *Traits) SetMutabilityMode(v Traits_MutabilityMode) {
-	x.xxx_hidden_MutabilityMode = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.MutabilityMode = v
 }
 
 func (x *Traits) SetVisibility(v Traits_Visibility) {
-	x.xxx_hidden_Visibility = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Visibility = v
 }
 
 func (x *Traits) SetOrigin(v Traits_Origin) {
-	x.xxx_hidden_Origin = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *Traits) HasMutabilityMode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Traits) HasVisibility() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Traits) HasOrigin() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Traits) ClearMutabilityMode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_MutabilityMode = Traits_ALLOW_MUTATE
-}
-
-func (x *Traits) ClearVisibility() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Visibility = Traits_VISIBLE
-}
-
-func (x *Traits) ClearOrigin() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Origin = Traits_IMPERATIVE
+	x.Origin = v
 }
 
 type Traits_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	MutabilityMode *Traits_MutabilityMode
-	Visibility     *Traits_Visibility
-	Origin         *Traits_Origin
+	MutabilityMode Traits_MutabilityMode
+	Visibility     Traits_Visibility
+	Origin         Traits_Origin
 }
 
 func (b0 Traits_builder) Build() *Traits {
 	m0 := &Traits{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.MutabilityMode != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_MutabilityMode = *b.MutabilityMode
-	}
-	if b.Visibility != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Visibility = *b.Visibility
-	}
-	if b.Origin != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Origin = *b.Origin
-	}
+	x.MutabilityMode = b.MutabilityMode
+	x.Visibility = b.Visibility
+	x.Origin = b.Origin
 	return m0
 }
 
@@ -344,8 +290,8 @@ const file_storage_traits_proto_rawDesc = "" +
 	"IMPERATIVE\x10\x00\x12\v\n" +
 	"\aDEFAULT\x10\x01\x12\x0f\n" +
 	"\vDECLARATIVE\x10\x02\x12\x18\n" +
-	"\x14DECLARATIVE_ORPHANED\x10\x03B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x14DECLARATIVE_ORPHANED\x10\x03B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_traits_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_storage_traits_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

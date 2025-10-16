@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/search_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -343,15 +345,11 @@ func (x SearchDataType) Number() protoreflect.EnumNumber {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 type RawQuery struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query      *string                `protobuf:"bytes,1,opt,name=query"`
-	xxx_hidden_Pagination *Pagination            `protobuf:"bytes,2,opt,name=pagination"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RawQuery) Reset() {
@@ -381,70 +379,41 @@ func (x *RawQuery) ProtoReflect() protoreflect.Message {
 
 func (x *RawQuery) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *RawQuery) GetPagination() *Pagination {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *Pagination
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Pagination
 	}
 	return nil
 }
 
 func (x *RawQuery) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Query = v
 }
 
 func (x *RawQuery) SetPagination(v *Pagination) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *RawQuery) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Pagination = v
 }
 
 func (x *RawQuery) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *RawQuery) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Query = nil
+	return x.Pagination != nil
 }
 
 func (x *RawQuery) ClearPagination() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*Pagination)(nil))
+	x.Pagination = nil
 }
 
 type RawQuery_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Query      *string
+	Query      string
 	Pagination *Pagination
 }
 
@@ -452,27 +421,19 @@ func (b0 RawQuery_builder) Build() *RawQuery {
 	m0 := &RawQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Query = b.Query
-	}
-	if b.Pagination != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Pagination = b.Pagination
-	}
+	x.Query = b.Query
+	x.Pagination = b.Pagination
 	return m0
 }
 
 // RawSearchRequest is used to scope a given search in a specific category.
 // The search categories could be deployments, policies, images etc.
 type RawSearchRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
-	xxx_hidden_Categories  []SearchCategory       `protobuf:"varint,2,rep,packed,name=categories,enum=v1.SearchCategory"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	Categories    []SearchCategory       `protobuf:"varint,2,rep,packed,name=categories,enum=v1.SearchCategory" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RawSearchRequest) Reset() {
@@ -502,46 +463,30 @@ func (x *RawSearchRequest) ProtoReflect() protoreflect.Message {
 
 func (x *RawSearchRequest) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *RawSearchRequest) GetCategories() []SearchCategory {
 	if x != nil {
-		return x.xxx_hidden_Categories
+		return x.Categories
 	}
 	return nil
 }
 
 func (x *RawSearchRequest) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Query = v
 }
 
 func (x *RawSearchRequest) SetCategories(v []SearchCategory) {
-	x.xxx_hidden_Categories = v
-}
-
-func (x *RawSearchRequest) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *RawSearchRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Query = nil
+	x.Categories = v
 }
 
 type RawSearchRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Query      *string
+	Query      string
 	Categories []SearchCategory
 }
 
@@ -549,26 +494,22 @@ func (b0 RawSearchRequest_builder) Build() *RawSearchRequest {
 	m0 := &RawSearchRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Query = b.Query
-	}
-	x.xxx_hidden_Categories = b.Categories
+	x.Query = b.Query
+	x.Categories = b.Categories
 	return m0
 }
 
 type QuerySortOption struct {
-	state                     protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Field          *string                          `protobuf:"bytes,1,opt,name=field"`
-	xxx_hidden_Reversed       bool                             `protobuf:"varint,2,opt,name=reversed"`
-	xxx_hidden_SearchAfterOpt isQuerySortOption_SearchAfterOpt `protobuf_oneof:"search_after_opt"`
-	xxx_hidden_AggregateBy    *AggregateBy                     `protobuf:"bytes,4,opt,name=aggregate_by,json=aggregateBy"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	Field    string                 `protobuf:"bytes,1,opt,name=field" json:"field,omitempty"`
+	Reversed bool                   `protobuf:"varint,2,opt,name=reversed" json:"reversed,omitempty"`
+	// Types that are valid to be assigned to SearchAfterOpt:
+	//
+	//	*QuerySortOption_SearchAfter
+	SearchAfterOpt isQuerySortOption_SearchAfterOpt `protobuf_oneof:"search_after_opt"`
+	AggregateBy    *AggregateBy                     `protobuf:"bytes,4,opt,name=aggregate_by,json=aggregateBy" json:"aggregate_by,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *QuerySortOption) Reset() {
@@ -598,24 +539,28 @@ func (x *QuerySortOption) ProtoReflect() protoreflect.Message {
 
 func (x *QuerySortOption) GetField() string {
 	if x != nil {
-		if x.xxx_hidden_Field != nil {
-			return *x.xxx_hidden_Field
-		}
-		return ""
+		return x.Field
 	}
 	return ""
 }
 
 func (x *QuerySortOption) GetReversed() bool {
 	if x != nil {
-		return x.xxx_hidden_Reversed
+		return x.Reversed
 	}
 	return false
 }
 
+func (x *QuerySortOption) GetSearchAfterOpt() isQuerySortOption_SearchAfterOpt {
+	if x != nil {
+		return x.SearchAfterOpt
+	}
+	return nil
+}
+
 func (x *QuerySortOption) GetSearchAfter() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_SearchAfterOpt.(*querySortOption_SearchAfter); ok {
+		if x, ok := x.SearchAfterOpt.(*QuerySortOption_SearchAfter); ok {
 			return x.SearchAfter
 		}
 	}
@@ -624,67 +569,39 @@ func (x *QuerySortOption) GetSearchAfter() string {
 
 func (x *QuerySortOption) GetAggregateBy() *AggregateBy {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AggregateBy) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *AggregateBy
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AggregateBy), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.AggregateBy
 	}
 	return nil
 }
 
 func (x *QuerySortOption) SetField(v string) {
-	x.xxx_hidden_Field = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Field = v
 }
 
 func (x *QuerySortOption) SetReversed(v bool) {
-	x.xxx_hidden_Reversed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Reversed = v
 }
 
 func (x *QuerySortOption) SetSearchAfter(v string) {
-	x.xxx_hidden_SearchAfterOpt = &querySortOption_SearchAfter{v}
+	x.SearchAfterOpt = &QuerySortOption_SearchAfter{v}
 }
 
 func (x *QuerySortOption) SetAggregateBy(v *AggregateBy) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-	}
-}
-
-func (x *QuerySortOption) HasField() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *QuerySortOption) HasReversed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.AggregateBy = v
 }
 
 func (x *QuerySortOption) HasSearchAfterOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SearchAfterOpt != nil
+	return x.SearchAfterOpt != nil
 }
 
 func (x *QuerySortOption) HasSearchAfter() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_SearchAfterOpt.(*querySortOption_SearchAfter)
+	_, ok := x.SearchAfterOpt.(*QuerySortOption_SearchAfter)
 	return ok
 }
 
@@ -692,32 +609,21 @@ func (x *QuerySortOption) HasAggregateBy() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *QuerySortOption) ClearField() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Field = nil
-}
-
-func (x *QuerySortOption) ClearReversed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Reversed = false
+	return x.AggregateBy != nil
 }
 
 func (x *QuerySortOption) ClearSearchAfterOpt() {
-	x.xxx_hidden_SearchAfterOpt = nil
+	x.SearchAfterOpt = nil
 }
 
 func (x *QuerySortOption) ClearSearchAfter() {
-	if _, ok := x.xxx_hidden_SearchAfterOpt.(*querySortOption_SearchAfter); ok {
-		x.xxx_hidden_SearchAfterOpt = nil
+	if _, ok := x.SearchAfterOpt.(*QuerySortOption_SearchAfter); ok {
+		x.SearchAfterOpt = nil
 	}
 }
 
 func (x *QuerySortOption) ClearAggregateBy() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_AggregateBy, (*AggregateBy)(nil))
+	x.AggregateBy = nil
 }
 
 const QuerySortOption_SearchAfterOpt_not_set_case case_QuerySortOption_SearchAfterOpt = 0
@@ -727,8 +633,8 @@ func (x *QuerySortOption) WhichSearchAfterOpt() case_QuerySortOption_SearchAfter
 	if x == nil {
 		return QuerySortOption_SearchAfterOpt_not_set_case
 	}
-	switch x.xxx_hidden_SearchAfterOpt.(type) {
-	case *querySortOption_SearchAfter:
+	switch x.SearchAfterOpt.(type) {
+	case *QuerySortOption_SearchAfter:
 		return QuerySortOption_SearchAfter_case
 	default:
 		return QuerySortOption_SearchAfterOpt_not_set_case
@@ -738,14 +644,14 @@ func (x *QuerySortOption) WhichSearchAfterOpt() case_QuerySortOption_SearchAfter
 type QuerySortOption_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Field    *string
-	Reversed *bool
-	// Fields of oneof xxx_hidden_SearchAfterOpt:
+	Field    string
+	Reversed bool
+	// Fields of oneof SearchAfterOpt:
 	// search_after is alternative to offset for pagination.
 	// Each value in search_after corresponds to a field. Only results following a record specified by a combination
 	// of field+search_after values in specified sorting order will be returned.
 	SearchAfter *string
-	// -- end of xxx_hidden_SearchAfterOpt
+	// -- end of SearchAfterOpt
 	AggregateBy *AggregateBy
 }
 
@@ -753,21 +659,12 @@ func (b0 QuerySortOption_builder) Build() *QuerySortOption {
 	m0 := &QuerySortOption{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Field != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Field = b.Field
-	}
-	if b.Reversed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Reversed = *b.Reversed
-	}
+	x.Field = b.Field
+	x.Reversed = b.Reversed
 	if b.SearchAfter != nil {
-		x.xxx_hidden_SearchAfterOpt = &querySortOption_SearchAfter{*b.SearchAfter}
+		x.SearchAfterOpt = &QuerySortOption_SearchAfter{*b.SearchAfter}
 	}
-	if b.AggregateBy != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_AggregateBy = b.AggregateBy
-	}
+	x.AggregateBy = b.AggregateBy
 	return m0
 }
 
@@ -785,24 +682,22 @@ type isQuerySortOption_SearchAfterOpt interface {
 	isQuerySortOption_SearchAfterOpt()
 }
 
-type querySortOption_SearchAfter struct {
+type QuerySortOption_SearchAfter struct {
 	// search_after is alternative to offset for pagination.
 	// Each value in search_after corresponds to a field. Only results following a record specified by a combination
 	// of field+search_after values in specified sorting order will be returned.
 	SearchAfter string `protobuf:"bytes,3,opt,name=search_after,json=searchAfter,oneof"`
 }
 
-func (*querySortOption_SearchAfter) isQuerySortOption_SearchAfterOpt() {}
+func (*QuerySortOption_SearchAfter) isQuerySortOption_SearchAfterOpt() {}
 
 type QueryField struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name          *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_AggregateFunc *string                `protobuf:"bytes,2,opt,name=aggregate_func,json=aggregateFunc"`
-	xxx_hidden_Distinct      bool                   `protobuf:"varint,3,opt,name=distinct"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	AggregateFunc string                 `protobuf:"bytes,2,opt,name=aggregate_func,json=aggregateFunc" json:"aggregate_func,omitempty"`
+	Distinct      bool                   `protobuf:"varint,3,opt,name=distinct" json:"distinct,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QueryField) Reset() {
@@ -832,119 +727,61 @@ func (x *QueryField) ProtoReflect() protoreflect.Message {
 
 func (x *QueryField) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *QueryField) GetAggregateFunc() string {
 	if x != nil {
-		if x.xxx_hidden_AggregateFunc != nil {
-			return *x.xxx_hidden_AggregateFunc
-		}
-		return ""
+		return x.AggregateFunc
 	}
 	return ""
 }
 
 func (x *QueryField) GetDistinct() bool {
 	if x != nil {
-		return x.xxx_hidden_Distinct
+		return x.Distinct
 	}
 	return false
 }
 
 func (x *QueryField) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Name = v
 }
 
 func (x *QueryField) SetAggregateFunc(v string) {
-	x.xxx_hidden_AggregateFunc = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.AggregateFunc = v
 }
 
 func (x *QueryField) SetDistinct(v bool) {
-	x.xxx_hidden_Distinct = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *QueryField) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *QueryField) HasAggregateFunc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *QueryField) HasDistinct() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *QueryField) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *QueryField) ClearAggregateFunc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_AggregateFunc = nil
-}
-
-func (x *QueryField) ClearDistinct() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Distinct = false
+	x.Distinct = v
 }
 
 type QueryField_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name          *string
-	AggregateFunc *string
-	Distinct      *bool
+	Name          string
+	AggregateFunc string
+	Distinct      bool
 }
 
 func (b0 QueryField_builder) Build() *QueryField {
 	m0 := &QueryField{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.AggregateFunc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_AggregateFunc = b.AggregateFunc
-	}
-	if b.Distinct != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Distinct = *b.Distinct
-	}
+	x.Name = b.Name
+	x.AggregateFunc = b.AggregateFunc
+	x.Distinct = b.Distinct
 	return m0
 }
 
 type QuerySelectFilter struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name  *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Query *Query                 `protobuf:"bytes,2,opt,name=query"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Query         *Query                 `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuerySelectFilter) Reset() {
@@ -974,70 +811,41 @@ func (x *QuerySelectFilter) ProtoReflect() protoreflect.Message {
 
 func (x *QuerySelectFilter) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *QuerySelectFilter) GetQuery() *Query {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *Query
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Query
 	}
 	return nil
 }
 
 func (x *QuerySelectFilter) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *QuerySelectFilter) SetQuery(v *Query) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *QuerySelectFilter) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Query = v
 }
 
 func (x *QuerySelectFilter) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *QuerySelectFilter) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
+	return x.Query != nil
 }
 
 func (x *QuerySelectFilter) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*Query)(nil))
+	x.Query = nil
 }
 
 type QuerySelectFilter_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name  *string
+	Name  string
 	Query *Query
 }
 
@@ -1045,27 +853,17 @@ func (b0 QuerySelectFilter_builder) Build() *QuerySelectFilter {
 	m0 := &QuerySelectFilter{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Name = b.Name
+	x.Query = b.Query
 	return m0
 }
 
 type QuerySelect struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Field  *QueryField            `protobuf:"bytes,1,opt,name=field"`
-	xxx_hidden_Filter *QuerySelectFilter     `protobuf:"bytes,2,opt,name=filter"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Field         *QueryField            `protobuf:"bytes,1,opt,name=field" json:"field,omitempty"`
+	Filter        *QuerySelectFilter     `protobuf:"bytes,2,opt,name=filter" json:"filter,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuerySelect) Reset() {
@@ -1095,72 +893,46 @@ func (x *QuerySelect) ProtoReflect() protoreflect.Message {
 
 func (x *QuerySelect) GetField() *QueryField {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Field) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *QueryField
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Field), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Field
 	}
 	return nil
 }
 
 func (x *QuerySelect) GetFilter() *QuerySelectFilter {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Filter) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *QuerySelectFilter
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Filter), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Filter
 	}
 	return nil
 }
 
 func (x *QuerySelect) SetField(v *QueryField) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Field, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Field = v
 }
 
 func (x *QuerySelect) SetFilter(v *QuerySelectFilter) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.Filter = v
 }
 
 func (x *QuerySelect) HasField() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Field != nil
 }
 
 func (x *QuerySelect) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Filter != nil
 }
 
 func (x *QuerySelect) ClearField() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Field, (*QueryField)(nil))
+	x.Field = nil
 }
 
 func (x *QuerySelect) ClearFilter() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Filter, (*QuerySelectFilter)(nil))
+	x.Filter = nil
 }
 
 type QuerySelect_builder struct {
@@ -1174,22 +946,16 @@ func (b0 QuerySelect_builder) Build() *QuerySelect {
 	m0 := &QuerySelect{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Field != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Field = b.Field
-	}
-	if b.Filter != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Filter = b.Filter
-	}
+	x.Field = b.Field
+	x.Filter = b.Filter
 	return m0
 }
 
 type QueryGroupBy struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Fields []string               `protobuf:"bytes,1,rep,name=fields"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Fields        []string               `protobuf:"bytes,1,rep,name=fields" json:"fields,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QueryGroupBy) Reset() {
@@ -1219,13 +985,13 @@ func (x *QueryGroupBy) ProtoReflect() protoreflect.Message {
 
 func (x *QueryGroupBy) GetFields() []string {
 	if x != nil {
-		return x.xxx_hidden_Fields
+		return x.Fields
 	}
 	return nil
 }
 
 func (x *QueryGroupBy) SetFields(v []string) {
-	x.xxx_hidden_Fields = v
+	x.Fields = v
 }
 
 type QueryGroupBy_builder struct {
@@ -1238,21 +1004,17 @@ func (b0 QueryGroupBy_builder) Build() *QueryGroupBy {
 	m0 := &QueryGroupBy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Fields = b.Fields
+	x.Fields = b.Fields
 	return m0
 }
 
 type QueryPagination struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Limit       int32                  `protobuf:"varint,1,opt,name=limit"`
-	xxx_hidden_Offset      int32                  `protobuf:"varint,2,opt,name=offset"`
-	xxx_hidden_SortOptions *[]*QuerySortOption    `protobuf:"bytes,3,rep,name=sort_options,json=sortOptions"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset" json:"offset,omitempty"`
+	SortOptions   []*QuerySortOption     `protobuf:"bytes,3,rep,name=sort_options,json=sortOptions" json:"sort_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QueryPagination) Reset() {
@@ -1282,82 +1044,42 @@ func (x *QueryPagination) ProtoReflect() protoreflect.Message {
 
 func (x *QueryPagination) GetLimit() int32 {
 	if x != nil {
-		return x.xxx_hidden_Limit
+		return x.Limit
 	}
 	return 0
 }
 
 func (x *QueryPagination) GetOffset() int32 {
 	if x != nil {
-		return x.xxx_hidden_Offset
+		return x.Offset
 	}
 	return 0
 }
 
 func (x *QueryPagination) GetSortOptions() []*QuerySortOption {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOptions) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*QuerySortOption
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.SortOptions
 	}
 	return nil
 }
 
 func (x *QueryPagination) SetLimit(v int32) {
-	x.xxx_hidden_Limit = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Limit = v
 }
 
 func (x *QueryPagination) SetOffset(v int32) {
-	x.xxx_hidden_Offset = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Offset = v
 }
 
 func (x *QueryPagination) SetSortOptions(v []*QuerySortOption) {
-	var sv *[]*QuerySortOption
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*QuerySortOption{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *QueryPagination) HasLimit() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *QueryPagination) HasOffset() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *QueryPagination) ClearLimit() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Limit = 0
-}
-
-func (x *QueryPagination) ClearOffset() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Offset = 0
+	x.SortOptions = v
 }
 
 type QueryPagination_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Limit       *int32
-	Offset      *int32
+	Limit       int32
+	Offset      int32
 	SortOptions []*QuerySortOption
 }
 
@@ -1365,31 +1087,18 @@ func (b0 QueryPagination_builder) Build() *QueryPagination {
 	m0 := &QueryPagination{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Limit != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Limit = *b.Limit
-	}
-	if b.Offset != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Offset = *b.Offset
-	}
-	if b.SortOptions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_SortOptions = &b.SortOptions
-	}
+	x.Limit = b.Limit
+	x.Offset = b.Offset
+	x.SortOptions = b.SortOptions
 	return m0
 }
 
 type BooleanQuery struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Must    *ConjunctionQuery      `protobuf:"bytes,1,opt,name=must"`
-	xxx_hidden_MustNot *DisjunctionQuery      `protobuf:"bytes,2,opt,name=must_not,json=mustNot"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Must          *ConjunctionQuery      `protobuf:"bytes,1,opt,name=must" json:"must,omitempty"`
+	MustNot       *DisjunctionQuery      `protobuf:"bytes,2,opt,name=must_not,json=mustNot" json:"must_not,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BooleanQuery) Reset() {
@@ -1419,72 +1128,46 @@ func (x *BooleanQuery) ProtoReflect() protoreflect.Message {
 
 func (x *BooleanQuery) GetMust() *ConjunctionQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Must) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *ConjunctionQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Must), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Must
 	}
 	return nil
 }
 
 func (x *BooleanQuery) GetMustNot() *DisjunctionQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MustNot) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *DisjunctionQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MustNot), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.MustNot
 	}
 	return nil
 }
 
 func (x *BooleanQuery) SetMust(v *ConjunctionQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Must, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Must = v
 }
 
 func (x *BooleanQuery) SetMustNot(v *DisjunctionQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MustNot, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.MustNot = v
 }
 
 func (x *BooleanQuery) HasMust() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Must != nil
 }
 
 func (x *BooleanQuery) HasMustNot() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.MustNot != nil
 }
 
 func (x *BooleanQuery) ClearMust() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Must, (*ConjunctionQuery)(nil))
+	x.Must = nil
 }
 
 func (x *BooleanQuery) ClearMustNot() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MustNot, (*DisjunctionQuery)(nil))
+	x.MustNot = nil
 }
 
 type BooleanQuery_builder struct {
@@ -1498,30 +1181,26 @@ func (b0 BooleanQuery_builder) Build() *BooleanQuery {
 	m0 := &BooleanQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Must != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Must = b.Must
-	}
-	if b.MustNot != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_MustNot = b.MustNot
-	}
+	x.Must = b.Must
+	x.MustNot = b.MustNot
 	return m0
 }
 
 // next tag: 9
 type Query struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query      isQuery_Query          `protobuf_oneof:"query"`
-	xxx_hidden_Selects    *[]*QuerySelect        `protobuf:"bytes,8,rep,name=selects"`
-	xxx_hidden_GroupBy    *QueryGroupBy          `protobuf:"bytes,7,opt,name=group_by,json=groupBy"`
-	xxx_hidden_Pagination *QueryPagination       `protobuf:"bytes,4,opt,name=pagination"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Query:
+	//
+	//	*Query_Conjunction
+	//	*Query_Disjunction
+	//	*Query_BaseQuery
+	//	*Query_BooleanQuery
+	Query         isQuery_Query    `protobuf_oneof:"query"`
+	Selects       []*QuerySelect   `protobuf:"bytes,8,rep,name=selects" json:"selects,omitempty"`
+	GroupBy       *QueryGroupBy    `protobuf:"bytes,7,opt,name=group_by,json=groupBy" json:"group_by,omitempty"`
+	Pagination    *QueryPagination `protobuf:"bytes,4,opt,name=pagination" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Query) Reset() {
@@ -1549,9 +1228,16 @@ func (x *Query) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *Query) GetQuery() isQuery_Query {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 func (x *Query) GetConjunction() *ConjunctionQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*query_Conjunction); ok {
+		if x, ok := x.Query.(*Query_Conjunction); ok {
 			return x.Conjunction
 		}
 	}
@@ -1560,7 +1246,7 @@ func (x *Query) GetConjunction() *ConjunctionQuery {
 
 func (x *Query) GetDisjunction() *DisjunctionQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*query_Disjunction); ok {
+		if x, ok := x.Query.(*Query_Disjunction); ok {
 			return x.Disjunction
 		}
 	}
@@ -1569,7 +1255,7 @@ func (x *Query) GetDisjunction() *DisjunctionQuery {
 
 func (x *Query) GetBaseQuery() *BaseQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*query_BaseQuery); ok {
+		if x, ok := x.Query.(*Query_BaseQuery); ok {
 			return x.BaseQuery
 		}
 	}
@@ -1578,7 +1264,7 @@ func (x *Query) GetBaseQuery() *BaseQuery {
 
 func (x *Query) GetBooleanQuery() *BooleanQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*query_BooleanQuery); ok {
+		if x, ok := x.Query.(*Query_BooleanQuery); ok {
 			return x.BooleanQuery
 		}
 	}
@@ -1587,119 +1273,81 @@ func (x *Query) GetBooleanQuery() *BooleanQuery {
 
 func (x *Query) GetSelects() []*QuerySelect {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Selects) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *[]*QuerySelect
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Selects
 	}
 	return nil
 }
 
 func (x *Query) GetGroupBy() *QueryGroupBy {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_GroupBy) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *QueryGroupBy
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_GroupBy), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.GroupBy
 	}
 	return nil
 }
 
 func (x *Query) GetPagination() *QueryPagination {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Pagination) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *QueryPagination
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Pagination), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Pagination
 	}
 	return nil
 }
 
 func (x *Query) SetConjunction(v *ConjunctionQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &query_Conjunction{v}
+	x.Query = &Query_Conjunction{v}
 }
 
 func (x *Query) SetDisjunction(v *DisjunctionQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &query_Disjunction{v}
+	x.Query = &Query_Disjunction{v}
 }
 
 func (x *Query) SetBaseQuery(v *BaseQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &query_BaseQuery{v}
+	x.Query = &Query_BaseQuery{v}
 }
 
 func (x *Query) SetBooleanQuery(v *BooleanQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &query_BooleanQuery{v}
+	x.Query = &Query_BooleanQuery{v}
 }
 
 func (x *Query) SetSelects(v []*QuerySelect) {
-	var sv *[]*QuerySelect
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*QuerySelect{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Selects), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Selects = v
 }
 
 func (x *Query) SetGroupBy(v *QueryGroupBy) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_GroupBy, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
-	}
+	x.GroupBy = v
 }
 
 func (x *Query) SetPagination(v *QueryPagination) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-	}
+	x.Pagination = v
 }
 
 func (x *Query) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Query != nil
+	return x.Query != nil
 }
 
 func (x *Query) HasConjunction() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*query_Conjunction)
+	_, ok := x.Query.(*Query_Conjunction)
 	return ok
 }
 
@@ -1707,7 +1355,7 @@ func (x *Query) HasDisjunction() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*query_Disjunction)
+	_, ok := x.Query.(*Query_Disjunction)
 	return ok
 }
 
@@ -1715,7 +1363,7 @@ func (x *Query) HasBaseQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*query_BaseQuery)
+	_, ok := x.Query.(*Query_BaseQuery)
 	return ok
 }
 
@@ -1723,7 +1371,7 @@ func (x *Query) HasBooleanQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*query_BooleanQuery)
+	_, ok := x.Query.(*Query_BooleanQuery)
 	return ok
 }
 
@@ -1731,52 +1379,50 @@ func (x *Query) HasGroupBy() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.GroupBy != nil
 }
 
 func (x *Query) HasPagination() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.Pagination != nil
 }
 
 func (x *Query) ClearQuery() {
-	x.xxx_hidden_Query = nil
+	x.Query = nil
 }
 
 func (x *Query) ClearConjunction() {
-	if _, ok := x.xxx_hidden_Query.(*query_Conjunction); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*Query_Conjunction); ok {
+		x.Query = nil
 	}
 }
 
 func (x *Query) ClearDisjunction() {
-	if _, ok := x.xxx_hidden_Query.(*query_Disjunction); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*Query_Disjunction); ok {
+		x.Query = nil
 	}
 }
 
 func (x *Query) ClearBaseQuery() {
-	if _, ok := x.xxx_hidden_Query.(*query_BaseQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*Query_BaseQuery); ok {
+		x.Query = nil
 	}
 }
 
 func (x *Query) ClearBooleanQuery() {
-	if _, ok := x.xxx_hidden_Query.(*query_BooleanQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*Query_BooleanQuery); ok {
+		x.Query = nil
 	}
 }
 
 func (x *Query) ClearGroupBy() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_GroupBy, (*QueryGroupBy)(nil))
+	x.GroupBy = nil
 }
 
 func (x *Query) ClearPagination() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Pagination, (*QueryPagination)(nil))
+	x.Pagination = nil
 }
 
 const Query_Query_not_set_case case_Query_Query = 0
@@ -1789,14 +1435,14 @@ func (x *Query) WhichQuery() case_Query_Query {
 	if x == nil {
 		return Query_Query_not_set_case
 	}
-	switch x.xxx_hidden_Query.(type) {
-	case *query_Conjunction:
+	switch x.Query.(type) {
+	case *Query_Conjunction:
 		return Query_Conjunction_case
-	case *query_Disjunction:
+	case *Query_Disjunction:
 		return Query_Disjunction_case
-	case *query_BaseQuery:
+	case *Query_BaseQuery:
 		return Query_BaseQuery_case
-	case *query_BooleanQuery:
+	case *Query_BooleanQuery:
 		return Query_BooleanQuery_case
 	default:
 		return Query_Query_not_set_case
@@ -1806,12 +1452,12 @@ func (x *Query) WhichQuery() case_Query_Query {
 type Query_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Query:
+	// Fields of oneof Query:
 	Conjunction  *ConjunctionQuery
 	Disjunction  *DisjunctionQuery
 	BaseQuery    *BaseQuery
 	BooleanQuery *BooleanQuery
-	// -- end of xxx_hidden_Query
+	// -- end of Query
 	Selects    []*QuerySelect
 	GroupBy    *QueryGroupBy
 	Pagination *QueryPagination
@@ -1822,29 +1468,20 @@ func (b0 Query_builder) Build() *Query {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Conjunction != nil {
-		x.xxx_hidden_Query = &query_Conjunction{b.Conjunction}
+		x.Query = &Query_Conjunction{b.Conjunction}
 	}
 	if b.Disjunction != nil {
-		x.xxx_hidden_Query = &query_Disjunction{b.Disjunction}
+		x.Query = &Query_Disjunction{b.Disjunction}
 	}
 	if b.BaseQuery != nil {
-		x.xxx_hidden_Query = &query_BaseQuery{b.BaseQuery}
+		x.Query = &Query_BaseQuery{b.BaseQuery}
 	}
 	if b.BooleanQuery != nil {
-		x.xxx_hidden_Query = &query_BooleanQuery{b.BooleanQuery}
+		x.Query = &Query_BooleanQuery{b.BooleanQuery}
 	}
-	if b.Selects != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Selects = &b.Selects
-	}
-	if b.GroupBy != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_GroupBy = b.GroupBy
-	}
-	if b.Pagination != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Pagination = b.Pagination
-	}
+	x.Selects = b.Selects
+	x.GroupBy = b.GroupBy
+	x.Pagination = b.Pagination
 	return m0
 }
 
@@ -1862,39 +1499,37 @@ type isQuery_Query interface {
 	isQuery_Query()
 }
 
-type query_Conjunction struct {
+type Query_Conjunction struct {
 	Conjunction *ConjunctionQuery `protobuf:"bytes,1,opt,name=conjunction,oneof"`
 }
 
-type query_Disjunction struct {
+type Query_Disjunction struct {
 	Disjunction *DisjunctionQuery `protobuf:"bytes,2,opt,name=disjunction,oneof"`
 }
 
-type query_BaseQuery struct {
+type Query_BaseQuery struct {
 	BaseQuery *BaseQuery `protobuf:"bytes,3,opt,name=base_query,json=baseQuery,oneof"`
 }
 
-type query_BooleanQuery struct {
+type Query_BooleanQuery struct {
 	BooleanQuery *BooleanQuery `protobuf:"bytes,6,opt,name=boolean_query,json=booleanQuery,oneof"`
 }
 
-func (*query_Conjunction) isQuery_Query() {}
+func (*Query_Conjunction) isQuery_Query() {}
 
-func (*query_Disjunction) isQuery_Query() {}
+func (*Query_Disjunction) isQuery_Query() {}
 
-func (*query_BaseQuery) isQuery_Query() {}
+func (*Query_BaseQuery) isQuery_Query() {}
 
-func (*query_BooleanQuery) isQuery_Query() {}
+func (*Query_BooleanQuery) isQuery_Query() {}
 
 // StringQuery represents a query that matches documents that contain the
 // query text in _any_ of their fields.
 type StringQuery struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query       *string                `protobuf:"bytes,1,opt,name=query"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StringQuery) Reset() {
@@ -1924,59 +1559,38 @@ func (x *StringQuery) ProtoReflect() protoreflect.Message {
 
 func (x *StringQuery) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *StringQuery) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *StringQuery) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *StringQuery) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Query = nil
+	x.Query = v
 }
 
 type StringQuery_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Query *string
+	Query string
 }
 
 func (b0 StringQuery_builder) Build() *StringQuery {
 	m0 := &StringQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Query = b.Query
 	return m0
 }
 
 // MatchFieldQuery represents a query that matches documents containing the
 // query text in the provided field.
 type MatchFieldQuery struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Field       *string                `protobuf:"bytes,1,opt,name=field"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
-	xxx_hidden_Highlight   bool                   `protobuf:"varint,3,opt,name=highlight"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Field         string                 `protobuf:"bytes,1,opt,name=field" json:"field,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+	Highlight     bool                   `protobuf:"varint,3,opt,name=highlight" json:"highlight,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MatchFieldQuery) Reset() {
@@ -2006,120 +1620,62 @@ func (x *MatchFieldQuery) ProtoReflect() protoreflect.Message {
 
 func (x *MatchFieldQuery) GetField() string {
 	if x != nil {
-		if x.xxx_hidden_Field != nil {
-			return *x.xxx_hidden_Field
-		}
-		return ""
+		return x.Field
 	}
 	return ""
 }
 
 func (x *MatchFieldQuery) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *MatchFieldQuery) GetHighlight() bool {
 	if x != nil {
-		return x.xxx_hidden_Highlight
+		return x.Highlight
 	}
 	return false
 }
 
 func (x *MatchFieldQuery) SetField(v string) {
-	x.xxx_hidden_Field = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Field = v
 }
 
 func (x *MatchFieldQuery) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Value = v
 }
 
 func (x *MatchFieldQuery) SetHighlight(v bool) {
-	x.xxx_hidden_Highlight = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *MatchFieldQuery) HasField() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *MatchFieldQuery) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *MatchFieldQuery) HasHighlight() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *MatchFieldQuery) ClearField() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Field = nil
-}
-
-func (x *MatchFieldQuery) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *MatchFieldQuery) ClearHighlight() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Highlight = false
+	x.Highlight = v
 }
 
 type MatchFieldQuery_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Field     *string
-	Value     *string
-	Highlight *bool
+	Field     string
+	Value     string
+	Highlight bool
 }
 
 func (b0 MatchFieldQuery_builder) Build() *MatchFieldQuery {
 	m0 := &MatchFieldQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Field != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Field = b.Field
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.Highlight != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Highlight = *b.Highlight
-	}
+	x.Field = b.Field
+	x.Value = b.Value
+	x.Highlight = b.Highlight
 	return m0
 }
 
 // MatchLinkedFieldsQuery represents a query that matches documents which have matches for all the provided
 // field values, in corresponding locations.
 type MatchLinkedFieldsQuery struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query *[]*MatchFieldQuery    `protobuf:"bytes,1,rep,name=query"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         []*MatchFieldQuery     `protobuf:"bytes,1,rep,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MatchLinkedFieldsQuery) Reset() {
@@ -2149,27 +1705,13 @@ func (x *MatchLinkedFieldsQuery) ProtoReflect() protoreflect.Message {
 
 func (x *MatchLinkedFieldsQuery) GetQuery() []*MatchFieldQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*MatchFieldQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Query
 	}
 	return nil
 }
 
 func (x *MatchLinkedFieldsQuery) SetQuery(v []*MatchFieldQuery) {
-	var sv *[]*MatchFieldQuery
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*MatchFieldQuery{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Query = v
 }
 
 type MatchLinkedFieldsQuery_builder struct {
@@ -2182,19 +1724,16 @@ func (b0 MatchLinkedFieldsQuery_builder) Build() *MatchLinkedFieldsQuery {
 	m0 := &MatchLinkedFieldsQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Query = &b.Query
-	}
+	x.Query = b.Query
 	return m0
 }
 
 // DocIDQuery represents a query that matches documents with the provided ids.
 type DocIDQuery struct {
-	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Ids []string               `protobuf:"bytes,1,rep,name=ids"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Ids           []string               `protobuf:"bytes,1,rep,name=ids" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DocIDQuery) Reset() {
@@ -2224,13 +1763,13 @@ func (x *DocIDQuery) ProtoReflect() protoreflect.Message {
 
 func (x *DocIDQuery) GetIds() []string {
 	if x != nil {
-		return x.xxx_hidden_Ids
+		return x.Ids
 	}
 	return nil
 }
 
 func (x *DocIDQuery) SetIds(v []string) {
-	x.xxx_hidden_Ids = v
+	x.Ids = v
 }
 
 type DocIDQuery_builder struct {
@@ -2243,15 +1782,21 @@ func (b0 DocIDQuery_builder) Build() *DocIDQuery {
 	m0 := &DocIDQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Ids = b.Ids
+	x.Ids = b.Ids
 	return m0
 }
 
 type BaseQuery struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query isBaseQuery_Query      `protobuf_oneof:"query"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Query:
+	//
+	//	*BaseQuery_MatchFieldQuery
+	//	*BaseQuery_MatchLinkedFieldsQuery
+	//	*BaseQuery_DocIdQuery
+	//	*BaseQuery_MatchNoneQuery
+	Query         isBaseQuery_Query `protobuf_oneof:"query"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BaseQuery) Reset() {
@@ -2279,9 +1824,16 @@ func (x *BaseQuery) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *BaseQuery) GetQuery() isBaseQuery_Query {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 func (x *BaseQuery) GetMatchFieldQuery() *MatchFieldQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*baseQuery_MatchFieldQuery); ok {
+		if x, ok := x.Query.(*BaseQuery_MatchFieldQuery); ok {
 			return x.MatchFieldQuery
 		}
 	}
@@ -2290,7 +1842,7 @@ func (x *BaseQuery) GetMatchFieldQuery() *MatchFieldQuery {
 
 func (x *BaseQuery) GetMatchLinkedFieldsQuery() *MatchLinkedFieldsQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*baseQuery_MatchLinkedFieldsQuery); ok {
+		if x, ok := x.Query.(*BaseQuery_MatchLinkedFieldsQuery); ok {
 			return x.MatchLinkedFieldsQuery
 		}
 	}
@@ -2299,7 +1851,7 @@ func (x *BaseQuery) GetMatchLinkedFieldsQuery() *MatchLinkedFieldsQuery {
 
 func (x *BaseQuery) GetDocIdQuery() *DocIDQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*baseQuery_DocIdQuery); ok {
+		if x, ok := x.Query.(*BaseQuery_DocIdQuery); ok {
 			return x.DocIdQuery
 		}
 	}
@@ -2308,7 +1860,7 @@ func (x *BaseQuery) GetDocIdQuery() *DocIDQuery {
 
 func (x *BaseQuery) GetMatchNoneQuery() *MatchNoneQuery {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Query.(*baseQuery_MatchNoneQuery); ok {
+		if x, ok := x.Query.(*BaseQuery_MatchNoneQuery); ok {
 			return x.MatchNoneQuery
 		}
 	}
@@ -2317,48 +1869,48 @@ func (x *BaseQuery) GetMatchNoneQuery() *MatchNoneQuery {
 
 func (x *BaseQuery) SetMatchFieldQuery(v *MatchFieldQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &baseQuery_MatchFieldQuery{v}
+	x.Query = &BaseQuery_MatchFieldQuery{v}
 }
 
 func (x *BaseQuery) SetMatchLinkedFieldsQuery(v *MatchLinkedFieldsQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &baseQuery_MatchLinkedFieldsQuery{v}
+	x.Query = &BaseQuery_MatchLinkedFieldsQuery{v}
 }
 
 func (x *BaseQuery) SetDocIdQuery(v *DocIDQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &baseQuery_DocIdQuery{v}
+	x.Query = &BaseQuery_DocIdQuery{v}
 }
 
 func (x *BaseQuery) SetMatchNoneQuery(v *MatchNoneQuery) {
 	if v == nil {
-		x.xxx_hidden_Query = nil
+		x.Query = nil
 		return
 	}
-	x.xxx_hidden_Query = &baseQuery_MatchNoneQuery{v}
+	x.Query = &BaseQuery_MatchNoneQuery{v}
 }
 
 func (x *BaseQuery) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Query != nil
+	return x.Query != nil
 }
 
 func (x *BaseQuery) HasMatchFieldQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*baseQuery_MatchFieldQuery)
+	_, ok := x.Query.(*BaseQuery_MatchFieldQuery)
 	return ok
 }
 
@@ -2366,7 +1918,7 @@ func (x *BaseQuery) HasMatchLinkedFieldsQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*baseQuery_MatchLinkedFieldsQuery)
+	_, ok := x.Query.(*BaseQuery_MatchLinkedFieldsQuery)
 	return ok
 }
 
@@ -2374,7 +1926,7 @@ func (x *BaseQuery) HasDocIdQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*baseQuery_DocIdQuery)
+	_, ok := x.Query.(*BaseQuery_DocIdQuery)
 	return ok
 }
 
@@ -2382,35 +1934,35 @@ func (x *BaseQuery) HasMatchNoneQuery() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Query.(*baseQuery_MatchNoneQuery)
+	_, ok := x.Query.(*BaseQuery_MatchNoneQuery)
 	return ok
 }
 
 func (x *BaseQuery) ClearQuery() {
-	x.xxx_hidden_Query = nil
+	x.Query = nil
 }
 
 func (x *BaseQuery) ClearMatchFieldQuery() {
-	if _, ok := x.xxx_hidden_Query.(*baseQuery_MatchFieldQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*BaseQuery_MatchFieldQuery); ok {
+		x.Query = nil
 	}
 }
 
 func (x *BaseQuery) ClearMatchLinkedFieldsQuery() {
-	if _, ok := x.xxx_hidden_Query.(*baseQuery_MatchLinkedFieldsQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*BaseQuery_MatchLinkedFieldsQuery); ok {
+		x.Query = nil
 	}
 }
 
 func (x *BaseQuery) ClearDocIdQuery() {
-	if _, ok := x.xxx_hidden_Query.(*baseQuery_DocIdQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*BaseQuery_DocIdQuery); ok {
+		x.Query = nil
 	}
 }
 
 func (x *BaseQuery) ClearMatchNoneQuery() {
-	if _, ok := x.xxx_hidden_Query.(*baseQuery_MatchNoneQuery); ok {
-		x.xxx_hidden_Query = nil
+	if _, ok := x.Query.(*BaseQuery_MatchNoneQuery); ok {
+		x.Query = nil
 	}
 }
 
@@ -2424,14 +1976,14 @@ func (x *BaseQuery) WhichQuery() case_BaseQuery_Query {
 	if x == nil {
 		return BaseQuery_Query_not_set_case
 	}
-	switch x.xxx_hidden_Query.(type) {
-	case *baseQuery_MatchFieldQuery:
+	switch x.Query.(type) {
+	case *BaseQuery_MatchFieldQuery:
 		return BaseQuery_MatchFieldQuery_case
-	case *baseQuery_MatchLinkedFieldsQuery:
+	case *BaseQuery_MatchLinkedFieldsQuery:
 		return BaseQuery_MatchLinkedFieldsQuery_case
-	case *baseQuery_DocIdQuery:
+	case *BaseQuery_DocIdQuery:
 		return BaseQuery_DocIdQuery_case
-	case *baseQuery_MatchNoneQuery:
+	case *BaseQuery_MatchNoneQuery:
 		return BaseQuery_MatchNoneQuery_case
 	default:
 		return BaseQuery_Query_not_set_case
@@ -2441,12 +1993,12 @@ func (x *BaseQuery) WhichQuery() case_BaseQuery_Query {
 type BaseQuery_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Query:
+	// Fields of oneof Query:
 	MatchFieldQuery        *MatchFieldQuery
 	MatchLinkedFieldsQuery *MatchLinkedFieldsQuery
 	DocIdQuery             *DocIDQuery
 	MatchNoneQuery         *MatchNoneQuery
-	// -- end of xxx_hidden_Query
+	// -- end of Query
 }
 
 func (b0 BaseQuery_builder) Build() *BaseQuery {
@@ -2454,16 +2006,16 @@ func (b0 BaseQuery_builder) Build() *BaseQuery {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.MatchFieldQuery != nil {
-		x.xxx_hidden_Query = &baseQuery_MatchFieldQuery{b.MatchFieldQuery}
+		x.Query = &BaseQuery_MatchFieldQuery{b.MatchFieldQuery}
 	}
 	if b.MatchLinkedFieldsQuery != nil {
-		x.xxx_hidden_Query = &baseQuery_MatchLinkedFieldsQuery{b.MatchLinkedFieldsQuery}
+		x.Query = &BaseQuery_MatchLinkedFieldsQuery{b.MatchLinkedFieldsQuery}
 	}
 	if b.DocIdQuery != nil {
-		x.xxx_hidden_Query = &baseQuery_DocIdQuery{b.DocIdQuery}
+		x.Query = &BaseQuery_DocIdQuery{b.DocIdQuery}
 	}
 	if b.MatchNoneQuery != nil {
-		x.xxx_hidden_Query = &baseQuery_MatchNoneQuery{b.MatchNoneQuery}
+		x.Query = &BaseQuery_MatchNoneQuery{b.MatchNoneQuery}
 	}
 	return m0
 }
@@ -2482,39 +2034,35 @@ type isBaseQuery_Query interface {
 	isBaseQuery_Query()
 }
 
-type baseQuery_MatchFieldQuery struct {
+type BaseQuery_MatchFieldQuery struct {
 	MatchFieldQuery *MatchFieldQuery `protobuf:"bytes,2,opt,name=match_field_query,json=matchFieldQuery,oneof"`
 }
 
-type baseQuery_MatchLinkedFieldsQuery struct {
+type BaseQuery_MatchLinkedFieldsQuery struct {
 	MatchLinkedFieldsQuery *MatchLinkedFieldsQuery `protobuf:"bytes,3,opt,name=match_linked_fields_query,json=matchLinkedFieldsQuery,oneof"`
 }
 
-type baseQuery_DocIdQuery struct {
+type BaseQuery_DocIdQuery struct {
 	DocIdQuery *DocIDQuery `protobuf:"bytes,4,opt,name=doc_id_query,json=docIdQuery,oneof"`
 }
 
-type baseQuery_MatchNoneQuery struct {
+type BaseQuery_MatchNoneQuery struct {
 	MatchNoneQuery *MatchNoneQuery `protobuf:"bytes,5,opt,name=match_none_query,json=matchNoneQuery,oneof"`
 }
 
-func (*baseQuery_MatchFieldQuery) isBaseQuery_Query() {}
+func (*BaseQuery_MatchFieldQuery) isBaseQuery_Query() {}
 
-func (*baseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
+func (*BaseQuery_MatchLinkedFieldsQuery) isBaseQuery_Query() {}
 
-func (*baseQuery_DocIdQuery) isBaseQuery_Query() {}
+func (*BaseQuery_DocIdQuery) isBaseQuery_Query() {}
 
-func (*baseQuery_MatchNoneQuery) isBaseQuery_Query() {}
+func (*BaseQuery_MatchNoneQuery) isBaseQuery_Query() {}
 
 type ConjunctionQuery struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Queries *[]*Query              `protobuf:"bytes,1,rep,name=queries"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Queries       []*Query               `protobuf:"bytes,1,rep,name=queries" json:"queries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConjunctionQuery) Reset() {
@@ -2544,27 +2092,13 @@ func (x *ConjunctionQuery) ProtoReflect() protoreflect.Message {
 
 func (x *ConjunctionQuery) GetQueries() []*Query {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Queries) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Query
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Queries
 	}
 	return nil
 }
 
 func (x *ConjunctionQuery) SetQueries(v []*Query) {
-	var sv *[]*Query
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Query{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Queries = v
 }
 
 type ConjunctionQuery_builder struct {
@@ -2577,22 +2111,15 @@ func (b0 ConjunctionQuery_builder) Build() *ConjunctionQuery {
 	m0 := &ConjunctionQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Queries != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Queries = &b.Queries
-	}
+	x.Queries = b.Queries
 	return m0
 }
 
 type DisjunctionQuery struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Queries *[]*Query              `protobuf:"bytes,1,rep,name=queries"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Queries       []*Query               `protobuf:"bytes,1,rep,name=queries" json:"queries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DisjunctionQuery) Reset() {
@@ -2622,27 +2149,13 @@ func (x *DisjunctionQuery) ProtoReflect() protoreflect.Message {
 
 func (x *DisjunctionQuery) GetQueries() []*Query {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Queries) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Query
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Queries
 	}
 	return nil
 }
 
 func (x *DisjunctionQuery) SetQueries(v []*Query) {
-	var sv *[]*Query
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Query{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Queries), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Queries = v
 }
 
 type DisjunctionQuery_builder struct {
@@ -2655,15 +2168,12 @@ func (b0 DisjunctionQuery_builder) Build() *DisjunctionQuery {
 	m0 := &DisjunctionQuery{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Queries != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Queries = &b.Queries
-	}
+	x.Queries = b.Queries
 	return m0
 }
 
 type MatchNoneQuery struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2706,19 +2216,20 @@ func (b0 MatchNoneQuery_builder) Build() *MatchNoneQuery {
 }
 
 type SearchResult struct {
-	state                     protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                          `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name           *string                          `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Category       SearchCategory                   `protobuf:"varint,3,opt,name=category,enum=v1.SearchCategory"`
-	xxx_hidden_FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Score          float64                          `protobuf:"fixed64,5,opt,name=score"`
-	xxx_hidden_Location       *string                          `protobuf:"bytes,6,opt,name=location"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState           `protogen:"hybrid.v1"`
+	Id             string                           `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name           string                           `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Category       SearchCategory                   `protobuf:"varint,3,opt,name=category,enum=v1.SearchCategory" json:"category,omitempty"`
+	FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches" json:"field_to_matches,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Score          float64                          `protobuf:"fixed64,5,opt,name=score" json:"score,omitempty"`
+	// Location is intended to be a unique, yet human readable,
+	// identifier for the result. For example, for a deployment,
+	// the location will be "$cluster_name/$namespace/$deployment_name.
+	// It is displayed in the UI in the global search results, underneath
+	// the name for each result.
+	Location      string `protobuf:"bytes,6,opt,name=location" json:"location,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchResult) Reset() {
@@ -2748,200 +2259,105 @@ func (x *SearchResult) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResult) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SearchResult) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *SearchResult) GetCategory() SearchCategory {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Category
-		}
+		return x.Category
 	}
 	return SearchCategory_SEARCH_UNSET
 }
 
 func (x *SearchResult) GetFieldToMatches() map[string]*SearchResult_Matches {
 	if x != nil {
-		return x.xxx_hidden_FieldToMatches
+		return x.FieldToMatches
 	}
 	return nil
 }
 
 func (x *SearchResult) GetScore() float64 {
 	if x != nil {
-		return x.xxx_hidden_Score
+		return x.Score
 	}
 	return 0
 }
 
 func (x *SearchResult) GetLocation() string {
 	if x != nil {
-		if x.xxx_hidden_Location != nil {
-			return *x.xxx_hidden_Location
-		}
-		return ""
+		return x.Location
 	}
 	return ""
 }
 
 func (x *SearchResult) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Id = v
 }
 
 func (x *SearchResult) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Name = v
 }
 
 func (x *SearchResult) SetCategory(v SearchCategory) {
-	x.xxx_hidden_Category = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Category = v
 }
 
 func (x *SearchResult) SetFieldToMatches(v map[string]*SearchResult_Matches) {
-	x.xxx_hidden_FieldToMatches = v
+	x.FieldToMatches = v
 }
 
 func (x *SearchResult) SetScore(v float64) {
-	x.xxx_hidden_Score = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.Score = v
 }
 
 func (x *SearchResult) SetLocation(v string) {
-	x.xxx_hidden_Location = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *SearchResult) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SearchResult) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SearchResult) HasCategory() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *SearchResult) HasScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *SearchResult) HasLocation() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *SearchResult) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *SearchResult) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *SearchResult) ClearCategory() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Category = SearchCategory_SEARCH_UNSET
-}
-
-func (x *SearchResult) ClearScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Score = 0
-}
-
-func (x *SearchResult) ClearLocation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Location = nil
+	x.Location = v
 }
 
 type SearchResult_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id             *string
-	Name           *string
-	Category       *SearchCategory
+	Id             string
+	Name           string
+	Category       SearchCategory
 	FieldToMatches map[string]*SearchResult_Matches
-	Score          *float64
+	Score          float64
 	// Location is intended to be a unique, yet human readable,
 	// identifier for the result. For example, for a deployment,
 	// the location will be "$cluster_name/$namespace/$deployment_name.
 	// It is displayed in the UI in the global search results, underneath
 	// the name for each result.
-	Location *string
+	Location string
 }
 
 func (b0 SearchResult_builder) Build() *SearchResult {
 	m0 := &SearchResult{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Category != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Category = *b.Category
-	}
-	x.xxx_hidden_FieldToMatches = b.FieldToMatches
-	if b.Score != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_Score = *b.Score
-	}
-	if b.Location != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_Location = b.Location
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Category = b.Category
+	x.FieldToMatches = b.FieldToMatches
+	x.Score = b.Score
+	x.Location = b.Location
 	return m0
 }
 
 type SearchResponse struct {
-	state              protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_Results *[]*SearchResult         `protobuf:"bytes,1,rep,name=results"`
-	xxx_hidden_Counts  *[]*SearchResponse_Count `protobuf:"bytes,2,rep,name=counts"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Results       []*SearchResult         `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	Counts        []*SearchResponse_Count `protobuf:"bytes,2,rep,name=counts" json:"counts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchResponse) Reset() {
@@ -2971,52 +2387,24 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResponse) GetResults() []*SearchResult {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Results) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*SearchResult
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Results
 	}
 	return nil
 }
 
 func (x *SearchResponse) GetCounts() []*SearchResponse_Count {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Counts) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*SearchResponse_Count
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Counts
 	}
 	return nil
 }
 
 func (x *SearchResponse) SetResults(v []*SearchResult) {
-	var sv *[]*SearchResult
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SearchResult{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Results), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Results = v
 }
 
 func (x *SearchResponse) SetCounts(v []*SearchResponse_Count) {
-	var sv *[]*SearchResponse_Count
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SearchResponse_Count{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Counts), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Counts = v
 }
 
 type SearchResponse_builder struct {
@@ -3030,22 +2418,16 @@ func (b0 SearchResponse_builder) Build() *SearchResponse {
 	m0 := &SearchResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Results != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Results = &b.Results
-	}
-	if b.Counts != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Counts = &b.Counts
-	}
+	x.Results = b.Results
+	x.Counts = b.Counts
 	return m0
 }
 
 type SearchOptionsRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Categories []SearchCategory       `protobuf:"varint,1,rep,packed,name=categories,enum=v1.SearchCategory"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Categories    []SearchCategory       `protobuf:"varint,1,rep,packed,name=categories,enum=v1.SearchCategory" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchOptionsRequest) Reset() {
@@ -3075,13 +2457,13 @@ func (x *SearchOptionsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SearchOptionsRequest) GetCategories() []SearchCategory {
 	if x != nil {
-		return x.xxx_hidden_Categories
+		return x.Categories
 	}
 	return nil
 }
 
 func (x *SearchOptionsRequest) SetCategories(v []SearchCategory) {
-	x.xxx_hidden_Categories = v
+	x.Categories = v
 }
 
 type SearchOptionsRequest_builder struct {
@@ -3094,15 +2476,15 @@ func (b0 SearchOptionsRequest_builder) Build() *SearchOptionsRequest {
 	m0 := &SearchOptionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Categories = b.Categories
+	x.Categories = b.Categories
 	return m0
 }
 
 type SearchOptionsResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Options []string               `protobuf:"bytes,1,rep,name=options"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Options       []string               `protobuf:"bytes,1,rep,name=options" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchOptionsResponse) Reset() {
@@ -3132,13 +2514,13 @@ func (x *SearchOptionsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SearchOptionsResponse) GetOptions() []string {
 	if x != nil {
-		return x.xxx_hidden_Options
+		return x.Options
 	}
 	return nil
 }
 
 func (x *SearchOptionsResponse) SetOptions(v []string) {
-	x.xxx_hidden_Options = v
+	x.Options = v
 }
 
 type SearchOptionsResponse_builder struct {
@@ -3151,15 +2533,15 @@ func (b0 SearchOptionsResponse_builder) Build() *SearchOptionsResponse {
 	m0 := &SearchOptionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Options = b.Options
+	x.Options = b.Options
 	return m0
 }
 
 type AutocompleteResponse struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Values []string               `protobuf:"bytes,1,rep,name=values"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AutocompleteResponse) Reset() {
@@ -3189,13 +2571,13 @@ func (x *AutocompleteResponse) ProtoReflect() protoreflect.Message {
 
 func (x *AutocompleteResponse) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *AutocompleteResponse) SetValues(v []string) {
-	x.xxx_hidden_Values = v
+	x.Values = v
 }
 
 type AutocompleteResponse_builder struct {
@@ -3208,15 +2590,15 @@ func (b0 AutocompleteResponse_builder) Build() *AutocompleteResponse {
 	m0 := &AutocompleteResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Values = b.Values
+	x.Values = b.Values
 	return m0
 }
 
 type SearchResult_Matches struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Values []string               `protobuf:"bytes,1,rep,name=values"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchResult_Matches) Reset() {
@@ -3246,13 +2628,13 @@ func (x *SearchResult_Matches) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResult_Matches) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *SearchResult_Matches) SetValues(v []string) {
-	x.xxx_hidden_Values = v
+	x.Values = v
 }
 
 type SearchResult_Matches_builder struct {
@@ -3265,18 +2647,16 @@ func (b0 SearchResult_Matches_builder) Build() *SearchResult_Matches {
 	m0 := &SearchResult_Matches{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Values = b.Values
+	x.Values = b.Values
 	return m0
 }
 
 type SearchResponse_Count struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Category    SearchCategory         `protobuf:"varint,1,opt,name=category,enum=v1.SearchCategory"`
-	xxx_hidden_Count       int64                  `protobuf:"varint,2,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Category      SearchCategory         `protobuf:"varint,1,opt,name=category,enum=v1.SearchCategory" json:"category,omitempty"`
+	Count         int64                  `protobuf:"varint,2,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchResponse_Count) Reset() {
@@ -3306,73 +2686,39 @@ func (x *SearchResponse_Count) ProtoReflect() protoreflect.Message {
 
 func (x *SearchResponse_Count) GetCategory() SearchCategory {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Category
-		}
+		return x.Category
 	}
 	return SearchCategory_SEARCH_UNSET
 }
 
 func (x *SearchResponse_Count) GetCount() int64 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *SearchResponse_Count) SetCategory(v SearchCategory) {
-	x.xxx_hidden_Category = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Category = v
 }
 
 func (x *SearchResponse_Count) SetCount(v int64) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *SearchResponse_Count) HasCategory() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SearchResponse_Count) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SearchResponse_Count) ClearCategory() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Category = SearchCategory_SEARCH_UNSET
-}
-
-func (x *SearchResponse_Count) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type SearchResponse_Count_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Category *SearchCategory
-	Count    *int64
+	Category SearchCategory
+	Count    int64
 }
 
 func (b0 SearchResponse_Count_builder) Build() *SearchResponse_Count {
 	m0 := &SearchResponse_Count{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Category != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Category = *b.Category
-	}
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Category = b.Category
+	x.Count = b.Count
 	return m0
 }
 
@@ -3571,8 +2917,8 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x06Search\x12\x14.v1.RawSearchRequest\x1a\x12.v1.SearchResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/v1/search\x12c\n" +
 	"\aOptions\x12\x18.v1.SearchOptionsRequest\x1a\x19.v1.SearchOptionsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/search/metadata/options\x12_\n" +
-	"\fAutocomplete\x12\x14.v1.RawSearchRequest\x1a\x18.v1.AutocompleteResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/search/autocompleteB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\fAutocomplete\x12\x14.v1.RawSearchRequest\x1a\x18.v1.AutocompleteResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/search/autocompleteB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_search_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v1_search_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
@@ -3659,19 +3005,19 @@ func file_api_v1_search_service_proto_init() {
 	}
 	file_api_v1_pagination_proto_init()
 	file_api_v1_search_service_proto_msgTypes[2].OneofWrappers = []any{
-		(*querySortOption_SearchAfter)(nil),
+		(*QuerySortOption_SearchAfter)(nil),
 	}
 	file_api_v1_search_service_proto_msgTypes[9].OneofWrappers = []any{
-		(*query_Conjunction)(nil),
-		(*query_Disjunction)(nil),
-		(*query_BaseQuery)(nil),
-		(*query_BooleanQuery)(nil),
+		(*Query_Conjunction)(nil),
+		(*Query_Disjunction)(nil),
+		(*Query_BaseQuery)(nil),
+		(*Query_BooleanQuery)(nil),
 	}
 	file_api_v1_search_service_proto_msgTypes[14].OneofWrappers = []any{
-		(*baseQuery_MatchFieldQuery)(nil),
-		(*baseQuery_MatchLinkedFieldsQuery)(nil),
-		(*baseQuery_DocIdQuery)(nil),
-		(*baseQuery_MatchNoneQuery)(nil),
+		(*BaseQuery_MatchFieldQuery)(nil),
+		(*BaseQuery_MatchLinkedFieldsQuery)(nil),
+		(*BaseQuery_DocIdQuery)(nil),
+		(*BaseQuery_MatchNoneQuery)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

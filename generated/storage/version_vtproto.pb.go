@@ -8,6 +8,7 @@ func (m *Version) SizeVT() int                   { return proto.Size(m) }
 func (m *Version) CloneVT() *Version             { return proto.Clone(m).(*Version) }
 func (m *Version) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Version) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Version) EqualVT(n *Version) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Version) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

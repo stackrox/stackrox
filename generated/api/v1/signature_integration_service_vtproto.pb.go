@@ -12,6 +12,9 @@ func (m *ListSignatureIntegrationsResponse) MarshalVT() ([]byte, error) { return
 func (m *ListSignatureIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListSignatureIntegrationsResponse) EqualVT(n *ListSignatureIntegrationsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListSignatureIntegrationsResponse) UnmarshalVTUnsafe(dAtA []byte) error {

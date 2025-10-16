@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/orchestrator_integration.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,15 +25,16 @@ const (
 
 // Next Tag: 5
 type OrchestratorIntegration struct {
-	state                        protoimpl.MessageState                      `protogen:"opaque.v1"`
-	xxx_hidden_Id                *string                                     `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name              *string                                     `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Type              *string                                     `protobuf:"bytes,3,opt,name=type"`
-	xxx_hidden_IntegrationConfig isOrchestratorIntegration_IntegrationConfig `protobuf_oneof:"IntegrationConfig"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Type  string                 `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
+	// Types that are valid to be assigned to IntegrationConfig:
+	//
+	//	*OrchestratorIntegration_Clairify
+	IntegrationConfig isOrchestratorIntegration_IntegrationConfig `protobuf_oneof:"IntegrationConfig"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *OrchestratorIntegration) Reset() {
@@ -61,37 +64,35 @@ func (x *OrchestratorIntegration) ProtoReflect() protoreflect.Message {
 
 func (x *OrchestratorIntegration) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *OrchestratorIntegration) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *OrchestratorIntegration) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
+func (x *OrchestratorIntegration) GetIntegrationConfig() isOrchestratorIntegration_IntegrationConfig {
+	if x != nil {
+		return x.IntegrationConfig
+	}
+	return nil
+}
+
 func (x *OrchestratorIntegration) GetClairify() *ClairifyConfig {
 	if x != nil {
-		if x, ok := x.xxx_hidden_IntegrationConfig.(*orchestratorIntegration_Clairify); ok {
+		if x, ok := x.IntegrationConfig.(*OrchestratorIntegration_Clairify); ok {
 			return x.Clairify
 		}
 	}
@@ -99,86 +100,47 @@ func (x *OrchestratorIntegration) GetClairify() *ClairifyConfig {
 }
 
 func (x *OrchestratorIntegration) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *OrchestratorIntegration) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Name = v
 }
 
 func (x *OrchestratorIntegration) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Type = v
 }
 
 func (x *OrchestratorIntegration) SetClairify(v *ClairifyConfig) {
 	if v == nil {
-		x.xxx_hidden_IntegrationConfig = nil
+		x.IntegrationConfig = nil
 		return
 	}
-	x.xxx_hidden_IntegrationConfig = &orchestratorIntegration_Clairify{v}
-}
-
-func (x *OrchestratorIntegration) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *OrchestratorIntegration) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *OrchestratorIntegration) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.IntegrationConfig = &OrchestratorIntegration_Clairify{v}
 }
 
 func (x *OrchestratorIntegration) HasIntegrationConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_IntegrationConfig != nil
+	return x.IntegrationConfig != nil
 }
 
 func (x *OrchestratorIntegration) HasClairify() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_IntegrationConfig.(*orchestratorIntegration_Clairify)
+	_, ok := x.IntegrationConfig.(*OrchestratorIntegration_Clairify)
 	return ok
 }
 
-func (x *OrchestratorIntegration) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *OrchestratorIntegration) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *OrchestratorIntegration) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Type = nil
-}
-
 func (x *OrchestratorIntegration) ClearIntegrationConfig() {
-	x.xxx_hidden_IntegrationConfig = nil
+	x.IntegrationConfig = nil
 }
 
 func (x *OrchestratorIntegration) ClearClairify() {
-	if _, ok := x.xxx_hidden_IntegrationConfig.(*orchestratorIntegration_Clairify); ok {
-		x.xxx_hidden_IntegrationConfig = nil
+	if _, ok := x.IntegrationConfig.(*OrchestratorIntegration_Clairify); ok {
+		x.IntegrationConfig = nil
 	}
 }
 
@@ -189,8 +151,8 @@ func (x *OrchestratorIntegration) WhichIntegrationConfig() case_OrchestratorInte
 	if x == nil {
 		return OrchestratorIntegration_IntegrationConfig_not_set_case
 	}
-	switch x.xxx_hidden_IntegrationConfig.(type) {
-	case *orchestratorIntegration_Clairify:
+	switch x.IntegrationConfig.(type) {
+	case *OrchestratorIntegration_Clairify:
 		return OrchestratorIntegration_Clairify_case
 	default:
 		return OrchestratorIntegration_IntegrationConfig_not_set_case
@@ -200,32 +162,23 @@ func (x *OrchestratorIntegration) WhichIntegrationConfig() case_OrchestratorInte
 type OrchestratorIntegration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id   *string
-	Name *string
-	Type *string
-	// Fields of oneof xxx_hidden_IntegrationConfig:
+	Id   string
+	Name string
+	Type string
+	// Fields of oneof IntegrationConfig:
 	Clairify *ClairifyConfig
-	// -- end of xxx_hidden_IntegrationConfig
+	// -- end of IntegrationConfig
 }
 
 func (b0 OrchestratorIntegration_builder) Build() *OrchestratorIntegration {
 	m0 := &OrchestratorIntegration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Type = b.Type
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Type = b.Type
 	if b.Clairify != nil {
-		x.xxx_hidden_IntegrationConfig = &orchestratorIntegration_Clairify{b.Clairify}
+		x.IntegrationConfig = &OrchestratorIntegration_Clairify{b.Clairify}
 	}
 	return m0
 }
@@ -244,11 +197,11 @@ type isOrchestratorIntegration_IntegrationConfig interface {
 	isOrchestratorIntegration_IntegrationConfig()
 }
 
-type orchestratorIntegration_Clairify struct {
+type OrchestratorIntegration_Clairify struct {
 	Clairify *ClairifyConfig `protobuf:"bytes,4,opt,name=clairify,oneof"`
 }
 
-func (*orchestratorIntegration_Clairify) isOrchestratorIntegration_IntegrationConfig() {}
+func (*OrchestratorIntegration_Clairify) isOrchestratorIntegration_IntegrationConfig() {}
 
 var File_storage_orchestrator_integration_proto protoreflect.FileDescriptor
 
@@ -260,8 +213,8 @@ const file_storage_orchestrator_integration_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x125\n" +
 	"\bclairify\x18\x04 \x01(\v2\x17.storage.ClairifyConfigH\x00R\bclairifyB\x13\n" +
-	"\x11IntegrationConfigB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x11IntegrationConfigB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_orchestrator_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_orchestrator_integration_proto_goTypes = []any{
@@ -284,7 +237,7 @@ func file_storage_orchestrator_integration_proto_init() {
 	}
 	file_storage_image_integration_proto_init()
 	file_storage_orchestrator_integration_proto_msgTypes[0].OneofWrappers = []any{
-		(*orchestratorIntegration_Clairify)(nil),
+		(*OrchestratorIntegration_Clairify)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

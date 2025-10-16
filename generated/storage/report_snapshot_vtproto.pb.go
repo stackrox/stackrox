@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ReportSnapshot) SizeVT() int                   { return proto.Size(m) }
-func (m *ReportSnapshot) CloneVT() *ReportSnapshot      { return proto.Clone(m).(*ReportSnapshot) }
-func (m *ReportSnapshot) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ReportSnapshot) SizeVT() int                    { return proto.Size(m) }
+func (m *ReportSnapshot) CloneVT() *ReportSnapshot       { return proto.Clone(m).(*ReportSnapshot) }
+func (m *ReportSnapshot) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ReportSnapshot) EqualVT(n *ReportSnapshot) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,16 +17,18 @@ func (m *CollectionSnapshot) SizeVT() int { return proto.Size(m) }
 func (m *CollectionSnapshot) CloneVT() *CollectionSnapshot {
 	return proto.Clone(m).(*CollectionSnapshot)
 }
-func (m *CollectionSnapshot) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CollectionSnapshot) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CollectionSnapshot) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *CollectionSnapshot) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *CollectionSnapshot) EqualVT(n *CollectionSnapshot) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectionSnapshot) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *NotifierSnapshot) SizeVT() int                   { return proto.Size(m) }
-func (m *NotifierSnapshot) CloneVT() *NotifierSnapshot    { return proto.Clone(m).(*NotifierSnapshot) }
-func (m *NotifierSnapshot) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NotifierSnapshot) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierSnapshot) SizeVT() int                      { return proto.Size(m) }
+func (m *NotifierSnapshot) CloneVT() *NotifierSnapshot       { return proto.Clone(m).(*NotifierSnapshot) }
+func (m *NotifierSnapshot) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *NotifierSnapshot) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierSnapshot) EqualVT(n *NotifierSnapshot) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NotifierSnapshot) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,7 @@ func (m *ReportStatus) SizeVT() int                   { return proto.Size(m) }
 func (m *ReportStatus) CloneVT() *ReportStatus        { return proto.Clone(m).(*ReportStatus) }
 func (m *ReportStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ReportStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ReportStatus) EqualVT(n *ReportStatus) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ReportStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

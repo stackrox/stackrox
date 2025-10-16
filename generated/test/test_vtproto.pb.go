@@ -8,8 +8,9 @@ func (m *TestCloneSubMessage) SizeVT() int { return proto.Size(m) }
 func (m *TestCloneSubMessage) CloneVT() *TestCloneSubMessage {
 	return proto.Clone(m).(*TestCloneSubMessage)
 }
-func (m *TestCloneSubMessage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TestCloneSubMessage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestCloneSubMessage) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *TestCloneSubMessage) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *TestCloneSubMessage) EqualVT(n *TestCloneSubMessage) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestCloneSubMessage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,7 @@ func (m *TestClone) SizeVT() int                   { return proto.Size(m) }
 func (m *TestClone) CloneVT() *TestClone           { return proto.Clone(m).(*TestClone) }
 func (m *TestClone) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TestClone) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TestClone) EqualVT(n *TestClone) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TestClone) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

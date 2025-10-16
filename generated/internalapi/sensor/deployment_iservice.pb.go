@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/deployment_iservice.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -23,13 +25,11 @@ const (
 )
 
 type GetDeploymentForPodRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PodName     *string                `protobuf:"bytes,1,opt,name=pod_name,json=podName"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,2,opt,name=namespace"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	PodName       string                 `protobuf:"bytes,1,opt,name=pod_name,json=podName" json:"pod_name,omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetDeploymentForPodRequest) Reset() {
@@ -59,77 +59,39 @@ func (x *GetDeploymentForPodRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetDeploymentForPodRequest) GetPodName() string {
 	if x != nil {
-		if x.xxx_hidden_PodName != nil {
-			return *x.xxx_hidden_PodName
-		}
-		return ""
+		return x.PodName
 	}
 	return ""
 }
 
 func (x *GetDeploymentForPodRequest) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *GetDeploymentForPodRequest) SetPodName(v string) {
-	x.xxx_hidden_PodName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.PodName = v
 }
 
 func (x *GetDeploymentForPodRequest) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetDeploymentForPodRequest) HasPodName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetDeploymentForPodRequest) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetDeploymentForPodRequest) ClearPodName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_PodName = nil
-}
-
-func (x *GetDeploymentForPodRequest) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Namespace = nil
+	x.Namespace = v
 }
 
 type GetDeploymentForPodRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	PodName   *string
-	Namespace *string
+	PodName   string
+	Namespace string
 }
 
 func (b0 GetDeploymentForPodRequest_builder) Build() *GetDeploymentForPodRequest {
 	m0 := &GetDeploymentForPodRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.PodName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_PodName = b.PodName
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.PodName = b.PodName
+	x.Namespace = b.Namespace
 	return m0
 }
 
@@ -142,7 +104,7 @@ const file_internalapi_sensor_deployment_iservice_proto_rawDesc = "" +
 	"\bpod_name\x18\x01 \x01(\tR\apodName\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace2c\n" +
 	"\x11DeploymentService\x12N\n" +
-	"\x13GetDeploymentForPod\x12\".sensor.GetDeploymentForPodRequest\x1a\x13.storage.DeploymentB%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x13GetDeploymentForPod\x12\".sensor.GetDeploymentForPodRequest\x1a\x13.storage.DeploymentB-Z\x1b./internalapi/sensor;sensor\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_deployment_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_sensor_deployment_iservice_proto_goTypes = []any{

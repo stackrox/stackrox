@@ -8,14 +8,16 @@ func (m *IndexReport) SizeVT() int                   { return proto.Size(m) }
 func (m *IndexReport) CloneVT() *IndexReport         { return proto.Clone(m).(*IndexReport) }
 func (m *IndexReport) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *IndexReport) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *IndexReport) EqualVT(n *IndexReport) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IndexReport) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *IndexReportEvent) SizeVT() int                   { return proto.Size(m) }
-func (m *IndexReportEvent) CloneVT() *IndexReportEvent    { return proto.Clone(m).(*IndexReportEvent) }
-func (m *IndexReportEvent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *IndexReportEvent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *IndexReportEvent) SizeVT() int                      { return proto.Size(m) }
+func (m *IndexReportEvent) CloneVT() *IndexReportEvent       { return proto.Clone(m).(*IndexReportEvent) }
+func (m *IndexReportEvent) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *IndexReportEvent) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *IndexReportEvent) EqualVT(n *IndexReportEvent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IndexReportEvent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

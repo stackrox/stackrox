@@ -12,6 +12,9 @@ func (m *UpsertVirtualMachineIndexReportRequest) MarshalVT() ([]byte, error) { r
 func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpsertVirtualMachineIndexReportRequest) EqualVT(n *UpsertVirtualMachineIndexReportRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -27,6 +30,9 @@ func (m *UpsertVirtualMachineIndexReportResponse) MarshalVT() ([]byte, error) {
 }
 func (m *UpsertVirtualMachineIndexReportResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpsertVirtualMachineIndexReportResponse) EqualVT(n *UpsertVirtualMachineIndexReportResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

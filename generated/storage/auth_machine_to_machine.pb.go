@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/auth_machine_to_machine.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -70,19 +72,17 @@ func (x AuthMachineToMachineConfig_Type) Number() protoreflect.EnumNumber {
 // Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
 // Next tag: 7.
 type AuthMachineToMachineConfig struct {
-	state                              protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_Id                      *string                                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Type                    AuthMachineToMachineConfig_Type        `protobuf:"varint,2,opt,name=type,enum=storage.AuthMachineToMachineConfig_Type"`
-	xxx_hidden_TokenExpirationDuration *string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration"`
-	xxx_hidden_Mappings                *[]*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings"`
-	xxx_hidden_Issuer                  *string                                `protobuf:"bytes,5,opt,name=issuer"`
-	xxx_hidden_Traits                  *Traits                                `protobuf:"bytes,6,opt,name=traits"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                   protoimpl.MessageState                `protogen:"hybrid.v1"`
+	Id                      string                                `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Type                    AuthMachineToMachineConfig_Type       `protobuf:"varint,2,opt,name=type,enum=storage.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
+	TokenExpirationDuration string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration" json:"token_expiration_duration,omitempty"`
+	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings" json:"mappings,omitempty"`
+	// The issuer is related to an ID token's issuer.
+	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
+	Issuer        string  `protobuf:"bytes,5,opt,name=issuer" json:"issuer,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Traits        *Traits `protobuf:"bytes,6,opt,name=traits" json:"traits,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuthMachineToMachineConfig) Reset() {
@@ -112,168 +112,91 @@ func (x *AuthMachineToMachineConfig) ProtoReflect() protoreflect.Message {
 
 func (x *AuthMachineToMachineConfig) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetType() AuthMachineToMachineConfig_Type {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return AuthMachineToMachineConfig_GENERIC
 }
 
 func (x *AuthMachineToMachineConfig) GetTokenExpirationDuration() string {
 	if x != nil {
-		if x.xxx_hidden_TokenExpirationDuration != nil {
-			return *x.xxx_hidden_TokenExpirationDuration
-		}
-		return ""
+		return x.TokenExpirationDuration
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetMappings() []*AuthMachineToMachineConfig_Mapping {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Mappings) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*AuthMachineToMachineConfig_Mapping
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Mappings
 	}
 	return nil
 }
 
 func (x *AuthMachineToMachineConfig) GetIssuer() string {
 	if x != nil {
-		if x.xxx_hidden_Issuer != nil {
-			return *x.xxx_hidden_Issuer
-		}
-		return ""
+		return x.Issuer
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig) GetTraits() *Traits {
 	if x != nil {
-		return x.xxx_hidden_Traits
+		return x.Traits
 	}
 	return nil
 }
 
 func (x *AuthMachineToMachineConfig) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Id = v
 }
 
 func (x *AuthMachineToMachineConfig) SetType(v AuthMachineToMachineConfig_Type) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Type = v
 }
 
 func (x *AuthMachineToMachineConfig) SetTokenExpirationDuration(v string) {
-	x.xxx_hidden_TokenExpirationDuration = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.TokenExpirationDuration = v
 }
 
 func (x *AuthMachineToMachineConfig) SetMappings(v []*AuthMachineToMachineConfig_Mapping) {
-	var sv *[]*AuthMachineToMachineConfig_Mapping
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*AuthMachineToMachineConfig_Mapping{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Mappings), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Mappings = v
 }
 
 func (x *AuthMachineToMachineConfig) SetIssuer(v string) {
-	x.xxx_hidden_Issuer = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.Issuer = v
 }
 
 func (x *AuthMachineToMachineConfig) SetTraits(v *Traits) {
-	x.xxx_hidden_Traits = v
-}
-
-func (x *AuthMachineToMachineConfig) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AuthMachineToMachineConfig) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *AuthMachineToMachineConfig) HasTokenExpirationDuration() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *AuthMachineToMachineConfig) HasIssuer() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.Traits = v
 }
 
 func (x *AuthMachineToMachineConfig) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Traits != nil
-}
-
-func (x *AuthMachineToMachineConfig) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *AuthMachineToMachineConfig) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = AuthMachineToMachineConfig_GENERIC
-}
-
-func (x *AuthMachineToMachineConfig) ClearTokenExpirationDuration() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_TokenExpirationDuration = nil
-}
-
-func (x *AuthMachineToMachineConfig) ClearIssuer() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Issuer = nil
+	return x.Traits != nil
 }
 
 func (x *AuthMachineToMachineConfig) ClearTraits() {
-	x.xxx_hidden_Traits = nil
+	x.Traits = nil
 }
 
 type AuthMachineToMachineConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                      *string
-	Type                    *AuthMachineToMachineConfig_Type
-	TokenExpirationDuration *string
+	Id                      string
+	Type                    AuthMachineToMachineConfig_Type
+	TokenExpirationDuration string
 	Mappings                []*AuthMachineToMachineConfig_Mapping
 	// The issuer is related to an ID token's issuer.
 	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-	Issuer *string
+	Issuer string
 	Traits *Traits
 }
 
@@ -281,39 +204,22 @@ func (b0 AuthMachineToMachineConfig_builder) Build() *AuthMachineToMachineConfig
 	m0 := &AuthMachineToMachineConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Type = *b.Type
-	}
-	if b.TokenExpirationDuration != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_TokenExpirationDuration = b.TokenExpirationDuration
-	}
-	if b.Mappings != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Mappings = &b.Mappings
-	}
-	if b.Issuer != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_Issuer = b.Issuer
-	}
-	x.xxx_hidden_Traits = b.Traits
+	x.Id = b.Id
+	x.Type = b.Type
+	x.TokenExpirationDuration = b.TokenExpirationDuration
+	x.Mappings = b.Mappings
+	x.Issuer = b.Issuer
+	x.Traits = b.Traits
 	return m0
 }
 
 type AuthMachineToMachineConfig_Mapping struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key             *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_ValueExpression *string                `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression"`
-	xxx_hidden_Role            *string                `protobuf:"bytes,3,opt,name=role"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key             string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	ValueExpression string                 `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression" json:"value_expression,omitempty"`
+	Role            string                 `protobuf:"bytes,3,opt,name=role" json:"role,omitempty" sql:"fk(Role:name),restrict-delete"` // @gotags: sql:"fk(Role:name),restrict-delete"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) Reset() {
@@ -343,109 +249,52 @@ func (x *AuthMachineToMachineConfig_Mapping) ProtoReflect() protoreflect.Message
 
 func (x *AuthMachineToMachineConfig_Mapping) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) GetValueExpression() string {
 	if x != nil {
-		if x.xxx_hidden_ValueExpression != nil {
-			return *x.xxx_hidden_ValueExpression
-		}
-		return ""
+		return x.ValueExpression
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) GetRole() string {
 	if x != nil {
-		if x.xxx_hidden_Role != nil {
-			return *x.xxx_hidden_Role
-		}
-		return ""
+		return x.Role
 	}
 	return ""
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Key = v
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetValueExpression(v string) {
-	x.xxx_hidden_ValueExpression = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.ValueExpression = v
 }
 
 func (x *AuthMachineToMachineConfig_Mapping) SetRole(v string) {
-	x.xxx_hidden_Role = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) HasValueExpression() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) HasRole() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) ClearValueExpression() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ValueExpression = nil
-}
-
-func (x *AuthMachineToMachineConfig_Mapping) ClearRole() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Role = nil
+	x.Role = v
 }
 
 type AuthMachineToMachineConfig_Mapping_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key             *string
-	ValueExpression *string
-	Role            *string
+	Key             string
+	ValueExpression string
+	Role            string
 }
 
 func (b0 AuthMachineToMachineConfig_Mapping_builder) Build() *AuthMachineToMachineConfig_Mapping {
 	m0 := &AuthMachineToMachineConfig_Mapping{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.ValueExpression != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_ValueExpression = b.ValueExpression
-	}
-	if b.Role != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Role = b.Role
-	}
+	x.Key = b.Key
+	x.ValueExpression = b.ValueExpression
+	x.Role = b.Role
 	return m0
 }
 
@@ -468,8 +317,8 @@ const file_storage_auth_machine_to_machine_proto_rawDesc = "" +
 	"\x04Type\x12\v\n" +
 	"\aGENERIC\x10\x00\x12\x12\n" +
 	"\x0eGITHUB_ACTIONS\x10\x01\x12\x18\n" +
-	"\x14KUBE_SERVICE_ACCOUNT\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x14KUBE_SERVICE_ACCOUNT\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_auth_machine_to_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_auth_machine_to_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

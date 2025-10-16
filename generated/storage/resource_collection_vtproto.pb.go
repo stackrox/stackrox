@@ -8,8 +8,9 @@ func (m *ResourceCollection) SizeVT() int { return proto.Size(m) }
 func (m *ResourceCollection) CloneVT() *ResourceCollection {
 	return proto.Clone(m).(*ResourceCollection)
 }
-func (m *ResourceCollection) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceCollection) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ResourceCollection) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceCollection) EqualVT(n *ResourceCollection) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceCollection) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,16 +25,20 @@ func (m *ResourceCollection_EmbeddedResourceCollection) MarshalVT() ([]byte, err
 func (m *ResourceCollection_EmbeddedResourceCollection) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ResourceCollection_EmbeddedResourceCollection) EqualVT(n *ResourceCollection_EmbeddedResourceCollection) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceCollection_EmbeddedResourceCollection) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *ResourceSelector) SizeVT() int                   { return proto.Size(m) }
-func (m *ResourceSelector) CloneVT() *ResourceSelector    { return proto.Clone(m).(*ResourceSelector) }
-func (m *ResourceSelector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ResourceSelector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceSelector) SizeVT() int                      { return proto.Size(m) }
+func (m *ResourceSelector) CloneVT() *ResourceSelector       { return proto.Clone(m).(*ResourceSelector) }
+func (m *ResourceSelector) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ResourceSelector) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceSelector) EqualVT(n *ResourceSelector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceSelector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,6 +47,7 @@ func (m *SelectorRule) SizeVT() int                   { return proto.Size(m) }
 func (m *SelectorRule) CloneVT() *SelectorRule        { return proto.Clone(m).(*SelectorRule) }
 func (m *SelectorRule) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SelectorRule) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SelectorRule) EqualVT(n *SelectorRule) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SelectorRule) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -50,6 +56,7 @@ func (m *RuleValue) SizeVT() int                   { return proto.Size(m) }
 func (m *RuleValue) CloneVT() *RuleValue           { return proto.Clone(m).(*RuleValue) }
 func (m *RuleValue) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RuleValue) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RuleValue) EqualVT(n *RuleValue) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RuleValue) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

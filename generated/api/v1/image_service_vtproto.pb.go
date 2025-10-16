@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *GetImageRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *GetImageRequest) CloneVT() *GetImageRequest     { return proto.Clone(m).(*GetImageRequest) }
-func (m *GetImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageRequest) SizeVT() int                     { return proto.Size(m) }
+func (m *GetImageRequest) CloneVT() *GetImageRequest       { return proto.Clone(m).(*GetImageRequest) }
+func (m *GetImageRequest) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageRequest) EqualVT(n *GetImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *ListImagesResponse) SizeVT() int { return proto.Size(m) }
 func (m *ListImagesResponse) CloneVT() *ListImagesResponse {
 	return proto.Clone(m).(*ListImagesResponse)
 }
-func (m *ListImagesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListImagesResponse) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ListImagesResponse) EqualVT(n *ListImagesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,16 +28,18 @@ func (m *CountImagesResponse) SizeVT() int { return proto.Size(m) }
 func (m *CountImagesResponse) CloneVT() *CountImagesResponse {
 	return proto.Clone(m).(*CountImagesResponse)
 }
-func (m *CountImagesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CountImagesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CountImagesResponse) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *CountImagesResponse) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *CountImagesResponse) EqualVT(n *CountImagesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ScanImageRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *ScanImageRequest) CloneVT() *ScanImageRequest    { return proto.Clone(m).(*ScanImageRequest) }
-func (m *ScanImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ScanImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScanImageRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *ScanImageRequest) CloneVT() *ScanImageRequest       { return proto.Clone(m).(*ScanImageRequest) }
+func (m *ScanImageRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ScanImageRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ScanImageRequest) EqualVT(n *ScanImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScanImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -46,6 +50,9 @@ func (m *ScanImageInternalRequest) CloneVT() *ScanImageInternalRequest {
 }
 func (m *ScanImageInternalRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScanImageInternalRequest) EqualVT(n *ScanImageInternalRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScanImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -57,6 +64,9 @@ func (m *ScanImageInternalRequest_Source) CloneVT() *ScanImageInternalRequest_So
 func (m *ScanImageInternalRequest_Source) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ScanImageInternalRequest_Source) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ScanImageInternalRequest_Source) EqualVT(n *ScanImageInternalRequest_Source) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -70,6 +80,9 @@ func (m *ScanImageInternalResponse) CloneVT() *ScanImageInternalResponse {
 }
 func (m *ScanImageInternalResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScanImageInternalResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScanImageInternalResponse) EqualVT(n *ScanImageInternalResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScanImageInternalResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -81,6 +94,9 @@ func (m *GetImageVulnerabilitiesInternalRequest) CloneVT() *GetImageVulnerabilit
 func (m *GetImageVulnerabilitiesInternalRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetImageVulnerabilitiesInternalRequest) EqualVT(n *GetImageVulnerabilitiesInternalRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -96,6 +112,9 @@ func (m *EnrichLocalImageInternalRequest) MarshalVT() ([]byte, error) { return p
 func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *EnrichLocalImageInternalRequest) EqualVT(n *EnrichLocalImageInternalRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -110,6 +129,9 @@ func (m *UpdateLocalScanStatusInternalRequest) MarshalVT() ([]byte, error) { ret
 func (m *UpdateLocalScanStatusInternalRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpdateLocalScanStatusInternalRequest) EqualVT(n *UpdateLocalScanStatusInternalRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateLocalScanStatusInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -120,8 +142,9 @@ func (m *DeleteImagesRequest) SizeVT() int { return proto.Size(m) }
 func (m *DeleteImagesRequest) CloneVT() *DeleteImagesRequest {
 	return proto.Clone(m).(*DeleteImagesRequest)
 }
-func (m *DeleteImagesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeleteImagesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteImagesRequest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *DeleteImagesRequest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteImagesRequest) EqualVT(n *DeleteImagesRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteImagesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -130,16 +153,18 @@ func (m *DeleteImagesResponse) SizeVT() int { return proto.Size(m) }
 func (m *DeleteImagesResponse) CloneVT() *DeleteImagesResponse {
 	return proto.Clone(m).(*DeleteImagesResponse)
 }
-func (m *DeleteImagesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeleteImagesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteImagesResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *DeleteImagesResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteImagesResponse) EqualVT(n *DeleteImagesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *WatchImageRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *WatchImageRequest) CloneVT() *WatchImageRequest   { return proto.Clone(m).(*WatchImageRequest) }
-func (m *WatchImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *WatchImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *WatchImageRequest) SizeVT() int                       { return proto.Size(m) }
+func (m *WatchImageRequest) CloneVT() *WatchImageRequest       { return proto.Clone(m).(*WatchImageRequest) }
+func (m *WatchImageRequest) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *WatchImageRequest) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *WatchImageRequest) EqualVT(n *WatchImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *WatchImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -148,8 +173,9 @@ func (m *WatchImageResponse) SizeVT() int { return proto.Size(m) }
 func (m *WatchImageResponse) CloneVT() *WatchImageResponse {
 	return proto.Clone(m).(*WatchImageResponse)
 }
-func (m *WatchImageResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *WatchImageResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *WatchImageResponse) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *WatchImageResponse) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *WatchImageResponse) EqualVT(n *WatchImageResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *WatchImageResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -158,8 +184,9 @@ func (m *UnwatchImageRequest) SizeVT() int { return proto.Size(m) }
 func (m *UnwatchImageRequest) CloneVT() *UnwatchImageRequest {
 	return proto.Clone(m).(*UnwatchImageRequest)
 }
-func (m *UnwatchImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UnwatchImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UnwatchImageRequest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *UnwatchImageRequest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *UnwatchImageRequest) EqualVT(n *UnwatchImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UnwatchImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -170,6 +197,9 @@ func (m *GetWatchedImagesResponse) CloneVT() *GetWatchedImagesResponse {
 }
 func (m *GetWatchedImagesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetWatchedImagesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetWatchedImagesResponse) EqualVT(n *GetWatchedImagesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetWatchedImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -181,6 +211,9 @@ func (m *ScanImageInternalResponseDetails) CloneVT() *ScanImageInternalResponseD
 func (m *ScanImageInternalResponseDetails) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ScanImageInternalResponseDetails) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ScanImageInternalResponseDetails) EqualVT(n *ScanImageInternalResponseDetails) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -198,6 +231,9 @@ func (m *ScanImageInternalResponseDetails_TooManyParallelScans) MarshalVT() ([]b
 func (m *ScanImageInternalResponseDetails_TooManyParallelScans) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ScanImageInternalResponseDetails_TooManyParallelScans) EqualVT(n *ScanImageInternalResponseDetails_TooManyParallelScans) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScanImageInternalResponseDetails_TooManyParallelScans) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -208,8 +244,9 @@ func (m *ExportImageRequest) SizeVT() int { return proto.Size(m) }
 func (m *ExportImageRequest) CloneVT() *ExportImageRequest {
 	return proto.Clone(m).(*ExportImageRequest)
 }
-func (m *ExportImageRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportImageRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportImageRequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ExportImageRequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ExportImageRequest) EqualVT(n *ExportImageRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportImageRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -218,8 +255,9 @@ func (m *ExportImageResponse) SizeVT() int { return proto.Size(m) }
 func (m *ExportImageResponse) CloneVT() *ExportImageResponse {
 	return proto.Clone(m).(*ExportImageResponse)
 }
-func (m *ExportImageResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportImageResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportImageResponse) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ExportImageResponse) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ExportImageResponse) EqualVT(n *ExportImageResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportImageResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

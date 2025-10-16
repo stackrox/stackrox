@@ -8,6 +8,7 @@ func (m *Namespace) SizeVT() int                   { return proto.Size(m) }
 func (m *Namespace) CloneVT() *Namespace           { return proto.Clone(m).(*Namespace) }
 func (m *Namespace) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Namespace) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Namespace) EqualVT(n *Namespace) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Namespace) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *GetNamespacesResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetNamespacesResponse) CloneVT() *GetNamespacesResponse {
 	return proto.Clone(m).(*GetNamespacesResponse)
 }
-func (m *GetNamespacesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetNamespacesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetNamespacesResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GetNamespacesResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GetNamespacesResponse) EqualVT(n *GetNamespacesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNamespacesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *GetNamespaceRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetNamespaceRequest) CloneVT() *GetNamespaceRequest {
 	return proto.Clone(m).(*GetNamespaceRequest)
 }
-func (m *GetNamespaceRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetNamespaceRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetNamespaceRequest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *GetNamespaceRequest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *GetNamespaceRequest) EqualVT(n *GetNamespaceRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNamespaceRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

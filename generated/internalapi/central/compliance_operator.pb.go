@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/compliance_operator.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -137,17 +139,24 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) Number() protoreflect.EnumN
 
 // ComplianceOperatorInfo has basic info and status about the compliance operator.
 type ComplianceOperatorInfo struct {
-	state                          protoimpl.MessageState                       `protogen:"opaque.v1"`
-	xxx_hidden_Version             *string                                      `protobuf:"bytes,1,opt,name=version"`
-	xxx_hidden_Namespace           *string                                      `protobuf:"bytes,2,opt,name=namespace"`
-	xxx_hidden_TotalDesiredPodsOpt isComplianceOperatorInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
-	xxx_hidden_TotalReadyPodsOpt   isComplianceOperatorInfo_TotalReadyPodsOpt   `protobuf_oneof:"total_ready_pods_opt"`
-	xxx_hidden_StatusError         *string                                      `protobuf:"bytes,5,opt,name=status_error,json=statusError"`
-	xxx_hidden_IsInstalled         bool                                         `protobuf:"varint,6,opt,name=is_installed,json=isInstalled"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"hybrid.v1"`
+	Version   string                 `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
+	Namespace string                 `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
+	// The following fields are made optional/nullable because there can be errors when trying to obtain them.
+	//
+	// Types that are valid to be assigned to TotalDesiredPodsOpt:
+	//
+	//	*ComplianceOperatorInfo_TotalDesiredPods
+	TotalDesiredPodsOpt isComplianceOperatorInfo_TotalDesiredPodsOpt `protobuf_oneof:"total_desired_pods_opt"`
+	// Types that are valid to be assigned to TotalReadyPodsOpt:
+	//
+	//	*ComplianceOperatorInfo_TotalReadyPods
+	TotalReadyPodsOpt isComplianceOperatorInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
+	// Collection of errors that occurred while trying to obtain compliance health info.
+	StatusError   string `protobuf:"bytes,5,opt,name=status_error,json=statusError" json:"status_error,omitempty"`
+	IsInstalled   bool   `protobuf:"varint,6,opt,name=is_installed,json=isInstalled" json:"is_installed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorInfo) Reset() {
@@ -177,36 +186,44 @@ func (x *ComplianceOperatorInfo) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorInfo) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorInfo) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
+func (x *ComplianceOperatorInfo) GetTotalDesiredPodsOpt() isComplianceOperatorInfo_TotalDesiredPodsOpt {
+	if x != nil {
+		return x.TotalDesiredPodsOpt
+	}
+	return nil
+}
+
 func (x *ComplianceOperatorInfo) GetTotalDesiredPods() int32 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*complianceOperatorInfo_TotalDesiredPods); ok {
+		if x, ok := x.TotalDesiredPodsOpt.(*ComplianceOperatorInfo_TotalDesiredPods); ok {
 			return x.TotalDesiredPods
 		}
 	}
 	return 0
 }
 
+func (x *ComplianceOperatorInfo) GetTotalReadyPodsOpt() isComplianceOperatorInfo_TotalReadyPodsOpt {
+	if x != nil {
+		return x.TotalReadyPodsOpt
+	}
+	return nil
+}
+
 func (x *ComplianceOperatorInfo) GetTotalReadyPods() int32 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_TotalReadyPodsOpt.(*complianceOperatorInfo_TotalReadyPods); ok {
+		if x, ok := x.TotalReadyPodsOpt.(*ComplianceOperatorInfo_TotalReadyPods); ok {
 			return x.TotalReadyPods
 		}
 	}
@@ -215,75 +232,54 @@ func (x *ComplianceOperatorInfo) GetTotalReadyPods() int32 {
 
 func (x *ComplianceOperatorInfo) GetStatusError() string {
 	if x != nil {
-		if x.xxx_hidden_StatusError != nil {
-			return *x.xxx_hidden_StatusError
-		}
-		return ""
+		return x.StatusError
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorInfo) GetIsInstalled() bool {
 	if x != nil {
-		return x.xxx_hidden_IsInstalled
+		return x.IsInstalled
 	}
 	return false
 }
 
 func (x *ComplianceOperatorInfo) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Version = v
 }
 
 func (x *ComplianceOperatorInfo) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Namespace = v
 }
 
 func (x *ComplianceOperatorInfo) SetTotalDesiredPods(v int32) {
-	x.xxx_hidden_TotalDesiredPodsOpt = &complianceOperatorInfo_TotalDesiredPods{v}
+	x.TotalDesiredPodsOpt = &ComplianceOperatorInfo_TotalDesiredPods{v}
 }
 
 func (x *ComplianceOperatorInfo) SetTotalReadyPods(v int32) {
-	x.xxx_hidden_TotalReadyPodsOpt = &complianceOperatorInfo_TotalReadyPods{v}
+	x.TotalReadyPodsOpt = &ComplianceOperatorInfo_TotalReadyPods{v}
 }
 
 func (x *ComplianceOperatorInfo) SetStatusError(v string) {
-	x.xxx_hidden_StatusError = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.StatusError = v
 }
 
 func (x *ComplianceOperatorInfo) SetIsInstalled(v bool) {
-	x.xxx_hidden_IsInstalled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *ComplianceOperatorInfo) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorInfo) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.IsInstalled = v
 }
 
 func (x *ComplianceOperatorInfo) HasTotalDesiredPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_TotalDesiredPodsOpt != nil
+	return x.TotalDesiredPodsOpt != nil
 }
 
 func (x *ComplianceOperatorInfo) HasTotalDesiredPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*complianceOperatorInfo_TotalDesiredPods)
+	_, ok := x.TotalDesiredPodsOpt.(*ComplianceOperatorInfo_TotalDesiredPods)
 	return ok
 }
 
@@ -291,69 +287,35 @@ func (x *ComplianceOperatorInfo) HasTotalReadyPodsOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_TotalReadyPodsOpt != nil
+	return x.TotalReadyPodsOpt != nil
 }
 
 func (x *ComplianceOperatorInfo) HasTotalReadyPods() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_TotalReadyPodsOpt.(*complianceOperatorInfo_TotalReadyPods)
+	_, ok := x.TotalReadyPodsOpt.(*ComplianceOperatorInfo_TotalReadyPods)
 	return ok
 }
 
-func (x *ComplianceOperatorInfo) HasStatusError() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorInfo) HasIsInstalled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ComplianceOperatorInfo) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Version = nil
-}
-
-func (x *ComplianceOperatorInfo) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Namespace = nil
-}
-
 func (x *ComplianceOperatorInfo) ClearTotalDesiredPodsOpt() {
-	x.xxx_hidden_TotalDesiredPodsOpt = nil
+	x.TotalDesiredPodsOpt = nil
 }
 
 func (x *ComplianceOperatorInfo) ClearTotalDesiredPods() {
-	if _, ok := x.xxx_hidden_TotalDesiredPodsOpt.(*complianceOperatorInfo_TotalDesiredPods); ok {
-		x.xxx_hidden_TotalDesiredPodsOpt = nil
+	if _, ok := x.TotalDesiredPodsOpt.(*ComplianceOperatorInfo_TotalDesiredPods); ok {
+		x.TotalDesiredPodsOpt = nil
 	}
 }
 
 func (x *ComplianceOperatorInfo) ClearTotalReadyPodsOpt() {
-	x.xxx_hidden_TotalReadyPodsOpt = nil
+	x.TotalReadyPodsOpt = nil
 }
 
 func (x *ComplianceOperatorInfo) ClearTotalReadyPods() {
-	if _, ok := x.xxx_hidden_TotalReadyPodsOpt.(*complianceOperatorInfo_TotalReadyPods); ok {
-		x.xxx_hidden_TotalReadyPodsOpt = nil
+	if _, ok := x.TotalReadyPodsOpt.(*ComplianceOperatorInfo_TotalReadyPods); ok {
+		x.TotalReadyPodsOpt = nil
 	}
-}
-
-func (x *ComplianceOperatorInfo) ClearStatusError() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_StatusError = nil
-}
-
-func (x *ComplianceOperatorInfo) ClearIsInstalled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_IsInstalled = false
 }
 
 const ComplianceOperatorInfo_TotalDesiredPodsOpt_not_set_case case_ComplianceOperatorInfo_TotalDesiredPodsOpt = 0
@@ -363,8 +325,8 @@ func (x *ComplianceOperatorInfo) WhichTotalDesiredPodsOpt() case_ComplianceOpera
 	if x == nil {
 		return ComplianceOperatorInfo_TotalDesiredPodsOpt_not_set_case
 	}
-	switch x.xxx_hidden_TotalDesiredPodsOpt.(type) {
-	case *complianceOperatorInfo_TotalDesiredPods:
+	switch x.TotalDesiredPodsOpt.(type) {
+	case *ComplianceOperatorInfo_TotalDesiredPods:
 		return ComplianceOperatorInfo_TotalDesiredPods_case
 	default:
 		return ComplianceOperatorInfo_TotalDesiredPodsOpt_not_set_case
@@ -378,8 +340,8 @@ func (x *ComplianceOperatorInfo) WhichTotalReadyPodsOpt() case_ComplianceOperato
 	if x == nil {
 		return ComplianceOperatorInfo_TotalReadyPodsOpt_not_set_case
 	}
-	switch x.xxx_hidden_TotalReadyPodsOpt.(type) {
-	case *complianceOperatorInfo_TotalReadyPods:
+	switch x.TotalReadyPodsOpt.(type) {
+	case *ComplianceOperatorInfo_TotalReadyPods:
 		return ComplianceOperatorInfo_TotalReadyPods_case
 	default:
 		return ComplianceOperatorInfo_TotalReadyPodsOpt_not_set_case
@@ -389,47 +351,35 @@ func (x *ComplianceOperatorInfo) WhichTotalReadyPodsOpt() case_ComplianceOperato
 type ComplianceOperatorInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Version   *string
-	Namespace *string
+	Version   string
+	Namespace string
 	// The following fields are made optional/nullable because there can be errors when trying to obtain them.
 
-	// Fields of oneof xxx_hidden_TotalDesiredPodsOpt:
+	// Fields of oneof TotalDesiredPodsOpt:
 	TotalDesiredPods *int32
-	// -- end of xxx_hidden_TotalDesiredPodsOpt
-	// Fields of oneof xxx_hidden_TotalReadyPodsOpt:
+	// -- end of TotalDesiredPodsOpt
+	// Fields of oneof TotalReadyPodsOpt:
 	TotalReadyPods *int32
-	// -- end of xxx_hidden_TotalReadyPodsOpt
+	// -- end of TotalReadyPodsOpt
 	// Collection of errors that occurred while trying to obtain compliance health info.
-	StatusError *string
-	IsInstalled *bool
+	StatusError string
+	IsInstalled bool
 }
 
 func (b0 ComplianceOperatorInfo_builder) Build() *ComplianceOperatorInfo {
 	m0 := &ComplianceOperatorInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Version = b.Version
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.Version = b.Version
+	x.Namespace = b.Namespace
 	if b.TotalDesiredPods != nil {
-		x.xxx_hidden_TotalDesiredPodsOpt = &complianceOperatorInfo_TotalDesiredPods{*b.TotalDesiredPods}
+		x.TotalDesiredPodsOpt = &ComplianceOperatorInfo_TotalDesiredPods{*b.TotalDesiredPods}
 	}
 	if b.TotalReadyPods != nil {
-		x.xxx_hidden_TotalReadyPodsOpt = &complianceOperatorInfo_TotalReadyPods{*b.TotalReadyPods}
+		x.TotalReadyPodsOpt = &ComplianceOperatorInfo_TotalReadyPods{*b.TotalReadyPods}
 	}
-	if b.StatusError != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_StatusError = b.StatusError
-	}
-	if b.IsInstalled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_IsInstalled = *b.IsInstalled
-	}
+	x.StatusError = b.StatusError
+	x.IsInstalled = b.IsInstalled
 	return m0
 }
 
@@ -457,29 +407,27 @@ type isComplianceOperatorInfo_TotalDesiredPodsOpt interface {
 	isComplianceOperatorInfo_TotalDesiredPodsOpt()
 }
 
-type complianceOperatorInfo_TotalDesiredPods struct {
+type ComplianceOperatorInfo_TotalDesiredPods struct {
 	TotalDesiredPods int32 `protobuf:"varint,3,opt,name=total_desired_pods,json=totalDesiredPods,oneof"`
 }
 
-func (*complianceOperatorInfo_TotalDesiredPods) isComplianceOperatorInfo_TotalDesiredPodsOpt() {}
+func (*ComplianceOperatorInfo_TotalDesiredPods) isComplianceOperatorInfo_TotalDesiredPodsOpt() {}
 
 type isComplianceOperatorInfo_TotalReadyPodsOpt interface {
 	isComplianceOperatorInfo_TotalReadyPodsOpt()
 }
 
-type complianceOperatorInfo_TotalReadyPods struct {
+type ComplianceOperatorInfo_TotalReadyPods struct {
 	TotalReadyPods int32 `protobuf:"varint,4,opt,name=total_ready_pods,json=totalReadyPods,oneof"`
 }
 
-func (*complianceOperatorInfo_TotalReadyPods) isComplianceOperatorInfo_TotalReadyPodsOpt() {}
+func (*ComplianceOperatorInfo_TotalReadyPods) isComplianceOperatorInfo_TotalReadyPodsOpt() {}
 
 type EnableComplianceRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnableComplianceRequest) Reset() {
@@ -509,55 +457,34 @@ func (x *EnableComplianceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *EnableComplianceRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *EnableComplianceRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *EnableComplianceRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *EnableComplianceRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	x.Id = v
 }
 
 type EnableComplianceRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
+	Id string
 }
 
 func (b0 EnableComplianceRequest_builder) Build() *EnableComplianceRequest {
 	m0 := &EnableComplianceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	return m0
 }
 
 type DisableComplianceRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DisableComplianceRequest) Reset() {
@@ -587,59 +514,36 @@ func (x *DisableComplianceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DisableComplianceRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DisableComplianceRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *DisableComplianceRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DisableComplianceRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	x.Id = v
 }
 
 type DisableComplianceRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
+	Id string
 }
 
 func (b0 DisableComplianceRequest_builder) Build() *DisableComplianceRequest {
 	m0 := &DisableComplianceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	return m0
 }
 
 // SyncComplianceScanConfigRequest contains a list of the Scan Configs that should be applied in the cluster.
 // This is use during Central/Sensor connection' startup to reconcile ScanSettings and ScanSettingBindings.
 type SyncComplianceScanConfigRequest struct {
-	state                  protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_ScanConfigs *[]*ApplyComplianceScanConfigRequest `protobuf:"bytes,1,rep,name=scan_configs,json=scanConfigs"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState              `protogen:"hybrid.v1"`
+	ScanConfigs   []*ApplyComplianceScanConfigRequest `protobuf:"bytes,1,rep,name=scan_configs,json=scanConfigs" json:"scan_configs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SyncComplianceScanConfigRequest) Reset() {
@@ -669,27 +573,13 @@ func (x *SyncComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *SyncComplianceScanConfigRequest) GetScanConfigs() []*ApplyComplianceScanConfigRequest {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ScanConfigs) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ApplyComplianceScanConfigRequest
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ScanConfigs
 	}
 	return nil
 }
 
 func (x *SyncComplianceScanConfigRequest) SetScanConfigs(v []*ApplyComplianceScanConfigRequest) {
-	var sv *[]*ApplyComplianceScanConfigRequest
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ApplyComplianceScanConfigRequest{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ScanConfigs), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.ScanConfigs = v
 }
 
 type SyncComplianceScanConfigRequest_builder struct {
@@ -702,22 +592,24 @@ func (b0 SyncComplianceScanConfigRequest_builder) Build() *SyncComplianceScanCon
 	m0 := &SyncComplianceScanConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScanConfigs != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ScanConfigs = &b.ScanConfigs
-	}
+	x.ScanConfigs = b.ScanConfigs
 	return m0
 }
 
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
 type ApplyComplianceScanConfigRequest struct {
-	state                  protoimpl.MessageState                         `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                        `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ScanRequest isApplyComplianceScanConfigRequest_ScanRequest `protobuf_oneof:"scan_request"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to ScanRequest:
+	//
+	//	*ApplyComplianceScanConfigRequest_ScheduledScan_
+	//	*ApplyComplianceScanConfigRequest_RerunScan
+	//	*ApplyComplianceScanConfigRequest_SuspendScan
+	//	*ApplyComplianceScanConfigRequest_ResumeScan
+	//	*ApplyComplianceScanConfigRequest_UpdateScan
+	ScanRequest   isApplyComplianceScanConfigRequest_ScanRequest `protobuf_oneof:"scan_request"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest) Reset() {
@@ -747,17 +639,21 @@ func (x *ApplyComplianceScanConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ApplyComplianceScanConfigRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *ApplyComplianceScanConfigRequest) GetScanRequest() isApplyComplianceScanConfigRequest_ScanRequest {
+	if x != nil {
+		return x.ScanRequest
+	}
+	return nil
+}
+
 func (x *ApplyComplianceScanConfigRequest) GetScheduledScan() *ApplyComplianceScanConfigRequest_ScheduledScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ScheduledScan_); ok {
+		if x, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ScheduledScan_); ok {
 			return x.ScheduledScan
 		}
 	}
@@ -766,7 +662,7 @@ func (x *ApplyComplianceScanConfigRequest) GetScheduledScan() *ApplyComplianceSc
 
 func (x *ApplyComplianceScanConfigRequest) GetRerunScan() *ApplyComplianceScanConfigRequest_RerunScheduledScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_RerunScan); ok {
+		if x, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_RerunScan); ok {
 			return x.RerunScan
 		}
 	}
@@ -775,7 +671,7 @@ func (x *ApplyComplianceScanConfigRequest) GetRerunScan() *ApplyComplianceScanCo
 
 func (x *ApplyComplianceScanConfigRequest) GetSuspendScan() *ApplyComplianceScanConfigRequest_SuspendScheduledScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_SuspendScan); ok {
+		if x, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_SuspendScan); ok {
 			return x.SuspendScan
 		}
 	}
@@ -784,7 +680,7 @@ func (x *ApplyComplianceScanConfigRequest) GetSuspendScan() *ApplyComplianceScan
 
 func (x *ApplyComplianceScanConfigRequest) GetResumeScan() *ApplyComplianceScanConfigRequest_ResumeScheduledScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ResumeScan); ok {
+		if x, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ResumeScan); ok {
 			return x.ResumeScan
 		}
 	}
@@ -793,7 +689,7 @@ func (x *ApplyComplianceScanConfigRequest) GetResumeScan() *ApplyComplianceScanC
 
 func (x *ApplyComplianceScanConfigRequest) GetUpdateScan() *ApplyComplianceScanConfigRequest_UpdateScheduledScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_UpdateScan); ok {
+		if x, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_UpdateScan); ok {
 			return x.UpdateScan
 		}
 	}
@@ -801,69 +697,61 @@ func (x *ApplyComplianceScanConfigRequest) GetUpdateScan() *ApplyComplianceScanC
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetScheduledScan(v *ApplyComplianceScanConfigRequest_ScheduledScan) {
 	if v == nil {
-		x.xxx_hidden_ScanRequest = nil
+		x.ScanRequest = nil
 		return
 	}
-	x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_ScheduledScan_{v}
+	x.ScanRequest = &ApplyComplianceScanConfigRequest_ScheduledScan_{v}
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetRerunScan(v *ApplyComplianceScanConfigRequest_RerunScheduledScan) {
 	if v == nil {
-		x.xxx_hidden_ScanRequest = nil
+		x.ScanRequest = nil
 		return
 	}
-	x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_RerunScan{v}
+	x.ScanRequest = &ApplyComplianceScanConfigRequest_RerunScan{v}
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetSuspendScan(v *ApplyComplianceScanConfigRequest_SuspendScheduledScan) {
 	if v == nil {
-		x.xxx_hidden_ScanRequest = nil
+		x.ScanRequest = nil
 		return
 	}
-	x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_SuspendScan{v}
+	x.ScanRequest = &ApplyComplianceScanConfigRequest_SuspendScan{v}
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetResumeScan(v *ApplyComplianceScanConfigRequest_ResumeScheduledScan) {
 	if v == nil {
-		x.xxx_hidden_ScanRequest = nil
+		x.ScanRequest = nil
 		return
 	}
-	x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_ResumeScan{v}
+	x.ScanRequest = &ApplyComplianceScanConfigRequest_ResumeScan{v}
 }
 
 func (x *ApplyComplianceScanConfigRequest) SetUpdateScan(v *ApplyComplianceScanConfigRequest_UpdateScheduledScan) {
 	if v == nil {
-		x.xxx_hidden_ScanRequest = nil
+		x.ScanRequest = nil
 		return
 	}
-	x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_UpdateScan{v}
-}
-
-func (x *ApplyComplianceScanConfigRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ScanRequest = &ApplyComplianceScanConfigRequest_UpdateScan{v}
 }
 
 func (x *ApplyComplianceScanConfigRequest) HasScanRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanRequest != nil
+	return x.ScanRequest != nil
 }
 
 func (x *ApplyComplianceScanConfigRequest) HasScheduledScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ScheduledScan_)
+	_, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ScheduledScan_)
 	return ok
 }
 
@@ -871,7 +759,7 @@ func (x *ApplyComplianceScanConfigRequest) HasRerunScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_RerunScan)
+	_, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_RerunScan)
 	return ok
 }
 
@@ -879,7 +767,7 @@ func (x *ApplyComplianceScanConfigRequest) HasSuspendScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_SuspendScan)
+	_, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_SuspendScan)
 	return ok
 }
 
@@ -887,7 +775,7 @@ func (x *ApplyComplianceScanConfigRequest) HasResumeScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ResumeScan)
+	_, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ResumeScan)
 	return ok
 }
 
@@ -895,46 +783,41 @@ func (x *ApplyComplianceScanConfigRequest) HasUpdateScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_UpdateScan)
+	_, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_UpdateScan)
 	return ok
 }
 
-func (x *ApplyComplianceScanConfigRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ApplyComplianceScanConfigRequest) ClearScanRequest() {
-	x.xxx_hidden_ScanRequest = nil
+	x.ScanRequest = nil
 }
 
 func (x *ApplyComplianceScanConfigRequest) ClearScheduledScan() {
-	if _, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ScheduledScan_); ok {
-		x.xxx_hidden_ScanRequest = nil
+	if _, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ScheduledScan_); ok {
+		x.ScanRequest = nil
 	}
 }
 
 func (x *ApplyComplianceScanConfigRequest) ClearRerunScan() {
-	if _, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_RerunScan); ok {
-		x.xxx_hidden_ScanRequest = nil
+	if _, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_RerunScan); ok {
+		x.ScanRequest = nil
 	}
 }
 
 func (x *ApplyComplianceScanConfigRequest) ClearSuspendScan() {
-	if _, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_SuspendScan); ok {
-		x.xxx_hidden_ScanRequest = nil
+	if _, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_SuspendScan); ok {
+		x.ScanRequest = nil
 	}
 }
 
 func (x *ApplyComplianceScanConfigRequest) ClearResumeScan() {
-	if _, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_ResumeScan); ok {
-		x.xxx_hidden_ScanRequest = nil
+	if _, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_ResumeScan); ok {
+		x.ScanRequest = nil
 	}
 }
 
 func (x *ApplyComplianceScanConfigRequest) ClearUpdateScan() {
-	if _, ok := x.xxx_hidden_ScanRequest.(*applyComplianceScanConfigRequest_UpdateScan); ok {
-		x.xxx_hidden_ScanRequest = nil
+	if _, ok := x.ScanRequest.(*ApplyComplianceScanConfigRequest_UpdateScan); ok {
+		x.ScanRequest = nil
 	}
 }
 
@@ -949,16 +832,16 @@ func (x *ApplyComplianceScanConfigRequest) WhichScanRequest() case_ApplyComplian
 	if x == nil {
 		return ApplyComplianceScanConfigRequest_ScanRequest_not_set_case
 	}
-	switch x.xxx_hidden_ScanRequest.(type) {
-	case *applyComplianceScanConfigRequest_ScheduledScan_:
+	switch x.ScanRequest.(type) {
+	case *ApplyComplianceScanConfigRequest_ScheduledScan_:
 		return ApplyComplianceScanConfigRequest_ScheduledScan_case
-	case *applyComplianceScanConfigRequest_RerunScan:
+	case *ApplyComplianceScanConfigRequest_RerunScan:
 		return ApplyComplianceScanConfigRequest_RerunScan_case
-	case *applyComplianceScanConfigRequest_SuspendScan:
+	case *ApplyComplianceScanConfigRequest_SuspendScan:
 		return ApplyComplianceScanConfigRequest_SuspendScan_case
-	case *applyComplianceScanConfigRequest_ResumeScan:
+	case *ApplyComplianceScanConfigRequest_ResumeScan:
 		return ApplyComplianceScanConfigRequest_ResumeScan_case
-	case *applyComplianceScanConfigRequest_UpdateScan:
+	case *ApplyComplianceScanConfigRequest_UpdateScan:
 		return ApplyComplianceScanConfigRequest_UpdateScan_case
 	default:
 		return ApplyComplianceScanConfigRequest_ScanRequest_not_set_case
@@ -968,38 +851,35 @@ func (x *ApplyComplianceScanConfigRequest) WhichScanRequest() case_ApplyComplian
 type ApplyComplianceScanConfigRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_ScanRequest:
+	Id string
+	// Fields of oneof ScanRequest:
 	ScheduledScan *ApplyComplianceScanConfigRequest_ScheduledScan
 	RerunScan     *ApplyComplianceScanConfigRequest_RerunScheduledScan
 	SuspendScan   *ApplyComplianceScanConfigRequest_SuspendScheduledScan
 	ResumeScan    *ApplyComplianceScanConfigRequest_ResumeScheduledScan
 	UpdateScan    *ApplyComplianceScanConfigRequest_UpdateScheduledScan
-	// -- end of xxx_hidden_ScanRequest
+	// -- end of ScanRequest
 }
 
 func (b0 ApplyComplianceScanConfigRequest_builder) Build() *ApplyComplianceScanConfigRequest {
 	m0 := &ApplyComplianceScanConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.ScheduledScan != nil {
-		x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_ScheduledScan_{b.ScheduledScan}
+		x.ScanRequest = &ApplyComplianceScanConfigRequest_ScheduledScan_{b.ScheduledScan}
 	}
 	if b.RerunScan != nil {
-		x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_RerunScan{b.RerunScan}
+		x.ScanRequest = &ApplyComplianceScanConfigRequest_RerunScan{b.RerunScan}
 	}
 	if b.SuspendScan != nil {
-		x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_SuspendScan{b.SuspendScan}
+		x.ScanRequest = &ApplyComplianceScanConfigRequest_SuspendScan{b.SuspendScan}
 	}
 	if b.ResumeScan != nil {
-		x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_ResumeScan{b.ResumeScan}
+		x.ScanRequest = &ApplyComplianceScanConfigRequest_ResumeScan{b.ResumeScan}
 	}
 	if b.UpdateScan != nil {
-		x.xxx_hidden_ScanRequest = &applyComplianceScanConfigRequest_UpdateScan{b.UpdateScan}
+		x.ScanRequest = &ApplyComplianceScanConfigRequest_UpdateScan{b.UpdateScan}
 	}
 	return m0
 }
@@ -1018,49 +898,47 @@ type isApplyComplianceScanConfigRequest_ScanRequest interface {
 	isApplyComplianceScanConfigRequest_ScanRequest()
 }
 
-type applyComplianceScanConfigRequest_ScheduledScan_ struct {
+type ApplyComplianceScanConfigRequest_ScheduledScan_ struct {
 	ScheduledScan *ApplyComplianceScanConfigRequest_ScheduledScan `protobuf:"bytes,3,opt,name=scheduled_scan,json=scheduledScan,oneof"`
 }
 
-type applyComplianceScanConfigRequest_RerunScan struct {
+type ApplyComplianceScanConfigRequest_RerunScan struct {
 	RerunScan *ApplyComplianceScanConfigRequest_RerunScheduledScan `protobuf:"bytes,4,opt,name=rerun_scan,json=rerunScan,oneof"`
 }
 
-type applyComplianceScanConfigRequest_SuspendScan struct {
+type ApplyComplianceScanConfigRequest_SuspendScan struct {
 	SuspendScan *ApplyComplianceScanConfigRequest_SuspendScheduledScan `protobuf:"bytes,5,opt,name=suspend_scan,json=suspendScan,oneof"`
 }
 
-type applyComplianceScanConfigRequest_ResumeScan struct {
+type ApplyComplianceScanConfigRequest_ResumeScan struct {
 	ResumeScan *ApplyComplianceScanConfigRequest_ResumeScheduledScan `protobuf:"bytes,6,opt,name=resume_scan,json=resumeScan,oneof"`
 }
 
-type applyComplianceScanConfigRequest_UpdateScan struct {
+type ApplyComplianceScanConfigRequest_UpdateScan struct {
 	UpdateScan *ApplyComplianceScanConfigRequest_UpdateScheduledScan `protobuf:"bytes,7,opt,name=update_scan,json=updateScan,oneof"`
 }
 
-func (*applyComplianceScanConfigRequest_ScheduledScan_) isApplyComplianceScanConfigRequest_ScanRequest() {
+func (*ApplyComplianceScanConfigRequest_ScheduledScan_) isApplyComplianceScanConfigRequest_ScanRequest() {
 }
 
-func (*applyComplianceScanConfigRequest_RerunScan) isApplyComplianceScanConfigRequest_ScanRequest() {}
+func (*ApplyComplianceScanConfigRequest_RerunScan) isApplyComplianceScanConfigRequest_ScanRequest() {}
 
-func (*applyComplianceScanConfigRequest_SuspendScan) isApplyComplianceScanConfigRequest_ScanRequest() {
+func (*ApplyComplianceScanConfigRequest_SuspendScan) isApplyComplianceScanConfigRequest_ScanRequest() {
 }
 
-func (*applyComplianceScanConfigRequest_ResumeScan) isApplyComplianceScanConfigRequest_ScanRequest() {
+func (*ApplyComplianceScanConfigRequest_ResumeScan) isApplyComplianceScanConfigRequest_ScanRequest() {
 }
 
-func (*applyComplianceScanConfigRequest_UpdateScan) isApplyComplianceScanConfigRequest_ScanRequest() {
+func (*ApplyComplianceScanConfigRequest_UpdateScan) isApplyComplianceScanConfigRequest_ScanRequest() {
 }
 
 // DeleteComplianceScanConfigRequest contains information about compliance scan configuration to be deleted from secured cluster.
 type DeleteComplianceScanConfigRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteComplianceScanConfigRequest) Reset() {
@@ -1090,86 +968,55 @@ func (x *DeleteComplianceScanConfigRequest) ProtoReflect() protoreflect.Message 
 
 func (x *DeleteComplianceScanConfigRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DeleteComplianceScanConfigRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *DeleteComplianceScanConfigRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *DeleteComplianceScanConfigRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *DeleteComplianceScanConfigRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeleteComplianceScanConfigRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeleteComplianceScanConfigRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *DeleteComplianceScanConfigRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type DeleteComplianceScanConfigRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id   *string
-	Name *string
+	Id   string
+	Name string
 }
 
 func (b0 DeleteComplianceScanConfigRequest_builder) Build() *DeleteComplianceScanConfigRequest {
 	m0 := &DeleteComplianceScanConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Id = b.Id
+	x.Name = b.Name
 	return m0
 }
 
 // ComplianceRequest is a message from Central (to Sensor) to perform an action related to compliance.
 type ComplianceRequest struct {
-	state              protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Request isComplianceRequest_Request `protobuf_oneof:"request"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Request:
+	//
+	//	*ComplianceRequest_EnableCompliance
+	//	*ComplianceRequest_DisableCompliance
+	//	*ComplianceRequest_ApplyScanConfig
+	//	*ComplianceRequest_DeleteScanConfig
+	//	*ComplianceRequest_SyncScanConfigs
+	Request       isComplianceRequest_Request `protobuf_oneof:"request"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceRequest) Reset() {
@@ -1197,9 +1044,16 @@ func (x *ComplianceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *ComplianceRequest) GetRequest() isComplianceRequest_Request {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
 func (x *ComplianceRequest) GetEnableCompliance() *EnableComplianceRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Request.(*complianceRequest_EnableCompliance); ok {
+		if x, ok := x.Request.(*ComplianceRequest_EnableCompliance); ok {
 			return x.EnableCompliance
 		}
 	}
@@ -1208,7 +1062,7 @@ func (x *ComplianceRequest) GetEnableCompliance() *EnableComplianceRequest {
 
 func (x *ComplianceRequest) GetDisableCompliance() *DisableComplianceRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Request.(*complianceRequest_DisableCompliance); ok {
+		if x, ok := x.Request.(*ComplianceRequest_DisableCompliance); ok {
 			return x.DisableCompliance
 		}
 	}
@@ -1217,7 +1071,7 @@ func (x *ComplianceRequest) GetDisableCompliance() *DisableComplianceRequest {
 
 func (x *ComplianceRequest) GetApplyScanConfig() *ApplyComplianceScanConfigRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Request.(*complianceRequest_ApplyScanConfig); ok {
+		if x, ok := x.Request.(*ComplianceRequest_ApplyScanConfig); ok {
 			return x.ApplyScanConfig
 		}
 	}
@@ -1226,7 +1080,7 @@ func (x *ComplianceRequest) GetApplyScanConfig() *ApplyComplianceScanConfigReque
 
 func (x *ComplianceRequest) GetDeleteScanConfig() *DeleteComplianceScanConfigRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Request.(*complianceRequest_DeleteScanConfig); ok {
+		if x, ok := x.Request.(*ComplianceRequest_DeleteScanConfig); ok {
 			return x.DeleteScanConfig
 		}
 	}
@@ -1235,7 +1089,7 @@ func (x *ComplianceRequest) GetDeleteScanConfig() *DeleteComplianceScanConfigReq
 
 func (x *ComplianceRequest) GetSyncScanConfigs() *SyncComplianceScanConfigRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Request.(*complianceRequest_SyncScanConfigs); ok {
+		if x, ok := x.Request.(*ComplianceRequest_SyncScanConfigs); ok {
 			return x.SyncScanConfigs
 		}
 	}
@@ -1244,56 +1098,56 @@ func (x *ComplianceRequest) GetSyncScanConfigs() *SyncComplianceScanConfigReques
 
 func (x *ComplianceRequest) SetEnableCompliance(v *EnableComplianceRequest) {
 	if v == nil {
-		x.xxx_hidden_Request = nil
+		x.Request = nil
 		return
 	}
-	x.xxx_hidden_Request = &complianceRequest_EnableCompliance{v}
+	x.Request = &ComplianceRequest_EnableCompliance{v}
 }
 
 func (x *ComplianceRequest) SetDisableCompliance(v *DisableComplianceRequest) {
 	if v == nil {
-		x.xxx_hidden_Request = nil
+		x.Request = nil
 		return
 	}
-	x.xxx_hidden_Request = &complianceRequest_DisableCompliance{v}
+	x.Request = &ComplianceRequest_DisableCompliance{v}
 }
 
 func (x *ComplianceRequest) SetApplyScanConfig(v *ApplyComplianceScanConfigRequest) {
 	if v == nil {
-		x.xxx_hidden_Request = nil
+		x.Request = nil
 		return
 	}
-	x.xxx_hidden_Request = &complianceRequest_ApplyScanConfig{v}
+	x.Request = &ComplianceRequest_ApplyScanConfig{v}
 }
 
 func (x *ComplianceRequest) SetDeleteScanConfig(v *DeleteComplianceScanConfigRequest) {
 	if v == nil {
-		x.xxx_hidden_Request = nil
+		x.Request = nil
 		return
 	}
-	x.xxx_hidden_Request = &complianceRequest_DeleteScanConfig{v}
+	x.Request = &ComplianceRequest_DeleteScanConfig{v}
 }
 
 func (x *ComplianceRequest) SetSyncScanConfigs(v *SyncComplianceScanConfigRequest) {
 	if v == nil {
-		x.xxx_hidden_Request = nil
+		x.Request = nil
 		return
 	}
-	x.xxx_hidden_Request = &complianceRequest_SyncScanConfigs{v}
+	x.Request = &ComplianceRequest_SyncScanConfigs{v}
 }
 
 func (x *ComplianceRequest) HasRequest() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Request != nil
+	return x.Request != nil
 }
 
 func (x *ComplianceRequest) HasEnableCompliance() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Request.(*complianceRequest_EnableCompliance)
+	_, ok := x.Request.(*ComplianceRequest_EnableCompliance)
 	return ok
 }
 
@@ -1301,7 +1155,7 @@ func (x *ComplianceRequest) HasDisableCompliance() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Request.(*complianceRequest_DisableCompliance)
+	_, ok := x.Request.(*ComplianceRequest_DisableCompliance)
 	return ok
 }
 
@@ -1309,7 +1163,7 @@ func (x *ComplianceRequest) HasApplyScanConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Request.(*complianceRequest_ApplyScanConfig)
+	_, ok := x.Request.(*ComplianceRequest_ApplyScanConfig)
 	return ok
 }
 
@@ -1317,7 +1171,7 @@ func (x *ComplianceRequest) HasDeleteScanConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Request.(*complianceRequest_DeleteScanConfig)
+	_, ok := x.Request.(*ComplianceRequest_DeleteScanConfig)
 	return ok
 }
 
@@ -1325,41 +1179,41 @@ func (x *ComplianceRequest) HasSyncScanConfigs() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Request.(*complianceRequest_SyncScanConfigs)
+	_, ok := x.Request.(*ComplianceRequest_SyncScanConfigs)
 	return ok
 }
 
 func (x *ComplianceRequest) ClearRequest() {
-	x.xxx_hidden_Request = nil
+	x.Request = nil
 }
 
 func (x *ComplianceRequest) ClearEnableCompliance() {
-	if _, ok := x.xxx_hidden_Request.(*complianceRequest_EnableCompliance); ok {
-		x.xxx_hidden_Request = nil
+	if _, ok := x.Request.(*ComplianceRequest_EnableCompliance); ok {
+		x.Request = nil
 	}
 }
 
 func (x *ComplianceRequest) ClearDisableCompliance() {
-	if _, ok := x.xxx_hidden_Request.(*complianceRequest_DisableCompliance); ok {
-		x.xxx_hidden_Request = nil
+	if _, ok := x.Request.(*ComplianceRequest_DisableCompliance); ok {
+		x.Request = nil
 	}
 }
 
 func (x *ComplianceRequest) ClearApplyScanConfig() {
-	if _, ok := x.xxx_hidden_Request.(*complianceRequest_ApplyScanConfig); ok {
-		x.xxx_hidden_Request = nil
+	if _, ok := x.Request.(*ComplianceRequest_ApplyScanConfig); ok {
+		x.Request = nil
 	}
 }
 
 func (x *ComplianceRequest) ClearDeleteScanConfig() {
-	if _, ok := x.xxx_hidden_Request.(*complianceRequest_DeleteScanConfig); ok {
-		x.xxx_hidden_Request = nil
+	if _, ok := x.Request.(*ComplianceRequest_DeleteScanConfig); ok {
+		x.Request = nil
 	}
 }
 
 func (x *ComplianceRequest) ClearSyncScanConfigs() {
-	if _, ok := x.xxx_hidden_Request.(*complianceRequest_SyncScanConfigs); ok {
-		x.xxx_hidden_Request = nil
+	if _, ok := x.Request.(*ComplianceRequest_SyncScanConfigs); ok {
+		x.Request = nil
 	}
 }
 
@@ -1374,16 +1228,16 @@ func (x *ComplianceRequest) WhichRequest() case_ComplianceRequest_Request {
 	if x == nil {
 		return ComplianceRequest_Request_not_set_case
 	}
-	switch x.xxx_hidden_Request.(type) {
-	case *complianceRequest_EnableCompliance:
+	switch x.Request.(type) {
+	case *ComplianceRequest_EnableCompliance:
 		return ComplianceRequest_EnableCompliance_case
-	case *complianceRequest_DisableCompliance:
+	case *ComplianceRequest_DisableCompliance:
 		return ComplianceRequest_DisableCompliance_case
-	case *complianceRequest_ApplyScanConfig:
+	case *ComplianceRequest_ApplyScanConfig:
 		return ComplianceRequest_ApplyScanConfig_case
-	case *complianceRequest_DeleteScanConfig:
+	case *ComplianceRequest_DeleteScanConfig:
 		return ComplianceRequest_DeleteScanConfig_case
-	case *complianceRequest_SyncScanConfigs:
+	case *ComplianceRequest_SyncScanConfigs:
 		return ComplianceRequest_SyncScanConfigs_case
 	default:
 		return ComplianceRequest_Request_not_set_case
@@ -1393,13 +1247,13 @@ func (x *ComplianceRequest) WhichRequest() case_ComplianceRequest_Request {
 type ComplianceRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Request:
+	// Fields of oneof Request:
 	EnableCompliance  *EnableComplianceRequest
 	DisableCompliance *DisableComplianceRequest
 	ApplyScanConfig   *ApplyComplianceScanConfigRequest
 	DeleteScanConfig  *DeleteComplianceScanConfigRequest
 	SyncScanConfigs   *SyncComplianceScanConfigRequest
-	// -- end of xxx_hidden_Request
+	// -- end of Request
 }
 
 func (b0 ComplianceRequest_builder) Build() *ComplianceRequest {
@@ -1407,19 +1261,19 @@ func (b0 ComplianceRequest_builder) Build() *ComplianceRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.EnableCompliance != nil {
-		x.xxx_hidden_Request = &complianceRequest_EnableCompliance{b.EnableCompliance}
+		x.Request = &ComplianceRequest_EnableCompliance{b.EnableCompliance}
 	}
 	if b.DisableCompliance != nil {
-		x.xxx_hidden_Request = &complianceRequest_DisableCompliance{b.DisableCompliance}
+		x.Request = &ComplianceRequest_DisableCompliance{b.DisableCompliance}
 	}
 	if b.ApplyScanConfig != nil {
-		x.xxx_hidden_Request = &complianceRequest_ApplyScanConfig{b.ApplyScanConfig}
+		x.Request = &ComplianceRequest_ApplyScanConfig{b.ApplyScanConfig}
 	}
 	if b.DeleteScanConfig != nil {
-		x.xxx_hidden_Request = &complianceRequest_DeleteScanConfig{b.DeleteScanConfig}
+		x.Request = &ComplianceRequest_DeleteScanConfig{b.DeleteScanConfig}
 	}
 	if b.SyncScanConfigs != nil {
-		x.xxx_hidden_Request = &complianceRequest_SyncScanConfigs{b.SyncScanConfigs}
+		x.Request = &ComplianceRequest_SyncScanConfigs{b.SyncScanConfigs}
 	}
 	return m0
 }
@@ -1438,42 +1292,48 @@ type isComplianceRequest_Request interface {
 	isComplianceRequest_Request()
 }
 
-type complianceRequest_EnableCompliance struct {
+type ComplianceRequest_EnableCompliance struct {
 	EnableCompliance *EnableComplianceRequest `protobuf:"bytes,1,opt,name=enable_compliance,json=enableCompliance,oneof"`
 }
 
-type complianceRequest_DisableCompliance struct {
+type ComplianceRequest_DisableCompliance struct {
 	DisableCompliance *DisableComplianceRequest `protobuf:"bytes,2,opt,name=disable_compliance,json=disableCompliance,oneof"`
 }
 
-type complianceRequest_ApplyScanConfig struct {
+type ComplianceRequest_ApplyScanConfig struct {
 	ApplyScanConfig *ApplyComplianceScanConfigRequest `protobuf:"bytes,3,opt,name=apply_scan_config,json=applyScanConfig,oneof"`
 }
 
-type complianceRequest_DeleteScanConfig struct {
+type ComplianceRequest_DeleteScanConfig struct {
 	DeleteScanConfig *DeleteComplianceScanConfigRequest `protobuf:"bytes,4,opt,name=delete_scan_config,json=deleteScanConfig,oneof"`
 }
 
-type complianceRequest_SyncScanConfigs struct {
+type ComplianceRequest_SyncScanConfigs struct {
 	SyncScanConfigs *SyncComplianceScanConfigRequest `protobuf:"bytes,5,opt,name=sync_scan_configs,json=syncScanConfigs,oneof"`
 }
 
-func (*complianceRequest_EnableCompliance) isComplianceRequest_Request() {}
+func (*ComplianceRequest_EnableCompliance) isComplianceRequest_Request() {}
 
-func (*complianceRequest_DisableCompliance) isComplianceRequest_Request() {}
+func (*ComplianceRequest_DisableCompliance) isComplianceRequest_Request() {}
 
-func (*complianceRequest_ApplyScanConfig) isComplianceRequest_Request() {}
+func (*ComplianceRequest_ApplyScanConfig) isComplianceRequest_Request() {}
 
-func (*complianceRequest_DeleteScanConfig) isComplianceRequest_Request() {}
+func (*ComplianceRequest_DeleteScanConfig) isComplianceRequest_Request() {}
 
-func (*complianceRequest_SyncScanConfigs) isComplianceRequest_Request() {}
+func (*ComplianceRequest_SyncScanConfigs) isComplianceRequest_Request() {}
 
 // ComplianceResponse is a message from Sensor (to Central) representing success/failure processing request.
 type ComplianceResponse struct {
-	state               protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Response isComplianceResponse_Response `protobuf_oneof:"response"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Response:
+	//
+	//	*ComplianceResponse_EnableComplianceResponse_
+	//	*ComplianceResponse_DisableComplianceResponse_
+	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_
+	//	*ComplianceResponse_DeleteComplianceScanConfigResponse_
+	Response      isComplianceResponse_Response `protobuf_oneof:"response"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceResponse) Reset() {
@@ -1501,9 +1361,16 @@ func (x *ComplianceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *ComplianceResponse) GetResponse() isComplianceResponse_Response {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
 func (x *ComplianceResponse) GetEnableComplianceResponse() *ComplianceResponse_EnableComplianceResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*complianceResponse_EnableComplianceResponse_); ok {
+		if x, ok := x.Response.(*ComplianceResponse_EnableComplianceResponse_); ok {
 			return x.EnableComplianceResponse
 		}
 	}
@@ -1512,7 +1379,7 @@ func (x *ComplianceResponse) GetEnableComplianceResponse() *ComplianceResponse_E
 
 func (x *ComplianceResponse) GetDisableComplianceResponse() *ComplianceResponse_DisableComplianceResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*complianceResponse_DisableComplianceResponse_); ok {
+		if x, ok := x.Response.(*ComplianceResponse_DisableComplianceResponse_); ok {
 			return x.DisableComplianceResponse
 		}
 	}
@@ -1521,7 +1388,7 @@ func (x *ComplianceResponse) GetDisableComplianceResponse() *ComplianceResponse_
 
 func (x *ComplianceResponse) GetApplyComplianceScanConfigResponse() *ComplianceResponse_ApplyComplianceScanConfigResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*complianceResponse_ApplyComplianceScanConfigResponse_); ok {
+		if x, ok := x.Response.(*ComplianceResponse_ApplyComplianceScanConfigResponse_); ok {
 			return x.ApplyComplianceScanConfigResponse
 		}
 	}
@@ -1530,7 +1397,7 @@ func (x *ComplianceResponse) GetApplyComplianceScanConfigResponse() *ComplianceR
 
 func (x *ComplianceResponse) GetDeleteComplianceScanConfigResponse() *ComplianceResponse_DeleteComplianceScanConfigResponse {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*complianceResponse_DeleteComplianceScanConfigResponse_); ok {
+		if x, ok := x.Response.(*ComplianceResponse_DeleteComplianceScanConfigResponse_); ok {
 			return x.DeleteComplianceScanConfigResponse
 		}
 	}
@@ -1539,48 +1406,48 @@ func (x *ComplianceResponse) GetDeleteComplianceScanConfigResponse() *Compliance
 
 func (x *ComplianceResponse) SetEnableComplianceResponse(v *ComplianceResponse_EnableComplianceResponse) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &complianceResponse_EnableComplianceResponse_{v}
+	x.Response = &ComplianceResponse_EnableComplianceResponse_{v}
 }
 
 func (x *ComplianceResponse) SetDisableComplianceResponse(v *ComplianceResponse_DisableComplianceResponse) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &complianceResponse_DisableComplianceResponse_{v}
+	x.Response = &ComplianceResponse_DisableComplianceResponse_{v}
 }
 
 func (x *ComplianceResponse) SetApplyComplianceScanConfigResponse(v *ComplianceResponse_ApplyComplianceScanConfigResponse) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &complianceResponse_ApplyComplianceScanConfigResponse_{v}
+	x.Response = &ComplianceResponse_ApplyComplianceScanConfigResponse_{v}
 }
 
 func (x *ComplianceResponse) SetDeleteComplianceScanConfigResponse(v *ComplianceResponse_DeleteComplianceScanConfigResponse) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &complianceResponse_DeleteComplianceScanConfigResponse_{v}
+	x.Response = &ComplianceResponse_DeleteComplianceScanConfigResponse_{v}
 }
 
 func (x *ComplianceResponse) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Response != nil
+	return x.Response != nil
 }
 
 func (x *ComplianceResponse) HasEnableComplianceResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*complianceResponse_EnableComplianceResponse_)
+	_, ok := x.Response.(*ComplianceResponse_EnableComplianceResponse_)
 	return ok
 }
 
@@ -1588,7 +1455,7 @@ func (x *ComplianceResponse) HasDisableComplianceResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*complianceResponse_DisableComplianceResponse_)
+	_, ok := x.Response.(*ComplianceResponse_DisableComplianceResponse_)
 	return ok
 }
 
@@ -1596,7 +1463,7 @@ func (x *ComplianceResponse) HasApplyComplianceScanConfigResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*complianceResponse_ApplyComplianceScanConfigResponse_)
+	_, ok := x.Response.(*ComplianceResponse_ApplyComplianceScanConfigResponse_)
 	return ok
 }
 
@@ -1604,35 +1471,35 @@ func (x *ComplianceResponse) HasDeleteComplianceScanConfigResponse() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*complianceResponse_DeleteComplianceScanConfigResponse_)
+	_, ok := x.Response.(*ComplianceResponse_DeleteComplianceScanConfigResponse_)
 	return ok
 }
 
 func (x *ComplianceResponse) ClearResponse() {
-	x.xxx_hidden_Response = nil
+	x.Response = nil
 }
 
 func (x *ComplianceResponse) ClearEnableComplianceResponse() {
-	if _, ok := x.xxx_hidden_Response.(*complianceResponse_EnableComplianceResponse_); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*ComplianceResponse_EnableComplianceResponse_); ok {
+		x.Response = nil
 	}
 }
 
 func (x *ComplianceResponse) ClearDisableComplianceResponse() {
-	if _, ok := x.xxx_hidden_Response.(*complianceResponse_DisableComplianceResponse_); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*ComplianceResponse_DisableComplianceResponse_); ok {
+		x.Response = nil
 	}
 }
 
 func (x *ComplianceResponse) ClearApplyComplianceScanConfigResponse() {
-	if _, ok := x.xxx_hidden_Response.(*complianceResponse_ApplyComplianceScanConfigResponse_); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*ComplianceResponse_ApplyComplianceScanConfigResponse_); ok {
+		x.Response = nil
 	}
 }
 
 func (x *ComplianceResponse) ClearDeleteComplianceScanConfigResponse() {
-	if _, ok := x.xxx_hidden_Response.(*complianceResponse_DeleteComplianceScanConfigResponse_); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*ComplianceResponse_DeleteComplianceScanConfigResponse_); ok {
+		x.Response = nil
 	}
 }
 
@@ -1646,14 +1513,14 @@ func (x *ComplianceResponse) WhichResponse() case_ComplianceResponse_Response {
 	if x == nil {
 		return ComplianceResponse_Response_not_set_case
 	}
-	switch x.xxx_hidden_Response.(type) {
-	case *complianceResponse_EnableComplianceResponse_:
+	switch x.Response.(type) {
+	case *ComplianceResponse_EnableComplianceResponse_:
 		return ComplianceResponse_EnableComplianceResponse_case
-	case *complianceResponse_DisableComplianceResponse_:
+	case *ComplianceResponse_DisableComplianceResponse_:
 		return ComplianceResponse_DisableComplianceResponse_case
-	case *complianceResponse_ApplyComplianceScanConfigResponse_:
+	case *ComplianceResponse_ApplyComplianceScanConfigResponse_:
 		return ComplianceResponse_ApplyComplianceScanConfigResponse_case
-	case *complianceResponse_DeleteComplianceScanConfigResponse_:
+	case *ComplianceResponse_DeleteComplianceScanConfigResponse_:
 		return ComplianceResponse_DeleteComplianceScanConfigResponse_case
 	default:
 		return ComplianceResponse_Response_not_set_case
@@ -1663,12 +1530,12 @@ func (x *ComplianceResponse) WhichResponse() case_ComplianceResponse_Response {
 type ComplianceResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Response:
+	// Fields of oneof Response:
 	EnableComplianceResponse           *ComplianceResponse_EnableComplianceResponse
 	DisableComplianceResponse          *ComplianceResponse_DisableComplianceResponse
 	ApplyComplianceScanConfigResponse  *ComplianceResponse_ApplyComplianceScanConfigResponse
 	DeleteComplianceScanConfigResponse *ComplianceResponse_DeleteComplianceScanConfigResponse
-	// -- end of xxx_hidden_Response
+	// -- end of Response
 }
 
 func (b0 ComplianceResponse_builder) Build() *ComplianceResponse {
@@ -1676,16 +1543,16 @@ func (b0 ComplianceResponse_builder) Build() *ComplianceResponse {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.EnableComplianceResponse != nil {
-		x.xxx_hidden_Response = &complianceResponse_EnableComplianceResponse_{b.EnableComplianceResponse}
+		x.Response = &ComplianceResponse_EnableComplianceResponse_{b.EnableComplianceResponse}
 	}
 	if b.DisableComplianceResponse != nil {
-		x.xxx_hidden_Response = &complianceResponse_DisableComplianceResponse_{b.DisableComplianceResponse}
+		x.Response = &ComplianceResponse_DisableComplianceResponse_{b.DisableComplianceResponse}
 	}
 	if b.ApplyComplianceScanConfigResponse != nil {
-		x.xxx_hidden_Response = &complianceResponse_ApplyComplianceScanConfigResponse_{b.ApplyComplianceScanConfigResponse}
+		x.Response = &ComplianceResponse_ApplyComplianceScanConfigResponse_{b.ApplyComplianceScanConfigResponse}
 	}
 	if b.DeleteComplianceScanConfigResponse != nil {
-		x.xxx_hidden_Response = &complianceResponse_DeleteComplianceScanConfigResponse_{b.DeleteComplianceScanConfigResponse}
+		x.Response = &ComplianceResponse_DeleteComplianceScanConfigResponse_{b.DeleteComplianceScanConfigResponse}
 	}
 	return m0
 }
@@ -1704,56 +1571,52 @@ type isComplianceResponse_Response interface {
 	isComplianceResponse_Response()
 }
 
-type complianceResponse_EnableComplianceResponse_ struct {
+type ComplianceResponse_EnableComplianceResponse_ struct {
 	EnableComplianceResponse *ComplianceResponse_EnableComplianceResponse `protobuf:"bytes,1,opt,name=enable_compliance_response,json=enableComplianceResponse,oneof"`
 }
 
-type complianceResponse_DisableComplianceResponse_ struct {
+type ComplianceResponse_DisableComplianceResponse_ struct {
 	DisableComplianceResponse *ComplianceResponse_DisableComplianceResponse `protobuf:"bytes,2,opt,name=disable_compliance_response,json=disableComplianceResponse,oneof"`
 }
 
-type complianceResponse_ApplyComplianceScanConfigResponse_ struct {
+type ComplianceResponse_ApplyComplianceScanConfigResponse_ struct {
 	ApplyComplianceScanConfigResponse *ComplianceResponse_ApplyComplianceScanConfigResponse `protobuf:"bytes,3,opt,name=apply_compliance_scan_config_response,json=applyComplianceScanConfigResponse,oneof"`
 }
 
-type complianceResponse_DeleteComplianceScanConfigResponse_ struct {
+type ComplianceResponse_DeleteComplianceScanConfigResponse_ struct {
 	DeleteComplianceScanConfigResponse *ComplianceResponse_DeleteComplianceScanConfigResponse `protobuf:"bytes,4,opt,name=delete_compliance_scan_config_response,json=deleteComplianceScanConfigResponse,oneof"`
 }
 
-func (*complianceResponse_EnableComplianceResponse_) isComplianceResponse_Response() {}
+func (*ComplianceResponse_EnableComplianceResponse_) isComplianceResponse_Response() {}
 
-func (*complianceResponse_DisableComplianceResponse_) isComplianceResponse_Response() {}
+func (*ComplianceResponse_DisableComplianceResponse_) isComplianceResponse_Response() {}
 
-func (*complianceResponse_ApplyComplianceScanConfigResponse_) isComplianceResponse_Response() {}
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse_) isComplianceResponse_Response() {}
 
-func (*complianceResponse_DeleteComplianceScanConfigResponse_) isComplianceResponse_Response() {}
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse_) isComplianceResponse_Response() {}
 
 // ComplianceOperatorCheckResultV2 is a message from Sensor (to Central) representing a compliance check result.
 // Next tag: 17.
 type ComplianceOperatorCheckResultV2 struct {
-	state                   protoimpl.MessageState                      `protogen:"opaque.v1"`
-	xxx_hidden_Id           *string                                     `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_CheckId      *string                                     `protobuf:"bytes,2,opt,name=check_id,json=checkId"`
-	xxx_hidden_CheckName    *string                                     `protobuf:"bytes,3,opt,name=check_name,json=checkName"`
-	xxx_hidden_ClusterId    *string                                     `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Status       ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,enum=central.ComplianceOperatorCheckResultV2_CheckStatus"`
-	xxx_hidden_Severity     ComplianceOperatorRuleSeverity              `protobuf:"varint,6,opt,name=severity,enum=central.ComplianceOperatorRuleSeverity"`
-	xxx_hidden_Description  *string                                     `protobuf:"bytes,7,opt,name=description"`
-	xxx_hidden_Instructions *string                                     `protobuf:"bytes,8,opt,name=instructions"`
-	xxx_hidden_Labels       map[string]string                           `protobuf:"bytes,9,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations  map[string]string                           `protobuf:"bytes,10,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreatedTime  *timestamppb.Timestamp                      `protobuf:"bytes,11,opt,name=created_time,json=createdTime"`
-	xxx_hidden_ScanName     *string                                     `protobuf:"bytes,14,opt,name=scan_name,json=scanName"`
-	xxx_hidden_SuiteName    *string                                     `protobuf:"bytes,15,opt,name=suite_name,json=suiteName"`
-	xxx_hidden_Rationale    *string                                     `protobuf:"bytes,16,opt,name=rationale"`
-	xxx_hidden_ValuesUsed   []string                                    `protobuf:"bytes,17,rep,name=valuesUsed"`
-	xxx_hidden_Warnings     []string                                    `protobuf:"bytes,18,rep,name=warnings"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                      `protogen:"hybrid.v1"`
+	Id            string                                      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	CheckId       string                                      `protobuf:"bytes,2,opt,name=check_id,json=checkId" json:"check_id,omitempty"`
+	CheckName     string                                      `protobuf:"bytes,3,opt,name=check_name,json=checkName" json:"check_name,omitempty"`
+	ClusterId     string                                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	Status        ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,enum=central.ComplianceOperatorCheckResultV2_CheckStatus" json:"status,omitempty"`
+	Severity      ComplianceOperatorRuleSeverity              `protobuf:"varint,6,opt,name=severity,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
+	Description   string                                      `protobuf:"bytes,7,opt,name=description" json:"description,omitempty"`
+	Instructions  string                                      `protobuf:"bytes,8,opt,name=instructions" json:"instructions,omitempty"`
+	Labels        map[string]string                           `protobuf:"bytes,9,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string                           `protobuf:"bytes,10,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	CreatedTime   *timestamppb.Timestamp                      `protobuf:"bytes,11,opt,name=created_time,json=createdTime" json:"created_time,omitempty"`
+	ScanName      string                                      `protobuf:"bytes,14,opt,name=scan_name,json=scanName" json:"scan_name,omitempty"`
+	SuiteName     string                                      `protobuf:"bytes,15,opt,name=suite_name,json=suiteName" json:"suite_name,omitempty"`
+	Rationale     string                                      `protobuf:"bytes,16,opt,name=rationale" json:"rationale,omitempty"`
+	ValuesUsed    []string                                    `protobuf:"bytes,17,rep,name=valuesUsed" json:"valuesUsed,omitempty"`
+	Warnings      []string                                    `protobuf:"bytes,18,rep,name=warnings" json:"warnings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCheckResultV2) Reset() {
@@ -1783,395 +1646,208 @@ func (x *ComplianceOperatorCheckResultV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorCheckResultV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetCheckId() string {
 	if x != nil {
-		if x.xxx_hidden_CheckId != nil {
-			return *x.xxx_hidden_CheckId
-		}
-		return ""
+		return x.CheckId
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetCheckName() string {
 	if x != nil {
-		if x.xxx_hidden_CheckName != nil {
-			return *x.xxx_hidden_CheckName
-		}
-		return ""
+		return x.CheckName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetStatus() ComplianceOperatorCheckResultV2_CheckStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Status
-		}
+		return x.Status
 	}
 	return ComplianceOperatorCheckResultV2_UNSET
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetSeverity() ComplianceOperatorRuleSeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetInstructions() string {
 	if x != nil {
-		if x.xxx_hidden_Instructions != nil {
-			return *x.xxx_hidden_Instructions
-		}
-		return ""
+		return x.Instructions
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetCreatedTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedTime) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedTime
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetScanName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanName != nil {
-			return *x.xxx_hidden_ScanName
-		}
-		return ""
+		return x.ScanName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetSuiteName() string {
 	if x != nil {
-		if x.xxx_hidden_SuiteName != nil {
-			return *x.xxx_hidden_SuiteName
-		}
-		return ""
+		return x.SuiteName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetRationale() string {
 	if x != nil {
-		if x.xxx_hidden_Rationale != nil {
-			return *x.xxx_hidden_Rationale
-		}
-		return ""
+		return x.Rationale
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetValuesUsed() []string {
 	if x != nil {
-		return x.xxx_hidden_ValuesUsed
+		return x.ValuesUsed
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetWarnings() []string {
 	if x != nil {
-		return x.xxx_hidden_Warnings
+		return x.Warnings
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 16)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetCheckId(v string) {
-	x.xxx_hidden_CheckId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 16)
+	x.CheckId = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetCheckName(v string) {
-	x.xxx_hidden_CheckName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 16)
+	x.CheckName = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 16)
+	x.ClusterId = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetStatus(v ComplianceOperatorCheckResultV2_CheckStatus) {
-	x.xxx_hidden_Status = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 16)
+	x.Status = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetSeverity(v ComplianceOperatorRuleSeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 16)
+	x.Severity = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 16)
+	x.Description = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetInstructions(v string) {
-	x.xxx_hidden_Instructions = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 16)
+	x.Instructions = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetCreatedTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 16)
-	}
+	x.CreatedTime = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetScanName(v string) {
-	x.xxx_hidden_ScanName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 16)
+	x.ScanName = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetSuiteName(v string) {
-	x.xxx_hidden_SuiteName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 16)
+	x.SuiteName = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetRationale(v string) {
-	x.xxx_hidden_Rationale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 16)
+	x.Rationale = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetValuesUsed(v []string) {
-	x.xxx_hidden_ValuesUsed = v
+	x.ValuesUsed = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) SetWarnings(v []string) {
-	x.xxx_hidden_Warnings = v
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasCheckId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasCheckName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasInstructions() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	x.Warnings = v
 }
 
 func (x *ComplianceOperatorCheckResultV2) HasCreatedTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasScanName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasSuiteName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *ComplianceOperatorCheckResultV2) HasRationale() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearCheckId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CheckId = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearCheckName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CheckName = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Status = ComplianceOperatorCheckResultV2_UNSET
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Severity = ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearInstructions() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Instructions = nil
+	return x.CreatedTime != nil
 }
 
 func (x *ComplianceOperatorCheckResultV2) ClearCreatedTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearScanName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_ScanName = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearSuiteName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_SuiteName = nil
-}
-
-func (x *ComplianceOperatorCheckResultV2) ClearRationale() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
-	x.xxx_hidden_Rationale = nil
+	x.CreatedTime = nil
 }
 
 type ComplianceOperatorCheckResultV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
-	CheckId      *string
-	CheckName    *string
-	ClusterId    *string
-	Status       *ComplianceOperatorCheckResultV2_CheckStatus
-	Severity     *ComplianceOperatorRuleSeverity
-	Description  *string
-	Instructions *string
+	Id           string
+	CheckId      string
+	CheckName    string
+	ClusterId    string
+	Status       ComplianceOperatorCheckResultV2_CheckStatus
+	Severity     ComplianceOperatorRuleSeverity
+	Description  string
+	Instructions string
 	Labels       map[string]string
 	Annotations  map[string]string
 	CreatedTime  *timestamppb.Timestamp
-	ScanName     *string
-	SuiteName    *string
-	Rationale    *string
+	ScanName     string
+	SuiteName    string
+	Rationale    string
 	ValuesUsed   []string
 	Warnings     []string
 }
@@ -2180,81 +1856,41 @@ func (b0 ComplianceOperatorCheckResultV2_builder) Build() *ComplianceOperatorChe
 	m0 := &ComplianceOperatorCheckResultV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 16)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.CheckId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 16)
-		x.xxx_hidden_CheckId = b.CheckId
-	}
-	if b.CheckName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 16)
-		x.xxx_hidden_CheckName = b.CheckName
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 16)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 16)
-		x.xxx_hidden_Status = *b.Status
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 16)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 16)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Instructions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 16)
-		x.xxx_hidden_Instructions = b.Instructions
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.CreatedTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 16)
-		x.xxx_hidden_CreatedTime = b.CreatedTime
-	}
-	if b.ScanName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 16)
-		x.xxx_hidden_ScanName = b.ScanName
-	}
-	if b.SuiteName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 16)
-		x.xxx_hidden_SuiteName = b.SuiteName
-	}
-	if b.Rationale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 16)
-		x.xxx_hidden_Rationale = b.Rationale
-	}
-	x.xxx_hidden_ValuesUsed = b.ValuesUsed
-	x.xxx_hidden_Warnings = b.Warnings
+	x.Id = b.Id
+	x.CheckId = b.CheckId
+	x.CheckName = b.CheckName
+	x.ClusterId = b.ClusterId
+	x.Status = b.Status
+	x.Severity = b.Severity
+	x.Description = b.Description
+	x.Instructions = b.Instructions
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.CreatedTime = b.CreatedTime
+	x.ScanName = b.ScanName
+	x.SuiteName = b.SuiteName
+	x.Rationale = b.Rationale
+	x.ValuesUsed = b.ValuesUsed
+	x.Warnings = b.Warnings
 	return m0
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
 // Next tag: 11.
 type ComplianceOperatorProfileV2 struct {
-	state                     protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                              `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ProfileId      *string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId"`
-	xxx_hidden_Name           *string                              `protobuf:"bytes,3,opt,name=name"`
-	xxx_hidden_ProfileVersion *string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion"`
-	xxx_hidden_Labels         map[string]string                    `protobuf:"bytes,5,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations    map[string]string                    `protobuf:"bytes,6,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Description    *string                              `protobuf:"bytes,7,opt,name=description"`
-	xxx_hidden_Rules          *[]*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,8,rep,name=rules"`
-	xxx_hidden_Title          *string                              `protobuf:"bytes,9,opt,name=title"`
-	xxx_hidden_Values         []string                             `protobuf:"bytes,10,rep,name=values"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState              `protogen:"hybrid.v1"`
+	Id             string                              `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	ProfileId      string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId" json:"profile_id,omitempty"`
+	Name           string                              `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	ProfileVersion string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion" json:"profile_version,omitempty"`
+	Labels         map[string]string                   `protobuf:"bytes,5,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations    map[string]string                   `protobuf:"bytes,6,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Description    string                              `protobuf:"bytes,7,opt,name=description" json:"description,omitempty"`
+	Rules          []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,8,rep,name=rules" json:"rules,omitempty"`
+	Title          string                              `protobuf:"bytes,9,opt,name=title" json:"title,omitempty"`
+	Values         []string                            `protobuf:"bytes,10,rep,name=values" json:"values,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
@@ -2284,236 +1920,126 @@ func (x *ComplianceOperatorProfileV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorProfileV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetProfileId() string {
 	if x != nil {
-		if x.xxx_hidden_ProfileId != nil {
-			return *x.xxx_hidden_ProfileId
-		}
-		return ""
+		return x.ProfileId
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetProfileVersion() string {
 	if x != nil {
-		if x.xxx_hidden_ProfileVersion != nil {
-			return *x.xxx_hidden_ProfileVersion
-		}
-		return ""
+		return x.ProfileVersion
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorProfileV2) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorProfileV2) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetRules() []*ComplianceOperatorProfileV2_Rule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *[]*ComplianceOperatorProfileV2_Rule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Rules
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorProfileV2) GetTitle() string {
 	if x != nil {
-		if x.xxx_hidden_Title != nil {
-			return *x.xxx_hidden_Title
-		}
-		return ""
+		return x.Title
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorProfileV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetProfileId(v string) {
-	x.xxx_hidden_ProfileId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
+	x.ProfileId = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetProfileVersion(v string) {
-	x.xxx_hidden_ProfileVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
+	x.ProfileVersion = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 10)
+	x.Description = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetRules(v []*ComplianceOperatorProfileV2_Rule) {
-	var sv *[]*ComplianceOperatorProfileV2_Rule
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceOperatorProfileV2_Rule{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 10)
+	x.Rules = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetTitle(v string) {
-	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
+	x.Title = v
 }
 
 func (x *ComplianceOperatorProfileV2) SetValues(v []string) {
-	x.xxx_hidden_Values = v
-}
-
-func (x *ComplianceOperatorProfileV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorProfileV2) HasProfileId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorProfileV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorProfileV2) HasProfileVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceOperatorProfileV2) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ComplianceOperatorProfileV2) HasTitle() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ComplianceOperatorProfileV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorProfileV2) ClearProfileId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ProfileId = nil
-}
-
-func (x *ComplianceOperatorProfileV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ComplianceOperatorProfileV2) ClearProfileVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ProfileVersion = nil
-}
-
-func (x *ComplianceOperatorProfileV2) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ComplianceOperatorProfileV2) ClearTitle() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Title = nil
+	x.Values = v
 }
 
 type ComplianceOperatorProfileV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id             *string
-	ProfileId      *string
-	Name           *string
-	ProfileVersion *string
+	Id             string
+	ProfileId      string
+	Name           string
+	ProfileVersion string
 	Labels         map[string]string
 	Annotations    map[string]string
-	Description    *string
+	Description    string
 	Rules          []*ComplianceOperatorProfileV2_Rule
-	Title          *string
+	Title          string
 	Values         []string
 }
 
@@ -2521,63 +2047,38 @@ func (b0 ComplianceOperatorProfileV2_builder) Build() *ComplianceOperatorProfile
 	m0 := &ComplianceOperatorProfileV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ProfileId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
-		x.xxx_hidden_ProfileId = b.ProfileId
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ProfileVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
-		x.xxx_hidden_ProfileVersion = b.ProfileVersion
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 10)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Rules != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 10)
-		x.xxx_hidden_Rules = &b.Rules
-	}
-	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
-		x.xxx_hidden_Title = b.Title
-	}
-	x.xxx_hidden_Values = b.Values
+	x.Id = b.Id
+	x.ProfileId = b.ProfileId
+	x.Name = b.Name
+	x.ProfileVersion = b.ProfileVersion
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.Description = b.Description
+	x.Rules = b.Rules
+	x.Title = b.Title
+	x.Values = b.Values
 	return m0
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
 // Next tag: 14
 type ComplianceOperatorRuleV2 struct {
-	state                   protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_RuleId       *string                          `protobuf:"bytes,1,opt,name=rule_id,json=ruleId"`
-	xxx_hidden_Id           *string                          `protobuf:"bytes,2,opt,name=id"`
-	xxx_hidden_Name         *string                          `protobuf:"bytes,3,opt,name=name"`
-	xxx_hidden_RuleType     *string                          `protobuf:"bytes,4,opt,name=rule_type,json=ruleType"`
-	xxx_hidden_Severity     ComplianceOperatorRuleSeverity   `protobuf:"varint,5,opt,name=severity,enum=central.ComplianceOperatorRuleSeverity"`
-	xxx_hidden_Labels       map[string]string                `protobuf:"bytes,6,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations  map[string]string                `protobuf:"bytes,7,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Title        *string                          `protobuf:"bytes,8,opt,name=title"`
-	xxx_hidden_Description  *string                          `protobuf:"bytes,9,opt,name=description"`
-	xxx_hidden_Rationale    *string                          `protobuf:"bytes,10,opt,name=rationale"`
-	xxx_hidden_Fixes        *[]*ComplianceOperatorRuleV2_Fix `protobuf:"bytes,11,rep,name=fixes"`
-	xxx_hidden_Warning      *string                          `protobuf:"bytes,12,opt,name=warning"`
-	xxx_hidden_Instructions *string                          `protobuf:"bytes,13,opt,name=instructions"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
+	RuleId        string                          `protobuf:"bytes,1,opt,name=rule_id,json=ruleId" json:"rule_id,omitempty"`
+	Id            string                          `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	Name          string                          `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	RuleType      string                          `protobuf:"bytes,4,opt,name=rule_type,json=ruleType" json:"rule_type,omitempty"`
+	Severity      ComplianceOperatorRuleSeverity  `protobuf:"varint,5,opt,name=severity,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
+	Labels        map[string]string               `protobuf:"bytes,6,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string               `protobuf:"bytes,7,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Title         string                          `protobuf:"bytes,8,opt,name=title" json:"title,omitempty"`
+	Description   string                          `protobuf:"bytes,9,opt,name=description" json:"description,omitempty"`
+	Rationale     string                          `protobuf:"bytes,10,opt,name=rationale" json:"rationale,omitempty"`
+	Fixes         []*ComplianceOperatorRuleV2_Fix `protobuf:"bytes,11,rep,name=fixes" json:"fixes,omitempty"`
+	Warning       string                          `protobuf:"bytes,12,opt,name=warning" json:"warning,omitempty"`
+	Instructions  string                          `protobuf:"bytes,13,opt,name=instructions" json:"instructions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -2607,406 +2108,196 @@ func (x *ComplianceOperatorRuleV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorRuleV2) GetRuleId() string {
 	if x != nil {
-		if x.xxx_hidden_RuleId != nil {
-			return *x.xxx_hidden_RuleId
-		}
-		return ""
+		return x.RuleId
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetRuleType() string {
 	if x != nil {
-		if x.xxx_hidden_RuleType != nil {
-			return *x.xxx_hidden_RuleType
-		}
-		return ""
+		return x.RuleType
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetSeverity() ComplianceOperatorRuleSeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
 }
 
 func (x *ComplianceOperatorRuleV2) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorRuleV2) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorRuleV2) GetTitle() string {
 	if x != nil {
-		if x.xxx_hidden_Title != nil {
-			return *x.xxx_hidden_Title
-		}
-		return ""
+		return x.Title
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetRationale() string {
 	if x != nil {
-		if x.xxx_hidden_Rationale != nil {
-			return *x.xxx_hidden_Rationale
-		}
-		return ""
+		return x.Rationale
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetFixes() []*ComplianceOperatorRuleV2_Fix {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Fixes) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *[]*ComplianceOperatorRuleV2_Fix
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Fixes
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorRuleV2) GetWarning() string {
 	if x != nil {
-		if x.xxx_hidden_Warning != nil {
-			return *x.xxx_hidden_Warning
-		}
-		return ""
+		return x.Warning
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) GetInstructions() string {
 	if x != nil {
-		if x.xxx_hidden_Instructions != nil {
-			return *x.xxx_hidden_Instructions
-		}
-		return ""
+		return x.Instructions
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2) SetRuleId(v string) {
-	x.xxx_hidden_RuleId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 13)
+	x.RuleId = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 13)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 13)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetRuleType(v string) {
-	x.xxx_hidden_RuleType = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 13)
+	x.RuleType = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetSeverity(v ComplianceOperatorRuleSeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 13)
+	x.Severity = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetTitle(v string) {
-	x.xxx_hidden_Title = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 13)
+	x.Title = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 13)
+	x.Description = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetRationale(v string) {
-	x.xxx_hidden_Rationale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 13)
+	x.Rationale = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetFixes(v []*ComplianceOperatorRuleV2_Fix) {
-	var sv *[]*ComplianceOperatorRuleV2_Fix
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceOperatorRuleV2_Fix{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Fixes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 13)
+	x.Fixes = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetWarning(v string) {
-	x.xxx_hidden_Warning = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
+	x.Warning = v
 }
 
 func (x *ComplianceOperatorRuleV2) SetInstructions(v string) {
-	x.xxx_hidden_Instructions = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 13)
-}
-
-func (x *ComplianceOperatorRuleV2) HasRuleId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorRuleV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorRuleV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorRuleV2) HasRuleType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceOperatorRuleV2) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorRuleV2) HasTitle() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ComplianceOperatorRuleV2) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ComplianceOperatorRuleV2) HasRationale() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ComplianceOperatorRuleV2) HasWarning() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ComplianceOperatorRuleV2) HasInstructions() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *ComplianceOperatorRuleV2) ClearRuleId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RuleId = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearRuleType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_RuleType = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Severity = ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
-}
-
-func (x *ComplianceOperatorRuleV2) ClearTitle() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Title = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearRationale() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Rationale = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearWarning() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_Warning = nil
-}
-
-func (x *ComplianceOperatorRuleV2) ClearInstructions() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_Instructions = nil
+	x.Instructions = v
 }
 
 type ComplianceOperatorRuleV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RuleId       *string
-	Id           *string
-	Name         *string
-	RuleType     *string
-	Severity     *ComplianceOperatorRuleSeverity
+	RuleId       string
+	Id           string
+	Name         string
+	RuleType     string
+	Severity     ComplianceOperatorRuleSeverity
 	Labels       map[string]string
 	Annotations  map[string]string
-	Title        *string
-	Description  *string
-	Rationale    *string
+	Title        string
+	Description  string
+	Rationale    string
 	Fixes        []*ComplianceOperatorRuleV2_Fix
-	Warning      *string
-	Instructions *string
+	Warning      string
+	Instructions string
 }
 
 func (b0 ComplianceOperatorRuleV2_builder) Build() *ComplianceOperatorRuleV2 {
 	m0 := &ComplianceOperatorRuleV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RuleId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 13)
-		x.xxx_hidden_RuleId = b.RuleId
-	}
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 13)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 13)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.RuleType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 13)
-		x.xxx_hidden_RuleType = b.RuleType
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 13)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.Title != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 13)
-		x.xxx_hidden_Title = b.Title
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 13)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Rationale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 13)
-		x.xxx_hidden_Rationale = b.Rationale
-	}
-	if b.Fixes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
-		x.xxx_hidden_Fixes = &b.Fixes
-	}
-	if b.Warning != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
-		x.xxx_hidden_Warning = b.Warning
-	}
-	if b.Instructions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 13)
-		x.xxx_hidden_Instructions = b.Instructions
-	}
+	x.RuleId = b.RuleId
+	x.Id = b.Id
+	x.Name = b.Name
+	x.RuleType = b.RuleType
+	x.Severity = b.Severity
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.Title = b.Title
+	x.Description = b.Description
+	x.Rationale = b.Rationale
+	x.Fixes = b.Fixes
+	x.Warning = b.Warning
+	x.Instructions = b.Instructions
 	return m0
 }
 
 type ComplianceOperatorScanV2 struct {
-	state                  protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                         `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                         `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ProfileId   *string                         `protobuf:"bytes,3,opt,name=profile_id,json=profileId"`
-	xxx_hidden_Labels      map[string]string               `protobuf:"bytes,4,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations map[string]string               `protobuf:"bytes,5,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_ScanType    *string                         `protobuf:"bytes,6,opt,name=scan_type,json=scanType"`
-	xxx_hidden_Status      *ComplianceOperatorScanStatusV2 `protobuf:"bytes,7,opt,name=status"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
+	Id            string                          `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                          `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	ProfileId     string                          `protobuf:"bytes,3,opt,name=profile_id,json=profileId" json:"profile_id,omitempty"`
+	Labels        map[string]string               `protobuf:"bytes,4,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string               `protobuf:"bytes,5,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ScanType      string                          `protobuf:"bytes,6,opt,name=scan_type,json=scanType" json:"scan_type,omitempty"`
+	Status        *ComplianceOperatorScanStatusV2 `protobuf:"bytes,7,opt,name=status" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanV2) Reset() {
@@ -3036,165 +2327,101 @@ func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorScanV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanV2) GetProfileId() string {
 	if x != nil {
-		if x.xxx_hidden_ProfileId != nil {
-			return *x.xxx_hidden_ProfileId
-		}
-		return ""
+		return x.ProfileId
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanV2) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanV2) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanV2) GetScanType() string {
 	if x != nil {
-		if x.xxx_hidden_ScanType != nil {
-			return *x.xxx_hidden_ScanType
-		}
-		return ""
+		return x.ScanType
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanV2) GetStatus() *ComplianceOperatorScanStatusV2 {
 	if x != nil {
-		return x.xxx_hidden_Status
+		return x.Status
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorScanV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorScanV2) SetProfileId(v string) {
-	x.xxx_hidden_ProfileId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	x.ProfileId = v
 }
 
 func (x *ComplianceOperatorScanV2) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ComplianceOperatorScanV2) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ComplianceOperatorScanV2) SetScanType(v string) {
-	x.xxx_hidden_ScanType = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.ScanType = v
 }
 
 func (x *ComplianceOperatorScanV2) SetStatus(v *ComplianceOperatorScanStatusV2) {
-	x.xxx_hidden_Status = v
-}
-
-func (x *ComplianceOperatorScanV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorScanV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorScanV2) HasProfileId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorScanV2) HasScanType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.Status = v
 }
 
 func (x *ComplianceOperatorScanV2) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Status != nil
-}
-
-func (x *ComplianceOperatorScanV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorScanV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ComplianceOperatorScanV2) ClearProfileId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ProfileId = nil
-}
-
-func (x *ComplianceOperatorScanV2) ClearScanType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ScanType = nil
+	return x.Status != nil
 }
 
 func (x *ComplianceOperatorScanV2) ClearStatus() {
-	x.xxx_hidden_Status = nil
+	x.Status = nil
 }
 
 type ComplianceOperatorScanV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	ProfileId   *string
+	Id          string
+	Name        string
+	ProfileId   string
 	Labels      map[string]string
 	Annotations map[string]string
-	ScanType    *string
+	ScanType    string
 	Status      *ComplianceOperatorScanStatusV2
 }
 
@@ -3202,45 +2429,31 @@ func (b0 ComplianceOperatorScanV2_builder) Build() *ComplianceOperatorScanV2 {
 	m0 := &ComplianceOperatorScanV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ProfileId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_ProfileId = b.ProfileId
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.ScanType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_ScanType = b.ScanType
-	}
-	x.xxx_hidden_Status = b.Status
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ProfileId = b.ProfileId
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.ScanType = b.ScanType
+	x.Status = b.Status
 	return m0
 }
 
 type ComplianceOperatorScanStatusV2 struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Phase            *string                `protobuf:"bytes,1,opt,name=phase"`
-	xxx_hidden_Result           *string                `protobuf:"bytes,2,opt,name=result"`
-	xxx_hidden_ErrorMessage     *string                `protobuf:"bytes,3,opt,name=error_message,json=errorMessage"`
-	xxx_hidden_CurrentIndex     int64                  `protobuf:"varint,4,opt,name=current_index,json=currentIndex"`
-	xxx_hidden_Warnings         *string                `protobuf:"bytes,5,opt,name=warnings"`
-	xxx_hidden_RemainingRetries int64                  `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries"`
-	xxx_hidden_StartTime        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime"`
-	xxx_hidden_EndTime          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime"`
-	xxx_hidden_LastStartTime    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_start_time,json=lastStartTime"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
+	Phase            string                 `protobuf:"bytes,1,opt,name=phase" json:"phase,omitempty"`
+	Result           string                 `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
+	ErrorMessage     string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	CurrentIndex     int64                  `protobuf:"varint,4,opt,name=current_index,json=currentIndex" json:"current_index,omitempty"`
+	Warnings         string                 `protobuf:"bytes,5,opt,name=warnings" json:"warnings,omitempty"`
+	RemainingRetries int64                  `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries" json:"remaining_retries,omitempty"`
+	// start_time is the creation time of the Scan resource
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime" json:"start_time,omitempty"`
+	EndTime   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime" json:"end_time,omitempty"`
+	// last_start_time is the last time the Scan resource was triggered
+	LastStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_start_time,json=lastStartTime" json:"last_start_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanStatusV2) Reset() {
@@ -3270,274 +2483,145 @@ func (x *ComplianceOperatorScanStatusV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorScanStatusV2) GetPhase() string {
 	if x != nil {
-		if x.xxx_hidden_Phase != nil {
-			return *x.xxx_hidden_Phase
-		}
-		return ""
+		return x.Phase
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetResult() string {
 	if x != nil {
-		if x.xxx_hidden_Result != nil {
-			return *x.xxx_hidden_Result
-		}
-		return ""
+		return x.Result
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetCurrentIndex() int64 {
 	if x != nil {
-		return x.xxx_hidden_CurrentIndex
+		return x.CurrentIndex
 	}
 	return 0
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetWarnings() string {
 	if x != nil {
-		if x.xxx_hidden_Warnings != nil {
-			return *x.xxx_hidden_Warnings
-		}
-		return ""
+		return x.Warnings
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetRemainingRetries() int64 {
 	if x != nil {
-		return x.xxx_hidden_RemainingRetries
+		return x.RemainingRetries
 	}
 	return 0
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartTime) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.StartTime
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_EndTime) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_EndTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.EndTime
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetLastStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastStartTime) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastStartTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastStartTime
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetPhase(v string) {
-	x.xxx_hidden_Phase = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
+	x.Phase = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetResult(v string) {
-	x.xxx_hidden_Result = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	x.Result = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	x.ErrorMessage = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetCurrentIndex(v int64) {
-	x.xxx_hidden_CurrentIndex = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
+	x.CurrentIndex = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetWarnings(v string) {
-	x.xxx_hidden_Warnings = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
+	x.Warnings = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetRemainingRetries(v int64) {
-	x.xxx_hidden_RemainingRetries = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+	x.RemainingRetries = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetStartTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
-	}
+	x.StartTime = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetEndTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
-	}
+	x.EndTime = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) SetLastStartTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastStartTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
-	}
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasPhase() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasResult() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasCurrentIndex() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasWarnings() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorScanStatusV2) HasRemainingRetries() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.LastStartTime = v
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	return x.StartTime != nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasEndTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.EndTime != nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) HasLastStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearPhase() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Phase = nil
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearResult() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Result = nil
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ErrorMessage = nil
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearCurrentIndex() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CurrentIndex = 0
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearWarnings() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Warnings = nil
-}
-
-func (x *ComplianceOperatorScanStatusV2) ClearRemainingRetries() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_RemainingRetries = 0
+	return x.LastStartTime != nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearStartTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, (*timestamppb.Timestamp)(nil))
+	x.StartTime = nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearEndTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_EndTime, (*timestamppb.Timestamp)(nil))
+	x.EndTime = nil
 }
 
 func (x *ComplianceOperatorScanStatusV2) ClearLastStartTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastStartTime, (*timestamppb.Timestamp)(nil))
+	x.LastStartTime = nil
 }
 
 type ComplianceOperatorScanStatusV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Phase            *string
-	Result           *string
-	ErrorMessage     *string
-	CurrentIndex     *int64
-	Warnings         *string
-	RemainingRetries *int64
+	Phase            string
+	Result           string
+	ErrorMessage     string
+	CurrentIndex     int64
+	Warnings         string
+	RemainingRetries int64
 	// start_time is the creation time of the Scan resource
 	StartTime *timestamppb.Timestamp
 	EndTime   *timestamppb.Timestamp
@@ -3549,60 +2633,29 @@ func (b0 ComplianceOperatorScanStatusV2_builder) Build() *ComplianceOperatorScan
 	m0 := &ComplianceOperatorScanStatusV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Phase != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
-		x.xxx_hidden_Phase = b.Phase
-	}
-	if b.Result != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
-		x.xxx_hidden_Result = b.Result
-	}
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
-	if b.CurrentIndex != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
-		x.xxx_hidden_CurrentIndex = *b.CurrentIndex
-	}
-	if b.Warnings != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
-		x.xxx_hidden_Warnings = b.Warnings
-	}
-	if b.RemainingRetries != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
-		x.xxx_hidden_RemainingRetries = *b.RemainingRetries
-	}
-	if b.StartTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
-		x.xxx_hidden_StartTime = b.StartTime
-	}
-	if b.EndTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
-		x.xxx_hidden_EndTime = b.EndTime
-	}
-	if b.LastStartTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
-		x.xxx_hidden_LastStartTime = b.LastStartTime
-	}
+	x.Phase = b.Phase
+	x.Result = b.Result
+	x.ErrorMessage = b.ErrorMessage
+	x.CurrentIndex = b.CurrentIndex
+	x.Warnings = b.Warnings
+	x.RemainingRetries = b.RemainingRetries
+	x.StartTime = b.StartTime
+	x.EndTime = b.EndTime
+	x.LastStartTime = b.LastStartTime
 	return m0
 }
 
 type ComplianceOperatorScanSettingBindingV2 struct {
-	state                      protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                   `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name            *string                   `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ProfileNames    []string                  `protobuf:"bytes,3,rep,name=profile_names,json=profileNames"`
-	xxx_hidden_ScanSettingName *string                   `protobuf:"bytes,4,opt,name=scan_setting_name,json=scanSettingName"`
-	xxx_hidden_Labels          map[string]string         `protobuf:"bytes,6,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations     map[string]string         `protobuf:"bytes,7,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Status          *ComplianceOperatorStatus `protobuf:"bytes,8,opt,name=status"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Id              string                    `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name            string                    `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	ProfileNames    []string                  `protobuf:"bytes,3,rep,name=profile_names,json=profileNames" json:"profile_names,omitempty"`
+	ScanSettingName string                    `protobuf:"bytes,4,opt,name=scan_setting_name,json=scanSettingName" json:"scan_setting_name,omitempty"`
+	Labels          map[string]string         `protobuf:"bytes,6,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations     map[string]string         `protobuf:"bytes,7,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Status          *ComplianceOperatorStatus `protobuf:"bytes,8,opt,name=status" json:"status,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) Reset() {
@@ -3632,147 +2685,99 @@ func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Mes
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetProfileNames() []string {
 	if x != nil {
-		return x.xxx_hidden_ProfileNames
+		return x.ProfileNames
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetScanSettingName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanSettingName != nil {
-			return *x.xxx_hidden_ScanSettingName
-		}
-		return ""
+		return x.ScanSettingName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetStatus() *ComplianceOperatorStatus {
 	if x != nil {
-		return x.xxx_hidden_Status
+		return x.Status
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetProfileNames(v []string) {
-	x.xxx_hidden_ProfileNames = v
+	x.ProfileNames = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetScanSettingName(v string) {
-	x.xxx_hidden_ScanSettingName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.ScanSettingName = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) SetStatus(v *ComplianceOperatorStatus) {
-	x.xxx_hidden_Status = v
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) HasScanSettingName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	x.Status = v
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Status != nil
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ComplianceOperatorScanSettingBindingV2) ClearScanSettingName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ScanSettingName = nil
+	return x.Status != nil
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) ClearStatus() {
-	x.xxx_hidden_Status = nil
+	x.Status = nil
 }
 
 type ComplianceOperatorScanSettingBindingV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
-	Name            *string
+	Id              string
+	Name            string
 	ProfileNames    []string
-	ScanSettingName *string
+	ScanSettingName string
 	Labels          map[string]string
 	Annotations     map[string]string
 	Status          *ComplianceOperatorStatus
@@ -3782,38 +2787,25 @@ func (b0 ComplianceOperatorScanSettingBindingV2_builder) Build() *ComplianceOper
 	m0 := &ComplianceOperatorScanSettingBindingV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_ProfileNames = b.ProfileNames
-	if b.ScanSettingName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_ScanSettingName = b.ScanSettingName
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	x.xxx_hidden_Status = b.Status
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ProfileNames = b.ProfileNames
+	x.ScanSettingName = b.ScanSettingName
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.Status = b.Status
 	return m0
 }
 
 type ComplianceOperatorCondition struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Type               *string                `protobuf:"bytes,1,opt,name=type"`
-	xxx_hidden_Status             *string                `protobuf:"bytes,2,opt,name=status"`
-	xxx_hidden_Reason             *string                `protobuf:"bytes,3,opt,name=reason"`
-	xxx_hidden_Message            *string                `protobuf:"bytes,4,opt,name=message"`
-	xxx_hidden_LastTransitionTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
+	Type               string                 `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
+	Status             string                 `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
+	Reason             string                 `protobuf:"bytes,3,opt,name=reason" json:"reason,omitempty"`
+	Message            string                 `protobuf:"bytes,4,opt,name=message" json:"message,omitempty"`
+	LastTransitionTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_transition_time,json=lastTransitionTime" json:"last_transition_time,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorCondition) Reset() {
@@ -3843,154 +2835,77 @@ func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorCondition) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCondition) GetStatus() string {
 	if x != nil {
-		if x.xxx_hidden_Status != nil {
-			return *x.xxx_hidden_Status
-		}
-		return ""
+		return x.Status
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCondition) GetReason() string {
 	if x != nil {
-		if x.xxx_hidden_Reason != nil {
-			return *x.xxx_hidden_Reason
-		}
-		return ""
+		return x.Reason
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCondition) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorCondition) GetLastTransitionTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastTransitionTime) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastTransitionTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastTransitionTime
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorCondition) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Type = v
 }
 
 func (x *ComplianceOperatorCondition) SetStatus(v string) {
-	x.xxx_hidden_Status = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Status = v
 }
 
 func (x *ComplianceOperatorCondition) SetReason(v string) {
-	x.xxx_hidden_Reason = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Reason = v
 }
 
 func (x *ComplianceOperatorCondition) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Message = v
 }
 
 func (x *ComplianceOperatorCondition) SetLastTransitionTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTransitionTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-	}
-}
-
-func (x *ComplianceOperatorCondition) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorCondition) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorCondition) HasReason() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorCondition) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	x.LastTransitionTime = v
 }
 
 func (x *ComplianceOperatorCondition) HasLastTransitionTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorCondition) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *ComplianceOperatorCondition) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Status = nil
-}
-
-func (x *ComplianceOperatorCondition) ClearReason() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Reason = nil
-}
-
-func (x *ComplianceOperatorCondition) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Message = nil
+	return x.LastTransitionTime != nil
 }
 
 func (x *ComplianceOperatorCondition) ClearLastTransitionTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTransitionTime, (*timestamppb.Timestamp)(nil))
+	x.LastTransitionTime = nil
 }
 
 type ComplianceOperatorCondition_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Type               *string
-	Status             *string
-	Reason             *string
-	Message            *string
+	Type               string
+	Status             string
+	Reason             string
+	Message            string
 	LastTransitionTime *timestamppb.Timestamp
 }
 
@@ -3998,41 +2913,22 @@ func (b0 ComplianceOperatorCondition_builder) Build() *ComplianceOperatorConditi
 	m0 := &ComplianceOperatorCondition{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Status = b.Status
-	}
-	if b.Reason != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Reason = b.Reason
-	}
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Message = b.Message
-	}
-	if b.LastTransitionTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_LastTransitionTime = b.LastTransitionTime
-	}
+	x.Type = b.Type
+	x.Status = b.Status
+	x.Reason = b.Reason
+	x.Message = b.Message
+	x.LastTransitionTime = b.LastTransitionTime
 	return m0
 }
 
 type ComplianceOperatorStatus struct {
-	state                   protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Phase        *string                         `protobuf:"bytes,1,opt,name=phase"`
-	xxx_hidden_Result       *string                         `protobuf:"bytes,2,opt,name=result"`
-	xxx_hidden_ErrorMessage *string                         `protobuf:"bytes,3,opt,name=error_message,json=errorMessage"`
-	xxx_hidden_Conditions   *[]*ComplianceOperatorCondition `protobuf:"bytes,4,rep,name=conditions"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
+	Phase         string                         `protobuf:"bytes,1,opt,name=phase" json:"phase,omitempty"`
+	Result        string                         `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
+	ErrorMessage  string                         `protobuf:"bytes,3,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	Conditions    []*ComplianceOperatorCondition `protobuf:"bytes,4,rep,name=conditions" json:"conditions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorStatus) Reset() {
@@ -4062,116 +2958,54 @@ func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorStatus) GetPhase() string {
 	if x != nil {
-		if x.xxx_hidden_Phase != nil {
-			return *x.xxx_hidden_Phase
-		}
-		return ""
+		return x.Phase
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorStatus) GetResult() string {
 	if x != nil {
-		if x.xxx_hidden_Result != nil {
-			return *x.xxx_hidden_Result
-		}
-		return ""
+		return x.Result
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorStatus) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorStatus) GetConditions() []*ComplianceOperatorCondition {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Conditions) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*ComplianceOperatorCondition
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Conditions
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorStatus) SetPhase(v string) {
-	x.xxx_hidden_Phase = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Phase = v
 }
 
 func (x *ComplianceOperatorStatus) SetResult(v string) {
-	x.xxx_hidden_Result = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Result = v
 }
 
 func (x *ComplianceOperatorStatus) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ErrorMessage = v
 }
 
 func (x *ComplianceOperatorStatus) SetConditions(v []*ComplianceOperatorCondition) {
-	var sv *[]*ComplianceOperatorCondition
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceOperatorCondition{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Conditions), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *ComplianceOperatorStatus) HasPhase() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorStatus) HasResult() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorStatus) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorStatus) ClearPhase() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Phase = nil
-}
-
-func (x *ComplianceOperatorStatus) ClearResult() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Result = nil
-}
-
-func (x *ComplianceOperatorStatus) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ErrorMessage = nil
+	x.Conditions = v
 }
 
 type ComplianceOperatorStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Phase        *string
-	Result       *string
-	ErrorMessage *string
+	Phase        string
+	Result       string
+	ErrorMessage string
 	Conditions   []*ComplianceOperatorCondition
 }
 
@@ -4179,34 +3013,20 @@ func (b0 ComplianceOperatorStatus_builder) Build() *ComplianceOperatorStatus {
 	m0 := &ComplianceOperatorStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Phase != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Phase = b.Phase
-	}
-	if b.Result != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Result = b.Result
-	}
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
-	if b.Conditions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Conditions = &b.Conditions
-	}
+	x.Phase = b.Phase
+	x.Result = b.Result
+	x.ErrorMessage = b.ErrorMessage
+	x.Conditions = b.Conditions
 	return m0
 }
 
 type ComplianceOperatorSuiteV2 struct {
-	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                   `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                   `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Status      *ComplianceOperatorStatus `protobuf:"bytes,4,opt,name=status"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Id            string                    `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                    `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Status        *ComplianceOperatorStatus `protobuf:"bytes,4,opt,name=status" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorSuiteV2) Reset() {
@@ -4236,85 +3056,53 @@ func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorSuiteV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorSuiteV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorSuiteV2) GetStatus() *ComplianceOperatorStatus {
 	if x != nil {
-		return x.xxx_hidden_Status
+		return x.Status
 	}
 	return nil
 }
 
 func (x *ComplianceOperatorSuiteV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorSuiteV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorSuiteV2) SetStatus(v *ComplianceOperatorStatus) {
-	x.xxx_hidden_Status = v
-}
-
-func (x *ComplianceOperatorSuiteV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorSuiteV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Status = v
 }
 
 func (x *ComplianceOperatorSuiteV2) HasStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Status != nil
-}
-
-func (x *ComplianceOperatorSuiteV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorSuiteV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	return x.Status != nil
 }
 
 func (x *ComplianceOperatorSuiteV2) ClearStatus() {
-	x.xxx_hidden_Status = nil
+	x.Status = nil
 }
 
 type ComplianceOperatorSuiteV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id     *string
-	Name   *string
+	Id     string
+	Name   string
 	Status *ComplianceOperatorStatus
 }
 
@@ -4322,31 +3110,29 @@ func (b0 ComplianceOperatorSuiteV2_builder) Build() *ComplianceOperatorSuiteV2 {
 	m0 := &ComplianceOperatorSuiteV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_Status = b.Status
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Status = b.Status
 	return m0
 }
 
 type ComplianceOperatorRemediationV2 struct {
-	state                                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                        *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                      *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_ComplianceCheckResultName *string                `protobuf:"bytes,3,opt,name=compliance_check_result_name,json=complianceCheckResultName"`
-	xxx_hidden_Apply                     bool                   `protobuf:"varint,4,opt,name=apply"`
-	xxx_hidden_CurrentObject             *string                `protobuf:"bytes,5,opt,name=current_object,json=currentObject"`
-	xxx_hidden_OutdatedObject            *string                `protobuf:"bytes,6,opt,name=outdated_object,json=outdatedObject"`
-	xxx_hidden_EnforcementType           *string                `protobuf:"bytes,7,opt,name=enforcement_type,json=enforcementType"`
-	XXX_raceDetectHookData               protoimpl.RaceDetectHookData
-	XXX_presence                         [1]uint32
-	unknownFields                        protoimpl.UnknownFields
-	sizeCache                            protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id                        string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name                      string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	ComplianceCheckResultName string                 `protobuf:"bytes,3,opt,name=compliance_check_result_name,json=complianceCheckResultName" json:"compliance_check_result_name,omitempty"`
+	// apply is used by the compliance operator to apply a remediation
+	Apply bool `protobuf:"varint,4,opt,name=apply" json:"apply,omitempty"`
+	// current holds the object which currently remediates the check result. It is saved in a "current" field because
+	// Compliance Operator can ship new remediations in a following versions.
+	// See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+	CurrentObject string `protobuf:"bytes,5,opt,name=current_object,json=currentObject" json:"current_object,omitempty"`
+	// outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
+	// See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+	OutdatedObject  string `protobuf:"bytes,6,opt,name=outdated_object,json=outdatedObject" json:"outdated_object,omitempty"`
+	EnforcementType string `protobuf:"bytes,7,opt,name=enforcement_type,json=enforcementType" json:"enforcement_type,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRemediationV2) Reset() {
@@ -4376,256 +3162,124 @@ func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorRemediationV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) GetComplianceCheckResultName() string {
 	if x != nil {
-		if x.xxx_hidden_ComplianceCheckResultName != nil {
-			return *x.xxx_hidden_ComplianceCheckResultName
-		}
-		return ""
+		return x.ComplianceCheckResultName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) GetApply() bool {
 	if x != nil {
-		return x.xxx_hidden_Apply
+		return x.Apply
 	}
 	return false
 }
 
 func (x *ComplianceOperatorRemediationV2) GetCurrentObject() string {
 	if x != nil {
-		if x.xxx_hidden_CurrentObject != nil {
-			return *x.xxx_hidden_CurrentObject
-		}
-		return ""
+		return x.CurrentObject
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) GetOutdatedObject() string {
 	if x != nil {
-		if x.xxx_hidden_OutdatedObject != nil {
-			return *x.xxx_hidden_OutdatedObject
-		}
-		return ""
+		return x.OutdatedObject
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) GetEnforcementType() string {
 	if x != nil {
-		if x.xxx_hidden_EnforcementType != nil {
-			return *x.xxx_hidden_EnforcementType
-		}
-		return ""
+		return x.EnforcementType
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRemediationV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Id = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.Name = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetComplianceCheckResultName(v string) {
-	x.xxx_hidden_ComplianceCheckResultName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	x.ComplianceCheckResultName = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetApply(v bool) {
-	x.xxx_hidden_Apply = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.Apply = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetCurrentObject(v string) {
-	x.xxx_hidden_CurrentObject = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	x.CurrentObject = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetOutdatedObject(v string) {
-	x.xxx_hidden_OutdatedObject = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.OutdatedObject = v
 }
 
 func (x *ComplianceOperatorRemediationV2) SetEnforcementType(v string) {
-	x.xxx_hidden_EnforcementType = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasComplianceCheckResultName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasApply() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasCurrentObject() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasOutdatedObject() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ComplianceOperatorRemediationV2) HasEnforcementType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearComplianceCheckResultName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ComplianceCheckResultName = nil
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearApply() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Apply = false
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearCurrentObject() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_CurrentObject = nil
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearOutdatedObject() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_OutdatedObject = nil
-}
-
-func (x *ComplianceOperatorRemediationV2) ClearEnforcementType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_EnforcementType = nil
+	x.EnforcementType = v
 }
 
 type ComplianceOperatorRemediationV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                        *string
-	Name                      *string
-	ComplianceCheckResultName *string
+	Id                        string
+	Name                      string
+	ComplianceCheckResultName string
 	// apply is used by the compliance operator to apply a remediation
-	Apply *bool
+	Apply bool
 	// current holds the object which currently remediates the check result. It is saved in a "current" field because
 	// Compliance Operator can ship new remediations in a following versions.
 	// See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
-	CurrentObject *string
+	CurrentObject string
 	// outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
 	// See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
-	OutdatedObject  *string
-	EnforcementType *string
+	OutdatedObject  string
+	EnforcementType string
 }
 
 func (b0 ComplianceOperatorRemediationV2_builder) Build() *ComplianceOperatorRemediationV2 {
 	m0 := &ComplianceOperatorRemediationV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ComplianceCheckResultName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_ComplianceCheckResultName = b.ComplianceCheckResultName
-	}
-	if b.Apply != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Apply = *b.Apply
-	}
-	if b.CurrentObject != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_CurrentObject = b.CurrentObject
-	}
-	if b.OutdatedObject != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_OutdatedObject = b.OutdatedObject
-	}
-	if b.EnforcementType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_EnforcementType = b.EnforcementType
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.ComplianceCheckResultName = b.ComplianceCheckResultName
+	x.Apply = b.Apply
+	x.CurrentObject = b.CurrentObject
+	x.OutdatedObject = b.OutdatedObject
+	x.EnforcementType = b.EnforcementType
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
-	state                             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DbRecordId             *string                `protobuf:"bytes,1,opt,name=db_record_id,json=dbRecordId"`
-	xxx_hidden_ScanName               *string                `protobuf:"bytes,2,opt,name=scan_name,json=scanName"`
-	xxx_hidden_Profiles               []string               `protobuf:"bytes,3,rep,name=profiles"`
-	xxx_hidden_ShowNotApplicable      bool                   `protobuf:"varint,4,opt,name=show_not_applicable,json=showNotApplicable"`
-	xxx_hidden_StrictNodeScan         bool                   `protobuf:"varint,5,opt,name=strict_node_scan,json=strictNodeScan"`
-	xxx_hidden_AutoApplyRemediations  bool                   `protobuf:"varint,6,opt,name=auto_apply_remediations,json=autoApplyRemediations"`
-	xxx_hidden_AutoUpdateRemediations bool                   `protobuf:"varint,7,opt,name=auto_update_remediations,json=autoUpdateRemediations"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
+	DbRecordId             string                 `protobuf:"bytes,1,opt,name=db_record_id,json=dbRecordId" json:"db_record_id,omitempty"`
+	ScanName               string                 `protobuf:"bytes,2,opt,name=scan_name,json=scanName" json:"scan_name,omitempty"`
+	Profiles               []string               `protobuf:"bytes,3,rep,name=profiles" json:"profiles,omitempty"`
+	ShowNotApplicable      bool                   `protobuf:"varint,4,opt,name=show_not_applicable,json=showNotApplicable" json:"show_not_applicable,omitempty"`
+	StrictNodeScan         bool                   `protobuf:"varint,5,opt,name=strict_node_scan,json=strictNodeScan" json:"strict_node_scan,omitempty"`
+	AutoApplyRemediations  bool                   `protobuf:"varint,6,opt,name=auto_apply_remediations,json=autoApplyRemediations" json:"auto_apply_remediations,omitempty"`
+	AutoUpdateRemediations bool                   `protobuf:"varint,7,opt,name=auto_update_remediations,json=autoUpdateRemediations" json:"auto_update_remediations,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) Reset() {
@@ -4655,214 +3309,112 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoReflect() proto
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetDbRecordId() string {
 	if x != nil {
-		if x.xxx_hidden_DbRecordId != nil {
-			return *x.xxx_hidden_DbRecordId
-		}
-		return ""
+		return x.DbRecordId
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetScanName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanName != nil {
-			return *x.xxx_hidden_ScanName
-		}
-		return ""
+		return x.ScanName
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetProfiles() []string {
 	if x != nil {
-		return x.xxx_hidden_Profiles
+		return x.Profiles
 	}
 	return nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetShowNotApplicable() bool {
 	if x != nil {
-		return x.xxx_hidden_ShowNotApplicable
+		return x.ShowNotApplicable
 	}
 	return false
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetStrictNodeScan() bool {
 	if x != nil {
-		return x.xxx_hidden_StrictNodeScan
+		return x.StrictNodeScan
 	}
 	return false
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoApplyRemediations() bool {
 	if x != nil {
-		return x.xxx_hidden_AutoApplyRemediations
+		return x.AutoApplyRemediations
 	}
 	return false
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoUpdateRemediations() bool {
 	if x != nil {
-		return x.xxx_hidden_AutoUpdateRemediations
+		return x.AutoUpdateRemediations
 	}
 	return false
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetDbRecordId(v string) {
-	x.xxx_hidden_DbRecordId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.DbRecordId = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetScanName(v string) {
-	x.xxx_hidden_ScanName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.ScanName = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetProfiles(v []string) {
-	x.xxx_hidden_Profiles = v
+	x.Profiles = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetShowNotApplicable(v bool) {
-	x.xxx_hidden_ShowNotApplicable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.ShowNotApplicable = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetStrictNodeScan(v bool) {
-	x.xxx_hidden_StrictNodeScan = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	x.StrictNodeScan = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetAutoApplyRemediations(v bool) {
-	x.xxx_hidden_AutoApplyRemediations = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.AutoApplyRemediations = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) SetAutoUpdateRemediations(v bool) {
-	x.xxx_hidden_AutoUpdateRemediations = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasDbRecordId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasScanName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasShowNotApplicable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasStrictNodeScan() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasAutoApplyRemediations() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) HasAutoUpdateRemediations() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearDbRecordId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DbRecordId = nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearScanName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ScanName = nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearShowNotApplicable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ShowNotApplicable = false
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearStrictNodeScan() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_StrictNodeScan = false
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearAutoApplyRemediations() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_AutoApplyRemediations = false
-}
-
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ClearAutoUpdateRemediations() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_AutoUpdateRemediations = false
+	x.AutoUpdateRemediations = v
 }
 
 type ApplyComplianceScanConfigRequest_BaseScanSettings_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	DbRecordId             *string
-	ScanName               *string
+	DbRecordId             string
+	ScanName               string
 	Profiles               []string
-	ShowNotApplicable      *bool
-	StrictNodeScan         *bool
-	AutoApplyRemediations  *bool
-	AutoUpdateRemediations *bool
+	ShowNotApplicable      bool
+	StrictNodeScan         bool
+	AutoApplyRemediations  bool
+	AutoUpdateRemediations bool
 }
 
 func (b0 ApplyComplianceScanConfigRequest_BaseScanSettings_builder) Build() *ApplyComplianceScanConfigRequest_BaseScanSettings {
 	m0 := &ApplyComplianceScanConfigRequest_BaseScanSettings{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DbRecordId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_DbRecordId = b.DbRecordId
-	}
-	if b.ScanName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_ScanName = b.ScanName
-	}
-	x.xxx_hidden_Profiles = b.Profiles
-	if b.ShowNotApplicable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_ShowNotApplicable = *b.ShowNotApplicable
-	}
-	if b.StrictNodeScan != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_StrictNodeScan = *b.StrictNodeScan
-	}
-	if b.AutoApplyRemediations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_AutoApplyRemediations = *b.AutoApplyRemediations
-	}
-	if b.AutoUpdateRemediations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_AutoUpdateRemediations = *b.AutoUpdateRemediations
-	}
+	x.DbRecordId = b.DbRecordId
+	x.ScanName = b.ScanName
+	x.Profiles = b.Profiles
+	x.ShowNotApplicable = b.ShowNotApplicable
+	x.StrictNodeScan = b.StrictNodeScan
+	x.AutoApplyRemediations = b.AutoApplyRemediations
+	x.AutoUpdateRemediations = b.AutoUpdateRemediations
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_OneTimeScan struct {
-	state                   protoimpl.MessageState                             `protogen:"opaque.v1"`
-	xxx_hidden_ScanSettings *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState                             `protogen:"hybrid.v1"`
+	ScanSettings  *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings" json:"scan_settings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) Reset() {
@@ -4892,24 +3444,24 @@ func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ProtoReflect() protorefle
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
 	if x != nil {
-		return x.xxx_hidden_ScanSettings
+		return x.ScanSettings
 	}
 	return nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) SetScanSettings(v *ApplyComplianceScanConfigRequest_BaseScanSettings) {
-	x.xxx_hidden_ScanSettings = v
+	x.ScanSettings = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) HasScanSettings() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanSettings != nil
+	return x.ScanSettings != nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ClearScanSettings() {
-	x.xxx_hidden_ScanSettings = nil
+	x.ScanSettings = nil
 }
 
 type ApplyComplianceScanConfigRequest_OneTimeScan_builder struct {
@@ -4922,18 +3474,16 @@ func (b0 ApplyComplianceScanConfigRequest_OneTimeScan_builder) Build() *ApplyCom
 	m0 := &ApplyComplianceScanConfigRequest_OneTimeScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanSettings = b.ScanSettings
+	x.ScanSettings = b.ScanSettings
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_ScheduledScan struct {
-	state                   protoimpl.MessageState                             `protogen:"opaque.v1"`
-	xxx_hidden_ScanSettings *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings"`
-	xxx_hidden_Cron         *string                                            `protobuf:"bytes,2,opt,name=cron"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState                             `protogen:"hybrid.v1"`
+	ScanSettings  *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings" json:"scan_settings,omitempty"`
+	Cron          string                                             `protobuf:"bytes,2,opt,name=cron" json:"cron,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) Reset() {
@@ -4963,79 +3513,58 @@ func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ProtoReflect() protoref
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
 	if x != nil {
-		return x.xxx_hidden_ScanSettings
+		return x.ScanSettings
 	}
 	return nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) GetCron() string {
 	if x != nil {
-		if x.xxx_hidden_Cron != nil {
-			return *x.xxx_hidden_Cron
-		}
-		return ""
+		return x.Cron
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) SetScanSettings(v *ApplyComplianceScanConfigRequest_BaseScanSettings) {
-	x.xxx_hidden_ScanSettings = v
+	x.ScanSettings = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) SetCron(v string) {
-	x.xxx_hidden_Cron = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Cron = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) HasScanSettings() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanSettings != nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_ScheduledScan) HasCron() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.ScanSettings != nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ClearScanSettings() {
-	x.xxx_hidden_ScanSettings = nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ClearCron() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Cron = nil
+	x.ScanSettings = nil
 }
 
 type ApplyComplianceScanConfigRequest_ScheduledScan_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ScanSettings *ApplyComplianceScanConfigRequest_BaseScanSettings
-	Cron         *string
+	Cron         string
 }
 
 func (b0 ApplyComplianceScanConfigRequest_ScheduledScan_builder) Build() *ApplyComplianceScanConfigRequest_ScheduledScan {
 	m0 := &ApplyComplianceScanConfigRequest_ScheduledScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanSettings = b.ScanSettings
-	if b.Cron != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Cron = b.Cron
-	}
+	x.ScanSettings = b.ScanSettings
+	x.Cron = b.Cron
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_RerunScheduledScan struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScanName    *string                `protobuf:"bytes,1,opt,name=scan_name,json=scanName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScanName      string                 `protobuf:"bytes,1,opt,name=scan_name,json=scanName" json:"scan_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) Reset() {
@@ -5065,55 +3594,34 @@ func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoReflect() pro
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) GetScanName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanName != nil {
-			return *x.xxx_hidden_ScanName
-		}
-		return ""
+		return x.ScanName
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) SetScanName(v string) {
-	x.xxx_hidden_ScanName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) HasScanName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ClearScanName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScanName = nil
+	x.ScanName = v
 }
 
 type ApplyComplianceScanConfigRequest_RerunScheduledScan_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScanName *string
+	ScanName string
 }
 
 func (b0 ApplyComplianceScanConfigRequest_RerunScheduledScan_builder) Build() *ApplyComplianceScanConfigRequest_RerunScheduledScan {
 	m0 := &ApplyComplianceScanConfigRequest_RerunScheduledScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScanName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ScanName = b.ScanName
-	}
+	x.ScanName = b.ScanName
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_SuspendScheduledScan struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScanName    *string                `protobuf:"bytes,1,opt,name=scan_name,json=scanName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScanName      string                 `protobuf:"bytes,1,opt,name=scan_name,json=scanName" json:"scan_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) Reset() {
@@ -5143,55 +3651,34 @@ func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoReflect() p
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) GetScanName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanName != nil {
-			return *x.xxx_hidden_ScanName
-		}
-		return ""
+		return x.ScanName
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) SetScanName(v string) {
-	x.xxx_hidden_ScanName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) HasScanName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ClearScanName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScanName = nil
+	x.ScanName = v
 }
 
 type ApplyComplianceScanConfigRequest_SuspendScheduledScan_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScanName *string
+	ScanName string
 }
 
 func (b0 ApplyComplianceScanConfigRequest_SuspendScheduledScan_builder) Build() *ApplyComplianceScanConfigRequest_SuspendScheduledScan {
 	m0 := &ApplyComplianceScanConfigRequest_SuspendScheduledScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScanName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ScanName = b.ScanName
-	}
+	x.ScanName = b.ScanName
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_ResumeScheduledScan struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScanName    *string                `protobuf:"bytes,1,opt,name=scan_name,json=scanName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScanName      string                 `protobuf:"bytes,1,opt,name=scan_name,json=scanName" json:"scan_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) Reset() {
@@ -5221,56 +3708,35 @@ func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoReflect() pr
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) GetScanName() string {
 	if x != nil {
-		if x.xxx_hidden_ScanName != nil {
-			return *x.xxx_hidden_ScanName
-		}
-		return ""
+		return x.ScanName
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) SetScanName(v string) {
-	x.xxx_hidden_ScanName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) HasScanName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ClearScanName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScanName = nil
+	x.ScanName = v
 }
 
 type ApplyComplianceScanConfigRequest_ResumeScheduledScan_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScanName *string
+	ScanName string
 }
 
 func (b0 ApplyComplianceScanConfigRequest_ResumeScheduledScan_builder) Build() *ApplyComplianceScanConfigRequest_ResumeScheduledScan {
 	m0 := &ApplyComplianceScanConfigRequest_ResumeScheduledScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScanName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ScanName = b.ScanName
-	}
+	x.ScanName = b.ScanName
 	return m0
 }
 
 type ApplyComplianceScanConfigRequest_UpdateScheduledScan struct {
-	state                   protoimpl.MessageState                             `protogen:"opaque.v1"`
-	xxx_hidden_ScanSettings *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings"`
-	xxx_hidden_Cron         *string                                            `protobuf:"bytes,2,opt,name=cron"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState                             `protogen:"hybrid.v1"`
+	ScanSettings  *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings" json:"scan_settings,omitempty"`
+	Cron          string                                             `protobuf:"bytes,2,opt,name=cron" json:"cron,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) Reset() {
@@ -5300,80 +3766,62 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoReflect() pr
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
 	if x != nil {
-		return x.xxx_hidden_ScanSettings
+		return x.ScanSettings
 	}
 	return nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) GetCron() string {
 	if x != nil {
-		if x.xxx_hidden_Cron != nil {
-			return *x.xxx_hidden_Cron
-		}
-		return ""
+		return x.Cron
 	}
 	return ""
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) SetScanSettings(v *ApplyComplianceScanConfigRequest_BaseScanSettings) {
-	x.xxx_hidden_ScanSettings = v
+	x.ScanSettings = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) SetCron(v string) {
-	x.xxx_hidden_Cron = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Cron = v
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) HasScanSettings() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScanSettings != nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) HasCron() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.ScanSettings != nil
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ClearScanSettings() {
-	x.xxx_hidden_ScanSettings = nil
-}
-
-func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ClearCron() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Cron = nil
+	x.ScanSettings = nil
 }
 
 type ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ScanSettings *ApplyComplianceScanConfigRequest_BaseScanSettings
-	Cron         *string
+	Cron         string
 }
 
 func (b0 ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder) Build() *ApplyComplianceScanConfigRequest_UpdateScheduledScan {
 	m0 := &ApplyComplianceScanConfigRequest_UpdateScheduledScan{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ScanSettings = b.ScanSettings
-	if b.Cron != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Cron = b.Cron
-	}
+	x.ScanSettings = b.ScanSettings
+	x.Cron = b.Cron
 	return m0
 }
 
 type ComplianceResponse_EnableComplianceResponse struct {
-	state                  protoimpl.MessageState                                `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                               `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Payload     isComplianceResponse_EnableComplianceResponse_Payload `protobuf_oneof:"payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*ComplianceResponse_EnableComplianceResponse_Error
+	Payload       isComplianceResponse_EnableComplianceResponse_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) Reset() {
@@ -5403,17 +3851,21 @@ func (x *ComplianceResponse_EnableComplianceResponse) ProtoReflect() protoreflec
 
 func (x *ComplianceResponse_EnableComplianceResponse) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *ComplianceResponse_EnableComplianceResponse) GetPayload() isComplianceResponse_EnableComplianceResponse_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
 func (x *ComplianceResponse_EnableComplianceResponse) GetError() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*complianceResponse_EnableComplianceResponse_Error); ok {
+		if x, ok := x.Payload.(*ComplianceResponse_EnableComplianceResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -5421,48 +3873,35 @@ func (x *ComplianceResponse_EnableComplianceResponse) GetError() string {
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) SetError(v string) {
-	x.xxx_hidden_Payload = &complianceResponse_EnableComplianceResponse_Error{v}
-}
-
-func (x *ComplianceResponse_EnableComplianceResponse) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = &ComplianceResponse_EnableComplianceResponse_Error{v}
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
+	return x.Payload != nil
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*complianceResponse_EnableComplianceResponse_Error)
+	_, ok := x.Payload.(*ComplianceResponse_EnableComplianceResponse_Error)
 	return ok
 }
 
-func (x *ComplianceResponse_EnableComplianceResponse) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ComplianceResponse_EnableComplianceResponse) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 func (x *ComplianceResponse_EnableComplianceResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Payload.(*complianceResponse_EnableComplianceResponse_Error); ok {
-		x.xxx_hidden_Payload = nil
+	if _, ok := x.Payload.(*ComplianceResponse_EnableComplianceResponse_Error); ok {
+		x.Payload = nil
 	}
 }
 
@@ -5473,8 +3912,8 @@ func (x *ComplianceResponse_EnableComplianceResponse) WhichPayload() case_Compli
 	if x == nil {
 		return ComplianceResponse_EnableComplianceResponse_Payload_not_set_case
 	}
-	switch x.xxx_hidden_Payload.(type) {
-	case *complianceResponse_EnableComplianceResponse_Error:
+	switch x.Payload.(type) {
+	case *ComplianceResponse_EnableComplianceResponse_Error:
 		return ComplianceResponse_EnableComplianceResponse_Error_case
 	default:
 		return ComplianceResponse_EnableComplianceResponse_Payload_not_set_case
@@ -5484,22 +3923,19 @@ func (x *ComplianceResponse_EnableComplianceResponse) WhichPayload() case_Compli
 type ComplianceResponse_EnableComplianceResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_Payload:
+	Id string
+	// Fields of oneof Payload:
 	Error *string
-	// -- end of xxx_hidden_Payload
+	// -- end of Payload
 }
 
 func (b0 ComplianceResponse_EnableComplianceResponse_builder) Build() *ComplianceResponse_EnableComplianceResponse {
 	m0 := &ComplianceResponse_EnableComplianceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.Error != nil {
-		x.xxx_hidden_Payload = &complianceResponse_EnableComplianceResponse_Error{*b.Error}
+		x.Payload = &ComplianceResponse_EnableComplianceResponse_Error{*b.Error}
 	}
 	return m0
 }
@@ -5518,21 +3954,22 @@ type isComplianceResponse_EnableComplianceResponse_Payload interface {
 	isComplianceResponse_EnableComplianceResponse_Payload()
 }
 
-type complianceResponse_EnableComplianceResponse_Error struct {
+type ComplianceResponse_EnableComplianceResponse_Error struct {
 	Error string `protobuf:"bytes,2,opt,name=error,oneof"`
 }
 
-func (*complianceResponse_EnableComplianceResponse_Error) isComplianceResponse_EnableComplianceResponse_Payload() {
+func (*ComplianceResponse_EnableComplianceResponse_Error) isComplianceResponse_EnableComplianceResponse_Payload() {
 }
 
 type ComplianceResponse_DisableComplianceResponse struct {
-	state                  protoimpl.MessageState                                 `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Payload     isComplianceResponse_DisableComplianceResponse_Payload `protobuf_oneof:"payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*ComplianceResponse_DisableComplianceResponse_Error
+	Payload       isComplianceResponse_DisableComplianceResponse_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) Reset() {
@@ -5562,17 +3999,21 @@ func (x *ComplianceResponse_DisableComplianceResponse) ProtoReflect() protorefle
 
 func (x *ComplianceResponse_DisableComplianceResponse) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *ComplianceResponse_DisableComplianceResponse) GetPayload() isComplianceResponse_DisableComplianceResponse_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
 func (x *ComplianceResponse_DisableComplianceResponse) GetError() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*complianceResponse_DisableComplianceResponse_Error); ok {
+		if x, ok := x.Payload.(*ComplianceResponse_DisableComplianceResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -5580,48 +4021,35 @@ func (x *ComplianceResponse_DisableComplianceResponse) GetError() string {
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) SetError(v string) {
-	x.xxx_hidden_Payload = &complianceResponse_DisableComplianceResponse_Error{v}
-}
-
-func (x *ComplianceResponse_DisableComplianceResponse) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = &ComplianceResponse_DisableComplianceResponse_Error{v}
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
+	return x.Payload != nil
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*complianceResponse_DisableComplianceResponse_Error)
+	_, ok := x.Payload.(*ComplianceResponse_DisableComplianceResponse_Error)
 	return ok
 }
 
-func (x *ComplianceResponse_DisableComplianceResponse) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ComplianceResponse_DisableComplianceResponse) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 func (x *ComplianceResponse_DisableComplianceResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Payload.(*complianceResponse_DisableComplianceResponse_Error); ok {
-		x.xxx_hidden_Payload = nil
+	if _, ok := x.Payload.(*ComplianceResponse_DisableComplianceResponse_Error); ok {
+		x.Payload = nil
 	}
 }
 
@@ -5632,8 +4060,8 @@ func (x *ComplianceResponse_DisableComplianceResponse) WhichPayload() case_Compl
 	if x == nil {
 		return ComplianceResponse_DisableComplianceResponse_Payload_not_set_case
 	}
-	switch x.xxx_hidden_Payload.(type) {
-	case *complianceResponse_DisableComplianceResponse_Error:
+	switch x.Payload.(type) {
+	case *ComplianceResponse_DisableComplianceResponse_Error:
 		return ComplianceResponse_DisableComplianceResponse_Error_case
 	default:
 		return ComplianceResponse_DisableComplianceResponse_Payload_not_set_case
@@ -5643,22 +4071,19 @@ func (x *ComplianceResponse_DisableComplianceResponse) WhichPayload() case_Compl
 type ComplianceResponse_DisableComplianceResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_Payload:
+	Id string
+	// Fields of oneof Payload:
 	Error *string
-	// -- end of xxx_hidden_Payload
+	// -- end of Payload
 }
 
 func (b0 ComplianceResponse_DisableComplianceResponse_builder) Build() *ComplianceResponse_DisableComplianceResponse {
 	m0 := &ComplianceResponse_DisableComplianceResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.Error != nil {
-		x.xxx_hidden_Payload = &complianceResponse_DisableComplianceResponse_Error{*b.Error}
+		x.Payload = &ComplianceResponse_DisableComplianceResponse_Error{*b.Error}
 	}
 	return m0
 }
@@ -5677,21 +4102,22 @@ type isComplianceResponse_DisableComplianceResponse_Payload interface {
 	isComplianceResponse_DisableComplianceResponse_Payload()
 }
 
-type complianceResponse_DisableComplianceResponse_Error struct {
+type ComplianceResponse_DisableComplianceResponse_Error struct {
 	Error string `protobuf:"bytes,2,opt,name=error,oneof"`
 }
 
-func (*complianceResponse_DisableComplianceResponse_Error) isComplianceResponse_DisableComplianceResponse_Payload() {
+func (*ComplianceResponse_DisableComplianceResponse_Error) isComplianceResponse_DisableComplianceResponse_Payload() {
 }
 
 type ComplianceResponse_ApplyComplianceScanConfigResponse struct {
-	state                  protoimpl.MessageState                                         `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                                        `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Payload     isComplianceResponse_ApplyComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_Error
+	Payload       isComplianceResponse_ApplyComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) Reset() {
@@ -5721,17 +4147,21 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoReflect() pr
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) GetPayload() isComplianceResponse_ApplyComplianceScanConfigResponse_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) GetError() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*complianceResponse_ApplyComplianceScanConfigResponse_Error); ok {
+		if x, ok := x.Payload.(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -5739,48 +4169,35 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) GetError() string
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) SetError(v string) {
-	x.xxx_hidden_Payload = &complianceResponse_ApplyComplianceScanConfigResponse_Error{v}
-}
-
-func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = &ComplianceResponse_ApplyComplianceScanConfigResponse_Error{v}
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
+	return x.Payload != nil
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*complianceResponse_ApplyComplianceScanConfigResponse_Error)
+	_, ok := x.Payload.(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error)
 	return ok
 }
 
-func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Payload.(*complianceResponse_ApplyComplianceScanConfigResponse_Error); ok {
-		x.xxx_hidden_Payload = nil
+	if _, ok := x.Payload.(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error); ok {
+		x.Payload = nil
 	}
 }
 
@@ -5791,8 +4208,8 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) WhichPayload() ca
 	if x == nil {
 		return ComplianceResponse_ApplyComplianceScanConfigResponse_Payload_not_set_case
 	}
-	switch x.xxx_hidden_Payload.(type) {
-	case *complianceResponse_ApplyComplianceScanConfigResponse_Error:
+	switch x.Payload.(type) {
+	case *ComplianceResponse_ApplyComplianceScanConfigResponse_Error:
 		return ComplianceResponse_ApplyComplianceScanConfigResponse_Error_case
 	default:
 		return ComplianceResponse_ApplyComplianceScanConfigResponse_Payload_not_set_case
@@ -5802,22 +4219,19 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) WhichPayload() ca
 type ComplianceResponse_ApplyComplianceScanConfigResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_Payload:
+	Id string
+	// Fields of oneof Payload:
 	Error *string
-	// -- end of xxx_hidden_Payload
+	// -- end of Payload
 }
 
 func (b0 ComplianceResponse_ApplyComplianceScanConfigResponse_builder) Build() *ComplianceResponse_ApplyComplianceScanConfigResponse {
 	m0 := &ComplianceResponse_ApplyComplianceScanConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.Error != nil {
-		x.xxx_hidden_Payload = &complianceResponse_ApplyComplianceScanConfigResponse_Error{*b.Error}
+		x.Payload = &ComplianceResponse_ApplyComplianceScanConfigResponse_Error{*b.Error}
 	}
 	return m0
 }
@@ -5836,21 +4250,22 @@ type isComplianceResponse_ApplyComplianceScanConfigResponse_Payload interface {
 	isComplianceResponse_ApplyComplianceScanConfigResponse_Payload()
 }
 
-type complianceResponse_ApplyComplianceScanConfigResponse_Error struct {
+type ComplianceResponse_ApplyComplianceScanConfigResponse_Error struct {
 	Error string `protobuf:"bytes,2,opt,name=error,oneof"`
 }
 
-func (*complianceResponse_ApplyComplianceScanConfigResponse_Error) isComplianceResponse_ApplyComplianceScanConfigResponse_Payload() {
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse_Error) isComplianceResponse_ApplyComplianceScanConfigResponse_Payload() {
 }
 
 type ComplianceResponse_DeleteComplianceScanConfigResponse struct {
-	state                  protoimpl.MessageState                                          `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                                         `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Payload     isComplianceResponse_DeleteComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*ComplianceResponse_DeleteComplianceScanConfigResponse_Error
+	Payload       isComplianceResponse_DeleteComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) Reset() {
@@ -5880,17 +4295,21 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoReflect() p
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
+func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) GetPayload() isComplianceResponse_DeleteComplianceScanConfigResponse_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) GetError() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Payload.(*complianceResponse_DeleteComplianceScanConfigResponse_Error); ok {
+		if x, ok := x.Payload.(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -5898,48 +4317,35 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) GetError() strin
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) SetError(v string) {
-	x.xxx_hidden_Payload = &complianceResponse_DeleteComplianceScanConfigResponse_Error{v}
-}
-
-func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = &ComplianceResponse_DeleteComplianceScanConfigResponse_Error{v}
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
+	return x.Payload != nil
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Payload.(*complianceResponse_DeleteComplianceScanConfigResponse_Error)
+	_, ok := x.Payload.(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error)
 	return ok
 }
 
-func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Payload.(*complianceResponse_DeleteComplianceScanConfigResponse_Error); ok {
-		x.xxx_hidden_Payload = nil
+	if _, ok := x.Payload.(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error); ok {
+		x.Payload = nil
 	}
 }
 
@@ -5950,8 +4356,8 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) WhichPayload() c
 	if x == nil {
 		return ComplianceResponse_DeleteComplianceScanConfigResponse_Payload_not_set_case
 	}
-	switch x.xxx_hidden_Payload.(type) {
-	case *complianceResponse_DeleteComplianceScanConfigResponse_Error:
+	switch x.Payload.(type) {
+	case *ComplianceResponse_DeleteComplianceScanConfigResponse_Error:
 		return ComplianceResponse_DeleteComplianceScanConfigResponse_Error_case
 	default:
 		return ComplianceResponse_DeleteComplianceScanConfigResponse_Payload_not_set_case
@@ -5961,22 +4367,19 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) WhichPayload() c
 type ComplianceResponse_DeleteComplianceScanConfigResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
-	// Fields of oneof xxx_hidden_Payload:
+	Id string
+	// Fields of oneof Payload:
 	Error *string
-	// -- end of xxx_hidden_Payload
+	// -- end of Payload
 }
 
 func (b0 ComplianceResponse_DeleteComplianceScanConfigResponse_builder) Build() *ComplianceResponse_DeleteComplianceScanConfigResponse {
 	m0 := &ComplianceResponse_DeleteComplianceScanConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.Error != nil {
-		x.xxx_hidden_Payload = &complianceResponse_DeleteComplianceScanConfigResponse_Error{*b.Error}
+		x.Payload = &ComplianceResponse_DeleteComplianceScanConfigResponse_Error{*b.Error}
 	}
 	return m0
 }
@@ -5995,20 +4398,18 @@ type isComplianceResponse_DeleteComplianceScanConfigResponse_Payload interface {
 	isComplianceResponse_DeleteComplianceScanConfigResponse_Payload()
 }
 
-type complianceResponse_DeleteComplianceScanConfigResponse_Error struct {
+type ComplianceResponse_DeleteComplianceScanConfigResponse_Error struct {
 	Error string `protobuf:"bytes,2,opt,name=error,oneof"`
 }
 
-func (*complianceResponse_DeleteComplianceScanConfigResponse_Error) isComplianceResponse_DeleteComplianceScanConfigResponse_Payload() {
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse_Error) isComplianceResponse_DeleteComplianceScanConfigResponse_Payload() {
 }
 
 type ComplianceOperatorProfileV2_Rule struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RuleName    *string                `protobuf:"bytes,1,opt,name=rule_name,json=ruleName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	RuleName      string                 `protobuf:"bytes,1,opt,name=rule_name,json=ruleName" json:"rule_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2_Rule) Reset() {
@@ -6038,56 +4439,35 @@ func (x *ComplianceOperatorProfileV2_Rule) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorProfileV2_Rule) GetRuleName() string {
 	if x != nil {
-		if x.xxx_hidden_RuleName != nil {
-			return *x.xxx_hidden_RuleName
-		}
-		return ""
+		return x.RuleName
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorProfileV2_Rule) SetRuleName(v string) {
-	x.xxx_hidden_RuleName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ComplianceOperatorProfileV2_Rule) HasRuleName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorProfileV2_Rule) ClearRuleName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RuleName = nil
+	x.RuleName = v
 }
 
 type ComplianceOperatorProfileV2_Rule_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RuleName *string
+	RuleName string
 }
 
 func (b0 ComplianceOperatorProfileV2_Rule_builder) Build() *ComplianceOperatorProfileV2_Rule {
 	m0 := &ComplianceOperatorProfileV2_Rule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RuleName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_RuleName = b.RuleName
-	}
+	x.RuleName = b.RuleName
 	return m0
 }
 
 type ComplianceOperatorRuleV2_Fix struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Platform    *string                `protobuf:"bytes,1,opt,name=platform"`
-	xxx_hidden_Disruption  *string                `protobuf:"bytes,2,opt,name=disruption"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Platform      string                 `protobuf:"bytes,1,opt,name=platform" json:"platform,omitempty"`
+	Disruption    string                 `protobuf:"bytes,2,opt,name=disruption" json:"disruption,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2_Fix) Reset() {
@@ -6117,77 +4497,39 @@ func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceOperatorRuleV2_Fix) GetPlatform() string {
 	if x != nil {
-		if x.xxx_hidden_Platform != nil {
-			return *x.xxx_hidden_Platform
-		}
-		return ""
+		return x.Platform
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2_Fix) GetDisruption() string {
 	if x != nil {
-		if x.xxx_hidden_Disruption != nil {
-			return *x.xxx_hidden_Disruption
-		}
-		return ""
+		return x.Disruption
 	}
 	return ""
 }
 
 func (x *ComplianceOperatorRuleV2_Fix) SetPlatform(v string) {
-	x.xxx_hidden_Platform = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Platform = v
 }
 
 func (x *ComplianceOperatorRuleV2_Fix) SetDisruption(v string) {
-	x.xxx_hidden_Disruption = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ComplianceOperatorRuleV2_Fix) HasPlatform() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceOperatorRuleV2_Fix) HasDisruption() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceOperatorRuleV2_Fix) ClearPlatform() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Platform = nil
-}
-
-func (x *ComplianceOperatorRuleV2_Fix) ClearDisruption() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Disruption = nil
+	x.Disruption = v
 }
 
 type ComplianceOperatorRuleV2_Fix_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Platform   *string
-	Disruption *string
+	Platform   string
+	Disruption string
 }
 
 func (b0 ComplianceOperatorRuleV2_Fix_builder) Build() *ComplianceOperatorRuleV2_Fix {
 	m0 := &ComplianceOperatorRuleV2_Fix{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Platform != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Platform = b.Platform
-	}
-	if b.Disruption != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Disruption = b.Disruption
-	}
+	x.Platform = b.Platform
+	x.Disruption = b.Disruption
 	return m0
 }
 
@@ -6435,7 +4777,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x12INFO_RULE_SEVERITY\x10\x02\x12\x15\n" +
 	"\x11LOW_RULE_SEVERITY\x10\x03\x12\x18\n" +
 	"\x14MEDIUM_RULE_SEVERITY\x10\x04\x12\x16\n" +
-	"\x12HIGH_RULE_SEVERITY\x10\x05B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x12HIGH_RULE_SEVERITY\x10\x05B/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_compliance_operator_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
@@ -6541,40 +4883,40 @@ func file_internalapi_central_compliance_operator_proto_init() {
 		return
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[0].OneofWrappers = []any{
-		(*complianceOperatorInfo_TotalDesiredPods)(nil),
-		(*complianceOperatorInfo_TotalReadyPods)(nil),
+		(*ComplianceOperatorInfo_TotalDesiredPods)(nil),
+		(*ComplianceOperatorInfo_TotalReadyPods)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[4].OneofWrappers = []any{
-		(*applyComplianceScanConfigRequest_ScheduledScan_)(nil),
-		(*applyComplianceScanConfigRequest_RerunScan)(nil),
-		(*applyComplianceScanConfigRequest_SuspendScan)(nil),
-		(*applyComplianceScanConfigRequest_ResumeScan)(nil),
-		(*applyComplianceScanConfigRequest_UpdateScan)(nil),
+		(*ApplyComplianceScanConfigRequest_ScheduledScan_)(nil),
+		(*ApplyComplianceScanConfigRequest_RerunScan)(nil),
+		(*ApplyComplianceScanConfigRequest_SuspendScan)(nil),
+		(*ApplyComplianceScanConfigRequest_ResumeScan)(nil),
+		(*ApplyComplianceScanConfigRequest_UpdateScan)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[6].OneofWrappers = []any{
-		(*complianceRequest_EnableCompliance)(nil),
-		(*complianceRequest_DisableCompliance)(nil),
-		(*complianceRequest_ApplyScanConfig)(nil),
-		(*complianceRequest_DeleteScanConfig)(nil),
-		(*complianceRequest_SyncScanConfigs)(nil),
+		(*ComplianceRequest_EnableCompliance)(nil),
+		(*ComplianceRequest_DisableCompliance)(nil),
+		(*ComplianceRequest_ApplyScanConfig)(nil),
+		(*ComplianceRequest_DeleteScanConfig)(nil),
+		(*ComplianceRequest_SyncScanConfigs)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[7].OneofWrappers = []any{
-		(*complianceResponse_EnableComplianceResponse_)(nil),
-		(*complianceResponse_DisableComplianceResponse_)(nil),
-		(*complianceResponse_ApplyComplianceScanConfigResponse_)(nil),
-		(*complianceResponse_DeleteComplianceScanConfigResponse_)(nil),
+		(*ComplianceResponse_EnableComplianceResponse_)(nil),
+		(*ComplianceResponse_DisableComplianceResponse_)(nil),
+		(*ComplianceResponse_ApplyComplianceScanConfigResponse_)(nil),
+		(*ComplianceResponse_DeleteComplianceScanConfigResponse_)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[25].OneofWrappers = []any{
-		(*complianceResponse_EnableComplianceResponse_Error)(nil),
+		(*ComplianceResponse_EnableComplianceResponse_Error)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[26].OneofWrappers = []any{
-		(*complianceResponse_DisableComplianceResponse_Error)(nil),
+		(*ComplianceResponse_DisableComplianceResponse_Error)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[27].OneofWrappers = []any{
-		(*complianceResponse_ApplyComplianceScanConfigResponse_Error)(nil),
+		(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error)(nil),
 	}
 	file_internalapi_central_compliance_operator_proto_msgTypes[28].OneofWrappers = []any{
-		(*complianceResponse_DeleteComplianceScanConfigResponse_Error)(nil),
+		(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

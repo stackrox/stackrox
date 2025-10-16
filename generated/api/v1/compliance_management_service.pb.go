@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/compliance_management_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -77,13 +79,13 @@ func (x ComplianceRun_State) Number() protoreflect.EnumNumber {
 }
 
 type ComplianceRunSelection struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_StandardId  *string                `protobuf:"bytes,2,opt,name=standard_id,json=standardId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The ID of the cluster. "*" means "all clusters".
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	// The ID of the compliance standard. "*" means "all standards".
+	StandardId    string `protobuf:"bytes,2,opt,name=standard_id,json=standardId" json:"standard_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceRunSelection) Reset() {
@@ -113,91 +115,49 @@ func (x *ComplianceRunSelection) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceRunSelection) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ComplianceRunSelection) GetStandardId() string {
 	if x != nil {
-		if x.xxx_hidden_StandardId != nil {
-			return *x.xxx_hidden_StandardId
-		}
-		return ""
+		return x.StandardId
 	}
 	return ""
 }
 
 func (x *ComplianceRunSelection) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ClusterId = v
 }
 
 func (x *ComplianceRunSelection) SetStandardId(v string) {
-	x.xxx_hidden_StandardId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ComplianceRunSelection) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceRunSelection) HasStandardId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceRunSelection) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ComplianceRunSelection) ClearStandardId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_StandardId = nil
+	x.StandardId = v
 }
 
 type ComplianceRunSelection_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The ID of the cluster. "*" means "all clusters".
-	ClusterId *string
+	ClusterId string
 	// The ID of the compliance standard. "*" means "all standards".
-	StandardId *string
+	StandardId string
 }
 
 func (b0 ComplianceRunSelection_builder) Build() *ComplianceRunSelection {
 	m0 := &ComplianceRunSelection{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.StandardId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_StandardId = b.StandardId
-	}
+	x.ClusterId = b.ClusterId
+	x.StandardId = b.StandardId
 	return m0
 }
 
 type GetActiveComplianceRunsRequest struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Selection *ComplianceRunSelection `protobuf:"bytes,1,opt,name=selection"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Selection     *ComplianceRunSelection `protobuf:"bytes,1,opt,name=selection" json:"selection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetActiveComplianceRunsRequest) Reset() {
@@ -227,37 +187,24 @@ func (x *GetActiveComplianceRunsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetActiveComplianceRunsRequest) GetSelection() *ComplianceRunSelection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Selection) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *ComplianceRunSelection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selection), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Selection
 	}
 	return nil
 }
 
 func (x *GetActiveComplianceRunsRequest) SetSelection(v *ComplianceRunSelection) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Selection, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Selection = v
 }
 
 func (x *GetActiveComplianceRunsRequest) HasSelection() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Selection != nil
 }
 
 func (x *GetActiveComplianceRunsRequest) ClearSelection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Selection, (*ComplianceRunSelection)(nil))
+	x.Selection = nil
 }
 
 type GetActiveComplianceRunsRequest_builder struct {
@@ -270,22 +217,15 @@ func (b0 GetActiveComplianceRunsRequest_builder) Build() *GetActiveComplianceRun
 	m0 := &GetActiveComplianceRunsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Selection != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Selection = b.Selection
-	}
+	x.Selection = b.Selection
 	return m0
 }
 
 type GetActiveComplianceRunsResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ActiveRuns *[]*ComplianceRun      `protobuf:"bytes,1,rep,name=active_runs,json=activeRuns"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ActiveRuns    []*ComplianceRun       `protobuf:"bytes,1,rep,name=active_runs,json=activeRuns" json:"active_runs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetActiveComplianceRunsResponse) Reset() {
@@ -315,27 +255,13 @@ func (x *GetActiveComplianceRunsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetActiveComplianceRunsResponse) GetActiveRuns() []*ComplianceRun {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ActiveRuns) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ComplianceRun
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveRuns), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ActiveRuns
 	}
 	return nil
 }
 
 func (x *GetActiveComplianceRunsResponse) SetActiveRuns(v []*ComplianceRun) {
-	var sv *[]*ComplianceRun
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ActiveRuns), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceRun{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ActiveRuns), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.ActiveRuns = v
 }
 
 type GetActiveComplianceRunsResponse_builder struct {
@@ -348,28 +274,21 @@ func (b0 GetActiveComplianceRunsResponse_builder) Build() *GetActiveComplianceRu
 	m0 := &GetActiveComplianceRunsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ActiveRuns != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ActiveRuns = &b.ActiveRuns
-	}
+	x.ActiveRuns = b.ActiveRuns
 	return m0
 }
 
 type ComplianceRun struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id           *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ClusterId    *string                `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_StandardId   *string                `protobuf:"bytes,3,opt,name=standard_id,json=standardId"`
-	xxx_hidden_StartTime    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime"`
-	xxx_hidden_FinishTime   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finish_time,json=finishTime"`
-	xxx_hidden_State        ComplianceRun_State    `protobuf:"varint,7,opt,name=state,enum=v1.ComplianceRun_State"`
-	xxx_hidden_ErrorMessage *string                `protobuf:"bytes,8,opt,name=error_message,json=errorMessage"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	StandardId    string                 `protobuf:"bytes,3,opt,name=standard_id,json=standardId" json:"standard_id,omitempty"`
+	StartTime     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime" json:"start_time,omitempty"`
+	FinishTime    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finish_time,json=finishTime" json:"finish_time,omitempty"`
+	State         ComplianceRun_State    `protobuf:"varint,7,opt,name=state,enum=v1.ComplianceRun_State" json:"state,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,8,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceRun) Reset() {
@@ -399,266 +318,142 @@ func (x *ComplianceRun) ProtoReflect() protoreflect.Message {
 
 func (x *ComplianceRun) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComplianceRun) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ComplianceRun) GetStandardId() string {
 	if x != nil {
-		if x.xxx_hidden_StandardId != nil {
-			return *x.xxx_hidden_StandardId
-		}
-		return ""
+		return x.StandardId
 	}
 	return ""
 }
 
 func (x *ComplianceRun) GetStartTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartTime) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.StartTime
 	}
 	return nil
 }
 
 func (x *ComplianceRun) GetFinishTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FinishTime) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FinishTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.FinishTime
 	}
 	return nil
 }
 
 func (x *ComplianceRun) GetState() ComplianceRun_State {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_State
-		}
+		return x.State
 	}
 	return ComplianceRun_INVALID
 }
 
 func (x *ComplianceRun) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ComplianceRun) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Id = v
 }
 
 func (x *ComplianceRun) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.ClusterId = v
 }
 
 func (x *ComplianceRun) SetStandardId(v string) {
-	x.xxx_hidden_StandardId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	x.StandardId = v
 }
 
 func (x *ComplianceRun) SetStartTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
-	}
+	x.StartTime = v
 }
 
 func (x *ComplianceRun) SetFinishTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FinishTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
-	}
+	x.FinishTime = v
 }
 
 func (x *ComplianceRun) SetState(v ComplianceRun_State) {
-	x.xxx_hidden_State = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.State = v
 }
 
 func (x *ComplianceRun) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *ComplianceRun) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComplianceRun) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ComplianceRun) HasStandardId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.ErrorMessage = v
 }
 
 func (x *ComplianceRun) HasStartTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.StartTime != nil
 }
 
 func (x *ComplianceRun) HasFinishTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComplianceRun) HasState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ComplianceRun) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ComplianceRun) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComplianceRun) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ComplianceRun) ClearStandardId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_StandardId = nil
+	return x.FinishTime != nil
 }
 
 func (x *ComplianceRun) ClearStartTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartTime, (*timestamppb.Timestamp)(nil))
+	x.StartTime = nil
 }
 
 func (x *ComplianceRun) ClearFinishTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FinishTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ComplianceRun) ClearState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_State = ComplianceRun_INVALID
-}
-
-func (x *ComplianceRun) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_ErrorMessage = nil
+	x.FinishTime = nil
 }
 
 type ComplianceRun_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
-	ClusterId    *string
-	StandardId   *string
+	Id           string
+	ClusterId    string
+	StandardId   string
 	StartTime    *timestamppb.Timestamp
 	FinishTime   *timestamppb.Timestamp
-	State        *ComplianceRun_State
-	ErrorMessage *string
+	State        ComplianceRun_State
+	ErrorMessage string
 }
 
 func (b0 ComplianceRun_builder) Build() *ComplianceRun {
 	m0 := &ComplianceRun{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.StandardId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_StandardId = b.StandardId
-	}
-	if b.StartTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_StartTime = b.StartTime
-	}
-	if b.FinishTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_FinishTime = b.FinishTime
-	}
-	if b.State != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_State = *b.State
-	}
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
+	x.Id = b.Id
+	x.ClusterId = b.ClusterId
+	x.StandardId = b.StandardId
+	x.StartTime = b.StartTime
+	x.FinishTime = b.FinishTime
+	x.State = b.State
+	x.ErrorMessage = b.ErrorMessage
 	return m0
 }
 
 type GetRecentComplianceRunsRequest struct {
-	state                    protoimpl.MessageState                         `protogen:"opaque.v1"`
-	xxx_hidden_ClusterIdOpt  isGetRecentComplianceRunsRequest_ClusterIdOpt  `protobuf_oneof:"cluster_id_opt"`
-	xxx_hidden_StandardIdOpt isGetRecentComplianceRunsRequest_StandardIdOpt `protobuf_oneof:"standard_id_opt"`
-	xxx_hidden_Since         *timestamppb.Timestamp                         `protobuf:"bytes,3,opt,name=since"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to ClusterIdOpt:
+	//
+	//	*GetRecentComplianceRunsRequest_ClusterId
+	ClusterIdOpt isGetRecentComplianceRunsRequest_ClusterIdOpt `protobuf_oneof:"cluster_id_opt"`
+	// Types that are valid to be assigned to StandardIdOpt:
+	//
+	//	*GetRecentComplianceRunsRequest_StandardId
+	StandardIdOpt isGetRecentComplianceRunsRequest_StandardIdOpt `protobuf_oneof:"standard_id_opt"`
+	Since         *timestamppb.Timestamp                         `protobuf:"bytes,3,opt,name=since" json:"since,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRecentComplianceRunsRequest) Reset() {
@@ -686,18 +481,32 @@ func (x *GetRecentComplianceRunsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *GetRecentComplianceRunsRequest) GetClusterIdOpt() isGetRecentComplianceRunsRequest_ClusterIdOpt {
+	if x != nil {
+		return x.ClusterIdOpt
+	}
+	return nil
+}
+
 func (x *GetRecentComplianceRunsRequest) GetClusterId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ClusterIdOpt.(*getRecentComplianceRunsRequest_ClusterId); ok {
+		if x, ok := x.ClusterIdOpt.(*GetRecentComplianceRunsRequest_ClusterId); ok {
 			return x.ClusterId
 		}
 	}
 	return ""
 }
 
+func (x *GetRecentComplianceRunsRequest) GetStandardIdOpt() isGetRecentComplianceRunsRequest_StandardIdOpt {
+	if x != nil {
+		return x.StandardIdOpt
+	}
+	return nil
+}
+
 func (x *GetRecentComplianceRunsRequest) GetStandardId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_StandardIdOpt.(*getRecentComplianceRunsRequest_StandardId); ok {
+		if x, ok := x.StandardIdOpt.(*GetRecentComplianceRunsRequest_StandardId); ok {
 			return x.StandardId
 		}
 	}
@@ -706,47 +515,35 @@ func (x *GetRecentComplianceRunsRequest) GetStandardId() string {
 
 func (x *GetRecentComplianceRunsRequest) GetSince() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Since) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Since), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Since
 	}
 	return nil
 }
 
 func (x *GetRecentComplianceRunsRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterIdOpt = &getRecentComplianceRunsRequest_ClusterId{v}
+	x.ClusterIdOpt = &GetRecentComplianceRunsRequest_ClusterId{v}
 }
 
 func (x *GetRecentComplianceRunsRequest) SetStandardId(v string) {
-	x.xxx_hidden_StandardIdOpt = &getRecentComplianceRunsRequest_StandardId{v}
+	x.StandardIdOpt = &GetRecentComplianceRunsRequest_StandardId{v}
 }
 
 func (x *GetRecentComplianceRunsRequest) SetSince(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-	}
+	x.Since = v
 }
 
 func (x *GetRecentComplianceRunsRequest) HasClusterIdOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ClusterIdOpt != nil
+	return x.ClusterIdOpt != nil
 }
 
 func (x *GetRecentComplianceRunsRequest) HasClusterId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ClusterIdOpt.(*getRecentComplianceRunsRequest_ClusterId)
+	_, ok := x.ClusterIdOpt.(*GetRecentComplianceRunsRequest_ClusterId)
 	return ok
 }
 
@@ -754,14 +551,14 @@ func (x *GetRecentComplianceRunsRequest) HasStandardIdOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_StandardIdOpt != nil
+	return x.StandardIdOpt != nil
 }
 
 func (x *GetRecentComplianceRunsRequest) HasStandardId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_StandardIdOpt.(*getRecentComplianceRunsRequest_StandardId)
+	_, ok := x.StandardIdOpt.(*GetRecentComplianceRunsRequest_StandardId)
 	return ok
 }
 
@@ -769,32 +566,31 @@ func (x *GetRecentComplianceRunsRequest) HasSince() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.Since != nil
 }
 
 func (x *GetRecentComplianceRunsRequest) ClearClusterIdOpt() {
-	x.xxx_hidden_ClusterIdOpt = nil
+	x.ClusterIdOpt = nil
 }
 
 func (x *GetRecentComplianceRunsRequest) ClearClusterId() {
-	if _, ok := x.xxx_hidden_ClusterIdOpt.(*getRecentComplianceRunsRequest_ClusterId); ok {
-		x.xxx_hidden_ClusterIdOpt = nil
+	if _, ok := x.ClusterIdOpt.(*GetRecentComplianceRunsRequest_ClusterId); ok {
+		x.ClusterIdOpt = nil
 	}
 }
 
 func (x *GetRecentComplianceRunsRequest) ClearStandardIdOpt() {
-	x.xxx_hidden_StandardIdOpt = nil
+	x.StandardIdOpt = nil
 }
 
 func (x *GetRecentComplianceRunsRequest) ClearStandardId() {
-	if _, ok := x.xxx_hidden_StandardIdOpt.(*getRecentComplianceRunsRequest_StandardId); ok {
-		x.xxx_hidden_StandardIdOpt = nil
+	if _, ok := x.StandardIdOpt.(*GetRecentComplianceRunsRequest_StandardId); ok {
+		x.StandardIdOpt = nil
 	}
 }
 
 func (x *GetRecentComplianceRunsRequest) ClearSince() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Since, (*timestamppb.Timestamp)(nil))
+	x.Since = nil
 }
 
 const GetRecentComplianceRunsRequest_ClusterIdOpt_not_set_case case_GetRecentComplianceRunsRequest_ClusterIdOpt = 0
@@ -804,8 +600,8 @@ func (x *GetRecentComplianceRunsRequest) WhichClusterIdOpt() case_GetRecentCompl
 	if x == nil {
 		return GetRecentComplianceRunsRequest_ClusterIdOpt_not_set_case
 	}
-	switch x.xxx_hidden_ClusterIdOpt.(type) {
-	case *getRecentComplianceRunsRequest_ClusterId:
+	switch x.ClusterIdOpt.(type) {
+	case *GetRecentComplianceRunsRequest_ClusterId:
 		return GetRecentComplianceRunsRequest_ClusterId_case
 	default:
 		return GetRecentComplianceRunsRequest_ClusterIdOpt_not_set_case
@@ -819,8 +615,8 @@ func (x *GetRecentComplianceRunsRequest) WhichStandardIdOpt() case_GetRecentComp
 	if x == nil {
 		return GetRecentComplianceRunsRequest_StandardIdOpt_not_set_case
 	}
-	switch x.xxx_hidden_StandardIdOpt.(type) {
-	case *getRecentComplianceRunsRequest_StandardId:
+	switch x.StandardIdOpt.(type) {
+	case *GetRecentComplianceRunsRequest_StandardId:
 		return GetRecentComplianceRunsRequest_StandardId_case
 	default:
 		return GetRecentComplianceRunsRequest_StandardIdOpt_not_set_case
@@ -830,12 +626,12 @@ func (x *GetRecentComplianceRunsRequest) WhichStandardIdOpt() case_GetRecentComp
 type GetRecentComplianceRunsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_ClusterIdOpt:
+	// Fields of oneof ClusterIdOpt:
 	ClusterId *string
-	// -- end of xxx_hidden_ClusterIdOpt
-	// Fields of oneof xxx_hidden_StandardIdOpt:
+	// -- end of ClusterIdOpt
+	// Fields of oneof StandardIdOpt:
 	StandardId *string
-	// -- end of xxx_hidden_StandardIdOpt
+	// -- end of StandardIdOpt
 	Since *timestamppb.Timestamp
 }
 
@@ -844,15 +640,12 @@ func (b0 GetRecentComplianceRunsRequest_builder) Build() *GetRecentComplianceRun
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.ClusterId != nil {
-		x.xxx_hidden_ClusterIdOpt = &getRecentComplianceRunsRequest_ClusterId{*b.ClusterId}
+		x.ClusterIdOpt = &GetRecentComplianceRunsRequest_ClusterId{*b.ClusterId}
 	}
 	if b.StandardId != nil {
-		x.xxx_hidden_StandardIdOpt = &getRecentComplianceRunsRequest_StandardId{*b.StandardId}
+		x.StandardIdOpt = &GetRecentComplianceRunsRequest_StandardId{*b.StandardId}
 	}
-	if b.Since != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Since = b.Since
-	}
+	x.Since = b.Since
 	return m0
 }
 
@@ -880,31 +673,27 @@ type isGetRecentComplianceRunsRequest_ClusterIdOpt interface {
 	isGetRecentComplianceRunsRequest_ClusterIdOpt()
 }
 
-type getRecentComplianceRunsRequest_ClusterId struct {
+type GetRecentComplianceRunsRequest_ClusterId struct {
 	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,oneof"`
 }
 
-func (*getRecentComplianceRunsRequest_ClusterId) isGetRecentComplianceRunsRequest_ClusterIdOpt() {}
+func (*GetRecentComplianceRunsRequest_ClusterId) isGetRecentComplianceRunsRequest_ClusterIdOpt() {}
 
 type isGetRecentComplianceRunsRequest_StandardIdOpt interface {
 	isGetRecentComplianceRunsRequest_StandardIdOpt()
 }
 
-type getRecentComplianceRunsRequest_StandardId struct {
+type GetRecentComplianceRunsRequest_StandardId struct {
 	StandardId string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,oneof"`
 }
 
-func (*getRecentComplianceRunsRequest_StandardId) isGetRecentComplianceRunsRequest_StandardIdOpt() {}
+func (*GetRecentComplianceRunsRequest_StandardId) isGetRecentComplianceRunsRequest_StandardIdOpt() {}
 
 type GetRecentComplianceRunsResponse struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ComplianceRuns *[]*ComplianceRun      `protobuf:"bytes,1,rep,name=compliance_runs,json=complianceRuns"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	ComplianceRuns []*ComplianceRun       `protobuf:"bytes,1,rep,name=compliance_runs,json=complianceRuns" json:"compliance_runs,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetRecentComplianceRunsResponse) Reset() {
@@ -934,27 +723,13 @@ func (x *GetRecentComplianceRunsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetRecentComplianceRunsResponse) GetComplianceRuns() []*ComplianceRun {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ComplianceRuns) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ComplianceRun
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ComplianceRuns), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ComplianceRuns
 	}
 	return nil
 }
 
 func (x *GetRecentComplianceRunsResponse) SetComplianceRuns(v []*ComplianceRun) {
-	var sv *[]*ComplianceRun
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ComplianceRuns), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceRun{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ComplianceRuns), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.ComplianceRuns = v
 }
 
 type GetRecentComplianceRunsResponse_builder struct {
@@ -967,21 +742,16 @@ func (b0 GetRecentComplianceRunsResponse_builder) Build() *GetRecentComplianceRu
 	m0 := &GetRecentComplianceRunsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ComplianceRuns != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ComplianceRuns = &b.ComplianceRuns
-	}
+	x.ComplianceRuns = b.ComplianceRuns
 	return m0
 }
 
 type TriggerComplianceRunRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_StandardId  *string                `protobuf:"bytes,2,opt,name=standard_id,json=standardId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	StandardId    string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId" json:"standard_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerComplianceRunRequest) Reset() {
@@ -1011,89 +781,47 @@ func (x *TriggerComplianceRunRequest) ProtoReflect() protoreflect.Message {
 
 func (x *TriggerComplianceRunRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *TriggerComplianceRunRequest) GetStandardId() string {
 	if x != nil {
-		if x.xxx_hidden_StandardId != nil {
-			return *x.xxx_hidden_StandardId
-		}
-		return ""
+		return x.StandardId
 	}
 	return ""
 }
 
 func (x *TriggerComplianceRunRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ClusterId = v
 }
 
 func (x *TriggerComplianceRunRequest) SetStandardId(v string) {
-	x.xxx_hidden_StandardId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *TriggerComplianceRunRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *TriggerComplianceRunRequest) HasStandardId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *TriggerComplianceRunRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *TriggerComplianceRunRequest) ClearStandardId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_StandardId = nil
+	x.StandardId = v
 }
 
 type TriggerComplianceRunRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId  *string
-	StandardId *string
+	ClusterId  string
+	StandardId string
 }
 
 func (b0 TriggerComplianceRunRequest_builder) Build() *TriggerComplianceRunRequest {
 	m0 := &TriggerComplianceRunRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.StandardId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_StandardId = b.StandardId
-	}
+	x.ClusterId = b.ClusterId
+	x.StandardId = b.StandardId
 	return m0
 }
 
 type TriggerComplianceRunResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_StartedRun *ComplianceRun         `protobuf:"bytes,1,opt,name=started_run,json=startedRun"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	StartedRun    *ComplianceRun         `protobuf:"bytes,1,opt,name=started_run,json=startedRun" json:"started_run,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerComplianceRunResponse) Reset() {
@@ -1123,37 +851,24 @@ func (x *TriggerComplianceRunResponse) ProtoReflect() protoreflect.Message {
 
 func (x *TriggerComplianceRunResponse) GetStartedRun() *ComplianceRun {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartedRun) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *ComplianceRun
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartedRun), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.StartedRun
 	}
 	return nil
 }
 
 func (x *TriggerComplianceRunResponse) SetStartedRun(v *ComplianceRun) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartedRun, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.StartedRun = v
 }
 
 func (x *TriggerComplianceRunResponse) HasStartedRun() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.StartedRun != nil
 }
 
 func (x *TriggerComplianceRunResponse) ClearStartedRun() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_StartedRun, (*ComplianceRun)(nil))
+	x.StartedRun = nil
 }
 
 type TriggerComplianceRunResponse_builder struct {
@@ -1166,22 +881,15 @@ func (b0 TriggerComplianceRunResponse_builder) Build() *TriggerComplianceRunResp
 	m0 := &TriggerComplianceRunResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.StartedRun != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_StartedRun = b.StartedRun
-	}
+	x.StartedRun = b.StartedRun
 	return m0
 }
 
 type TriggerComplianceRunsRequest struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Selection *ComplianceRunSelection `protobuf:"bytes,1,opt,name=selection"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Selection     *ComplianceRunSelection `protobuf:"bytes,1,opt,name=selection" json:"selection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerComplianceRunsRequest) Reset() {
@@ -1211,37 +919,24 @@ func (x *TriggerComplianceRunsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *TriggerComplianceRunsRequest) GetSelection() *ComplianceRunSelection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Selection) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *ComplianceRunSelection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Selection), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Selection
 	}
 	return nil
 }
 
 func (x *TriggerComplianceRunsRequest) SetSelection(v *ComplianceRunSelection) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Selection, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Selection = v
 }
 
 func (x *TriggerComplianceRunsRequest) HasSelection() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Selection != nil
 }
 
 func (x *TriggerComplianceRunsRequest) ClearSelection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Selection, (*ComplianceRunSelection)(nil))
+	x.Selection = nil
 }
 
 type TriggerComplianceRunsRequest_builder struct {
@@ -1254,22 +949,15 @@ func (b0 TriggerComplianceRunsRequest_builder) Build() *TriggerComplianceRunsReq
 	m0 := &TriggerComplianceRunsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Selection != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Selection = b.Selection
-	}
+	x.Selection = b.Selection
 	return m0
 }
 
 type TriggerComplianceRunsResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_StartedRuns *[]*ComplianceRun      `protobuf:"bytes,1,rep,name=started_runs,json=startedRuns"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	StartedRuns   []*ComplianceRun       `protobuf:"bytes,1,rep,name=started_runs,json=startedRuns" json:"started_runs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TriggerComplianceRunsResponse) Reset() {
@@ -1299,27 +987,13 @@ func (x *TriggerComplianceRunsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *TriggerComplianceRunsResponse) GetStartedRuns() []*ComplianceRun {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_StartedRuns) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ComplianceRun
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartedRuns), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.StartedRuns
 	}
 	return nil
 }
 
 func (x *TriggerComplianceRunsResponse) SetStartedRuns(v []*ComplianceRun) {
-	var sv *[]*ComplianceRun
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_StartedRuns), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceRun{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_StartedRuns), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.StartedRuns = v
 }
 
 type TriggerComplianceRunsResponse_builder struct {
@@ -1332,21 +1006,16 @@ func (b0 TriggerComplianceRunsResponse_builder) Build() *TriggerComplianceRunsRe
 	m0 := &TriggerComplianceRunsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.StartedRuns != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_StartedRuns = &b.StartedRuns
-	}
+	x.StartedRuns = b.StartedRuns
 	return m0
 }
 
 type GetComplianceRunStatusesRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RunIds      []string               `protobuf:"bytes,1,rep,name=run_ids,json=runIds"`
-	xxx_hidden_Latest      bool                   `protobuf:"varint,2,opt,name=latest"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	RunIds        []string               `protobuf:"bytes,1,rep,name=run_ids,json=runIds" json:"run_ids,omitempty"`
+	Latest        bool                   `protobuf:"varint,2,opt,name=latest" json:"latest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetComplianceRunStatusesRequest) Reset() {
@@ -1376,68 +1045,48 @@ func (x *GetComplianceRunStatusesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetComplianceRunStatusesRequest) GetRunIds() []string {
 	if x != nil {
-		return x.xxx_hidden_RunIds
+		return x.RunIds
 	}
 	return nil
 }
 
 func (x *GetComplianceRunStatusesRequest) GetLatest() bool {
 	if x != nil {
-		return x.xxx_hidden_Latest
+		return x.Latest
 	}
 	return false
 }
 
 func (x *GetComplianceRunStatusesRequest) SetRunIds(v []string) {
-	x.xxx_hidden_RunIds = v
+	x.RunIds = v
 }
 
 func (x *GetComplianceRunStatusesRequest) SetLatest(v bool) {
-	x.xxx_hidden_Latest = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetComplianceRunStatusesRequest) HasLatest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetComplianceRunStatusesRequest) ClearLatest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Latest = false
+	x.Latest = v
 }
 
 type GetComplianceRunStatusesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	RunIds []string
-	Latest *bool
+	Latest bool
 }
 
 func (b0 GetComplianceRunStatusesRequest_builder) Build() *GetComplianceRunStatusesRequest {
 	m0 := &GetComplianceRunStatusesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RunIds = b.RunIds
-	if b.Latest != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Latest = *b.Latest
-	}
+	x.RunIds = b.RunIds
+	x.Latest = b.Latest
 	return m0
 }
 
 type GetComplianceRunStatusesResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_InvalidRunIds []string               `protobuf:"bytes,1,rep,name=invalid_run_ids,json=invalidRunIds"`
-	xxx_hidden_Runs          *[]*ComplianceRun      `protobuf:"bytes,2,rep,name=runs"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	InvalidRunIds []string               `protobuf:"bytes,1,rep,name=invalid_run_ids,json=invalidRunIds" json:"invalid_run_ids,omitempty"`
+	Runs          []*ComplianceRun       `protobuf:"bytes,2,rep,name=runs" json:"runs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetComplianceRunStatusesResponse) Reset() {
@@ -1467,38 +1116,24 @@ func (x *GetComplianceRunStatusesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetComplianceRunStatusesResponse) GetInvalidRunIds() []string {
 	if x != nil {
-		return x.xxx_hidden_InvalidRunIds
+		return x.InvalidRunIds
 	}
 	return nil
 }
 
 func (x *GetComplianceRunStatusesResponse) GetRuns() []*ComplianceRun {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Runs) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*ComplianceRun
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Runs
 	}
 	return nil
 }
 
 func (x *GetComplianceRunStatusesResponse) SetInvalidRunIds(v []string) {
-	x.xxx_hidden_InvalidRunIds = v
+	x.InvalidRunIds = v
 }
 
 func (x *GetComplianceRunStatusesResponse) SetRuns(v []*ComplianceRun) {
-	var sv *[]*ComplianceRun
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ComplianceRun{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Runs = v
 }
 
 type GetComplianceRunStatusesResponse_builder struct {
@@ -1512,11 +1147,8 @@ func (b0 GetComplianceRunStatusesResponse_builder) Build() *GetComplianceRunStat
 	m0 := &GetComplianceRunStatusesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_InvalidRunIds = b.InvalidRunIds
-	if b.Runs != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Runs = &b.Runs
-	}
+	x.InvalidRunIds = b.InvalidRunIds
+	x.Runs = b.Runs
 	return m0
 }
 
@@ -1585,8 +1217,8 @@ const file_api_v1_compliance_management_service_proto_rawDesc = "" +
 	"\x1bComplianceManagementService\x12\x7f\n" +
 	"\rGetRecentRuns\x12\".v1.GetRecentComplianceRunsRequest\x1a#.v1.GetRecentComplianceRunsResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/complianceManagement/runs\x12|\n" +
 	"\vTriggerRuns\x12 .v1.TriggerComplianceRunsRequest\x1a!.v1.TriggerComplianceRunsResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/compliancemanagement/runs\x12\x89\x01\n" +
-	"\x0eGetRunStatuses\x12#.v1.GetComplianceRunStatusesRequest\x1a$.v1.GetComplianceRunStatusesResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/compliancemanagement/runstatusesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
+	"\x0eGetRunStatuses\x12#.v1.GetComplianceRunStatusesRequest\x1a$.v1.GetComplianceRunStatusesResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/compliancemanagement/runstatusesB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_compliance_management_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_compliance_management_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
@@ -1637,8 +1269,8 @@ func file_api_v1_compliance_management_service_proto_init() {
 		return
 	}
 	file_api_v1_compliance_management_service_proto_msgTypes[4].OneofWrappers = []any{
-		(*getRecentComplianceRunsRequest_ClusterId)(nil),
-		(*getRecentComplianceRunsRequest_StandardId)(nil),
+		(*GetRecentComplianceRunsRequest_ClusterId)(nil),
+		(*GetRecentComplianceRunsRequest_StandardId)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

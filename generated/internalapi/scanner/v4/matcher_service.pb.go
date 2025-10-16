@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/scanner/v4/matcher_service.proto
 
+//go:build !protoopaque
+
 package v4
 
 import (
@@ -24,13 +26,11 @@ const (
 )
 
 type GetVulnerabilitiesRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_HashId      *string                `protobuf:"bytes,1,opt,name=hash_id,json=hashId"`
-	xxx_hidden_Contents    *Contents              `protobuf:"bytes,2,opt,name=contents"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	HashId        string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId" json:"hash_id,omitempty"`
+	Contents      *Contents              `protobuf:"bytes,2,opt,name=contents" json:"contents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetVulnerabilitiesRequest) Reset() {
@@ -60,57 +60,41 @@ func (x *GetVulnerabilitiesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetVulnerabilitiesRequest) GetHashId() string {
 	if x != nil {
-		if x.xxx_hidden_HashId != nil {
-			return *x.xxx_hidden_HashId
-		}
-		return ""
+		return x.HashId
 	}
 	return ""
 }
 
 func (x *GetVulnerabilitiesRequest) GetContents() *Contents {
 	if x != nil {
-		return x.xxx_hidden_Contents
+		return x.Contents
 	}
 	return nil
 }
 
 func (x *GetVulnerabilitiesRequest) SetHashId(v string) {
-	x.xxx_hidden_HashId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.HashId = v
 }
 
 func (x *GetVulnerabilitiesRequest) SetContents(v *Contents) {
-	x.xxx_hidden_Contents = v
-}
-
-func (x *GetVulnerabilitiesRequest) HasHashId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Contents = v
 }
 
 func (x *GetVulnerabilitiesRequest) HasContents() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Contents != nil
-}
-
-func (x *GetVulnerabilitiesRequest) ClearHashId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_HashId = nil
+	return x.Contents != nil
 }
 
 func (x *GetVulnerabilitiesRequest) ClearContents() {
-	x.xxx_hidden_Contents = nil
+	x.Contents = nil
 }
 
 type GetVulnerabilitiesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	HashId   *string
+	HashId   string
 	Contents *Contents
 }
 
@@ -118,24 +102,26 @@ func (b0 GetVulnerabilitiesRequest_builder) Build() *GetVulnerabilitiesRequest {
 	m0 := &GetVulnerabilitiesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.HashId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_HashId = b.HashId
-	}
-	x.xxx_hidden_Contents = b.Contents
+	x.HashId = b.HashId
+	x.Contents = b.Contents
 	return m0
 }
 
 type GetSBOMRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Uri         *string                `protobuf:"bytes,3,opt,name=uri"`
-	xxx_hidden_Contents    *Contents              `protobuf:"bytes,4,opt,name=contents"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// id is a unique identifier (ie: sha256 digest) that represents the contents.
+	// For SPDX 2.3 this will be the document name.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// name is the user requested name for the contents (ie: for images this may be the images full name with tag).
+	// For SPDX 2.3 this will be included to the document comment.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	// uri is a unique absolute Uniform Resource Identifier (URI) for this document (if applicable).
+	// For SPDX 2.3 this will be the document namespace.
+	Uri string `protobuf:"bytes,3,opt,name=uri" json:"uri,omitempty"`
+	// contents is the packages, versions, etc. that will be converted to an SBOM.
+	Contents      *Contents `protobuf:"bytes,4,opt,name=contents" json:"contents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSBOMRequest) Reset() {
@@ -165,105 +151,57 @@ func (x *GetSBOMRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetSBOMRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetSBOMRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *GetSBOMRequest) GetUri() string {
 	if x != nil {
-		if x.xxx_hidden_Uri != nil {
-			return *x.xxx_hidden_Uri
-		}
-		return ""
+		return x.Uri
 	}
 	return ""
 }
 
 func (x *GetSBOMRequest) GetContents() *Contents {
 	if x != nil {
-		return x.xxx_hidden_Contents
+		return x.Contents
 	}
 	return nil
 }
 
 func (x *GetSBOMRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *GetSBOMRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Name = v
 }
 
 func (x *GetSBOMRequest) SetUri(v string) {
-	x.xxx_hidden_Uri = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Uri = v
 }
 
 func (x *GetSBOMRequest) SetContents(v *Contents) {
-	x.xxx_hidden_Contents = v
-}
-
-func (x *GetSBOMRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetSBOMRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetSBOMRequest) HasUri() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.Contents = v
 }
 
 func (x *GetSBOMRequest) HasContents() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Contents != nil
-}
-
-func (x *GetSBOMRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *GetSBOMRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *GetSBOMRequest) ClearUri() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Uri = nil
+	return x.Contents != nil
 }
 
 func (x *GetSBOMRequest) ClearContents() {
-	x.xxx_hidden_Contents = nil
+	x.Contents = nil
 }
 
 type GetSBOMRequest_builder struct {
@@ -271,13 +209,13 @@ type GetSBOMRequest_builder struct {
 
 	// id is a unique identifier (ie: sha256 digest) that represents the contents.
 	// For SPDX 2.3 this will be the document name.
-	Id *string
+	Id string
 	// name is the user requested name for the contents (ie: for images this may be the images full name with tag).
 	// For SPDX 2.3 this will be included to the document comment.
-	Name *string
+	Name string
 	// uri is a unique absolute Uniform Resource Identifier (URI) for this document (if applicable).
 	// For SPDX 2.3 this will be the document namespace.
-	Uri *string
+	Uri string
 	// contents is the packages, versions, etc. that will be converted to an SBOM.
 	Contents *Contents
 }
@@ -286,29 +224,18 @@ func (b0 GetSBOMRequest_builder) Build() *GetSBOMRequest {
 	m0 := &GetSBOMRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Uri != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Uri = b.Uri
-	}
-	x.xxx_hidden_Contents = b.Contents
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Uri = b.Uri
+	x.Contents = b.Contents
 	return m0
 }
 
 type GetSBOMResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Sbom        []byte                 `protobuf:"bytes,1,opt,name=sbom"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Sbom          []byte                 `protobuf:"bytes,1,opt,name=sbom" json:"sbom,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSBOMResponse) Reset() {
@@ -338,7 +265,7 @@ func (x *GetSBOMResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSBOMResponse) GetSbom() []byte {
 	if x != nil {
-		return x.xxx_hidden_Sbom
+		return x.Sbom
 	}
 	return nil
 }
@@ -347,20 +274,7 @@ func (x *GetSBOMResponse) SetSbom(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Sbom = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *GetSBOMResponse) HasSbom() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetSBOMResponse) ClearSbom() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Sbom = nil
+	x.Sbom = v
 }
 
 type GetSBOMResponse_builder struct {
@@ -373,22 +287,15 @@ func (b0 GetSBOMResponse_builder) Build() *GetSBOMResponse {
 	m0 := &GetSBOMResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Sbom != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Sbom = b.Sbom
-	}
+	x.Sbom = b.Sbom
 	return m0
 }
 
 type Metadata struct {
-	state                              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"hybrid.v1"`
+	LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate" json:"LastVulnerabilityUpdate,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -418,37 +325,24 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 
 func (x *Metadata) GetLastVulnerabilityUpdate() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastVulnerabilityUpdate) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastVulnerabilityUpdate), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastVulnerabilityUpdate
 	}
 	return nil
 }
 
 func (x *Metadata) SetLastVulnerabilityUpdate(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastVulnerabilityUpdate, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.LastVulnerabilityUpdate = v
 }
 
 func (x *Metadata) HasLastVulnerabilityUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.LastVulnerabilityUpdate != nil
 }
 
 func (x *Metadata) ClearLastVulnerabilityUpdate() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastVulnerabilityUpdate, (*timestamppb.Timestamp)(nil))
+	x.LastVulnerabilityUpdate = nil
 }
 
 type Metadata_builder struct {
@@ -461,10 +355,7 @@ func (b0 Metadata_builder) Build() *Metadata {
 	m0 := &Metadata{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.LastVulnerabilityUpdate != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_LastVulnerabilityUpdate = b.LastVulnerabilityUpdate
-	}
+	x.LastVulnerabilityUpdate = b.LastVulnerabilityUpdate
 	return m0
 }
 
@@ -489,7 +380,7 @@ const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
 	"\aMatcher\x12\\\n" +
 	"\x12GetVulnerabilities\x12%.scanner.v4.GetVulnerabilitiesRequest\x1a\x1f.scanner.v4.VulnerabilityReport\x12;\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x14.scanner.v4.Metadata\x12B\n" +
-	"\aGetSBOM\x12\x1a.scanner.v4.GetSBOMRequest\x1a\x1b.scanner.v4.GetSBOMResponseB%Z\x1b./internalapi/scanner/v4;v4\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\aGetSBOM\x12\x1a.scanner.v4.GetSBOMRequest\x1a\x1b.scanner.v4.GetSBOMResponseB-Z\x1b./internalapi/scanner/v4;v4\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_scanner_v4_matcher_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_scanner_v4_matcher_service_proto_goTypes = []any{

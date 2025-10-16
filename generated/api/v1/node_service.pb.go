@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/node_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,12 +26,10 @@ const (
 )
 
 type ListNodesRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListNodesRequest) Reset() {
@@ -59,57 +59,34 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListNodesRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ListNodesRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ListNodesRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ListNodesRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
+	x.ClusterId = v
 }
 
 type ListNodesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId *string
+	ClusterId string
 }
 
 func (b0 ListNodesRequest_builder) Build() *ListNodesRequest {
 	m0 := &ListNodesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
+	x.ClusterId = b.ClusterId
 	return m0
 }
 
 type ListNodesResponse struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Nodes *[]*storage.Node       `protobuf:"bytes,1,rep,name=nodes"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Nodes         []*storage.Node        `protobuf:"bytes,1,rep,name=nodes" json:"nodes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListNodesResponse) Reset() {
@@ -139,27 +116,13 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListNodesResponse) GetNodes() []*storage.Node {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Nodes) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.Node
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Nodes
 	}
 	return nil
 }
 
 func (x *ListNodesResponse) SetNodes(v []*storage.Node) {
-	var sv *[]*storage.Node
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Node{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Nodes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Nodes = v
 }
 
 type ListNodesResponse_builder struct {
@@ -172,21 +135,16 @@ func (b0 ListNodesResponse_builder) Build() *ListNodesResponse {
 	m0 := &ListNodesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Nodes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Nodes = &b.Nodes
-	}
+	x.Nodes = b.Nodes
 	return m0
 }
 
 type GetNodeRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_NodeId      *string                `protobuf:"bytes,2,opt,name=node_id,json=nodeId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId" json:"node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetNodeRequest) Reset() {
@@ -216,88 +174,48 @@ func (x *GetNodeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetNodeRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *GetNodeRequest) GetNodeId() string {
 	if x != nil {
-		if x.xxx_hidden_NodeId != nil {
-			return *x.xxx_hidden_NodeId
-		}
-		return ""
+		return x.NodeId
 	}
 	return ""
 }
 
 func (x *GetNodeRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ClusterId = v
 }
 
 func (x *GetNodeRequest) SetNodeId(v string) {
-	x.xxx_hidden_NodeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetNodeRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetNodeRequest) HasNodeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetNodeRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *GetNodeRequest) ClearNodeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NodeId = nil
+	x.NodeId = v
 }
 
 type GetNodeRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId *string
-	NodeId    *string
+	ClusterId string
+	NodeId    string
 }
 
 func (b0 GetNodeRequest_builder) Build() *GetNodeRequest {
 	m0 := &GetNodeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.NodeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_NodeId = b.NodeId
-	}
+	x.ClusterId = b.ClusterId
+	x.NodeId = b.NodeId
 	return m0
 }
 
 type ExportNodeRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Timeout     int32                  `protobuf:"varint,1,opt,name=timeout"`
-	xxx_hidden_Query       *string                `protobuf:"bytes,2,opt,name=query"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout" json:"timeout,omitempty"`
+	Query         string                 `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExportNodeRequest) Reset() {
@@ -327,86 +245,47 @@ func (x *ExportNodeRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ExportNodeRequest) GetTimeout() int32 {
 	if x != nil {
-		return x.xxx_hidden_Timeout
+		return x.Timeout
 	}
 	return 0
 }
 
 func (x *ExportNodeRequest) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *ExportNodeRequest) SetTimeout(v int32) {
-	x.xxx_hidden_Timeout = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Timeout = v
 }
 
 func (x *ExportNodeRequest) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ExportNodeRequest) HasTimeout() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ExportNodeRequest) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ExportNodeRequest) ClearTimeout() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Timeout = 0
-}
-
-func (x *ExportNodeRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Query = nil
+	x.Query = v
 }
 
 type ExportNodeRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Timeout *int32
-	Query   *string
+	Timeout int32
+	Query   string
 }
 
 func (b0 ExportNodeRequest_builder) Build() *ExportNodeRequest {
 	m0 := &ExportNodeRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Timeout != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Timeout = *b.Timeout
-	}
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Timeout = b.Timeout
+	x.Query = b.Query
 	return m0
 }
 
 type ExportNodeResponse struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Node *storage.Node          `protobuf:"bytes,1,opt,name=node"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Node          *storage.Node          `protobuf:"bytes,1,opt,name=node" json:"node,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExportNodeResponse) Reset() {
@@ -436,37 +315,24 @@ func (x *ExportNodeResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportNodeResponse) GetNode() *storage.Node {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Node) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.Node
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Node), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Node
 	}
 	return nil
 }
 
 func (x *ExportNodeResponse) SetNode(v *storage.Node) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Node, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Node = v
 }
 
 func (x *ExportNodeResponse) HasNode() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Node != nil
 }
 
 func (x *ExportNodeResponse) ClearNode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Node, (*storage.Node)(nil))
+	x.Node = nil
 }
 
 type ExportNodeResponse_builder struct {
@@ -479,10 +345,7 @@ func (b0 ExportNodeResponse_builder) Build() *ExportNodeResponse {
 	m0 := &ExportNodeResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Node != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Node = b.Node
-	}
+	x.Node = b.Node
 	return m0
 }
 
@@ -508,8 +371,8 @@ const file_api_v1_node_service_proto_rawDesc = "" +
 	"\vNodeService\x12X\n" +
 	"\tListNodes\x12\x14.v1.ListNodesRequest\x1a\x15.v1.ListNodesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/nodes/{cluster_id}\x12V\n" +
 	"\aGetNode\x12\x12.v1.GetNodeRequest\x1a\r.storage.Node\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/nodes/{cluster_id}/{node_id}\x12X\n" +
-	"\vExportNodes\x12\x15.v1.ExportNodeRequest\x1a\x16.v1.ExportNodeResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/export/nodes0\x01B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
+	"\vExportNodes\x12\x15.v1.ExportNodeRequest\x1a\x16.v1.ExportNodeResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/export/nodes0\x01B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_node_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_node_service_proto_goTypes = []any{

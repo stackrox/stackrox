@@ -8,6 +8,7 @@ func (m *Role) SizeVT() int                   { return proto.Size(m) }
 func (m *Role) CloneVT() *Role                { return proto.Clone(m).(*Role) }
 func (m *Role) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Role) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Role) EqualVT(n *Role) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Role) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,14 +17,16 @@ func (m *PermissionSet) SizeVT() int                   { return proto.Size(m) }
 func (m *PermissionSet) CloneVT() *PermissionSet       { return proto.Clone(m).(*PermissionSet) }
 func (m *PermissionSet) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PermissionSet) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PermissionSet) EqualVT(n *PermissionSet) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PermissionSet) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *SimpleAccessScope) SizeVT() int                   { return proto.Size(m) }
-func (m *SimpleAccessScope) CloneVT() *SimpleAccessScope   { return proto.Clone(m).(*SimpleAccessScope) }
-func (m *SimpleAccessScope) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SimpleAccessScope) SizeVT() int                       { return proto.Size(m) }
+func (m *SimpleAccessScope) CloneVT() *SimpleAccessScope       { return proto.Clone(m).(*SimpleAccessScope) }
+func (m *SimpleAccessScope) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *SimpleAccessScope) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *SimpleAccessScope) EqualVT(n *SimpleAccessScope) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SimpleAccessScope) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,8 +35,9 @@ func (m *SimpleAccessScope_Rules) SizeVT() int { return proto.Size(m) }
 func (m *SimpleAccessScope_Rules) CloneVT() *SimpleAccessScope_Rules {
 	return proto.Clone(m).(*SimpleAccessScope_Rules)
 }
-func (m *SimpleAccessScope_Rules) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SimpleAccessScope_Rules) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *SimpleAccessScope_Rules) EqualVT(n *SimpleAccessScope_Rules) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SimpleAccessScope_Rules) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -46,6 +50,9 @@ func (m *SimpleAccessScope_Rules_Namespace) MarshalVT() ([]byte, error) { return
 func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *SimpleAccessScope_Rules_Namespace) EqualVT(n *SimpleAccessScope_Rules_Namespace) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -56,8 +63,9 @@ func (m *EffectiveAccessScope) SizeVT() int { return proto.Size(m) }
 func (m *EffectiveAccessScope) CloneVT() *EffectiveAccessScope {
 	return proto.Clone(m).(*EffectiveAccessScope)
 }
-func (m *EffectiveAccessScope) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *EffectiveAccessScope) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *EffectiveAccessScope) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *EffectiveAccessScope) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *EffectiveAccessScope) EqualVT(n *EffectiveAccessScope) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EffectiveAccessScope) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -69,6 +77,9 @@ func (m *EffectiveAccessScope_Namespace) CloneVT() *EffectiveAccessScope_Namespa
 func (m *EffectiveAccessScope_Namespace) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *EffectiveAccessScope_Namespace) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *EffectiveAccessScope_Namespace) EqualVT(n *EffectiveAccessScope_Namespace) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -83,6 +94,9 @@ func (m *EffectiveAccessScope_Cluster) CloneVT() *EffectiveAccessScope_Cluster {
 func (m *EffectiveAccessScope_Cluster) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *EffectiveAccessScope_Cluster) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *EffectiveAccessScope_Cluster) EqualVT(n *EffectiveAccessScope_Cluster) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

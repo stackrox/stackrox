@@ -8,6 +8,7 @@ func (m *EPSS) SizeVT() int                   { return proto.Size(m) }
 func (m *EPSS) CloneVT() *EPSS                { return proto.Clone(m).(*EPSS) }
 func (m *EPSS) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *EPSS) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *EPSS) EqualVT(n *EPSS) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EPSS) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *CVE) SizeVT() int                   { return proto.Size(m) }
 func (m *CVE) CloneVT() *CVE                 { return proto.Clone(m).(*CVE) }
 func (m *CVE) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVE) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVE) EqualVT(n *CVE) bool           { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVE) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *CVE_DistroSpecific) SizeVT() int { return proto.Size(m) }
 func (m *CVE_DistroSpecific) CloneVT() *CVE_DistroSpecific {
 	return proto.Clone(m).(*CVE_DistroSpecific)
 }
-func (m *CVE_DistroSpecific) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVE_DistroSpecific) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *CVE_DistroSpecific) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *CVE_DistroSpecific) EqualVT(n *CVE_DistroSpecific) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVE_DistroSpecific) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,7 @@ func (m *CVE_Reference) SizeVT() int                   { return proto.Size(m) }
 func (m *CVE_Reference) CloneVT() *CVE_Reference       { return proto.Clone(m).(*CVE_Reference) }
 func (m *CVE_Reference) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVE_Reference) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVE_Reference) EqualVT(n *CVE_Reference) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVE_Reference) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,14 +46,16 @@ func (m *CVEInfo) SizeVT() int                   { return proto.Size(m) }
 func (m *CVEInfo) CloneVT() *CVEInfo             { return proto.Clone(m).(*CVEInfo) }
 func (m *CVEInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVEInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVEInfo) EqualVT(n *CVEInfo) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CVEInfo_Reference) SizeVT() int                   { return proto.Size(m) }
-func (m *CVEInfo_Reference) CloneVT() *CVEInfo_Reference   { return proto.Clone(m).(*CVEInfo_Reference) }
-func (m *CVEInfo_Reference) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CVEInfo_Reference) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVEInfo_Reference) SizeVT() int                       { return proto.Size(m) }
+func (m *CVEInfo_Reference) CloneVT() *CVEInfo_Reference       { return proto.Clone(m).(*CVEInfo_Reference) }
+func (m *CVEInfo_Reference) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *CVEInfo_Reference) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *CVEInfo_Reference) EqualVT(n *CVEInfo_Reference) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVEInfo_Reference) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -58,6 +64,7 @@ func (m *Advisory) SizeVT() int                   { return proto.Size(m) }
 func (m *Advisory) CloneVT() *Advisory            { return proto.Clone(m).(*Advisory) }
 func (m *Advisory) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Advisory) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Advisory) EqualVT(n *Advisory) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Advisory) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -66,6 +73,7 @@ func (m *ImageCVE) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageCVE) CloneVT() *ImageCVE            { return proto.Clone(m).(*ImageCVE) }
 func (m *ImageCVE) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageCVE) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageCVE) EqualVT(n *ImageCVE) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageCVE) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -74,6 +82,7 @@ func (m *ImageCVEV2) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageCVEV2) CloneVT() *ImageCVEV2          { return proto.Clone(m).(*ImageCVEV2) }
 func (m *ImageCVEV2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageCVEV2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageCVEV2) EqualVT(n *ImageCVEV2) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -82,6 +91,7 @@ func (m *NodeCVE) SizeVT() int                   { return proto.Size(m) }
 func (m *NodeCVE) CloneVT() *NodeCVE             { return proto.Clone(m).(*NodeCVE) }
 func (m *NodeCVE) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NodeCVE) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeCVE) EqualVT(n *NodeCVE) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeCVE) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -90,6 +100,7 @@ func (m *ClusterCVE) SizeVT() int                   { return proto.Size(m) }
 func (m *ClusterCVE) CloneVT() *ClusterCVE          { return proto.Clone(m).(*ClusterCVE) }
 func (m *ClusterCVE) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ClusterCVE) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterCVE) EqualVT(n *ClusterCVE) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterCVE) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -98,6 +109,7 @@ func (m *CVSSScore) SizeVT() int                   { return proto.Size(m) }
 func (m *CVSSScore) CloneVT() *CVSSScore           { return proto.Clone(m).(*CVSSScore) }
 func (m *CVSSScore) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVSSScore) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVSSScore) EqualVT(n *CVSSScore) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVSSScore) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -106,6 +118,7 @@ func (m *CVSSV2) SizeVT() int                   { return proto.Size(m) }
 func (m *CVSSV2) CloneVT() *CVSSV2              { return proto.Clone(m).(*CVSSV2) }
 func (m *CVSSV2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVSSV2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVSSV2) EqualVT(n *CVSSV2) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVSSV2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -114,6 +127,7 @@ func (m *CVSSV3) SizeVT() int                   { return proto.Size(m) }
 func (m *CVSSV3) CloneVT() *CVSSV3              { return proto.Clone(m).(*CVSSV3) }
 func (m *CVSSV3) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CVSSV3) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CVSSV3) EqualVT(n *CVSSV3) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CVSSV3) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

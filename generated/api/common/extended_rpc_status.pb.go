@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/common/extended_rpc_status.proto
 
+//go:build !protoopaque
+
 package common
 
 import (
@@ -25,17 +27,23 @@ const (
 // The `Status` type defines a logical error model that is suitable for
 // different programming environments, including REST APIs and RPC APIs.
 type ExtendedRpcStatus struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Code    int32                  `protobuf:"varint,1,opt,name=code"`
-	xxx_hidden_Message *string                `protobuf:"bytes,2,opt,name=message"`
-	xxx_hidden_Details *[]*anypb.Any          `protobuf:"bytes,3,rep,name=details"`
-	xxx_hidden_Error   *string                `protobuf:"bytes,4,opt,name=error"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// A simple error code that can be easily handled by the client. The
+	// actual error code is defined by `google.rpc.Code`.
+	Code int32 `protobuf:"varint,1,opt,name=code" json:"code,omitempty"`
+	// A developer-facing human-readable error message in English. It should
+	// both explain the error and offer an actionable resolution to it.
+	Message string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
+	// Additional error information that the client code can use to handle
+	// the error, such as retry info or a help link.
+	Details []*anypb.Any `protobuf:"bytes,3,rep,name=details" json:"details,omitempty"`
+	// Backward compatibility to gRPC Gateway V1 returned error payload.
+	// It contains the same string returned in "message" field.
+	//
+	// Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
+	Error         string `protobuf:"bytes,4,opt,name=error" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExtendedRpcStatus) Reset() {
@@ -65,31 +73,21 @@ func (x *ExtendedRpcStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ExtendedRpcStatus) GetCode() int32 {
 	if x != nil {
-		return x.xxx_hidden_Code
+		return x.Code
 	}
 	return 0
 }
 
 func (x *ExtendedRpcStatus) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *ExtendedRpcStatus) GetDetails() []*anypb.Any {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Details) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*anypb.Any
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Details
 	}
 	return nil
 }
@@ -97,77 +95,26 @@ func (x *ExtendedRpcStatus) GetDetails() []*anypb.Any {
 // Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
 func (x *ExtendedRpcStatus) GetError() string {
 	if x != nil {
-		if x.xxx_hidden_Error != nil {
-			return *x.xxx_hidden_Error
-		}
-		return ""
+		return x.Error
 	}
 	return ""
 }
 
 func (x *ExtendedRpcStatus) SetCode(v int32) {
-	x.xxx_hidden_Code = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Code = v
 }
 
 func (x *ExtendedRpcStatus) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Message = v
 }
 
 func (x *ExtendedRpcStatus) SetDetails(v []*anypb.Any) {
-	var sv *[]*anypb.Any
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*anypb.Any{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Details), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Details = v
 }
 
 // Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
 func (x *ExtendedRpcStatus) SetError(v string) {
-	x.xxx_hidden_Error = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *ExtendedRpcStatus) HasCode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ExtendedRpcStatus) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-// Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
-func (x *ExtendedRpcStatus) HasError() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ExtendedRpcStatus) ClearCode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Code = 0
-}
-
-func (x *ExtendedRpcStatus) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Message = nil
-}
-
-// Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
-func (x *ExtendedRpcStatus) ClearError() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Error = nil
+	x.Error = v
 }
 
 type ExtendedRpcStatus_builder struct {
@@ -175,10 +122,10 @@ type ExtendedRpcStatus_builder struct {
 
 	// A simple error code that can be easily handled by the client. The
 	// actual error code is defined by `google.rpc.Code`.
-	Code *int32
+	Code int32
 	// A developer-facing human-readable error message in English. It should
 	// both explain the error and offer an actionable resolution to it.
-	Message *string
+	Message string
 	// Additional error information that the client code can use to handle
 	// the error, such as retry info or a help link.
 	Details []*anypb.Any
@@ -186,29 +133,17 @@ type ExtendedRpcStatus_builder struct {
 	// It contains the same string returned in "message" field.
 	//
 	// Deprecated: Marked as deprecated in api/common/extended_rpc_status.proto.
-	Error *string
+	Error string
 }
 
 func (b0 ExtendedRpcStatus_builder) Build() *ExtendedRpcStatus {
 	m0 := &ExtendedRpcStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Code != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Code = *b.Code
-	}
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Message = b.Message
-	}
-	if b.Details != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Details = &b.Details
-	}
-	if b.Error != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Error = b.Error
-	}
+	x.Code = b.Code
+	x.Message = b.Message
+	x.Details = b.Details
+	x.Error = b.Error
 	return m0
 }
 
@@ -221,8 +156,8 @@ const file_api_common_extended_rpc_status_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x122\n" +
 	"\adetails\x18\x03 \x03(\v2\x14.google.protobuf.AnyB\x02(\x01R\adetails\x12\x18\n" +
-	"\x05error\x18\x04 \x01(\tB\x02\x18\x01R\x05errorB;\n" +
-	"\x1cio.stackrox.proto.api.commonZ\x13./api/common;common\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05error\x18\x04 \x01(\tB\x02\x18\x01R\x05errorBC\n" +
+	"\x1cio.stackrox.proto.api.commonZ\x13./api/common;common\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_common_extended_rpc_status_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_common_extended_rpc_status_proto_goTypes = []any{

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/sensor_events.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -117,12 +119,10 @@ func (x AlertResults_Source) Number() protoreflect.EnumNumber {
 }
 
 type ReprocessDeploymentRisk struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReprocessDeploymentRisk) Reset() {
@@ -152,60 +152,38 @@ func (x *ReprocessDeploymentRisk) ProtoReflect() protoreflect.Message {
 
 func (x *ReprocessDeploymentRisk) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *ReprocessDeploymentRisk) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ReprocessDeploymentRisk) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ReprocessDeploymentRisk) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DeploymentId = nil
+	x.DeploymentId = v
 }
 
 type ReprocessDeploymentRisk_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	DeploymentId *string
+	DeploymentId string
 }
 
 func (b0 ReprocessDeploymentRisk_builder) Build() *ReprocessDeploymentRisk {
 	m0 := &ReprocessDeploymentRisk{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
+	x.DeploymentId = b.DeploymentId
 	return m0
 }
 
 type AlertResults struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_Alerts       *[]*storage.Alert      `protobuf:"bytes,2,rep,name=alerts"`
-	xxx_hidden_Stage        storage.LifecycleStage `protobuf:"varint,3,opt,name=stage,enum=storage.LifecycleStage"`
-	xxx_hidden_Source       AlertResults_Source    `protobuf:"varint,4,opt,name=source,enum=central.AlertResults_Source"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Only relevant if source == DEPLOYMENT.
+	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	Alerts        []*storage.Alert       `protobuf:"bytes,2,rep,name=alerts" json:"alerts,omitempty"`
+	Stage         storage.LifecycleStage `protobuf:"varint,3,opt,name=stage,enum=storage.LifecycleStage" json:"stage,omitempty"`
+	Source        AlertResults_Source    `protobuf:"varint,4,opt,name=source,enum=central.AlertResults_Source" json:"source,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AlertResults) Reset() {
@@ -235,150 +213,76 @@ func (x *AlertResults) ProtoReflect() protoreflect.Message {
 
 func (x *AlertResults) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *AlertResults) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*storage.Alert
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Alerts
 	}
 	return nil
 }
 
 func (x *AlertResults) GetStage() storage.LifecycleStage {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Stage
-		}
+		return x.Stage
 	}
 	return storage.LifecycleStage(0)
 }
 
 func (x *AlertResults) GetSource() AlertResults_Source {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Source
-		}
+		return x.Source
 	}
 	return AlertResults_DEPLOYMENT_EVENT
 }
 
 func (x *AlertResults) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.DeploymentId = v
 }
 
 func (x *AlertResults) SetAlerts(v []*storage.Alert) {
-	var sv *[]*storage.Alert
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Alert{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Alerts = v
 }
 
 func (x *AlertResults) SetStage(v storage.LifecycleStage) {
-	x.xxx_hidden_Stage = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Stage = v
 }
 
 func (x *AlertResults) SetSource(v AlertResults_Source) {
-	x.xxx_hidden_Source = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *AlertResults) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AlertResults) HasStage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *AlertResults) HasSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *AlertResults) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *AlertResults) ClearStage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Stage = storage.LifecycleStage_DEPLOY
-}
-
-func (x *AlertResults) ClearSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Source = AlertResults_DEPLOYMENT_EVENT
+	x.Source = v
 }
 
 type AlertResults_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Only relevant if source == DEPLOYMENT.
-	DeploymentId *string
+	DeploymentId string
 	Alerts       []*storage.Alert
-	Stage        *storage.LifecycleStage
-	Source       *AlertResults_Source
+	Stage        storage.LifecycleStage
+	Source       AlertResults_Source
 }
 
 func (b0 AlertResults_builder) Build() *AlertResults {
 	m0 := &AlertResults{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.Alerts != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Alerts = &b.Alerts
-	}
-	if b.Stage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Stage = *b.Stage
-	}
-	if b.Source != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Source = *b.Source
-	}
+	x.DeploymentId = b.DeploymentId
+	x.Alerts = b.Alerts
+	x.Stage = b.Stage
+	x.Source = b.Source
 	return m0
 }
 
 type Timing struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Dispatcher  *string                `protobuf:"bytes,1,opt,name=dispatcher"`
-	xxx_hidden_Resource    *string                `protobuf:"bytes,2,opt,name=resource"`
-	xxx_hidden_Nanos       int64                  `protobuf:"varint,3,opt,name=nanos"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Dispatcher    string                 `protobuf:"bytes,1,opt,name=dispatcher" json:"dispatcher,omitempty"`
+	Resource      string                 `protobuf:"bytes,2,opt,name=resource" json:"resource,omitempty"`
+	Nanos         int64                  `protobuf:"varint,3,opt,name=nanos" json:"nanos,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Timing) Reset() {
@@ -408,123 +312,103 @@ func (x *Timing) ProtoReflect() protoreflect.Message {
 
 func (x *Timing) GetDispatcher() string {
 	if x != nil {
-		if x.xxx_hidden_Dispatcher != nil {
-			return *x.xxx_hidden_Dispatcher
-		}
-		return ""
+		return x.Dispatcher
 	}
 	return ""
 }
 
 func (x *Timing) GetResource() string {
 	if x != nil {
-		if x.xxx_hidden_Resource != nil {
-			return *x.xxx_hidden_Resource
-		}
-		return ""
+		return x.Resource
 	}
 	return ""
 }
 
 func (x *Timing) GetNanos() int64 {
 	if x != nil {
-		return x.xxx_hidden_Nanos
+		return x.Nanos
 	}
 	return 0
 }
 
 func (x *Timing) SetDispatcher(v string) {
-	x.xxx_hidden_Dispatcher = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Dispatcher = v
 }
 
 func (x *Timing) SetResource(v string) {
-	x.xxx_hidden_Resource = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Resource = v
 }
 
 func (x *Timing) SetNanos(v int64) {
-	x.xxx_hidden_Nanos = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *Timing) HasDispatcher() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Timing) HasResource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Timing) HasNanos() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Timing) ClearDispatcher() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Dispatcher = nil
-}
-
-func (x *Timing) ClearResource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Resource = nil
-}
-
-func (x *Timing) ClearNanos() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Nanos = 0
+	x.Nanos = v
 }
 
 type Timing_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Dispatcher *string
-	Resource   *string
-	Nanos      *int64
+	Dispatcher string
+	Resource   string
+	Nanos      int64
 }
 
 func (b0 Timing_builder) Build() *Timing {
 	m0 := &Timing{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Dispatcher != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Dispatcher = b.Dispatcher
-	}
-	if b.Resource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Resource = b.Resource
-	}
-	if b.Nanos != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Nanos = *b.Nanos
-	}
+	x.Dispatcher = b.Dispatcher
+	x.Resource = b.Resource
+	x.Nanos = b.Nanos
 	return m0
 }
 
 // Next tag: 37.
 type SensorEvent struct {
-	state                      protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Action          ResourceAction                `protobuf:"varint,2,opt,name=action,enum=central.ResourceAction"`
-	xxx_hidden_Timing          *Timing                       `protobuf:"bytes,3,opt,name=timing"`
-	xxx_hidden_SensorHashOneof isSensorEvent_SensorHashOneof `protobuf_oneof:"sensor_hash_oneof"`
-	xxx_hidden_Resource        isSensorEvent_Resource        `protobuf_oneof:"resource"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// These fields may be duplicated in the individual events, but avoid the need to branch all the time
+	Id     string         `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Action ResourceAction `protobuf:"varint,2,opt,name=action,enum=central.ResourceAction" json:"action,omitempty"`
+	Timing *Timing        `protobuf:"bytes,3,opt,name=timing" json:"timing,omitempty"`
+	// Types that are valid to be assigned to SensorHashOneof:
+	//
+	//	*SensorEvent_SensorHash
+	SensorHashOneof isSensorEvent_SensorHashOneof `protobuf_oneof:"sensor_hash_oneof"`
+	// Types that are valid to be assigned to Resource:
+	//
+	//	*SensorEvent_NetworkPolicy
+	//	*SensorEvent_Deployment
+	//	*SensorEvent_Pod
+	//	*SensorEvent_Namespace
+	//	*SensorEvent_Secret
+	//	*SensorEvent_Node
+	//	*SensorEvent_NodeInventory
+	//	*SensorEvent_IndexReport
+	//	*SensorEvent_ServiceAccount
+	//	*SensorEvent_Role
+	//	*SensorEvent_Binding
+	//	*SensorEvent_ProcessIndicator
+	//	*SensorEvent_ProviderMetadata
+	//	*SensorEvent_Synced
+	//	*SensorEvent_OrchestratorMetadata
+	//	*SensorEvent_ImageIntegration
+	//	*SensorEvent_ReprocessDeployment
+	//	*SensorEvent_AlertResults
+	//	*SensorEvent_ComplianceOperatorResult
+	//	*SensorEvent_ComplianceOperatorProfile
+	//	*SensorEvent_ComplianceOperatorRule
+	//	*SensorEvent_ComplianceOperatorScanSettingBinding
+	//	*SensorEvent_ComplianceOperatorScan
+	//	*SensorEvent_VirtualMachineIndexReport
+	//	*SensorEvent_VirtualMachine
+	//	*SensorEvent_ComplianceOperatorResultV2
+	//	*SensorEvent_ComplianceOperatorProfileV2
+	//	*SensorEvent_ComplianceOperatorRuleV2
+	//	*SensorEvent_ComplianceOperatorScanV2
+	//	*SensorEvent_ComplianceOperatorScanSettingBindingV2
+	//	*SensorEvent_ComplianceOperatorSuiteV2
+	//	*SensorEvent_ComplianceOperatorRemediationV2
+	Resource      isSensorEvent_Resource `protobuf_oneof:"resource"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SensorEvent) Reset() {
@@ -554,42 +438,51 @@ func (x *SensorEvent) ProtoReflect() protoreflect.Message {
 
 func (x *SensorEvent) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SensorEvent) GetAction() ResourceAction {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Action
-		}
+		return x.Action
 	}
 	return ResourceAction_UNSET_ACTION_RESOURCE
 }
 
 func (x *SensorEvent) GetTiming() *Timing {
 	if x != nil {
-		return x.xxx_hidden_Timing
+		return x.Timing
+	}
+	return nil
+}
+
+func (x *SensorEvent) GetSensorHashOneof() isSensorEvent_SensorHashOneof {
+	if x != nil {
+		return x.SensorHashOneof
 	}
 	return nil
 }
 
 func (x *SensorEvent) GetSensorHash() uint64 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_SensorHashOneof.(*sensorEvent_SensorHash); ok {
+		if x, ok := x.SensorHashOneof.(*SensorEvent_SensorHash); ok {
 			return x.SensorHash
 		}
 	}
 	return 0
 }
 
+func (x *SensorEvent) GetResource() isSensorEvent_Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 func (x *SensorEvent) GetNetworkPolicy() *storage.NetworkPolicy {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_NetworkPolicy); ok {
+		if x, ok := x.Resource.(*SensorEvent_NetworkPolicy); ok {
 			return x.NetworkPolicy
 		}
 	}
@@ -598,7 +491,7 @@ func (x *SensorEvent) GetNetworkPolicy() *storage.NetworkPolicy {
 
 func (x *SensorEvent) GetDeployment() *storage.Deployment {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Deployment); ok {
+		if x, ok := x.Resource.(*SensorEvent_Deployment); ok {
 			return x.Deployment
 		}
 	}
@@ -607,7 +500,7 @@ func (x *SensorEvent) GetDeployment() *storage.Deployment {
 
 func (x *SensorEvent) GetPod() *storage.Pod {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Pod); ok {
+		if x, ok := x.Resource.(*SensorEvent_Pod); ok {
 			return x.Pod
 		}
 	}
@@ -616,7 +509,7 @@ func (x *SensorEvent) GetPod() *storage.Pod {
 
 func (x *SensorEvent) GetNamespace() *storage.NamespaceMetadata {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Namespace); ok {
+		if x, ok := x.Resource.(*SensorEvent_Namespace); ok {
 			return x.Namespace
 		}
 	}
@@ -625,7 +518,7 @@ func (x *SensorEvent) GetNamespace() *storage.NamespaceMetadata {
 
 func (x *SensorEvent) GetSecret() *storage.Secret {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Secret); ok {
+		if x, ok := x.Resource.(*SensorEvent_Secret); ok {
 			return x.Secret
 		}
 	}
@@ -634,7 +527,7 @@ func (x *SensorEvent) GetSecret() *storage.Secret {
 
 func (x *SensorEvent) GetNode() *storage.Node {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Node); ok {
+		if x, ok := x.Resource.(*SensorEvent_Node); ok {
 			return x.Node
 		}
 	}
@@ -643,7 +536,7 @@ func (x *SensorEvent) GetNode() *storage.Node {
 
 func (x *SensorEvent) GetNodeInventory() *storage.NodeInventory {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_NodeInventory); ok {
+		if x, ok := x.Resource.(*SensorEvent_NodeInventory); ok {
 			return x.NodeInventory
 		}
 	}
@@ -652,7 +545,7 @@ func (x *SensorEvent) GetNodeInventory() *storage.NodeInventory {
 
 func (x *SensorEvent) GetIndexReport() *v4.IndexReport {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_IndexReport); ok {
+		if x, ok := x.Resource.(*SensorEvent_IndexReport); ok {
 			return x.IndexReport
 		}
 	}
@@ -661,7 +554,7 @@ func (x *SensorEvent) GetIndexReport() *v4.IndexReport {
 
 func (x *SensorEvent) GetServiceAccount() *storage.ServiceAccount {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ServiceAccount); ok {
+		if x, ok := x.Resource.(*SensorEvent_ServiceAccount); ok {
 			return x.ServiceAccount
 		}
 	}
@@ -670,7 +563,7 @@ func (x *SensorEvent) GetServiceAccount() *storage.ServiceAccount {
 
 func (x *SensorEvent) GetRole() *storage.K8SRole {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Role); ok {
+		if x, ok := x.Resource.(*SensorEvent_Role); ok {
 			return x.Role
 		}
 	}
@@ -679,7 +572,7 @@ func (x *SensorEvent) GetRole() *storage.K8SRole {
 
 func (x *SensorEvent) GetBinding() *storage.K8SRoleBinding {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Binding); ok {
+		if x, ok := x.Resource.(*SensorEvent_Binding); ok {
 			return x.Binding
 		}
 	}
@@ -688,7 +581,7 @@ func (x *SensorEvent) GetBinding() *storage.K8SRoleBinding {
 
 func (x *SensorEvent) GetProcessIndicator() *storage.ProcessIndicator {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ProcessIndicator); ok {
+		if x, ok := x.Resource.(*SensorEvent_ProcessIndicator); ok {
 			return x.ProcessIndicator
 		}
 	}
@@ -697,7 +590,7 @@ func (x *SensorEvent) GetProcessIndicator() *storage.ProcessIndicator {
 
 func (x *SensorEvent) GetProviderMetadata() *storage.ProviderMetadata {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ProviderMetadata); ok {
+		if x, ok := x.Resource.(*SensorEvent_ProviderMetadata); ok {
 			return x.ProviderMetadata
 		}
 	}
@@ -706,7 +599,7 @@ func (x *SensorEvent) GetProviderMetadata() *storage.ProviderMetadata {
 
 func (x *SensorEvent) GetSynced() *SensorEvent_ResourcesSynced {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_Synced); ok {
+		if x, ok := x.Resource.(*SensorEvent_Synced); ok {
 			return x.Synced
 		}
 	}
@@ -715,7 +608,7 @@ func (x *SensorEvent) GetSynced() *SensorEvent_ResourcesSynced {
 
 func (x *SensorEvent) GetOrchestratorMetadata() *storage.OrchestratorMetadata {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_OrchestratorMetadata); ok {
+		if x, ok := x.Resource.(*SensorEvent_OrchestratorMetadata); ok {
 			return x.OrchestratorMetadata
 		}
 	}
@@ -724,7 +617,7 @@ func (x *SensorEvent) GetOrchestratorMetadata() *storage.OrchestratorMetadata {
 
 func (x *SensorEvent) GetImageIntegration() *storage.ImageIntegration {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ImageIntegration); ok {
+		if x, ok := x.Resource.(*SensorEvent_ImageIntegration); ok {
 			return x.ImageIntegration
 		}
 	}
@@ -733,7 +626,7 @@ func (x *SensorEvent) GetImageIntegration() *storage.ImageIntegration {
 
 func (x *SensorEvent) GetReprocessDeployment() *ReprocessDeploymentRisk {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ReprocessDeployment); ok {
+		if x, ok := x.Resource.(*SensorEvent_ReprocessDeployment); ok {
 			return x.ReprocessDeployment
 		}
 	}
@@ -742,7 +635,7 @@ func (x *SensorEvent) GetReprocessDeployment() *ReprocessDeploymentRisk {
 
 func (x *SensorEvent) GetAlertResults() *AlertResults {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_AlertResults); ok {
+		if x, ok := x.Resource.(*SensorEvent_AlertResults); ok {
 			return x.AlertResults
 		}
 	}
@@ -751,7 +644,7 @@ func (x *SensorEvent) GetAlertResults() *AlertResults {
 
 func (x *SensorEvent) GetComplianceOperatorResult() *storage.ComplianceOperatorCheckResult {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResult); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
 			return x.ComplianceOperatorResult
 		}
 	}
@@ -760,7 +653,7 @@ func (x *SensorEvent) GetComplianceOperatorResult() *storage.ComplianceOperatorC
 
 func (x *SensorEvent) GetComplianceOperatorProfile() *storage.ComplianceOperatorProfile {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfile); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
 			return x.ComplianceOperatorProfile
 		}
 	}
@@ -769,7 +662,7 @@ func (x *SensorEvent) GetComplianceOperatorProfile() *storage.ComplianceOperator
 
 func (x *SensorEvent) GetComplianceOperatorRule() *storage.ComplianceOperatorRule {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRule); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
 			return x.ComplianceOperatorRule
 		}
 	}
@@ -778,7 +671,7 @@ func (x *SensorEvent) GetComplianceOperatorRule() *storage.ComplianceOperatorRul
 
 func (x *SensorEvent) GetComplianceOperatorScanSettingBinding() *storage.ComplianceOperatorScanSettingBinding {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBinding); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
 			return x.ComplianceOperatorScanSettingBinding
 		}
 	}
@@ -787,7 +680,7 @@ func (x *SensorEvent) GetComplianceOperatorScanSettingBinding() *storage.Complia
 
 func (x *SensorEvent) GetComplianceOperatorScan() *storage.ComplianceOperatorScan {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScan); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
 			return x.ComplianceOperatorScan
 		}
 	}
@@ -796,7 +689,7 @@ func (x *SensorEvent) GetComplianceOperatorScan() *storage.ComplianceOperatorSca
 
 func (x *SensorEvent) GetVirtualMachineIndexReport() *v1.IndexReportEvent {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachineIndexReport); ok {
+		if x, ok := x.Resource.(*SensorEvent_VirtualMachineIndexReport); ok {
 			return x.VirtualMachineIndexReport
 		}
 	}
@@ -805,7 +698,7 @@ func (x *SensorEvent) GetVirtualMachineIndexReport() *v1.IndexReportEvent {
 
 func (x *SensorEvent) GetVirtualMachine() *v1.VirtualMachine {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachine); ok {
+		if x, ok := x.Resource.(*SensorEvent_VirtualMachine); ok {
 			return x.VirtualMachine
 		}
 	}
@@ -814,7 +707,7 @@ func (x *SensorEvent) GetVirtualMachine() *v1.VirtualMachine {
 
 func (x *SensorEvent) GetComplianceOperatorResultV2() *ComplianceOperatorCheckResultV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResultV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorResultV2); ok {
 			return x.ComplianceOperatorResultV2
 		}
 	}
@@ -823,7 +716,7 @@ func (x *SensorEvent) GetComplianceOperatorResultV2() *ComplianceOperatorCheckRe
 
 func (x *SensorEvent) GetComplianceOperatorProfileV2() *ComplianceOperatorProfileV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfileV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfileV2); ok {
 			return x.ComplianceOperatorProfileV2
 		}
 	}
@@ -832,7 +725,7 @@ func (x *SensorEvent) GetComplianceOperatorProfileV2() *ComplianceOperatorProfil
 
 func (x *SensorEvent) GetComplianceOperatorRuleV2() *ComplianceOperatorRuleV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRuleV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorRuleV2); ok {
 			return x.ComplianceOperatorRuleV2
 		}
 	}
@@ -841,7 +734,7 @@ func (x *SensorEvent) GetComplianceOperatorRuleV2() *ComplianceOperatorRuleV2 {
 
 func (x *SensorEvent) GetComplianceOperatorScanV2() *ComplianceOperatorScanV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanV2); ok {
 			return x.ComplianceOperatorScanV2
 		}
 	}
@@ -850,7 +743,7 @@ func (x *SensorEvent) GetComplianceOperatorScanV2() *ComplianceOperatorScanV2 {
 
 func (x *SensorEvent) GetComplianceOperatorScanSettingBindingV2() *ComplianceOperatorScanSettingBindingV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBindingV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBindingV2); ok {
 			return x.ComplianceOperatorScanSettingBindingV2
 		}
 	}
@@ -859,7 +752,7 @@ func (x *SensorEvent) GetComplianceOperatorScanSettingBindingV2() *ComplianceOpe
 
 func (x *SensorEvent) GetComplianceOperatorSuiteV2() *ComplianceOperatorSuiteV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorSuiteV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorSuiteV2); ok {
 			return x.ComplianceOperatorSuiteV2
 		}
 	}
@@ -868,7 +761,7 @@ func (x *SensorEvent) GetComplianceOperatorSuiteV2() *ComplianceOperatorSuiteV2 
 
 func (x *SensorEvent) GetComplianceOperatorRemediationV2() *ComplianceOperatorRemediationV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRemediationV2); ok {
+		if x, ok := x.Resource.(*SensorEvent_ComplianceOperatorRemediationV2); ok {
 			return x.ComplianceOperatorRemediationV2
 		}
 	}
@@ -876,312 +769,296 @@ func (x *SensorEvent) GetComplianceOperatorRemediationV2() *ComplianceOperatorRe
 }
 
 func (x *SensorEvent) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *SensorEvent) SetAction(v ResourceAction) {
-	x.xxx_hidden_Action = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Action = v
 }
 
 func (x *SensorEvent) SetTiming(v *Timing) {
-	x.xxx_hidden_Timing = v
+	x.Timing = v
 }
 
 func (x *SensorEvent) SetSensorHash(v uint64) {
-	x.xxx_hidden_SensorHashOneof = &sensorEvent_SensorHash{v}
+	x.SensorHashOneof = &SensorEvent_SensorHash{v}
 }
 
 func (x *SensorEvent) SetNetworkPolicy(v *storage.NetworkPolicy) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_NetworkPolicy{v}
+	x.Resource = &SensorEvent_NetworkPolicy{v}
 }
 
 func (x *SensorEvent) SetDeployment(v *storage.Deployment) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Deployment{v}
+	x.Resource = &SensorEvent_Deployment{v}
 }
 
 func (x *SensorEvent) SetPod(v *storage.Pod) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Pod{v}
+	x.Resource = &SensorEvent_Pod{v}
 }
 
 func (x *SensorEvent) SetNamespace(v *storage.NamespaceMetadata) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Namespace{v}
+	x.Resource = &SensorEvent_Namespace{v}
 }
 
 func (x *SensorEvent) SetSecret(v *storage.Secret) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Secret{v}
+	x.Resource = &SensorEvent_Secret{v}
 }
 
 func (x *SensorEvent) SetNode(v *storage.Node) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Node{v}
+	x.Resource = &SensorEvent_Node{v}
 }
 
 func (x *SensorEvent) SetNodeInventory(v *storage.NodeInventory) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_NodeInventory{v}
+	x.Resource = &SensorEvent_NodeInventory{v}
 }
 
 func (x *SensorEvent) SetIndexReport(v *v4.IndexReport) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_IndexReport{v}
+	x.Resource = &SensorEvent_IndexReport{v}
 }
 
 func (x *SensorEvent) SetServiceAccount(v *storage.ServiceAccount) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ServiceAccount{v}
+	x.Resource = &SensorEvent_ServiceAccount{v}
 }
 
 func (x *SensorEvent) SetRole(v *storage.K8SRole) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Role{v}
+	x.Resource = &SensorEvent_Role{v}
 }
 
 func (x *SensorEvent) SetBinding(v *storage.K8SRoleBinding) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Binding{v}
+	x.Resource = &SensorEvent_Binding{v}
 }
 
 func (x *SensorEvent) SetProcessIndicator(v *storage.ProcessIndicator) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ProcessIndicator{v}
+	x.Resource = &SensorEvent_ProcessIndicator{v}
 }
 
 func (x *SensorEvent) SetProviderMetadata(v *storage.ProviderMetadata) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ProviderMetadata{v}
+	x.Resource = &SensorEvent_ProviderMetadata{v}
 }
 
 func (x *SensorEvent) SetSynced(v *SensorEvent_ResourcesSynced) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_Synced{v}
+	x.Resource = &SensorEvent_Synced{v}
 }
 
 func (x *SensorEvent) SetOrchestratorMetadata(v *storage.OrchestratorMetadata) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_OrchestratorMetadata{v}
+	x.Resource = &SensorEvent_OrchestratorMetadata{v}
 }
 
 func (x *SensorEvent) SetImageIntegration(v *storage.ImageIntegration) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ImageIntegration{v}
+	x.Resource = &SensorEvent_ImageIntegration{v}
 }
 
 func (x *SensorEvent) SetReprocessDeployment(v *ReprocessDeploymentRisk) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ReprocessDeployment{v}
+	x.Resource = &SensorEvent_ReprocessDeployment{v}
 }
 
 func (x *SensorEvent) SetAlertResults(v *AlertResults) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_AlertResults{v}
+	x.Resource = &SensorEvent_AlertResults{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorResult(v *storage.ComplianceOperatorCheckResult) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorResult{v}
+	x.Resource = &SensorEvent_ComplianceOperatorResult{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorProfile(v *storage.ComplianceOperatorProfile) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorProfile{v}
+	x.Resource = &SensorEvent_ComplianceOperatorProfile{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorRule(v *storage.ComplianceOperatorRule) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRule{v}
+	x.Resource = &SensorEvent_ComplianceOperatorRule{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorScanSettingBinding(v *storage.ComplianceOperatorScanSettingBinding) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanSettingBinding{v}
+	x.Resource = &SensorEvent_ComplianceOperatorScanSettingBinding{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorScan(v *storage.ComplianceOperatorScan) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScan{v}
+	x.Resource = &SensorEvent_ComplianceOperatorScan{v}
 }
 
 func (x *SensorEvent) SetVirtualMachineIndexReport(v *v1.IndexReportEvent) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_VirtualMachineIndexReport{v}
+	x.Resource = &SensorEvent_VirtualMachineIndexReport{v}
 }
 
 func (x *SensorEvent) SetVirtualMachine(v *v1.VirtualMachine) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_VirtualMachine{v}
+	x.Resource = &SensorEvent_VirtualMachine{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorResultV2(v *ComplianceOperatorCheckResultV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorResultV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorResultV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorProfileV2(v *ComplianceOperatorProfileV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorProfileV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorProfileV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorRuleV2(v *ComplianceOperatorRuleV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRuleV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorRuleV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorScanV2(v *ComplianceOperatorScanV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorScanV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorScanSettingBindingV2(v *ComplianceOperatorScanSettingBindingV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanSettingBindingV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorScanSettingBindingV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorSuiteV2(v *ComplianceOperatorSuiteV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorSuiteV2{v}
+	x.Resource = &SensorEvent_ComplianceOperatorSuiteV2{v}
 }
 
 func (x *SensorEvent) SetComplianceOperatorRemediationV2(v *ComplianceOperatorRemediationV2) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRemediationV2{v}
-}
-
-func (x *SensorEvent) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SensorEvent) HasAction() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Resource = &SensorEvent_ComplianceOperatorRemediationV2{v}
 }
 
 func (x *SensorEvent) HasTiming() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Timing != nil
+	return x.Timing != nil
 }
 
 func (x *SensorEvent) HasSensorHashOneof() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SensorHashOneof != nil
+	return x.SensorHashOneof != nil
 }
 
 func (x *SensorEvent) HasSensorHash() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_SensorHashOneof.(*sensorEvent_SensorHash)
+	_, ok := x.SensorHashOneof.(*SensorEvent_SensorHash)
 	return ok
 }
 
@@ -1189,14 +1066,14 @@ func (x *SensorEvent) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *SensorEvent) HasNetworkPolicy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_NetworkPolicy)
+	_, ok := x.Resource.(*SensorEvent_NetworkPolicy)
 	return ok
 }
 
@@ -1204,7 +1081,7 @@ func (x *SensorEvent) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Deployment)
+	_, ok := x.Resource.(*SensorEvent_Deployment)
 	return ok
 }
 
@@ -1212,7 +1089,7 @@ func (x *SensorEvent) HasPod() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Pod)
+	_, ok := x.Resource.(*SensorEvent_Pod)
 	return ok
 }
 
@@ -1220,7 +1097,7 @@ func (x *SensorEvent) HasNamespace() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Namespace)
+	_, ok := x.Resource.(*SensorEvent_Namespace)
 	return ok
 }
 
@@ -1228,7 +1105,7 @@ func (x *SensorEvent) HasSecret() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Secret)
+	_, ok := x.Resource.(*SensorEvent_Secret)
 	return ok
 }
 
@@ -1236,7 +1113,7 @@ func (x *SensorEvent) HasNode() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Node)
+	_, ok := x.Resource.(*SensorEvent_Node)
 	return ok
 }
 
@@ -1244,7 +1121,7 @@ func (x *SensorEvent) HasNodeInventory() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_NodeInventory)
+	_, ok := x.Resource.(*SensorEvent_NodeInventory)
 	return ok
 }
 
@@ -1252,7 +1129,7 @@ func (x *SensorEvent) HasIndexReport() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_IndexReport)
+	_, ok := x.Resource.(*SensorEvent_IndexReport)
 	return ok
 }
 
@@ -1260,7 +1137,7 @@ func (x *SensorEvent) HasServiceAccount() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ServiceAccount)
+	_, ok := x.Resource.(*SensorEvent_ServiceAccount)
 	return ok
 }
 
@@ -1268,7 +1145,7 @@ func (x *SensorEvent) HasRole() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Role)
+	_, ok := x.Resource.(*SensorEvent_Role)
 	return ok
 }
 
@@ -1276,7 +1153,7 @@ func (x *SensorEvent) HasBinding() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Binding)
+	_, ok := x.Resource.(*SensorEvent_Binding)
 	return ok
 }
 
@@ -1284,7 +1161,7 @@ func (x *SensorEvent) HasProcessIndicator() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ProcessIndicator)
+	_, ok := x.Resource.(*SensorEvent_ProcessIndicator)
 	return ok
 }
 
@@ -1292,7 +1169,7 @@ func (x *SensorEvent) HasProviderMetadata() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ProviderMetadata)
+	_, ok := x.Resource.(*SensorEvent_ProviderMetadata)
 	return ok
 }
 
@@ -1300,7 +1177,7 @@ func (x *SensorEvent) HasSynced() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_Synced)
+	_, ok := x.Resource.(*SensorEvent_Synced)
 	return ok
 }
 
@@ -1308,7 +1185,7 @@ func (x *SensorEvent) HasOrchestratorMetadata() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_OrchestratorMetadata)
+	_, ok := x.Resource.(*SensorEvent_OrchestratorMetadata)
 	return ok
 }
 
@@ -1316,7 +1193,7 @@ func (x *SensorEvent) HasImageIntegration() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ImageIntegration)
+	_, ok := x.Resource.(*SensorEvent_ImageIntegration)
 	return ok
 }
 
@@ -1324,7 +1201,7 @@ func (x *SensorEvent) HasReprocessDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ReprocessDeployment)
+	_, ok := x.Resource.(*SensorEvent_ReprocessDeployment)
 	return ok
 }
 
@@ -1332,7 +1209,7 @@ func (x *SensorEvent) HasAlertResults() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_AlertResults)
+	_, ok := x.Resource.(*SensorEvent_AlertResults)
 	return ok
 }
 
@@ -1340,7 +1217,7 @@ func (x *SensorEvent) HasComplianceOperatorResult() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResult)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorResult)
 	return ok
 }
 
@@ -1348,7 +1225,7 @@ func (x *SensorEvent) HasComplianceOperatorProfile() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfile)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfile)
 	return ok
 }
 
@@ -1356,7 +1233,7 @@ func (x *SensorEvent) HasComplianceOperatorRule() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRule)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorRule)
 	return ok
 }
 
@@ -1364,7 +1241,7 @@ func (x *SensorEvent) HasComplianceOperatorScanSettingBinding() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBinding)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding)
 	return ok
 }
 
@@ -1372,7 +1249,7 @@ func (x *SensorEvent) HasComplianceOperatorScan() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScan)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorScan)
 	return ok
 }
 
@@ -1380,7 +1257,7 @@ func (x *SensorEvent) HasVirtualMachineIndexReport() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachineIndexReport)
+	_, ok := x.Resource.(*SensorEvent_VirtualMachineIndexReport)
 	return ok
 }
 
@@ -1388,7 +1265,7 @@ func (x *SensorEvent) HasVirtualMachine() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachine)
+	_, ok := x.Resource.(*SensorEvent_VirtualMachine)
 	return ok
 }
 
@@ -1396,7 +1273,7 @@ func (x *SensorEvent) HasComplianceOperatorResultV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResultV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorResultV2)
 	return ok
 }
 
@@ -1404,7 +1281,7 @@ func (x *SensorEvent) HasComplianceOperatorProfileV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfileV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfileV2)
 	return ok
 }
 
@@ -1412,7 +1289,7 @@ func (x *SensorEvent) HasComplianceOperatorRuleV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRuleV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorRuleV2)
 	return ok
 }
 
@@ -1420,7 +1297,7 @@ func (x *SensorEvent) HasComplianceOperatorScanV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanV2)
 	return ok
 }
 
@@ -1428,7 +1305,7 @@ func (x *SensorEvent) HasComplianceOperatorScanSettingBindingV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBindingV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBindingV2)
 	return ok
 }
 
@@ -1436,7 +1313,7 @@ func (x *SensorEvent) HasComplianceOperatorSuiteV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorSuiteV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorSuiteV2)
 	return ok
 }
 
@@ -1444,227 +1321,217 @@ func (x *SensorEvent) HasComplianceOperatorRemediationV2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRemediationV2)
+	_, ok := x.Resource.(*SensorEvent_ComplianceOperatorRemediationV2)
 	return ok
 }
 
-func (x *SensorEvent) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *SensorEvent) ClearAction() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Action = ResourceAction_UNSET_ACTION_RESOURCE
-}
-
 func (x *SensorEvent) ClearTiming() {
-	x.xxx_hidden_Timing = nil
+	x.Timing = nil
 }
 
 func (x *SensorEvent) ClearSensorHashOneof() {
-	x.xxx_hidden_SensorHashOneof = nil
+	x.SensorHashOneof = nil
 }
 
 func (x *SensorEvent) ClearSensorHash() {
-	if _, ok := x.xxx_hidden_SensorHashOneof.(*sensorEvent_SensorHash); ok {
-		x.xxx_hidden_SensorHashOneof = nil
+	if _, ok := x.SensorHashOneof.(*SensorEvent_SensorHash); ok {
+		x.SensorHashOneof = nil
 	}
 }
 
 func (x *SensorEvent) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 func (x *SensorEvent) ClearNetworkPolicy() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_NetworkPolicy); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_NetworkPolicy); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearDeployment() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Deployment); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Deployment); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearPod() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Pod); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Pod); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearNamespace() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Namespace); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Namespace); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearSecret() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Secret); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Secret); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearNode() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Node); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Node); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearNodeInventory() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_NodeInventory); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_NodeInventory); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearIndexReport() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_IndexReport); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_IndexReport); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearServiceAccount() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ServiceAccount); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ServiceAccount); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearRole() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Role); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Role); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearBinding() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Binding); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Binding); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearProcessIndicator() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ProcessIndicator); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ProcessIndicator); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearProviderMetadata() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ProviderMetadata); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ProviderMetadata); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearSynced() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_Synced); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_Synced); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearOrchestratorMetadata() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_OrchestratorMetadata); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_OrchestratorMetadata); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearImageIntegration() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ImageIntegration); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ImageIntegration); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearReprocessDeployment() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ReprocessDeployment); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ReprocessDeployment); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearAlertResults() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_AlertResults); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_AlertResults); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorResult() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResult); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorProfile() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfile); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorRule() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRule); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorScanSettingBinding() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBinding); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorScan() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScan); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearVirtualMachineIndexReport() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachineIndexReport); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_VirtualMachineIndexReport); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearVirtualMachine() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_VirtualMachine); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_VirtualMachine); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorResultV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorResultV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorResultV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorProfileV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorProfileV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorProfileV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorRuleV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRuleV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorRuleV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorScanV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorScanSettingBindingV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorScanSettingBindingV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorScanSettingBindingV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorSuiteV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorSuiteV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorSuiteV2); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEvent) ClearComplianceOperatorRemediationV2() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEvent_ComplianceOperatorRemediationV2); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEvent_ComplianceOperatorRemediationV2); ok {
+		x.Resource = nil
 	}
 }
 
@@ -1675,8 +1542,8 @@ func (x *SensorEvent) WhichSensorHashOneof() case_SensorEvent_SensorHashOneof {
 	if x == nil {
 		return SensorEvent_SensorHashOneof_not_set_case
 	}
-	switch x.xxx_hidden_SensorHashOneof.(type) {
-	case *sensorEvent_SensorHash:
+	switch x.SensorHashOneof.(type) {
+	case *SensorEvent_SensorHash:
 		return SensorEvent_SensorHash_case
 	default:
 		return SensorEvent_SensorHashOneof_not_set_case
@@ -1721,70 +1588,70 @@ func (x *SensorEvent) WhichResource() case_SensorEvent_Resource {
 	if x == nil {
 		return SensorEvent_Resource_not_set_case
 	}
-	switch x.xxx_hidden_Resource.(type) {
-	case *sensorEvent_NetworkPolicy:
+	switch x.Resource.(type) {
+	case *SensorEvent_NetworkPolicy:
 		return SensorEvent_NetworkPolicy_case
-	case *sensorEvent_Deployment:
+	case *SensorEvent_Deployment:
 		return SensorEvent_Deployment_case
-	case *sensorEvent_Pod:
+	case *SensorEvent_Pod:
 		return SensorEvent_Pod_case
-	case *sensorEvent_Namespace:
+	case *SensorEvent_Namespace:
 		return SensorEvent_Namespace_case
-	case *sensorEvent_Secret:
+	case *SensorEvent_Secret:
 		return SensorEvent_Secret_case
-	case *sensorEvent_Node:
+	case *SensorEvent_Node:
 		return SensorEvent_Node_case
-	case *sensorEvent_NodeInventory:
+	case *SensorEvent_NodeInventory:
 		return SensorEvent_NodeInventory_case
-	case *sensorEvent_IndexReport:
+	case *SensorEvent_IndexReport:
 		return SensorEvent_IndexReport_case
-	case *sensorEvent_ServiceAccount:
+	case *SensorEvent_ServiceAccount:
 		return SensorEvent_ServiceAccount_case
-	case *sensorEvent_Role:
+	case *SensorEvent_Role:
 		return SensorEvent_Role_case
-	case *sensorEvent_Binding:
+	case *SensorEvent_Binding:
 		return SensorEvent_Binding_case
-	case *sensorEvent_ProcessIndicator:
+	case *SensorEvent_ProcessIndicator:
 		return SensorEvent_ProcessIndicator_case
-	case *sensorEvent_ProviderMetadata:
+	case *SensorEvent_ProviderMetadata:
 		return SensorEvent_ProviderMetadata_case
-	case *sensorEvent_Synced:
+	case *SensorEvent_Synced:
 		return SensorEvent_Synced_case
-	case *sensorEvent_OrchestratorMetadata:
+	case *SensorEvent_OrchestratorMetadata:
 		return SensorEvent_OrchestratorMetadata_case
-	case *sensorEvent_ImageIntegration:
+	case *SensorEvent_ImageIntegration:
 		return SensorEvent_ImageIntegration_case
-	case *sensorEvent_ReprocessDeployment:
+	case *SensorEvent_ReprocessDeployment:
 		return SensorEvent_ReprocessDeployment_case
-	case *sensorEvent_AlertResults:
+	case *SensorEvent_AlertResults:
 		return SensorEvent_AlertResults_case
-	case *sensorEvent_ComplianceOperatorResult:
+	case *SensorEvent_ComplianceOperatorResult:
 		return SensorEvent_ComplianceOperatorResult_case
-	case *sensorEvent_ComplianceOperatorProfile:
+	case *SensorEvent_ComplianceOperatorProfile:
 		return SensorEvent_ComplianceOperatorProfile_case
-	case *sensorEvent_ComplianceOperatorRule:
+	case *SensorEvent_ComplianceOperatorRule:
 		return SensorEvent_ComplianceOperatorRule_case
-	case *sensorEvent_ComplianceOperatorScanSettingBinding:
+	case *SensorEvent_ComplianceOperatorScanSettingBinding:
 		return SensorEvent_ComplianceOperatorScanSettingBinding_case
-	case *sensorEvent_ComplianceOperatorScan:
+	case *SensorEvent_ComplianceOperatorScan:
 		return SensorEvent_ComplianceOperatorScan_case
-	case *sensorEvent_VirtualMachineIndexReport:
+	case *SensorEvent_VirtualMachineIndexReport:
 		return SensorEvent_VirtualMachineIndexReport_case
-	case *sensorEvent_VirtualMachine:
+	case *SensorEvent_VirtualMachine:
 		return SensorEvent_VirtualMachine_case
-	case *sensorEvent_ComplianceOperatorResultV2:
+	case *SensorEvent_ComplianceOperatorResultV2:
 		return SensorEvent_ComplianceOperatorResultV2_case
-	case *sensorEvent_ComplianceOperatorProfileV2:
+	case *SensorEvent_ComplianceOperatorProfileV2:
 		return SensorEvent_ComplianceOperatorProfileV2_case
-	case *sensorEvent_ComplianceOperatorRuleV2:
+	case *SensorEvent_ComplianceOperatorRuleV2:
 		return SensorEvent_ComplianceOperatorRuleV2_case
-	case *sensorEvent_ComplianceOperatorScanV2:
+	case *SensorEvent_ComplianceOperatorScanV2:
 		return SensorEvent_ComplianceOperatorScanV2_case
-	case *sensorEvent_ComplianceOperatorScanSettingBindingV2:
+	case *SensorEvent_ComplianceOperatorScanSettingBindingV2:
 		return SensorEvent_ComplianceOperatorScanSettingBindingV2_case
-	case *sensorEvent_ComplianceOperatorSuiteV2:
+	case *SensorEvent_ComplianceOperatorSuiteV2:
 		return SensorEvent_ComplianceOperatorSuiteV2_case
-	case *sensorEvent_ComplianceOperatorRemediationV2:
+	case *SensorEvent_ComplianceOperatorRemediationV2:
 		return SensorEvent_ComplianceOperatorRemediationV2_case
 	default:
 		return SensorEvent_Resource_not_set_case
@@ -1795,13 +1662,13 @@ type SensorEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// These fields may be duplicated in the individual events, but avoid the need to branch all the time
-	Id     *string
-	Action *ResourceAction
+	Id     string
+	Action ResourceAction
 	Timing *Timing
-	// Fields of oneof xxx_hidden_SensorHashOneof:
+	// Fields of oneof SensorHashOneof:
 	SensorHash *uint64
-	// -- end of xxx_hidden_SensorHashOneof
-	// Fields of oneof xxx_hidden_Resource:
+	// -- end of SensorHashOneof
+	// Fields of oneof Resource:
 	NetworkPolicy                        *storage.NetworkPolicy
 	Deployment                           *storage.Deployment
 	Pod                                  *storage.Pod
@@ -1835,120 +1702,114 @@ type SensorEvent_builder struct {
 	ComplianceOperatorScanSettingBindingV2 *ComplianceOperatorScanSettingBindingV2
 	ComplianceOperatorSuiteV2              *ComplianceOperatorSuiteV2
 	ComplianceOperatorRemediationV2        *ComplianceOperatorRemediationV2
-	// -- end of xxx_hidden_Resource
+	// -- end of Resource
 }
 
 func (b0 SensorEvent_builder) Build() *SensorEvent {
 	m0 := &SensorEvent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Action != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Action = *b.Action
-	}
-	x.xxx_hidden_Timing = b.Timing
+	x.Id = b.Id
+	x.Action = b.Action
+	x.Timing = b.Timing
 	if b.SensorHash != nil {
-		x.xxx_hidden_SensorHashOneof = &sensorEvent_SensorHash{*b.SensorHash}
+		x.SensorHashOneof = &SensorEvent_SensorHash{*b.SensorHash}
 	}
 	if b.NetworkPolicy != nil {
-		x.xxx_hidden_Resource = &sensorEvent_NetworkPolicy{b.NetworkPolicy}
+		x.Resource = &SensorEvent_NetworkPolicy{b.NetworkPolicy}
 	}
 	if b.Deployment != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Deployment{b.Deployment}
+		x.Resource = &SensorEvent_Deployment{b.Deployment}
 	}
 	if b.Pod != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Pod{b.Pod}
+		x.Resource = &SensorEvent_Pod{b.Pod}
 	}
 	if b.Namespace != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Namespace{b.Namespace}
+		x.Resource = &SensorEvent_Namespace{b.Namespace}
 	}
 	if b.Secret != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Secret{b.Secret}
+		x.Resource = &SensorEvent_Secret{b.Secret}
 	}
 	if b.Node != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Node{b.Node}
+		x.Resource = &SensorEvent_Node{b.Node}
 	}
 	if b.NodeInventory != nil {
-		x.xxx_hidden_Resource = &sensorEvent_NodeInventory{b.NodeInventory}
+		x.Resource = &SensorEvent_NodeInventory{b.NodeInventory}
 	}
 	if b.IndexReport != nil {
-		x.xxx_hidden_Resource = &sensorEvent_IndexReport{b.IndexReport}
+		x.Resource = &SensorEvent_IndexReport{b.IndexReport}
 	}
 	if b.ServiceAccount != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ServiceAccount{b.ServiceAccount}
+		x.Resource = &SensorEvent_ServiceAccount{b.ServiceAccount}
 	}
 	if b.Role != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Role{b.Role}
+		x.Resource = &SensorEvent_Role{b.Role}
 	}
 	if b.Binding != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Binding{b.Binding}
+		x.Resource = &SensorEvent_Binding{b.Binding}
 	}
 	if b.ProcessIndicator != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ProcessIndicator{b.ProcessIndicator}
+		x.Resource = &SensorEvent_ProcessIndicator{b.ProcessIndicator}
 	}
 	if b.ProviderMetadata != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ProviderMetadata{b.ProviderMetadata}
+		x.Resource = &SensorEvent_ProviderMetadata{b.ProviderMetadata}
 	}
 	if b.Synced != nil {
-		x.xxx_hidden_Resource = &sensorEvent_Synced{b.Synced}
+		x.Resource = &SensorEvent_Synced{b.Synced}
 	}
 	if b.OrchestratorMetadata != nil {
-		x.xxx_hidden_Resource = &sensorEvent_OrchestratorMetadata{b.OrchestratorMetadata}
+		x.Resource = &SensorEvent_OrchestratorMetadata{b.OrchestratorMetadata}
 	}
 	if b.ImageIntegration != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ImageIntegration{b.ImageIntegration}
+		x.Resource = &SensorEvent_ImageIntegration{b.ImageIntegration}
 	}
 	if b.ReprocessDeployment != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ReprocessDeployment{b.ReprocessDeployment}
+		x.Resource = &SensorEvent_ReprocessDeployment{b.ReprocessDeployment}
 	}
 	if b.AlertResults != nil {
-		x.xxx_hidden_Resource = &sensorEvent_AlertResults{b.AlertResults}
+		x.Resource = &SensorEvent_AlertResults{b.AlertResults}
 	}
 	if b.ComplianceOperatorResult != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorResult{b.ComplianceOperatorResult}
+		x.Resource = &SensorEvent_ComplianceOperatorResult{b.ComplianceOperatorResult}
 	}
 	if b.ComplianceOperatorProfile != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorProfile{b.ComplianceOperatorProfile}
+		x.Resource = &SensorEvent_ComplianceOperatorProfile{b.ComplianceOperatorProfile}
 	}
 	if b.ComplianceOperatorRule != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRule{b.ComplianceOperatorRule}
+		x.Resource = &SensorEvent_ComplianceOperatorRule{b.ComplianceOperatorRule}
 	}
 	if b.ComplianceOperatorScanSettingBinding != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanSettingBinding{b.ComplianceOperatorScanSettingBinding}
+		x.Resource = &SensorEvent_ComplianceOperatorScanSettingBinding{b.ComplianceOperatorScanSettingBinding}
 	}
 	if b.ComplianceOperatorScan != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScan{b.ComplianceOperatorScan}
+		x.Resource = &SensorEvent_ComplianceOperatorScan{b.ComplianceOperatorScan}
 	}
 	if b.VirtualMachineIndexReport != nil {
-		x.xxx_hidden_Resource = &sensorEvent_VirtualMachineIndexReport{b.VirtualMachineIndexReport}
+		x.Resource = &SensorEvent_VirtualMachineIndexReport{b.VirtualMachineIndexReport}
 	}
 	if b.VirtualMachine != nil {
-		x.xxx_hidden_Resource = &sensorEvent_VirtualMachine{b.VirtualMachine}
+		x.Resource = &SensorEvent_VirtualMachine{b.VirtualMachine}
 	}
 	if b.ComplianceOperatorResultV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorResultV2{b.ComplianceOperatorResultV2}
+		x.Resource = &SensorEvent_ComplianceOperatorResultV2{b.ComplianceOperatorResultV2}
 	}
 	if b.ComplianceOperatorProfileV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorProfileV2{b.ComplianceOperatorProfileV2}
+		x.Resource = &SensorEvent_ComplianceOperatorProfileV2{b.ComplianceOperatorProfileV2}
 	}
 	if b.ComplianceOperatorRuleV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRuleV2{b.ComplianceOperatorRuleV2}
+		x.Resource = &SensorEvent_ComplianceOperatorRuleV2{b.ComplianceOperatorRuleV2}
 	}
 	if b.ComplianceOperatorScanV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanV2{b.ComplianceOperatorScanV2}
+		x.Resource = &SensorEvent_ComplianceOperatorScanV2{b.ComplianceOperatorScanV2}
 	}
 	if b.ComplianceOperatorScanSettingBindingV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorScanSettingBindingV2{b.ComplianceOperatorScanSettingBindingV2}
+		x.Resource = &SensorEvent_ComplianceOperatorScanSettingBindingV2{b.ComplianceOperatorScanSettingBindingV2}
 	}
 	if b.ComplianceOperatorSuiteV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorSuiteV2{b.ComplianceOperatorSuiteV2}
+		x.Resource = &SensorEvent_ComplianceOperatorSuiteV2{b.ComplianceOperatorSuiteV2}
 	}
 	if b.ComplianceOperatorRemediationV2 != nil {
-		x.xxx_hidden_Resource = &sensorEvent_ComplianceOperatorRemediationV2{b.ComplianceOperatorRemediationV2}
+		x.Resource = &SensorEvent_ComplianceOperatorRemediationV2{b.ComplianceOperatorRemediationV2}
 	}
 	return m0
 }
@@ -1977,217 +1838,219 @@ type isSensorEvent_SensorHashOneof interface {
 	isSensorEvent_SensorHashOneof()
 }
 
-type sensorEvent_SensorHash struct {
+type SensorEvent_SensorHash struct {
 	SensorHash uint64 `protobuf:"varint,26,opt,name=sensor_hash,json=sensorHash,oneof"`
 }
 
-func (*sensorEvent_SensorHash) isSensorEvent_SensorHashOneof() {}
+func (*SensorEvent_SensorHash) isSensorEvent_SensorHashOneof() {}
 
 type isSensorEvent_Resource interface {
 	isSensorEvent_Resource()
 }
 
-type sensorEvent_NetworkPolicy struct {
+type SensorEvent_NetworkPolicy struct {
 	NetworkPolicy *storage.NetworkPolicy `protobuf:"bytes,4,opt,name=network_policy,json=networkPolicy,oneof"`
 }
 
-type sensorEvent_Deployment struct {
+type SensorEvent_Deployment struct {
 	Deployment *storage.Deployment `protobuf:"bytes,5,opt,name=deployment,oneof"`
 }
 
-type sensorEvent_Pod struct {
+type SensorEvent_Pod struct {
 	Pod *storage.Pod `protobuf:"bytes,19,opt,name=pod,oneof"`
 }
 
-type sensorEvent_Namespace struct {
+type SensorEvent_Namespace struct {
 	Namespace *storage.NamespaceMetadata `protobuf:"bytes,6,opt,name=namespace,oneof"`
 }
 
-type sensorEvent_Secret struct {
+type SensorEvent_Secret struct {
 	Secret *storage.Secret `protobuf:"bytes,7,opt,name=secret,oneof"`
 }
 
-type sensorEvent_Node struct {
+type SensorEvent_Node struct {
 	Node *storage.Node `protobuf:"bytes,9,opt,name=node,oneof"`
 }
 
-type sensorEvent_NodeInventory struct {
+type SensorEvent_NodeInventory struct {
 	NodeInventory *storage.NodeInventory `protobuf:"bytes,25,opt,name=node_inventory,json=nodeInventory,oneof"`
 }
 
-type sensorEvent_IndexReport struct {
+type SensorEvent_IndexReport struct {
 	IndexReport *v4.IndexReport `protobuf:"bytes,34,opt,name=index_report,json=indexReport,oneof"`
 }
 
-type sensorEvent_ServiceAccount struct {
+type SensorEvent_ServiceAccount struct {
 	ServiceAccount *storage.ServiceAccount `protobuf:"bytes,14,opt,name=service_account,json=serviceAccount,oneof"`
 }
 
-type sensorEvent_Role struct {
+type SensorEvent_Role struct {
 	Role *storage.K8SRole `protobuf:"bytes,15,opt,name=role,oneof"`
 }
 
-type sensorEvent_Binding struct {
+type SensorEvent_Binding struct {
 	Binding *storage.K8SRoleBinding `protobuf:"bytes,16,opt,name=binding,oneof"`
 }
 
-type sensorEvent_ProcessIndicator struct {
+type SensorEvent_ProcessIndicator struct {
 	ProcessIndicator *storage.ProcessIndicator `protobuf:"bytes,8,opt,name=process_indicator,json=processIndicator,oneof"`
 }
 
-type sensorEvent_ProviderMetadata struct {
+type SensorEvent_ProviderMetadata struct {
 	ProviderMetadata *storage.ProviderMetadata `protobuf:"bytes,10,opt,name=provider_metadata,json=providerMetadata,oneof"`
 }
 
-type sensorEvent_Synced struct {
+type SensorEvent_Synced struct {
 	Synced *SensorEvent_ResourcesSynced `protobuf:"bytes,11,opt,name=synced,oneof"`
 }
 
-type sensorEvent_OrchestratorMetadata struct {
+type SensorEvent_OrchestratorMetadata struct {
 	OrchestratorMetadata *storage.OrchestratorMetadata `protobuf:"bytes,12,opt,name=orchestrator_metadata,json=orchestratorMetadata,oneof"`
 }
 
-type sensorEvent_ImageIntegration struct {
+type SensorEvent_ImageIntegration struct {
 	ImageIntegration *storage.ImageIntegration `protobuf:"bytes,13,opt,name=image_integration,json=imageIntegration,oneof"`
 }
 
-type sensorEvent_ReprocessDeployment struct {
+type SensorEvent_ReprocessDeployment struct {
 	ReprocessDeployment *ReprocessDeploymentRisk `protobuf:"bytes,17,opt,name=reprocess_deployment,json=reprocessDeployment,oneof"`
 }
 
-type sensorEvent_AlertResults struct {
+type SensorEvent_AlertResults struct {
 	AlertResults *AlertResults `protobuf:"bytes,18,opt,name=alert_results,json=alertResults,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorResult struct {
+type SensorEvent_ComplianceOperatorResult struct {
 	ComplianceOperatorResult *storage.ComplianceOperatorCheckResult `protobuf:"bytes,20,opt,name=compliance_operator_result,json=complianceOperatorResult,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorProfile struct {
+type SensorEvent_ComplianceOperatorProfile struct {
 	ComplianceOperatorProfile *storage.ComplianceOperatorProfile `protobuf:"bytes,21,opt,name=compliance_operator_profile,json=complianceOperatorProfile,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorRule struct {
+type SensorEvent_ComplianceOperatorRule struct {
 	ComplianceOperatorRule *storage.ComplianceOperatorRule `protobuf:"bytes,22,opt,name=compliance_operator_rule,json=complianceOperatorRule,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorScanSettingBinding struct {
+type SensorEvent_ComplianceOperatorScanSettingBinding struct {
 	ComplianceOperatorScanSettingBinding *storage.ComplianceOperatorScanSettingBinding `protobuf:"bytes,23,opt,name=compliance_operator_scan_setting_binding,json=complianceOperatorScanSettingBinding,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorScan struct {
+type SensorEvent_ComplianceOperatorScan struct {
 	ComplianceOperatorScan *storage.ComplianceOperatorScan `protobuf:"bytes,24,opt,name=compliance_operator_scan,json=complianceOperatorScan,oneof"`
 }
 
-type sensorEvent_VirtualMachineIndexReport struct {
+type SensorEvent_VirtualMachineIndexReport struct {
 	VirtualMachineIndexReport *v1.IndexReportEvent `protobuf:"bytes,35,opt,name=virtual_machine_index_report,json=virtualMachineIndexReport,oneof"`
 }
 
-type sensorEvent_VirtualMachine struct {
+type SensorEvent_VirtualMachine struct {
 	VirtualMachine *v1.VirtualMachine `protobuf:"bytes,36,opt,name=virtual_machine,json=virtualMachine,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorResultV2 struct {
+type SensorEvent_ComplianceOperatorResultV2 struct {
 	// V2 Compliance
 	ComplianceOperatorResultV2 *ComplianceOperatorCheckResultV2 `protobuf:"bytes,27,opt,name=compliance_operator_result_v2,json=complianceOperatorResultV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorProfileV2 struct {
+type SensorEvent_ComplianceOperatorProfileV2 struct {
 	ComplianceOperatorProfileV2 *ComplianceOperatorProfileV2 `protobuf:"bytes,28,opt,name=compliance_operator_profile_v2,json=complianceOperatorProfileV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorRuleV2 struct {
+type SensorEvent_ComplianceOperatorRuleV2 struct {
 	ComplianceOperatorRuleV2 *ComplianceOperatorRuleV2 `protobuf:"bytes,29,opt,name=compliance_operator_rule_v2,json=complianceOperatorRuleV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorScanV2 struct {
+type SensorEvent_ComplianceOperatorScanV2 struct {
 	ComplianceOperatorScanV2 *ComplianceOperatorScanV2 `protobuf:"bytes,30,opt,name=compliance_operator_scan_v2,json=complianceOperatorScanV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorScanSettingBindingV2 struct {
+type SensorEvent_ComplianceOperatorScanSettingBindingV2 struct {
 	ComplianceOperatorScanSettingBindingV2 *ComplianceOperatorScanSettingBindingV2 `protobuf:"bytes,31,opt,name=compliance_operator_scan_setting_binding_v2,json=complianceOperatorScanSettingBindingV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorSuiteV2 struct {
+type SensorEvent_ComplianceOperatorSuiteV2 struct {
 	ComplianceOperatorSuiteV2 *ComplianceOperatorSuiteV2 `protobuf:"bytes,32,opt,name=compliance_operator_suite_v2,json=complianceOperatorSuiteV2,oneof"`
 }
 
-type sensorEvent_ComplianceOperatorRemediationV2 struct {
+type SensorEvent_ComplianceOperatorRemediationV2 struct {
 	ComplianceOperatorRemediationV2 *ComplianceOperatorRemediationV2 `protobuf:"bytes,33,opt,name=compliance_operator_remediation_v2,json=complianceOperatorRemediationV2,oneof"`
 }
 
-func (*sensorEvent_NetworkPolicy) isSensorEvent_Resource() {}
+func (*SensorEvent_NetworkPolicy) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Deployment) isSensorEvent_Resource() {}
+func (*SensorEvent_Deployment) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Pod) isSensorEvent_Resource() {}
+func (*SensorEvent_Pod) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Namespace) isSensorEvent_Resource() {}
+func (*SensorEvent_Namespace) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Secret) isSensorEvent_Resource() {}
+func (*SensorEvent_Secret) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Node) isSensorEvent_Resource() {}
+func (*SensorEvent_Node) isSensorEvent_Resource() {}
 
-func (*sensorEvent_NodeInventory) isSensorEvent_Resource() {}
+func (*SensorEvent_NodeInventory) isSensorEvent_Resource() {}
 
-func (*sensorEvent_IndexReport) isSensorEvent_Resource() {}
+func (*SensorEvent_IndexReport) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ServiceAccount) isSensorEvent_Resource() {}
+func (*SensorEvent_ServiceAccount) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Role) isSensorEvent_Resource() {}
+func (*SensorEvent_Role) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Binding) isSensorEvent_Resource() {}
+func (*SensorEvent_Binding) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ProcessIndicator) isSensorEvent_Resource() {}
+func (*SensorEvent_ProcessIndicator) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ProviderMetadata) isSensorEvent_Resource() {}
+func (*SensorEvent_ProviderMetadata) isSensorEvent_Resource() {}
 
-func (*sensorEvent_Synced) isSensorEvent_Resource() {}
+func (*SensorEvent_Synced) isSensorEvent_Resource() {}
 
-func (*sensorEvent_OrchestratorMetadata) isSensorEvent_Resource() {}
+func (*SensorEvent_OrchestratorMetadata) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ImageIntegration) isSensorEvent_Resource() {}
+func (*SensorEvent_ImageIntegration) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ReprocessDeployment) isSensorEvent_Resource() {}
+func (*SensorEvent_ReprocessDeployment) isSensorEvent_Resource() {}
 
-func (*sensorEvent_AlertResults) isSensorEvent_Resource() {}
+func (*SensorEvent_AlertResults) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorResult) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorResult) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorProfile) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorProfile) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorRule) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorRule) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorScanSettingBinding) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorScanSettingBinding) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorScan) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorScan) isSensorEvent_Resource() {}
 
-func (*sensorEvent_VirtualMachineIndexReport) isSensorEvent_Resource() {}
+func (*SensorEvent_VirtualMachineIndexReport) isSensorEvent_Resource() {}
 
-func (*sensorEvent_VirtualMachine) isSensorEvent_Resource() {}
+func (*SensorEvent_VirtualMachine) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorResultV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorResultV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorProfileV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorProfileV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorRuleV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorRuleV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorScanV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorScanV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorScanSettingBindingV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorScanSettingBindingV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorSuiteV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorSuiteV2) isSensorEvent_Resource() {}
 
-func (*sensorEvent_ComplianceOperatorRemediationV2) isSensorEvent_Resource() {}
+func (*SensorEvent_ComplianceOperatorRemediationV2) isSensorEvent_Resource() {}
 
 type SensorEnforcement struct {
-	state                  protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Enforcement storage.EnforcementAction    `protobuf:"varint,1,opt,name=enforcement,enum=storage.EnforcementAction"`
-	xxx_hidden_Resource    isSensorEnforcement_Resource `protobuf_oneof:"resource"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Enforcement storage.EnforcementAction `protobuf:"varint,1,opt,name=enforcement,enum=storage.EnforcementAction" json:"enforcement,omitempty"`
+	// Types that are valid to be assigned to Resource:
+	//
+	//	*SensorEnforcement_Deployment
+	//	*SensorEnforcement_ContainerInstance
+	Resource      isSensorEnforcement_Resource `protobuf_oneof:"resource"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SensorEnforcement) Reset() {
@@ -2217,16 +2080,21 @@ func (x *SensorEnforcement) ProtoReflect() protoreflect.Message {
 
 func (x *SensorEnforcement) GetEnforcement() storage.EnforcementAction {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Enforcement
-		}
+		return x.Enforcement
 	}
 	return storage.EnforcementAction(0)
 }
 
+func (x *SensorEnforcement) GetResource() isSensorEnforcement_Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 func (x *SensorEnforcement) GetDeployment() *DeploymentEnforcement {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEnforcement_Deployment); ok {
+		if x, ok := x.Resource.(*SensorEnforcement_Deployment); ok {
 			return x.Deployment
 		}
 	}
@@ -2235,7 +2103,7 @@ func (x *SensorEnforcement) GetDeployment() *DeploymentEnforcement {
 
 func (x *SensorEnforcement) GetContainerInstance() *ContainerInstanceEnforcement {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*sensorEnforcement_ContainerInstance); ok {
+		if x, ok := x.Resource.(*SensorEnforcement_ContainerInstance); ok {
 			return x.ContainerInstance
 		}
 	}
@@ -2243,45 +2111,37 @@ func (x *SensorEnforcement) GetContainerInstance() *ContainerInstanceEnforcement
 }
 
 func (x *SensorEnforcement) SetEnforcement(v storage.EnforcementAction) {
-	x.xxx_hidden_Enforcement = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Enforcement = v
 }
 
 func (x *SensorEnforcement) SetDeployment(v *DeploymentEnforcement) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEnforcement_Deployment{v}
+	x.Resource = &SensorEnforcement_Deployment{v}
 }
 
 func (x *SensorEnforcement) SetContainerInstance(v *ContainerInstanceEnforcement) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &sensorEnforcement_ContainerInstance{v}
-}
-
-func (x *SensorEnforcement) HasEnforcement() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Resource = &SensorEnforcement_ContainerInstance{v}
 }
 
 func (x *SensorEnforcement) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *SensorEnforcement) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEnforcement_Deployment)
+	_, ok := x.Resource.(*SensorEnforcement_Deployment)
 	return ok
 }
 
@@ -2289,28 +2149,23 @@ func (x *SensorEnforcement) HasContainerInstance() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*sensorEnforcement_ContainerInstance)
+	_, ok := x.Resource.(*SensorEnforcement_ContainerInstance)
 	return ok
 }
 
-func (x *SensorEnforcement) ClearEnforcement() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enforcement = storage.EnforcementAction_UNSET_ENFORCEMENT
-}
-
 func (x *SensorEnforcement) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 func (x *SensorEnforcement) ClearDeployment() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEnforcement_Deployment); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEnforcement_Deployment); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *SensorEnforcement) ClearContainerInstance() {
-	if _, ok := x.xxx_hidden_Resource.(*sensorEnforcement_ContainerInstance); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*SensorEnforcement_ContainerInstance); ok {
+		x.Resource = nil
 	}
 }
 
@@ -2322,10 +2177,10 @@ func (x *SensorEnforcement) WhichResource() case_SensorEnforcement_Resource {
 	if x == nil {
 		return SensorEnforcement_Resource_not_set_case
 	}
-	switch x.xxx_hidden_Resource.(type) {
-	case *sensorEnforcement_Deployment:
+	switch x.Resource.(type) {
+	case *SensorEnforcement_Deployment:
 		return SensorEnforcement_Deployment_case
-	case *sensorEnforcement_ContainerInstance:
+	case *SensorEnforcement_ContainerInstance:
 		return SensorEnforcement_ContainerInstance_case
 	default:
 		return SensorEnforcement_Resource_not_set_case
@@ -2335,26 +2190,23 @@ func (x *SensorEnforcement) WhichResource() case_SensorEnforcement_Resource {
 type SensorEnforcement_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Enforcement *storage.EnforcementAction
-	// Fields of oneof xxx_hidden_Resource:
+	Enforcement storage.EnforcementAction
+	// Fields of oneof Resource:
 	Deployment        *DeploymentEnforcement
 	ContainerInstance *ContainerInstanceEnforcement
-	// -- end of xxx_hidden_Resource
+	// -- end of Resource
 }
 
 func (b0 SensorEnforcement_builder) Build() *SensorEnforcement {
 	m0 := &SensorEnforcement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enforcement != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Enforcement = *b.Enforcement
-	}
+	x.Enforcement = b.Enforcement
 	if b.Deployment != nil {
-		x.xxx_hidden_Resource = &sensorEnforcement_Deployment{b.Deployment}
+		x.Resource = &SensorEnforcement_Deployment{b.Deployment}
 	}
 	if b.ContainerInstance != nil {
-		x.xxx_hidden_Resource = &sensorEnforcement_ContainerInstance{b.ContainerInstance}
+		x.Resource = &SensorEnforcement_ContainerInstance{b.ContainerInstance}
 	}
 	return m0
 }
@@ -2373,30 +2225,28 @@ type isSensorEnforcement_Resource interface {
 	isSensorEnforcement_Resource()
 }
 
-type sensorEnforcement_Deployment struct {
+type SensorEnforcement_Deployment struct {
 	Deployment *DeploymentEnforcement `protobuf:"bytes,2,opt,name=deployment,oneof"`
 }
 
-type sensorEnforcement_ContainerInstance struct {
+type SensorEnforcement_ContainerInstance struct {
 	ContainerInstance *ContainerInstanceEnforcement `protobuf:"bytes,3,opt,name=container_instance,json=containerInstance,oneof"`
 }
 
-func (*sensorEnforcement_Deployment) isSensorEnforcement_Resource() {}
+func (*SensorEnforcement_Deployment) isSensorEnforcement_Resource() {}
 
-func (*sensorEnforcement_ContainerInstance) isSensorEnforcement_Resource() {}
+func (*SensorEnforcement_ContainerInstance) isSensorEnforcement_Resource() {}
 
 type DeploymentEnforcement struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DeploymentId   *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_DeploymentName *string                `protobuf:"bytes,2,opt,name=deployment_name,json=deploymentName"`
-	xxx_hidden_DeploymentType *string                `protobuf:"bytes,3,opt,name=deployment_type,json=deploymentType"`
-	xxx_hidden_Namespace      *string                `protobuf:"bytes,4,opt,name=namespace"`
-	xxx_hidden_AlertId        *string                `protobuf:"bytes,5,opt,name=alert_id,json=alertId"`
-	xxx_hidden_PolicyName     *string                `protobuf:"bytes,6,opt,name=policy_name,json=policyName"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	DeploymentId   string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	DeploymentName string                 `protobuf:"bytes,2,opt,name=deployment_name,json=deploymentName" json:"deployment_name,omitempty"`
+	DeploymentType string                 `protobuf:"bytes,3,opt,name=deployment_type,json=deploymentType" json:"deployment_type,omitempty"`
+	Namespace      string                 `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty"`
+	AlertId        string                 `protobuf:"bytes,5,opt,name=alert_id,json=alertId" json:"alert_id,omitempty"`
+	PolicyName     string                 `protobuf:"bytes,6,opt,name=policy_name,json=policyName" json:"policy_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DeploymentEnforcement) Reset() {
@@ -2426,216 +2276,100 @@ func (x *DeploymentEnforcement) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentEnforcement) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) GetDeploymentName() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentName != nil {
-			return *x.xxx_hidden_DeploymentName
-		}
-		return ""
+		return x.DeploymentName
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) GetDeploymentType() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentType != nil {
-			return *x.xxx_hidden_DeploymentType
-		}
-		return ""
+		return x.DeploymentType
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) GetAlertId() string {
 	if x != nil {
-		if x.xxx_hidden_AlertId != nil {
-			return *x.xxx_hidden_AlertId
-		}
-		return ""
+		return x.AlertId
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) GetPolicyName() string {
 	if x != nil {
-		if x.xxx_hidden_PolicyName != nil {
-			return *x.xxx_hidden_PolicyName
-		}
-		return ""
+		return x.PolicyName
 	}
 	return ""
 }
 
 func (x *DeploymentEnforcement) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.DeploymentId = v
 }
 
 func (x *DeploymentEnforcement) SetDeploymentName(v string) {
-	x.xxx_hidden_DeploymentName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.DeploymentName = v
 }
 
 func (x *DeploymentEnforcement) SetDeploymentType(v string) {
-	x.xxx_hidden_DeploymentType = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.DeploymentType = v
 }
 
 func (x *DeploymentEnforcement) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Namespace = v
 }
 
 func (x *DeploymentEnforcement) SetAlertId(v string) {
-	x.xxx_hidden_AlertId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.AlertId = v
 }
 
 func (x *DeploymentEnforcement) SetPolicyName(v string) {
-	x.xxx_hidden_PolicyName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *DeploymentEnforcement) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeploymentEnforcement) HasDeploymentName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeploymentEnforcement) HasDeploymentType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *DeploymentEnforcement) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *DeploymentEnforcement) HasAlertId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *DeploymentEnforcement) HasPolicyName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *DeploymentEnforcement) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *DeploymentEnforcement) ClearDeploymentName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_DeploymentName = nil
-}
-
-func (x *DeploymentEnforcement) ClearDeploymentType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_DeploymentType = nil
-}
-
-func (x *DeploymentEnforcement) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *DeploymentEnforcement) ClearAlertId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_AlertId = nil
-}
-
-func (x *DeploymentEnforcement) ClearPolicyName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_PolicyName = nil
+	x.PolicyName = v
 }
 
 type DeploymentEnforcement_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	DeploymentId   *string
-	DeploymentName *string
-	DeploymentType *string
-	Namespace      *string
-	AlertId        *string
-	PolicyName     *string
+	DeploymentId   string
+	DeploymentName string
+	DeploymentType string
+	Namespace      string
+	AlertId        string
+	PolicyName     string
 }
 
 func (b0 DeploymentEnforcement_builder) Build() *DeploymentEnforcement {
 	m0 := &DeploymentEnforcement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.DeploymentName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_DeploymentName = b.DeploymentName
-	}
-	if b.DeploymentType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_DeploymentType = b.DeploymentType
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.AlertId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_AlertId = b.AlertId
-	}
-	if b.PolicyName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_PolicyName = b.PolicyName
-	}
+	x.DeploymentId = b.DeploymentId
+	x.DeploymentName = b.DeploymentName
+	x.DeploymentType = b.DeploymentType
+	x.Namespace = b.Namespace
+	x.AlertId = b.AlertId
+	x.PolicyName = b.PolicyName
 	return m0
 }
 
 type ContainerInstanceEnforcement struct {
-	state                            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PodId                 *string                `protobuf:"bytes,2,opt,name=pod_id,json=podId"`
-	xxx_hidden_DeploymentEnforcement *DeploymentEnforcement `protobuf:"bytes,3,opt,name=deployment_enforcement,json=deploymentEnforcement"`
-	XXX_raceDetectHookData           protoimpl.RaceDetectHookData
-	XXX_presence                     [1]uint32
-	unknownFields                    protoimpl.UnknownFields
-	sizeCache                        protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"hybrid.v1"`
+	PodId                 string                 `protobuf:"bytes,2,opt,name=pod_id,json=podId" json:"pod_id,omitempty"`
+	DeploymentEnforcement *DeploymentEnforcement `protobuf:"bytes,3,opt,name=deployment_enforcement,json=deploymentEnforcement" json:"deployment_enforcement,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ContainerInstanceEnforcement) Reset() {
@@ -2665,57 +2399,41 @@ func (x *ContainerInstanceEnforcement) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerInstanceEnforcement) GetPodId() string {
 	if x != nil {
-		if x.xxx_hidden_PodId != nil {
-			return *x.xxx_hidden_PodId
-		}
-		return ""
+		return x.PodId
 	}
 	return ""
 }
 
 func (x *ContainerInstanceEnforcement) GetDeploymentEnforcement() *DeploymentEnforcement {
 	if x != nil {
-		return x.xxx_hidden_DeploymentEnforcement
+		return x.DeploymentEnforcement
 	}
 	return nil
 }
 
 func (x *ContainerInstanceEnforcement) SetPodId(v string) {
-	x.xxx_hidden_PodId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.PodId = v
 }
 
 func (x *ContainerInstanceEnforcement) SetDeploymentEnforcement(v *DeploymentEnforcement) {
-	x.xxx_hidden_DeploymentEnforcement = v
-}
-
-func (x *ContainerInstanceEnforcement) HasPodId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.DeploymentEnforcement = v
 }
 
 func (x *ContainerInstanceEnforcement) HasDeploymentEnforcement() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_DeploymentEnforcement != nil
-}
-
-func (x *ContainerInstanceEnforcement) ClearPodId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_PodId = nil
+	return x.DeploymentEnforcement != nil
 }
 
 func (x *ContainerInstanceEnforcement) ClearDeploymentEnforcement() {
-	x.xxx_hidden_DeploymentEnforcement = nil
+	x.DeploymentEnforcement = nil
 }
 
 type ContainerInstanceEnforcement_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	PodId                 *string
+	PodId                 string
 	DeploymentEnforcement *DeploymentEnforcement
 }
 
@@ -2723,22 +2441,21 @@ func (b0 ContainerInstanceEnforcement_builder) Build() *ContainerInstanceEnforce
 	m0 := &ContainerInstanceEnforcement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.PodId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_PodId = b.PodId
-	}
-	x.xxx_hidden_DeploymentEnforcement = b.DeploymentEnforcement
+	x.PodId = b.PodId
+	x.DeploymentEnforcement = b.DeploymentEnforcement
 	return m0
 }
 
 type ScrapeCommand struct {
-	state                  protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_ScrapeId    *string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId"`
-	xxx_hidden_Command     isScrapeCommand_Command `protobuf_oneof:"command"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId" json:"scrape_id,omitempty"`
+	// Types that are valid to be assigned to Command:
+	//
+	//	*ScrapeCommand_StartScrape
+	//	*ScrapeCommand_KillScrape
+	Command       isScrapeCommand_Command `protobuf_oneof:"command"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScrapeCommand) Reset() {
@@ -2768,17 +2485,21 @@ func (x *ScrapeCommand) ProtoReflect() protoreflect.Message {
 
 func (x *ScrapeCommand) GetScrapeId() string {
 	if x != nil {
-		if x.xxx_hidden_ScrapeId != nil {
-			return *x.xxx_hidden_ScrapeId
-		}
-		return ""
+		return x.ScrapeId
 	}
 	return ""
 }
 
+func (x *ScrapeCommand) GetCommand() isScrapeCommand_Command {
+	if x != nil {
+		return x.Command
+	}
+	return nil
+}
+
 func (x *ScrapeCommand) GetStartScrape() *StartScrape {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Command.(*scrapeCommand_StartScrape); ok {
+		if x, ok := x.Command.(*ScrapeCommand_StartScrape); ok {
 			return x.StartScrape
 		}
 	}
@@ -2787,7 +2508,7 @@ func (x *ScrapeCommand) GetStartScrape() *StartScrape {
 
 func (x *ScrapeCommand) GetKillScrape() *KillScrape {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Command.(*scrapeCommand_KillScrape); ok {
+		if x, ok := x.Command.(*ScrapeCommand_KillScrape); ok {
 			return x.KillScrape
 		}
 	}
@@ -2795,45 +2516,37 @@ func (x *ScrapeCommand) GetKillScrape() *KillScrape {
 }
 
 func (x *ScrapeCommand) SetScrapeId(v string) {
-	x.xxx_hidden_ScrapeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ScrapeId = v
 }
 
 func (x *ScrapeCommand) SetStartScrape(v *StartScrape) {
 	if v == nil {
-		x.xxx_hidden_Command = nil
+		x.Command = nil
 		return
 	}
-	x.xxx_hidden_Command = &scrapeCommand_StartScrape{v}
+	x.Command = &ScrapeCommand_StartScrape{v}
 }
 
 func (x *ScrapeCommand) SetKillScrape(v *KillScrape) {
 	if v == nil {
-		x.xxx_hidden_Command = nil
+		x.Command = nil
 		return
 	}
-	x.xxx_hidden_Command = &scrapeCommand_KillScrape{v}
-}
-
-func (x *ScrapeCommand) HasScrapeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Command = &ScrapeCommand_KillScrape{v}
 }
 
 func (x *ScrapeCommand) HasCommand() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Command != nil
+	return x.Command != nil
 }
 
 func (x *ScrapeCommand) HasStartScrape() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Command.(*scrapeCommand_StartScrape)
+	_, ok := x.Command.(*ScrapeCommand_StartScrape)
 	return ok
 }
 
@@ -2841,28 +2554,23 @@ func (x *ScrapeCommand) HasKillScrape() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Command.(*scrapeCommand_KillScrape)
+	_, ok := x.Command.(*ScrapeCommand_KillScrape)
 	return ok
 }
 
-func (x *ScrapeCommand) ClearScrapeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScrapeId = nil
-}
-
 func (x *ScrapeCommand) ClearCommand() {
-	x.xxx_hidden_Command = nil
+	x.Command = nil
 }
 
 func (x *ScrapeCommand) ClearStartScrape() {
-	if _, ok := x.xxx_hidden_Command.(*scrapeCommand_StartScrape); ok {
-		x.xxx_hidden_Command = nil
+	if _, ok := x.Command.(*ScrapeCommand_StartScrape); ok {
+		x.Command = nil
 	}
 }
 
 func (x *ScrapeCommand) ClearKillScrape() {
-	if _, ok := x.xxx_hidden_Command.(*scrapeCommand_KillScrape); ok {
-		x.xxx_hidden_Command = nil
+	if _, ok := x.Command.(*ScrapeCommand_KillScrape); ok {
+		x.Command = nil
 	}
 }
 
@@ -2874,10 +2582,10 @@ func (x *ScrapeCommand) WhichCommand() case_ScrapeCommand_Command {
 	if x == nil {
 		return ScrapeCommand_Command_not_set_case
 	}
-	switch x.xxx_hidden_Command.(type) {
-	case *scrapeCommand_StartScrape:
+	switch x.Command.(type) {
+	case *ScrapeCommand_StartScrape:
 		return ScrapeCommand_StartScrape_case
-	case *scrapeCommand_KillScrape:
+	case *ScrapeCommand_KillScrape:
 		return ScrapeCommand_KillScrape_case
 	default:
 		return ScrapeCommand_Command_not_set_case
@@ -2887,26 +2595,23 @@ func (x *ScrapeCommand) WhichCommand() case_ScrapeCommand_Command {
 type ScrapeCommand_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScrapeId *string
-	// Fields of oneof xxx_hidden_Command:
+	ScrapeId string
+	// Fields of oneof Command:
 	StartScrape *StartScrape
 	KillScrape  *KillScrape
-	// -- end of xxx_hidden_Command
+	// -- end of Command
 }
 
 func (b0 ScrapeCommand_builder) Build() *ScrapeCommand {
 	m0 := &ScrapeCommand{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScrapeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ScrapeId = b.ScrapeId
-	}
+	x.ScrapeId = b.ScrapeId
 	if b.StartScrape != nil {
-		x.xxx_hidden_Command = &scrapeCommand_StartScrape{b.StartScrape}
+		x.Command = &ScrapeCommand_StartScrape{b.StartScrape}
 	}
 	if b.KillScrape != nil {
-		x.xxx_hidden_Command = &scrapeCommand_KillScrape{b.KillScrape}
+		x.Command = &ScrapeCommand_KillScrape{b.KillScrape}
 	}
 	return m0
 }
@@ -2925,24 +2630,26 @@ type isScrapeCommand_Command interface {
 	isScrapeCommand_Command()
 }
 
-type scrapeCommand_StartScrape struct {
+type ScrapeCommand_StartScrape struct {
 	StartScrape *StartScrape `protobuf:"bytes,2,opt,name=start_scrape,json=startScrape,oneof"`
 }
 
-type scrapeCommand_KillScrape struct {
+type ScrapeCommand_KillScrape struct {
 	KillScrape *KillScrape `protobuf:"bytes,3,opt,name=kill_scrape,json=killScrape,oneof"`
 }
 
-func (*scrapeCommand_StartScrape) isScrapeCommand_Command() {}
+func (*ScrapeCommand_StartScrape) isScrapeCommand_Command() {}
 
-func (*scrapeCommand_KillScrape) isScrapeCommand_Command() {}
+func (*ScrapeCommand_KillScrape) isScrapeCommand_Command() {}
 
 type StartScrape struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Hostnames []string               `protobuf:"bytes,1,rep,name=hostnames"`
-	xxx_hidden_Standards []string               `protobuf:"bytes,2,rep,name=standards"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Dictates the hosts we expect results from.
+	Hostnames []string `protobuf:"bytes,1,rep,name=hostnames" json:"hostnames,omitempty"`
+	// Dictates which standards the compliance pods should run.
+	Standards     []string `protobuf:"bytes,2,rep,name=standards" json:"standards,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StartScrape) Reset() {
@@ -2972,24 +2679,24 @@ func (x *StartScrape) ProtoReflect() protoreflect.Message {
 
 func (x *StartScrape) GetHostnames() []string {
 	if x != nil {
-		return x.xxx_hidden_Hostnames
+		return x.Hostnames
 	}
 	return nil
 }
 
 func (x *StartScrape) GetStandards() []string {
 	if x != nil {
-		return x.xxx_hidden_Standards
+		return x.Standards
 	}
 	return nil
 }
 
 func (x *StartScrape) SetHostnames(v []string) {
-	x.xxx_hidden_Hostnames = v
+	x.Hostnames = v
 }
 
 func (x *StartScrape) SetStandards(v []string) {
-	x.xxx_hidden_Standards = v
+	x.Standards = v
 }
 
 type StartScrape_builder struct {
@@ -3005,13 +2712,13 @@ func (b0 StartScrape_builder) Build() *StartScrape {
 	m0 := &StartScrape{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Hostnames = b.Hostnames
-	x.xxx_hidden_Standards = b.Standards
+	x.Hostnames = b.Hostnames
+	x.Standards = b.Standards
 	return m0
 }
 
 type KillScrape struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3054,15 +2761,16 @@ func (b0 KillScrape_builder) Build() *KillScrape {
 }
 
 type ScrapeUpdate struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScrapeId *string                `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId"`
-	xxx_hidden_Update   isScrapeUpdate_Update  `protobuf_oneof:"update"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId" json:"scrape_id,omitempty"`
+	// Types that are valid to be assigned to Update:
+	//
+	//	*ScrapeUpdate_ComplianceReturn
+	//	*ScrapeUpdate_ScrapeStarted
+	//	*ScrapeUpdate_ScrapeKilled
+	Update        isScrapeUpdate_Update `protobuf_oneof:"update"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScrapeUpdate) Reset() {
@@ -3092,17 +2800,21 @@ func (x *ScrapeUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *ScrapeUpdate) GetScrapeId() string {
 	if x != nil {
-		if x.xxx_hidden_ScrapeId != nil {
-			return *x.xxx_hidden_ScrapeId
-		}
-		return ""
+		return x.ScrapeId
 	}
 	return ""
 }
 
+func (x *ScrapeUpdate) GetUpdate() isScrapeUpdate_Update {
+	if x != nil {
+		return x.Update
+	}
+	return nil
+}
+
 func (x *ScrapeUpdate) GetComplianceReturn() *compliance.ComplianceReturn {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Update.(*scrapeUpdate_ComplianceReturn); ok {
+		if x, ok := x.Update.(*ScrapeUpdate_ComplianceReturn); ok {
 			return x.ComplianceReturn
 		}
 	}
@@ -3111,7 +2823,7 @@ func (x *ScrapeUpdate) GetComplianceReturn() *compliance.ComplianceReturn {
 
 func (x *ScrapeUpdate) GetScrapeStarted() *ScrapeStarted {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeStarted); ok {
+		if x, ok := x.Update.(*ScrapeUpdate_ScrapeStarted); ok {
 			return x.ScrapeStarted
 		}
 	}
@@ -3120,7 +2832,7 @@ func (x *ScrapeUpdate) GetScrapeStarted() *ScrapeStarted {
 
 func (x *ScrapeUpdate) GetScrapeKilled() *ScrapeKilled {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeKilled); ok {
+		if x, ok := x.Update.(*ScrapeUpdate_ScrapeKilled); ok {
 			return x.ScrapeKilled
 		}
 	}
@@ -3128,53 +2840,45 @@ func (x *ScrapeUpdate) GetScrapeKilled() *ScrapeKilled {
 }
 
 func (x *ScrapeUpdate) SetScrapeId(v string) {
-	x.xxx_hidden_ScrapeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ScrapeId = v
 }
 
 func (x *ScrapeUpdate) SetComplianceReturn(v *compliance.ComplianceReturn) {
 	if v == nil {
-		x.xxx_hidden_Update = nil
+		x.Update = nil
 		return
 	}
-	x.xxx_hidden_Update = &scrapeUpdate_ComplianceReturn{v}
+	x.Update = &ScrapeUpdate_ComplianceReturn{v}
 }
 
 func (x *ScrapeUpdate) SetScrapeStarted(v *ScrapeStarted) {
 	if v == nil {
-		x.xxx_hidden_Update = nil
+		x.Update = nil
 		return
 	}
-	x.xxx_hidden_Update = &scrapeUpdate_ScrapeStarted{v}
+	x.Update = &ScrapeUpdate_ScrapeStarted{v}
 }
 
 func (x *ScrapeUpdate) SetScrapeKilled(v *ScrapeKilled) {
 	if v == nil {
-		x.xxx_hidden_Update = nil
+		x.Update = nil
 		return
 	}
-	x.xxx_hidden_Update = &scrapeUpdate_ScrapeKilled{v}
-}
-
-func (x *ScrapeUpdate) HasScrapeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Update = &ScrapeUpdate_ScrapeKilled{v}
 }
 
 func (x *ScrapeUpdate) HasUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Update != nil
+	return x.Update != nil
 }
 
 func (x *ScrapeUpdate) HasComplianceReturn() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Update.(*scrapeUpdate_ComplianceReturn)
+	_, ok := x.Update.(*ScrapeUpdate_ComplianceReturn)
 	return ok
 }
 
@@ -3182,7 +2886,7 @@ func (x *ScrapeUpdate) HasScrapeStarted() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeStarted)
+	_, ok := x.Update.(*ScrapeUpdate_ScrapeStarted)
 	return ok
 }
 
@@ -3190,34 +2894,29 @@ func (x *ScrapeUpdate) HasScrapeKilled() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeKilled)
+	_, ok := x.Update.(*ScrapeUpdate_ScrapeKilled)
 	return ok
 }
 
-func (x *ScrapeUpdate) ClearScrapeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScrapeId = nil
-}
-
 func (x *ScrapeUpdate) ClearUpdate() {
-	x.xxx_hidden_Update = nil
+	x.Update = nil
 }
 
 func (x *ScrapeUpdate) ClearComplianceReturn() {
-	if _, ok := x.xxx_hidden_Update.(*scrapeUpdate_ComplianceReturn); ok {
-		x.xxx_hidden_Update = nil
+	if _, ok := x.Update.(*ScrapeUpdate_ComplianceReturn); ok {
+		x.Update = nil
 	}
 }
 
 func (x *ScrapeUpdate) ClearScrapeStarted() {
-	if _, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeStarted); ok {
-		x.xxx_hidden_Update = nil
+	if _, ok := x.Update.(*ScrapeUpdate_ScrapeStarted); ok {
+		x.Update = nil
 	}
 }
 
 func (x *ScrapeUpdate) ClearScrapeKilled() {
-	if _, ok := x.xxx_hidden_Update.(*scrapeUpdate_ScrapeKilled); ok {
-		x.xxx_hidden_Update = nil
+	if _, ok := x.Update.(*ScrapeUpdate_ScrapeKilled); ok {
+		x.Update = nil
 	}
 }
 
@@ -3230,12 +2929,12 @@ func (x *ScrapeUpdate) WhichUpdate() case_ScrapeUpdate_Update {
 	if x == nil {
 		return ScrapeUpdate_Update_not_set_case
 	}
-	switch x.xxx_hidden_Update.(type) {
-	case *scrapeUpdate_ComplianceReturn:
+	switch x.Update.(type) {
+	case *ScrapeUpdate_ComplianceReturn:
 		return ScrapeUpdate_ComplianceReturn_case
-	case *scrapeUpdate_ScrapeStarted:
+	case *ScrapeUpdate_ScrapeStarted:
 		return ScrapeUpdate_ScrapeStarted_case
-	case *scrapeUpdate_ScrapeKilled:
+	case *ScrapeUpdate_ScrapeKilled:
 		return ScrapeUpdate_ScrapeKilled_case
 	default:
 		return ScrapeUpdate_Update_not_set_case
@@ -3245,30 +2944,27 @@ func (x *ScrapeUpdate) WhichUpdate() case_ScrapeUpdate_Update {
 type ScrapeUpdate_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScrapeId *string
-	// Fields of oneof xxx_hidden_Update:
+	ScrapeId string
+	// Fields of oneof Update:
 	ComplianceReturn *compliance.ComplianceReturn
 	ScrapeStarted    *ScrapeStarted
 	ScrapeKilled     *ScrapeKilled
-	// -- end of xxx_hidden_Update
+	// -- end of Update
 }
 
 func (b0 ScrapeUpdate_builder) Build() *ScrapeUpdate {
 	m0 := &ScrapeUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScrapeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ScrapeId = b.ScrapeId
-	}
+	x.ScrapeId = b.ScrapeId
 	if b.ComplianceReturn != nil {
-		x.xxx_hidden_Update = &scrapeUpdate_ComplianceReturn{b.ComplianceReturn}
+		x.Update = &ScrapeUpdate_ComplianceReturn{b.ComplianceReturn}
 	}
 	if b.ScrapeStarted != nil {
-		x.xxx_hidden_Update = &scrapeUpdate_ScrapeStarted{b.ScrapeStarted}
+		x.Update = &ScrapeUpdate_ScrapeStarted{b.ScrapeStarted}
 	}
 	if b.ScrapeKilled != nil {
-		x.xxx_hidden_Update = &scrapeUpdate_ScrapeKilled{b.ScrapeKilled}
+		x.Update = &ScrapeUpdate_ScrapeKilled{b.ScrapeKilled}
 	}
 	return m0
 }
@@ -3287,31 +2983,29 @@ type isScrapeUpdate_Update interface {
 	isScrapeUpdate_Update()
 }
 
-type scrapeUpdate_ComplianceReturn struct {
+type ScrapeUpdate_ComplianceReturn struct {
 	ComplianceReturn *compliance.ComplianceReturn `protobuf:"bytes,2,opt,name=compliance_return,json=complianceReturn,oneof"`
 }
 
-type scrapeUpdate_ScrapeStarted struct {
+type ScrapeUpdate_ScrapeStarted struct {
 	ScrapeStarted *ScrapeStarted `protobuf:"bytes,3,opt,name=scrape_started,json=scrapeStarted,oneof"`
 }
 
-type scrapeUpdate_ScrapeKilled struct {
+type ScrapeUpdate_ScrapeKilled struct {
 	ScrapeKilled *ScrapeKilled `protobuf:"bytes,4,opt,name=scrape_killed,json=scrapeKilled,oneof"`
 }
 
-func (*scrapeUpdate_ComplianceReturn) isScrapeUpdate_Update() {}
+func (*ScrapeUpdate_ComplianceReturn) isScrapeUpdate_Update() {}
 
-func (*scrapeUpdate_ScrapeStarted) isScrapeUpdate_Update() {}
+func (*ScrapeUpdate_ScrapeStarted) isScrapeUpdate_Update() {}
 
-func (*scrapeUpdate_ScrapeKilled) isScrapeUpdate_Update() {}
+func (*ScrapeUpdate_ScrapeKilled) isScrapeUpdate_Update() {}
 
 type ScrapeStarted struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ErrorMessage *string                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScrapeStarted) Reset() {
@@ -3341,55 +3035,34 @@ func (x *ScrapeStarted) ProtoReflect() protoreflect.Message {
 
 func (x *ScrapeStarted) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ScrapeStarted) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ScrapeStarted) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ScrapeStarted) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ErrorMessage = nil
+	x.ErrorMessage = v
 }
 
 type ScrapeStarted_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ErrorMessage *string
+	ErrorMessage string
 }
 
 func (b0 ScrapeStarted_builder) Build() *ScrapeStarted {
 	m0 := &ScrapeStarted{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
+	x.ErrorMessage = b.ErrorMessage
 	return m0
 }
 
 type ScrapeKilled struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ErrorMessage *string                `protobuf:"bytes,1,opt,name=error_message,json=errorMessage"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScrapeKilled) Reset() {
@@ -3419,56 +3092,35 @@ func (x *ScrapeKilled) ProtoReflect() protoreflect.Message {
 
 func (x *ScrapeKilled) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *ScrapeKilled) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ScrapeKilled) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ScrapeKilled) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ErrorMessage = nil
+	x.ErrorMessage = v
 }
 
 type ScrapeKilled_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ErrorMessage *string
+	ErrorMessage string
 }
 
 func (b0 ScrapeKilled_builder) Build() *ScrapeKilled {
 	m0 := &ScrapeKilled{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
+	x.ErrorMessage = b.ErrorMessage
 	return m0
 }
 
 type NetworkPoliciesCommand struct {
-	state                  protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_SeqId       int64                           `protobuf:"varint,1,opt,name=seq_id,json=seqId"`
-	xxx_hidden_Payload     *NetworkPoliciesCommand_Payload `protobuf:"bytes,2,opt,name=payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
+	SeqId         int64                           `protobuf:"varint,1,opt,name=seq_id,json=seqId" json:"seq_id,omitempty"`
+	Payload       *NetworkPoliciesCommand_Payload `protobuf:"bytes,2,opt,name=payload" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesCommand) Reset() {
@@ -3498,54 +3150,41 @@ func (x *NetworkPoliciesCommand) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPoliciesCommand) GetSeqId() int64 {
 	if x != nil {
-		return x.xxx_hidden_SeqId
+		return x.SeqId
 	}
 	return 0
 }
 
 func (x *NetworkPoliciesCommand) GetPayload() *NetworkPoliciesCommand_Payload {
 	if x != nil {
-		return x.xxx_hidden_Payload
+		return x.Payload
 	}
 	return nil
 }
 
 func (x *NetworkPoliciesCommand) SetSeqId(v int64) {
-	x.xxx_hidden_SeqId = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.SeqId = v
 }
 
 func (x *NetworkPoliciesCommand) SetPayload(v *NetworkPoliciesCommand_Payload) {
-	x.xxx_hidden_Payload = v
-}
-
-func (x *NetworkPoliciesCommand) HasSeqId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = v
 }
 
 func (x *NetworkPoliciesCommand) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
-}
-
-func (x *NetworkPoliciesCommand) ClearSeqId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_SeqId = 0
+	return x.Payload != nil
 }
 
 func (x *NetworkPoliciesCommand) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 type NetworkPoliciesCommand_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SeqId   *int64
+	SeqId   int64
 	Payload *NetworkPoliciesCommand_Payload
 }
 
@@ -3553,22 +3192,17 @@ func (b0 NetworkPoliciesCommand_builder) Build() *NetworkPoliciesCommand {
 	m0 := &NetworkPoliciesCommand{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.SeqId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_SeqId = *b.SeqId
-	}
-	x.xxx_hidden_Payload = b.Payload
+	x.SeqId = b.SeqId
+	x.Payload = b.Payload
 	return m0
 }
 
 type NetworkPoliciesResponse struct {
-	state                  protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_SeqId       int64                            `protobuf:"varint,1,opt,name=seq_id,json=seqId"`
-	xxx_hidden_Payload     *NetworkPoliciesResponse_Payload `protobuf:"bytes,2,opt,name=payload"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState           `protogen:"hybrid.v1"`
+	SeqId         int64                            `protobuf:"varint,1,opt,name=seq_id,json=seqId" json:"seq_id,omitempty"`
+	Payload       *NetworkPoliciesResponse_Payload `protobuf:"bytes,2,opt,name=payload" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesResponse) Reset() {
@@ -3598,54 +3232,41 @@ func (x *NetworkPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPoliciesResponse) GetSeqId() int64 {
 	if x != nil {
-		return x.xxx_hidden_SeqId
+		return x.SeqId
 	}
 	return 0
 }
 
 func (x *NetworkPoliciesResponse) GetPayload() *NetworkPoliciesResponse_Payload {
 	if x != nil {
-		return x.xxx_hidden_Payload
+		return x.Payload
 	}
 	return nil
 }
 
 func (x *NetworkPoliciesResponse) SetSeqId(v int64) {
-	x.xxx_hidden_SeqId = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.SeqId = v
 }
 
 func (x *NetworkPoliciesResponse) SetPayload(v *NetworkPoliciesResponse_Payload) {
-	x.xxx_hidden_Payload = v
-}
-
-func (x *NetworkPoliciesResponse) HasSeqId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Payload = v
 }
 
 func (x *NetworkPoliciesResponse) HasPayload() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Payload != nil
-}
-
-func (x *NetworkPoliciesResponse) ClearSeqId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_SeqId = 0
+	return x.Payload != nil
 }
 
 func (x *NetworkPoliciesResponse) ClearPayload() {
-	x.xxx_hidden_Payload = nil
+	x.Payload = nil
 }
 
 type NetworkPoliciesResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SeqId   *int64
+	SeqId   int64
 	Payload *NetworkPoliciesResponse_Payload
 }
 
@@ -3653,19 +3274,16 @@ func (b0 NetworkPoliciesResponse_builder) Build() *NetworkPoliciesResponse {
 	m0 := &NetworkPoliciesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.SeqId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_SeqId = *b.SeqId
-	}
-	x.xxx_hidden_Payload = b.Payload
+	x.SeqId = b.SeqId
+	x.Payload = b.Payload
 	return m0
 }
 
 type SensorEvent_ResourcesSynced struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UnchangedIds []string               `protobuf:"bytes,1,rep,name=unchanged_ids,json=unchangedIds"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	UnchangedIds  []string               `protobuf:"bytes,1,rep,name=unchanged_ids,json=unchangedIds" json:"unchanged_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SensorEvent_ResourcesSynced) Reset() {
@@ -3695,13 +3313,13 @@ func (x *SensorEvent_ResourcesSynced) ProtoReflect() protoreflect.Message {
 
 func (x *SensorEvent_ResourcesSynced) GetUnchangedIds() []string {
 	if x != nil {
-		return x.xxx_hidden_UnchangedIds
+		return x.UnchangedIds
 	}
 	return nil
 }
 
 func (x *SensorEvent_ResourcesSynced) SetUnchangedIds(v []string) {
-	x.xxx_hidden_UnchangedIds = v
+	x.UnchangedIds = v
 }
 
 type SensorEvent_ResourcesSynced_builder struct {
@@ -3714,20 +3332,16 @@ func (b0 SensorEvent_ResourcesSynced_builder) Build() *SensorEvent_ResourcesSync
 	m0 := &SensorEvent_ResourcesSynced{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UnchangedIds = b.UnchangedIds
+	x.UnchangedIds = b.UnchangedIds
 	return m0
 }
 
 type NetworkPoliciesCommand_Apply struct {
-	state                   protoimpl.MessageState             `protogen:"opaque.v1"`
-	xxx_hidden_ApplyId      *string                            `protobuf:"bytes,1,opt,name=apply_id,json=applyId"`
-	xxx_hidden_Modification *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=modification"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState             `protogen:"hybrid.v1"`
+	ApplyId       string                             `protobuf:"bytes,1,opt,name=apply_id,json=applyId" json:"apply_id,omitempty"`
+	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=modification" json:"modification,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesCommand_Apply) Reset() {
@@ -3757,70 +3371,41 @@ func (x *NetworkPoliciesCommand_Apply) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPoliciesCommand_Apply) GetApplyId() string {
 	if x != nil {
-		if x.xxx_hidden_ApplyId != nil {
-			return *x.xxx_hidden_ApplyId
-		}
-		return ""
+		return x.ApplyId
 	}
 	return ""
 }
 
 func (x *NetworkPoliciesCommand_Apply) GetModification() *storage.NetworkPolicyModification {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Modification) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *storage.NetworkPolicyModification
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Modification), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Modification
 	}
 	return nil
 }
 
 func (x *NetworkPoliciesCommand_Apply) SetApplyId(v string) {
-	x.xxx_hidden_ApplyId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ApplyId = v
 }
 
 func (x *NetworkPoliciesCommand_Apply) SetModification(v *storage.NetworkPolicyModification) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Modification, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *NetworkPoliciesCommand_Apply) HasApplyId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Modification = v
 }
 
 func (x *NetworkPoliciesCommand_Apply) HasModification() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPoliciesCommand_Apply) ClearApplyId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ApplyId = nil
+	return x.Modification != nil
 }
 
 func (x *NetworkPoliciesCommand_Apply) ClearModification() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Modification, (*storage.NetworkPolicyModification)(nil))
+	x.Modification = nil
 }
 
 type NetworkPoliciesCommand_Apply_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ApplyId      *string
+	ApplyId      string
 	Modification *storage.NetworkPolicyModification
 }
 
@@ -3828,22 +3413,19 @@ func (b0 NetworkPoliciesCommand_Apply_builder) Build() *NetworkPoliciesCommand_A
 	m0 := &NetworkPoliciesCommand_Apply{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ApplyId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ApplyId = b.ApplyId
-	}
-	if b.Modification != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Modification = b.Modification
-	}
+	x.ApplyId = b.ApplyId
+	x.Modification = b.Modification
 	return m0
 }
 
 type NetworkPoliciesCommand_Payload struct {
-	state          protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_Cmd isNetworkPoliciesCommand_Payload_Cmd `protobuf_oneof:"cmd"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Cmd:
+	//
+	//	*NetworkPoliciesCommand_Payload_Apply
+	Cmd           isNetworkPoliciesCommand_Payload_Cmd `protobuf_oneof:"cmd"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesCommand_Payload) Reset() {
@@ -3871,9 +3453,16 @@ func (x *NetworkPoliciesCommand_Payload) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *NetworkPoliciesCommand_Payload) GetCmd() isNetworkPoliciesCommand_Payload_Cmd {
+	if x != nil {
+		return x.Cmd
+	}
+	return nil
+}
+
 func (x *NetworkPoliciesCommand_Payload) GetApply() *NetworkPoliciesCommand_Apply {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Cmd.(*networkPoliciesCommand_Payload_Apply); ok {
+		if x, ok := x.Cmd.(*NetworkPoliciesCommand_Payload_Apply); ok {
 			return x.Apply
 		}
 	}
@@ -3882,34 +3471,34 @@ func (x *NetworkPoliciesCommand_Payload) GetApply() *NetworkPoliciesCommand_Appl
 
 func (x *NetworkPoliciesCommand_Payload) SetApply(v *NetworkPoliciesCommand_Apply) {
 	if v == nil {
-		x.xxx_hidden_Cmd = nil
+		x.Cmd = nil
 		return
 	}
-	x.xxx_hidden_Cmd = &networkPoliciesCommand_Payload_Apply{v}
+	x.Cmd = &NetworkPoliciesCommand_Payload_Apply{v}
 }
 
 func (x *NetworkPoliciesCommand_Payload) HasCmd() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Cmd != nil
+	return x.Cmd != nil
 }
 
 func (x *NetworkPoliciesCommand_Payload) HasApply() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Cmd.(*networkPoliciesCommand_Payload_Apply)
+	_, ok := x.Cmd.(*NetworkPoliciesCommand_Payload_Apply)
 	return ok
 }
 
 func (x *NetworkPoliciesCommand_Payload) ClearCmd() {
-	x.xxx_hidden_Cmd = nil
+	x.Cmd = nil
 }
 
 func (x *NetworkPoliciesCommand_Payload) ClearApply() {
-	if _, ok := x.xxx_hidden_Cmd.(*networkPoliciesCommand_Payload_Apply); ok {
-		x.xxx_hidden_Cmd = nil
+	if _, ok := x.Cmd.(*NetworkPoliciesCommand_Payload_Apply); ok {
+		x.Cmd = nil
 	}
 }
 
@@ -3920,8 +3509,8 @@ func (x *NetworkPoliciesCommand_Payload) WhichCmd() case_NetworkPoliciesCommand_
 	if x == nil {
 		return NetworkPoliciesCommand_Payload_Cmd_not_set_case
 	}
-	switch x.xxx_hidden_Cmd.(type) {
-	case *networkPoliciesCommand_Payload_Apply:
+	switch x.Cmd.(type) {
+	case *NetworkPoliciesCommand_Payload_Apply:
 		return NetworkPoliciesCommand_Payload_Apply_case
 	default:
 		return NetworkPoliciesCommand_Payload_Cmd_not_set_case
@@ -3931,9 +3520,9 @@ func (x *NetworkPoliciesCommand_Payload) WhichCmd() case_NetworkPoliciesCommand_
 type NetworkPoliciesCommand_Payload_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Cmd:
+	// Fields of oneof Cmd:
 	Apply *NetworkPoliciesCommand_Apply
-	// -- end of xxx_hidden_Cmd
+	// -- end of Cmd
 }
 
 func (b0 NetworkPoliciesCommand_Payload_builder) Build() *NetworkPoliciesCommand_Payload {
@@ -3941,7 +3530,7 @@ func (b0 NetworkPoliciesCommand_Payload_builder) Build() *NetworkPoliciesCommand
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Apply != nil {
-		x.xxx_hidden_Cmd = &networkPoliciesCommand_Payload_Apply{b.Apply}
+		x.Cmd = &NetworkPoliciesCommand_Payload_Apply{b.Apply}
 	}
 	return m0
 }
@@ -3960,22 +3549,18 @@ type isNetworkPoliciesCommand_Payload_Cmd interface {
 	isNetworkPoliciesCommand_Payload_Cmd()
 }
 
-type networkPoliciesCommand_Payload_Apply struct {
+type NetworkPoliciesCommand_Payload_Apply struct {
 	Apply *NetworkPoliciesCommand_Apply `protobuf:"bytes,1,opt,name=apply,oneof"`
 }
 
-func (*networkPoliciesCommand_Payload_Apply) isNetworkPoliciesCommand_Payload_Cmd() {}
+func (*NetworkPoliciesCommand_Payload_Apply) isNetworkPoliciesCommand_Payload_Cmd() {}
 
 type NetworkPoliciesResponse_Apply struct {
-	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
-	xxx_hidden_ApplyId          *string                            `protobuf:"bytes,1,opt,name=apply_id,json=applyId"`
-	xxx_hidden_UndoModification *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=undo_modification,json=undoModification"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState             `protogen:"hybrid.v1"`
+	ApplyId          string                             `protobuf:"bytes,1,opt,name=apply_id,json=applyId" json:"apply_id,omitempty"`
+	UndoModification *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=undo_modification,json=undoModification" json:"undo_modification,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesResponse_Apply) Reset() {
@@ -4005,70 +3590,41 @@ func (x *NetworkPoliciesResponse_Apply) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPoliciesResponse_Apply) GetApplyId() string {
 	if x != nil {
-		if x.xxx_hidden_ApplyId != nil {
-			return *x.xxx_hidden_ApplyId
-		}
-		return ""
+		return x.ApplyId
 	}
 	return ""
 }
 
 func (x *NetworkPoliciesResponse_Apply) GetUndoModification() *storage.NetworkPolicyModification {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UndoModification) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *storage.NetworkPolicyModification
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UndoModification), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.UndoModification
 	}
 	return nil
 }
 
 func (x *NetworkPoliciesResponse_Apply) SetApplyId(v string) {
-	x.xxx_hidden_ApplyId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ApplyId = v
 }
 
 func (x *NetworkPoliciesResponse_Apply) SetUndoModification(v *storage.NetworkPolicyModification) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UndoModification, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *NetworkPoliciesResponse_Apply) HasApplyId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.UndoModification = v
 }
 
 func (x *NetworkPoliciesResponse_Apply) HasUndoModification() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPoliciesResponse_Apply) ClearApplyId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ApplyId = nil
+	return x.UndoModification != nil
 }
 
 func (x *NetworkPoliciesResponse_Apply) ClearUndoModification() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UndoModification, (*storage.NetworkPolicyModification)(nil))
+	x.UndoModification = nil
 }
 
 type NetworkPoliciesResponse_Apply_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ApplyId          *string
+	ApplyId          string
 	UndoModification *storage.NetworkPolicyModification
 }
 
@@ -4076,24 +3632,16 @@ func (b0 NetworkPoliciesResponse_Apply_builder) Build() *NetworkPoliciesResponse
 	m0 := &NetworkPoliciesResponse_Apply{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ApplyId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ApplyId = b.ApplyId
-	}
-	if b.UndoModification != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_UndoModification = b.UndoModification
-	}
+	x.ApplyId = b.ApplyId
+	x.UndoModification = b.UndoModification
 	return m0
 }
 
 type NetworkPoliciesResponse_Error struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesResponse_Error) Reset() {
@@ -4123,53 +3671,38 @@ func (x *NetworkPoliciesResponse_Error) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPoliciesResponse_Error) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *NetworkPoliciesResponse_Error) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *NetworkPoliciesResponse_Error) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPoliciesResponse_Error) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Message = nil
+	x.Message = v
 }
 
 type NetworkPoliciesResponse_Error_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Message *string
+	Message string
 }
 
 func (b0 NetworkPoliciesResponse_Error_builder) Build() *NetworkPoliciesResponse_Error {
 	m0 := &NetworkPoliciesResponse_Error{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Message = b.Message
-	}
+	x.Message = b.Message
 	return m0
 }
 
 type NetworkPoliciesResponse_Payload struct {
-	state          protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_Cmd isNetworkPoliciesResponse_Payload_Cmd `protobuf_oneof:"cmd"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Cmd:
+	//
+	//	*NetworkPoliciesResponse_Payload_Error
+	//	*NetworkPoliciesResponse_Payload_Apply
+	Cmd           isNetworkPoliciesResponse_Payload_Cmd `protobuf_oneof:"cmd"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPoliciesResponse_Payload) Reset() {
@@ -4197,9 +3730,16 @@ func (x *NetworkPoliciesResponse_Payload) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *NetworkPoliciesResponse_Payload) GetCmd() isNetworkPoliciesResponse_Payload_Cmd {
+	if x != nil {
+		return x.Cmd
+	}
+	return nil
+}
+
 func (x *NetworkPoliciesResponse_Payload) GetError() *NetworkPoliciesResponse_Error {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Error); ok {
+		if x, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Error); ok {
 			return x.Error
 		}
 	}
@@ -4208,7 +3748,7 @@ func (x *NetworkPoliciesResponse_Payload) GetError() *NetworkPoliciesResponse_Er
 
 func (x *NetworkPoliciesResponse_Payload) GetApply() *NetworkPoliciesResponse_Apply {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Apply); ok {
+		if x, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Apply); ok {
 			return x.Apply
 		}
 	}
@@ -4217,32 +3757,32 @@ func (x *NetworkPoliciesResponse_Payload) GetApply() *NetworkPoliciesResponse_Ap
 
 func (x *NetworkPoliciesResponse_Payload) SetError(v *NetworkPoliciesResponse_Error) {
 	if v == nil {
-		x.xxx_hidden_Cmd = nil
+		x.Cmd = nil
 		return
 	}
-	x.xxx_hidden_Cmd = &networkPoliciesResponse_Payload_Error{v}
+	x.Cmd = &NetworkPoliciesResponse_Payload_Error{v}
 }
 
 func (x *NetworkPoliciesResponse_Payload) SetApply(v *NetworkPoliciesResponse_Apply) {
 	if v == nil {
-		x.xxx_hidden_Cmd = nil
+		x.Cmd = nil
 		return
 	}
-	x.xxx_hidden_Cmd = &networkPoliciesResponse_Payload_Apply{v}
+	x.Cmd = &NetworkPoliciesResponse_Payload_Apply{v}
 }
 
 func (x *NetworkPoliciesResponse_Payload) HasCmd() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Cmd != nil
+	return x.Cmd != nil
 }
 
 func (x *NetworkPoliciesResponse_Payload) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Error)
+	_, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Error)
 	return ok
 }
 
@@ -4250,23 +3790,23 @@ func (x *NetworkPoliciesResponse_Payload) HasApply() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Apply)
+	_, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Apply)
 	return ok
 }
 
 func (x *NetworkPoliciesResponse_Payload) ClearCmd() {
-	x.xxx_hidden_Cmd = nil
+	x.Cmd = nil
 }
 
 func (x *NetworkPoliciesResponse_Payload) ClearError() {
-	if _, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Error); ok {
-		x.xxx_hidden_Cmd = nil
+	if _, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Error); ok {
+		x.Cmd = nil
 	}
 }
 
 func (x *NetworkPoliciesResponse_Payload) ClearApply() {
-	if _, ok := x.xxx_hidden_Cmd.(*networkPoliciesResponse_Payload_Apply); ok {
-		x.xxx_hidden_Cmd = nil
+	if _, ok := x.Cmd.(*NetworkPoliciesResponse_Payload_Apply); ok {
+		x.Cmd = nil
 	}
 }
 
@@ -4278,10 +3818,10 @@ func (x *NetworkPoliciesResponse_Payload) WhichCmd() case_NetworkPoliciesRespons
 	if x == nil {
 		return NetworkPoliciesResponse_Payload_Cmd_not_set_case
 	}
-	switch x.xxx_hidden_Cmd.(type) {
-	case *networkPoliciesResponse_Payload_Error:
+	switch x.Cmd.(type) {
+	case *NetworkPoliciesResponse_Payload_Error:
 		return NetworkPoliciesResponse_Payload_Error_case
-	case *networkPoliciesResponse_Payload_Apply:
+	case *NetworkPoliciesResponse_Payload_Apply:
 		return NetworkPoliciesResponse_Payload_Apply_case
 	default:
 		return NetworkPoliciesResponse_Payload_Cmd_not_set_case
@@ -4291,10 +3831,10 @@ func (x *NetworkPoliciesResponse_Payload) WhichCmd() case_NetworkPoliciesRespons
 type NetworkPoliciesResponse_Payload_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Cmd:
+	// Fields of oneof Cmd:
 	Error *NetworkPoliciesResponse_Error
 	Apply *NetworkPoliciesResponse_Apply
-	// -- end of xxx_hidden_Cmd
+	// -- end of Cmd
 }
 
 func (b0 NetworkPoliciesResponse_Payload_builder) Build() *NetworkPoliciesResponse_Payload {
@@ -4302,10 +3842,10 @@ func (b0 NetworkPoliciesResponse_Payload_builder) Build() *NetworkPoliciesRespon
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Error != nil {
-		x.xxx_hidden_Cmd = &networkPoliciesResponse_Payload_Error{b.Error}
+		x.Cmd = &NetworkPoliciesResponse_Payload_Error{b.Error}
 	}
 	if b.Apply != nil {
-		x.xxx_hidden_Cmd = &networkPoliciesResponse_Payload_Apply{b.Apply}
+		x.Cmd = &NetworkPoliciesResponse_Payload_Apply{b.Apply}
 	}
 	return m0
 }
@@ -4324,17 +3864,17 @@ type isNetworkPoliciesResponse_Payload_Cmd interface {
 	isNetworkPoliciesResponse_Payload_Cmd()
 }
 
-type networkPoliciesResponse_Payload_Error struct {
+type NetworkPoliciesResponse_Payload_Error struct {
 	Error *NetworkPoliciesResponse_Error `protobuf:"bytes,1,opt,name=error,oneof"`
 }
 
-type networkPoliciesResponse_Payload_Apply struct {
+type NetworkPoliciesResponse_Payload_Apply struct {
 	Apply *NetworkPoliciesResponse_Apply `protobuf:"bytes,2,opt,name=apply,oneof"`
 }
 
-func (*networkPoliciesResponse_Payload_Error) isNetworkPoliciesResponse_Payload_Cmd() {}
+func (*NetworkPoliciesResponse_Payload_Error) isNetworkPoliciesResponse_Payload_Cmd() {}
 
-func (*networkPoliciesResponse_Payload_Apply) isNetworkPoliciesResponse_Payload_Cmd() {}
+func (*NetworkPoliciesResponse_Payload_Apply) isNetworkPoliciesResponse_Payload_Cmd() {}
 
 var File_internalapi_central_sensor_events_proto protoreflect.FileDescriptor
 
@@ -4469,7 +4009,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\x0fCREATE_RESOURCE\x10\x01\x12\x13\n" +
 	"\x0fREMOVE_RESOURCE\x10\x02\x12\x13\n" +
 	"\x0fUPDATE_RESOURCE\x10\x03\x12\x11\n" +
-	"\rSYNC_RESOURCE\x10\x04B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\rSYNC_RESOURCE\x10\x04B/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_sensor_events_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_central_sensor_events_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
@@ -4600,59 +4140,59 @@ func file_internalapi_central_sensor_events_proto_init() {
 	}
 	file_internalapi_central_compliance_operator_proto_init()
 	file_internalapi_central_sensor_events_proto_msgTypes[3].OneofWrappers = []any{
-		(*sensorEvent_SensorHash)(nil),
-		(*sensorEvent_NetworkPolicy)(nil),
-		(*sensorEvent_Deployment)(nil),
-		(*sensorEvent_Pod)(nil),
-		(*sensorEvent_Namespace)(nil),
-		(*sensorEvent_Secret)(nil),
-		(*sensorEvent_Node)(nil),
-		(*sensorEvent_NodeInventory)(nil),
-		(*sensorEvent_IndexReport)(nil),
-		(*sensorEvent_ServiceAccount)(nil),
-		(*sensorEvent_Role)(nil),
-		(*sensorEvent_Binding)(nil),
-		(*sensorEvent_ProcessIndicator)(nil),
-		(*sensorEvent_ProviderMetadata)(nil),
-		(*sensorEvent_Synced)(nil),
-		(*sensorEvent_OrchestratorMetadata)(nil),
-		(*sensorEvent_ImageIntegration)(nil),
-		(*sensorEvent_ReprocessDeployment)(nil),
-		(*sensorEvent_AlertResults)(nil),
-		(*sensorEvent_ComplianceOperatorResult)(nil),
-		(*sensorEvent_ComplianceOperatorProfile)(nil),
-		(*sensorEvent_ComplianceOperatorRule)(nil),
-		(*sensorEvent_ComplianceOperatorScanSettingBinding)(nil),
-		(*sensorEvent_ComplianceOperatorScan)(nil),
-		(*sensorEvent_VirtualMachineIndexReport)(nil),
-		(*sensorEvent_VirtualMachine)(nil),
-		(*sensorEvent_ComplianceOperatorResultV2)(nil),
-		(*sensorEvent_ComplianceOperatorProfileV2)(nil),
-		(*sensorEvent_ComplianceOperatorRuleV2)(nil),
-		(*sensorEvent_ComplianceOperatorScanV2)(nil),
-		(*sensorEvent_ComplianceOperatorScanSettingBindingV2)(nil),
-		(*sensorEvent_ComplianceOperatorSuiteV2)(nil),
-		(*sensorEvent_ComplianceOperatorRemediationV2)(nil),
+		(*SensorEvent_SensorHash)(nil),
+		(*SensorEvent_NetworkPolicy)(nil),
+		(*SensorEvent_Deployment)(nil),
+		(*SensorEvent_Pod)(nil),
+		(*SensorEvent_Namespace)(nil),
+		(*SensorEvent_Secret)(nil),
+		(*SensorEvent_Node)(nil),
+		(*SensorEvent_NodeInventory)(nil),
+		(*SensorEvent_IndexReport)(nil),
+		(*SensorEvent_ServiceAccount)(nil),
+		(*SensorEvent_Role)(nil),
+		(*SensorEvent_Binding)(nil),
+		(*SensorEvent_ProcessIndicator)(nil),
+		(*SensorEvent_ProviderMetadata)(nil),
+		(*SensorEvent_Synced)(nil),
+		(*SensorEvent_OrchestratorMetadata)(nil),
+		(*SensorEvent_ImageIntegration)(nil),
+		(*SensorEvent_ReprocessDeployment)(nil),
+		(*SensorEvent_AlertResults)(nil),
+		(*SensorEvent_ComplianceOperatorResult)(nil),
+		(*SensorEvent_ComplianceOperatorProfile)(nil),
+		(*SensorEvent_ComplianceOperatorRule)(nil),
+		(*SensorEvent_ComplianceOperatorScanSettingBinding)(nil),
+		(*SensorEvent_ComplianceOperatorScan)(nil),
+		(*SensorEvent_VirtualMachineIndexReport)(nil),
+		(*SensorEvent_VirtualMachine)(nil),
+		(*SensorEvent_ComplianceOperatorResultV2)(nil),
+		(*SensorEvent_ComplianceOperatorProfileV2)(nil),
+		(*SensorEvent_ComplianceOperatorRuleV2)(nil),
+		(*SensorEvent_ComplianceOperatorScanV2)(nil),
+		(*SensorEvent_ComplianceOperatorScanSettingBindingV2)(nil),
+		(*SensorEvent_ComplianceOperatorSuiteV2)(nil),
+		(*SensorEvent_ComplianceOperatorRemediationV2)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[4].OneofWrappers = []any{
-		(*sensorEnforcement_Deployment)(nil),
-		(*sensorEnforcement_ContainerInstance)(nil),
+		(*SensorEnforcement_Deployment)(nil),
+		(*SensorEnforcement_ContainerInstance)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[7].OneofWrappers = []any{
-		(*scrapeCommand_StartScrape)(nil),
-		(*scrapeCommand_KillScrape)(nil),
+		(*ScrapeCommand_StartScrape)(nil),
+		(*ScrapeCommand_KillScrape)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[10].OneofWrappers = []any{
-		(*scrapeUpdate_ComplianceReturn)(nil),
-		(*scrapeUpdate_ScrapeStarted)(nil),
-		(*scrapeUpdate_ScrapeKilled)(nil),
+		(*ScrapeUpdate_ComplianceReturn)(nil),
+		(*ScrapeUpdate_ScrapeStarted)(nil),
+		(*ScrapeUpdate_ScrapeKilled)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[17].OneofWrappers = []any{
-		(*networkPoliciesCommand_Payload_Apply)(nil),
+		(*NetworkPoliciesCommand_Payload_Apply)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[20].OneofWrappers = []any{
-		(*networkPoliciesResponse_Payload_Error)(nil),
-		(*networkPoliciesResponse_Payload_Apply)(nil),
+		(*NetworkPoliciesResponse_Payload_Error)(nil),
+		(*NetworkPoliciesResponse_Payload_Apply)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

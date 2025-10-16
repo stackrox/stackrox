@@ -8,14 +8,16 @@ func (m *ImageV2) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageV2) CloneVT() *ImageV2             { return proto.Clone(m).(*ImageV2) }
 func (m *ImageV2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageV2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageV2) EqualVT(n *ImageV2) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageV2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ImageV2_ScanStats) SizeVT() int                   { return proto.Size(m) }
-func (m *ImageV2_ScanStats) CloneVT() *ImageV2_ScanStats   { return proto.Clone(m).(*ImageV2_ScanStats) }
-func (m *ImageV2_ScanStats) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImageV2_ScanStats) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageV2_ScanStats) SizeVT() int                       { return proto.Size(m) }
+func (m *ImageV2_ScanStats) CloneVT() *ImageV2_ScanStats       { return proto.Clone(m).(*ImageV2_ScanStats) }
+func (m *ImageV2_ScanStats) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ImageV2_ScanStats) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ImageV2_ScanStats) EqualVT(n *ImageV2_ScanStats) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageV2_ScanStats) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *ListImageV2) SizeVT() int                   { return proto.Size(m) }
 func (m *ListImageV2) CloneVT() *ListImageV2         { return proto.Clone(m).(*ListImageV2) }
 func (m *ListImageV2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListImageV2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListImageV2) EqualVT(n *ListImageV2) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListImageV2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

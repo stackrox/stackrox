@@ -8,8 +8,9 @@ func (m *DBRestoreRequestHeader) SizeVT() int { return proto.Size(m) }
 func (m *DBRestoreRequestHeader) CloneVT() *DBRestoreRequestHeader {
 	return proto.Clone(m).(*DBRestoreRequestHeader)
 }
-func (m *DBRestoreRequestHeader) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBRestoreRequestHeader) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBRestoreRequestHeader) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *DBRestoreRequestHeader) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *DBRestoreRequestHeader) EqualVT(n *DBRestoreRequestHeader) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBRestoreRequestHeader) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *DBRestoreRequestHeader_LocalFileInfo) CloneVT() *DBRestoreRequestHeader
 func (m *DBRestoreRequestHeader_LocalFileInfo) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *DBRestoreRequestHeader_LocalFileInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DBRestoreRequestHeader_LocalFileInfo) EqualVT(n *DBRestoreRequestHeader_LocalFileInfo) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -34,6 +38,9 @@ func (m *DBRestoreProcessMetadata) CloneVT() *DBRestoreProcessMetadata {
 }
 func (m *DBRestoreProcessMetadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DBRestoreProcessMetadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBRestoreProcessMetadata) EqualVT(n *DBRestoreProcessMetadata) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBRestoreProcessMetadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,8 +49,9 @@ func (m *DBRestoreProcessStatus) SizeVT() int { return proto.Size(m) }
 func (m *DBRestoreProcessStatus) CloneVT() *DBRestoreProcessStatus {
 	return proto.Clone(m).(*DBRestoreProcessStatus)
 }
-func (m *DBRestoreProcessStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBRestoreProcessStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBRestoreProcessStatus) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *DBRestoreProcessStatus) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *DBRestoreProcessStatus) EqualVT(n *DBRestoreProcessStatus) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBRestoreProcessStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -56,16 +64,20 @@ func (m *DBRestoreProcessStatus_ResumeInfo) MarshalVT() ([]byte, error) { return
 func (m *DBRestoreProcessStatus_ResumeInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DBRestoreProcessStatus_ResumeInfo) EqualVT(n *DBRestoreProcessStatus_ResumeInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBRestoreProcessStatus_ResumeInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *DBExportManifest) SizeVT() int                   { return proto.Size(m) }
-func (m *DBExportManifest) CloneVT() *DBExportManifest    { return proto.Clone(m).(*DBExportManifest) }
-func (m *DBExportManifest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBExportManifest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportManifest) SizeVT() int                      { return proto.Size(m) }
+func (m *DBExportManifest) CloneVT() *DBExportManifest       { return proto.Clone(m).(*DBExportManifest) }
+func (m *DBExportManifest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *DBExportManifest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportManifest) EqualVT(n *DBExportManifest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBExportManifest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -74,16 +86,18 @@ func (m *DBExportManifest_File) SizeVT() int { return proto.Size(m) }
 func (m *DBExportManifest_File) CloneVT() *DBExportManifest_File {
 	return proto.Clone(m).(*DBExportManifest_File)
 }
-func (m *DBExportManifest_File) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBExportManifest_File) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportManifest_File) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *DBExportManifest_File) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportManifest_File) EqualVT(n *DBExportManifest_File) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBExportManifest_File) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *DBExportFormat) SizeVT() int                   { return proto.Size(m) }
-func (m *DBExportFormat) CloneVT() *DBExportFormat      { return proto.Clone(m).(*DBExportFormat) }
-func (m *DBExportFormat) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBExportFormat) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportFormat) SizeVT() int                    { return proto.Size(m) }
+func (m *DBExportFormat) CloneVT() *DBExportFormat       { return proto.Clone(m).(*DBExportFormat) }
+func (m *DBExportFormat) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *DBExportFormat) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportFormat) EqualVT(n *DBExportFormat) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBExportFormat) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -92,8 +106,9 @@ func (m *DBExportFormat_File) SizeVT() int { return proto.Size(m) }
 func (m *DBExportFormat_File) CloneVT() *DBExportFormat_File {
 	return proto.Clone(m).(*DBExportFormat_File)
 }
-func (m *DBExportFormat_File) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DBExportFormat_File) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportFormat_File) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *DBExportFormat_File) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *DBExportFormat_File) EqualVT(n *DBExportFormat_File) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DBExportFormat_File) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -105,6 +120,9 @@ func (m *GetDBExportCapabilitiesResponse) CloneVT() *GetDBExportCapabilitiesResp
 func (m *GetDBExportCapabilitiesResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetDBExportCapabilitiesResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetDBExportCapabilitiesResponse) EqualVT(n *GetDBExportCapabilitiesResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -120,6 +138,9 @@ func (m *GetActiveDBRestoreProcessResponse) MarshalVT() ([]byte, error) { return
 func (m *GetActiveDBRestoreProcessResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetActiveDBRestoreProcessResponse) EqualVT(n *GetActiveDBRestoreProcessResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetActiveDBRestoreProcessResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -134,6 +155,9 @@ func (m *InterruptDBRestoreProcessRequest) MarshalVT() ([]byte, error) { return 
 func (m *InterruptDBRestoreProcessRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *InterruptDBRestoreProcessRequest) EqualVT(n *InterruptDBRestoreProcessRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InterruptDBRestoreProcessRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -147,6 +171,9 @@ func (m *InterruptDBRestoreProcessResponse) CloneVT() *InterruptDBRestoreProcess
 func (m *InterruptDBRestoreProcessResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *InterruptDBRestoreProcessResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *InterruptDBRestoreProcessResponse) EqualVT(n *InterruptDBRestoreProcessResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

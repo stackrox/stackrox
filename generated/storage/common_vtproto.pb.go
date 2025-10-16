@@ -8,6 +8,7 @@ func (m *KeyValuePair) SizeVT() int                   { return proto.Size(m) }
 func (m *KeyValuePair) CloneVT() *KeyValuePair        { return proto.Clone(m).(*KeyValuePair) }
 func (m *KeyValuePair) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *KeyValuePair) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *KeyValuePair) EqualVT(n *KeyValuePair) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *KeyValuePair) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

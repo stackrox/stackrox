@@ -8,6 +8,7 @@ func (m *AuthProvider) SizeVT() int                   { return proto.Size(m) }
 func (m *AuthProvider) CloneVT() *AuthProvider        { return proto.Clone(m).(*AuthProvider) }
 func (m *AuthProvider) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AuthProvider) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AuthProvider) EqualVT(n *AuthProvider) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AuthProvider) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -19,6 +20,9 @@ func (m *AuthProvider_RequiredAttribute) CloneVT() *AuthProvider_RequiredAttribu
 func (m *AuthProvider_RequiredAttribute) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AuthProvider_RequiredAttribute) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthProvider_RequiredAttribute) EqualVT(n *AuthProvider_RequiredAttribute) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

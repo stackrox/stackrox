@@ -8,8 +8,9 @@ func (m *FetchCertificateRequest) SizeVT() int { return proto.Size(m) }
 func (m *FetchCertificateRequest) CloneVT() *FetchCertificateRequest {
 	return proto.Clone(m).(*FetchCertificateRequest)
 }
-func (m *FetchCertificateRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FetchCertificateRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FetchCertificateRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *FetchCertificateRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *FetchCertificateRequest) EqualVT(n *FetchCertificateRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FetchCertificateRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *FetchCertificateResponse) CloneVT() *FetchCertificateResponse {
 }
 func (m *FetchCertificateResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FetchCertificateResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FetchCertificateResponse) EqualVT(n *FetchCertificateResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FetchCertificateResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

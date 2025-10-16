@@ -12,6 +12,9 @@ func (m *GetProcessesListeningOnPortsRequest) MarshalVT() ([]byte, error) { retu
 func (m *GetProcessesListeningOnPortsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetProcessesListeningOnPortsRequest) EqualVT(n *GetProcessesListeningOnPortsRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetProcessesListeningOnPortsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -25,6 +28,9 @@ func (m *GetProcessesListeningOnPortsResponse) CloneVT() *GetProcessesListeningO
 func (m *GetProcessesListeningOnPortsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetProcessesListeningOnPortsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetProcessesListeningOnPortsResponse) EqualVT(n *GetProcessesListeningOnPortsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

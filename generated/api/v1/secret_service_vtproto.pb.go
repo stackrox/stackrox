@@ -8,6 +8,7 @@ func (m *SecretList) SizeVT() int                   { return proto.Size(m) }
 func (m *SecretList) CloneVT() *SecretList          { return proto.Clone(m).(*SecretList) }
 func (m *SecretList) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SecretList) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecretList) EqualVT(n *SecretList) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecretList) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *ListSecretsResponse) SizeVT() int { return proto.Size(m) }
 func (m *ListSecretsResponse) CloneVT() *ListSecretsResponse {
 	return proto.Clone(m).(*ListSecretsResponse)
 }
-func (m *ListSecretsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListSecretsResponse) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ListSecretsResponse) EqualVT(n *ListSecretsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListSecretsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *CountSecretsResponse) SizeVT() int { return proto.Size(m) }
 func (m *CountSecretsResponse) CloneVT() *CountSecretsResponse {
 	return proto.Clone(m).(*CountSecretsResponse)
 }
-func (m *CountSecretsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CountSecretsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CountSecretsResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *CountSecretsResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *CountSecretsResponse) EqualVT(n *CountSecretsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountSecretsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

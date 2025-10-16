@@ -8,8 +8,9 @@ func (m *SignalStreamMessage) SizeVT() int { return proto.Size(m) }
 func (m *SignalStreamMessage) CloneVT() *SignalStreamMessage {
 	return proto.Clone(m).(*SignalStreamMessage)
 }
-func (m *SignalStreamMessage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SignalStreamMessage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SignalStreamMessage) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *SignalStreamMessage) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *SignalStreamMessage) EqualVT(n *SignalStreamMessage) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SignalStreamMessage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

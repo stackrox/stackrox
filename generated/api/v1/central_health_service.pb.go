@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/central_health_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -23,14 +25,10 @@ const (
 )
 
 type GetUpgradeStatusResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UpgradeStatus *CentralUpgradeStatus  `protobuf:"bytes,1,opt,name=upgradeStatus"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	UpgradeStatus *CentralUpgradeStatus  `protobuf:"bytes,1,opt,name=upgradeStatus" json:"upgradeStatus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUpgradeStatusResponse) Reset() {
@@ -60,37 +58,24 @@ func (x *GetUpgradeStatusResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetUpgradeStatusResponse) GetUpgradeStatus() *CentralUpgradeStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpgradeStatus) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *CentralUpgradeStatus
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpgradeStatus), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.UpgradeStatus
 	}
 	return nil
 }
 
 func (x *GetUpgradeStatusResponse) SetUpgradeStatus(v *CentralUpgradeStatus) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpgradeStatus, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.UpgradeStatus = v
 }
 
 func (x *GetUpgradeStatusResponse) HasUpgradeStatus() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.UpgradeStatus != nil
 }
 
 func (x *GetUpgradeStatusResponse) ClearUpgradeStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_UpgradeStatus, (*CentralUpgradeStatus)(nil))
+	x.UpgradeStatus = nil
 }
 
 type GetUpgradeStatusResponse_builder struct {
@@ -103,24 +88,26 @@ func (b0 GetUpgradeStatusResponse_builder) Build() *GetUpgradeStatusResponse {
 	m0 := &GetUpgradeStatusResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.UpgradeStatus != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_UpgradeStatus = b.UpgradeStatus
-	}
+	x.UpgradeStatus = b.UpgradeStatus
 	return m0
 }
 
 type CentralUpgradeStatus struct {
-	state                                            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Version                               *string                `protobuf:"bytes,1,opt,name=version"`
-	xxx_hidden_ForceRollbackTo                       *string                `protobuf:"bytes,2,opt,name=force_rollback_to,json=forceRollbackTo"`
-	xxx_hidden_CanRollbackAfterUpgrade               bool                   `protobuf:"varint,3,opt,name=can_rollback_after_upgrade,json=canRollbackAfterUpgrade"`
-	xxx_hidden_SpaceRequiredForRollbackAfterUpgrade  int64                  `protobuf:"varint,4,opt,name=space_required_for_rollback_after_upgrade,json=spaceRequiredForRollbackAfterUpgrade"`
-	xxx_hidden_SpaceAvailableForRollbackAfterUpgrade int64                  `protobuf:"varint,5,opt,name=space_available_for_rollback_after_upgrade,json=spaceAvailableForRollbackAfterUpgrade"`
-	XXX_raceDetectHookData                           protoimpl.RaceDetectHookData
-	XXX_presence                                     [1]uint32
-	unknownFields                                    protoimpl.UnknownFields
-	sizeCache                                        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Current Central Version
+	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
+	// The version of previous clone in Central. This is the version we can force rollback to.
+	ForceRollbackTo string `protobuf:"bytes,2,opt,name=force_rollback_to,json=forceRollbackTo" json:"force_rollback_to,omitempty"`
+	// If true, we can rollback to the current version if an upgrade failed.
+	CanRollbackAfterUpgrade bool `protobuf:"varint,3,opt,name=can_rollback_after_upgrade,json=canRollbackAfterUpgrade" json:"can_rollback_after_upgrade,omitempty"`
+	// Current disk space stats for upgrade
+	//
+	// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
+	SpaceRequiredForRollbackAfterUpgrade int64 `protobuf:"varint,4,opt,name=space_required_for_rollback_after_upgrade,json=spaceRequiredForRollbackAfterUpgrade" json:"space_required_for_rollback_after_upgrade,omitempty"`
+	// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
+	SpaceAvailableForRollbackAfterUpgrade int64 `protobuf:"varint,5,opt,name=space_available_for_rollback_after_upgrade,json=spaceAvailableForRollbackAfterUpgrade" json:"space_available_for_rollback_after_upgrade,omitempty"`
+	unknownFields                         protoimpl.UnknownFields
+	sizeCache                             protoimpl.SizeCache
 }
 
 func (x *CentralUpgradeStatus) Reset() {
@@ -150,27 +137,21 @@ func (x *CentralUpgradeStatus) ProtoReflect() protoreflect.Message {
 
 func (x *CentralUpgradeStatus) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *CentralUpgradeStatus) GetForceRollbackTo() string {
 	if x != nil {
-		if x.xxx_hidden_ForceRollbackTo != nil {
-			return *x.xxx_hidden_ForceRollbackTo
-		}
-		return ""
+		return x.ForceRollbackTo
 	}
 	return ""
 }
 
 func (x *CentralUpgradeStatus) GetCanRollbackAfterUpgrade() bool {
 	if x != nil {
-		return x.xxx_hidden_CanRollbackAfterUpgrade
+		return x.CanRollbackAfterUpgrade
 	}
 	return false
 }
@@ -178,7 +159,7 @@ func (x *CentralUpgradeStatus) GetCanRollbackAfterUpgrade() bool {
 // Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
 func (x *CentralUpgradeStatus) GetSpaceRequiredForRollbackAfterUpgrade() int64 {
 	if x != nil {
-		return x.xxx_hidden_SpaceRequiredForRollbackAfterUpgrade
+		return x.SpaceRequiredForRollbackAfterUpgrade
 	}
 	return 0
 }
@@ -186,143 +167,59 @@ func (x *CentralUpgradeStatus) GetSpaceRequiredForRollbackAfterUpgrade() int64 {
 // Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
 func (x *CentralUpgradeStatus) GetSpaceAvailableForRollbackAfterUpgrade() int64 {
 	if x != nil {
-		return x.xxx_hidden_SpaceAvailableForRollbackAfterUpgrade
+		return x.SpaceAvailableForRollbackAfterUpgrade
 	}
 	return 0
 }
 
 func (x *CentralUpgradeStatus) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Version = v
 }
 
 func (x *CentralUpgradeStatus) SetForceRollbackTo(v string) {
-	x.xxx_hidden_ForceRollbackTo = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.ForceRollbackTo = v
 }
 
 func (x *CentralUpgradeStatus) SetCanRollbackAfterUpgrade(v bool) {
-	x.xxx_hidden_CanRollbackAfterUpgrade = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.CanRollbackAfterUpgrade = v
 }
 
 // Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
 func (x *CentralUpgradeStatus) SetSpaceRequiredForRollbackAfterUpgrade(v int64) {
-	x.xxx_hidden_SpaceRequiredForRollbackAfterUpgrade = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.SpaceRequiredForRollbackAfterUpgrade = v
 }
 
 // Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
 func (x *CentralUpgradeStatus) SetSpaceAvailableForRollbackAfterUpgrade(v int64) {
-	x.xxx_hidden_SpaceAvailableForRollbackAfterUpgrade = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *CentralUpgradeStatus) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CentralUpgradeStatus) HasForceRollbackTo() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CentralUpgradeStatus) HasCanRollbackAfterUpgrade() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-func (x *CentralUpgradeStatus) HasSpaceRequiredForRollbackAfterUpgrade() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-func (x *CentralUpgradeStatus) HasSpaceAvailableForRollbackAfterUpgrade() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *CentralUpgradeStatus) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Version = nil
-}
-
-func (x *CentralUpgradeStatus) ClearForceRollbackTo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ForceRollbackTo = nil
-}
-
-func (x *CentralUpgradeStatus) ClearCanRollbackAfterUpgrade() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CanRollbackAfterUpgrade = false
-}
-
-// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-func (x *CentralUpgradeStatus) ClearSpaceRequiredForRollbackAfterUpgrade() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_SpaceRequiredForRollbackAfterUpgrade = 0
-}
-
-// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-func (x *CentralUpgradeStatus) ClearSpaceAvailableForRollbackAfterUpgrade() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_SpaceAvailableForRollbackAfterUpgrade = 0
+	x.SpaceAvailableForRollbackAfterUpgrade = v
 }
 
 type CentralUpgradeStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Current Central Version
-	Version *string
+	Version string
 	// The version of previous clone in Central. This is the version we can force rollback to.
-	ForceRollbackTo *string
+	ForceRollbackTo string
 	// If true, we can rollback to the current version if an upgrade failed.
-	CanRollbackAfterUpgrade *bool
+	CanRollbackAfterUpgrade bool
 	// Current disk space stats for upgrade
 	//
 	// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-	SpaceRequiredForRollbackAfterUpgrade *int64
+	SpaceRequiredForRollbackAfterUpgrade int64
 	// Deprecated: Marked as deprecated in api/v1/central_health_service.proto.
-	SpaceAvailableForRollbackAfterUpgrade *int64
+	SpaceAvailableForRollbackAfterUpgrade int64
 }
 
 func (b0 CentralUpgradeStatus_builder) Build() *CentralUpgradeStatus {
 	m0 := &CentralUpgradeStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Version = b.Version
-	}
-	if b.ForceRollbackTo != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_ForceRollbackTo = b.ForceRollbackTo
-	}
-	if b.CanRollbackAfterUpgrade != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_CanRollbackAfterUpgrade = *b.CanRollbackAfterUpgrade
-	}
-	if b.SpaceRequiredForRollbackAfterUpgrade != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_SpaceRequiredForRollbackAfterUpgrade = *b.SpaceRequiredForRollbackAfterUpgrade
-	}
-	if b.SpaceAvailableForRollbackAfterUpgrade != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_SpaceAvailableForRollbackAfterUpgrade = *b.SpaceAvailableForRollbackAfterUpgrade
-	}
+	x.Version = b.Version
+	x.ForceRollbackTo = b.ForceRollbackTo
+	x.CanRollbackAfterUpgrade = b.CanRollbackAfterUpgrade
+	x.SpaceRequiredForRollbackAfterUpgrade = b.SpaceRequiredForRollbackAfterUpgrade
+	x.SpaceAvailableForRollbackAfterUpgrade = b.SpaceAvailableForRollbackAfterUpgrade
 	return m0
 }
 
@@ -340,8 +237,8 @@ const file_api_v1_central_health_service_proto_rawDesc = "" +
 	")space_required_for_rollback_after_upgrade\x18\x04 \x01(\x03B\x02\x18\x01R$spaceRequiredForRollbackAfterUpgrade\x12]\n" +
 	"*space_available_for_rollback_after_upgrade\x18\x05 \x01(\x03B\x02\x18\x01R%spaceAvailableForRollbackAfterUpgrade2|\n" +
 	"\x14CentralHealthService\x12d\n" +
-	"\x10GetUpgradeStatus\x12\t.v1.Empty\x1a\x1c.v1.GetUpgradeStatusResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/centralhealth/upgradestatusB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x10GetUpgradeStatus\x12\t.v1.Empty\x1a\x1c.v1.GetUpgradeStatusResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/centralhealth/upgradestatusB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_central_health_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_central_health_service_proto_goTypes = []any{

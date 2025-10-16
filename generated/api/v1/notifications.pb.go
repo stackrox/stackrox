@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/notifications.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -22,13 +24,11 @@ const (
 )
 
 type NetworkPolicyNotification struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cluster     *string                `protobuf:"bytes,1,opt,name=cluster"`
-	xxx_hidden_Yaml        *string                `protobuf:"bytes,2,opt,name=yaml"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster" json:"cluster,omitempty"`
+	Yaml          string                 `protobuf:"bytes,2,opt,name=yaml" json:"yaml,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyNotification) Reset() {
@@ -58,77 +58,39 @@ func (x *NetworkPolicyNotification) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkPolicyNotification) GetCluster() string {
 	if x != nil {
-		if x.xxx_hidden_Cluster != nil {
-			return *x.xxx_hidden_Cluster
-		}
-		return ""
+		return x.Cluster
 	}
 	return ""
 }
 
 func (x *NetworkPolicyNotification) GetYaml() string {
 	if x != nil {
-		if x.xxx_hidden_Yaml != nil {
-			return *x.xxx_hidden_Yaml
-		}
-		return ""
+		return x.Yaml
 	}
 	return ""
 }
 
 func (x *NetworkPolicyNotification) SetCluster(v string) {
-	x.xxx_hidden_Cluster = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Cluster = v
 }
 
 func (x *NetworkPolicyNotification) SetYaml(v string) {
-	x.xxx_hidden_Yaml = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *NetworkPolicyNotification) HasCluster() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NetworkPolicyNotification) HasYaml() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NetworkPolicyNotification) ClearCluster() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Cluster = nil
-}
-
-func (x *NetworkPolicyNotification) ClearYaml() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Yaml = nil
+	x.Yaml = v
 }
 
 type NetworkPolicyNotification_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Cluster *string
-	Yaml    *string
+	Cluster string
+	Yaml    string
 }
 
 func (b0 NetworkPolicyNotification_builder) Build() *NetworkPolicyNotification {
 	m0 := &NetworkPolicyNotification{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Cluster != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Cluster = b.Cluster
-	}
-	if b.Yaml != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Yaml = b.Yaml
-	}
+	x.Cluster = b.Cluster
+	x.Yaml = b.Yaml
 	return m0
 }
 
@@ -139,8 +101,8 @@ const file_api_v1_notifications_proto_rawDesc = "" +
 	"\x1aapi/v1/notifications.proto\x12\x02v1\x1a!google/protobuf/go_features.proto\"I\n" +
 	"\x19NetworkPolicyNotification\x12\x18\n" +
 	"\acluster\x18\x01 \x01(\tR\acluster\x12\x12\n" +
-	"\x04yaml\x18\x02 \x01(\tR\x04yamlB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x04yaml\x18\x02 \x01(\tR\x04yamlB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_v1_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_notifications_proto_goTypes = []any{

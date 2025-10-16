@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/hello.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -67,17 +69,13 @@ func (x SensorHello_SensorState) Number() protoreflect.EnumNumber {
 }
 
 type HelmManagedConfigInit struct {
-	state                    protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_ClusterConfig *storage.CompleteClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig"`
-	xxx_hidden_ClusterName   *string                        `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_ClusterId     *string                        `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ManagedBy     storage.ManagerType            `protobuf:"varint,5,opt,name=managed_by,json=managedBy,enum=storage.ManagerType"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
+	ClusterConfig *storage.CompleteClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig" json:"cluster_config,omitempty"`
+	ClusterName   string                         `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
+	ClusterId     string                         `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	ManagedBy     storage.ManagerType            `protobuf:"varint,5,opt,name=managed_by,json=managedBy,enum=storage.ManagerType" json:"managed_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HelmManagedConfigInit) Reset() {
@@ -107,166 +105,93 @@ func (x *HelmManagedConfigInit) ProtoReflect() protoreflect.Message {
 
 func (x *HelmManagedConfigInit) GetClusterConfig() *storage.CompleteClusterConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ClusterConfig) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.CompleteClusterConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ClusterConfig), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ClusterConfig
 	}
 	return nil
 }
 
 func (x *HelmManagedConfigInit) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *HelmManagedConfigInit) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *HelmManagedConfigInit) GetManagedBy() storage.ManagerType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_ManagedBy
-		}
+		return x.ManagedBy
 	}
 	return storage.ManagerType(0)
 }
 
 func (x *HelmManagedConfigInit) SetClusterConfig(v *storage.CompleteClusterConfig) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterConfig, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-	}
+	x.ClusterConfig = v
 }
 
 func (x *HelmManagedConfigInit) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.ClusterName = v
 }
 
 func (x *HelmManagedConfigInit) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ClusterId = v
 }
 
 func (x *HelmManagedConfigInit) SetManagedBy(v storage.ManagerType) {
-	x.xxx_hidden_ManagedBy = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	x.ManagedBy = v
 }
 
 func (x *HelmManagedConfigInit) HasClusterConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *HelmManagedConfigInit) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *HelmManagedConfigInit) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *HelmManagedConfigInit) HasManagedBy() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.ClusterConfig != nil
 }
 
 func (x *HelmManagedConfigInit) ClearClusterConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ClusterConfig, (*storage.CompleteClusterConfig)(nil))
-}
-
-func (x *HelmManagedConfigInit) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *HelmManagedConfigInit) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *HelmManagedConfigInit) ClearManagedBy() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ManagedBy = storage.ManagerType_MANAGER_TYPE_UNKNOWN
+	x.ClusterConfig = nil
 }
 
 type HelmManagedConfigInit_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ClusterConfig *storage.CompleteClusterConfig
-	ClusterName   *string
-	ClusterId     *string
-	ManagedBy     *storage.ManagerType
+	ClusterName   string
+	ClusterId     string
+	ManagedBy     storage.ManagerType
 }
 
 func (b0 HelmManagedConfigInit_builder) Build() *HelmManagedConfigInit {
 	m0 := &HelmManagedConfigInit{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterConfig != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_ClusterConfig = b.ClusterConfig
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ManagedBy != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_ManagedBy = *b.ManagedBy
-	}
+	x.ClusterConfig = b.ClusterConfig
+	x.ClusterName = b.ClusterName
+	x.ClusterId = b.ClusterId
+	x.ManagedBy = b.ManagedBy
 	return m0
 }
 
 type SensorHello struct {
-	state                               protoimpl.MessageState                  `protogen:"opaque.v1"`
-	xxx_hidden_SensorVersion            *string                                 `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion"`
-	xxx_hidden_Capabilities             []string                                `protobuf:"bytes,2,rep,name=capabilities"`
-	xxx_hidden_DeploymentIdentification *storage.SensorDeploymentIdentification `protobuf:"bytes,5,opt,name=deployment_identification,json=deploymentIdentification"`
-	xxx_hidden_HelmManagedConfigInit    *HelmManagedConfigInit                  `protobuf:"bytes,3,opt,name=helm_managed_config_init,json=helmManagedConfigInit"`
-	xxx_hidden_PolicyVersion            *string                                 `protobuf:"bytes,4,opt,name=policy_version,json=policyVersion"`
-	xxx_hidden_SensorState              SensorHello_SensorState                 `protobuf:"varint,6,opt,name=sensor_state,json=sensorState,enum=central.SensorHello_SensorState"`
-	xxx_hidden_RequestDeduperState      bool                                    `protobuf:"varint,7,opt,name=request_deduper_state,json=requestDeduperState"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                    protoimpl.MessageState                  `protogen:"hybrid.v1"`
+	SensorVersion            string                                  `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion" json:"sensor_version,omitempty"`
+	Capabilities             []string                                `protobuf:"bytes,2,rep,name=capabilities" json:"capabilities,omitempty"`
+	DeploymentIdentification *storage.SensorDeploymentIdentification `protobuf:"bytes,5,opt,name=deployment_identification,json=deploymentIdentification" json:"deployment_identification,omitempty"`
+	HelmManagedConfigInit    *HelmManagedConfigInit                  `protobuf:"bytes,3,opt,name=helm_managed_config_init,json=helmManagedConfigInit" json:"helm_managed_config_init,omitempty"`
+	// Policy version sensor understands. If unset, central will try to guess it.
+	PolicyVersion string `protobuf:"bytes,4,opt,name=policy_version,json=policyVersion" json:"policy_version,omitempty"`
+	// sensor_state defines in what state sensor is (e.g. it's starting up or it's reconnecting)
+	SensorState SensorHello_SensorState `protobuf:"varint,6,opt,name=sensor_state,json=sensorState,enum=central.SensorHello_SensorState" json:"sensor_state,omitempty"`
+	// request_deduper_state is a request to central to communicate its deduper state.
+	RequestDeduperState bool `protobuf:"varint,7,opt,name=request_deduper_state,json=requestDeduperState" json:"request_deduper_state,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *SensorHello) Reset() {
@@ -296,234 +221,142 @@ func (x *SensorHello) ProtoReflect() protoreflect.Message {
 
 func (x *SensorHello) GetSensorVersion() string {
 	if x != nil {
-		if x.xxx_hidden_SensorVersion != nil {
-			return *x.xxx_hidden_SensorVersion
-		}
-		return ""
+		return x.SensorVersion
 	}
 	return ""
 }
 
 func (x *SensorHello) GetCapabilities() []string {
 	if x != nil {
-		return x.xxx_hidden_Capabilities
+		return x.Capabilities
 	}
 	return nil
 }
 
 func (x *SensorHello) GetDeploymentIdentification() *storage.SensorDeploymentIdentification {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_DeploymentIdentification) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *storage.SensorDeploymentIdentification
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_DeploymentIdentification), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.DeploymentIdentification
 	}
 	return nil
 }
 
 func (x *SensorHello) GetHelmManagedConfigInit() *HelmManagedConfigInit {
 	if x != nil {
-		return x.xxx_hidden_HelmManagedConfigInit
+		return x.HelmManagedConfigInit
 	}
 	return nil
 }
 
 func (x *SensorHello) GetPolicyVersion() string {
 	if x != nil {
-		if x.xxx_hidden_PolicyVersion != nil {
-			return *x.xxx_hidden_PolicyVersion
-		}
-		return ""
+		return x.PolicyVersion
 	}
 	return ""
 }
 
 func (x *SensorHello) GetSensorState() SensorHello_SensorState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_SensorState
-		}
+		return x.SensorState
 	}
 	return SensorHello_UNKNOWN
 }
 
 func (x *SensorHello) GetRequestDeduperState() bool {
 	if x != nil {
-		return x.xxx_hidden_RequestDeduperState
+		return x.RequestDeduperState
 	}
 	return false
 }
 
 func (x *SensorHello) SetSensorVersion(v string) {
-	x.xxx_hidden_SensorVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.SensorVersion = v
 }
 
 func (x *SensorHello) SetCapabilities(v []string) {
-	x.xxx_hidden_Capabilities = v
+	x.Capabilities = v
 }
 
 func (x *SensorHello) SetDeploymentIdentification(v *storage.SensorDeploymentIdentification) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DeploymentIdentification, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
-	}
+	x.DeploymentIdentification = v
 }
 
 func (x *SensorHello) SetHelmManagedConfigInit(v *HelmManagedConfigInit) {
-	x.xxx_hidden_HelmManagedConfigInit = v
+	x.HelmManagedConfigInit = v
 }
 
 func (x *SensorHello) SetPolicyVersion(v string) {
-	x.xxx_hidden_PolicyVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	x.PolicyVersion = v
 }
 
 func (x *SensorHello) SetSensorState(v SensorHello_SensorState) {
-	x.xxx_hidden_SensorState = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.SensorState = v
 }
 
 func (x *SensorHello) SetRequestDeduperState(v bool) {
-	x.xxx_hidden_RequestDeduperState = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *SensorHello) HasSensorVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.RequestDeduperState = v
 }
 
 func (x *SensorHello) HasDeploymentIdentification() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.DeploymentIdentification != nil
 }
 
 func (x *SensorHello) HasHelmManagedConfigInit() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HelmManagedConfigInit != nil
-}
-
-func (x *SensorHello) HasPolicyVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *SensorHello) HasSensorState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *SensorHello) HasRequestDeduperState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *SensorHello) ClearSensorVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_SensorVersion = nil
+	return x.HelmManagedConfigInit != nil
 }
 
 func (x *SensorHello) ClearDeploymentIdentification() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_DeploymentIdentification, (*storage.SensorDeploymentIdentification)(nil))
+	x.DeploymentIdentification = nil
 }
 
 func (x *SensorHello) ClearHelmManagedConfigInit() {
-	x.xxx_hidden_HelmManagedConfigInit = nil
-}
-
-func (x *SensorHello) ClearPolicyVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_PolicyVersion = nil
-}
-
-func (x *SensorHello) ClearSensorState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_SensorState = SensorHello_UNKNOWN
-}
-
-func (x *SensorHello) ClearRequestDeduperState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_RequestDeduperState = false
+	x.HelmManagedConfigInit = nil
 }
 
 type SensorHello_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SensorVersion            *string
+	SensorVersion            string
 	Capabilities             []string
 	DeploymentIdentification *storage.SensorDeploymentIdentification
 	HelmManagedConfigInit    *HelmManagedConfigInit
 	// Policy version sensor understands. If unset, central will try to guess it.
-	PolicyVersion *string
+	PolicyVersion string
 	// sensor_state defines in what state sensor is (e.g. it's starting up or it's reconnecting)
-	SensorState *SensorHello_SensorState
+	SensorState SensorHello_SensorState
 	// request_deduper_state is a request to central to communicate its deduper state.
-	RequestDeduperState *bool
+	RequestDeduperState bool
 }
 
 func (b0 SensorHello_builder) Build() *SensorHello {
 	m0 := &SensorHello{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.SensorVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_SensorVersion = b.SensorVersion
-	}
-	x.xxx_hidden_Capabilities = b.Capabilities
-	if b.DeploymentIdentification != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_DeploymentIdentification = b.DeploymentIdentification
-	}
-	x.xxx_hidden_HelmManagedConfigInit = b.HelmManagedConfigInit
-	if b.PolicyVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_PolicyVersion = b.PolicyVersion
-	}
-	if b.SensorState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_SensorState = *b.SensorState
-	}
-	if b.RequestDeduperState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_RequestDeduperState = *b.RequestDeduperState
-	}
+	x.SensorVersion = b.SensorVersion
+	x.Capabilities = b.Capabilities
+	x.DeploymentIdentification = b.DeploymentIdentification
+	x.HelmManagedConfigInit = b.HelmManagedConfigInit
+	x.PolicyVersion = b.PolicyVersion
+	x.SensorState = b.SensorState
+	x.RequestDeduperState = b.RequestDeduperState
 	return m0
 }
 
 type CentralHello struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId        *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_CertBundle       map[string]string      `protobuf:"bytes,2,rep,name=cert_bundle,json=certBundle" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_ManagedCentral   bool                   `protobuf:"varint,3,opt,name=managed_central,json=managedCentral"`
-	xxx_hidden_CentralId        *string                `protobuf:"bytes,4,opt,name=central_id,json=centralId"`
-	xxx_hidden_Capabilities     []string               `protobuf:"bytes,5,rep,name=capabilities"`
-	xxx_hidden_SendDeduperState bool                   `protobuf:"varint,6,opt,name=send_deduper_state,json=sendDeduperState"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId        string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	CertBundle       map[string]string      `protobuf:"bytes,2,rep,name=cert_bundle,json=certBundle" json:"cert_bundle,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ManagedCentral   bool                   `protobuf:"varint,3,opt,name=managed_central,json=managedCentral" json:"managed_central,omitempty"`
+	CentralId        string                 `protobuf:"bytes,4,opt,name=central_id,json=centralId" json:"central_id,omitempty"`
+	Capabilities     []string               `protobuf:"bytes,5,rep,name=capabilities" json:"capabilities,omitempty"`
+	SendDeduperState bool                   `protobuf:"varint,6,opt,name=send_deduper_state,json=sendDeduperState" json:"send_deduper_state,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CentralHello) Reset() {
@@ -553,161 +386,91 @@ func (x *CentralHello) ProtoReflect() protoreflect.Message {
 
 func (x *CentralHello) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *CentralHello) GetCertBundle() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_CertBundle
+		return x.CertBundle
 	}
 	return nil
 }
 
 func (x *CentralHello) GetManagedCentral() bool {
 	if x != nil {
-		return x.xxx_hidden_ManagedCentral
+		return x.ManagedCentral
 	}
 	return false
 }
 
 func (x *CentralHello) GetCentralId() string {
 	if x != nil {
-		if x.xxx_hidden_CentralId != nil {
-			return *x.xxx_hidden_CentralId
-		}
-		return ""
+		return x.CentralId
 	}
 	return ""
 }
 
 func (x *CentralHello) GetCapabilities() []string {
 	if x != nil {
-		return x.xxx_hidden_Capabilities
+		return x.Capabilities
 	}
 	return nil
 }
 
 func (x *CentralHello) GetSendDeduperState() bool {
 	if x != nil {
-		return x.xxx_hidden_SendDeduperState
+		return x.SendDeduperState
 	}
 	return false
 }
 
 func (x *CentralHello) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.ClusterId = v
 }
 
 func (x *CentralHello) SetCertBundle(v map[string]string) {
-	x.xxx_hidden_CertBundle = v
+	x.CertBundle = v
 }
 
 func (x *CentralHello) SetManagedCentral(v bool) {
-	x.xxx_hidden_ManagedCentral = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.ManagedCentral = v
 }
 
 func (x *CentralHello) SetCentralId(v string) {
-	x.xxx_hidden_CentralId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.CentralId = v
 }
 
 func (x *CentralHello) SetCapabilities(v []string) {
-	x.xxx_hidden_Capabilities = v
+	x.Capabilities = v
 }
 
 func (x *CentralHello) SetSendDeduperState(v bool) {
-	x.xxx_hidden_SendDeduperState = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *CentralHello) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CentralHello) HasManagedCentral() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CentralHello) HasCentralId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *CentralHello) HasSendDeduperState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *CentralHello) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *CentralHello) ClearManagedCentral() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ManagedCentral = false
-}
-
-func (x *CentralHello) ClearCentralId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CentralId = nil
-}
-
-func (x *CentralHello) ClearSendDeduperState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_SendDeduperState = false
+	x.SendDeduperState = v
 }
 
 type CentralHello_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId        *string
+	ClusterId        string
 	CertBundle       map[string]string
-	ManagedCentral   *bool
-	CentralId        *string
+	ManagedCentral   bool
+	CentralId        string
 	Capabilities     []string
-	SendDeduperState *bool
+	SendDeduperState bool
 }
 
 func (b0 CentralHello_builder) Build() *CentralHello {
 	m0 := &CentralHello{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	x.xxx_hidden_CertBundle = b.CertBundle
-	if b.ManagedCentral != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_ManagedCentral = *b.ManagedCentral
-	}
-	if b.CentralId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_CentralId = b.CentralId
-	}
-	x.xxx_hidden_Capabilities = b.Capabilities
-	if b.SendDeduperState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_SendDeduperState = *b.SendDeduperState
-	}
+	x.ClusterId = b.ClusterId
+	x.CertBundle = b.CertBundle
+	x.ManagedCentral = b.ManagedCentral
+	x.CentralId = b.CentralId
+	x.Capabilities = b.Capabilities
+	x.SendDeduperState = b.SendDeduperState
 	return m0
 }
 
@@ -747,7 +510,7 @@ const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\x12send_deduper_state\x18\x06 \x01(\bR\x10sendDeduperState\x1a=\n" +
 	"\x0fCertBundleEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_hello_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internalapi_central_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 4)

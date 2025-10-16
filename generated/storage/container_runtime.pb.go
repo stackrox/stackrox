@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/container_runtime.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -66,13 +68,11 @@ func (x ContainerRuntime) Number() protoreflect.EnumNumber {
 }
 
 type ContainerRuntimeInfo struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Type        ContainerRuntime       `protobuf:"varint,1,opt,name=type,enum=storage.ContainerRuntime"`
-	xxx_hidden_Version     *string                `protobuf:"bytes,2,opt,name=version"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Type          ContainerRuntime       `protobuf:"varint,1,opt,name=type,enum=storage.ContainerRuntime" json:"type,omitempty"`
+	Version       string                 `protobuf:"bytes,2,opt,name=version" json:"version,omitempty" search:"Container Runtime,store"` // @gotags: search:"Container Runtime,store"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ContainerRuntimeInfo) Reset() {
@@ -102,76 +102,39 @@ func (x *ContainerRuntimeInfo) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerRuntimeInfo) GetType() ContainerRuntime {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME
 }
 
 func (x *ContainerRuntimeInfo) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *ContainerRuntimeInfo) SetType(v ContainerRuntime) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Type = v
 }
 
 func (x *ContainerRuntimeInfo) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ContainerRuntimeInfo) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ContainerRuntimeInfo) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ContainerRuntimeInfo) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Type = ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME
-}
-
-func (x *ContainerRuntimeInfo) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Version = nil
+	x.Version = v
 }
 
 type ContainerRuntimeInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Type    *ContainerRuntime
-	Version *string
+	Type    ContainerRuntime
+	Version string
 }
 
 func (b0 ContainerRuntimeInfo_builder) Build() *ContainerRuntimeInfo {
 	m0 := &ContainerRuntimeInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Type = *b.Type
-	}
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Version = b.Version
-	}
+	x.Type = b.Type
+	x.Version = b.Version
 	return m0
 }
 
@@ -186,8 +149,8 @@ const file_storage_container_runtime_proto_rawDesc = "" +
 	"\x10ContainerRuntime\x12\x1d\n" +
 	"\x19UNKNOWN_CONTAINER_RUNTIME\x10\x00\x12\x1c\n" +
 	"\x18DOCKER_CONTAINER_RUNTIME\x10\x01\x12\x1a\n" +
-	"\x16CRIO_CONTAINER_RUNTIME\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x16CRIO_CONTAINER_RUNTIME\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_container_runtime_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_container_runtime_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

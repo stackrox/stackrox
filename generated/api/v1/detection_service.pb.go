@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/detection_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,20 +26,24 @@ const (
 )
 
 type BuildDetectionRequest struct {
-	state                         protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Resource           isBuildDetectionRequest_Resource `protobuf_oneof:"Resource"`
-	xxx_hidden_NoExternalMetadata bool                             `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata"`
-	xxx_hidden_SendNotifications  bool                             `protobuf:"varint,4,opt,name=send_notifications,json=sendNotifications"`
-	xxx_hidden_Force              bool                             `protobuf:"varint,6,opt,name=force"`
-	xxx_hidden_PolicyCategories   []string                         `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories"`
-	xxx_hidden_Cluster            *string                          `protobuf:"bytes,7,opt,name=cluster"`
-	xxx_hidden_Namespace          *string                          `protobuf:"bytes,8,opt,name=namespace"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Resource:
+	//
+	//	*BuildDetectionRequest_Image
+	//	*BuildDetectionRequest_ImageName
+	Resource           isBuildDetectionRequest_Resource `protobuf_oneof:"Resource"`
+	NoExternalMetadata bool                             `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata" json:"no_external_metadata,omitempty"`
+	SendNotifications  bool                             `protobuf:"varint,4,opt,name=send_notifications,json=sendNotifications" json:"send_notifications,omitempty"`
+	Force              bool                             `protobuf:"varint,6,opt,name=force" json:"force,omitempty"`
+	PolicyCategories   []string                         `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories" json:"policy_categories,omitempty"`
+	// Cluster to delegate scan to, may be the cluster's name or ID.
+	Cluster string `protobuf:"bytes,7,opt,name=cluster" json:"cluster,omitempty"`
+	// Namespace on the secured cluster from which to read context information
+	// when delegating image scans, specifically pull secrets to access the image
+	// registry.
+	Namespace     string `protobuf:"bytes,8,opt,name=namespace" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BuildDetectionRequest) Reset() {
@@ -65,9 +71,16 @@ func (x *BuildDetectionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *BuildDetectionRequest) GetResource() isBuildDetectionRequest_Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 func (x *BuildDetectionRequest) GetImage() *storage.ContainerImage {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_Image); ok {
+		if x, ok := x.Resource.(*BuildDetectionRequest_Image); ok {
 			return x.Image
 		}
 	}
@@ -76,7 +89,7 @@ func (x *BuildDetectionRequest) GetImage() *storage.ContainerImage {
 
 func (x *BuildDetectionRequest) GetImageName() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_ImageName); ok {
+		if x, ok := x.Resource.(*BuildDetectionRequest_ImageName); ok {
 			return x.ImageName
 		}
 	}
@@ -85,105 +98,94 @@ func (x *BuildDetectionRequest) GetImageName() string {
 
 func (x *BuildDetectionRequest) GetNoExternalMetadata() bool {
 	if x != nil {
-		return x.xxx_hidden_NoExternalMetadata
+		return x.NoExternalMetadata
 	}
 	return false
 }
 
 func (x *BuildDetectionRequest) GetSendNotifications() bool {
 	if x != nil {
-		return x.xxx_hidden_SendNotifications
+		return x.SendNotifications
 	}
 	return false
 }
 
 func (x *BuildDetectionRequest) GetForce() bool {
 	if x != nil {
-		return x.xxx_hidden_Force
+		return x.Force
 	}
 	return false
 }
 
 func (x *BuildDetectionRequest) GetPolicyCategories() []string {
 	if x != nil {
-		return x.xxx_hidden_PolicyCategories
+		return x.PolicyCategories
 	}
 	return nil
 }
 
 func (x *BuildDetectionRequest) GetCluster() string {
 	if x != nil {
-		if x.xxx_hidden_Cluster != nil {
-			return *x.xxx_hidden_Cluster
-		}
-		return ""
+		return x.Cluster
 	}
 	return ""
 }
 
 func (x *BuildDetectionRequest) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *BuildDetectionRequest) SetImage(v *storage.ContainerImage) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &buildDetectionRequest_Image{v}
+	x.Resource = &BuildDetectionRequest_Image{v}
 }
 
 func (x *BuildDetectionRequest) SetImageName(v string) {
-	x.xxx_hidden_Resource = &buildDetectionRequest_ImageName{v}
+	x.Resource = &BuildDetectionRequest_ImageName{v}
 }
 
 func (x *BuildDetectionRequest) SetNoExternalMetadata(v bool) {
-	x.xxx_hidden_NoExternalMetadata = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.NoExternalMetadata = v
 }
 
 func (x *BuildDetectionRequest) SetSendNotifications(v bool) {
-	x.xxx_hidden_SendNotifications = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	x.SendNotifications = v
 }
 
 func (x *BuildDetectionRequest) SetForce(v bool) {
-	x.xxx_hidden_Force = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.Force = v
 }
 
 func (x *BuildDetectionRequest) SetPolicyCategories(v []string) {
-	x.xxx_hidden_PolicyCategories = v
+	x.PolicyCategories = v
 }
 
 func (x *BuildDetectionRequest) SetCluster(v string) {
-	x.xxx_hidden_Cluster = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.Cluster = v
 }
 
 func (x *BuildDetectionRequest) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
+	x.Namespace = v
 }
 
 func (x *BuildDetectionRequest) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *BuildDetectionRequest) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_Image)
+	_, ok := x.Resource.(*BuildDetectionRequest_Image)
 	return ok
 }
 
@@ -191,84 +193,24 @@ func (x *BuildDetectionRequest) HasImageName() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_ImageName)
+	_, ok := x.Resource.(*BuildDetectionRequest_ImageName)
 	return ok
 }
 
-func (x *BuildDetectionRequest) HasNoExternalMetadata() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *BuildDetectionRequest) HasSendNotifications() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *BuildDetectionRequest) HasForce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *BuildDetectionRequest) HasCluster() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *BuildDetectionRequest) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
 func (x *BuildDetectionRequest) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 func (x *BuildDetectionRequest) ClearImage() {
-	if _, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_Image); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*BuildDetectionRequest_Image); ok {
+		x.Resource = nil
 	}
 }
 
 func (x *BuildDetectionRequest) ClearImageName() {
-	if _, ok := x.xxx_hidden_Resource.(*buildDetectionRequest_ImageName); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*BuildDetectionRequest_ImageName); ok {
+		x.Resource = nil
 	}
-}
-
-func (x *BuildDetectionRequest) ClearNoExternalMetadata() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NoExternalMetadata = false
-}
-
-func (x *BuildDetectionRequest) ClearSendNotifications() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_SendNotifications = false
-}
-
-func (x *BuildDetectionRequest) ClearForce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Force = false
-}
-
-func (x *BuildDetectionRequest) ClearCluster() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Cluster = nil
-}
-
-func (x *BuildDetectionRequest) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Namespace = nil
 }
 
 const BuildDetectionRequest_Resource_not_set_case case_BuildDetectionRequest_Resource = 0
@@ -279,10 +221,10 @@ func (x *BuildDetectionRequest) WhichResource() case_BuildDetectionRequest_Resou
 	if x == nil {
 		return BuildDetectionRequest_Resource_not_set_case
 	}
-	switch x.xxx_hidden_Resource.(type) {
-	case *buildDetectionRequest_Image:
+	switch x.Resource.(type) {
+	case *BuildDetectionRequest_Image:
 		return BuildDetectionRequest_Image_case
-	case *buildDetectionRequest_ImageName:
+	case *BuildDetectionRequest_ImageName:
 		return BuildDetectionRequest_ImageName_case
 	default:
 		return BuildDetectionRequest_Resource_not_set_case
@@ -292,20 +234,20 @@ func (x *BuildDetectionRequest) WhichResource() case_BuildDetectionRequest_Resou
 type BuildDetectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Resource:
+	// Fields of oneof Resource:
 	Image     *storage.ContainerImage
 	ImageName *string
-	// -- end of xxx_hidden_Resource
-	NoExternalMetadata *bool
-	SendNotifications  *bool
-	Force              *bool
+	// -- end of Resource
+	NoExternalMetadata bool
+	SendNotifications  bool
+	Force              bool
 	PolicyCategories   []string
 	// Cluster to delegate scan to, may be the cluster's name or ID.
-	Cluster *string
+	Cluster string
 	// Namespace on the secured cluster from which to read context information
 	// when delegating image scans, specifically pull secrets to access the image
 	// registry.
-	Namespace *string
+	Namespace string
 }
 
 func (b0 BuildDetectionRequest_builder) Build() *BuildDetectionRequest {
@@ -313,32 +255,17 @@ func (b0 BuildDetectionRequest_builder) Build() *BuildDetectionRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Image != nil {
-		x.xxx_hidden_Resource = &buildDetectionRequest_Image{b.Image}
+		x.Resource = &BuildDetectionRequest_Image{b.Image}
 	}
 	if b.ImageName != nil {
-		x.xxx_hidden_Resource = &buildDetectionRequest_ImageName{*b.ImageName}
+		x.Resource = &BuildDetectionRequest_ImageName{*b.ImageName}
 	}
-	if b.NoExternalMetadata != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_NoExternalMetadata = *b.NoExternalMetadata
-	}
-	if b.SendNotifications != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_SendNotifications = *b.SendNotifications
-	}
-	if b.Force != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Force = *b.Force
-	}
-	x.xxx_hidden_PolicyCategories = b.PolicyCategories
-	if b.Cluster != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_Cluster = b.Cluster
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.NoExternalMetadata = b.NoExternalMetadata
+	x.SendNotifications = b.SendNotifications
+	x.Force = b.Force
+	x.PolicyCategories = b.PolicyCategories
+	x.Cluster = b.Cluster
+	x.Namespace = b.Namespace
 	return m0
 }
 
@@ -356,27 +283,23 @@ type isBuildDetectionRequest_Resource interface {
 	isBuildDetectionRequest_Resource()
 }
 
-type buildDetectionRequest_Image struct {
+type BuildDetectionRequest_Image struct {
 	Image *storage.ContainerImage `protobuf:"bytes,1,opt,name=image,oneof"`
 }
 
-type buildDetectionRequest_ImageName struct {
+type BuildDetectionRequest_ImageName struct {
 	ImageName string `protobuf:"bytes,3,opt,name=image_name,json=imageName,oneof"`
 }
 
-func (*buildDetectionRequest_Image) isBuildDetectionRequest_Resource() {}
+func (*BuildDetectionRequest_Image) isBuildDetectionRequest_Resource() {}
 
-func (*buildDetectionRequest_ImageName) isBuildDetectionRequest_Resource() {}
+func (*BuildDetectionRequest_ImageName) isBuildDetectionRequest_Resource() {}
 
 type BuildDetectionResponse struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Alerts *[]*storage.Alert      `protobuf:"bytes,1,rep,name=alerts"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Alerts        []*storage.Alert       `protobuf:"bytes,1,rep,name=alerts" json:"alerts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BuildDetectionResponse) Reset() {
@@ -406,27 +329,13 @@ func (x *BuildDetectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *BuildDetectionResponse) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.Alert
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Alerts
 	}
 	return nil
 }
 
 func (x *BuildDetectionResponse) SetAlerts(v []*storage.Alert) {
-	var sv *[]*storage.Alert
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Alert{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Alerts = v
 }
 
 type BuildDetectionResponse_builder struct {
@@ -439,25 +348,21 @@ func (b0 BuildDetectionResponse_builder) Build() *BuildDetectionResponse {
 	m0 := &BuildDetectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Alerts != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Alerts = &b.Alerts
-	}
+	x.Alerts = b.Alerts
 	return m0
 }
 
 type DeployDetectionRequest struct {
-	state                         protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_Resource           isDeployDetectionRequest_Resource `protobuf_oneof:"Resource"`
-	xxx_hidden_NoExternalMetadata bool                              `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata"`
-	xxx_hidden_EnforcementOnly    bool                              `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly"`
-	xxx_hidden_ClusterId          *string                           `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Resource:
+	//
+	//	*DeployDetectionRequest_Deployment
+	Resource           isDeployDetectionRequest_Resource `protobuf_oneof:"Resource"`
+	NoExternalMetadata bool                              `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata" json:"no_external_metadata,omitempty"`
+	EnforcementOnly    bool                              `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly" json:"enforcement_only,omitempty"`
+	ClusterId          string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *DeployDetectionRequest) Reset() {
@@ -485,9 +390,16 @@ func (x *DeployDetectionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *DeployDetectionRequest) GetResource() isDeployDetectionRequest_Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 func (x *DeployDetectionRequest) GetDeployment() *storage.Deployment {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Resource.(*deployDetectionRequest_Deployment); ok {
+		if x, ok := x.Resource.(*DeployDetectionRequest_Deployment); ok {
 			return x.Deployment
 		}
 	}
@@ -496,110 +408,68 @@ func (x *DeployDetectionRequest) GetDeployment() *storage.Deployment {
 
 func (x *DeployDetectionRequest) GetNoExternalMetadata() bool {
 	if x != nil {
-		return x.xxx_hidden_NoExternalMetadata
+		return x.NoExternalMetadata
 	}
 	return false
 }
 
 func (x *DeployDetectionRequest) GetEnforcementOnly() bool {
 	if x != nil {
-		return x.xxx_hidden_EnforcementOnly
+		return x.EnforcementOnly
 	}
 	return false
 }
 
 func (x *DeployDetectionRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *DeployDetectionRequest) SetDeployment(v *storage.Deployment) {
 	if v == nil {
-		x.xxx_hidden_Resource = nil
+		x.Resource = nil
 		return
 	}
-	x.xxx_hidden_Resource = &deployDetectionRequest_Deployment{v}
+	x.Resource = &DeployDetectionRequest_Deployment{v}
 }
 
 func (x *DeployDetectionRequest) SetNoExternalMetadata(v bool) {
-	x.xxx_hidden_NoExternalMetadata = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.NoExternalMetadata = v
 }
 
 func (x *DeployDetectionRequest) SetEnforcementOnly(v bool) {
-	x.xxx_hidden_EnforcementOnly = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.EnforcementOnly = v
 }
 
 func (x *DeployDetectionRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	x.ClusterId = v
 }
 
 func (x *DeployDetectionRequest) HasResource() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resource != nil
+	return x.Resource != nil
 }
 
 func (x *DeployDetectionRequest) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Resource.(*deployDetectionRequest_Deployment)
+	_, ok := x.Resource.(*DeployDetectionRequest_Deployment)
 	return ok
 }
 
-func (x *DeployDetectionRequest) HasNoExternalMetadata() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeployDetectionRequest) HasEnforcementOnly() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *DeployDetectionRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
 func (x *DeployDetectionRequest) ClearResource() {
-	x.xxx_hidden_Resource = nil
+	x.Resource = nil
 }
 
 func (x *DeployDetectionRequest) ClearDeployment() {
-	if _, ok := x.xxx_hidden_Resource.(*deployDetectionRequest_Deployment); ok {
-		x.xxx_hidden_Resource = nil
+	if _, ok := x.Resource.(*DeployDetectionRequest_Deployment); ok {
+		x.Resource = nil
 	}
-}
-
-func (x *DeployDetectionRequest) ClearNoExternalMetadata() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NoExternalMetadata = false
-}
-
-func (x *DeployDetectionRequest) ClearEnforcementOnly() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_EnforcementOnly = false
-}
-
-func (x *DeployDetectionRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterId = nil
 }
 
 const DeployDetectionRequest_Resource_not_set_case case_DeployDetectionRequest_Resource = 0
@@ -609,8 +479,8 @@ func (x *DeployDetectionRequest) WhichResource() case_DeployDetectionRequest_Res
 	if x == nil {
 		return DeployDetectionRequest_Resource_not_set_case
 	}
-	switch x.xxx_hidden_Resource.(type) {
-	case *deployDetectionRequest_Deployment:
+	switch x.Resource.(type) {
+	case *DeployDetectionRequest_Deployment:
 		return DeployDetectionRequest_Deployment_case
 	default:
 		return DeployDetectionRequest_Resource_not_set_case
@@ -620,12 +490,12 @@ func (x *DeployDetectionRequest) WhichResource() case_DeployDetectionRequest_Res
 type DeployDetectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Resource:
+	// Fields of oneof Resource:
 	Deployment *storage.Deployment
-	// -- end of xxx_hidden_Resource
-	NoExternalMetadata *bool
-	EnforcementOnly    *bool
-	ClusterId          *string
+	// -- end of Resource
+	NoExternalMetadata bool
+	EnforcementOnly    bool
+	ClusterId          string
 }
 
 func (b0 DeployDetectionRequest_builder) Build() *DeployDetectionRequest {
@@ -633,20 +503,11 @@ func (b0 DeployDetectionRequest_builder) Build() *DeployDetectionRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Deployment != nil {
-		x.xxx_hidden_Resource = &deployDetectionRequest_Deployment{b.Deployment}
+		x.Resource = &DeployDetectionRequest_Deployment{b.Deployment}
 	}
-	if b.NoExternalMetadata != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_NoExternalMetadata = *b.NoExternalMetadata
-	}
-	if b.EnforcementOnly != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_EnforcementOnly = *b.EnforcementOnly
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
+	x.NoExternalMetadata = b.NoExternalMetadata
+	x.EnforcementOnly = b.EnforcementOnly
+	x.ClusterId = b.ClusterId
 	return m0
 }
 
@@ -664,25 +525,24 @@ type isDeployDetectionRequest_Resource interface {
 	isDeployDetectionRequest_Resource()
 }
 
-type deployDetectionRequest_Deployment struct {
+type DeployDetectionRequest_Deployment struct {
 	Deployment *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,oneof"`
 }
 
-func (*deployDetectionRequest_Deployment) isDeployDetectionRequest_Resource() {}
+func (*DeployDetectionRequest_Deployment) isDeployDetectionRequest_Resource() {}
 
 type DeployYAMLDetectionRequest struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Yaml               *string                `protobuf:"bytes,1,opt,name=yaml"`
-	xxx_hidden_NoExternalMetadata bool                   `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata"`
-	xxx_hidden_EnforcementOnly    bool                   `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly"`
-	xxx_hidden_Force              bool                   `protobuf:"varint,5,opt,name=force"`
-	xxx_hidden_PolicyCategories   []string               `protobuf:"bytes,4,rep,name=policy_categories,json=policyCategories"`
-	xxx_hidden_Cluster            *string                `protobuf:"bytes,6,opt,name=cluster"`
-	xxx_hidden_Namespace          *string                `protobuf:"bytes,7,opt,name=namespace"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
+	Yaml               string                 `protobuf:"bytes,1,opt,name=yaml" json:"yaml,omitempty"`
+	NoExternalMetadata bool                   `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata" json:"no_external_metadata,omitempty"`
+	EnforcementOnly    bool                   `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly" json:"enforcement_only,omitempty"`
+	Force              bool                   `protobuf:"varint,5,opt,name=force" json:"force,omitempty"`
+	PolicyCategories   []string               `protobuf:"bytes,4,rep,name=policy_categories,json=policyCategories" json:"policy_categories,omitempty"`
+	// Cluster to delegate scan to, may be the cluster's name or ID.
+	Cluster       string `protobuf:"bytes,6,opt,name=cluster" json:"cluster,omitempty"`
+	Namespace     string `protobuf:"bytes,7,opt,name=namespace" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeployYAMLDetectionRequest) Reset() {
@@ -712,224 +572,116 @@ func (x *DeployYAMLDetectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeployYAMLDetectionRequest) GetYaml() string {
 	if x != nil {
-		if x.xxx_hidden_Yaml != nil {
-			return *x.xxx_hidden_Yaml
-		}
-		return ""
+		return x.Yaml
 	}
 	return ""
 }
 
 func (x *DeployYAMLDetectionRequest) GetNoExternalMetadata() bool {
 	if x != nil {
-		return x.xxx_hidden_NoExternalMetadata
+		return x.NoExternalMetadata
 	}
 	return false
 }
 
 func (x *DeployYAMLDetectionRequest) GetEnforcementOnly() bool {
 	if x != nil {
-		return x.xxx_hidden_EnforcementOnly
+		return x.EnforcementOnly
 	}
 	return false
 }
 
 func (x *DeployYAMLDetectionRequest) GetForce() bool {
 	if x != nil {
-		return x.xxx_hidden_Force
+		return x.Force
 	}
 	return false
 }
 
 func (x *DeployYAMLDetectionRequest) GetPolicyCategories() []string {
 	if x != nil {
-		return x.xxx_hidden_PolicyCategories
+		return x.PolicyCategories
 	}
 	return nil
 }
 
 func (x *DeployYAMLDetectionRequest) GetCluster() string {
 	if x != nil {
-		if x.xxx_hidden_Cluster != nil {
-			return *x.xxx_hidden_Cluster
-		}
-		return ""
+		return x.Cluster
 	}
 	return ""
 }
 
 func (x *DeployYAMLDetectionRequest) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *DeployYAMLDetectionRequest) SetYaml(v string) {
-	x.xxx_hidden_Yaml = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Yaml = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetNoExternalMetadata(v bool) {
-	x.xxx_hidden_NoExternalMetadata = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	x.NoExternalMetadata = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetEnforcementOnly(v bool) {
-	x.xxx_hidden_EnforcementOnly = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	x.EnforcementOnly = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetForce(v bool) {
-	x.xxx_hidden_Force = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.Force = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetPolicyCategories(v []string) {
-	x.xxx_hidden_PolicyCategories = v
+	x.PolicyCategories = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetCluster(v string) {
-	x.xxx_hidden_Cluster = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.Cluster = v
 }
 
 func (x *DeployYAMLDetectionRequest) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *DeployYAMLDetectionRequest) HasYaml() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeployYAMLDetectionRequest) HasNoExternalMetadata() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeployYAMLDetectionRequest) HasEnforcementOnly() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *DeployYAMLDetectionRequest) HasForce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *DeployYAMLDetectionRequest) HasCluster() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *DeployYAMLDetectionRequest) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *DeployYAMLDetectionRequest) ClearYaml() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Yaml = nil
-}
-
-func (x *DeployYAMLDetectionRequest) ClearNoExternalMetadata() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NoExternalMetadata = false
-}
-
-func (x *DeployYAMLDetectionRequest) ClearEnforcementOnly() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_EnforcementOnly = false
-}
-
-func (x *DeployYAMLDetectionRequest) ClearForce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Force = false
-}
-
-func (x *DeployYAMLDetectionRequest) ClearCluster() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Cluster = nil
-}
-
-func (x *DeployYAMLDetectionRequest) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Namespace = nil
+	x.Namespace = v
 }
 
 type DeployYAMLDetectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Yaml               *string
-	NoExternalMetadata *bool
-	EnforcementOnly    *bool
-	Force              *bool
+	Yaml               string
+	NoExternalMetadata bool
+	EnforcementOnly    bool
+	Force              bool
 	PolicyCategories   []string
 	// Cluster to delegate scan to, may be the cluster's name or ID.
-	Cluster   *string
-	Namespace *string
+	Cluster   string
+	Namespace string
 }
 
 func (b0 DeployYAMLDetectionRequest_builder) Build() *DeployYAMLDetectionRequest {
 	m0 := &DeployYAMLDetectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Yaml != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Yaml = b.Yaml
-	}
-	if b.NoExternalMetadata != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
-		x.xxx_hidden_NoExternalMetadata = *b.NoExternalMetadata
-	}
-	if b.EnforcementOnly != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
-		x.xxx_hidden_EnforcementOnly = *b.EnforcementOnly
-	}
-	if b.Force != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Force = *b.Force
-	}
-	x.xxx_hidden_PolicyCategories = b.PolicyCategories
-	if b.Cluster != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_Cluster = b.Cluster
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
+	x.Yaml = b.Yaml
+	x.NoExternalMetadata = b.NoExternalMetadata
+	x.EnforcementOnly = b.EnforcementOnly
+	x.Force = b.Force
+	x.PolicyCategories = b.PolicyCategories
+	x.Cluster = b.Cluster
+	x.Namespace = b.Namespace
 	return m0
 }
 
 type DeployDetectionResponse struct {
-	state                        protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Runs              *[]*DeployDetectionResponse_Run `protobuf:"bytes,1,rep,name=runs"`
-	xxx_hidden_IgnoredObjectRefs []string                        `protobuf:"bytes,2,rep,name=ignored_object_refs,json=ignoredObjectRefs"`
-	xxx_hidden_Remarks           *[]*DeployDetectionRemark       `protobuf:"bytes,3,rep,name=remarks"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState         `protogen:"hybrid.v1"`
+	Runs  []*DeployDetectionResponse_Run `protobuf:"bytes,1,rep,name=runs" json:"runs,omitempty"`
+	// The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
+	IgnoredObjectRefs []string                 `protobuf:"bytes,2,rep,name=ignored_object_refs,json=ignoredObjectRefs" json:"ignored_object_refs,omitempty"`
+	Remarks           []*DeployDetectionRemark `protobuf:"bytes,3,rep,name=remarks" json:"remarks,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DeployDetectionResponse) Reset() {
@@ -959,63 +711,35 @@ func (x *DeployDetectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeployDetectionResponse) GetRuns() []*DeployDetectionResponse_Run {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Runs) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*DeployDetectionResponse_Run
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Runs
 	}
 	return nil
 }
 
 func (x *DeployDetectionResponse) GetIgnoredObjectRefs() []string {
 	if x != nil {
-		return x.xxx_hidden_IgnoredObjectRefs
+		return x.IgnoredObjectRefs
 	}
 	return nil
 }
 
 func (x *DeployDetectionResponse) GetRemarks() []*DeployDetectionRemark {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Remarks) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*DeployDetectionRemark
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Remarks
 	}
 	return nil
 }
 
 func (x *DeployDetectionResponse) SetRuns(v []*DeployDetectionResponse_Run) {
-	var sv *[]*DeployDetectionResponse_Run
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*DeployDetectionResponse_Run{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Runs), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Runs = v
 }
 
 func (x *DeployDetectionResponse) SetIgnoredObjectRefs(v []string) {
-	x.xxx_hidden_IgnoredObjectRefs = v
+	x.IgnoredObjectRefs = v
 }
 
 func (x *DeployDetectionResponse) SetRemarks(v []*DeployDetectionRemark) {
-	var sv *[]*DeployDetectionRemark
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*DeployDetectionRemark{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	x.Remarks = v
 }
 
 type DeployDetectionResponse_builder struct {
@@ -1031,27 +755,19 @@ func (b0 DeployDetectionResponse_builder) Build() *DeployDetectionResponse {
 	m0 := &DeployDetectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Runs != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Runs = &b.Runs
-	}
-	x.xxx_hidden_IgnoredObjectRefs = b.IgnoredObjectRefs
-	if b.Remarks != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Remarks = &b.Remarks
-	}
+	x.Runs = b.Runs
+	x.IgnoredObjectRefs = b.IgnoredObjectRefs
+	x.Remarks = b.Remarks
 	return m0
 }
 
 type DeployDetectionRemark struct {
-	state                             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name                   *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_PermissionLevel        *string                `protobuf:"bytes,2,opt,name=permission_level,json=permissionLevel"`
-	xxx_hidden_AppliedNetworkPolicies []string               `protobuf:"bytes,3,rep,name=applied_network_policies,json=appliedNetworkPolicies"`
-	XXX_raceDetectHookData            protoimpl.RaceDetectHookData
-	XXX_presence                      [1]uint32
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name                   string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	PermissionLevel        string                 `protobuf:"bytes,2,opt,name=permission_level,json=permissionLevel" json:"permission_level,omitempty"`
+	AppliedNetworkPolicies []string               `protobuf:"bytes,3,rep,name=applied_network_policies,json=appliedNetworkPolicies" json:"applied_network_policies,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DeployDetectionRemark) Reset() {
@@ -1081,74 +797,42 @@ func (x *DeployDetectionRemark) ProtoReflect() protoreflect.Message {
 
 func (x *DeployDetectionRemark) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *DeployDetectionRemark) GetPermissionLevel() string {
 	if x != nil {
-		if x.xxx_hidden_PermissionLevel != nil {
-			return *x.xxx_hidden_PermissionLevel
-		}
-		return ""
+		return x.PermissionLevel
 	}
 	return ""
 }
 
 func (x *DeployDetectionRemark) GetAppliedNetworkPolicies() []string {
 	if x != nil {
-		return x.xxx_hidden_AppliedNetworkPolicies
+		return x.AppliedNetworkPolicies
 	}
 	return nil
 }
 
 func (x *DeployDetectionRemark) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Name = v
 }
 
 func (x *DeployDetectionRemark) SetPermissionLevel(v string) {
-	x.xxx_hidden_PermissionLevel = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.PermissionLevel = v
 }
 
 func (x *DeployDetectionRemark) SetAppliedNetworkPolicies(v []string) {
-	x.xxx_hidden_AppliedNetworkPolicies = v
-}
-
-func (x *DeployDetectionRemark) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeployDetectionRemark) HasPermissionLevel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeployDetectionRemark) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *DeployDetectionRemark) ClearPermissionLevel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_PermissionLevel = nil
+	x.AppliedNetworkPolicies = v
 }
 
 type DeployDetectionRemark_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name                   *string
-	PermissionLevel        *string
+	Name                   string
+	PermissionLevel        string
 	AppliedNetworkPolicies []string
 }
 
@@ -1156,29 +840,19 @@ func (b0 DeployDetectionRemark_builder) Build() *DeployDetectionRemark {
 	m0 := &DeployDetectionRemark{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.PermissionLevel != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_PermissionLevel = b.PermissionLevel
-	}
-	x.xxx_hidden_AppliedNetworkPolicies = b.AppliedNetworkPolicies
+	x.Name = b.Name
+	x.PermissionLevel = b.PermissionLevel
+	x.AppliedNetworkPolicies = b.AppliedNetworkPolicies
 	return m0
 }
 
 // This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
 type ResultAggregation struct {
-	state              protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_Alerts  *[]*storage.Alert         `protobuf:"bytes,1,rep,name=alerts"`
-	xxx_hidden_Remarks *[]*DeployDetectionRemark `protobuf:"bytes,2,rep,name=remarks"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Alerts        []*storage.Alert         `protobuf:"bytes,1,rep,name=alerts" json:"alerts,omitempty"`
+	Remarks       []*DeployDetectionRemark `protobuf:"bytes,2,rep,name=remarks" json:"remarks,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResultAggregation) Reset() {
@@ -1208,52 +882,24 @@ func (x *ResultAggregation) ProtoReflect() protoreflect.Message {
 
 func (x *ResultAggregation) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.Alert
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Alerts
 	}
 	return nil
 }
 
 func (x *ResultAggregation) GetRemarks() []*DeployDetectionRemark {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Remarks) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*DeployDetectionRemark
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Remarks
 	}
 	return nil
 }
 
 func (x *ResultAggregation) SetAlerts(v []*storage.Alert) {
-	var sv *[]*storage.Alert
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Alert{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Alerts = v
 }
 
 func (x *ResultAggregation) SetRemarks(v []*DeployDetectionRemark) {
-	var sv *[]*DeployDetectionRemark
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*DeployDetectionRemark{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Remarks), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Remarks = v
 }
 
 type ResultAggregation_builder struct {
@@ -1267,28 +913,18 @@ func (b0 ResultAggregation_builder) Build() *ResultAggregation {
 	m0 := &ResultAggregation{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Alerts != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Alerts = &b.Alerts
-	}
-	if b.Remarks != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Remarks = &b.Remarks
-	}
+	x.Alerts = b.Alerts
+	x.Remarks = b.Remarks
 	return m0
 }
 
 type DeployDetectionResponse_Run struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name   *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Type   *string                `protobuf:"bytes,2,opt,name=type"`
-	xxx_hidden_Alerts *[]*storage.Alert      `protobuf:"bytes,3,rep,name=alerts"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type" json:"type,omitempty"`
+	Alerts        []*storage.Alert       `protobuf:"bytes,3,rep,name=alerts" json:"alerts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeployDetectionResponse_Run) Reset() {
@@ -1318,88 +954,42 @@ func (x *DeployDetectionResponse_Run) ProtoReflect() protoreflect.Message {
 
 func (x *DeployDetectionResponse_Run) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *DeployDetectionResponse_Run) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *DeployDetectionResponse_Run) GetAlerts() []*storage.Alert {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Alerts) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*storage.Alert
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Alerts
 	}
 	return nil
 }
 
 func (x *DeployDetectionResponse_Run) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Name = v
 }
 
 func (x *DeployDetectionResponse_Run) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Type = v
 }
 
 func (x *DeployDetectionResponse_Run) SetAlerts(v []*storage.Alert) {
-	var sv *[]*storage.Alert
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Alert{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Alerts), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *DeployDetectionResponse_Run) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeployDetectionResponse_Run) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeployDetectionResponse_Run) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *DeployDetectionResponse_Run) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Type = nil
+	x.Alerts = v
 }
 
 type DeployDetectionResponse_Run_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name   *string
-	Type   *string
+	Name   string
+	Type   string
 	Alerts []*storage.Alert
 }
 
@@ -1407,18 +997,9 @@ func (b0 DeployDetectionResponse_Run_builder) Build() *DeployDetectionResponse_R
 	m0 := &DeployDetectionResponse_Run{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.Alerts != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Alerts = &b.Alerts
-	}
+	x.Name = b.Name
+	x.Type = b.Type
+	x.Alerts = b.Alerts
 	return m0
 }
 
@@ -1477,8 +1058,8 @@ const file_api_v1_detection_service_proto_rawDesc = "" +
 	"\x10DetectionService\x12e\n" +
 	"\x0fDetectBuildTime\x12\x19.v1.BuildDetectionRequest\x1a\x1a.v1.BuildDetectionResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/v1/detect/build\x12i\n" +
 	"\x10DetectDeployTime\x12\x1a.v1.DeployDetectionRequest\x1a\x1b.v1.DeployDetectionResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/detect/deploy\x12z\n" +
-	"\x18DetectDeployTimeFromYAML\x12\x1e.v1.DeployYAMLDetectionRequest\x1a\x1b.v1.DeployDetectionResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/detect/deploy/yamlB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x00b\beditionsp\xe8\a"
+	"\x18DetectDeployTimeFromYAML\x12\x1e.v1.DeployYAMLDetectionRequest\x1a\x1b.v1.DeployDetectionResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/detect/deploy/yamlB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x00b\beditionsp\xe8\a"
 
 var file_api_v1_detection_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_detection_service_proto_goTypes = []any{
@@ -1522,11 +1103,11 @@ func file_api_v1_detection_service_proto_init() {
 		return
 	}
 	file_api_v1_detection_service_proto_msgTypes[0].OneofWrappers = []any{
-		(*buildDetectionRequest_Image)(nil),
-		(*buildDetectionRequest_ImageName)(nil),
+		(*BuildDetectionRequest_Image)(nil),
+		(*BuildDetectionRequest_ImageName)(nil),
 	}
 	file_api_v1_detection_service_proto_msgTypes[2].OneofWrappers = []any{
-		(*deployDetectionRequest_Deployment)(nil),
+		(*DeployDetectionRequest_Deployment)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

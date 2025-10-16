@@ -8,8 +8,9 @@ func (m *OrchestratorIntegration) SizeVT() int { return proto.Size(m) }
 func (m *OrchestratorIntegration) CloneVT() *OrchestratorIntegration {
 	return proto.Clone(m).(*OrchestratorIntegration)
 }
-func (m *OrchestratorIntegration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *OrchestratorIntegration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *OrchestratorIntegration) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *OrchestratorIntegration) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *OrchestratorIntegration) EqualVT(n *OrchestratorIntegration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *OrchestratorIntegration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

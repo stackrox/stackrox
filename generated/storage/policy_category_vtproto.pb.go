@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *PolicyCategory) SizeVT() int                   { return proto.Size(m) }
-func (m *PolicyCategory) CloneVT() *PolicyCategory      { return proto.Clone(m).(*PolicyCategory) }
-func (m *PolicyCategory) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategory) SizeVT() int                    { return proto.Size(m) }
+func (m *PolicyCategory) CloneVT() *PolicyCategory       { return proto.Clone(m).(*PolicyCategory) }
+func (m *PolicyCategory) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategory) EqualVT(n *PolicyCategory) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PolicyCategory) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

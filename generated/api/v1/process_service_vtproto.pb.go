@@ -12,6 +12,9 @@ func (m *GetProcessesByDeploymentRequest) MarshalVT() ([]byte, error) { return p
 func (m *GetProcessesByDeploymentRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetProcessesByDeploymentRequest) EqualVT(n *GetProcessesByDeploymentRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetProcessesByDeploymentRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -22,8 +25,9 @@ func (m *GetProcessesResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetProcessesResponse) CloneVT() *GetProcessesResponse {
 	return proto.Clone(m).(*GetProcessesResponse)
 }
-func (m *GetProcessesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetProcessesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetProcessesResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GetProcessesResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GetProcessesResponse) EqualVT(n *GetProcessesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetProcessesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,14 +36,16 @@ func (m *ProcessGroup) SizeVT() int                   { return proto.Size(m) }
 func (m *ProcessGroup) CloneVT() *ProcessGroup        { return proto.Clone(m).(*ProcessGroup) }
 func (m *ProcessGroup) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessGroup) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessGroup) EqualVT(n *ProcessGroup) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessGroup) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ProcessNameGroup) SizeVT() int                   { return proto.Size(m) }
-func (m *ProcessNameGroup) CloneVT() *ProcessNameGroup    { return proto.Clone(m).(*ProcessNameGroup) }
-func (m *ProcessNameGroup) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessNameGroup) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessNameGroup) SizeVT() int                      { return proto.Size(m) }
+func (m *ProcessNameGroup) CloneVT() *ProcessNameGroup       { return proto.Clone(m).(*ProcessNameGroup) }
+func (m *ProcessNameGroup) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ProcessNameGroup) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessNameGroup) EqualVT(n *ProcessNameGroup) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessNameGroup) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -50,6 +56,9 @@ func (m *GetGroupedProcessesResponse) CloneVT() *GetGroupedProcessesResponse {
 }
 func (m *GetGroupedProcessesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetGroupedProcessesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetGroupedProcessesResponse) EqualVT(n *GetGroupedProcessesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetGroupedProcessesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -63,6 +72,9 @@ func (m *ProcessNameAndContainerNameGroup) CloneVT() *ProcessNameAndContainerNam
 func (m *ProcessNameAndContainerNameGroup) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ProcessNameAndContainerNameGroup) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ProcessNameAndContainerNameGroup) EqualVT(n *ProcessNameAndContainerNameGroup) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -80,6 +92,9 @@ func (m *GetGroupedProcessesWithContainerResponse) MarshalVT() ([]byte, error) {
 func (m *GetGroupedProcessesWithContainerResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetGroupedProcessesWithContainerResponse) EqualVT(n *GetGroupedProcessesWithContainerResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetGroupedProcessesWithContainerResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -90,8 +105,9 @@ func (m *CountProcessesResponse) SizeVT() int { return proto.Size(m) }
 func (m *CountProcessesResponse) CloneVT() *CountProcessesResponse {
 	return proto.Clone(m).(*CountProcessesResponse)
 }
-func (m *CountProcessesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CountProcessesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CountProcessesResponse) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *CountProcessesResponse) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *CountProcessesResponse) EqualVT(n *CountProcessesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CountProcessesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

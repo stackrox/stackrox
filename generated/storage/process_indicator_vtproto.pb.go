@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ProcessIndicator) SizeVT() int                   { return proto.Size(m) }
-func (m *ProcessIndicator) CloneVT() *ProcessIndicator    { return proto.Clone(m).(*ProcessIndicator) }
-func (m *ProcessIndicator) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessIndicator) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessIndicator) SizeVT() int                      { return proto.Size(m) }
+func (m *ProcessIndicator) CloneVT() *ProcessIndicator       { return proto.Clone(m).(*ProcessIndicator) }
+func (m *ProcessIndicator) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ProcessIndicator) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessIndicator) EqualVT(n *ProcessIndicator) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessIndicator) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *ProcessIndicatorUniqueKey) CloneVT() *ProcessIndicatorUniqueKey {
 }
 func (m *ProcessIndicatorUniqueKey) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessIndicatorUniqueKey) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessIndicatorUniqueKey) EqualVT(n *ProcessIndicatorUniqueKey) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessIndicatorUniqueKey) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +30,9 @@ func (m *NetworkProcessUniqueKey) SizeVT() int { return proto.Size(m) }
 func (m *NetworkProcessUniqueKey) CloneVT() *NetworkProcessUniqueKey {
 	return proto.Clone(m).(*NetworkProcessUniqueKey)
 }
-func (m *NetworkProcessUniqueKey) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkProcessUniqueKey) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkProcessUniqueKey) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *NetworkProcessUniqueKey) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkProcessUniqueKey) EqualVT(n *NetworkProcessUniqueKey) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkProcessUniqueKey) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -36,6 +41,7 @@ func (m *ProcessSignal) SizeVT() int                   { return proto.Size(m) }
 func (m *ProcessSignal) CloneVT() *ProcessSignal       { return proto.Clone(m).(*ProcessSignal) }
 func (m *ProcessSignal) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessSignal) EqualVT(n *ProcessSignal) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -46,6 +52,9 @@ func (m *ProcessSignal_LineageInfo) CloneVT() *ProcessSignal_LineageInfo {
 }
 func (m *ProcessSignal_LineageInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessSignal_LineageInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessSignal_LineageInfo) EqualVT(n *ProcessSignal_LineageInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessSignal_LineageInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

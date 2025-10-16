@@ -8,6 +8,7 @@ func (m *LabelSelector) SizeVT() int                   { return proto.Size(m) }
 func (m *LabelSelector) CloneVT() *LabelSelector       { return proto.Clone(m).(*LabelSelector) }
 func (m *LabelSelector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *LabelSelector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LabelSelector) EqualVT(n *LabelSelector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LabelSelector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *LabelSelector_Requirement) CloneVT() *LabelSelector_Requirement {
 }
 func (m *LabelSelector_Requirement) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *LabelSelector_Requirement) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LabelSelector_Requirement) EqualVT(n *LabelSelector_Requirement) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LabelSelector_Requirement) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +30,9 @@ func (m *SetBasedLabelSelector) SizeVT() int { return proto.Size(m) }
 func (m *SetBasedLabelSelector) CloneVT() *SetBasedLabelSelector {
 	return proto.Clone(m).(*SetBasedLabelSelector)
 }
-func (m *SetBasedLabelSelector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SetBasedLabelSelector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SetBasedLabelSelector) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *SetBasedLabelSelector) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *SetBasedLabelSelector) EqualVT(n *SetBasedLabelSelector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SetBasedLabelSelector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -39,6 +44,9 @@ func (m *SetBasedLabelSelector_Requirement) CloneVT() *SetBasedLabelSelector_Req
 func (m *SetBasedLabelSelector_Requirement) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *SetBasedLabelSelector_Requirement) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *SetBasedLabelSelector_Requirement) EqualVT(n *SetBasedLabelSelector_Requirement) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

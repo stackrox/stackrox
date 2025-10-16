@@ -8,6 +8,7 @@ func (m *Risk) SizeVT() int                   { return proto.Size(m) }
 func (m *Risk) CloneVT() *Risk                { return proto.Clone(m).(*Risk) }
 func (m *Risk) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Risk) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Risk) EqualVT(n *Risk) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Risk) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *Risk_Result) SizeVT() int                   { return proto.Size(m) }
 func (m *Risk_Result) CloneVT() *Risk_Result         { return proto.Clone(m).(*Risk_Result) }
 func (m *Risk_Result) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Risk_Result) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Risk_Result) EqualVT(n *Risk_Result) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Risk_Result) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *Risk_Result_Factor) SizeVT() int { return proto.Size(m) }
 func (m *Risk_Result_Factor) CloneVT() *Risk_Result_Factor {
 	return proto.Clone(m).(*Risk_Result_Factor)
 }
-func (m *Risk_Result_Factor) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *Risk_Result_Factor) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Risk_Result_Factor) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *Risk_Result_Factor) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *Risk_Result_Factor) EqualVT(n *Risk_Result_Factor) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Risk_Result_Factor) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,7 @@ func (m *RiskSubject) SizeVT() int                   { return proto.Size(m) }
 func (m *RiskSubject) CloneVT() *RiskSubject         { return proto.Clone(m).(*RiskSubject) }
 func (m *RiskSubject) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RiskSubject) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RiskSubject) EqualVT(n *RiskSubject) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RiskSubject) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

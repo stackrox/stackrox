@@ -8,8 +8,9 @@ func (m *ContainerRuntimeInfo) SizeVT() int { return proto.Size(m) }
 func (m *ContainerRuntimeInfo) CloneVT() *ContainerRuntimeInfo {
 	return proto.Clone(m).(*ContainerRuntimeInfo)
 }
-func (m *ContainerRuntimeInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ContainerRuntimeInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ContainerRuntimeInfo) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *ContainerRuntimeInfo) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *ContainerRuntimeInfo) EqualVT(n *ContainerRuntimeInfo) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ContainerRuntimeInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

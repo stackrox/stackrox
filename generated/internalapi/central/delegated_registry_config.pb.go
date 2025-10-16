@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/delegated_registry_config.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -74,15 +76,11 @@ func (x DelegatedRegistryConfig_EnabledFor) Number() protoreflect.EnumNumber {
 //
 // Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 type DelegatedRegistryConfig struct {
-	state                 protoimpl.MessageState                        `protogen:"opaque.v1"`
-	xxx_hidden_EnabledFor DelegatedRegistryConfig_EnabledFor            `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=central.DelegatedRegistryConfig_EnabledFor"`
-	xxx_hidden_Registries *[]*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,2,rep,name=registries"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                       `protogen:"hybrid.v1"`
+	EnabledFor    DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=central.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
+	Registries    []*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,2,rep,name=registries" json:"registries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig) Reset() {
@@ -112,59 +110,30 @@ func (x *DelegatedRegistryConfig) ProtoReflect() protoreflect.Message {
 
 func (x *DelegatedRegistryConfig) GetEnabledFor() DelegatedRegistryConfig_EnabledFor {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_EnabledFor
-		}
+		return x.EnabledFor
 	}
 	return DelegatedRegistryConfig_NONE
 }
 
 func (x *DelegatedRegistryConfig) GetRegistries() []*DelegatedRegistryConfig_DelegatedRegistry {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Registries) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*DelegatedRegistryConfig_DelegatedRegistry
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Registries
 	}
 	return nil
 }
 
 func (x *DelegatedRegistryConfig) SetEnabledFor(v DelegatedRegistryConfig_EnabledFor) {
-	x.xxx_hidden_EnabledFor = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.EnabledFor = v
 }
 
 func (x *DelegatedRegistryConfig) SetRegistries(v []*DelegatedRegistryConfig_DelegatedRegistry) {
-	var sv *[]*DelegatedRegistryConfig_DelegatedRegistry
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*DelegatedRegistryConfig_DelegatedRegistry{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *DelegatedRegistryConfig) HasEnabledFor() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DelegatedRegistryConfig) ClearEnabledFor() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_EnabledFor = DelegatedRegistryConfig_NONE
+	x.Registries = v
 }
 
 type DelegatedRegistryConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	EnabledFor *DelegatedRegistryConfig_EnabledFor
+	EnabledFor DelegatedRegistryConfig_EnabledFor
 	Registries []*DelegatedRegistryConfig_DelegatedRegistry
 }
 
@@ -172,24 +141,16 @@ func (b0 DelegatedRegistryConfig_builder) Build() *DelegatedRegistryConfig {
 	m0 := &DelegatedRegistryConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.EnabledFor != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_EnabledFor = *b.EnabledFor
-	}
-	if b.Registries != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Registries = &b.Registries
-	}
+	x.EnabledFor = b.EnabledFor
+	x.Registries = b.Registries
 	return m0
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) Reset() {
@@ -219,45 +180,26 @@ func (x *DelegatedRegistryConfig_DelegatedRegistry) ProtoReflect() protoreflect.
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) GetPath() string {
 	if x != nil {
-		if x.xxx_hidden_Path != nil {
-			return *x.xxx_hidden_Path
-		}
-		return ""
+		return x.Path
 	}
 	return ""
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) SetPath(v string) {
-	x.xxx_hidden_Path = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) HasPath() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) ClearPath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Path = nil
+	x.Path = v
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Path *string
+	Path string
 }
 
 func (b0 DelegatedRegistryConfig_DelegatedRegistry_builder) Build() *DelegatedRegistryConfig_DelegatedRegistry {
 	m0 := &DelegatedRegistryConfig_DelegatedRegistry{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Path != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Path = b.Path
-	}
+	x.Path = b.Path
 	return m0
 }
 
@@ -278,7 +220,7 @@ const file_internalapi_central_delegated_registry_config_proto_rawDesc = "" +
 	"EnabledFor\x12\b\n" +
 	"\x04NONE\x10\x00\x12\a\n" +
 	"\x03ALL\x10\x01\x12\f\n" +
-	"\bSPECIFIC\x10\x02B'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\bSPECIFIC\x10\x02B/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_delegated_registry_config_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_internalapi_central_delegated_registry_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

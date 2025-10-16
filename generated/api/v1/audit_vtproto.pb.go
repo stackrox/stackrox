@@ -8,6 +8,7 @@ func (m *Audit) SizeVT() int                   { return proto.Size(m) }
 func (m *Audit) CloneVT() *Audit               { return proto.Clone(m).(*Audit) }
 func (m *Audit) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Audit) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Audit) EqualVT(n *Audit) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Audit) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *Audit_Message) SizeVT() int                   { return proto.Size(m) }
 func (m *Audit_Message) CloneVT() *Audit_Message       { return proto.Clone(m).(*Audit_Message) }
 func (m *Audit_Message) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Audit_Message) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Audit_Message) EqualVT(n *Audit_Message) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Audit_Message) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *Audit_Message_Request) SizeVT() int { return proto.Size(m) }
 func (m *Audit_Message_Request) CloneVT() *Audit_Message_Request {
 	return proto.Clone(m).(*Audit_Message_Request)
 }
-func (m *Audit_Message_Request) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *Audit_Message_Request) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Audit_Message_Request) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *Audit_Message_Request) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *Audit_Message_Request) EqualVT(n *Audit_Message_Request) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Audit_Message_Request) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -37,6 +40,9 @@ func (m *Audit_Message_Request_SourceHeaders) CloneVT() *Audit_Message_Request_S
 func (m *Audit_Message_Request_SourceHeaders) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *Audit_Message_Request_SourceHeaders) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *Audit_Message_Request_SourceHeaders) EqualVT(n *Audit_Message_Request_SourceHeaders) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

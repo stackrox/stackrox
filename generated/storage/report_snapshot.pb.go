@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/report_snapshot.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -198,25 +200,27 @@ func (x ReportStatus_RunMethod) Number() protoreflect.EnumNumber {
 // ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
 // vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
 type ReportSnapshot struct {
-	state                            protoimpl.MessageState    `protogen:"opaque.v1"`
-	xxx_hidden_ReportId              *string                   `protobuf:"bytes,1,opt,name=report_id,json=reportId"`
-	xxx_hidden_ReportConfigurationId *string                   `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId"`
-	xxx_hidden_Name                  *string                   `protobuf:"bytes,3,opt,name=name"`
-	xxx_hidden_Description           *string                   `protobuf:"bytes,4,opt,name=description"`
-	xxx_hidden_Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,enum=storage.ReportSnapshot_ReportType"`
-	xxx_hidden_Filter                isReportSnapshot_Filter   `protobuf_oneof:"filter"`
-	xxx_hidden_Collection            *CollectionSnapshot       `protobuf:"bytes,7,opt,name=collection"`
-	xxx_hidden_Schedule              *Schedule                 `protobuf:"bytes,8,opt,name=schedule"`
-	xxx_hidden_ReportStatus          *ReportStatus             `protobuf:"bytes,9,opt,name=report_status,json=reportStatus"`
-	xxx_hidden_Notifiers             *[]*NotifierSnapshot      `protobuf:"bytes,10,rep,name=notifiers"`
-	xxx_hidden_Requester             *SlimUser                 `protobuf:"bytes,11,opt,name=requester"`
-	xxx_hidden_AreaOfConcern         *string                   `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                 protoimpl.MessageState    `protogen:"hybrid.v1"`
+	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId" json:"report_id,omitempty" sql:"pk,type(uuid)"`                                          // @gotags: sql:"pk,type(uuid)"
+	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId" json:"report_configuration_id,omitempty" search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"
+	Name                  string                    `protobuf:"bytes,3,opt,name=name" json:"name,omitempty" search:"Report Name"`                                                                  // @gotags: search:"Report Name"
+	Description           string                    `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`
+	Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,enum=storage.ReportSnapshot_ReportType" json:"type,omitempty"`
+	// Types that are valid to be assigned to Filter:
+	//
+	//	*ReportSnapshot_VulnReportFilters
+	//	*ReportSnapshot_ViewBasedVulnReportFilters
+	Filter       isReportSnapshot_Filter `protobuf_oneof:"filter"`
+	Collection   *CollectionSnapshot     `protobuf:"bytes,7,opt,name=collection" json:"collection,omitempty"`
+	Schedule     *Schedule               `protobuf:"bytes,8,opt,name=schedule" json:"schedule,omitempty"`
+	ReportStatus *ReportStatus           `protobuf:"bytes,9,opt,name=report_status,json=reportStatus" json:"report_status,omitempty"`
+	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,10,rep,name=notifiers" json:"notifiers,omitempty"`
+	Requester    *SlimUser               `protobuf:"bytes,11,opt,name=requester" json:"requester,omitempty"`
+	// fields related to view based reports
+	// area_of_concern refers to view from which report is generated - user workload, platform component etc
+	AreaOfConcern string `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern" json:"area_of_concern,omitempty" search:"Area Of Concern"` // @gotags: search:"Area Of Concern"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReportSnapshot) Reset() {
@@ -246,56 +250,49 @@ func (x *ReportSnapshot) ProtoReflect() protoreflect.Message {
 
 func (x *ReportSnapshot) GetReportId() string {
 	if x != nil {
-		if x.xxx_hidden_ReportId != nil {
-			return *x.xxx_hidden_ReportId
-		}
-		return ""
+		return x.ReportId
 	}
 	return ""
 }
 
 func (x *ReportSnapshot) GetReportConfigurationId() string {
 	if x != nil {
-		if x.xxx_hidden_ReportConfigurationId != nil {
-			return *x.xxx_hidden_ReportConfigurationId
-		}
-		return ""
+		return x.ReportConfigurationId
 	}
 	return ""
 }
 
 func (x *ReportSnapshot) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ReportSnapshot) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ReportSnapshot) GetType() ReportSnapshot_ReportType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return ReportSnapshot_VULNERABILITY
 }
 
+func (x *ReportSnapshot) GetFilter() isReportSnapshot_Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
 func (x *ReportSnapshot) GetVulnReportFilters() *VulnerabilityReportFilters {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Filter.(*reportSnapshot_VulnReportFilters); ok {
+		if x, ok := x.Filter.(*ReportSnapshot_VulnReportFilters); ok {
 			return x.VulnReportFilters
 		}
 	}
@@ -304,7 +301,7 @@ func (x *ReportSnapshot) GetVulnReportFilters() *VulnerabilityReportFilters {
 
 func (x *ReportSnapshot) GetViewBasedVulnReportFilters() *ViewBasedVulnerabilityReportFilters {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Filter.(*reportSnapshot_ViewBasedVulnReportFilters); ok {
+		if x, ok := x.Filter.(*ReportSnapshot_ViewBasedVulnReportFilters); ok {
 			return x.ViewBasedVulnReportFilters
 		}
 	}
@@ -313,188 +310,118 @@ func (x *ReportSnapshot) GetViewBasedVulnReportFilters() *ViewBasedVulnerability
 
 func (x *ReportSnapshot) GetCollection() *CollectionSnapshot {
 	if x != nil {
-		return x.xxx_hidden_Collection
+		return x.Collection
 	}
 	return nil
 }
 
 func (x *ReportSnapshot) GetSchedule() *Schedule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Schedule) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *Schedule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Schedule), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Schedule
 	}
 	return nil
 }
 
 func (x *ReportSnapshot) GetReportStatus() *ReportStatus {
 	if x != nil {
-		return x.xxx_hidden_ReportStatus
+		return x.ReportStatus
 	}
 	return nil
 }
 
 func (x *ReportSnapshot) GetNotifiers() []*NotifierSnapshot {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Notifiers) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *[]*NotifierSnapshot
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Notifiers
 	}
 	return nil
 }
 
 func (x *ReportSnapshot) GetRequester() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_Requester
+		return x.Requester
 	}
 	return nil
 }
 
 func (x *ReportSnapshot) GetAreaOfConcern() string {
 	if x != nil {
-		if x.xxx_hidden_AreaOfConcern != nil {
-			return *x.xxx_hidden_AreaOfConcern
-		}
-		return ""
+		return x.AreaOfConcern
 	}
 	return ""
 }
 
 func (x *ReportSnapshot) SetReportId(v string) {
-	x.xxx_hidden_ReportId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 12)
+	x.ReportId = v
 }
 
 func (x *ReportSnapshot) SetReportConfigurationId(v string) {
-	x.xxx_hidden_ReportConfigurationId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 12)
+	x.ReportConfigurationId = v
 }
 
 func (x *ReportSnapshot) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
+	x.Name = v
 }
 
 func (x *ReportSnapshot) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 12)
+	x.Description = v
 }
 
 func (x *ReportSnapshot) SetType(v ReportSnapshot_ReportType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 12)
+	x.Type = v
 }
 
 func (x *ReportSnapshot) SetVulnReportFilters(v *VulnerabilityReportFilters) {
 	if v == nil {
-		x.xxx_hidden_Filter = nil
+		x.Filter = nil
 		return
 	}
-	x.xxx_hidden_Filter = &reportSnapshot_VulnReportFilters{v}
+	x.Filter = &ReportSnapshot_VulnReportFilters{v}
 }
 
 func (x *ReportSnapshot) SetViewBasedVulnReportFilters(v *ViewBasedVulnerabilityReportFilters) {
 	if v == nil {
-		x.xxx_hidden_Filter = nil
+		x.Filter = nil
 		return
 	}
-	x.xxx_hidden_Filter = &reportSnapshot_ViewBasedVulnReportFilters{v}
+	x.Filter = &ReportSnapshot_ViewBasedVulnReportFilters{v}
 }
 
 func (x *ReportSnapshot) SetCollection(v *CollectionSnapshot) {
-	x.xxx_hidden_Collection = v
+	x.Collection = v
 }
 
 func (x *ReportSnapshot) SetSchedule(v *Schedule) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 12)
-	}
+	x.Schedule = v
 }
 
 func (x *ReportSnapshot) SetReportStatus(v *ReportStatus) {
-	x.xxx_hidden_ReportStatus = v
+	x.ReportStatus = v
 }
 
 func (x *ReportSnapshot) SetNotifiers(v []*NotifierSnapshot) {
-	var sv *[]*NotifierSnapshot
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NotifierSnapshot{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 12)
+	x.Notifiers = v
 }
 
 func (x *ReportSnapshot) SetRequester(v *SlimUser) {
-	x.xxx_hidden_Requester = v
+	x.Requester = v
 }
 
 func (x *ReportSnapshot) SetAreaOfConcern(v string) {
-	x.xxx_hidden_AreaOfConcern = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
-}
-
-func (x *ReportSnapshot) HasReportId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ReportSnapshot) HasReportConfigurationId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ReportSnapshot) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ReportSnapshot) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ReportSnapshot) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.AreaOfConcern = v
 }
 
 func (x *ReportSnapshot) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Filter != nil
+	return x.Filter != nil
 }
 
 func (x *ReportSnapshot) HasVulnReportFilters() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Filter.(*reportSnapshot_VulnReportFilters)
+	_, ok := x.Filter.(*ReportSnapshot_VulnReportFilters)
 	return ok
 }
 
@@ -502,7 +429,7 @@ func (x *ReportSnapshot) HasViewBasedVulnReportFilters() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Filter.(*reportSnapshot_ViewBasedVulnReportFilters)
+	_, ok := x.Filter.(*ReportSnapshot_ViewBasedVulnReportFilters)
 	return ok
 }
 
@@ -510,98 +437,60 @@ func (x *ReportSnapshot) HasCollection() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Collection != nil
+	return x.Collection != nil
 }
 
 func (x *ReportSnapshot) HasSchedule() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.Schedule != nil
 }
 
 func (x *ReportSnapshot) HasReportStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ReportStatus != nil
+	return x.ReportStatus != nil
 }
 
 func (x *ReportSnapshot) HasRequester() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Requester != nil
-}
-
-func (x *ReportSnapshot) HasAreaOfConcern() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ReportSnapshot) ClearReportId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ReportId = nil
-}
-
-func (x *ReportSnapshot) ClearReportConfigurationId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ReportConfigurationId = nil
-}
-
-func (x *ReportSnapshot) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ReportSnapshot) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ReportSnapshot) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Type = ReportSnapshot_VULNERABILITY
+	return x.Requester != nil
 }
 
 func (x *ReportSnapshot) ClearFilter() {
-	x.xxx_hidden_Filter = nil
+	x.Filter = nil
 }
 
 func (x *ReportSnapshot) ClearVulnReportFilters() {
-	if _, ok := x.xxx_hidden_Filter.(*reportSnapshot_VulnReportFilters); ok {
-		x.xxx_hidden_Filter = nil
+	if _, ok := x.Filter.(*ReportSnapshot_VulnReportFilters); ok {
+		x.Filter = nil
 	}
 }
 
 func (x *ReportSnapshot) ClearViewBasedVulnReportFilters() {
-	if _, ok := x.xxx_hidden_Filter.(*reportSnapshot_ViewBasedVulnReportFilters); ok {
-		x.xxx_hidden_Filter = nil
+	if _, ok := x.Filter.(*ReportSnapshot_ViewBasedVulnReportFilters); ok {
+		x.Filter = nil
 	}
 }
 
 func (x *ReportSnapshot) ClearCollection() {
-	x.xxx_hidden_Collection = nil
+	x.Collection = nil
 }
 
 func (x *ReportSnapshot) ClearSchedule() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, (*Schedule)(nil))
+	x.Schedule = nil
 }
 
 func (x *ReportSnapshot) ClearReportStatus() {
-	x.xxx_hidden_ReportStatus = nil
+	x.ReportStatus = nil
 }
 
 func (x *ReportSnapshot) ClearRequester() {
-	x.xxx_hidden_Requester = nil
-}
-
-func (x *ReportSnapshot) ClearAreaOfConcern() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_AreaOfConcern = nil
+	x.Requester = nil
 }
 
 const ReportSnapshot_Filter_not_set_case case_ReportSnapshot_Filter = 0
@@ -612,10 +501,10 @@ func (x *ReportSnapshot) WhichFilter() case_ReportSnapshot_Filter {
 	if x == nil {
 		return ReportSnapshot_Filter_not_set_case
 	}
-	switch x.xxx_hidden_Filter.(type) {
-	case *reportSnapshot_VulnReportFilters:
+	switch x.Filter.(type) {
+	case *ReportSnapshot_VulnReportFilters:
 		return ReportSnapshot_VulnReportFilters_case
-	case *reportSnapshot_ViewBasedVulnReportFilters:
+	case *ReportSnapshot_ViewBasedVulnReportFilters:
 		return ReportSnapshot_ViewBasedVulnReportFilters_case
 	default:
 		return ReportSnapshot_Filter_not_set_case
@@ -625,15 +514,15 @@ func (x *ReportSnapshot) WhichFilter() case_ReportSnapshot_Filter {
 type ReportSnapshot_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ReportId              *string
-	ReportConfigurationId *string
-	Name                  *string
-	Description           *string
-	Type                  *ReportSnapshot_ReportType
-	// Fields of oneof xxx_hidden_Filter:
+	ReportId              string
+	ReportConfigurationId string
+	Name                  string
+	Description           string
+	Type                  ReportSnapshot_ReportType
+	// Fields of oneof Filter:
 	VulnReportFilters          *VulnerabilityReportFilters
 	ViewBasedVulnReportFilters *ViewBasedVulnerabilityReportFilters
-	// -- end of xxx_hidden_Filter
+	// -- end of Filter
 	Collection   *CollectionSnapshot
 	Schedule     *Schedule
 	ReportStatus *ReportStatus
@@ -641,54 +530,30 @@ type ReportSnapshot_builder struct {
 	Requester    *SlimUser
 	// fields related to view based reports
 	// area_of_concern refers to view from which report is generated - user workload, platform component etc
-	AreaOfConcern *string
+	AreaOfConcern string
 }
 
 func (b0 ReportSnapshot_builder) Build() *ReportSnapshot {
 	m0 := &ReportSnapshot{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 12)
-		x.xxx_hidden_ReportId = b.ReportId
-	}
-	if b.ReportConfigurationId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
-		x.xxx_hidden_ReportConfigurationId = b.ReportConfigurationId
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 12)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 12)
-		x.xxx_hidden_Type = *b.Type
-	}
+	x.ReportId = b.ReportId
+	x.ReportConfigurationId = b.ReportConfigurationId
+	x.Name = b.Name
+	x.Description = b.Description
+	x.Type = b.Type
 	if b.VulnReportFilters != nil {
-		x.xxx_hidden_Filter = &reportSnapshot_VulnReportFilters{b.VulnReportFilters}
+		x.Filter = &ReportSnapshot_VulnReportFilters{b.VulnReportFilters}
 	}
 	if b.ViewBasedVulnReportFilters != nil {
-		x.xxx_hidden_Filter = &reportSnapshot_ViewBasedVulnReportFilters{b.ViewBasedVulnReportFilters}
+		x.Filter = &ReportSnapshot_ViewBasedVulnReportFilters{b.ViewBasedVulnReportFilters}
 	}
-	x.xxx_hidden_Collection = b.Collection
-	if b.Schedule != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 12)
-		x.xxx_hidden_Schedule = b.Schedule
-	}
-	x.xxx_hidden_ReportStatus = b.ReportStatus
-	if b.Notifiers != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 12)
-		x.xxx_hidden_Notifiers = &b.Notifiers
-	}
-	x.xxx_hidden_Requester = b.Requester
-	if b.AreaOfConcern != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
-		x.xxx_hidden_AreaOfConcern = b.AreaOfConcern
-	}
+	x.Collection = b.Collection
+	x.Schedule = b.Schedule
+	x.ReportStatus = b.ReportStatus
+	x.Notifiers = b.Notifiers
+	x.Requester = b.Requester
+	x.AreaOfConcern = b.AreaOfConcern
 	return m0
 }
 
@@ -706,26 +571,24 @@ type isReportSnapshot_Filter interface {
 	isReportSnapshot_Filter()
 }
 
-type reportSnapshot_VulnReportFilters struct {
+type ReportSnapshot_VulnReportFilters struct {
 	VulnReportFilters *VulnerabilityReportFilters `protobuf:"bytes,6,opt,name=vuln_report_filters,json=vulnReportFilters,oneof"`
 }
 
-type reportSnapshot_ViewBasedVulnReportFilters struct {
+type ReportSnapshot_ViewBasedVulnReportFilters struct {
 	ViewBasedVulnReportFilters *ViewBasedVulnerabilityReportFilters `protobuf:"bytes,12,opt,name=view_based_vuln_report_filters,json=viewBasedVulnReportFilters,oneof"`
 }
 
-func (*reportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
+func (*ReportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
 
-func (*reportSnapshot_ViewBasedVulnReportFilters) isReportSnapshot_Filter() {}
+func (*ReportSnapshot_ViewBasedVulnReportFilters) isReportSnapshot_Filter() {}
 
 type CollectionSnapshot struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectionSnapshot) Reset() {
@@ -755,88 +618,51 @@ func (x *CollectionSnapshot) ProtoReflect() protoreflect.Message {
 
 func (x *CollectionSnapshot) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *CollectionSnapshot) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *CollectionSnapshot) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *CollectionSnapshot) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *CollectionSnapshot) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CollectionSnapshot) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CollectionSnapshot) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *CollectionSnapshot) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type CollectionSnapshot_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id   *string
-	Name *string
+	Id   string
+	Name string
 }
 
 func (b0 CollectionSnapshot_builder) Build() *CollectionSnapshot {
 	m0 := &CollectionSnapshot{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Id = b.Id
+	x.Name = b.Name
 	return m0
 }
 
 type NotifierSnapshot struct {
-	state                     protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_NotifierConfig isNotifierSnapshot_NotifierConfig `protobuf_oneof:"notifier_config"`
-	xxx_hidden_NotifierName   *string                           `protobuf:"bytes,2,opt,name=notifier_name,json=notifierName"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to NotifierConfig:
+	//
+	//	*NotifierSnapshot_EmailConfig
+	NotifierConfig isNotifierSnapshot_NotifierConfig `protobuf_oneof:"notifier_config"`
+	NotifierName   string                            `protobuf:"bytes,2,opt,name=notifier_name,json=notifierName" json:"notifier_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *NotifierSnapshot) Reset() {
@@ -864,9 +690,16 @@ func (x *NotifierSnapshot) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *NotifierSnapshot) GetNotifierConfig() isNotifierSnapshot_NotifierConfig {
+	if x != nil {
+		return x.NotifierConfig
+	}
+	return nil
+}
+
 func (x *NotifierSnapshot) GetEmailConfig() *EmailNotifierConfiguration {
 	if x != nil {
-		if x, ok := x.xxx_hidden_NotifierConfig.(*notifierSnapshot_EmailConfig); ok {
+		if x, ok := x.NotifierConfig.(*NotifierSnapshot_EmailConfig); ok {
 			return x.EmailConfig
 		}
 	}
@@ -875,62 +708,46 @@ func (x *NotifierSnapshot) GetEmailConfig() *EmailNotifierConfiguration {
 
 func (x *NotifierSnapshot) GetNotifierName() string {
 	if x != nil {
-		if x.xxx_hidden_NotifierName != nil {
-			return *x.xxx_hidden_NotifierName
-		}
-		return ""
+		return x.NotifierName
 	}
 	return ""
 }
 
 func (x *NotifierSnapshot) SetEmailConfig(v *EmailNotifierConfiguration) {
 	if v == nil {
-		x.xxx_hidden_NotifierConfig = nil
+		x.NotifierConfig = nil
 		return
 	}
-	x.xxx_hidden_NotifierConfig = &notifierSnapshot_EmailConfig{v}
+	x.NotifierConfig = &NotifierSnapshot_EmailConfig{v}
 }
 
 func (x *NotifierSnapshot) SetNotifierName(v string) {
-	x.xxx_hidden_NotifierName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.NotifierName = v
 }
 
 func (x *NotifierSnapshot) HasNotifierConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_NotifierConfig != nil
+	return x.NotifierConfig != nil
 }
 
 func (x *NotifierSnapshot) HasEmailConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_NotifierConfig.(*notifierSnapshot_EmailConfig)
+	_, ok := x.NotifierConfig.(*NotifierSnapshot_EmailConfig)
 	return ok
 }
 
-func (x *NotifierSnapshot) HasNotifierName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
 func (x *NotifierSnapshot) ClearNotifierConfig() {
-	x.xxx_hidden_NotifierConfig = nil
+	x.NotifierConfig = nil
 }
 
 func (x *NotifierSnapshot) ClearEmailConfig() {
-	if _, ok := x.xxx_hidden_NotifierConfig.(*notifierSnapshot_EmailConfig); ok {
-		x.xxx_hidden_NotifierConfig = nil
+	if _, ok := x.NotifierConfig.(*NotifierSnapshot_EmailConfig); ok {
+		x.NotifierConfig = nil
 	}
-}
-
-func (x *NotifierSnapshot) ClearNotifierName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NotifierName = nil
 }
 
 const NotifierSnapshot_NotifierConfig_not_set_case case_NotifierSnapshot_NotifierConfig = 0
@@ -940,8 +757,8 @@ func (x *NotifierSnapshot) WhichNotifierConfig() case_NotifierSnapshot_NotifierC
 	if x == nil {
 		return NotifierSnapshot_NotifierConfig_not_set_case
 	}
-	switch x.xxx_hidden_NotifierConfig.(type) {
-	case *notifierSnapshot_EmailConfig:
+	switch x.NotifierConfig.(type) {
+	case *NotifierSnapshot_EmailConfig:
 		return NotifierSnapshot_EmailConfig_case
 	default:
 		return NotifierSnapshot_NotifierConfig_not_set_case
@@ -951,10 +768,10 @@ func (x *NotifierSnapshot) WhichNotifierConfig() case_NotifierSnapshot_NotifierC
 type NotifierSnapshot_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_NotifierConfig:
+	// Fields of oneof NotifierConfig:
 	EmailConfig *EmailNotifierConfiguration
-	// -- end of xxx_hidden_NotifierConfig
-	NotifierName *string
+	// -- end of NotifierConfig
+	NotifierName string
 }
 
 func (b0 NotifierSnapshot_builder) Build() *NotifierSnapshot {
@@ -962,12 +779,9 @@ func (b0 NotifierSnapshot_builder) Build() *NotifierSnapshot {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.EmailConfig != nil {
-		x.xxx_hidden_NotifierConfig = &notifierSnapshot_EmailConfig{b.EmailConfig}
+		x.NotifierConfig = &NotifierSnapshot_EmailConfig{b.EmailConfig}
 	}
-	if b.NotifierName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_NotifierName = b.NotifierName
-	}
+	x.NotifierName = b.NotifierName
 	return m0
 }
 
@@ -985,26 +799,22 @@ type isNotifierSnapshot_NotifierConfig interface {
 	isNotifierSnapshot_NotifierConfig()
 }
 
-type notifierSnapshot_EmailConfig struct {
+type NotifierSnapshot_EmailConfig struct {
 	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,1,opt,name=email_config,json=emailConfig,oneof"`
 }
 
-func (*notifierSnapshot_EmailConfig) isNotifierSnapshot_NotifierConfig() {}
+func (*NotifierSnapshot_EmailConfig) isNotifierSnapshot_NotifierConfig() {}
 
 type ReportStatus struct {
-	state                               protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,enum=storage.ReportStatus_RunState"`
-	xxx_hidden_QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt"`
-	xxx_hidden_CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt"`
-	xxx_hidden_ErrorMsg                 *string                         `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg"`
-	xxx_hidden_ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,enum=storage.ReportStatus_RunMethod"`
-	xxx_hidden_ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,enum=storage.ReportStatus_NotificationMethod"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                    protoimpl.MessageState          `protogen:"hybrid.v1"`
+	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,enum=storage.ReportStatus_RunState" json:"run_state,omitempty" search:"Report State"` // @gotags: search:"Report State"
+	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt" json:"queued_at,omitempty" search:"Report Init Time"`                                     // @gotags: search:"Report Init Time"
+	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt" json:"completed_at,omitempty" search:"Report Completion Time"`                            // @gotags: search:"Report Completion Time"
+	ErrorMsg                 string                          `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg" json:"error_msg,omitempty"`
+	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Report Request Type"`                               // @gotags: search:"Report Request Type"
+	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Report Notification Method"` // @gotags: search:"Report Notification Method"
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ReportStatus) Reset() {
@@ -1034,218 +844,113 @@ func (x *ReportStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ReportStatus) GetRunState() ReportStatus_RunState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_RunState
-		}
+		return x.RunState
 	}
 	return ReportStatus_WAITING
 }
 
 func (x *ReportStatus) GetQueuedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_QueuedAt) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_QueuedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.QueuedAt
 	}
 	return nil
 }
 
 func (x *ReportStatus) GetCompletedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CompletedAt) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CompletedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CompletedAt
 	}
 	return nil
 }
 
 func (x *ReportStatus) GetErrorMsg() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMsg != nil {
-			return *x.xxx_hidden_ErrorMsg
-		}
-		return ""
+		return x.ErrorMsg
 	}
 	return ""
 }
 
 func (x *ReportStatus) GetReportRequestType() ReportStatus_RunMethod {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_ReportRequestType
-		}
+		return x.ReportRequestType
 	}
 	return ReportStatus_ON_DEMAND
 }
 
 func (x *ReportStatus) GetReportNotificationMethod() ReportStatus_NotificationMethod {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_ReportNotificationMethod
-		}
+		return x.ReportNotificationMethod
 	}
 	return ReportStatus_EMAIL
 }
 
 func (x *ReportStatus) SetRunState(v ReportStatus_RunState) {
-	x.xxx_hidden_RunState = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.RunState = v
 }
 
 func (x *ReportStatus) SetQueuedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_QueuedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
-	}
+	x.QueuedAt = v
 }
 
 func (x *ReportStatus) SetCompletedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CompletedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
-	}
+	x.CompletedAt = v
 }
 
 func (x *ReportStatus) SetErrorMsg(v string) {
-	x.xxx_hidden_ErrorMsg = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.ErrorMsg = v
 }
 
 func (x *ReportStatus) SetReportRequestType(v ReportStatus_RunMethod) {
-	x.xxx_hidden_ReportRequestType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.ReportRequestType = v
 }
 
 func (x *ReportStatus) SetReportNotificationMethod(v ReportStatus_NotificationMethod) {
-	x.xxx_hidden_ReportNotificationMethod = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *ReportStatus) HasRunState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ReportNotificationMethod = v
 }
 
 func (x *ReportStatus) HasQueuedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.QueuedAt != nil
 }
 
 func (x *ReportStatus) HasCompletedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ReportStatus) HasErrorMsg() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ReportStatus) HasReportRequestType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ReportStatus) HasReportNotificationMethod() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ReportStatus) ClearRunState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RunState = ReportStatus_WAITING
+	return x.CompletedAt != nil
 }
 
 func (x *ReportStatus) ClearQueuedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_QueuedAt, (*timestamppb.Timestamp)(nil))
+	x.QueuedAt = nil
 }
 
 func (x *ReportStatus) ClearCompletedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CompletedAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ReportStatus) ClearErrorMsg() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ErrorMsg = nil
-}
-
-func (x *ReportStatus) ClearReportRequestType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ReportRequestType = ReportStatus_ON_DEMAND
-}
-
-func (x *ReportStatus) ClearReportNotificationMethod() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ReportNotificationMethod = ReportStatus_EMAIL
+	x.CompletedAt = nil
 }
 
 type ReportStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RunState                 *ReportStatus_RunState
+	RunState                 ReportStatus_RunState
 	QueuedAt                 *timestamppb.Timestamp
 	CompletedAt              *timestamppb.Timestamp
-	ErrorMsg                 *string
-	ReportRequestType        *ReportStatus_RunMethod
-	ReportNotificationMethod *ReportStatus_NotificationMethod
+	ErrorMsg                 string
+	ReportRequestType        ReportStatus_RunMethod
+	ReportNotificationMethod ReportStatus_NotificationMethod
 }
 
 func (b0 ReportStatus_builder) Build() *ReportStatus {
 	m0 := &ReportStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RunState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_RunState = *b.RunState
-	}
-	if b.QueuedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_QueuedAt = b.QueuedAt
-	}
-	if b.CompletedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_CompletedAt = b.CompletedAt
-	}
-	if b.ErrorMsg != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_ErrorMsg = b.ErrorMsg
-	}
-	if b.ReportRequestType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_ReportRequestType = *b.ReportRequestType
-	}
-	if b.ReportNotificationMethod != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_ReportNotificationMethod = *b.ReportNotificationMethod
-	}
+	x.RunState = b.RunState
+	x.QueuedAt = b.QueuedAt
+	x.CompletedAt = b.CompletedAt
+	x.ErrorMsg = b.ErrorMsg
+	x.ReportRequestType = b.ReportRequestType
+	x.ReportNotificationMethod = b.ReportNotificationMethod
 	return m0
 }
 
@@ -1302,8 +1007,8 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\tON_DEMAND\x10\x00\x12\r\n" +
 	"\tSCHEDULED\x10\x01\x12\x0e\n" +
 	"\n" +
-	"VIEW_BASED\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"VIEW_BASED\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_report_snapshot_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_report_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
@@ -1355,11 +1060,11 @@ func file_storage_report_snapshot_proto_init() {
 	file_storage_schedule_proto_init()
 	file_storage_user_proto_init()
 	file_storage_report_snapshot_proto_msgTypes[0].OneofWrappers = []any{
-		(*reportSnapshot_VulnReportFilters)(nil),
-		(*reportSnapshot_ViewBasedVulnReportFilters)(nil),
+		(*ReportSnapshot_VulnReportFilters)(nil),
+		(*ReportSnapshot_ViewBasedVulnReportFilters)(nil),
 	}
 	file_storage_report_snapshot_proto_msgTypes[2].OneofWrappers = []any{
-		(*notifierSnapshot_EmailConfig)(nil),
+		(*NotifierSnapshot_EmailConfig)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

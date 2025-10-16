@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/version.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,17 +25,18 @@ const (
 )
 
 type Version struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SeqNum        int32                  `protobuf:"varint,1,opt,name=seq_num,json=seqNum"`
-	xxx_hidden_Version       *string                `protobuf:"bytes,2,opt,name=version"`
-	xxx_hidden_LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted"`
-	xxx_hidden_MinSeqNum     int32                  `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// This is a strictly incrementing integer describing the DB version.
+	SeqNum int32 `protobuf:"varint,1,opt,name=seq_num,json=seqNum" json:"seq_num,omitempty" search:"Current Sequence Number"` // @gotags: search:"Current Sequence Number"
+	// Associated version metadata. (For example, the corresponding product version.)
+	Version string `protobuf:"bytes,2,opt,name=version" json:"version,omitempty" search:"Version"` // @gotags: search:"Version"
+	// Last time version was updated
+	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
+	// The minimum sequence number supported by this iteration of the database.  Rollbacks
+	// to versions prior to this sequence number are not supported.
+	MinSeqNum     int32 `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum" json:"min_seq_num,omitempty" search:"Minimum Sequence Number"` // @gotags: search:"Minimum Sequence Number"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Version) Reset() {
@@ -63,148 +66,81 @@ func (x *Version) ProtoReflect() protoreflect.Message {
 
 func (x *Version) GetSeqNum() int32 {
 	if x != nil {
-		return x.xxx_hidden_SeqNum
+		return x.SeqNum
 	}
 	return 0
 }
 
 func (x *Version) GetVersion() string {
 	if x != nil {
-		if x.xxx_hidden_Version != nil {
-			return *x.xxx_hidden_Version
-		}
-		return ""
+		return x.Version
 	}
 	return ""
 }
 
 func (x *Version) GetLastPersisted() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastPersisted) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastPersisted), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastPersisted
 	}
 	return nil
 }
 
 func (x *Version) GetMinSeqNum() int32 {
 	if x != nil {
-		return x.xxx_hidden_MinSeqNum
+		return x.MinSeqNum
 	}
 	return 0
 }
 
 func (x *Version) SetSeqNum(v int32) {
-	x.xxx_hidden_SeqNum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.SeqNum = v
 }
 
 func (x *Version) SetVersion(v string) {
-	x.xxx_hidden_Version = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Version = v
 }
 
 func (x *Version) SetLastPersisted(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastPersisted, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
-	}
+	x.LastPersisted = v
 }
 
 func (x *Version) SetMinSeqNum(v int32) {
-	x.xxx_hidden_MinSeqNum = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Version) HasSeqNum() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Version) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.MinSeqNum = v
 }
 
 func (x *Version) HasLastPersisted() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Version) HasMinSeqNum() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Version) ClearSeqNum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_SeqNum = 0
-}
-
-func (x *Version) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Version = nil
+	return x.LastPersisted != nil
 }
 
 func (x *Version) ClearLastPersisted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastPersisted, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *Version) ClearMinSeqNum() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_MinSeqNum = 0
+	x.LastPersisted = nil
 }
 
 type Version_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// This is a strictly incrementing integer describing the DB version.
-	SeqNum *int32
+	SeqNum int32
 	// Associated version metadata. (For example, the corresponding product version.)
-	Version *string
+	Version string
 	// Last time version was updated
 	LastPersisted *timestamppb.Timestamp
 	// The minimum sequence number supported by this iteration of the database.  Rollbacks
 	// to versions prior to this sequence number are not supported.
-	MinSeqNum *int32
+	MinSeqNum int32
 }
 
 func (b0 Version_builder) Build() *Version {
 	m0 := &Version{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.SeqNum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_SeqNum = *b.SeqNum
-	}
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Version = b.Version
-	}
-	if b.LastPersisted != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_LastPersisted = b.LastPersisted
-	}
-	if b.MinSeqNum != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_MinSeqNum = *b.MinSeqNum
-	}
+	x.SeqNum = b.SeqNum
+	x.Version = b.Version
+	x.LastPersisted = b.LastPersisted
+	x.MinSeqNum = b.MinSeqNum
 	return m0
 }
 
@@ -217,8 +153,8 @@ const file_storage_version_proto_rawDesc = "" +
 	"\aseq_num\x18\x01 \x01(\x05R\x06seqNum\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12E\n" +
 	"\x0elast_persisted\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\rlastPersisted\x12\x1e\n" +
-	"\vmin_seq_num\x18\x04 \x01(\x05R\tminSeqNumB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\vmin_seq_num\x18\x04 \x01(\x05R\tminSeqNumB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_version_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_version_proto_goTypes = []any{

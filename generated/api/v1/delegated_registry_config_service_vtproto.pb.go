@@ -12,6 +12,9 @@ func (m *DelegatedRegistryClustersResponse) MarshalVT() ([]byte, error) { return
 func (m *DelegatedRegistryClustersResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DelegatedRegistryClustersResponse) EqualVT(n *DelegatedRegistryClustersResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DelegatedRegistryClustersResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *DelegatedRegistryCluster) CloneVT() *DelegatedRegistryCluster {
 }
 func (m *DelegatedRegistryCluster) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DelegatedRegistryCluster) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DelegatedRegistryCluster) EqualVT(n *DelegatedRegistryCluster) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DelegatedRegistryCluster) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,8 +38,9 @@ func (m *DelegatedRegistryConfig) SizeVT() int { return proto.Size(m) }
 func (m *DelegatedRegistryConfig) CloneVT() *DelegatedRegistryConfig {
 	return proto.Clone(m).(*DelegatedRegistryConfig)
 }
-func (m *DelegatedRegistryConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DelegatedRegistryConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DelegatedRegistryConfig) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *DelegatedRegistryConfig) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *DelegatedRegistryConfig) EqualVT(n *DelegatedRegistryConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DelegatedRegistryConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -47,6 +54,9 @@ func (m *DelegatedRegistryConfig_DelegatedRegistry) MarshalVT() ([]byte, error) 
 }
 func (m *DelegatedRegistryConfig_DelegatedRegistry) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DelegatedRegistryConfig_DelegatedRegistry) EqualVT(n *DelegatedRegistryConfig_DelegatedRegistry) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

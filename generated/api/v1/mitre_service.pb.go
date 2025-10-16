@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/mitre_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,14 +26,10 @@ const (
 )
 
 type ListMitreAttackVectorsResponse struct {
-	state                         protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_MitreAttackVectors *[]*storage.MitreAttackVector `protobuf:"bytes,1,rep,name=mitre_attack_vectors,json=mitreAttackVectors"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state              protoimpl.MessageState       `protogen:"hybrid.v1"`
+	MitreAttackVectors []*storage.MitreAttackVector `protobuf:"bytes,1,rep,name=mitre_attack_vectors,json=mitreAttackVectors" json:"mitre_attack_vectors,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListMitreAttackVectorsResponse) Reset() {
@@ -61,27 +59,13 @@ func (x *ListMitreAttackVectorsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListMitreAttackVectorsResponse) GetMitreAttackVectors() []*storage.MitreAttackVector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MitreAttackVectors) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.MitreAttackVector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.MitreAttackVectors
 	}
 	return nil
 }
 
 func (x *ListMitreAttackVectorsResponse) SetMitreAttackVectors(v []*storage.MitreAttackVector) {
-	var sv *[]*storage.MitreAttackVector
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.MitreAttackVector{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.MitreAttackVectors = v
 }
 
 type ListMitreAttackVectorsResponse_builder struct {
@@ -94,22 +78,15 @@ func (b0 ListMitreAttackVectorsResponse_builder) Build() *ListMitreAttackVectors
 	m0 := &ListMitreAttackVectorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.MitreAttackVectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_MitreAttackVectors = &b.MitreAttackVectors
-	}
+	x.MitreAttackVectors = b.MitreAttackVectors
 	return m0
 }
 
 type GetMitreVectorResponse struct {
-	state                        protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_MitreAttackVector *storage.MitreAttackVector `protobuf:"bytes,1,opt,name=mitre_attack_vector,json=mitreAttackVector"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state             protoimpl.MessageState     `protogen:"hybrid.v1"`
+	MitreAttackVector *storage.MitreAttackVector `protobuf:"bytes,1,opt,name=mitre_attack_vector,json=mitreAttackVector" json:"mitre_attack_vector,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetMitreVectorResponse) Reset() {
@@ -139,37 +116,24 @@ func (x *GetMitreVectorResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetMitreVectorResponse) GetMitreAttackVector() *storage.MitreAttackVector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MitreAttackVector) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.MitreAttackVector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVector), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.MitreAttackVector
 	}
 	return nil
 }
 
 func (x *GetMitreVectorResponse) SetMitreAttackVector(v *storage.MitreAttackVector) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MitreAttackVector, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.MitreAttackVector = v
 }
 
 func (x *GetMitreVectorResponse) HasMitreAttackVector() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.MitreAttackVector != nil
 }
 
 func (x *GetMitreVectorResponse) ClearMitreAttackVector() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MitreAttackVector, (*storage.MitreAttackVector)(nil))
+	x.MitreAttackVector = nil
 }
 
 type GetMitreVectorResponse_builder struct {
@@ -182,10 +146,7 @@ func (b0 GetMitreVectorResponse_builder) Build() *GetMitreVectorResponse {
 	m0 := &GetMitreVectorResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.MitreAttackVector != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_MitreAttackVector = b.MitreAttackVector
-	}
+	x.MitreAttackVector = b.MitreAttackVector
 	return m0
 }
 
@@ -200,8 +161,8 @@ const file_api_v1_mitre_service_proto_rawDesc = "" +
 	"\x13mitre_attack_vector\x18\x01 \x01(\v2\x1a.storage.MitreAttackVectorB\x02(\x01R\x11mitreAttackVector2\xe8\x01\n" +
 	"\x12MitreAttackService\x12g\n" +
 	"\x16ListMitreAttackVectors\x12\t.v1.Empty\x1a\".v1.ListMitreAttackVectorsResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/v1/mitreattackvectors\x12i\n" +
-	"\x14GetMitreAttackVector\x12\x10.v1.ResourceByID\x1a\x1a.v1.GetMitreVectorResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/mitreattackvectors/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\x14GetMitreAttackVector\x12\x10.v1.ResourceByID\x1a\x1a.v1.GetMitreVectorResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/v1/mitreattackvectors/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_mitre_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_mitre_service_proto_goTypes = []any{

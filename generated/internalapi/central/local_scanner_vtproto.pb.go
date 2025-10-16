@@ -10,6 +10,9 @@ func (m *LocalScannerCertsIssueError) CloneVT() *LocalScannerCertsIssueError {
 }
 func (m *LocalScannerCertsIssueError) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *LocalScannerCertsIssueError) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LocalScannerCertsIssueError) EqualVT(n *LocalScannerCertsIssueError) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LocalScannerCertsIssueError) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *IssueLocalScannerCertsRequest) MarshalVT() ([]byte, error) { return pro
 func (m *IssueLocalScannerCertsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *IssueLocalScannerCertsRequest) EqualVT(n *IssueLocalScannerCertsRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IssueLocalScannerCertsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -37,6 +43,9 @@ func (m *IssueLocalScannerCertsResponse) CloneVT() *IssueLocalScannerCertsRespon
 func (m *IssueLocalScannerCertsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *IssueLocalScannerCertsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *IssueLocalScannerCertsResponse) EqualVT(n *IssueLocalScannerCertsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/collector_iservice.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -22,10 +24,15 @@ const (
 )
 
 type MsgFromCollector struct {
-	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Msg isMsgFromCollector_Msg `protobuf_oneof:"msg"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Msg:
+	//
+	//	*MsgFromCollector_Register
+	//	*MsgFromCollector_Info
+	//	*MsgFromCollector_ProcessSignal
+	Msg           isMsgFromCollector_Msg `protobuf_oneof:"msg"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgFromCollector) Reset() {
@@ -53,9 +60,16 @@ func (x *MsgFromCollector) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *MsgFromCollector) GetMsg() isMsgFromCollector_Msg {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
 func (x *MsgFromCollector) GetRegister() *CollectorRegisterRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCollector_Register); ok {
+		if x, ok := x.Msg.(*MsgFromCollector_Register); ok {
 			return x.Register
 		}
 	}
@@ -64,7 +78,7 @@ func (x *MsgFromCollector) GetRegister() *CollectorRegisterRequest {
 
 func (x *MsgFromCollector) GetInfo() *NetworkConnectionInfo {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCollector_Info); ok {
+		if x, ok := x.Msg.(*MsgFromCollector_Info); ok {
 			return x.Info
 		}
 	}
@@ -73,7 +87,7 @@ func (x *MsgFromCollector) GetInfo() *NetworkConnectionInfo {
 
 func (x *MsgFromCollector) GetProcessSignal() *ProcessSignal {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCollector_ProcessSignal); ok {
+		if x, ok := x.Msg.(*MsgFromCollector_ProcessSignal); ok {
 			return x.ProcessSignal
 		}
 	}
@@ -82,40 +96,40 @@ func (x *MsgFromCollector) GetProcessSignal() *ProcessSignal {
 
 func (x *MsgFromCollector) SetRegister(v *CollectorRegisterRequest) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCollector_Register{v}
+	x.Msg = &MsgFromCollector_Register{v}
 }
 
 func (x *MsgFromCollector) SetInfo(v *NetworkConnectionInfo) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCollector_Info{v}
+	x.Msg = &MsgFromCollector_Info{v}
 }
 
 func (x *MsgFromCollector) SetProcessSignal(v *ProcessSignal) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCollector_ProcessSignal{v}
+	x.Msg = &MsgFromCollector_ProcessSignal{v}
 }
 
 func (x *MsgFromCollector) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *MsgFromCollector) HasRegister() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCollector_Register)
+	_, ok := x.Msg.(*MsgFromCollector_Register)
 	return ok
 }
 
@@ -123,7 +137,7 @@ func (x *MsgFromCollector) HasInfo() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCollector_Info)
+	_, ok := x.Msg.(*MsgFromCollector_Info)
 	return ok
 }
 
@@ -131,29 +145,29 @@ func (x *MsgFromCollector) HasProcessSignal() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCollector_ProcessSignal)
+	_, ok := x.Msg.(*MsgFromCollector_ProcessSignal)
 	return ok
 }
 
 func (x *MsgFromCollector) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 func (x *MsgFromCollector) ClearRegister() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCollector_Register); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCollector_Register); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgFromCollector) ClearInfo() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCollector_Info); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCollector_Info); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgFromCollector) ClearProcessSignal() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCollector_ProcessSignal); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCollector_ProcessSignal); ok {
+		x.Msg = nil
 	}
 }
 
@@ -166,12 +180,12 @@ func (x *MsgFromCollector) WhichMsg() case_MsgFromCollector_Msg {
 	if x == nil {
 		return MsgFromCollector_Msg_not_set_case
 	}
-	switch x.xxx_hidden_Msg.(type) {
-	case *msgFromCollector_Register:
+	switch x.Msg.(type) {
+	case *MsgFromCollector_Register:
 		return MsgFromCollector_Register_case
-	case *msgFromCollector_Info:
+	case *MsgFromCollector_Info:
 		return MsgFromCollector_Info_case
-	case *msgFromCollector_ProcessSignal:
+	case *MsgFromCollector_ProcessSignal:
 		return MsgFromCollector_ProcessSignal_case
 	default:
 		return MsgFromCollector_Msg_not_set_case
@@ -181,11 +195,11 @@ func (x *MsgFromCollector) WhichMsg() case_MsgFromCollector_Msg {
 type MsgFromCollector_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Msg:
+	// Fields of oneof Msg:
 	Register      *CollectorRegisterRequest
 	Info          *NetworkConnectionInfo
 	ProcessSignal *ProcessSignal
-	// -- end of xxx_hidden_Msg
+	// -- end of Msg
 }
 
 func (b0 MsgFromCollector_builder) Build() *MsgFromCollector {
@@ -193,13 +207,13 @@ func (b0 MsgFromCollector_builder) Build() *MsgFromCollector {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Register != nil {
-		x.xxx_hidden_Msg = &msgFromCollector_Register{b.Register}
+		x.Msg = &MsgFromCollector_Register{b.Register}
 	}
 	if b.Info != nil {
-		x.xxx_hidden_Msg = &msgFromCollector_Info{b.Info}
+		x.Msg = &MsgFromCollector_Info{b.Info}
 	}
 	if b.ProcessSignal != nil {
-		x.xxx_hidden_Msg = &msgFromCollector_ProcessSignal{b.ProcessSignal}
+		x.Msg = &MsgFromCollector_ProcessSignal{b.ProcessSignal}
 	}
 	return m0
 }
@@ -218,29 +232,33 @@ type isMsgFromCollector_Msg interface {
 	isMsgFromCollector_Msg()
 }
 
-type msgFromCollector_Register struct {
+type MsgFromCollector_Register struct {
 	Register *CollectorRegisterRequest `protobuf:"bytes,1,opt,name=register,oneof"`
 }
 
-type msgFromCollector_Info struct {
+type MsgFromCollector_Info struct {
 	Info *NetworkConnectionInfo `protobuf:"bytes,2,opt,name=info,oneof"`
 }
 
-type msgFromCollector_ProcessSignal struct {
+type MsgFromCollector_ProcessSignal struct {
 	ProcessSignal *ProcessSignal `protobuf:"bytes,3,opt,name=process_signal,json=processSignal,oneof"`
 }
 
-func (*msgFromCollector_Register) isMsgFromCollector_Msg() {}
+func (*MsgFromCollector_Register) isMsgFromCollector_Msg() {}
 
-func (*msgFromCollector_Info) isMsgFromCollector_Msg() {}
+func (*MsgFromCollector_Info) isMsgFromCollector_Msg() {}
 
-func (*msgFromCollector_ProcessSignal) isMsgFromCollector_Msg() {}
+func (*MsgFromCollector_ProcessSignal) isMsgFromCollector_Msg() {}
 
 type MsgToCollector struct {
-	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Msg isMsgToCollector_Msg   `protobuf_oneof:"msg"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Msg:
+	//
+	//	*MsgToCollector_PublicIpAddresses
+	//	*MsgToCollector_IpNetworks
+	Msg           isMsgToCollector_Msg `protobuf_oneof:"msg"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCollector) Reset() {
@@ -268,9 +286,16 @@ func (x *MsgToCollector) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *MsgToCollector) GetMsg() isMsgToCollector_Msg {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
 func (x *MsgToCollector) GetPublicIpAddresses() *IPAddressList {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCollector_PublicIpAddresses); ok {
+		if x, ok := x.Msg.(*MsgToCollector_PublicIpAddresses); ok {
 			return x.PublicIpAddresses
 		}
 	}
@@ -279,7 +304,7 @@ func (x *MsgToCollector) GetPublicIpAddresses() *IPAddressList {
 
 func (x *MsgToCollector) GetIpNetworks() *IPNetworkList {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCollector_IpNetworks); ok {
+		if x, ok := x.Msg.(*MsgToCollector_IpNetworks); ok {
 			return x.IpNetworks
 		}
 	}
@@ -288,32 +313,32 @@ func (x *MsgToCollector) GetIpNetworks() *IPNetworkList {
 
 func (x *MsgToCollector) SetPublicIpAddresses(v *IPAddressList) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCollector_PublicIpAddresses{v}
+	x.Msg = &MsgToCollector_PublicIpAddresses{v}
 }
 
 func (x *MsgToCollector) SetIpNetworks(v *IPNetworkList) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCollector_IpNetworks{v}
+	x.Msg = &MsgToCollector_IpNetworks{v}
 }
 
 func (x *MsgToCollector) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *MsgToCollector) HasPublicIpAddresses() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCollector_PublicIpAddresses)
+	_, ok := x.Msg.(*MsgToCollector_PublicIpAddresses)
 	return ok
 }
 
@@ -321,23 +346,23 @@ func (x *MsgToCollector) HasIpNetworks() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCollector_IpNetworks)
+	_, ok := x.Msg.(*MsgToCollector_IpNetworks)
 	return ok
 }
 
 func (x *MsgToCollector) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 func (x *MsgToCollector) ClearPublicIpAddresses() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCollector_PublicIpAddresses); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCollector_PublicIpAddresses); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgToCollector) ClearIpNetworks() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCollector_IpNetworks); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCollector_IpNetworks); ok {
+		x.Msg = nil
 	}
 }
 
@@ -349,10 +374,10 @@ func (x *MsgToCollector) WhichMsg() case_MsgToCollector_Msg {
 	if x == nil {
 		return MsgToCollector_Msg_not_set_case
 	}
-	switch x.xxx_hidden_Msg.(type) {
-	case *msgToCollector_PublicIpAddresses:
+	switch x.Msg.(type) {
+	case *MsgToCollector_PublicIpAddresses:
 		return MsgToCollector_PublicIpAddresses_case
-	case *msgToCollector_IpNetworks:
+	case *MsgToCollector_IpNetworks:
 		return MsgToCollector_IpNetworks_case
 	default:
 		return MsgToCollector_Msg_not_set_case
@@ -362,10 +387,10 @@ func (x *MsgToCollector) WhichMsg() case_MsgToCollector_Msg {
 type MsgToCollector_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Msg:
+	// Fields of oneof Msg:
 	PublicIpAddresses *IPAddressList
 	IpNetworks        *IPNetworkList
-	// -- end of xxx_hidden_Msg
+	// -- end of Msg
 }
 
 func (b0 MsgToCollector_builder) Build() *MsgToCollector {
@@ -373,10 +398,10 @@ func (b0 MsgToCollector_builder) Build() *MsgToCollector {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.PublicIpAddresses != nil {
-		x.xxx_hidden_Msg = &msgToCollector_PublicIpAddresses{b.PublicIpAddresses}
+		x.Msg = &MsgToCollector_PublicIpAddresses{b.PublicIpAddresses}
 	}
 	if b.IpNetworks != nil {
-		x.xxx_hidden_Msg = &msgToCollector_IpNetworks{b.IpNetworks}
+		x.Msg = &MsgToCollector_IpNetworks{b.IpNetworks}
 	}
 	return m0
 }
@@ -395,17 +420,17 @@ type isMsgToCollector_Msg interface {
 	isMsgToCollector_Msg()
 }
 
-type msgToCollector_PublicIpAddresses struct {
+type MsgToCollector_PublicIpAddresses struct {
 	PublicIpAddresses *IPAddressList `protobuf:"bytes,1,opt,name=public_ip_addresses,json=publicIpAddresses,oneof"`
 }
 
-type msgToCollector_IpNetworks struct {
+type MsgToCollector_IpNetworks struct {
 	IpNetworks *IPNetworkList `protobuf:"bytes,2,opt,name=ip_networks,json=ipNetworks,oneof"`
 }
 
-func (*msgToCollector_PublicIpAddresses) isMsgToCollector_Msg() {}
+func (*MsgToCollector_PublicIpAddresses) isMsgToCollector_Msg() {}
 
-func (*msgToCollector_IpNetworks) isMsgToCollector_Msg() {}
+func (*MsgToCollector_IpNetworks) isMsgToCollector_Msg() {}
 
 var File_internalapi_sensor_collector_iservice_proto protoreflect.FileDescriptor
 
@@ -423,7 +448,7 @@ const file_internalapi_sensor_collector_iservice_proto_rawDesc = "" +
 	"ipNetworksB\x05\n" +
 	"\x03msg2W\n" +
 	"\x10CollectorService\x12C\n" +
-	"\vCommunicate\x12\x18.sensor.MsgFromCollector\x1a\x16.sensor.MsgToCollector(\x010\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\vCommunicate\x12\x18.sensor.MsgFromCollector\x1a\x16.sensor.MsgToCollector(\x010\x01B0Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_collector_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_collector_iservice_proto_goTypes = []any{
@@ -459,13 +484,13 @@ func file_internalapi_sensor_collector_iservice_proto_init() {
 	file_internalapi_sensor_network_connection_info_proto_init()
 	file_internalapi_sensor_network_connection_iservice_proto_init()
 	file_internalapi_sensor_collector_iservice_proto_msgTypes[0].OneofWrappers = []any{
-		(*msgFromCollector_Register)(nil),
-		(*msgFromCollector_Info)(nil),
-		(*msgFromCollector_ProcessSignal)(nil),
+		(*MsgFromCollector_Register)(nil),
+		(*MsgFromCollector_Info)(nil),
+		(*MsgFromCollector_ProcessSignal)(nil),
 	}
 	file_internalapi_sensor_collector_iservice_proto_msgTypes[1].OneofWrappers = []any{
-		(*msgToCollector_PublicIpAddresses)(nil),
-		(*msgToCollector_IpNetworks)(nil),
+		(*MsgToCollector_PublicIpAddresses)(nil),
+		(*MsgToCollector_IpNetworks)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

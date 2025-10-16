@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/process_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,12 +26,10 @@ const (
 )
 
 type GetProcessesByDeploymentRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_DeploymentId *string                `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProcessesByDeploymentRequest) Reset() {
@@ -59,57 +59,34 @@ func (x *GetProcessesByDeploymentRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetProcessesByDeploymentRequest) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *GetProcessesByDeploymentRequest) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *GetProcessesByDeploymentRequest) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetProcessesByDeploymentRequest) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_DeploymentId = nil
+	x.DeploymentId = v
 }
 
 type GetProcessesByDeploymentRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	DeploymentId *string
+	DeploymentId string
 }
 
 func (b0 GetProcessesByDeploymentRequest_builder) Build() *GetProcessesByDeploymentRequest {
 	m0 := &GetProcessesByDeploymentRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
+	x.DeploymentId = b.DeploymentId
 	return m0
 }
 
 type GetProcessesResponse struct {
-	state                protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Processes *[]*storage.ProcessIndicator `protobuf:"bytes,1,rep,name=processes"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Processes     []*storage.ProcessIndicator `protobuf:"bytes,1,rep,name=processes" json:"processes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProcessesResponse) Reset() {
@@ -139,27 +116,13 @@ func (x *GetProcessesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetProcessesResponse) GetProcesses() []*storage.ProcessIndicator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Processes) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.ProcessIndicator
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Processes
 	}
 	return nil
 }
 
 func (x *GetProcessesResponse) SetProcesses(v []*storage.ProcessIndicator) {
-	var sv *[]*storage.ProcessIndicator
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ProcessIndicator{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Processes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Processes = v
 }
 
 type GetProcessesResponse_builder struct {
@@ -172,23 +135,16 @@ func (b0 GetProcessesResponse_builder) Build() *GetProcessesResponse {
 	m0 := &GetProcessesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Processes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Processes = &b.Processes
-	}
+	x.Processes = b.Processes
 	return m0
 }
 
 type ProcessGroup struct {
-	state              protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Args    *string                      `protobuf:"bytes,1,opt,name=args"`
-	xxx_hidden_Signals *[]*storage.ProcessIndicator `protobuf:"bytes,2,rep,name=signals"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Args          string                      `protobuf:"bytes,1,opt,name=args" json:"args,omitempty"`
+	Signals       []*storage.ProcessIndicator `protobuf:"bytes,2,rep,name=signals" json:"signals,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessGroup) Reset() {
@@ -218,60 +174,30 @@ func (x *ProcessGroup) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessGroup) GetArgs() string {
 	if x != nil {
-		if x.xxx_hidden_Args != nil {
-			return *x.xxx_hidden_Args
-		}
-		return ""
+		return x.Args
 	}
 	return ""
 }
 
 func (x *ProcessGroup) GetSignals() []*storage.ProcessIndicator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Signals) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*storage.ProcessIndicator
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Signals
 	}
 	return nil
 }
 
 func (x *ProcessGroup) SetArgs(v string) {
-	x.xxx_hidden_Args = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Args = v
 }
 
 func (x *ProcessGroup) SetSignals(v []*storage.ProcessIndicator) {
-	var sv *[]*storage.ProcessIndicator
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ProcessIndicator{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Signals), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ProcessGroup) HasArgs() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessGroup) ClearArgs() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Args = nil
+	x.Signals = v
 }
 
 type ProcessGroup_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Args    *string
+	Args    string
 	Signals []*storage.ProcessIndicator
 }
 
@@ -279,28 +205,18 @@ func (b0 ProcessGroup_builder) Build() *ProcessGroup {
 	m0 := &ProcessGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Args != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Args = b.Args
-	}
-	if b.Signals != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Signals = &b.Signals
-	}
+	x.Args = b.Args
+	x.Signals = b.Signals
 	return m0
 }
 
 type ProcessNameGroup struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name          *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_TimesExecuted uint32                 `protobuf:"varint,2,opt,name=times_executed,json=timesExecuted"`
-	xxx_hidden_Groups        *[]*ProcessGroup       `protobuf:"bytes,3,rep,name=groups"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	TimesExecuted uint32                 `protobuf:"varint,2,opt,name=times_executed,json=timesExecuted" json:"times_executed,omitempty"`
+	Groups        []*ProcessGroup        `protobuf:"bytes,3,rep,name=groups" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessNameGroup) Reset() {
@@ -330,85 +246,42 @@ func (x *ProcessNameGroup) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessNameGroup) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ProcessNameGroup) GetTimesExecuted() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TimesExecuted
+		return x.TimesExecuted
 	}
 	return 0
 }
 
 func (x *ProcessNameGroup) GetGroups() []*ProcessGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*ProcessGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *ProcessNameGroup) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Name = v
 }
 
 func (x *ProcessNameGroup) SetTimesExecuted(v uint32) {
-	x.xxx_hidden_TimesExecuted = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.TimesExecuted = v
 }
 
 func (x *ProcessNameGroup) SetGroups(v []*ProcessGroup) {
-	var sv *[]*ProcessGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ProcessGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *ProcessNameGroup) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessNameGroup) HasTimesExecuted() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessNameGroup) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ProcessNameGroup) ClearTimesExecuted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_TimesExecuted = 0
+	x.Groups = v
 }
 
 type ProcessNameGroup_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name          *string
-	TimesExecuted *uint32
+	Name          string
+	TimesExecuted uint32
 	Groups        []*ProcessGroup
 }
 
@@ -416,30 +289,17 @@ func (b0 ProcessNameGroup_builder) Build() *ProcessNameGroup {
 	m0 := &ProcessNameGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.TimesExecuted != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_TimesExecuted = *b.TimesExecuted
-	}
-	if b.Groups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Groups = &b.Groups
-	}
+	x.Name = b.Name
+	x.TimesExecuted = b.TimesExecuted
+	x.Groups = b.Groups
 	return m0
 }
 
 type GetGroupedProcessesResponse struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Groups *[]*ProcessNameGroup   `protobuf:"bytes,3,rep,name=groups"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Groups        []*ProcessNameGroup    `protobuf:"bytes,3,rep,name=groups" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetGroupedProcessesResponse) Reset() {
@@ -469,27 +329,13 @@ func (x *GetGroupedProcessesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGroupedProcessesResponse) GetGroups() []*ProcessNameGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*ProcessNameGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *GetGroupedProcessesResponse) SetGroups(v []*ProcessNameGroup) {
-	var sv *[]*ProcessNameGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ProcessNameGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Groups = v
 }
 
 type GetGroupedProcessesResponse_builder struct {
@@ -502,26 +348,19 @@ func (b0 GetGroupedProcessesResponse_builder) Build() *GetGroupedProcessesRespon
 	m0 := &GetGroupedProcessesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Groups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Groups = &b.Groups
-	}
+	x.Groups = b.Groups
 	return m0
 }
 
 type ProcessNameAndContainerNameGroup struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name          *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_ContainerName *string                `protobuf:"bytes,2,opt,name=container_name,json=containerName"`
-	xxx_hidden_TimesExecuted uint32                 `protobuf:"varint,3,opt,name=times_executed,json=timesExecuted"`
-	xxx_hidden_Groups        *[]*ProcessGroup       `protobuf:"bytes,4,rep,name=groups"`
-	xxx_hidden_Suspicious    bool                   `protobuf:"varint,5,opt,name=suspicious"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	ContainerName string                 `protobuf:"bytes,2,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
+	TimesExecuted uint32                 `protobuf:"varint,3,opt,name=times_executed,json=timesExecuted" json:"times_executed,omitempty"`
+	Groups        []*ProcessGroup        `protobuf:"bytes,4,rep,name=groups" json:"groups,omitempty"`
+	Suspicious    bool                   `protobuf:"varint,5,opt,name=suspicious" json:"suspicious,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessNameAndContainerNameGroup) Reset() {
@@ -551,177 +390,86 @@ func (x *ProcessNameAndContainerNameGroup) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessNameAndContainerNameGroup) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ProcessNameAndContainerNameGroup) GetContainerName() string {
 	if x != nil {
-		if x.xxx_hidden_ContainerName != nil {
-			return *x.xxx_hidden_ContainerName
-		}
-		return ""
+		return x.ContainerName
 	}
 	return ""
 }
 
 func (x *ProcessNameAndContainerNameGroup) GetTimesExecuted() uint32 {
 	if x != nil {
-		return x.xxx_hidden_TimesExecuted
+		return x.TimesExecuted
 	}
 	return 0
 }
 
 func (x *ProcessNameAndContainerNameGroup) GetGroups() []*ProcessGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*ProcessGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *ProcessNameAndContainerNameGroup) GetSuspicious() bool {
 	if x != nil {
-		return x.xxx_hidden_Suspicious
+		return x.Suspicious
 	}
 	return false
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Name = v
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetContainerName(v string) {
-	x.xxx_hidden_ContainerName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.ContainerName = v
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetTimesExecuted(v uint32) {
-	x.xxx_hidden_TimesExecuted = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.TimesExecuted = v
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetGroups(v []*ProcessGroup) {
-	var sv *[]*ProcessGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ProcessGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Groups = v
 }
 
 func (x *ProcessNameAndContainerNameGroup) SetSuspicious(v bool) {
-	x.xxx_hidden_Suspicious = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ProcessNameAndContainerNameGroup) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessNameAndContainerNameGroup) HasContainerName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessNameAndContainerNameGroup) HasTimesExecuted() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ProcessNameAndContainerNameGroup) HasSuspicious() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ProcessNameAndContainerNameGroup) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ProcessNameAndContainerNameGroup) ClearContainerName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ContainerName = nil
-}
-
-func (x *ProcessNameAndContainerNameGroup) ClearTimesExecuted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_TimesExecuted = 0
-}
-
-func (x *ProcessNameAndContainerNameGroup) ClearSuspicious() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Suspicious = false
+	x.Suspicious = v
 }
 
 type ProcessNameAndContainerNameGroup_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name          *string
-	ContainerName *string
-	TimesExecuted *uint32
+	Name          string
+	ContainerName string
+	TimesExecuted uint32
 	Groups        []*ProcessGroup
-	Suspicious    *bool
+	Suspicious    bool
 }
 
 func (b0 ProcessNameAndContainerNameGroup_builder) Build() *ProcessNameAndContainerNameGroup {
 	m0 := &ProcessNameAndContainerNameGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ContainerName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_ContainerName = b.ContainerName
-	}
-	if b.TimesExecuted != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_TimesExecuted = *b.TimesExecuted
-	}
-	if b.Groups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Groups = &b.Groups
-	}
-	if b.Suspicious != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_Suspicious = *b.Suspicious
-	}
+	x.Name = b.Name
+	x.ContainerName = b.ContainerName
+	x.TimesExecuted = b.TimesExecuted
+	x.Groups = b.Groups
+	x.Suspicious = b.Suspicious
 	return m0
 }
 
 type GetGroupedProcessesWithContainerResponse struct {
-	state             protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_Groups *[]*ProcessNameAndContainerNameGroup `protobuf:"bytes,3,rep,name=groups"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState              `protogen:"hybrid.v1"`
+	Groups        []*ProcessNameAndContainerNameGroup `protobuf:"bytes,3,rep,name=groups" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetGroupedProcessesWithContainerResponse) Reset() {
@@ -751,27 +499,13 @@ func (x *GetGroupedProcessesWithContainerResponse) ProtoReflect() protoreflect.M
 
 func (x *GetGroupedProcessesWithContainerResponse) GetGroups() []*ProcessNameAndContainerNameGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*ProcessNameAndContainerNameGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *GetGroupedProcessesWithContainerResponse) SetGroups(v []*ProcessNameAndContainerNameGroup) {
-	var sv *[]*ProcessNameAndContainerNameGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ProcessNameAndContainerNameGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Groups = v
 }
 
 type GetGroupedProcessesWithContainerResponse_builder struct {
@@ -784,20 +518,15 @@ func (b0 GetGroupedProcessesWithContainerResponse_builder) Build() *GetGroupedPr
 	m0 := &GetGroupedProcessesWithContainerResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Groups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Groups = &b.Groups
-	}
+	x.Groups = b.Groups
 	return m0
 }
 
 type CountProcessesResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CountProcessesResponse) Reset() {
@@ -827,42 +556,26 @@ func (x *CountProcessesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CountProcessesResponse) GetCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *CountProcessesResponse) SetCount(v int32) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *CountProcessesResponse) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CountProcessesResponse) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type CountProcessesResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Count *int32
+	Count int32
 }
 
 func (b0 CountProcessesResponse_builder) Build() *CountProcessesResponse {
 	m0 := &CountProcessesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Count = b.Count
 	return m0
 }
 
@@ -900,8 +613,8 @@ const file_api_v1_process_service_proto_rawDesc = "" +
 	"\x0eCountProcesses\x12\f.v1.RawQuery\x1a\x1a.v1.CountProcessesResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/processcount\x12\x8b\x01\n" +
 	"\x18GetProcessesByDeployment\x12#.v1.GetProcessesByDeploymentRequest\x1a\x18.v1.GetProcessesResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/processes/deployment/{deployment_id}\x12\x9f\x01\n" +
 	"\x1dGetGroupedProcessByDeployment\x12#.v1.GetProcessesByDeploymentRequest\x1a\x1f.v1.GetGroupedProcessesResponse\"8\x82\xd3\xe4\x93\x022\x120/v1/processes/deployment/{deployment_id}/grouped\x12\xc2\x01\n" +
-	")GetGroupedProcessByDeploymentAndContainer\x12#.v1.GetProcessesByDeploymentRequest\x1a,.v1.GetGroupedProcessesWithContainerResponse\"B\x82\xd3\xe4\x93\x02<\x12:/v1/processes/deployment/{deployment_id}/grouped/containerB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	")GetGroupedProcessByDeploymentAndContainer\x12#.v1.GetProcessesByDeploymentRequest\x1a,.v1.GetGroupedProcessesWithContainerResponse\"B\x82\xd3\xe4\x93\x02<\x12:/v1/processes/deployment/{deployment_id}/grouped/containerB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_process_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_process_service_proto_goTypes = []any{

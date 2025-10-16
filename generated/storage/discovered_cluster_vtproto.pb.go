@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *DiscoveredCluster) SizeVT() int                   { return proto.Size(m) }
-func (m *DiscoveredCluster) CloneVT() *DiscoveredCluster   { return proto.Clone(m).(*DiscoveredCluster) }
-func (m *DiscoveredCluster) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster) SizeVT() int                       { return proto.Size(m) }
+func (m *DiscoveredCluster) CloneVT() *DiscoveredCluster       { return proto.Clone(m).(*DiscoveredCluster) }
+func (m *DiscoveredCluster) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *DiscoveredCluster) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster) EqualVT(n *DiscoveredCluster) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DiscoveredCluster) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *DiscoveredCluster_Metadata) CloneVT() *DiscoveredCluster_Metadata {
 }
 func (m *DiscoveredCluster_Metadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DiscoveredCluster_Metadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DiscoveredCluster_Metadata) EqualVT(n *DiscoveredCluster_Metadata) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DiscoveredCluster_Metadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

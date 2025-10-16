@@ -4,10 +4,11 @@ package central
 
 import "google.golang.org/protobuf/proto"
 
-func (m *NetworkFlowUpdate) SizeVT() int                   { return proto.Size(m) }
-func (m *NetworkFlowUpdate) CloneVT() *NetworkFlowUpdate   { return proto.Clone(m).(*NetworkFlowUpdate) }
-func (m *NetworkFlowUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkFlowUpdate) SizeVT() int                       { return proto.Size(m) }
+func (m *NetworkFlowUpdate) CloneVT() *NetworkFlowUpdate       { return proto.Clone(m).(*NetworkFlowUpdate) }
+func (m *NetworkFlowUpdate) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkFlowUpdate) EqualVT(n *NetworkFlowUpdate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkFlowUpdate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *PushNetworkEntitiesRequest) CloneVT() *PushNetworkEntitiesRequest {
 }
 func (m *PushNetworkEntitiesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PushNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PushNetworkEntitiesRequest) EqualVT(n *PushNetworkEntitiesRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PushNetworkEntitiesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

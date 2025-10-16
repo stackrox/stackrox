@@ -8,8 +8,9 @@ func (m *HTTPEndpointConfig) SizeVT() int { return proto.Size(m) }
 func (m *HTTPEndpointConfig) CloneVT() *HTTPEndpointConfig {
 	return proto.Clone(m).(*HTTPEndpointConfig)
 }
-func (m *HTTPEndpointConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *HTTPEndpointConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *HTTPEndpointConfig) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *HTTPEndpointConfig) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *HTTPEndpointConfig) EqualVT(n *HTTPEndpointConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *HTTPEndpointConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

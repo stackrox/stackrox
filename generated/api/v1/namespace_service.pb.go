@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/namespace_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,17 +26,13 @@ const (
 )
 
 type Namespace struct {
-	state                         protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Metadata           *storage.NamespaceMetadata `protobuf:"bytes,1,opt,name=metadata"`
-	xxx_hidden_NumDeployments     int32                      `protobuf:"varint,2,opt,name=num_deployments,json=numDeployments"`
-	xxx_hidden_NumSecrets         int32                      `protobuf:"varint,3,opt,name=num_secrets,json=numSecrets"`
-	xxx_hidden_NumNetworkPolicies int32                      `protobuf:"varint,4,opt,name=num_network_policies,json=numNetworkPolicies"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state              protoimpl.MessageState     `protogen:"hybrid.v1"`
+	Metadata           *storage.NamespaceMetadata `protobuf:"bytes,1,opt,name=metadata" json:"metadata,omitempty"`
+	NumDeployments     int32                      `protobuf:"varint,2,opt,name=num_deployments,json=numDeployments" json:"num_deployments,omitempty"`
+	NumSecrets         int32                      `protobuf:"varint,3,opt,name=num_secrets,json=numSecrets" json:"num_secrets,omitempty"`
+	NumNetworkPolicies int32                      `protobuf:"varint,4,opt,name=num_network_policies,json=numNetworkPolicies" json:"num_network_policies,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Namespace) Reset() {
@@ -64,152 +62,84 @@ func (x *Namespace) ProtoReflect() protoreflect.Message {
 
 func (x *Namespace) GetMetadata() *storage.NamespaceMetadata {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Metadata) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.NamespaceMetadata
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Metadata), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Metadata
 	}
 	return nil
 }
 
 func (x *Namespace) GetNumDeployments() int32 {
 	if x != nil {
-		return x.xxx_hidden_NumDeployments
+		return x.NumDeployments
 	}
 	return 0
 }
 
 func (x *Namespace) GetNumSecrets() int32 {
 	if x != nil {
-		return x.xxx_hidden_NumSecrets
+		return x.NumSecrets
 	}
 	return 0
 }
 
 func (x *Namespace) GetNumNetworkPolicies() int32 {
 	if x != nil {
-		return x.xxx_hidden_NumNetworkPolicies
+		return x.NumNetworkPolicies
 	}
 	return 0
 }
 
 func (x *Namespace) SetMetadata(v *storage.NamespaceMetadata) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-	}
+	x.Metadata = v
 }
 
 func (x *Namespace) SetNumDeployments(v int32) {
-	x.xxx_hidden_NumDeployments = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.NumDeployments = v
 }
 
 func (x *Namespace) SetNumSecrets(v int32) {
-	x.xxx_hidden_NumSecrets = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.NumSecrets = v
 }
 
 func (x *Namespace) SetNumNetworkPolicies(v int32) {
-	x.xxx_hidden_NumNetworkPolicies = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	x.NumNetworkPolicies = v
 }
 
 func (x *Namespace) HasMetadata() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Namespace) HasNumDeployments() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Namespace) HasNumSecrets() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Namespace) HasNumNetworkPolicies() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.Metadata != nil
 }
 
 func (x *Namespace) ClearMetadata() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Metadata, (*storage.NamespaceMetadata)(nil))
-}
-
-func (x *Namespace) ClearNumDeployments() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NumDeployments = 0
-}
-
-func (x *Namespace) ClearNumSecrets() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_NumSecrets = 0
-}
-
-func (x *Namespace) ClearNumNetworkPolicies() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_NumNetworkPolicies = 0
+	x.Metadata = nil
 }
 
 type Namespace_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Metadata           *storage.NamespaceMetadata
-	NumDeployments     *int32
-	NumSecrets         *int32
-	NumNetworkPolicies *int32
+	NumDeployments     int32
+	NumSecrets         int32
+	NumNetworkPolicies int32
 }
 
 func (b0 Namespace_builder) Build() *Namespace {
 	m0 := &Namespace{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Metadata != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Metadata = b.Metadata
-	}
-	if b.NumDeployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_NumDeployments = *b.NumDeployments
-	}
-	if b.NumSecrets != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_NumSecrets = *b.NumSecrets
-	}
-	if b.NumNetworkPolicies != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_NumNetworkPolicies = *b.NumNetworkPolicies
-	}
+	x.Metadata = b.Metadata
+	x.NumDeployments = b.NumDeployments
+	x.NumSecrets = b.NumSecrets
+	x.NumNetworkPolicies = b.NumNetworkPolicies
 	return m0
 }
 
 type GetNamespacesResponse struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Namespaces *[]*Namespace          `protobuf:"bytes,1,rep,name=namespaces"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Namespaces    []*Namespace           `protobuf:"bytes,1,rep,name=namespaces" json:"namespaces,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetNamespacesResponse) Reset() {
@@ -239,27 +169,13 @@ func (x *GetNamespacesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetNamespacesResponse) GetNamespaces() []*Namespace {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Namespaces) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Namespace
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Namespaces
 	}
 	return nil
 }
 
 func (x *GetNamespacesResponse) SetNamespaces(v []*Namespace) {
-	var sv *[]*Namespace
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Namespace{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Namespaces), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Namespaces = v
 }
 
 type GetNamespacesResponse_builder struct {
@@ -272,22 +188,15 @@ func (b0 GetNamespacesResponse_builder) Build() *GetNamespacesResponse {
 	m0 := &GetNamespacesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Namespaces != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Namespaces = &b.Namespaces
-	}
+	x.Namespaces = b.Namespaces
 	return m0
 }
 
 type GetNamespaceRequest struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query *RawQuery              `protobuf:"bytes,1,opt,name=query"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetNamespaceRequest) Reset() {
@@ -317,37 +226,24 @@ func (x *GetNamespaceRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetNamespaceRequest) GetQuery() *RawQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *RawQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Query
 	}
 	return nil
 }
 
 func (x *GetNamespaceRequest) SetQuery(v *RawQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Query = v
 }
 
 func (x *GetNamespaceRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Query != nil
 }
 
 func (x *GetNamespaceRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*RawQuery)(nil))
+	x.Query = nil
 }
 
 type GetNamespaceRequest_builder struct {
@@ -360,10 +256,7 @@ func (b0 GetNamespaceRequest_builder) Build() *GetNamespaceRequest {
 	m0 := &GetNamespaceRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Query = b.Query
 	return m0
 }
 
@@ -386,8 +279,8 @@ const file_api_v1_namespace_service_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryB\x02(\x01R\x05query2\xbd\x01\n" +
 	"\x10NamespaceService\x12[\n" +
 	"\rGetNamespaces\x12\x17.v1.GetNamespaceRequest\x1a\x19.v1.GetNamespacesResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/v1/namespaces\x12L\n" +
-	"\fGetNamespace\x12\x10.v1.ResourceByID\x1a\r.v1.Namespace\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/namespaces/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\fGetNamespace\x12\x10.v1.ResourceByID\x1a\r.v1.Namespace\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/namespaces/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_namespace_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_namespace_service_proto_goTypes = []any{

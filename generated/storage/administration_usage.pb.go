@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/administration_usage.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -25,17 +27,22 @@ const (
 // SecuredUnits represents a record of an aggregated secured clusters usage
 // metrics. The metrics are aggregated periodically, and put into the database.
 type SecuredUnits struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Timestamp   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
-	xxx_hidden_NumNodes    int64                  `protobuf:"varint,3,opt,name=num_nodes,json=numNodes"`
-	xxx_hidden_NumCpuUnits int64                  `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// id is not used to retrieve data, but serves mostly for compatibility with
+	// the current implementation of the query generator.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	// timestamp stores the moment at which the values of the metrics below are
+	// aggregated.
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty" sql:"unique" search:"Administration Usage Timestamp,hidden"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
+	// num_nodes is the maximum number of secured nodes, observed across all
+	// registered clusters during last aggregation period.
+	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes" json:"num_nodes,omitempty" search:"Administration Usage Nodes,hidden"` // @gotags: search:"Administration Usage Nodes,hidden"
+	// num_cpu_units is the maximum number of secured CPU units (which are the
+	// units reported by Kubernetes), observed across all registered clusters
+	// during last aggregation period.
+	NumCpuUnits   int64 `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits" json:"num_cpu_units,omitempty" search:"Administration Usage CPU Units,hidden"` // @gotags: search:"Administration Usage CPU Units,hidden"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SecuredUnits) Reset() {
@@ -65,112 +72,57 @@ func (x *SecuredUnits) ProtoReflect() protoreflect.Message {
 
 func (x *SecuredUnits) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *SecuredUnits) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *SecuredUnits) GetNumNodes() int64 {
 	if x != nil {
-		return x.xxx_hidden_NumNodes
+		return x.NumNodes
 	}
 	return 0
 }
 
 func (x *SecuredUnits) GetNumCpuUnits() int64 {
 	if x != nil {
-		return x.xxx_hidden_NumCpuUnits
+		return x.NumCpuUnits
 	}
 	return 0
 }
 
 func (x *SecuredUnits) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *SecuredUnits) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
-	}
+	x.Timestamp = v
 }
 
 func (x *SecuredUnits) SetNumNodes(v int64) {
-	x.xxx_hidden_NumNodes = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.NumNodes = v
 }
 
 func (x *SecuredUnits) SetNumCpuUnits(v int64) {
-	x.xxx_hidden_NumCpuUnits = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *SecuredUnits) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.NumCpuUnits = v
 }
 
 func (x *SecuredUnits) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SecuredUnits) HasNumNodes() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *SecuredUnits) HasNumCpuUnits() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *SecuredUnits) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.Timestamp != nil
 }
 
 func (x *SecuredUnits) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *SecuredUnits) ClearNumNodes() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_NumNodes = 0
-}
-
-func (x *SecuredUnits) ClearNumCpuUnits() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_NumCpuUnits = 0
+	x.Timestamp = nil
 }
 
 type SecuredUnits_builder struct {
@@ -178,39 +130,27 @@ type SecuredUnits_builder struct {
 
 	// id is not used to retrieve data, but serves mostly for compatibility with
 	// the current implementation of the query generator.
-	Id *string
+	Id string
 	// timestamp stores the moment at which the values of the metrics below are
 	// aggregated.
 	Timestamp *timestamppb.Timestamp
 	// num_nodes is the maximum number of secured nodes, observed across all
 	// registered clusters during last aggregation period.
-	NumNodes *int64
+	NumNodes int64
 	// num_cpu_units is the maximum number of secured CPU units (which are the
 	// units reported by Kubernetes), observed across all registered clusters
 	// during last aggregation period.
-	NumCpuUnits *int64
+	NumCpuUnits int64
 }
 
 func (b0 SecuredUnits_builder) Build() *SecuredUnits {
 	m0 := &SecuredUnits{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.NumNodes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_NumNodes = *b.NumNodes
-	}
-	if b.NumCpuUnits != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_NumCpuUnits = *b.NumCpuUnits
-	}
+	x.Id = b.Id
+	x.Timestamp = b.Timestamp
+	x.NumNodes = b.NumNodes
+	x.NumCpuUnits = b.NumCpuUnits
 	return m0
 }
 
@@ -223,8 +163,8 @@ const file_storage_administration_usage_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12\x1b\n" +
 	"\tnum_nodes\x18\x03 \x01(\x03R\bnumNodes\x12\"\n" +
-	"\rnum_cpu_units\x18\x04 \x01(\x03R\vnumCpuUnitsB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\rnum_cpu_units\x18\x04 \x01(\x03R\vnumCpuUnitsB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_administration_usage_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_administration_usage_proto_goTypes = []any{

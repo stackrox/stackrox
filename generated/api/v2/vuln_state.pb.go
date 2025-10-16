@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v2/vuln_state.proto
 
+//go:build !protoopaque
+
 package v2
 
 import (
@@ -77,8 +79,8 @@ const file_api_v2_vuln_state_proto_rawDesc = "" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +
-	"\x0eFALSE_POSITIVE\x10\x02B/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x0eFALSE_POSITIVE\x10\x02B7\n" +
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_v2_vuln_state_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v2_vuln_state_proto_goTypes = []any{

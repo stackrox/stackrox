@@ -12,6 +12,9 @@ func (m *VulnMgmtExportWorkloadsRequest) MarshalVT() ([]byte, error) { return pr
 func (m *VulnMgmtExportWorkloadsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *VulnMgmtExportWorkloadsRequest) EqualVT(n *VulnMgmtExportWorkloadsRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnMgmtExportWorkloadsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -25,6 +28,9 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneVT() *VulnMgmtExportWorkloadsResp
 func (m *VulnMgmtExportWorkloadsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *VulnMgmtExportWorkloadsResponse) EqualVT(n *VulnMgmtExportWorkloadsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

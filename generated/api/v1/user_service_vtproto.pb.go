@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *GetUsersResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *GetUsersResponse) CloneVT() *GetUsersResponse    { return proto.Clone(m).(*GetUsersResponse) }
-func (m *GetUsersResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetUsersResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetUsersResponse) SizeVT() int                      { return proto.Size(m) }
+func (m *GetUsersResponse) CloneVT() *GetUsersResponse       { return proto.Clone(m).(*GetUsersResponse) }
+func (m *GetUsersResponse) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *GetUsersResponse) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *GetUsersResponse) EqualVT(n *GetUsersResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetUsersResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *UserAttributeTuple) SizeVT() int { return proto.Size(m) }
 func (m *UserAttributeTuple) CloneVT() *UserAttributeTuple {
 	return proto.Clone(m).(*UserAttributeTuple)
 }
-func (m *UserAttributeTuple) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UserAttributeTuple) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UserAttributeTuple) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *UserAttributeTuple) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *UserAttributeTuple) EqualVT(n *UserAttributeTuple) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UserAttributeTuple) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,6 +30,9 @@ func (m *GetUsersAttributesResponse) CloneVT() *GetUsersAttributesResponse {
 }
 func (m *GetUsersAttributesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetUsersAttributesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetUsersAttributesResponse) EqualVT(n *GetUsersAttributesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetUsersAttributesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

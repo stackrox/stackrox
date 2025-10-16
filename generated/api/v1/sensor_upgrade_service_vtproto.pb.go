@@ -12,6 +12,9 @@ func (m *UpdateSensorUpgradeConfigRequest) MarshalVT() ([]byte, error) { return 
 func (m *UpdateSensorUpgradeConfigRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpdateSensorUpgradeConfigRequest) EqualVT(n *UpdateSensorUpgradeConfigRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateSensorUpgradeConfigRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -25,6 +28,9 @@ func (m *GetSensorUpgradeConfigResponse) CloneVT() *GetSensorUpgradeConfigRespon
 func (m *GetSensorUpgradeConfigResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetSensorUpgradeConfigResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetSensorUpgradeConfigResponse) EqualVT(n *GetSensorUpgradeConfigResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -41,6 +47,9 @@ func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) MarshalVT() ([]byte, erro
 }
 func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetSensorUpgradeConfigResponse_UpgradeConfig) EqualVT(n *GetSensorUpgradeConfigResponse_UpgradeConfig) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

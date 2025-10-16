@@ -8,6 +8,7 @@ func (m *Signal) SizeVT() int                   { return proto.Size(m) }
 func (m *Signal) CloneVT() *Signal              { return proto.Clone(m).(*Signal) }
 func (m *Signal) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Signal) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Signal) EqualVT(n *Signal) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Signal) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

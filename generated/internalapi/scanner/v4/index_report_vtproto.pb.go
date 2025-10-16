@@ -8,6 +8,7 @@ func (m *IndexReport) SizeVT() int                   { return proto.Size(m) }
 func (m *IndexReport) CloneVT() *IndexReport         { return proto.Clone(m).(*IndexReport) }
 func (m *IndexReport) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *IndexReport) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *IndexReport) EqualVT(n *IndexReport) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IndexReport) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

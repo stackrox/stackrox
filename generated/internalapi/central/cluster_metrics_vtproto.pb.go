@@ -4,10 +4,11 @@ package central
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ClusterMetrics) SizeVT() int                   { return proto.Size(m) }
-func (m *ClusterMetrics) CloneVT() *ClusterMetrics      { return proto.Clone(m).(*ClusterMetrics) }
-func (m *ClusterMetrics) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterMetrics) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterMetrics) SizeVT() int                    { return proto.Size(m) }
+func (m *ClusterMetrics) CloneVT() *ClusterMetrics       { return proto.Clone(m).(*ClusterMetrics) }
+func (m *ClusterMetrics) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ClusterMetrics) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterMetrics) EqualVT(n *ClusterMetrics) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterMetrics) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

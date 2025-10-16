@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/compliance_iservice.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -107,13 +109,11 @@ func (x MsgToCompliance_NodeInventoryACK_MessageType) Number() protoreflect.Enum
 }
 
 type GetScrapeConfigRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_NodeName    *string                `protobuf:"bytes,1,opt,name=node_name,json=nodeName"`
-	xxx_hidden_ScrapeId    *string                `protobuf:"bytes,2,opt,name=scrape_id,json=scrapeId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	NodeName      string                 `protobuf:"bytes,1,opt,name=node_name,json=nodeName" json:"node_name,omitempty"`
+	ScrapeId      string                 `protobuf:"bytes,2,opt,name=scrape_id,json=scrapeId" json:"scrape_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetScrapeConfigRequest) Reset() {
@@ -143,89 +143,48 @@ func (x *GetScrapeConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetScrapeConfigRequest) GetNodeName() string {
 	if x != nil {
-		if x.xxx_hidden_NodeName != nil {
-			return *x.xxx_hidden_NodeName
-		}
-		return ""
+		return x.NodeName
 	}
 	return ""
 }
 
 func (x *GetScrapeConfigRequest) GetScrapeId() string {
 	if x != nil {
-		if x.xxx_hidden_ScrapeId != nil {
-			return *x.xxx_hidden_ScrapeId
-		}
-		return ""
+		return x.ScrapeId
 	}
 	return ""
 }
 
 func (x *GetScrapeConfigRequest) SetNodeName(v string) {
-	x.xxx_hidden_NodeName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.NodeName = v
 }
 
 func (x *GetScrapeConfigRequest) SetScrapeId(v string) {
-	x.xxx_hidden_ScrapeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetScrapeConfigRequest) HasNodeName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetScrapeConfigRequest) HasScrapeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetScrapeConfigRequest) ClearNodeName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_NodeName = nil
-}
-
-func (x *GetScrapeConfigRequest) ClearScrapeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ScrapeId = nil
+	x.ScrapeId = v
 }
 
 type GetScrapeConfigRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	NodeName *string
-	ScrapeId *string
+	NodeName string
+	ScrapeId string
 }
 
 func (b0 GetScrapeConfigRequest_builder) Build() *GetScrapeConfigRequest {
 	m0 := &GetScrapeConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.NodeName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_NodeName = b.NodeName
-	}
-	if b.ScrapeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ScrapeId = b.ScrapeId
-	}
+	x.NodeName = b.NodeName
+	x.ScrapeId = b.ScrapeId
 	return m0
 }
 
 type AuditEvents struct {
-	state             protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Events *[]*storage.KubernetesEvent `protobuf:"bytes,1,rep,name=events"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// events are ordered with the most recent being the last element
+	Events        []*storage.KubernetesEvent `protobuf:"bytes,1,rep,name=events" json:"events,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuditEvents) Reset() {
@@ -255,27 +214,13 @@ func (x *AuditEvents) ProtoReflect() protoreflect.Message {
 
 func (x *AuditEvents) GetEvents() []*storage.KubernetesEvent {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Events) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.KubernetesEvent
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Events
 	}
 	return nil
 }
 
 func (x *AuditEvents) SetEvents(v []*storage.KubernetesEvent) {
-	var sv *[]*storage.KubernetesEvent
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.KubernetesEvent{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Events), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Events = v
 }
 
 type AuditEvents_builder struct {
@@ -289,23 +234,22 @@ func (b0 AuditEvents_builder) Build() *AuditEvents {
 	m0 := &AuditEvents{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Events != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Events = &b.Events
-	}
+	x.Events = b.Events
 	return m0
 }
 
 type MsgFromCompliance struct {
-	state           protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Node *string                 `protobuf:"bytes,1,opt,name=node"`
-	xxx_hidden_Msg  isMsgFromCompliance_Msg `protobuf_oneof:"msg"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Node  string                 `protobuf:"bytes,1,opt,name=node" json:"node,omitempty"`
+	// Types that are valid to be assigned to Msg:
+	//
+	//	*MsgFromCompliance_Return
+	//	*MsgFromCompliance_AuditEvents
+	//	*MsgFromCompliance_NodeInventory
+	//	*MsgFromCompliance_IndexReport
+	Msg           isMsgFromCompliance_Msg `protobuf_oneof:"msg"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgFromCompliance) Reset() {
@@ -335,17 +279,21 @@ func (x *MsgFromCompliance) ProtoReflect() protoreflect.Message {
 
 func (x *MsgFromCompliance) GetNode() string {
 	if x != nil {
-		if x.xxx_hidden_Node != nil {
-			return *x.xxx_hidden_Node
-		}
-		return ""
+		return x.Node
 	}
 	return ""
 }
 
+func (x *MsgFromCompliance) GetMsg() isMsgFromCompliance_Msg {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
 func (x *MsgFromCompliance) GetReturn() *compliance.ComplianceReturn {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCompliance_Return); ok {
+		if x, ok := x.Msg.(*MsgFromCompliance_Return); ok {
 			return x.Return
 		}
 	}
@@ -354,7 +302,7 @@ func (x *MsgFromCompliance) GetReturn() *compliance.ComplianceReturn {
 
 func (x *MsgFromCompliance) GetAuditEvents() *AuditEvents {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCompliance_AuditEvents); ok {
+		if x, ok := x.Msg.(*MsgFromCompliance_AuditEvents); ok {
 			return x.AuditEvents
 		}
 	}
@@ -363,7 +311,7 @@ func (x *MsgFromCompliance) GetAuditEvents() *AuditEvents {
 
 func (x *MsgFromCompliance) GetNodeInventory() *storage.NodeInventory {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCompliance_NodeInventory); ok {
+		if x, ok := x.Msg.(*MsgFromCompliance_NodeInventory); ok {
 			return x.NodeInventory
 		}
 	}
@@ -372,7 +320,7 @@ func (x *MsgFromCompliance) GetNodeInventory() *storage.NodeInventory {
 
 func (x *MsgFromCompliance) GetIndexReport() *v4.IndexReport {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgFromCompliance_IndexReport); ok {
+		if x, ok := x.Msg.(*MsgFromCompliance_IndexReport); ok {
 			return x.IndexReport
 		}
 	}
@@ -380,61 +328,53 @@ func (x *MsgFromCompliance) GetIndexReport() *v4.IndexReport {
 }
 
 func (x *MsgFromCompliance) SetNode(v string) {
-	x.xxx_hidden_Node = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Node = v
 }
 
 func (x *MsgFromCompliance) SetReturn(v *compliance.ComplianceReturn) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCompliance_Return{v}
+	x.Msg = &MsgFromCompliance_Return{v}
 }
 
 func (x *MsgFromCompliance) SetAuditEvents(v *AuditEvents) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCompliance_AuditEvents{v}
+	x.Msg = &MsgFromCompliance_AuditEvents{v}
 }
 
 func (x *MsgFromCompliance) SetNodeInventory(v *storage.NodeInventory) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCompliance_NodeInventory{v}
+	x.Msg = &MsgFromCompliance_NodeInventory{v}
 }
 
 func (x *MsgFromCompliance) SetIndexReport(v *v4.IndexReport) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgFromCompliance_IndexReport{v}
-}
-
-func (x *MsgFromCompliance) HasNode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Msg = &MsgFromCompliance_IndexReport{v}
 }
 
 func (x *MsgFromCompliance) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *MsgFromCompliance) HasReturn() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCompliance_Return)
+	_, ok := x.Msg.(*MsgFromCompliance_Return)
 	return ok
 }
 
@@ -442,7 +382,7 @@ func (x *MsgFromCompliance) HasAuditEvents() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCompliance_AuditEvents)
+	_, ok := x.Msg.(*MsgFromCompliance_AuditEvents)
 	return ok
 }
 
@@ -450,7 +390,7 @@ func (x *MsgFromCompliance) HasNodeInventory() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCompliance_NodeInventory)
+	_, ok := x.Msg.(*MsgFromCompliance_NodeInventory)
 	return ok
 }
 
@@ -458,40 +398,35 @@ func (x *MsgFromCompliance) HasIndexReport() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgFromCompliance_IndexReport)
+	_, ok := x.Msg.(*MsgFromCompliance_IndexReport)
 	return ok
 }
 
-func (x *MsgFromCompliance) ClearNode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Node = nil
-}
-
 func (x *MsgFromCompliance) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 func (x *MsgFromCompliance) ClearReturn() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCompliance_Return); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCompliance_Return); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgFromCompliance) ClearAuditEvents() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCompliance_AuditEvents); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCompliance_AuditEvents); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgFromCompliance) ClearNodeInventory() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCompliance_NodeInventory); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCompliance_NodeInventory); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgFromCompliance) ClearIndexReport() {
-	if _, ok := x.xxx_hidden_Msg.(*msgFromCompliance_IndexReport); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgFromCompliance_IndexReport); ok {
+		x.Msg = nil
 	}
 }
 
@@ -505,14 +440,14 @@ func (x *MsgFromCompliance) WhichMsg() case_MsgFromCompliance_Msg {
 	if x == nil {
 		return MsgFromCompliance_Msg_not_set_case
 	}
-	switch x.xxx_hidden_Msg.(type) {
-	case *msgFromCompliance_Return:
+	switch x.Msg.(type) {
+	case *MsgFromCompliance_Return:
 		return MsgFromCompliance_Return_case
-	case *msgFromCompliance_AuditEvents:
+	case *MsgFromCompliance_AuditEvents:
 		return MsgFromCompliance_AuditEvents_case
-	case *msgFromCompliance_NodeInventory:
+	case *MsgFromCompliance_NodeInventory:
 		return MsgFromCompliance_NodeInventory_case
-	case *msgFromCompliance_IndexReport:
+	case *MsgFromCompliance_IndexReport:
 		return MsgFromCompliance_IndexReport_case
 	default:
 		return MsgFromCompliance_Msg_not_set_case
@@ -522,34 +457,31 @@ func (x *MsgFromCompliance) WhichMsg() case_MsgFromCompliance_Msg {
 type MsgFromCompliance_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Node *string
-	// Fields of oneof xxx_hidden_Msg:
+	Node string
+	// Fields of oneof Msg:
 	Return        *compliance.ComplianceReturn
 	AuditEvents   *AuditEvents
 	NodeInventory *storage.NodeInventory
 	IndexReport   *v4.IndexReport
-	// -- end of xxx_hidden_Msg
+	// -- end of Msg
 }
 
 func (b0 MsgFromCompliance_builder) Build() *MsgFromCompliance {
 	m0 := &MsgFromCompliance{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Node != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Node = b.Node
-	}
+	x.Node = b.Node
 	if b.Return != nil {
-		x.xxx_hidden_Msg = &msgFromCompliance_Return{b.Return}
+		x.Msg = &MsgFromCompliance_Return{b.Return}
 	}
 	if b.AuditEvents != nil {
-		x.xxx_hidden_Msg = &msgFromCompliance_AuditEvents{b.AuditEvents}
+		x.Msg = &MsgFromCompliance_AuditEvents{b.AuditEvents}
 	}
 	if b.NodeInventory != nil {
-		x.xxx_hidden_Msg = &msgFromCompliance_NodeInventory{b.NodeInventory}
+		x.Msg = &MsgFromCompliance_NodeInventory{b.NodeInventory}
 	}
 	if b.IndexReport != nil {
-		x.xxx_hidden_Msg = &msgFromCompliance_IndexReport{b.IndexReport}
+		x.Msg = &MsgFromCompliance_IndexReport{b.IndexReport}
 	}
 	return m0
 }
@@ -568,35 +500,41 @@ type isMsgFromCompliance_Msg interface {
 	isMsgFromCompliance_Msg()
 }
 
-type msgFromCompliance_Return struct {
+type MsgFromCompliance_Return struct {
 	Return *compliance.ComplianceReturn `protobuf:"bytes,2,opt,name=return,oneof"`
 }
 
-type msgFromCompliance_AuditEvents struct {
+type MsgFromCompliance_AuditEvents struct {
 	AuditEvents *AuditEvents `protobuf:"bytes,3,opt,name=audit_events,json=auditEvents,oneof"`
 }
 
-type msgFromCompliance_NodeInventory struct {
+type MsgFromCompliance_NodeInventory struct {
 	NodeInventory *storage.NodeInventory `protobuf:"bytes,4,opt,name=node_inventory,json=nodeInventory,oneof"`
 }
 
-type msgFromCompliance_IndexReport struct {
+type MsgFromCompliance_IndexReport struct {
 	IndexReport *v4.IndexReport `protobuf:"bytes,5,opt,name=index_report,json=indexReport,oneof"`
 }
 
-func (*msgFromCompliance_Return) isMsgFromCompliance_Msg() {}
+func (*MsgFromCompliance_Return) isMsgFromCompliance_Msg() {}
 
-func (*msgFromCompliance_AuditEvents) isMsgFromCompliance_Msg() {}
+func (*MsgFromCompliance_AuditEvents) isMsgFromCompliance_Msg() {}
 
-func (*msgFromCompliance_NodeInventory) isMsgFromCompliance_Msg() {}
+func (*MsgFromCompliance_NodeInventory) isMsgFromCompliance_Msg() {}
 
-func (*msgFromCompliance_IndexReport) isMsgFromCompliance_Msg() {}
+func (*MsgFromCompliance_IndexReport) isMsgFromCompliance_Msg() {}
 
 type MsgToCompliance struct {
-	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Msg isMsgToCompliance_Msg  `protobuf_oneof:"msg"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Msg:
+	//
+	//	*MsgToCompliance_Config
+	//	*MsgToCompliance_Trigger
+	//	*MsgToCompliance_AuditLogCollectionRequest_
+	//	*MsgToCompliance_Ack
+	Msg           isMsgToCompliance_Msg `protobuf_oneof:"msg"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance) Reset() {
@@ -624,9 +562,16 @@ func (x *MsgToCompliance) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *MsgToCompliance) GetMsg() isMsgToCompliance_Msg {
+	if x != nil {
+		return x.Msg
+	}
+	return nil
+}
+
 func (x *MsgToCompliance) GetConfig() *MsgToCompliance_ScrapeConfig {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCompliance_Config); ok {
+		if x, ok := x.Msg.(*MsgToCompliance_Config); ok {
 			return x.Config
 		}
 	}
@@ -635,7 +580,7 @@ func (x *MsgToCompliance) GetConfig() *MsgToCompliance_ScrapeConfig {
 
 func (x *MsgToCompliance) GetTrigger() *MsgToCompliance_TriggerRun {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCompliance_Trigger); ok {
+		if x, ok := x.Msg.(*MsgToCompliance_Trigger); ok {
 			return x.Trigger
 		}
 	}
@@ -644,7 +589,7 @@ func (x *MsgToCompliance) GetTrigger() *MsgToCompliance_TriggerRun {
 
 func (x *MsgToCompliance) GetAuditLogCollectionRequest() *MsgToCompliance_AuditLogCollectionRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCompliance_AuditLogCollectionRequest_); ok {
+		if x, ok := x.Msg.(*MsgToCompliance_AuditLogCollectionRequest_); ok {
 			return x.AuditLogCollectionRequest
 		}
 	}
@@ -653,7 +598,7 @@ func (x *MsgToCompliance) GetAuditLogCollectionRequest() *MsgToCompliance_AuditL
 
 func (x *MsgToCompliance) GetAck() *MsgToCompliance_NodeInventoryACK {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Msg.(*msgToCompliance_Ack); ok {
+		if x, ok := x.Msg.(*MsgToCompliance_Ack); ok {
 			return x.Ack
 		}
 	}
@@ -662,48 +607,48 @@ func (x *MsgToCompliance) GetAck() *MsgToCompliance_NodeInventoryACK {
 
 func (x *MsgToCompliance) SetConfig(v *MsgToCompliance_ScrapeConfig) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCompliance_Config{v}
+	x.Msg = &MsgToCompliance_Config{v}
 }
 
 func (x *MsgToCompliance) SetTrigger(v *MsgToCompliance_TriggerRun) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCompliance_Trigger{v}
+	x.Msg = &MsgToCompliance_Trigger{v}
 }
 
 func (x *MsgToCompliance) SetAuditLogCollectionRequest(v *MsgToCompliance_AuditLogCollectionRequest) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCompliance_AuditLogCollectionRequest_{v}
+	x.Msg = &MsgToCompliance_AuditLogCollectionRequest_{v}
 }
 
 func (x *MsgToCompliance) SetAck(v *MsgToCompliance_NodeInventoryACK) {
 	if v == nil {
-		x.xxx_hidden_Msg = nil
+		x.Msg = nil
 		return
 	}
-	x.xxx_hidden_Msg = &msgToCompliance_Ack{v}
+	x.Msg = &MsgToCompliance_Ack{v}
 }
 
 func (x *MsgToCompliance) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *MsgToCompliance) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCompliance_Config)
+	_, ok := x.Msg.(*MsgToCompliance_Config)
 	return ok
 }
 
@@ -711,7 +656,7 @@ func (x *MsgToCompliance) HasTrigger() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCompliance_Trigger)
+	_, ok := x.Msg.(*MsgToCompliance_Trigger)
 	return ok
 }
 
@@ -719,7 +664,7 @@ func (x *MsgToCompliance) HasAuditLogCollectionRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCompliance_AuditLogCollectionRequest_)
+	_, ok := x.Msg.(*MsgToCompliance_AuditLogCollectionRequest_)
 	return ok
 }
 
@@ -727,35 +672,35 @@ func (x *MsgToCompliance) HasAck() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Msg.(*msgToCompliance_Ack)
+	_, ok := x.Msg.(*MsgToCompliance_Ack)
 	return ok
 }
 
 func (x *MsgToCompliance) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 func (x *MsgToCompliance) ClearConfig() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCompliance_Config); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCompliance_Config); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgToCompliance) ClearTrigger() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCompliance_Trigger); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCompliance_Trigger); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgToCompliance) ClearAuditLogCollectionRequest() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCompliance_AuditLogCollectionRequest_); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCompliance_AuditLogCollectionRequest_); ok {
+		x.Msg = nil
 	}
 }
 
 func (x *MsgToCompliance) ClearAck() {
-	if _, ok := x.xxx_hidden_Msg.(*msgToCompliance_Ack); ok {
-		x.xxx_hidden_Msg = nil
+	if _, ok := x.Msg.(*MsgToCompliance_Ack); ok {
+		x.Msg = nil
 	}
 }
 
@@ -769,14 +714,14 @@ func (x *MsgToCompliance) WhichMsg() case_MsgToCompliance_Msg {
 	if x == nil {
 		return MsgToCompliance_Msg_not_set_case
 	}
-	switch x.xxx_hidden_Msg.(type) {
-	case *msgToCompliance_Config:
+	switch x.Msg.(type) {
+	case *MsgToCompliance_Config:
 		return MsgToCompliance_Config_case
-	case *msgToCompliance_Trigger:
+	case *MsgToCompliance_Trigger:
 		return MsgToCompliance_Trigger_case
-	case *msgToCompliance_AuditLogCollectionRequest_:
+	case *MsgToCompliance_AuditLogCollectionRequest_:
 		return MsgToCompliance_AuditLogCollectionRequest_case
-	case *msgToCompliance_Ack:
+	case *MsgToCompliance_Ack:
 		return MsgToCompliance_Ack_case
 	default:
 		return MsgToCompliance_Msg_not_set_case
@@ -786,12 +731,12 @@ func (x *MsgToCompliance) WhichMsg() case_MsgToCompliance_Msg {
 type MsgToCompliance_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Msg:
+	// Fields of oneof Msg:
 	Config                    *MsgToCompliance_ScrapeConfig
 	Trigger                   *MsgToCompliance_TriggerRun
 	AuditLogCollectionRequest *MsgToCompliance_AuditLogCollectionRequest
 	Ack                       *MsgToCompliance_NodeInventoryACK
-	// -- end of xxx_hidden_Msg
+	// -- end of Msg
 }
 
 func (b0 MsgToCompliance_builder) Build() *MsgToCompliance {
@@ -799,16 +744,16 @@ func (b0 MsgToCompliance_builder) Build() *MsgToCompliance {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Config != nil {
-		x.xxx_hidden_Msg = &msgToCompliance_Config{b.Config}
+		x.Msg = &MsgToCompliance_Config{b.Config}
 	}
 	if b.Trigger != nil {
-		x.xxx_hidden_Msg = &msgToCompliance_Trigger{b.Trigger}
+		x.Msg = &MsgToCompliance_Trigger{b.Trigger}
 	}
 	if b.AuditLogCollectionRequest != nil {
-		x.xxx_hidden_Msg = &msgToCompliance_AuditLogCollectionRequest_{b.AuditLogCollectionRequest}
+		x.Msg = &MsgToCompliance_AuditLogCollectionRequest_{b.AuditLogCollectionRequest}
 	}
 	if b.Ack != nil {
-		x.xxx_hidden_Msg = &msgToCompliance_Ack{b.Ack}
+		x.Msg = &MsgToCompliance_Ack{b.Ack}
 	}
 	return m0
 }
@@ -827,38 +772,36 @@ type isMsgToCompliance_Msg interface {
 	isMsgToCompliance_Msg()
 }
 
-type msgToCompliance_Config struct {
+type MsgToCompliance_Config struct {
 	Config *MsgToCompliance_ScrapeConfig `protobuf:"bytes,1,opt,name=config,oneof"`
 }
 
-type msgToCompliance_Trigger struct {
+type MsgToCompliance_Trigger struct {
 	Trigger *MsgToCompliance_TriggerRun `protobuf:"bytes,2,opt,name=trigger,oneof"`
 }
 
-type msgToCompliance_AuditLogCollectionRequest_ struct {
+type MsgToCompliance_AuditLogCollectionRequest_ struct {
 	AuditLogCollectionRequest *MsgToCompliance_AuditLogCollectionRequest `protobuf:"bytes,3,opt,name=audit_log_collection_request,json=auditLogCollectionRequest,oneof"`
 }
 
-type msgToCompliance_Ack struct {
+type MsgToCompliance_Ack struct {
 	Ack *MsgToCompliance_NodeInventoryACK `protobuf:"bytes,4,opt,name=ack,oneof"`
 }
 
-func (*msgToCompliance_Config) isMsgToCompliance_Msg() {}
+func (*MsgToCompliance_Config) isMsgToCompliance_Msg() {}
 
-func (*msgToCompliance_Trigger) isMsgToCompliance_Msg() {}
+func (*MsgToCompliance_Trigger) isMsgToCompliance_Msg() {}
 
-func (*msgToCompliance_AuditLogCollectionRequest_) isMsgToCompliance_Msg() {}
+func (*MsgToCompliance_AuditLogCollectionRequest_) isMsgToCompliance_Msg() {}
 
-func (*msgToCompliance_Ack) isMsgToCompliance_Msg() {}
+func (*MsgToCompliance_Ack) isMsgToCompliance_Msg() {}
 
 type MsgToCompliance_ScrapeConfig struct {
-	state                       protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_ContainerRuntime storage.ContainerRuntime `protobuf:"varint,1,opt,name=container_runtime,json=containerRuntime,enum=storage.ContainerRuntime"`
-	xxx_hidden_IsMasterNode     bool                     `protobuf:"varint,2,opt,name=is_master_node,json=isMasterNode"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state            protoimpl.MessageState   `protogen:"hybrid.v1"`
+	ContainerRuntime storage.ContainerRuntime `protobuf:"varint,1,opt,name=container_runtime,json=containerRuntime,enum=storage.ContainerRuntime" json:"container_runtime,omitempty"`
+	IsMasterNode     bool                     `protobuf:"varint,2,opt,name=is_master_node,json=isMasterNode" json:"is_master_node,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_ScrapeConfig) Reset() {
@@ -888,84 +831,48 @@ func (x *MsgToCompliance_ScrapeConfig) ProtoReflect() protoreflect.Message {
 
 func (x *MsgToCompliance_ScrapeConfig) GetContainerRuntime() storage.ContainerRuntime {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_ContainerRuntime
-		}
+		return x.ContainerRuntime
 	}
 	return storage.ContainerRuntime(0)
 }
 
 func (x *MsgToCompliance_ScrapeConfig) GetIsMasterNode() bool {
 	if x != nil {
-		return x.xxx_hidden_IsMasterNode
+		return x.IsMasterNode
 	}
 	return false
 }
 
 func (x *MsgToCompliance_ScrapeConfig) SetContainerRuntime(v storage.ContainerRuntime) {
-	x.xxx_hidden_ContainerRuntime = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ContainerRuntime = v
 }
 
 func (x *MsgToCompliance_ScrapeConfig) SetIsMasterNode(v bool) {
-	x.xxx_hidden_IsMasterNode = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *MsgToCompliance_ScrapeConfig) HasContainerRuntime() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *MsgToCompliance_ScrapeConfig) HasIsMasterNode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *MsgToCompliance_ScrapeConfig) ClearContainerRuntime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ContainerRuntime = storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME
-}
-
-func (x *MsgToCompliance_ScrapeConfig) ClearIsMasterNode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsMasterNode = false
+	x.IsMasterNode = v
 }
 
 type MsgToCompliance_ScrapeConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ContainerRuntime *storage.ContainerRuntime
-	IsMasterNode     *bool
+	ContainerRuntime storage.ContainerRuntime
+	IsMasterNode     bool
 }
 
 func (b0 MsgToCompliance_ScrapeConfig_builder) Build() *MsgToCompliance_ScrapeConfig {
 	m0 := &MsgToCompliance_ScrapeConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ContainerRuntime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ContainerRuntime = *b.ContainerRuntime
-	}
-	if b.IsMasterNode != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_IsMasterNode = *b.IsMasterNode
-	}
+	x.ContainerRuntime = b.ContainerRuntime
+	x.IsMasterNode = b.IsMasterNode
 	return m0
 }
 
 type MsgToCompliance_TriggerRun struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ScrapeId    *string                `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId"`
-	xxx_hidden_StandardIds []string               `protobuf:"bytes,2,rep,name=standard_ids,json=standardIds"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ScrapeId      string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId" json:"scrape_id,omitempty"`
+	StandardIds   []string               `protobuf:"bytes,2,rep,name=standard_ids,json=standardIds" json:"standard_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_TriggerRun) Reset() {
@@ -995,46 +902,30 @@ func (x *MsgToCompliance_TriggerRun) ProtoReflect() protoreflect.Message {
 
 func (x *MsgToCompliance_TriggerRun) GetScrapeId() string {
 	if x != nil {
-		if x.xxx_hidden_ScrapeId != nil {
-			return *x.xxx_hidden_ScrapeId
-		}
-		return ""
+		return x.ScrapeId
 	}
 	return ""
 }
 
 func (x *MsgToCompliance_TriggerRun) GetStandardIds() []string {
 	if x != nil {
-		return x.xxx_hidden_StandardIds
+		return x.StandardIds
 	}
 	return nil
 }
 
 func (x *MsgToCompliance_TriggerRun) SetScrapeId(v string) {
-	x.xxx_hidden_ScrapeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ScrapeId = v
 }
 
 func (x *MsgToCompliance_TriggerRun) SetStandardIds(v []string) {
-	x.xxx_hidden_StandardIds = v
-}
-
-func (x *MsgToCompliance_TriggerRun) HasScrapeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *MsgToCompliance_TriggerRun) ClearScrapeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ScrapeId = nil
+	x.StandardIds = v
 }
 
 type MsgToCompliance_TriggerRun_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ScrapeId    *string
+	ScrapeId    string
 	StandardIds []string
 }
 
@@ -1042,19 +933,20 @@ func (b0 MsgToCompliance_TriggerRun_builder) Build() *MsgToCompliance_TriggerRun
 	m0 := &MsgToCompliance_TriggerRun{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ScrapeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ScrapeId = b.ScrapeId
-	}
-	x.xxx_hidden_StandardIds = b.StandardIds
+	x.ScrapeId = b.ScrapeId
+	x.StandardIds = b.StandardIds
 	return m0
 }
 
 type MsgToCompliance_AuditLogCollectionRequest struct {
-	state          protoimpl.MessageState                          `protogen:"opaque.v1"`
-	xxx_hidden_Req isMsgToCompliance_AuditLogCollectionRequest_Req `protobuf_oneof:"req"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Req:
+	//
+	//	*MsgToCompliance_AuditLogCollectionRequest_StartReq
+	//	*MsgToCompliance_AuditLogCollectionRequest_StopReq
+	Req           isMsgToCompliance_AuditLogCollectionRequest_Req `protobuf_oneof:"req"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) Reset() {
@@ -1082,9 +974,16 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
+func (x *MsgToCompliance_AuditLogCollectionRequest) GetReq() isMsgToCompliance_AuditLogCollectionRequest_Req {
+	if x != nil {
+		return x.Req
+	}
+	return nil
+}
+
 func (x *MsgToCompliance_AuditLogCollectionRequest) GetStartReq() *MsgToCompliance_AuditLogCollectionRequest_StartRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StartReq); ok {
+		if x, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StartReq); ok {
 			return x.StartReq
 		}
 	}
@@ -1093,7 +992,7 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) GetStartReq() *MsgToComplian
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) GetStopReq() *MsgToCompliance_AuditLogCollectionRequest_StopRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StopReq); ok {
+		if x, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StopReq); ok {
 			return x.StopReq
 		}
 	}
@@ -1102,32 +1001,32 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) GetStopReq() *MsgToComplianc
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) SetStartReq(v *MsgToCompliance_AuditLogCollectionRequest_StartRequest) {
 	if v == nil {
-		x.xxx_hidden_Req = nil
+		x.Req = nil
 		return
 	}
-	x.xxx_hidden_Req = &msgToCompliance_AuditLogCollectionRequest_StartReq{v}
+	x.Req = &MsgToCompliance_AuditLogCollectionRequest_StartReq{v}
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) SetStopReq(v *MsgToCompliance_AuditLogCollectionRequest_StopRequest) {
 	if v == nil {
-		x.xxx_hidden_Req = nil
+		x.Req = nil
 		return
 	}
-	x.xxx_hidden_Req = &msgToCompliance_AuditLogCollectionRequest_StopReq{v}
+	x.Req = &MsgToCompliance_AuditLogCollectionRequest_StopReq{v}
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) HasReq() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Req != nil
+	return x.Req != nil
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) HasStartReq() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StartReq)
+	_, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StartReq)
 	return ok
 }
 
@@ -1135,23 +1034,23 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) HasStopReq() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StopReq)
+	_, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StopReq)
 	return ok
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) ClearReq() {
-	x.xxx_hidden_Req = nil
+	x.Req = nil
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) ClearStartReq() {
-	if _, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StartReq); ok {
-		x.xxx_hidden_Req = nil
+	if _, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StartReq); ok {
+		x.Req = nil
 	}
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest) ClearStopReq() {
-	if _, ok := x.xxx_hidden_Req.(*msgToCompliance_AuditLogCollectionRequest_StopReq); ok {
-		x.xxx_hidden_Req = nil
+	if _, ok := x.Req.(*MsgToCompliance_AuditLogCollectionRequest_StopReq); ok {
+		x.Req = nil
 	}
 }
 
@@ -1163,10 +1062,10 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) WhichReq() case_MsgToComplia
 	if x == nil {
 		return MsgToCompliance_AuditLogCollectionRequest_Req_not_set_case
 	}
-	switch x.xxx_hidden_Req.(type) {
-	case *msgToCompliance_AuditLogCollectionRequest_StartReq:
+	switch x.Req.(type) {
+	case *MsgToCompliance_AuditLogCollectionRequest_StartReq:
 		return MsgToCompliance_AuditLogCollectionRequest_StartReq_case
-	case *msgToCompliance_AuditLogCollectionRequest_StopReq:
+	case *MsgToCompliance_AuditLogCollectionRequest_StopReq:
 		return MsgToCompliance_AuditLogCollectionRequest_StopReq_case
 	default:
 		return MsgToCompliance_AuditLogCollectionRequest_Req_not_set_case
@@ -1176,10 +1075,10 @@ func (x *MsgToCompliance_AuditLogCollectionRequest) WhichReq() case_MsgToComplia
 type MsgToCompliance_AuditLogCollectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Req:
+	// Fields of oneof Req:
 	StartReq *MsgToCompliance_AuditLogCollectionRequest_StartRequest
 	StopReq  *MsgToCompliance_AuditLogCollectionRequest_StopRequest
-	// -- end of xxx_hidden_Req
+	// -- end of Req
 }
 
 func (b0 MsgToCompliance_AuditLogCollectionRequest_builder) Build() *MsgToCompliance_AuditLogCollectionRequest {
@@ -1187,10 +1086,10 @@ func (b0 MsgToCompliance_AuditLogCollectionRequest_builder) Build() *MsgToCompli
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.StartReq != nil {
-		x.xxx_hidden_Req = &msgToCompliance_AuditLogCollectionRequest_StartReq{b.StartReq}
+		x.Req = &MsgToCompliance_AuditLogCollectionRequest_StartReq{b.StartReq}
 	}
 	if b.StopReq != nil {
-		x.xxx_hidden_Req = &msgToCompliance_AuditLogCollectionRequest_StopReq{b.StopReq}
+		x.Req = &MsgToCompliance_AuditLogCollectionRequest_StopReq{b.StopReq}
 	}
 	return m0
 }
@@ -1209,28 +1108,26 @@ type isMsgToCompliance_AuditLogCollectionRequest_Req interface {
 	isMsgToCompliance_AuditLogCollectionRequest_Req()
 }
 
-type msgToCompliance_AuditLogCollectionRequest_StartReq struct {
+type MsgToCompliance_AuditLogCollectionRequest_StartReq struct {
 	StartReq *MsgToCompliance_AuditLogCollectionRequest_StartRequest `protobuf:"bytes,1,opt,name=start_req,json=startReq,oneof"`
 }
 
-type msgToCompliance_AuditLogCollectionRequest_StopReq struct {
+type MsgToCompliance_AuditLogCollectionRequest_StopReq struct {
 	StopReq *MsgToCompliance_AuditLogCollectionRequest_StopRequest `protobuf:"bytes,2,opt,name=stop_req,json=stopReq,oneof"`
 }
 
-func (*msgToCompliance_AuditLogCollectionRequest_StartReq) isMsgToCompliance_AuditLogCollectionRequest_Req() {
+func (*MsgToCompliance_AuditLogCollectionRequest_StartReq) isMsgToCompliance_AuditLogCollectionRequest_Req() {
 }
 
-func (*msgToCompliance_AuditLogCollectionRequest_StopReq) isMsgToCompliance_AuditLogCollectionRequest_Req() {
+func (*MsgToCompliance_AuditLogCollectionRequest_StopReq) isMsgToCompliance_AuditLogCollectionRequest_Req() {
 }
 
 type MsgToCompliance_NodeInventoryACK struct {
-	state                  protoimpl.MessageState                       `protogen:"opaque.v1"`
-	xxx_hidden_Action      MsgToCompliance_NodeInventoryACK_Action      `protobuf:"varint,1,opt,name=action,enum=sensor.MsgToCompliance_NodeInventoryACK_Action"`
-	xxx_hidden_MessageType MsgToCompliance_NodeInventoryACK_MessageType `protobuf:"varint,2,opt,name=messageType,enum=sensor.MsgToCompliance_NodeInventoryACK_MessageType"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                       `protogen:"hybrid.v1"`
+	Action        MsgToCompliance_NodeInventoryACK_Action      `protobuf:"varint,1,opt,name=action,enum=sensor.MsgToCompliance_NodeInventoryACK_Action" json:"action,omitempty"`
+	MessageType   MsgToCompliance_NodeInventoryACK_MessageType `protobuf:"varint,2,opt,name=messageType,enum=sensor.MsgToCompliance_NodeInventoryACK_MessageType" json:"messageType,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_NodeInventoryACK) Reset() {
@@ -1260,88 +1157,48 @@ func (x *MsgToCompliance_NodeInventoryACK) ProtoReflect() protoreflect.Message {
 
 func (x *MsgToCompliance_NodeInventoryACK) GetAction() MsgToCompliance_NodeInventoryACK_Action {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Action
-		}
+		return x.Action
 	}
 	return MsgToCompliance_NodeInventoryACK_ACK
 }
 
 func (x *MsgToCompliance_NodeInventoryACK) GetMessageType() MsgToCompliance_NodeInventoryACK_MessageType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_MessageType
-		}
+		return x.MessageType
 	}
 	return MsgToCompliance_NodeInventoryACK_NodeInventory
 }
 
 func (x *MsgToCompliance_NodeInventoryACK) SetAction(v MsgToCompliance_NodeInventoryACK_Action) {
-	x.xxx_hidden_Action = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Action = v
 }
 
 func (x *MsgToCompliance_NodeInventoryACK) SetMessageType(v MsgToCompliance_NodeInventoryACK_MessageType) {
-	x.xxx_hidden_MessageType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *MsgToCompliance_NodeInventoryACK) HasAction() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *MsgToCompliance_NodeInventoryACK) HasMessageType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *MsgToCompliance_NodeInventoryACK) ClearAction() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Action = MsgToCompliance_NodeInventoryACK_ACK
-}
-
-func (x *MsgToCompliance_NodeInventoryACK) ClearMessageType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_MessageType = MsgToCompliance_NodeInventoryACK_NodeInventory
+	x.MessageType = v
 }
 
 type MsgToCompliance_NodeInventoryACK_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Action      *MsgToCompliance_NodeInventoryACK_Action
-	MessageType *MsgToCompliance_NodeInventoryACK_MessageType
+	Action      MsgToCompliance_NodeInventoryACK_Action
+	MessageType MsgToCompliance_NodeInventoryACK_MessageType
 }
 
 func (b0 MsgToCompliance_NodeInventoryACK_builder) Build() *MsgToCompliance_NodeInventoryACK {
 	m0 := &MsgToCompliance_NodeInventoryACK{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Action != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Action = *b.Action
-	}
-	if b.MessageType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_MessageType = *b.MessageType
-	}
+	x.Action = b.Action
+	x.MessageType = b.MessageType
 	return m0
 }
 
 type MsgToCompliance_AuditLogCollectionRequest_StartRequest struct {
-	state                        protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId         *string                    `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_CollectStartState *storage.AuditLogFileState `protobuf:"bytes,2,opt,name=collect_start_state,json=collectStartState"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state             protoimpl.MessageState     `protogen:"hybrid.v1"`
+	ClusterId         string                     `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	CollectStartState *storage.AuditLogFileState `protobuf:"bytes,2,opt,name=collect_start_state,json=collectStartState" json:"collect_start_state,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) Reset() {
@@ -1371,70 +1228,41 @@ func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ProtoReflect() 
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) GetCollectStartState() *storage.AuditLogFileState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CollectStartState) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *storage.AuditLogFileState
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CollectStartState), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CollectStartState
 	}
 	return nil
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ClusterId = v
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SetCollectStartState(v *storage.AuditLogFileState) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectStartState, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.CollectStartState = v
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) HasCollectStartState() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
+	return x.CollectStartState != nil
 }
 
 func (x *MsgToCompliance_AuditLogCollectionRequest_StartRequest) ClearCollectStartState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CollectStartState, (*storage.AuditLogFileState)(nil))
+	x.CollectStartState = nil
 }
 
 type MsgToCompliance_AuditLogCollectionRequest_StartRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId         *string
+	ClusterId         string
 	CollectStartState *storage.AuditLogFileState
 }
 
@@ -1442,19 +1270,13 @@ func (b0 MsgToCompliance_AuditLogCollectionRequest_StartRequest_builder) Build()
 	m0 := &MsgToCompliance_AuditLogCollectionRequest_StartRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.CollectStartState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_CollectStartState = b.CollectStartState
-	}
+	x.ClusterId = b.ClusterId
+	x.CollectStartState = b.CollectStartState
 	return m0
 }
 
 type MsgToCompliance_AuditLogCollectionRequest_StopRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1545,7 +1367,7 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\vNodeIndexer\x10\x01B\x05\n" +
 	"\x03msg2Z\n" +
 	"\x11ComplianceService\x12E\n" +
-	"\vCommunicate\x12\x19.sensor.MsgFromCompliance\x1a\x17.sensor.MsgToCompliance(\x010\x01B%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\vCommunicate\x12\x19.sensor.MsgFromCompliance\x1a\x17.sensor.MsgToCompliance(\x010\x01B-Z\x1b./internalapi/sensor;sensor\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_compliance_iservice_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_sensor_compliance_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
@@ -1600,20 +1422,20 @@ func file_internalapi_sensor_compliance_iservice_proto_init() {
 		return
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[2].OneofWrappers = []any{
-		(*msgFromCompliance_Return)(nil),
-		(*msgFromCompliance_AuditEvents)(nil),
-		(*msgFromCompliance_NodeInventory)(nil),
-		(*msgFromCompliance_IndexReport)(nil),
+		(*MsgFromCompliance_Return)(nil),
+		(*MsgFromCompliance_AuditEvents)(nil),
+		(*MsgFromCompliance_NodeInventory)(nil),
+		(*MsgFromCompliance_IndexReport)(nil),
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[3].OneofWrappers = []any{
-		(*msgToCompliance_Config)(nil),
-		(*msgToCompliance_Trigger)(nil),
-		(*msgToCompliance_AuditLogCollectionRequest_)(nil),
-		(*msgToCompliance_Ack)(nil),
+		(*MsgToCompliance_Config)(nil),
+		(*MsgToCompliance_Trigger)(nil),
+		(*MsgToCompliance_AuditLogCollectionRequest_)(nil),
+		(*MsgToCompliance_Ack)(nil),
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[6].OneofWrappers = []any{
-		(*msgToCompliance_AuditLogCollectionRequest_StartReq)(nil),
-		(*msgToCompliance_AuditLogCollectionRequest_StopReq)(nil),
+		(*MsgToCompliance_AuditLogCollectionRequest_StartReq)(nil),
+		(*MsgToCompliance_AuditLogCollectionRequest_StopReq)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/hash.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,15 +24,11 @@ const (
 )
 
 type Hash struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ClusterId *string                `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Hashes    map[string]uint64      `protobuf:"bytes,2,rep,name=hashes" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Hashes        map[string]uint64      `protobuf:"bytes,2,rep,name=hashes" json:"hashes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Hash) Reset() {
@@ -60,46 +58,30 @@ func (x *Hash) ProtoReflect() protoreflect.Message {
 
 func (x *Hash) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *Hash) GetHashes() map[string]uint64 {
 	if x != nil {
-		return x.xxx_hidden_Hashes
+		return x.Hashes
 	}
 	return nil
 }
 
 func (x *Hash) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ClusterId = v
 }
 
 func (x *Hash) SetHashes(v map[string]uint64) {
-	x.xxx_hidden_Hashes = v
-}
-
-func (x *Hash) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Hash) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ClusterId = nil
+	x.Hashes = v
 }
 
 type Hash_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ClusterId *string
+	ClusterId string
 	Hashes    map[string]uint64
 }
 
@@ -107,11 +89,8 @@ func (b0 Hash_builder) Build() *Hash {
 	m0 := &Hash{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	x.xxx_hidden_Hashes = b.Hashes
+	x.ClusterId = b.ClusterId
+	x.Hashes = b.Hashes
 	return m0
 }
 
@@ -126,8 +105,8 @@ const file_storage_hash_proto_rawDesc = "" +
 	"\x06hashes\x18\x02 \x03(\v2\x19.storage.Hash.HashesEntryB\x02(\x01R\x06hashes\x1a9\n" +
 	"\vHashesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_hash_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_hash_proto_goTypes = []any{

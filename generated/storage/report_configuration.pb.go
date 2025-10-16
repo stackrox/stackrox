@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/report_configuration.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -187,27 +189,29 @@ func (x VulnerabilityReportFilters_ImageType) Number() protoreflect.EnumNumber {
 }
 
 type ReportConfiguration struct {
-	state                            protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_Id                    *string                              `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                  *string                              `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Description           *string                              `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_Type                  ReportConfiguration_ReportType       `protobuf:"varint,4,opt,name=type,enum=storage.ReportConfiguration_ReportType"`
-	xxx_hidden_Filter                isReportConfiguration_Filter         `protobuf_oneof:"filter"`
-	xxx_hidden_ScopeId               *string                              `protobuf:"bytes,6,opt,name=scope_id,json=scopeId"`
-	xxx_hidden_NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
-	xxx_hidden_Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule"`
-	xxx_hidden_LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus"`
-	xxx_hidden_LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime"`
-	xxx_hidden_ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope"`
-	xxx_hidden_Notifiers             *[]*NotifierConfiguration            `protobuf:"bytes,12,rep,name=notifiers"`
-	xxx_hidden_Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator"`
-	xxx_hidden_Version               int32                                `protobuf:"varint,14,opt,name=version"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState         `protogen:"hybrid.v1"`
+	Id          string                         `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name        string                         `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
+	Description string                         `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
+	// Types that are valid to be assigned to Filter:
+	//
+	//	*ReportConfiguration_VulnReportFilters
+	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
+	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	// Types that are valid to be assigned to NotifierConfig:
+	//
+	//	*ReportConfiguration_EmailConfig
+	NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
+	Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule" json:"schedule,omitempty"`
+	LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus" json:"last_run_status,omitempty"`
+	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime" json:"last_successful_run_time,omitempty"`
+	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope" json:"resource_scope,omitempty"`
+	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers" json:"notifiers,omitempty"`
+	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
+	Version               int32                                `protobuf:"varint,14,opt,name=version" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ReportConfiguration) Reset() {
@@ -237,46 +241,42 @@ func (x *ReportConfiguration) ProtoReflect() protoreflect.Message {
 
 func (x *ReportConfiguration) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ReportConfiguration) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ReportConfiguration) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ReportConfiguration) GetType() ReportConfiguration_ReportType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return ReportConfiguration_VULNERABILITY
 }
 
+func (x *ReportConfiguration) GetFilter() isReportConfiguration_Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
 func (x *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Filter.(*reportConfiguration_VulnReportFilters); ok {
+		if x, ok := x.Filter.(*ReportConfiguration_VulnReportFilters); ok {
 			return x.VulnReportFilters
 		}
 	}
@@ -285,17 +285,21 @@ func (x *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters
 
 func (x *ReportConfiguration) GetScopeId() string {
 	if x != nil {
-		if x.xxx_hidden_ScopeId != nil {
-			return *x.xxx_hidden_ScopeId
-		}
-		return ""
+		return x.ScopeId
 	}
 	return ""
 }
 
+func (x *ReportConfiguration) GetNotifierConfig() isReportConfiguration_NotifierConfig {
+	if x != nil {
+		return x.NotifierConfig
+	}
+	return nil
+}
+
 func (x *ReportConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
 	if x != nil {
-		if x, ok := x.xxx_hidden_NotifierConfig.(*reportConfiguration_EmailConfig); ok {
+		if x, ok := x.NotifierConfig.(*ReportConfiguration_EmailConfig); ok {
 			return x.EmailConfig
 		}
 	}
@@ -304,223 +308,144 @@ func (x *ReportConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
 
 func (x *ReportConfiguration) GetSchedule() *Schedule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Schedule) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *Schedule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Schedule), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Schedule
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetLastRunStatus() *ReportLastRunStatus {
 	if x != nil {
-		return x.xxx_hidden_LastRunStatus
+		return x.LastRunStatus
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetLastSuccessfulRunTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastSuccessfulRunTime) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastSuccessfulRunTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastSuccessfulRunTime
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetResourceScope() *ResourceScope {
 	if x != nil {
-		return x.xxx_hidden_ResourceScope
+		return x.ResourceScope
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetNotifiers() []*NotifierConfiguration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Notifiers) {
-				protoimpl.X.UnmarshalField(x, 12)
-			}
-			var rv *[]*NotifierConfiguration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Notifiers
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetCreator() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_Creator
+		return x.Creator
 	}
 	return nil
 }
 
 func (x *ReportConfiguration) GetVersion() int32 {
 	if x != nil {
-		return x.xxx_hidden_Version
+		return x.Version
 	}
 	return 0
 }
 
 func (x *ReportConfiguration) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
+	x.Id = v
 }
 
 func (x *ReportConfiguration) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
+	x.Name = v
 }
 
 func (x *ReportConfiguration) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
+	x.Description = v
 }
 
 func (x *ReportConfiguration) SetType(v ReportConfiguration_ReportType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 14)
+	x.Type = v
 }
 
 func (x *ReportConfiguration) SetVulnReportFilters(v *VulnerabilityReportFilters) {
 	if v == nil {
-		x.xxx_hidden_Filter = nil
+		x.Filter = nil
 		return
 	}
-	x.xxx_hidden_Filter = &reportConfiguration_VulnReportFilters{v}
+	x.Filter = &ReportConfiguration_VulnReportFilters{v}
 }
 
 func (x *ReportConfiguration) SetScopeId(v string) {
-	x.xxx_hidden_ScopeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 14)
+	x.ScopeId = v
 }
 
 func (x *ReportConfiguration) SetEmailConfig(v *EmailNotifierConfiguration) {
 	if v == nil {
-		x.xxx_hidden_NotifierConfig = nil
+		x.NotifierConfig = nil
 		return
 	}
-	x.xxx_hidden_NotifierConfig = &reportConfiguration_EmailConfig{v}
+	x.NotifierConfig = &ReportConfiguration_EmailConfig{v}
 }
 
 func (x *ReportConfiguration) SetSchedule(v *Schedule) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 14)
-	}
+	x.Schedule = v
 }
 
 func (x *ReportConfiguration) SetLastRunStatus(v *ReportLastRunStatus) {
-	x.xxx_hidden_LastRunStatus = v
+	x.LastRunStatus = v
 }
 
 func (x *ReportConfiguration) SetLastSuccessfulRunTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastSuccessfulRunTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 14)
-	}
+	x.LastSuccessfulRunTime = v
 }
 
 func (x *ReportConfiguration) SetResourceScope(v *ResourceScope) {
-	x.xxx_hidden_ResourceScope = v
+	x.ResourceScope = v
 }
 
 func (x *ReportConfiguration) SetNotifiers(v []*NotifierConfiguration) {
-	var sv *[]*NotifierConfiguration
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*NotifierConfiguration{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Notifiers), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 14)
+	x.Notifiers = v
 }
 
 func (x *ReportConfiguration) SetCreator(v *SlimUser) {
-	x.xxx_hidden_Creator = v
+	x.Creator = v
 }
 
 func (x *ReportConfiguration) SetVersion(v int32) {
-	x.xxx_hidden_Version = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 14)
-}
-
-func (x *ReportConfiguration) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ReportConfiguration) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ReportConfiguration) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ReportConfiguration) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	x.Version = v
 }
 
 func (x *ReportConfiguration) HasFilter() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Filter != nil
+	return x.Filter != nil
 }
 
 func (x *ReportConfiguration) HasVulnReportFilters() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Filter.(*reportConfiguration_VulnReportFilters)
+	_, ok := x.Filter.(*ReportConfiguration_VulnReportFilters)
 	return ok
-}
-
-func (x *ReportConfiguration) HasScopeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
 func (x *ReportConfiguration) HasNotifierConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_NotifierConfig != nil
+	return x.NotifierConfig != nil
 }
 
 func (x *ReportConfiguration) HasEmailConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_NotifierConfig.(*reportConfiguration_EmailConfig)
+	_, ok := x.NotifierConfig.(*ReportConfiguration_EmailConfig)
 	return ok
 }
 
@@ -528,114 +453,75 @@ func (x *ReportConfiguration) HasSchedule() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.Schedule != nil
 }
 
 func (x *ReportConfiguration) HasLastRunStatus() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastRunStatus != nil
+	return x.LastRunStatus != nil
 }
 
 func (x *ReportConfiguration) HasLastSuccessfulRunTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.LastSuccessfulRunTime != nil
 }
 
 func (x *ReportConfiguration) HasResourceScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ResourceScope != nil
+	return x.ResourceScope != nil
 }
 
 func (x *ReportConfiguration) HasCreator() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Creator != nil
-}
-
-func (x *ReportConfiguration) HasVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
-}
-
-func (x *ReportConfiguration) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ReportConfiguration) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ReportConfiguration) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ReportConfiguration) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Type = ReportConfiguration_VULNERABILITY
+	return x.Creator != nil
 }
 
 func (x *ReportConfiguration) ClearFilter() {
-	x.xxx_hidden_Filter = nil
+	x.Filter = nil
 }
 
 func (x *ReportConfiguration) ClearVulnReportFilters() {
-	if _, ok := x.xxx_hidden_Filter.(*reportConfiguration_VulnReportFilters); ok {
-		x.xxx_hidden_Filter = nil
+	if _, ok := x.Filter.(*ReportConfiguration_VulnReportFilters); ok {
+		x.Filter = nil
 	}
 }
 
-func (x *ReportConfiguration) ClearScopeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ScopeId = nil
-}
-
 func (x *ReportConfiguration) ClearNotifierConfig() {
-	x.xxx_hidden_NotifierConfig = nil
+	x.NotifierConfig = nil
 }
 
 func (x *ReportConfiguration) ClearEmailConfig() {
-	if _, ok := x.xxx_hidden_NotifierConfig.(*reportConfiguration_EmailConfig); ok {
-		x.xxx_hidden_NotifierConfig = nil
+	if _, ok := x.NotifierConfig.(*ReportConfiguration_EmailConfig); ok {
+		x.NotifierConfig = nil
 	}
 }
 
 func (x *ReportConfiguration) ClearSchedule() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Schedule, (*Schedule)(nil))
+	x.Schedule = nil
 }
 
 func (x *ReportConfiguration) ClearLastRunStatus() {
-	x.xxx_hidden_LastRunStatus = nil
+	x.LastRunStatus = nil
 }
 
 func (x *ReportConfiguration) ClearLastSuccessfulRunTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastSuccessfulRunTime, (*timestamppb.Timestamp)(nil))
+	x.LastSuccessfulRunTime = nil
 }
 
 func (x *ReportConfiguration) ClearResourceScope() {
-	x.xxx_hidden_ResourceScope = nil
+	x.ResourceScope = nil
 }
 
 func (x *ReportConfiguration) ClearCreator() {
-	x.xxx_hidden_Creator = nil
-}
-
-func (x *ReportConfiguration) ClearVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
-	x.xxx_hidden_Version = 0
+	x.Creator = nil
 }
 
 const ReportConfiguration_Filter_not_set_case case_ReportConfiguration_Filter = 0
@@ -645,8 +531,8 @@ func (x *ReportConfiguration) WhichFilter() case_ReportConfiguration_Filter {
 	if x == nil {
 		return ReportConfiguration_Filter_not_set_case
 	}
-	switch x.xxx_hidden_Filter.(type) {
-	case *reportConfiguration_VulnReportFilters:
+	switch x.Filter.(type) {
+	case *ReportConfiguration_VulnReportFilters:
 		return ReportConfiguration_VulnReportFilters_case
 	default:
 		return ReportConfiguration_Filter_not_set_case
@@ -660,8 +546,8 @@ func (x *ReportConfiguration) WhichNotifierConfig() case_ReportConfiguration_Not
 	if x == nil {
 		return ReportConfiguration_NotifierConfig_not_set_case
 	}
-	switch x.xxx_hidden_NotifierConfig.(type) {
-	case *reportConfiguration_EmailConfig:
+	switch x.NotifierConfig.(type) {
+	case *ReportConfiguration_EmailConfig:
 		return ReportConfiguration_EmailConfig_case
 	default:
 		return ReportConfiguration_NotifierConfig_not_set_case
@@ -671,75 +557,48 @@ func (x *ReportConfiguration) WhichNotifierConfig() case_ReportConfiguration_Not
 type ReportConfiguration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	Description *string
-	Type        *ReportConfiguration_ReportType
-	// Fields of oneof xxx_hidden_Filter:
+	Id          string
+	Name        string
+	Description string
+	Type        ReportConfiguration_ReportType
+	// Fields of oneof Filter:
 	VulnReportFilters *VulnerabilityReportFilters
-	// -- end of xxx_hidden_Filter
-	ScopeId *string
-	// Fields of oneof xxx_hidden_NotifierConfig:
+	// -- end of Filter
+	ScopeId string
+	// Fields of oneof NotifierConfig:
 	EmailConfig *EmailNotifierConfiguration
-	// -- end of xxx_hidden_NotifierConfig
+	// -- end of NotifierConfig
 	Schedule              *Schedule
 	LastRunStatus         *ReportLastRunStatus
 	LastSuccessfulRunTime *timestamppb.Timestamp
 	ResourceScope         *ResourceScope
 	Notifiers             []*NotifierConfiguration
 	Creator               *SlimUser
-	Version               *int32
+	Version               int32
 }
 
 func (b0 ReportConfiguration_builder) Build() *ReportConfiguration {
 	m0 := &ReportConfiguration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
-		x.xxx_hidden_Type = *b.Type
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Description = b.Description
+	x.Type = b.Type
 	if b.VulnReportFilters != nil {
-		x.xxx_hidden_Filter = &reportConfiguration_VulnReportFilters{b.VulnReportFilters}
+		x.Filter = &ReportConfiguration_VulnReportFilters{b.VulnReportFilters}
 	}
-	if b.ScopeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 14)
-		x.xxx_hidden_ScopeId = b.ScopeId
-	}
+	x.ScopeId = b.ScopeId
 	if b.EmailConfig != nil {
-		x.xxx_hidden_NotifierConfig = &reportConfiguration_EmailConfig{b.EmailConfig}
+		x.NotifierConfig = &ReportConfiguration_EmailConfig{b.EmailConfig}
 	}
-	if b.Schedule != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 14)
-		x.xxx_hidden_Schedule = b.Schedule
-	}
-	x.xxx_hidden_LastRunStatus = b.LastRunStatus
-	if b.LastSuccessfulRunTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
-		x.xxx_hidden_LastSuccessfulRunTime = b.LastSuccessfulRunTime
-	}
-	x.xxx_hidden_ResourceScope = b.ResourceScope
-	if b.Notifiers != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
-		x.xxx_hidden_Notifiers = &b.Notifiers
-	}
-	x.xxx_hidden_Creator = b.Creator
-	if b.Version != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 14)
-		x.xxx_hidden_Version = *b.Version
-	}
+	x.Schedule = b.Schedule
+	x.LastRunStatus = b.LastRunStatus
+	x.LastSuccessfulRunTime = b.LastSuccessfulRunTime
+	x.ResourceScope = b.ResourceScope
+	x.Notifiers = b.Notifiers
+	x.Creator = b.Creator
+	x.Version = b.Version
 	return m0
 }
 
@@ -767,33 +626,29 @@ type isReportConfiguration_Filter interface {
 	isReportConfiguration_Filter()
 }
 
-type reportConfiguration_VulnReportFilters struct {
+type ReportConfiguration_VulnReportFilters struct {
 	VulnReportFilters *VulnerabilityReportFilters `protobuf:"bytes,5,opt,name=vuln_report_filters,json=vulnReportFilters,oneof"`
 }
 
-func (*reportConfiguration_VulnReportFilters) isReportConfiguration_Filter() {}
+func (*ReportConfiguration_VulnReportFilters) isReportConfiguration_Filter() {}
 
 type isReportConfiguration_NotifierConfig interface {
 	isReportConfiguration_NotifierConfig()
 }
 
-type reportConfiguration_EmailConfig struct {
+type ReportConfiguration_EmailConfig struct {
 	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,7,opt,name=email_config,json=emailConfig,oneof"`
 }
 
-func (*reportConfiguration_EmailConfig) isReportConfiguration_NotifierConfig() {}
+func (*ReportConfiguration_EmailConfig) isReportConfiguration_NotifierConfig() {}
 
 type ReportLastRunStatus struct {
-	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_ReportStatus ReportLastRunStatus_RunStatus `protobuf:"varint,1,opt,name=report_status,json=reportStatus,enum=storage.ReportLastRunStatus_RunStatus"`
-	xxx_hidden_LastRunTime  *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime"`
-	xxx_hidden_ErrorMsg     *string                       `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
+	ReportStatus  ReportLastRunStatus_RunStatus `protobuf:"varint,1,opt,name=report_status,json=reportStatus,enum=storage.ReportLastRunStatus_RunStatus" json:"report_status,omitempty"`
+	LastRunTime   *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime" json:"last_run_time,omitempty"`
+	ErrorMsg      string                        `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg" json:"error_msg,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReportLastRunStatus) Reset() {
@@ -823,134 +678,82 @@ func (x *ReportLastRunStatus) ProtoReflect() protoreflect.Message {
 
 func (x *ReportLastRunStatus) GetReportStatus() ReportLastRunStatus_RunStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_ReportStatus
-		}
+		return x.ReportStatus
 	}
 	return ReportLastRunStatus_SUCCESS
 }
 
 func (x *ReportLastRunStatus) GetLastRunTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastRunTime) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastRunTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastRunTime
 	}
 	return nil
 }
 
 func (x *ReportLastRunStatus) GetErrorMsg() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMsg != nil {
-			return *x.xxx_hidden_ErrorMsg
-		}
-		return ""
+		return x.ErrorMsg
 	}
 	return ""
 }
 
 func (x *ReportLastRunStatus) SetReportStatus(v ReportLastRunStatus_RunStatus) {
-	x.xxx_hidden_ReportStatus = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.ReportStatus = v
 }
 
 func (x *ReportLastRunStatus) SetLastRunTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastRunTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
-	}
+	x.LastRunTime = v
 }
 
 func (x *ReportLastRunStatus) SetErrorMsg(v string) {
-	x.xxx_hidden_ErrorMsg = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *ReportLastRunStatus) HasReportStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ErrorMsg = v
 }
 
 func (x *ReportLastRunStatus) HasLastRunTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ReportLastRunStatus) HasErrorMsg() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ReportLastRunStatus) ClearReportStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ReportStatus = ReportLastRunStatus_SUCCESS
+	return x.LastRunTime != nil
 }
 
 func (x *ReportLastRunStatus) ClearLastRunTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastRunTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ReportLastRunStatus) ClearErrorMsg() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ErrorMsg = nil
+	x.LastRunTime = nil
 }
 
 type ReportLastRunStatus_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ReportStatus *ReportLastRunStatus_RunStatus
+	ReportStatus ReportLastRunStatus_RunStatus
 	LastRunTime  *timestamppb.Timestamp
-	ErrorMsg     *string
+	ErrorMsg     string
 }
 
 func (b0 ReportLastRunStatus_builder) Build() *ReportLastRunStatus {
 	m0 := &ReportLastRunStatus{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ReportStatus != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_ReportStatus = *b.ReportStatus
-	}
-	if b.LastRunTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_LastRunTime = b.LastRunTime
-	}
-	if b.ErrorMsg != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_ErrorMsg = b.ErrorMsg
-	}
+	x.ReportStatus = b.ReportStatus
+	x.LastRunTime = b.LastRunTime
+	x.ErrorMsg = b.ErrorMsg
 	return m0
 }
 
 type VulnerabilityReportFilters struct {
-	state                             protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_Fixability             VulnerabilityReportFilters_Fixability  `protobuf:"varint,1,opt,name=fixability,enum=storage.VulnerabilityReportFilters_Fixability"`
-	xxx_hidden_SinceLastReport        bool                                   `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport"`
-	xxx_hidden_Severities             []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_ImageTypes             []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,enum=storage.VulnerabilityReportFilters_ImageType"`
-	xxx_hidden_CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
-	xxx_hidden_AccessScopeRules       *[]*SimpleAccessScope_Rules            `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules"`
-	xxx_hidden_IncludeNvdCvss         bool                                   `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss"`
-	xxx_hidden_IncludeEpssProbability bool                                   `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability"`
-	xxx_hidden_IncludeAdvisory        bool                                   `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
+	state           protoimpl.MessageState                 `protogen:"hybrid.v1"`
+	Fixability      VulnerabilityReportFilters_Fixability  `protobuf:"varint,1,opt,name=fixability,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	SinceLastReport bool                                   `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport" json:"since_last_report,omitempty"`
+	Severities      []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
+	ImageTypes      []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,enum=storage.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
+	// Types that are valid to be assigned to CvesSince:
+	//
+	//	*VulnerabilityReportFilters_AllVuln
+	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
+	//	*VulnerabilityReportFilters_SinceStartDate
+	CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	AccessScopeRules       []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules" json:"access_scope_rules,omitempty"`
+	IncludeNvdCvss         bool                                   `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss" json:"include_nvd_cvss,omitempty"`
+	IncludeEpssProbability bool                                   `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability" json:"include_epss_probability,omitempty"`
+	IncludeAdvisory        bool                                   `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory" json:"include_advisory,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -982,37 +785,42 @@ func (x *VulnerabilityReportFilters) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityReportFilters) GetFixability() VulnerabilityReportFilters_Fixability {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Fixability
-		}
+		return x.Fixability
 	}
 	return VulnerabilityReportFilters_BOTH
 }
 
 func (x *VulnerabilityReportFilters) GetSinceLastReport() bool {
 	if x != nil {
-		return x.xxx_hidden_SinceLastReport
+		return x.SinceLastReport
 	}
 	return false
 }
 
 func (x *VulnerabilityReportFilters) GetSeverities() []VulnerabilitySeverity {
 	if x != nil {
-		return x.xxx_hidden_Severities
+		return x.Severities
 	}
 	return nil
 }
 
 func (x *VulnerabilityReportFilters) GetImageTypes() []VulnerabilityReportFilters_ImageType {
 	if x != nil {
-		return x.xxx_hidden_ImageTypes
+		return x.ImageTypes
+	}
+	return nil
+}
+
+func (x *VulnerabilityReportFilters) GetCvesSince() isVulnerabilityReportFilters_CvesSince {
+	if x != nil {
+		return x.CvesSince
 	}
 	return nil
 }
 
 func (x *VulnerabilityReportFilters) GetAllVuln() bool {
 	if x != nil {
-		if x, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_AllVuln); ok {
+		if x, ok := x.CvesSince.(*VulnerabilityReportFilters_AllVuln); ok {
 			return x.AllVuln
 		}
 	}
@@ -1021,7 +829,7 @@ func (x *VulnerabilityReportFilters) GetAllVuln() bool {
 
 func (x *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
 	if x != nil {
-		if x, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
+		if x, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
 			return x.SinceLastSentScheduledReport
 		}
 	}
@@ -1030,7 +838,7 @@ func (x *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
 
 func (x *VulnerabilityReportFilters) GetSinceStartDate() *timestamppb.Timestamp {
 	if x != nil {
-		if x, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceStartDate); ok {
+		if x, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceStartDate); ok {
 			return x.SinceStartDate
 		}
 	}
@@ -1039,125 +847,92 @@ func (x *VulnerabilityReportFilters) GetSinceStartDate() *timestamppb.Timestamp 
 
 func (x *VulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_Rules {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AccessScopeRules) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *[]*SimpleAccessScope_Rules
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.AccessScopeRules
 	}
 	return nil
 }
 
 func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 	if x != nil {
-		return x.xxx_hidden_IncludeNvdCvss
+		return x.IncludeNvdCvss
 	}
 	return false
 }
 
 func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
-		return x.xxx_hidden_IncludeEpssProbability
+		return x.IncludeEpssProbability
 	}
 	return false
 }
 
 func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
 	if x != nil {
-		return x.xxx_hidden_IncludeAdvisory
+		return x.IncludeAdvisory
 	}
 	return false
 }
 
 func (x *VulnerabilityReportFilters) SetFixability(v VulnerabilityReportFilters_Fixability) {
-	x.xxx_hidden_Fixability = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
+	x.Fixability = v
 }
 
 func (x *VulnerabilityReportFilters) SetSinceLastReport(v bool) {
-	x.xxx_hidden_SinceLastReport = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	x.SinceLastReport = v
 }
 
 func (x *VulnerabilityReportFilters) SetSeverities(v []VulnerabilitySeverity) {
-	x.xxx_hidden_Severities = v
+	x.Severities = v
 }
 
 func (x *VulnerabilityReportFilters) SetImageTypes(v []VulnerabilityReportFilters_ImageType) {
-	x.xxx_hidden_ImageTypes = v
+	x.ImageTypes = v
 }
 
 func (x *VulnerabilityReportFilters) SetAllVuln(v bool) {
-	x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_AllVuln{v}
+	x.CvesSince = &VulnerabilityReportFilters_AllVuln{v}
 }
 
 func (x *VulnerabilityReportFilters) SetSinceLastSentScheduledReport(v bool) {
-	x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_SinceLastSentScheduledReport{v}
+	x.CvesSince = &VulnerabilityReportFilters_SinceLastSentScheduledReport{v}
 }
 
 func (x *VulnerabilityReportFilters) SetSinceStartDate(v *timestamppb.Timestamp) {
 	if v == nil {
-		x.xxx_hidden_CvesSince = nil
+		x.CvesSince = nil
 		return
 	}
-	x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_SinceStartDate{v}
+	x.CvesSince = &VulnerabilityReportFilters_SinceStartDate{v}
 }
 
 func (x *VulnerabilityReportFilters) SetAccessScopeRules(v []*SimpleAccessScope_Rules) {
-	var sv *[]*SimpleAccessScope_Rules
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SimpleAccessScope_Rules{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+	x.AccessScopeRules = v
 }
 
 func (x *VulnerabilityReportFilters) SetIncludeNvdCvss(v bool) {
-	x.xxx_hidden_IncludeNvdCvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
+	x.IncludeNvdCvss = v
 }
 
 func (x *VulnerabilityReportFilters) SetIncludeEpssProbability(v bool) {
-	x.xxx_hidden_IncludeEpssProbability = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	x.IncludeEpssProbability = v
 }
 
 func (x *VulnerabilityReportFilters) SetIncludeAdvisory(v bool) {
-	x.xxx_hidden_IncludeAdvisory = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
-}
-
-func (x *VulnerabilityReportFilters) HasFixability() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *VulnerabilityReportFilters) HasSinceLastReport() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.IncludeAdvisory = v
 }
 
 func (x *VulnerabilityReportFilters) HasCvesSince() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvesSince != nil
+	return x.CvesSince != nil
 }
 
 func (x *VulnerabilityReportFilters) HasAllVuln() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_AllVuln)
+	_, ok := x.CvesSince.(*VulnerabilityReportFilters_AllVuln)
 	return ok
 }
 
@@ -1165,7 +940,7 @@ func (x *VulnerabilityReportFilters) HasSinceLastSentScheduledReport() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceLastSentScheduledReport)
+	_, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceLastSentScheduledReport)
 	return ok
 }
 
@@ -1173,76 +948,30 @@ func (x *VulnerabilityReportFilters) HasSinceStartDate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceStartDate)
+	_, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceStartDate)
 	return ok
 }
 
-func (x *VulnerabilityReportFilters) HasIncludeNvdCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *VulnerabilityReportFilters) HasIncludeEpssProbability() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *VulnerabilityReportFilters) HasIncludeAdvisory() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *VulnerabilityReportFilters) ClearFixability() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Fixability = VulnerabilityReportFilters_BOTH
-}
-
-func (x *VulnerabilityReportFilters) ClearSinceLastReport() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_SinceLastReport = false
-}
-
 func (x *VulnerabilityReportFilters) ClearCvesSince() {
-	x.xxx_hidden_CvesSince = nil
+	x.CvesSince = nil
 }
 
 func (x *VulnerabilityReportFilters) ClearAllVuln() {
-	if _, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_AllVuln); ok {
-		x.xxx_hidden_CvesSince = nil
+	if _, ok := x.CvesSince.(*VulnerabilityReportFilters_AllVuln); ok {
+		x.CvesSince = nil
 	}
 }
 
 func (x *VulnerabilityReportFilters) ClearSinceLastSentScheduledReport() {
-	if _, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
-		x.xxx_hidden_CvesSince = nil
+	if _, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
+		x.CvesSince = nil
 	}
 }
 
 func (x *VulnerabilityReportFilters) ClearSinceStartDate() {
-	if _, ok := x.xxx_hidden_CvesSince.(*vulnerabilityReportFilters_SinceStartDate); ok {
-		x.xxx_hidden_CvesSince = nil
+	if _, ok := x.CvesSince.(*VulnerabilityReportFilters_SinceStartDate); ok {
+		x.CvesSince = nil
 	}
-}
-
-func (x *VulnerabilityReportFilters) ClearIncludeNvdCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_IncludeNvdCvss = false
-}
-
-func (x *VulnerabilityReportFilters) ClearIncludeEpssProbability() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_IncludeEpssProbability = false
-}
-
-func (x *VulnerabilityReportFilters) ClearIncludeAdvisory() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_IncludeAdvisory = false
 }
 
 const VulnerabilityReportFilters_CvesSince_not_set_case case_VulnerabilityReportFilters_CvesSince = 0
@@ -1254,12 +983,12 @@ func (x *VulnerabilityReportFilters) WhichCvesSince() case_VulnerabilityReportFi
 	if x == nil {
 		return VulnerabilityReportFilters_CvesSince_not_set_case
 	}
-	switch x.xxx_hidden_CvesSince.(type) {
-	case *vulnerabilityReportFilters_AllVuln:
+	switch x.CvesSince.(type) {
+	case *VulnerabilityReportFilters_AllVuln:
 		return VulnerabilityReportFilters_AllVuln_case
-	case *vulnerabilityReportFilters_SinceLastSentScheduledReport:
+	case *VulnerabilityReportFilters_SinceLastSentScheduledReport:
 		return VulnerabilityReportFilters_SinceLastSentScheduledReport_case
-	case *vulnerabilityReportFilters_SinceStartDate:
+	case *VulnerabilityReportFilters_SinceStartDate:
 		return VulnerabilityReportFilters_SinceStartDate_case
 	default:
 		return VulnerabilityReportFilters_CvesSince_not_set_case
@@ -1269,60 +998,42 @@ func (x *VulnerabilityReportFilters) WhichCvesSince() case_VulnerabilityReportFi
 type VulnerabilityReportFilters_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Fixability      *VulnerabilityReportFilters_Fixability
-	SinceLastReport *bool
+	Fixability      VulnerabilityReportFilters_Fixability
+	SinceLastReport bool
 	Severities      []VulnerabilitySeverity
 	ImageTypes      []VulnerabilityReportFilters_ImageType
-	// Fields of oneof xxx_hidden_CvesSince:
+	// Fields of oneof CvesSince:
 	AllVuln                      *bool
 	SinceLastSentScheduledReport *bool
 	SinceStartDate               *timestamppb.Timestamp
-	// -- end of xxx_hidden_CvesSince
+	// -- end of CvesSince
 	AccessScopeRules       []*SimpleAccessScope_Rules
-	IncludeNvdCvss         *bool
-	IncludeEpssProbability *bool
-	IncludeAdvisory        *bool
+	IncludeNvdCvss         bool
+	IncludeEpssProbability bool
+	IncludeAdvisory        bool
 }
 
 func (b0 VulnerabilityReportFilters_builder) Build() *VulnerabilityReportFilters {
 	m0 := &VulnerabilityReportFilters{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Fixability != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
-		x.xxx_hidden_Fixability = *b.Fixability
-	}
-	if b.SinceLastReport != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
-		x.xxx_hidden_SinceLastReport = *b.SinceLastReport
-	}
-	x.xxx_hidden_Severities = b.Severities
-	x.xxx_hidden_ImageTypes = b.ImageTypes
+	x.Fixability = b.Fixability
+	x.SinceLastReport = b.SinceLastReport
+	x.Severities = b.Severities
+	x.ImageTypes = b.ImageTypes
 	if b.AllVuln != nil {
-		x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_AllVuln{*b.AllVuln}
+		x.CvesSince = &VulnerabilityReportFilters_AllVuln{*b.AllVuln}
 	}
 	if b.SinceLastSentScheduledReport != nil {
-		x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_SinceLastSentScheduledReport{*b.SinceLastSentScheduledReport}
+		x.CvesSince = &VulnerabilityReportFilters_SinceLastSentScheduledReport{*b.SinceLastSentScheduledReport}
 	}
 	if b.SinceStartDate != nil {
-		x.xxx_hidden_CvesSince = &vulnerabilityReportFilters_SinceStartDate{b.SinceStartDate}
+		x.CvesSince = &VulnerabilityReportFilters_SinceStartDate{b.SinceStartDate}
 	}
-	if b.AccessScopeRules != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
-		x.xxx_hidden_AccessScopeRules = &b.AccessScopeRules
-	}
-	if b.IncludeNvdCvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
-		x.xxx_hidden_IncludeNvdCvss = *b.IncludeNvdCvss
-	}
-	if b.IncludeEpssProbability != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
-		x.xxx_hidden_IncludeEpssProbability = *b.IncludeEpssProbability
-	}
-	if b.IncludeAdvisory != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
-		x.xxx_hidden_IncludeAdvisory = *b.IncludeAdvisory
-	}
+	x.AccessScopeRules = b.AccessScopeRules
+	x.IncludeNvdCvss = b.IncludeNvdCvss
+	x.IncludeEpssProbability = b.IncludeEpssProbability
+	x.IncludeAdvisory = b.IncludeAdvisory
 	return m0
 }
 
@@ -1340,30 +1051,33 @@ type isVulnerabilityReportFilters_CvesSince interface {
 	isVulnerabilityReportFilters_CvesSince()
 }
 
-type vulnerabilityReportFilters_AllVuln struct {
+type VulnerabilityReportFilters_AllVuln struct {
 	AllVuln bool `protobuf:"varint,5,opt,name=all_vuln,json=allVuln,oneof"`
 }
 
-type vulnerabilityReportFilters_SinceLastSentScheduledReport struct {
+type VulnerabilityReportFilters_SinceLastSentScheduledReport struct {
 	SinceLastSentScheduledReport bool `protobuf:"varint,6,opt,name=since_last_sent_scheduled_report,json=sinceLastSentScheduledReport,oneof"`
 }
 
-type vulnerabilityReportFilters_SinceStartDate struct {
+type VulnerabilityReportFilters_SinceStartDate struct {
 	SinceStartDate *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=since_start_date,json=sinceStartDate,oneof"`
 }
 
-func (*vulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
+func (*VulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
 
-func (*vulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityReportFilters_CvesSince() {
+func (*VulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityReportFilters_CvesSince() {
 }
 
-func (*vulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
+func (*VulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
 
 type ResourceScope struct {
-	state                     protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_ScopeReference isResourceScope_ScopeReference `protobuf_oneof:"scope_reference"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to ScopeReference:
+	//
+	//	*ResourceScope_CollectionId
+	ScopeReference isResourceScope_ScopeReference `protobuf_oneof:"scope_reference"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ResourceScope) Reset() {
@@ -1391,9 +1105,16 @@ func (x *ResourceScope) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *ResourceScope) GetScopeReference() isResourceScope_ScopeReference {
+	if x != nil {
+		return x.ScopeReference
+	}
+	return nil
+}
+
 func (x *ResourceScope) GetCollectionId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ScopeReference.(*resourceScope_CollectionId); ok {
+		if x, ok := x.ScopeReference.(*ResourceScope_CollectionId); ok {
 			return x.CollectionId
 		}
 	}
@@ -1401,31 +1122,31 @@ func (x *ResourceScope) GetCollectionId() string {
 }
 
 func (x *ResourceScope) SetCollectionId(v string) {
-	x.xxx_hidden_ScopeReference = &resourceScope_CollectionId{v}
+	x.ScopeReference = &ResourceScope_CollectionId{v}
 }
 
 func (x *ResourceScope) HasScopeReference() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ScopeReference != nil
+	return x.ScopeReference != nil
 }
 
 func (x *ResourceScope) HasCollectionId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ScopeReference.(*resourceScope_CollectionId)
+	_, ok := x.ScopeReference.(*ResourceScope_CollectionId)
 	return ok
 }
 
 func (x *ResourceScope) ClearScopeReference() {
-	x.xxx_hidden_ScopeReference = nil
+	x.ScopeReference = nil
 }
 
 func (x *ResourceScope) ClearCollectionId() {
-	if _, ok := x.xxx_hidden_ScopeReference.(*resourceScope_CollectionId); ok {
-		x.xxx_hidden_ScopeReference = nil
+	if _, ok := x.ScopeReference.(*ResourceScope_CollectionId); ok {
+		x.ScopeReference = nil
 	}
 }
 
@@ -1436,8 +1157,8 @@ func (x *ResourceScope) WhichScopeReference() case_ResourceScope_ScopeReference 
 	if x == nil {
 		return ResourceScope_ScopeReference_not_set_case
 	}
-	switch x.xxx_hidden_ScopeReference.(type) {
-	case *resourceScope_CollectionId:
+	switch x.ScopeReference.(type) {
+	case *ResourceScope_CollectionId:
 		return ResourceScope_CollectionId_case
 	default:
 		return ResourceScope_ScopeReference_not_set_case
@@ -1447,9 +1168,9 @@ func (x *ResourceScope) WhichScopeReference() case_ResourceScope_ScopeReference 
 type ResourceScope_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_ScopeReference:
+	// Fields of oneof ScopeReference:
 	CollectionId *string
-	// -- end of xxx_hidden_ScopeReference
+	// -- end of ScopeReference
 }
 
 func (b0 ResourceScope_builder) Build() *ResourceScope {
@@ -1457,7 +1178,7 @@ func (b0 ResourceScope_builder) Build() *ResourceScope {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.CollectionId != nil {
-		x.xxx_hidden_ScopeReference = &resourceScope_CollectionId{*b.CollectionId}
+		x.ScopeReference = &ResourceScope_CollectionId{*b.CollectionId}
 	}
 	return m0
 }
@@ -1476,23 +1197,19 @@ type isResourceScope_ScopeReference interface {
 	isResourceScope_ScopeReference()
 }
 
-type resourceScope_CollectionId struct {
+type ResourceScope_CollectionId struct {
 	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,oneof" search:"Collection ID"` // @gotags: search:"Collection ID"
 }
 
-func (*resourceScope_CollectionId) isResourceScope_ScopeReference() {}
+func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
 
 // filter for view based reports
 type ViewBasedVulnerabilityReportFilters struct {
-	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Query            *string                     `protobuf:"bytes,1,opt,name=query"`
-	xxx_hidden_AccessScopeRules *[]*SimpleAccessScope_Rules `protobuf:"bytes,2,rep,name=access_scope_rules,json=accessScopeRules"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState     `protogen:"hybrid.v1"`
+	Query            string                     `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	AccessScopeRules []*SimpleAccessScope_Rules `protobuf:"bytes,2,rep,name=access_scope_rules,json=accessScopeRules" json:"access_scope_rules,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ViewBasedVulnerabilityReportFilters) Reset() {
@@ -1522,60 +1239,30 @@ func (x *ViewBasedVulnerabilityReportFilters) ProtoReflect() protoreflect.Messag
 
 func (x *ViewBasedVulnerabilityReportFilters) GetQuery() string {
 	if x != nil {
-		if x.xxx_hidden_Query != nil {
-			return *x.xxx_hidden_Query
-		}
-		return ""
+		return x.Query
 	}
 	return ""
 }
 
 func (x *ViewBasedVulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_Rules {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_AccessScopeRules) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*SimpleAccessScope_Rules
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.AccessScopeRules
 	}
 	return nil
 }
 
 func (x *ViewBasedVulnerabilityReportFilters) SetQuery(v string) {
-	x.xxx_hidden_Query = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Query = v
 }
 
 func (x *ViewBasedVulnerabilityReportFilters) SetAccessScopeRules(v []*SimpleAccessScope_Rules) {
-	var sv *[]*SimpleAccessScope_Rules
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SimpleAccessScope_Rules{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_AccessScopeRules), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ViewBasedVulnerabilityReportFilters) HasQuery() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ViewBasedVulnerabilityReportFilters) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Query = nil
+	x.AccessScopeRules = v
 }
 
 type ViewBasedVulnerabilityReportFilters_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Query            *string
+	Query            string
 	AccessScopeRules []*SimpleAccessScope_Rules
 }
 
@@ -1583,14 +1270,8 @@ func (b0 ViewBasedVulnerabilityReportFilters_builder) Build() *ViewBasedVulnerab
 	m0 := &ViewBasedVulnerabilityReportFilters{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Query = b.Query
-	}
-	if b.AccessScopeRules != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_AccessScopeRules = &b.AccessScopeRules
-	}
+	x.Query = b.Query
+	x.AccessScopeRules = b.AccessScopeRules
 	return m0
 }
 
@@ -1660,8 +1341,8 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\x0fscope_reference\"\x8f\x01\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12R\n" +
-	"\x12access_scope_rules\x18\x02 \x03(\v2 .storage.SimpleAccessScope.RulesB\x02(\x01R\x10accessScopeRulesB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x12access_scope_rules\x18\x02 \x03(\v2 .storage.SimpleAccessScope.RulesB\x02(\x01R\x10accessScopeRulesB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_report_configuration_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_report_configuration_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
@@ -1719,16 +1400,16 @@ func file_storage_report_configuration_proto_init() {
 	file_storage_schedule_proto_init()
 	file_storage_user_proto_init()
 	file_storage_report_configuration_proto_msgTypes[0].OneofWrappers = []any{
-		(*reportConfiguration_VulnReportFilters)(nil),
-		(*reportConfiguration_EmailConfig)(nil),
+		(*ReportConfiguration_VulnReportFilters)(nil),
+		(*ReportConfiguration_EmailConfig)(nil),
 	}
 	file_storage_report_configuration_proto_msgTypes[2].OneofWrappers = []any{
-		(*vulnerabilityReportFilters_AllVuln)(nil),
-		(*vulnerabilityReportFilters_SinceLastSentScheduledReport)(nil),
-		(*vulnerabilityReportFilters_SinceStartDate)(nil),
+		(*VulnerabilityReportFilters_AllVuln)(nil),
+		(*VulnerabilityReportFilters_SinceLastSentScheduledReport)(nil),
+		(*VulnerabilityReportFilters_SinceStartDate)(nil),
 	}
 	file_storage_report_configuration_proto_msgTypes[3].OneofWrappers = []any{
-		(*resourceScope_CollectionId)(nil),
+		(*ResourceScope_CollectionId)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

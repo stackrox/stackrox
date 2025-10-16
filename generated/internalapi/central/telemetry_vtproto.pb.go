@@ -12,6 +12,9 @@ func (m *CancelPullTelemetryDataRequest) MarshalVT() ([]byte, error) { return pr
 func (m *CancelPullTelemetryDataRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CancelPullTelemetryDataRequest) EqualVT(n *CancelPullTelemetryDataRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CancelPullTelemetryDataRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *PullTelemetryDataRequest) CloneVT() *PullTelemetryDataRequest {
 }
 func (m *PullTelemetryDataRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PullTelemetryDataRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PullTelemetryDataRequest) EqualVT(n *PullTelemetryDataRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PullTelemetryDataRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +40,9 @@ func (m *TelemetryResponsePayload) CloneVT() *TelemetryResponsePayload {
 }
 func (m *TelemetryResponsePayload) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TelemetryResponsePayload) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TelemetryResponsePayload) EqualVT(n *TelemetryResponsePayload) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryResponsePayload) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -45,6 +54,9 @@ func (m *TelemetryResponsePayload_EndOfStream) CloneVT() *TelemetryResponsePaylo
 func (m *TelemetryResponsePayload_EndOfStream) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *TelemetryResponsePayload_EndOfStream) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *TelemetryResponsePayload_EndOfStream) EqualVT(n *TelemetryResponsePayload_EndOfStream) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -62,6 +74,9 @@ func (m *TelemetryResponsePayload_KubernetesInfo) MarshalVT() ([]byte, error) {
 func (m *TelemetryResponsePayload_KubernetesInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TelemetryResponsePayload_KubernetesInfo) EqualVT(n *TelemetryResponsePayload_KubernetesInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryResponsePayload_KubernetesInfo) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -78,6 +93,9 @@ func (m *TelemetryResponsePayload_KubernetesInfo_File) MarshalVT() ([]byte, erro
 func (m *TelemetryResponsePayload_KubernetesInfo_File) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TelemetryResponsePayload_KubernetesInfo_File) EqualVT(n *TelemetryResponsePayload_KubernetesInfo_File) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryResponsePayload_KubernetesInfo_File) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -92,6 +110,9 @@ func (m *TelemetryResponsePayload_ClusterInfo) MarshalVT() ([]byte, error) { ret
 func (m *TelemetryResponsePayload_ClusterInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *TelemetryResponsePayload_ClusterInfo) EqualVT(n *TelemetryResponsePayload_ClusterInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryResponsePayload_ClusterInfo) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -104,14 +125,18 @@ func (m *PullTelemetryDataResponse) CloneVT() *PullTelemetryDataResponse {
 }
 func (m *PullTelemetryDataResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PullTelemetryDataResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PullTelemetryDataResponse) EqualVT(n *PullTelemetryDataResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PullTelemetryDataResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *TelemetryConfig) SizeVT() int                   { return proto.Size(m) }
-func (m *TelemetryConfig) CloneVT() *TelemetryConfig     { return proto.Clone(m).(*TelemetryConfig) }
-func (m *TelemetryConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TelemetryConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TelemetryConfig) SizeVT() int                     { return proto.Size(m) }
+func (m *TelemetryConfig) CloneVT() *TelemetryConfig       { return proto.Clone(m).(*TelemetryConfig) }
+func (m *TelemetryConfig) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *TelemetryConfig) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *TelemetryConfig) EqualVT(n *TelemetryConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TelemetryConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

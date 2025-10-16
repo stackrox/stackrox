@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/policy.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -356,38 +358,56 @@ func (x Comparator) Number() protoreflect.EnumNumber {
 
 // Next tag: 28
 type Policy struct {
-	state                         protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id                 *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name               *string                       `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Description        *string                       `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_Rationale          *string                       `protobuf:"bytes,4,opt,name=rationale"`
-	xxx_hidden_Remediation        *string                       `protobuf:"bytes,5,opt,name=remediation"`
-	xxx_hidden_Disabled           bool                          `protobuf:"varint,6,opt,name=disabled"`
-	xxx_hidden_Categories         []string                      `protobuf:"bytes,7,rep,name=categories"`
-	xxx_hidden_LifecycleStages    []LifecycleStage              `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,enum=storage.LifecycleStage"`
-	xxx_hidden_EventSource        EventSource                   `protobuf:"varint,22,opt,name=event_source,json=eventSource,enum=storage.EventSource"`
-	xxx_hidden_Exclusions         *[]*Exclusion                 `protobuf:"bytes,21,rep,name=exclusions"`
-	xxx_hidden_Scope              *[]*Scope                     `protobuf:"bytes,11,rep,name=scope"`
-	xxx_hidden_Severity           Severity                      `protobuf:"varint,12,opt,name=severity,enum=storage.Severity"`
-	xxx_hidden_EnforcementActions []EnforcementAction           `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,enum=storage.EnforcementAction"`
-	xxx_hidden_Notifiers          []string                      `protobuf:"bytes,14,rep,name=notifiers"`
-	xxx_hidden_LastUpdated        *timestamppb.Timestamp        `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_SORTName           *string                       `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName"`
-	xxx_hidden_SORTLifecycleStage *string                       `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage"`
-	xxx_hidden_SORTEnforcement    bool                          `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement"`
-	xxx_hidden_PolicyVersion      *string                       `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion"`
-	xxx_hidden_PolicySections     *[]*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections"`
-	xxx_hidden_MitreAttackVectors *[]*Policy_MitreAttackVectors `protobuf:"bytes,23,rep,name=mitre_attack_vectors,json=mitreAttackVectors"`
-	xxx_hidden_CriteriaLocked     bool                          `protobuf:"varint,24,opt,name=criteria_locked,json=criteriaLocked"`
-	xxx_hidden_MitreVectorsLocked bool                          `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked"`
-	xxx_hidden_IsDefault          bool                          `protobuf:"varint,26,opt,name=is_default,json=isDefault"`
-	xxx_hidden_Source             PolicySource                  `protobuf:"varint,27,opt,name=source,enum=storage.PolicySource"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk,index=btree" crYaml:"-"` // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree" crYaml:"-"
+	// Name of the policy.  Must be unique.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Policy,store" sql:"unique" crYaml:"policyName"` // @gotags: search:"Policy,store" sql:"unique" crYaml:"policyName"
+	// Free-form text description of this policy.
+	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty" search:"Description" crYaml:",omitempty"` // @gotags: search:"Description" crYaml:",omitempty"
+	Rationale   string `protobuf:"bytes,4,opt,name=rationale" json:"rationale,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"
+	// Describes how to remediate a violation of this policy.
+	Remediation string `protobuf:"bytes,5,opt,name=remediation" json:"remediation,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	// Toggles whether or not this policy will be executing and actively firing alerts.
+	Disabled bool `protobuf:"varint,6,opt,name=disabled" json:"disabled,omitempty" search:"Disabled" crYaml:",omitempty"` // @gotags: search:"Disabled" crYaml:",omitempty"
+	// List of categories that this policy falls under.  Category names must already exist in Central.
+	Categories []string `protobuf:"bytes,7,rep,name=categories" json:"categories,omitempty" search:"Category,store" crYaml:",omitempty"` // @gotags: search:"Category,store" crYaml:",omitempty"
+	// Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
+	LifecycleStages []LifecycleStage `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty" search:"Lifecycle Stage,store" crYaml:"lifecycleStages,stringer"` // @gotags: search:"Lifecycle Stage,store" crYaml:"lifecycleStages,stringer"
+	// Describes which events should trigger execution of this policy
+	EventSource EventSource `protobuf:"varint,22,opt,name=event_source,json=eventSource,enum=storage.EventSource" json:"event_source,omitempty" crYaml:"eventSource,stringer"` // @gotags: crYaml:"eventSource,stringer"
+	// Define deployments or images that should be excluded from this policy.
+	Exclusions []*Exclusion `protobuf:"bytes,21,rep,name=exclusions" json:"exclusions,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	// Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
+	Scope []*Scope `protobuf:"bytes,11,rep,name=scope" json:"scope,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	// Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
+	Severity Severity `protobuf:"varint,12,opt,name=severity,enum=storage.Severity" json:"severity,omitempty" search:"Severity,store" crYaml:",stringer"` // @gotags: search:"Severity,store" crYaml:",stringer"
+	// FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
+	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
+	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
+	// Lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
+	EnforcementActions []EnforcementAction `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"` // @gotags: search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"
+	// List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
+	Notifiers   []string               `protobuf:"bytes,14,rep,name=notifiers" json:"notifiers,omitempty" crYaml:",omitempty"`                        // @gotags: crYaml:",omitempty"
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty" search:"Policy Last Updated" crYaml:"-"` // @gotags: search:"Policy Last Updated" crYaml:"-"
+	// For internal use only.
+	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
+	// For internal use only.
+	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage,hidden" crYaml:"-"` // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
+	// For internal use only.
+	SORTEnforcement bool   `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden" crYaml:"-"` // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
+	PolicyVersion   string `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion" json:"policy_version,omitempty" crYaml:"-"`        // @gotags: crYaml:"-"
+	// PolicySections define the violation criteria for this policy.
+	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections" json:"policy_sections,omitempty" crYaml:"policySections,omitempty"`               // @gotags: crYaml:"policySections,omitempty"
+	MitreAttackVectors []*Policy_MitreAttackVectors `protobuf:"bytes,23,rep,name=mitre_attack_vectors,json=mitreAttackVectors" json:"mitre_attack_vectors,omitempty" crYaml:"mitreAttackVectors,omitempty"` // @gotags: crYaml:"mitreAttackVectors,omitempty"
+	// Read-only field. If true, the policy's criteria fields are rendered read-only.
+	CriteriaLocked bool `protobuf:"varint,24,opt,name=criteria_locked,json=criteriaLocked" json:"criteria_locked,omitempty" crYaml:"criteriaLocked"` // @gotags: crYaml:"criteriaLocked"
+	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
+	MitreVectorsLocked bool `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked" json:"mitre_vectors_locked,omitempty" crYaml:"mitreVectorsLocked"` // @gotags: crYaml:"mitreVectorsLocked"
+	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
+	IsDefault     bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
+	Source        PolicySource `protobuf:"varint,27,opt,name=source,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Policy) Reset() {
@@ -417,622 +437,315 @@ func (x *Policy) ProtoReflect() protoreflect.Message {
 
 func (x *Policy) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Policy) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Policy) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *Policy) GetRationale() string {
 	if x != nil {
-		if x.xxx_hidden_Rationale != nil {
-			return *x.xxx_hidden_Rationale
-		}
-		return ""
+		return x.Rationale
 	}
 	return ""
 }
 
 func (x *Policy) GetRemediation() string {
 	if x != nil {
-		if x.xxx_hidden_Remediation != nil {
-			return *x.xxx_hidden_Remediation
-		}
-		return ""
+		return x.Remediation
 	}
 	return ""
 }
 
 func (x *Policy) GetDisabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Disabled
+		return x.Disabled
 	}
 	return false
 }
 
 func (x *Policy) GetCategories() []string {
 	if x != nil {
-		return x.xxx_hidden_Categories
+		return x.Categories
 	}
 	return nil
 }
 
 func (x *Policy) GetLifecycleStages() []LifecycleStage {
 	if x != nil {
-		return x.xxx_hidden_LifecycleStages
+		return x.LifecycleStages
 	}
 	return nil
 }
 
 func (x *Policy) GetEventSource() EventSource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			return x.xxx_hidden_EventSource
-		}
+		return x.EventSource
 	}
 	return EventSource_NOT_APPLICABLE
 }
 
 func (x *Policy) GetExclusions() []*Exclusion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Exclusions) {
-				protoimpl.X.UnmarshalField(x, 21)
-			}
-			var rv *[]*Exclusion
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Exclusions
 	}
 	return nil
 }
 
 func (x *Policy) GetScope() []*Scope {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *[]*Scope
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Scope
 	}
 	return nil
 }
 
 func (x *Policy) GetSeverity() Severity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return Severity_UNSET_SEVERITY
 }
 
 func (x *Policy) GetEnforcementActions() []EnforcementAction {
 	if x != nil {
-		return x.xxx_hidden_EnforcementActions
+		return x.EnforcementActions
 	}
 	return nil
 }
 
 func (x *Policy) GetNotifiers() []string {
 	if x != nil {
-		return x.xxx_hidden_Notifiers
+		return x.Notifiers
 	}
 	return nil
 }
 
 func (x *Policy) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 14) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 15)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *Policy) GetSORTName() string {
 	if x != nil {
-		if x.xxx_hidden_SORTName != nil {
-			return *x.xxx_hidden_SORTName
-		}
-		return ""
+		return x.SORTName
 	}
 	return ""
 }
 
 func (x *Policy) GetSORTLifecycleStage() string {
 	if x != nil {
-		if x.xxx_hidden_SORTLifecycleStage != nil {
-			return *x.xxx_hidden_SORTLifecycleStage
-		}
-		return ""
+		return x.SORTLifecycleStage
 	}
 	return ""
 }
 
 func (x *Policy) GetSORTEnforcement() bool {
 	if x != nil {
-		return x.xxx_hidden_SORTEnforcement
+		return x.SORTEnforcement
 	}
 	return false
 }
 
 func (x *Policy) GetPolicyVersion() string {
 	if x != nil {
-		if x.xxx_hidden_PolicyVersion != nil {
-			return *x.xxx_hidden_PolicyVersion
-		}
-		return ""
+		return x.PolicyVersion
 	}
 	return ""
 }
 
 func (x *Policy) GetPolicySections() []*PolicySection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 19) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PolicySections) {
-				protoimpl.X.UnmarshalField(x, 20)
-			}
-			var rv *[]*PolicySection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.PolicySections
 	}
 	return nil
 }
 
 func (x *Policy) GetMitreAttackVectors() []*Policy_MitreAttackVectors {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 20) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MitreAttackVectors) {
-				protoimpl.X.UnmarshalField(x, 23)
-			}
-			var rv *[]*Policy_MitreAttackVectors
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.MitreAttackVectors
 	}
 	return nil
 }
 
 func (x *Policy) GetCriteriaLocked() bool {
 	if x != nil {
-		return x.xxx_hidden_CriteriaLocked
+		return x.CriteriaLocked
 	}
 	return false
 }
 
 func (x *Policy) GetMitreVectorsLocked() bool {
 	if x != nil {
-		return x.xxx_hidden_MitreVectorsLocked
+		return x.MitreVectorsLocked
 	}
 	return false
 }
 
 func (x *Policy) GetIsDefault() bool {
 	if x != nil {
-		return x.xxx_hidden_IsDefault
+		return x.IsDefault
 	}
 	return false
 }
 
 func (x *Policy) GetSource() PolicySource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 24) {
-			return x.xxx_hidden_Source
-		}
+		return x.Source
 	}
 	return PolicySource_IMPERATIVE
 }
 
 func (x *Policy) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 25)
+	x.Id = v
 }
 
 func (x *Policy) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 25)
+	x.Name = v
 }
 
 func (x *Policy) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 25)
+	x.Description = v
 }
 
 func (x *Policy) SetRationale(v string) {
-	x.xxx_hidden_Rationale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 25)
+	x.Rationale = v
 }
 
 func (x *Policy) SetRemediation(v string) {
-	x.xxx_hidden_Remediation = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 25)
+	x.Remediation = v
 }
 
 func (x *Policy) SetDisabled(v bool) {
-	x.xxx_hidden_Disabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 25)
+	x.Disabled = v
 }
 
 func (x *Policy) SetCategories(v []string) {
-	x.xxx_hidden_Categories = v
+	x.Categories = v
 }
 
 func (x *Policy) SetLifecycleStages(v []LifecycleStage) {
-	x.xxx_hidden_LifecycleStages = v
+	x.LifecycleStages = v
 }
 
 func (x *Policy) SetEventSource(v EventSource) {
-	x.xxx_hidden_EventSource = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 25)
+	x.EventSource = v
 }
 
 func (x *Policy) SetExclusions(v []*Exclusion) {
-	var sv *[]*Exclusion
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Exclusion{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Exclusions), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 25)
+	x.Exclusions = v
 }
 
 func (x *Policy) SetScope(v []*Scope) {
-	var sv *[]*Scope
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Scope{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 25)
+	x.Scope = v
 }
 
 func (x *Policy) SetSeverity(v Severity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 25)
+	x.Severity = v
 }
 
 func (x *Policy) SetEnforcementActions(v []EnforcementAction) {
-	x.xxx_hidden_EnforcementActions = v
+	x.EnforcementActions = v
 }
 
 func (x *Policy) SetNotifiers(v []string) {
-	x.xxx_hidden_Notifiers = v
+	x.Notifiers = v
 }
 
 func (x *Policy) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 25)
-	}
+	x.LastUpdated = v
 }
 
 func (x *Policy) SetSORTName(v string) {
-	x.xxx_hidden_SORTName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 15, 25)
+	x.SORTName = v
 }
 
 func (x *Policy) SetSORTLifecycleStage(v string) {
-	x.xxx_hidden_SORTLifecycleStage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 25)
+	x.SORTLifecycleStage = v
 }
 
 func (x *Policy) SetSORTEnforcement(v bool) {
-	x.xxx_hidden_SORTEnforcement = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 25)
+	x.SORTEnforcement = v
 }
 
 func (x *Policy) SetPolicyVersion(v string) {
-	x.xxx_hidden_PolicyVersion = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 18, 25)
+	x.PolicyVersion = v
 }
 
 func (x *Policy) SetPolicySections(v []*PolicySection) {
-	var sv *[]*PolicySection
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PolicySection{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PolicySections), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 19, 25)
+	x.PolicySections = v
 }
 
 func (x *Policy) SetMitreAttackVectors(v []*Policy_MitreAttackVectors) {
-	var sv *[]*Policy_MitreAttackVectors
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Policy_MitreAttackVectors{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_MitreAttackVectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 20, 25)
+	x.MitreAttackVectors = v
 }
 
 func (x *Policy) SetCriteriaLocked(v bool) {
-	x.xxx_hidden_CriteriaLocked = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 21, 25)
+	x.CriteriaLocked = v
 }
 
 func (x *Policy) SetMitreVectorsLocked(v bool) {
-	x.xxx_hidden_MitreVectorsLocked = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 22, 25)
+	x.MitreVectorsLocked = v
 }
 
 func (x *Policy) SetIsDefault(v bool) {
-	x.xxx_hidden_IsDefault = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 23, 25)
+	x.IsDefault = v
 }
 
 func (x *Policy) SetSource(v PolicySource) {
-	x.xxx_hidden_Source = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 24, 25)
-}
-
-func (x *Policy) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Policy) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Policy) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Policy) HasRationale() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Policy) HasRemediation() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *Policy) HasDisabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *Policy) HasEventSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *Policy) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
+	x.Source = v
 }
 
 func (x *Policy) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
-}
-
-func (x *Policy) HasSORTName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 15)
-}
-
-func (x *Policy) HasSORTLifecycleStage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 16)
-}
-
-func (x *Policy) HasSORTEnforcement() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
-}
-
-func (x *Policy) HasPolicyVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 18)
-}
-
-func (x *Policy) HasCriteriaLocked() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 21)
-}
-
-func (x *Policy) HasMitreVectorsLocked() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 22)
-}
-
-func (x *Policy) HasIsDefault() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 23)
-}
-
-func (x *Policy) HasSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 24)
-}
-
-func (x *Policy) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *Policy) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Policy) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *Policy) ClearRationale() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Rationale = nil
-}
-
-func (x *Policy) ClearRemediation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Remediation = nil
-}
-
-func (x *Policy) ClearDisabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Disabled = false
-}
-
-func (x *Policy) ClearEventSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_EventSource = EventSource_NOT_APPLICABLE
-}
-
-func (x *Policy) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_Severity = Severity_UNSET_SEVERITY
+	return x.LastUpdated != nil
 }
 
 func (x *Policy) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *Policy) ClearSORTName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 15)
-	x.xxx_hidden_SORTName = nil
-}
-
-func (x *Policy) ClearSORTLifecycleStage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 16)
-	x.xxx_hidden_SORTLifecycleStage = nil
-}
-
-func (x *Policy) ClearSORTEnforcement() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
-	x.xxx_hidden_SORTEnforcement = false
-}
-
-func (x *Policy) ClearPolicyVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 18)
-	x.xxx_hidden_PolicyVersion = nil
-}
-
-func (x *Policy) ClearCriteriaLocked() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 21)
-	x.xxx_hidden_CriteriaLocked = false
-}
-
-func (x *Policy) ClearMitreVectorsLocked() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 22)
-	x.xxx_hidden_MitreVectorsLocked = false
-}
-
-func (x *Policy) ClearIsDefault() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 23)
-	x.xxx_hidden_IsDefault = false
-}
-
-func (x *Policy) ClearSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 24)
-	x.xxx_hidden_Source = PolicySource_IMPERATIVE
+	x.LastUpdated = nil
 }
 
 type Policy_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
+	Id string
 	// Name of the policy.  Must be unique.
-	Name *string
+	Name string
 	// Free-form text description of this policy.
-	Description *string
-	Rationale   *string
+	Description string
+	Rationale   string
 	// Describes how to remediate a violation of this policy.
-	Remediation *string
+	Remediation string
 	// Toggles whether or not this policy will be executing and actively firing alerts.
-	Disabled *bool
+	Disabled bool
 	// List of categories that this policy falls under.  Category names must already exist in Central.
 	Categories []string
 	// Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
 	LifecycleStages []LifecycleStage
 	// Describes which events should trigger execution of this policy
-	EventSource *EventSource
+	EventSource EventSource
 	// Define deployments or images that should be excluded from this policy.
 	Exclusions []*Exclusion
 	// Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
 	Scope []*Scope
 	// Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
-	Severity *Severity
+	Severity Severity
 	// FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
@@ -1042,129 +755,63 @@ type Policy_builder struct {
 	Notifiers   []string
 	LastUpdated *timestamppb.Timestamp
 	// For internal use only.
-	SORTName *string
+	SORTName string
 	// For internal use only.
-	SORTLifecycleStage *string
+	SORTLifecycleStage string
 	// For internal use only.
-	SORTEnforcement *bool
-	PolicyVersion   *string
+	SORTEnforcement bool
+	PolicyVersion   string
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []*PolicySection
 	MitreAttackVectors []*Policy_MitreAttackVectors
 	// Read-only field. If true, the policy's criteria fields are rendered read-only.
-	CriteriaLocked *bool
+	CriteriaLocked bool
 	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
-	MitreVectorsLocked *bool
+	MitreVectorsLocked bool
 	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-	IsDefault *bool
-	Source    *PolicySource
+	IsDefault bool
+	Source    PolicySource
 }
 
 func (b0 Policy_builder) Build() *Policy {
 	m0 := &Policy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 25)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 25)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 25)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Rationale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 25)
-		x.xxx_hidden_Rationale = b.Rationale
-	}
-	if b.Remediation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 25)
-		x.xxx_hidden_Remediation = b.Remediation
-	}
-	if b.Disabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 25)
-		x.xxx_hidden_Disabled = *b.Disabled
-	}
-	x.xxx_hidden_Categories = b.Categories
-	x.xxx_hidden_LifecycleStages = b.LifecycleStages
-	if b.EventSource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 25)
-		x.xxx_hidden_EventSource = *b.EventSource
-	}
-	if b.Exclusions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 25)
-		x.xxx_hidden_Exclusions = &b.Exclusions
-	}
-	if b.Scope != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 25)
-		x.xxx_hidden_Scope = &b.Scope
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 25)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	x.xxx_hidden_EnforcementActions = b.EnforcementActions
-	x.xxx_hidden_Notifiers = b.Notifiers
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 25)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	if b.SORTName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 15, 25)
-		x.xxx_hidden_SORTName = b.SORTName
-	}
-	if b.SORTLifecycleStage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 25)
-		x.xxx_hidden_SORTLifecycleStage = b.SORTLifecycleStage
-	}
-	if b.SORTEnforcement != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 25)
-		x.xxx_hidden_SORTEnforcement = *b.SORTEnforcement
-	}
-	if b.PolicyVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 18, 25)
-		x.xxx_hidden_PolicyVersion = b.PolicyVersion
-	}
-	if b.PolicySections != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 19, 25)
-		x.xxx_hidden_PolicySections = &b.PolicySections
-	}
-	if b.MitreAttackVectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 20, 25)
-		x.xxx_hidden_MitreAttackVectors = &b.MitreAttackVectors
-	}
-	if b.CriteriaLocked != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 21, 25)
-		x.xxx_hidden_CriteriaLocked = *b.CriteriaLocked
-	}
-	if b.MitreVectorsLocked != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 22, 25)
-		x.xxx_hidden_MitreVectorsLocked = *b.MitreVectorsLocked
-	}
-	if b.IsDefault != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 23, 25)
-		x.xxx_hidden_IsDefault = *b.IsDefault
-	}
-	if b.Source != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 24, 25)
-		x.xxx_hidden_Source = *b.Source
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Description = b.Description
+	x.Rationale = b.Rationale
+	x.Remediation = b.Remediation
+	x.Disabled = b.Disabled
+	x.Categories = b.Categories
+	x.LifecycleStages = b.LifecycleStages
+	x.EventSource = b.EventSource
+	x.Exclusions = b.Exclusions
+	x.Scope = b.Scope
+	x.Severity = b.Severity
+	x.EnforcementActions = b.EnforcementActions
+	x.Notifiers = b.Notifiers
+	x.LastUpdated = b.LastUpdated
+	x.SORTName = b.SORTName
+	x.SORTLifecycleStage = b.SORTLifecycleStage
+	x.SORTEnforcement = b.SORTEnforcement
+	x.PolicyVersion = b.PolicyVersion
+	x.PolicySections = b.PolicySections
+	x.MitreAttackVectors = b.MitreAttackVectors
+	x.CriteriaLocked = b.CriteriaLocked
+	x.MitreVectorsLocked = b.MitreVectorsLocked
+	x.IsDefault = b.IsDefault
+	x.Source = b.Source
 	return m0
 }
 
 type PolicySection struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SectionName  *string                `protobuf:"bytes,1,opt,name=section_name,json=sectionName"`
-	xxx_hidden_PolicyGroups *[]*PolicyGroup        `protobuf:"bytes,3,rep,name=policy_groups,json=policyGroups"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	SectionName string                 `protobuf:"bytes,1,opt,name=section_name,json=sectionName" json:"section_name,omitempty" crYaml:"sectionName,omitempty"` // @gotags: crYaml:"sectionName,omitempty"
+	// The set of policies groups that make up this section.  Each group can be considered an individual criterion.
+	PolicyGroups  []*PolicyGroup `protobuf:"bytes,3,rep,name=policy_groups,json=policyGroups" json:"policy_groups,omitempty" crYaml:"policyGroups,omitempty"` // @gotags: crYaml:"policyGroups,omitempty"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicySection) Reset() {
@@ -1194,60 +841,30 @@ func (x *PolicySection) ProtoReflect() protoreflect.Message {
 
 func (x *PolicySection) GetSectionName() string {
 	if x != nil {
-		if x.xxx_hidden_SectionName != nil {
-			return *x.xxx_hidden_SectionName
-		}
-		return ""
+		return x.SectionName
 	}
 	return ""
 }
 
 func (x *PolicySection) GetPolicyGroups() []*PolicyGroup {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PolicyGroups) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*PolicyGroup
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.PolicyGroups
 	}
 	return nil
 }
 
 func (x *PolicySection) SetSectionName(v string) {
-	x.xxx_hidden_SectionName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.SectionName = v
 }
 
 func (x *PolicySection) SetPolicyGroups(v []*PolicyGroup) {
-	var sv *[]*PolicyGroup
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PolicyGroup{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PolicyGroups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *PolicySection) HasSectionName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PolicySection) ClearSectionName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_SectionName = nil
+	x.PolicyGroups = v
 }
 
 type PolicySection_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SectionName *string
+	SectionName string
 	// The set of policies groups that make up this section.  Each group can be considered an individual criterion.
 	PolicyGroups []*PolicyGroup
 }
@@ -1256,29 +873,23 @@ func (b0 PolicySection_builder) Build() *PolicySection {
 	m0 := &PolicySection{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.SectionName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_SectionName = b.SectionName
-	}
-	if b.PolicyGroups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_PolicyGroups = &b.PolicyGroups
-	}
+	x.SectionName = b.SectionName
+	x.PolicyGroups = b.PolicyGroups
 	return m0
 }
 
 type PolicyGroup struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FieldName       *string                `protobuf:"bytes,1,opt,name=field_name,json=fieldName"`
-	xxx_hidden_BooleanOperator BooleanOperator        `protobuf:"varint,2,opt,name=boolean_operator,json=booleanOperator,enum=storage.BooleanOperator"`
-	xxx_hidden_Negate          bool                   `protobuf:"varint,3,opt,name=negate"`
-	xxx_hidden_Values          *[]*PolicyValue        `protobuf:"bytes,4,rep,name=values"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.
+	FieldName string `protobuf:"bytes,1,opt,name=field_name,json=fieldName" json:"field_name,omitempty" crYaml:"fieldName"` // @gotags: crYaml:"fieldName"
+	// Determines if the values are combined with an OR or an AND.  Defaults to OR.
+	BooleanOperator BooleanOperator `protobuf:"varint,2,opt,name=boolean_operator,json=booleanOperator,enum=storage.BooleanOperator" json:"boolean_operator,omitempty" crYaml:"booleanOperator,stringer"` // @gotags: crYaml:"booleanOperator,stringer"
+	// Determines if the evaluation of this PolicyGroup is negated.  Default to false.
+	Negate bool `protobuf:"varint,3,opt,name=negate" json:"negate,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	// List of values for the specified field
+	Values        []*PolicyValue `protobuf:"bytes,4,rep,name=values" json:"values,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicyGroup) Reset() {
@@ -1308,115 +919,57 @@ func (x *PolicyGroup) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyGroup) GetFieldName() string {
 	if x != nil {
-		if x.xxx_hidden_FieldName != nil {
-			return *x.xxx_hidden_FieldName
-		}
-		return ""
+		return x.FieldName
 	}
 	return ""
 }
 
 func (x *PolicyGroup) GetBooleanOperator() BooleanOperator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_BooleanOperator
-		}
+		return x.BooleanOperator
 	}
 	return BooleanOperator_OR
 }
 
 func (x *PolicyGroup) GetNegate() bool {
 	if x != nil {
-		return x.xxx_hidden_Negate
+		return x.Negate
 	}
 	return false
 }
 
 func (x *PolicyGroup) GetValues() []*PolicyValue {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Values) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*PolicyValue
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Values
 	}
 	return nil
 }
 
 func (x *PolicyGroup) SetFieldName(v string) {
-	x.xxx_hidden_FieldName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.FieldName = v
 }
 
 func (x *PolicyGroup) SetBooleanOperator(v BooleanOperator) {
-	x.xxx_hidden_BooleanOperator = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.BooleanOperator = v
 }
 
 func (x *PolicyGroup) SetNegate(v bool) {
-	x.xxx_hidden_Negate = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Negate = v
 }
 
 func (x *PolicyGroup) SetValues(v []*PolicyValue) {
-	var sv *[]*PolicyValue
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PolicyValue{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Values), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *PolicyGroup) HasFieldName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PolicyGroup) HasBooleanOperator() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PolicyGroup) HasNegate() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *PolicyGroup) ClearFieldName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_FieldName = nil
-}
-
-func (x *PolicyGroup) ClearBooleanOperator() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_BooleanOperator = BooleanOperator_OR
-}
-
-func (x *PolicyGroup) ClearNegate() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Negate = false
+	x.Values = v
 }
 
 type PolicyGroup_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.
-	FieldName *string
+	FieldName string
 	// Determines if the values are combined with an OR or an AND.  Defaults to OR.
-	BooleanOperator *BooleanOperator
+	BooleanOperator BooleanOperator
 	// Determines if the evaluation of this PolicyGroup is negated.  Default to false.
-	Negate *bool
+	Negate bool
 	// List of values for the specified field
 	Values []*PolicyValue
 }
@@ -1425,32 +978,18 @@ func (b0 PolicyGroup_builder) Build() *PolicyGroup {
 	m0 := &PolicyGroup{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.FieldName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_FieldName = b.FieldName
-	}
-	if b.BooleanOperator != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_BooleanOperator = *b.BooleanOperator
-	}
-	if b.Negate != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Negate = *b.Negate
-	}
-	if b.Values != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Values = &b.Values
-	}
+	x.FieldName = b.FieldName
+	x.BooleanOperator = b.BooleanOperator
+	x.Negate = b.Negate
+	x.Values = b.Values
 	return m0
 }
 
 type PolicyValue struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,1,opt,name=value"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicyValue) Reset() {
@@ -1480,57 +1019,34 @@ func (x *PolicyValue) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyValue) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *PolicyValue) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *PolicyValue) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PolicyValue) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Value = nil
+	x.Value = v
 }
 
 type PolicyValue_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Value *string
+	Value string
 }
 
 func (b0 PolicyValue_builder) Build() *PolicyValue {
 	m0 := &PolicyValue{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Value = b.Value
-	}
+	x.Value = b.Value
 	return m0
 }
 
 type PolicyList struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policies *[]*Policy             `protobuf:"bytes,1,rep,name=policies"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Policies      []*Policy              `protobuf:"bytes,1,rep,name=policies" json:"policies,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicyList) Reset() {
@@ -1560,27 +1076,13 @@ func (x *PolicyList) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyList) GetPolicies() []*Policy {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Policy
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Policies
 	}
 	return nil
 }
 
 func (x *PolicyList) SetPolicies(v []*Policy) {
-	var sv *[]*Policy
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Policy{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Policies = v
 }
 
 type PolicyList_builder struct {
@@ -1593,32 +1095,25 @@ func (b0 PolicyList_builder) Build() *PolicyList {
 	m0 := &PolicyList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Policies != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Policies = &b.Policies
-	}
+	x.Policies = b.Policies
 	return m0
 }
 
 type ListPolicy struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name            *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Description     *string                `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_Severity        Severity               `protobuf:"varint,4,opt,name=severity,enum=storage.Severity"`
-	xxx_hidden_Disabled        bool                   `protobuf:"varint,5,opt,name=disabled"`
-	xxx_hidden_LifecycleStages []LifecycleStage       `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,enum=storage.LifecycleStage"`
-	xxx_hidden_Notifiers       []string               `protobuf:"bytes,7,rep,name=notifiers"`
-	xxx_hidden_LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_EventSource     EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,enum=storage.EventSource"`
-	xxx_hidden_IsDefault       bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault"`
-	xxx_hidden_Source          PolicySource           `protobuf:"varint,11,opt,name=source,enum=storage.PolicySource"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Description     string                 `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Severity        Severity               `protobuf:"varint,4,opt,name=severity,enum=storage.Severity" json:"severity,omitempty"`
+	Disabled        bool                   `protobuf:"varint,5,opt,name=disabled" json:"disabled,omitempty"`
+	LifecycleStages []LifecycleStage       `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"`
+	Notifiers       []string               `protobuf:"bytes,7,rep,name=notifiers" json:"notifiers,omitempty"`
+	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
+	EventSource     EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,enum=storage.EventSource" json:"event_source,omitempty"`
+	IsDefault       bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault" json:"is_default,omitempty"`
+	Source          PolicySource           `protobuf:"varint,11,opt,name=source,enum=storage.PolicySource" json:"source,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListPolicy) Reset() {
@@ -1648,341 +1143,178 @@ func (x *ListPolicy) ProtoReflect() protoreflect.Message {
 
 func (x *ListPolicy) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ListPolicy) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ListPolicy) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *ListPolicy) GetSeverity() Severity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return Severity_UNSET_SEVERITY
 }
 
 func (x *ListPolicy) GetDisabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Disabled
+		return x.Disabled
 	}
 	return false
 }
 
 func (x *ListPolicy) GetLifecycleStages() []LifecycleStage {
 	if x != nil {
-		return x.xxx_hidden_LifecycleStages
+		return x.LifecycleStages
 	}
 	return nil
 }
 
 func (x *ListPolicy) GetNotifiers() []string {
 	if x != nil {
-		return x.xxx_hidden_Notifiers
+		return x.Notifiers
 	}
 	return nil
 }
 
 func (x *ListPolicy) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *ListPolicy) GetEventSource() EventSource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			return x.xxx_hidden_EventSource
-		}
+		return x.EventSource
 	}
 	return EventSource_NOT_APPLICABLE
 }
 
 func (x *ListPolicy) GetIsDefault() bool {
 	if x != nil {
-		return x.xxx_hidden_IsDefault
+		return x.IsDefault
 	}
 	return false
 }
 
 func (x *ListPolicy) GetSource() PolicySource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			return x.xxx_hidden_Source
-		}
+		return x.Source
 	}
 	return PolicySource_IMPERATIVE
 }
 
 func (x *ListPolicy) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *ListPolicy) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.Name = v
 }
 
 func (x *ListPolicy) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.Description = v
 }
 
 func (x *ListPolicy) SetSeverity(v Severity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.Severity = v
 }
 
 func (x *ListPolicy) SetDisabled(v bool) {
-	x.xxx_hidden_Disabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.Disabled = v
 }
 
 func (x *ListPolicy) SetLifecycleStages(v []LifecycleStage) {
-	x.xxx_hidden_LifecycleStages = v
+	x.LifecycleStages = v
 }
 
 func (x *ListPolicy) SetNotifiers(v []string) {
-	x.xxx_hidden_Notifiers = v
+	x.Notifiers = v
 }
 
 func (x *ListPolicy) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
-	}
+	x.LastUpdated = v
 }
 
 func (x *ListPolicy) SetEventSource(v EventSource) {
-	x.xxx_hidden_EventSource = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.EventSource = v
 }
 
 func (x *ListPolicy) SetIsDefault(v bool) {
-	x.xxx_hidden_IsDefault = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.IsDefault = v
 }
 
 func (x *ListPolicy) SetSource(v PolicySource) {
-	x.xxx_hidden_Source = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *ListPolicy) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ListPolicy) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ListPolicy) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ListPolicy) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ListPolicy) HasDisabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.Source = v
 }
 
 func (x *ListPolicy) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ListPolicy) HasEventSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ListPolicy) HasIsDefault() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ListPolicy) HasSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *ListPolicy) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ListPolicy) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ListPolicy) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
-}
-
-func (x *ListPolicy) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Severity = Severity_UNSET_SEVERITY
-}
-
-func (x *ListPolicy) ClearDisabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Disabled = false
+	return x.LastUpdated != nil
 }
 
 func (x *ListPolicy) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ListPolicy) ClearEventSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_EventSource = EventSource_NOT_APPLICABLE
-}
-
-func (x *ListPolicy) ClearIsDefault() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_IsDefault = false
-}
-
-func (x *ListPolicy) ClearSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_Source = PolicySource_IMPERATIVE
+	x.LastUpdated = nil
 }
 
 type ListPolicy_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
-	Name            *string
-	Description     *string
-	Severity        *Severity
-	Disabled        *bool
+	Id              string
+	Name            string
+	Description     string
+	Severity        Severity
+	Disabled        bool
 	LifecycleStages []LifecycleStage
 	Notifiers       []string
 	LastUpdated     *timestamppb.Timestamp
-	EventSource     *EventSource
-	IsDefault       *bool
-	Source          *PolicySource
+	EventSource     EventSource
+	IsDefault       bool
+	Source          PolicySource
 }
 
 func (b0 ListPolicy_builder) Build() *ListPolicy {
 	m0 := &ListPolicy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.Disabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_Disabled = *b.Disabled
-	}
-	x.xxx_hidden_LifecycleStages = b.LifecycleStages
-	x.xxx_hidden_Notifiers = b.Notifiers
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	if b.EventSource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_EventSource = *b.EventSource
-	}
-	if b.IsDefault != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_IsDefault = *b.IsDefault
-	}
-	if b.Source != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_Source = *b.Source
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Description = b.Description
+	x.Severity = b.Severity
+	x.Disabled = b.Disabled
+	x.LifecycleStages = b.LifecycleStages
+	x.Notifiers = b.Notifiers
+	x.LastUpdated = b.LastUpdated
+	x.EventSource = b.EventSource
+	x.IsDefault = b.IsDefault
+	x.Source = b.Source
 	return m0
 }
 
 type Exclusion struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name       *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Deployment *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment"`
-	xxx_hidden_Image      *Exclusion_Image       `protobuf:"bytes,7,opt,name=image"`
-	xxx_hidden_Expiration *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
+	Deployment    *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment" json:"deployment,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	Image         *Exclusion_Image       `protobuf:"bytes,7,opt,name=image" json:"image,omitempty" crYaml:",omitempty"`           // @gotags: crYaml:",omitempty"
+	Expiration    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration" json:"expiration,omitempty" crYaml:",timestamp,omitempty"` // @gotags: crYaml:",timestamp,omitempty"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Exclusion) Reset() {
@@ -2012,114 +1344,85 @@ func (x *Exclusion) ProtoReflect() protoreflect.Message {
 
 func (x *Exclusion) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Exclusion) GetDeployment() *Exclusion_Deployment {
 	if x != nil {
-		return x.xxx_hidden_Deployment
+		return x.Deployment
 	}
 	return nil
 }
 
 func (x *Exclusion) GetImage() *Exclusion_Image {
 	if x != nil {
-		return x.xxx_hidden_Image
+		return x.Image
 	}
 	return nil
 }
 
 func (x *Exclusion) GetExpiration() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Expiration) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Expiration), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Expiration
 	}
 	return nil
 }
 
 func (x *Exclusion) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Name = v
 }
 
 func (x *Exclusion) SetDeployment(v *Exclusion_Deployment) {
-	x.xxx_hidden_Deployment = v
+	x.Deployment = v
 }
 
 func (x *Exclusion) SetImage(v *Exclusion_Image) {
-	x.xxx_hidden_Image = v
+	x.Image = v
 }
 
 func (x *Exclusion) SetExpiration(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-	}
-}
-
-func (x *Exclusion) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Expiration = v
 }
 
 func (x *Exclusion) HasDeployment() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Deployment != nil
+	return x.Deployment != nil
 }
 
 func (x *Exclusion) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return x.Image != nil
 }
 
 func (x *Exclusion) HasExpiration() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Exclusion) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
+	return x.Expiration != nil
 }
 
 func (x *Exclusion) ClearDeployment() {
-	x.xxx_hidden_Deployment = nil
+	x.Deployment = nil
 }
 
 func (x *Exclusion) ClearImage() {
-	x.xxx_hidden_Image = nil
+	x.Image = nil
 }
 
 func (x *Exclusion) ClearExpiration() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Expiration, (*timestamppb.Timestamp)(nil))
+	x.Expiration = nil
 }
 
 type Exclusion_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name       *string
+	Name       string
 	Deployment *Exclusion_Deployment
 	Image      *Exclusion_Image
 	Expiration *timestamppb.Timestamp
@@ -2129,30 +1432,20 @@ func (b0 Exclusion_builder) Build() *Exclusion {
 	m0 := &Exclusion{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_Deployment = b.Deployment
-	x.xxx_hidden_Image = b.Image
-	if b.Expiration != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Expiration = b.Expiration
-	}
+	x.Name = b.Name
+	x.Deployment = b.Deployment
+	x.Image = b.Image
+	x.Expiration = b.Expiration
 	return m0
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
 // We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
 type ExportPoliciesResponse struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Policies *[]*Policy             `protobuf:"bytes,1,rep,name=policies"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Policies      []*Policy              `protobuf:"bytes,1,rep,name=policies" json:"policies,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExportPoliciesResponse) Reset() {
@@ -2182,27 +1475,13 @@ func (x *ExportPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ExportPoliciesResponse) GetPolicies() []*Policy {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Policies) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*Policy
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Policies
 	}
 	return nil
 }
 
 func (x *ExportPoliciesResponse) SetPolicies(v []*Policy) {
-	var sv *[]*Policy
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Policy{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Policies), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Policies = v
 }
 
 type ExportPoliciesResponse_builder struct {
@@ -2215,21 +1494,16 @@ func (b0 ExportPoliciesResponse_builder) Build() *ExportPoliciesResponse {
 	m0 := &ExportPoliciesResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Policies != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Policies = &b.Policies
-	}
+	x.Policies = b.Policies
 	return m0
 }
 
 type Policy_MitreAttackVectors struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Tactic      *string                `protobuf:"bytes,1,opt,name=tactic"`
-	xxx_hidden_Techniques  []string               `protobuf:"bytes,2,rep,name=techniques"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Tactic        string                 `protobuf:"bytes,1,opt,name=tactic" json:"tactic,omitempty"`
+	Techniques    []string               `protobuf:"bytes,2,rep,name=techniques" json:"techniques,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Policy_MitreAttackVectors) Reset() {
@@ -2259,46 +1533,30 @@ func (x *Policy_MitreAttackVectors) ProtoReflect() protoreflect.Message {
 
 func (x *Policy_MitreAttackVectors) GetTactic() string {
 	if x != nil {
-		if x.xxx_hidden_Tactic != nil {
-			return *x.xxx_hidden_Tactic
-		}
-		return ""
+		return x.Tactic
 	}
 	return ""
 }
 
 func (x *Policy_MitreAttackVectors) GetTechniques() []string {
 	if x != nil {
-		return x.xxx_hidden_Techniques
+		return x.Techniques
 	}
 	return nil
 }
 
 func (x *Policy_MitreAttackVectors) SetTactic(v string) {
-	x.xxx_hidden_Tactic = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Tactic = v
 }
 
 func (x *Policy_MitreAttackVectors) SetTechniques(v []string) {
-	x.xxx_hidden_Techniques = v
-}
-
-func (x *Policy_MitreAttackVectors) HasTactic() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Policy_MitreAttackVectors) ClearTactic() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Tactic = nil
+	x.Techniques = v
 }
 
 type Policy_MitreAttackVectors_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Tactic     *string
+	Tactic     string
 	Techniques []string
 }
 
@@ -2306,19 +1564,16 @@ func (b0 Policy_MitreAttackVectors_builder) Build() *Policy_MitreAttackVectors {
 	m0 := &Policy_MitreAttackVectors{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Tactic != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Tactic = b.Tactic
-	}
-	x.xxx_hidden_Techniques = b.Techniques
+	x.Tactic = b.Tactic
+	x.Techniques = b.Techniques
 	return m0
 }
 
 type Exclusion_Container struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ImageName *ImageName             `protobuf:"bytes,3,opt,name=image_name,json=imageName"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	ImageName     *ImageName             `protobuf:"bytes,3,opt,name=image_name,json=imageName" json:"image_name,omitempty" search:"-" crYaml:"imageName"` // @gotags: search:"-" crYaml:"imageName"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Exclusion_Container) Reset() {
@@ -2348,24 +1603,24 @@ func (x *Exclusion_Container) ProtoReflect() protoreflect.Message {
 
 func (x *Exclusion_Container) GetImageName() *ImageName {
 	if x != nil {
-		return x.xxx_hidden_ImageName
+		return x.ImageName
 	}
 	return nil
 }
 
 func (x *Exclusion_Container) SetImageName(v *ImageName) {
-	x.xxx_hidden_ImageName = v
+	x.ImageName = v
 }
 
 func (x *Exclusion_Container) HasImageName() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImageName != nil
+	return x.ImageName != nil
 }
 
 func (x *Exclusion_Container) ClearImageName() {
-	x.xxx_hidden_ImageName = nil
+	x.ImageName = nil
 }
 
 type Exclusion_Container_builder struct {
@@ -2378,18 +1633,16 @@ func (b0 Exclusion_Container_builder) Build() *Exclusion_Container {
 	m0 := &Exclusion_Container{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ImageName = b.ImageName
+	x.ImageName = b.ImageName
 	return m0
 }
 
 type Exclusion_Deployment struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
-	xxx_hidden_Scope       *Scope                 `protobuf:"bytes,4,opt,name=scope"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name" json:"name,omitempty" crYaml:",omitempty"`   // @gotags: crYaml:",omitempty"
+	Scope         *Scope                 `protobuf:"bytes,4,opt,name=scope" json:"scope,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Exclusion_Deployment) Reset() {
@@ -2419,57 +1672,41 @@ func (x *Exclusion_Deployment) ProtoReflect() protoreflect.Message {
 
 func (x *Exclusion_Deployment) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Exclusion_Deployment) GetScope() *Scope {
 	if x != nil {
-		return x.xxx_hidden_Scope
+		return x.Scope
 	}
 	return nil
 }
 
 func (x *Exclusion_Deployment) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *Exclusion_Deployment) SetScope(v *Scope) {
-	x.xxx_hidden_Scope = v
-}
-
-func (x *Exclusion_Deployment) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Scope = v
 }
 
 func (x *Exclusion_Deployment) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Scope != nil
-}
-
-func (x *Exclusion_Deployment) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
+	return x.Scope != nil
 }
 
 func (x *Exclusion_Deployment) ClearScope() {
-	x.xxx_hidden_Scope = nil
+	x.Scope = nil
 }
 
 type Exclusion_Deployment_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name  *string
+	Name  string
 	Scope *Scope
 }
 
@@ -2477,21 +1714,16 @@ func (b0 Exclusion_Deployment_builder) Build() *Exclusion_Deployment {
 	m0 := &Exclusion_Deployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_Scope = b.Scope
+	x.Name = b.Name
+	x.Scope = b.Scope
 	return m0
 }
 
 type Exclusion_Image struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Exclusion_Image) Reset() {
@@ -2521,45 +1753,26 @@ func (x *Exclusion_Image) ProtoReflect() protoreflect.Message {
 
 func (x *Exclusion_Image) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Exclusion_Image) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *Exclusion_Image) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Exclusion_Image) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
+	x.Name = v
 }
 
 type Exclusion_Image_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name *string
+	Name string
 }
 
 func (b0 Exclusion_Image_builder) Build() *Exclusion_Image {
 	m0 := &Exclusion_Image{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Name = b.Name
-	}
+	x.Name = b.Name
 	return m0
 }
 
@@ -2692,8 +1905,8 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"\x06EQUALS\x10\x02\x12\x1a\n" +
 	"\x16GREATER_THAN_OR_EQUALS\x10\x03\x12\x10\n" +
-	"\fGREATER_THAN\x10\x04B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\fGREATER_THAN\x10\x04B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 12)

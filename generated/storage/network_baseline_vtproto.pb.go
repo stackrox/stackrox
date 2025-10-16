@@ -12,6 +12,9 @@ func (m *NetworkBaselineConnectionProperties) MarshalVT() ([]byte, error) { retu
 func (m *NetworkBaselineConnectionProperties) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkBaselineConnectionProperties) EqualVT(n *NetworkBaselineConnectionProperties) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselineConnectionProperties) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -22,16 +25,18 @@ func (m *NetworkBaselinePeer) SizeVT() int { return proto.Size(m) }
 func (m *NetworkBaselinePeer) CloneVT() *NetworkBaselinePeer {
 	return proto.Clone(m).(*NetworkBaselinePeer)
 }
-func (m *NetworkBaselinePeer) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkBaselinePeer) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaselinePeer) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *NetworkBaselinePeer) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaselinePeer) EqualVT(n *NetworkBaselinePeer) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaselinePeer) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *NetworkBaseline) SizeVT() int                   { return proto.Size(m) }
-func (m *NetworkBaseline) CloneVT() *NetworkBaseline     { return proto.Clone(m).(*NetworkBaseline) }
-func (m *NetworkBaseline) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkBaseline) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaseline) SizeVT() int                     { return proto.Size(m) }
+func (m *NetworkBaseline) CloneVT() *NetworkBaseline       { return proto.Clone(m).(*NetworkBaseline) }
+func (m *NetworkBaseline) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *NetworkBaseline) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkBaseline) EqualVT(n *NetworkBaseline) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkBaseline) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

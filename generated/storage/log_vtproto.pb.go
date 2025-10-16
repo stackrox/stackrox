@@ -8,6 +8,7 @@ func (m *LogImbue) SizeVT() int                   { return proto.Size(m) }
 func (m *LogImbue) CloneVT() *LogImbue            { return proto.Clone(m).(*LogImbue) }
 func (m *LogImbue) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *LogImbue) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LogImbue) EqualVT(n *LogImbue) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LogImbue) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

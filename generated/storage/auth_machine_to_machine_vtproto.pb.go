@@ -10,6 +10,9 @@ func (m *AuthMachineToMachineConfig) CloneVT() *AuthMachineToMachineConfig {
 }
 func (m *AuthMachineToMachineConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AuthMachineToMachineConfig) EqualVT(n *AuthMachineToMachineConfig) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AuthMachineToMachineConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +24,9 @@ func (m *AuthMachineToMachineConfig_Mapping) CloneVT() *AuthMachineToMachineConf
 func (m *AuthMachineToMachineConfig_Mapping) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AuthMachineToMachineConfig_Mapping) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthMachineToMachineConfig_Mapping) EqualVT(n *AuthMachineToMachineConfig_Mapping) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

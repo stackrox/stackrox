@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/grpc_preference_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -23,12 +25,10 @@ const (
 )
 
 type Preferences struct {
-	state                              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_MaxGrpcReceiveSizeBytes uint64                 `protobuf:"varint,1,opt,name=max_grpc_receive_size_bytes,json=maxGrpcReceiveSizeBytes"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"hybrid.v1"`
+	MaxGrpcReceiveSizeBytes uint64                 `protobuf:"varint,1,opt,name=max_grpc_receive_size_bytes,json=maxGrpcReceiveSizeBytes" json:"max_grpc_receive_size_bytes,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Preferences) Reset() {
@@ -58,42 +58,26 @@ func (x *Preferences) ProtoReflect() protoreflect.Message {
 
 func (x *Preferences) GetMaxGrpcReceiveSizeBytes() uint64 {
 	if x != nil {
-		return x.xxx_hidden_MaxGrpcReceiveSizeBytes
+		return x.MaxGrpcReceiveSizeBytes
 	}
 	return 0
 }
 
 func (x *Preferences) SetMaxGrpcReceiveSizeBytes(v uint64) {
-	x.xxx_hidden_MaxGrpcReceiveSizeBytes = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *Preferences) HasMaxGrpcReceiveSizeBytes() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Preferences) ClearMaxGrpcReceiveSizeBytes() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_MaxGrpcReceiveSizeBytes = 0
+	x.MaxGrpcReceiveSizeBytes = v
 }
 
 type Preferences_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	MaxGrpcReceiveSizeBytes *uint64
+	MaxGrpcReceiveSizeBytes uint64
 }
 
 func (b0 Preferences_builder) Build() *Preferences {
 	m0 := &Preferences{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.MaxGrpcReceiveSizeBytes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_MaxGrpcReceiveSizeBytes = *b.MaxGrpcReceiveSizeBytes
-	}
+	x.MaxGrpcReceiveSizeBytes = b.MaxGrpcReceiveSizeBytes
 	return m0
 }
 
@@ -105,8 +89,8 @@ const file_api_v1_grpc_preference_service_proto_rawDesc = "" +
 	"\vPreferences\x12<\n" +
 	"\x1bmax_grpc_receive_size_bytes\x18\x01 \x01(\x04R\x17maxGrpcReceiveSizeBytes2Y\n" +
 	"\x16GRPCPreferencesService\x12?\n" +
-	"\x03Get\x12\t.v1.Empty\x1a\x0f.v1.Preferences\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/grpc-preferencesB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x03Get\x12\t.v1.Empty\x1a\x0f.v1.Preferences\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/grpc-preferencesB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_grpc_preference_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_grpc_preference_service_proto_goTypes = []any{

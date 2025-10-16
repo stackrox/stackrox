@@ -8,6 +8,7 @@ func (m *Scope) SizeVT() int                   { return proto.Size(m) }
 func (m *Scope) CloneVT() *Scope               { return proto.Clone(m).(*Scope) }
 func (m *Scope) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Scope) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Scope) EqualVT(n *Scope) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Scope) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *Scope_Label) SizeVT() int                   { return proto.Size(m) }
 func (m *Scope_Label) CloneVT() *Scope_Label         { return proto.Clone(m).(*Scope_Label) }
 func (m *Scope_Label) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Scope_Label) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Scope_Label) EqualVT(n *Scope_Label) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Scope_Label) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

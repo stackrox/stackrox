@@ -8,6 +8,7 @@ func (m *ResourceByID) SizeVT() int                   { return proto.Size(m) }
 func (m *ResourceByID) CloneVT() *ResourceByID        { return proto.Clone(m).(*ResourceByID) }
 func (m *ResourceByID) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ResourceByID) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceByID) EqualVT(n *ResourceByID) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceByID) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *DeleteByIDWithForce) SizeVT() int { return proto.Size(m) }
 func (m *DeleteByIDWithForce) CloneVT() *DeleteByIDWithForce {
 	return proto.Clone(m).(*DeleteByIDWithForce)
 }
-func (m *DeleteByIDWithForce) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeleteByIDWithForce) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteByIDWithForce) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *DeleteByIDWithForce) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteByIDWithForce) EqualVT(n *DeleteByIDWithForce) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteByIDWithForce) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

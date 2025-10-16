@@ -8,8 +8,9 @@ func (m *GenerateTokenRequest) SizeVT() int { return proto.Size(m) }
 func (m *GenerateTokenRequest) CloneVT() *GenerateTokenRequest {
 	return proto.Clone(m).(*GenerateTokenRequest)
 }
-func (m *GenerateTokenRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GenerateTokenRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GenerateTokenRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GenerateTokenRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GenerateTokenRequest) EqualVT(n *GenerateTokenRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GenerateTokenRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *GenerateTokenResponse) SizeVT() int { return proto.Size(m) }
 func (m *GenerateTokenResponse) CloneVT() *GenerateTokenResponse {
 	return proto.Clone(m).(*GenerateTokenResponse)
 }
-func (m *GenerateTokenResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GenerateTokenResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GenerateTokenResponse) EqualVT(n *GenerateTokenResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GenerateTokenResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,8 +30,9 @@ func (m *GetAPITokensRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetAPITokensRequest) CloneVT() *GetAPITokensRequest {
 	return proto.Clone(m).(*GetAPITokensRequest)
 }
-func (m *GetAPITokensRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetAPITokensRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetAPITokensRequest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *GetAPITokensRequest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *GetAPITokensRequest) EqualVT(n *GetAPITokensRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetAPITokensRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,8 +41,9 @@ func (m *GetAPITokensResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetAPITokensResponse) CloneVT() *GetAPITokensResponse {
 	return proto.Clone(m).(*GetAPITokensResponse)
 }
-func (m *GetAPITokensResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetAPITokensResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GetAPITokensResponse) EqualVT(n *GetAPITokensResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetAPITokensResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -51,6 +55,9 @@ func (m *ListAllowedTokenRolesResponse) CloneVT() *ListAllowedTokenRolesResponse
 func (m *ListAllowedTokenRolesResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ListAllowedTokenRolesResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ListAllowedTokenRolesResponse) EqualVT(n *ListAllowedTokenRolesResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

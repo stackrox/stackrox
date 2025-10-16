@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/cve.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -887,13 +889,11 @@ func (x CVSSV3_Severity) Number() protoreflect.EnumNumber {
 
 // EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
 type EPSS struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_EpssProbability float32                `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability"`
-	xxx_hidden_EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	EpssProbability float32                `protobuf:"fixed32,1,opt,name=epss_probability,json=epssProbability" json:"epss_probability,omitempty" search:"EPSS Probability,store"` // @gotags: search:"EPSS Probability,store"
+	EpssPercentile  float32                `protobuf:"fixed32,2,opt,name=epss_percentile,json=epssPercentile" json:"epss_percentile,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *EPSS) Reset() {
@@ -923,71 +923,39 @@ func (x *EPSS) ProtoReflect() protoreflect.Message {
 
 func (x *EPSS) GetEpssProbability() float32 {
 	if x != nil {
-		return x.xxx_hidden_EpssProbability
+		return x.EpssProbability
 	}
 	return 0
 }
 
 func (x *EPSS) GetEpssPercentile() float32 {
 	if x != nil {
-		return x.xxx_hidden_EpssPercentile
+		return x.EpssPercentile
 	}
 	return 0
 }
 
 func (x *EPSS) SetEpssProbability(v float32) {
-	x.xxx_hidden_EpssProbability = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.EpssProbability = v
 }
 
 func (x *EPSS) SetEpssPercentile(v float32) {
-	x.xxx_hidden_EpssPercentile = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *EPSS) HasEpssProbability() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *EPSS) HasEpssPercentile() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *EPSS) ClearEpssProbability() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_EpssProbability = 0
-}
-
-func (x *EPSS) ClearEpssPercentile() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_EpssPercentile = 0
+	x.EpssPercentile = v
 }
 
 type EPSS_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	EpssProbability *float32
-	EpssPercentile  *float32
+	EpssProbability float32
+	EpssPercentile  float32
 }
 
 func (b0 EPSS_builder) Build() *EPSS {
 	m0 := &EPSS{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.EpssProbability != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_EpssProbability = *b.EpssProbability
-	}
-	if b.EpssPercentile != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_EpssPercentile = *b.EpssPercentile
-	}
+	x.EpssProbability = b.EpssProbability
+	x.EpssPercentile = b.EpssPercentile
 	return m0
 }
 
@@ -996,32 +964,30 @@ func (b0 EPSS_builder) Build() *EPSS {
 // ******************************
 // Next Tag: 23
 type CVE struct {
-	state                         protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_Id                 *string                        `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Cvss               float32                        `protobuf:"fixed32,2,opt,name=cvss"`
-	xxx_hidden_ImpactScore        float32                        `protobuf:"fixed32,14,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Type               CVE_CVEType                    `protobuf:"varint,3,opt,name=type,enum=storage.CVE_CVEType"`
-	xxx_hidden_Types              []CVE_CVEType                  `protobuf:"varint,18,rep,packed,name=types,enum=storage.CVE_CVEType"`
-	xxx_hidden_Summary            *string                        `protobuf:"bytes,4,opt,name=summary"`
-	xxx_hidden_Link               *string                        `protobuf:"bytes,5,opt,name=link"`
-	xxx_hidden_PublishedOn        *timestamppb.Timestamp         `protobuf:"bytes,6,opt,name=published_on,json=publishedOn"`
-	xxx_hidden_CreatedAt          *timestamppb.Timestamp         `protobuf:"bytes,15,opt,name=created_at,json=createdAt"`
-	xxx_hidden_LastModified       *timestamppb.Timestamp         `protobuf:"bytes,7,opt,name=last_modified,json=lastModified"`
-	xxx_hidden_References         *[]*CVE_Reference              `protobuf:"bytes,8,rep,name=references"`
-	xxx_hidden_ScoreVersion       CVE_ScoreVersion               `protobuf:"varint,9,opt,name=score_version,json=scoreVersion,enum=storage.CVE_ScoreVersion"`
-	xxx_hidden_CvssV2             *CVSSV2                        `protobuf:"bytes,10,opt,name=cvss_v2,json=cvssV2"`
-	xxx_hidden_CvssV3             *CVSSV3                        `protobuf:"bytes,11,opt,name=cvss_v3,json=cvssV3"`
-	xxx_hidden_Suppressed         bool                           `protobuf:"varint,12,opt,name=suppressed"`
-	xxx_hidden_SuppressActivation *timestamppb.Timestamp         `protobuf:"bytes,16,opt,name=suppress_activation,json=suppressActivation"`
-	xxx_hidden_SuppressExpiry     *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry"`
-	xxx_hidden_DistroSpecifics    map[string]*CVE_DistroSpecific `protobuf:"bytes,19,rep,name=distro_specifics,json=distroSpecifics" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Severity           VulnerabilitySeverity          `protobuf:"varint,20,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"CVE,store"`                                         // @gotags: search:"CVE,store"
+	Cvss        float32                `protobuf:"fixed32,2,opt,name=cvss" json:"cvss,omitempty" search:"CVSS,store"`                                   // @gotags: search:"CVSS,store"
+	ImpactScore float32                `protobuf:"fixed32,14,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty" search:"Impact Score"` // @gotags: search:"Impact Score"
+	Type        CVE_CVEType            `protobuf:"varint,3,opt,name=type,enum=storage.CVE_CVEType" json:"type,omitempty" sql:"-"`           // @gotags: sql:"-"
+	Types       []CVE_CVEType          `protobuf:"varint,18,rep,packed,name=types,enum=storage.CVE_CVEType" json:"types,omitempty" search:"CVE Type"` // @gotags: search:"CVE Type"
+	Summary     string                 `protobuf:"bytes,4,opt,name=summary" json:"summary,omitempty"`
+	Link        string                 `protobuf:"bytes,5,opt,name=link" json:"link,omitempty"`
+	// This indicates the timestamp when the cve was first published in the cve feeds.
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=published_on,json=publishedOn" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
+	// Time when the CVE was first seen in the system.
+	CreatedAt          *timestamppb.Timestamp         `protobuf:"bytes,15,opt,name=created_at,json=createdAt" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
+	LastModified       *timestamppb.Timestamp         `protobuf:"bytes,7,opt,name=last_modified,json=lastModified" json:"last_modified,omitempty"`
+	References         []*CVE_Reference               `protobuf:"bytes,8,rep,name=references" json:"references,omitempty"`
+	ScoreVersion       CVE_ScoreVersion               `protobuf:"varint,9,opt,name=score_version,json=scoreVersion,enum=storage.CVE_ScoreVersion" json:"score_version,omitempty"`
+	CvssV2             *CVSSV2                        `protobuf:"bytes,10,opt,name=cvss_v2,json=cvssV2" json:"cvss_v2,omitempty"`
+	CvssV3             *CVSSV3                        `protobuf:"bytes,11,opt,name=cvss_v3,json=cvssV3" json:"cvss_v3,omitempty"`
+	Suppressed         bool                           `protobuf:"varint,12,opt,name=suppressed" json:"suppressed,omitempty" search:"CVE Snoozed"` // @gotags: search:"CVE Snoozed"
+	SuppressActivation *timestamppb.Timestamp         `protobuf:"bytes,16,opt,name=suppress_activation,json=suppressActivation" json:"suppress_activation,omitempty"`
+	SuppressExpiry     *timestamppb.Timestamp         `protobuf:"bytes,17,opt,name=suppress_expiry,json=suppressExpiry" json:"suppress_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	DistroSpecifics    map[string]*CVE_DistroSpecific `protobuf:"bytes,19,rep,name=distro_specifics,json=distroSpecifics" json:"distro_specifics,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Severity           VulnerabilitySeverity          `protobuf:"varint,20,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CVE) Reset() {
@@ -1051,521 +1017,362 @@ func (x *CVE) ProtoReflect() protoreflect.Message {
 
 func (x *CVE) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *CVE) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *CVE) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *CVE) GetType() CVE_CVEType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return CVE_UNKNOWN_CVE
 }
 
 func (x *CVE) GetTypes() []CVE_CVEType {
 	if x != nil {
-		return x.xxx_hidden_Types
+		return x.Types
 	}
 	return nil
 }
 
 func (x *CVE) GetSummary() string {
 	if x != nil {
-		if x.xxx_hidden_Summary != nil {
-			return *x.xxx_hidden_Summary
-		}
-		return ""
+		return x.Summary
 	}
 	return ""
 }
 
 func (x *CVE) GetLink() string {
 	if x != nil {
-		if x.xxx_hidden_Link != nil {
-			return *x.xxx_hidden_Link
-		}
-		return ""
+		return x.Link
 	}
 	return ""
 }
 
 func (x *CVE) GetPublishedOn() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_PublishedOn
+		return x.PublishedOn
 	}
 	return nil
 }
 
 func (x *CVE) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *CVE) GetLastModified() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastModified
+		return x.LastModified
 	}
 	return nil
 }
 
 func (x *CVE) GetReferences() []*CVE_Reference {
 	if x != nil {
-		if x.xxx_hidden_References != nil {
-			return *x.xxx_hidden_References
-		}
+		return x.References
 	}
 	return nil
 }
 
 func (x *CVE) GetScoreVersion() CVE_ScoreVersion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
-			return x.xxx_hidden_ScoreVersion
-		}
+		return x.ScoreVersion
 	}
 	return CVE_V2
 }
 
 func (x *CVE) GetCvssV2() *CVSSV2 {
 	if x != nil {
-		return x.xxx_hidden_CvssV2
+		return x.CvssV2
 	}
 	return nil
 }
 
 func (x *CVE) GetCvssV3() *CVSSV3 {
 	if x != nil {
-		return x.xxx_hidden_CvssV3
+		return x.CvssV3
 	}
 	return nil
 }
 
 func (x *CVE) GetSuppressed() bool {
 	if x != nil {
-		return x.xxx_hidden_Suppressed
+		return x.Suppressed
 	}
 	return false
 }
 
 func (x *CVE) GetSuppressActivation() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SuppressActivation
+		return x.SuppressActivation
 	}
 	return nil
 }
 
 func (x *CVE) GetSuppressExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SuppressExpiry
+		return x.SuppressExpiry
 	}
 	return nil
 }
 
 func (x *CVE) GetDistroSpecifics() map[string]*CVE_DistroSpecific {
 	if x != nil {
-		return x.xxx_hidden_DistroSpecifics
+		return x.DistroSpecifics
 	}
 	return nil
 }
 
 func (x *CVE) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 18) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *CVE) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 19)
+	x.Id = v
 }
 
 func (x *CVE) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 19)
+	x.Cvss = v
 }
 
 func (x *CVE) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 19)
+	x.ImpactScore = v
 }
 
 func (x *CVE) SetType(v CVE_CVEType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 19)
+	x.Type = v
 }
 
 func (x *CVE) SetTypes(v []CVE_CVEType) {
-	x.xxx_hidden_Types = v
+	x.Types = v
 }
 
 func (x *CVE) SetSummary(v string) {
-	x.xxx_hidden_Summary = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 19)
+	x.Summary = v
 }
 
 func (x *CVE) SetLink(v string) {
-	x.xxx_hidden_Link = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 19)
+	x.Link = v
 }
 
 func (x *CVE) SetPublishedOn(v *timestamppb.Timestamp) {
-	x.xxx_hidden_PublishedOn = v
+	x.PublishedOn = v
 }
 
 func (x *CVE) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	x.CreatedAt = v
 }
 
 func (x *CVE) SetLastModified(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastModified = v
+	x.LastModified = v
 }
 
 func (x *CVE) SetReferences(v []*CVE_Reference) {
-	x.xxx_hidden_References = &v
+	x.References = v
 }
 
 func (x *CVE) SetScoreVersion(v CVE_ScoreVersion) {
-	x.xxx_hidden_ScoreVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 19)
+	x.ScoreVersion = v
 }
 
 func (x *CVE) SetCvssV2(v *CVSSV2) {
-	x.xxx_hidden_CvssV2 = v
+	x.CvssV2 = v
 }
 
 func (x *CVE) SetCvssV3(v *CVSSV3) {
-	x.xxx_hidden_CvssV3 = v
+	x.CvssV3 = v
 }
 
 func (x *CVE) SetSuppressed(v bool) {
-	x.xxx_hidden_Suppressed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 19)
+	x.Suppressed = v
 }
 
 func (x *CVE) SetSuppressActivation(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SuppressActivation = v
+	x.SuppressActivation = v
 }
 
 func (x *CVE) SetSuppressExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SuppressExpiry = v
+	x.SuppressExpiry = v
 }
 
 func (x *CVE) SetDistroSpecifics(v map[string]*CVE_DistroSpecific) {
-	x.xxx_hidden_DistroSpecifics = v
+	x.DistroSpecifics = v
 }
 
 func (x *CVE) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 18, 19)
-}
-
-func (x *CVE) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVE) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CVE) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CVE) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *CVE) HasSummary() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *CVE) HasLink() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	x.Severity = v
 }
 
 func (x *CVE) HasPublishedOn() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PublishedOn != nil
+	return x.PublishedOn != nil
 }
 
 func (x *CVE) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return x.CreatedAt != nil
 }
 
 func (x *CVE) HasLastModified() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastModified != nil
-}
-
-func (x *CVE) HasScoreVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
+	return x.LastModified != nil
 }
 
 func (x *CVE) HasCvssV2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV2 != nil
+	return x.CvssV2 != nil
 }
 
 func (x *CVE) HasCvssV3() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV3 != nil
-}
-
-func (x *CVE) HasSuppressed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
+	return x.CvssV3 != nil
 }
 
 func (x *CVE) HasSuppressActivation() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SuppressActivation != nil
+	return x.SuppressActivation != nil
 }
 
 func (x *CVE) HasSuppressExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SuppressExpiry != nil
-}
-
-func (x *CVE) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 18)
-}
-
-func (x *CVE) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *CVE) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *CVE) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *CVE) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Type = CVE_UNKNOWN_CVE
-}
-
-func (x *CVE) ClearSummary() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Summary = nil
-}
-
-func (x *CVE) ClearLink() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Link = nil
+	return x.SuppressExpiry != nil
 }
 
 func (x *CVE) ClearPublishedOn() {
-	x.xxx_hidden_PublishedOn = nil
+	x.PublishedOn = nil
 }
 
 func (x *CVE) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	x.CreatedAt = nil
 }
 
 func (x *CVE) ClearLastModified() {
-	x.xxx_hidden_LastModified = nil
-}
-
-func (x *CVE) ClearScoreVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_ScoreVersion = CVE_V2
+	x.LastModified = nil
 }
 
 func (x *CVE) ClearCvssV2() {
-	x.xxx_hidden_CvssV2 = nil
+	x.CvssV2 = nil
 }
 
 func (x *CVE) ClearCvssV3() {
-	x.xxx_hidden_CvssV3 = nil
-}
-
-func (x *CVE) ClearSuppressed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	x.xxx_hidden_Suppressed = false
+	x.CvssV3 = nil
 }
 
 func (x *CVE) ClearSuppressActivation() {
-	x.xxx_hidden_SuppressActivation = nil
+	x.SuppressActivation = nil
 }
 
 func (x *CVE) ClearSuppressExpiry() {
-	x.xxx_hidden_SuppressExpiry = nil
-}
-
-func (x *CVE) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 18)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	x.SuppressExpiry = nil
 }
 
 type CVE_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Cvss        *float32
-	ImpactScore *float32
-	Type        *CVE_CVEType
+	Id          string
+	Cvss        float32
+	ImpactScore float32
+	Type        CVE_CVEType
 	Types       []CVE_CVEType
-	Summary     *string
-	Link        *string
+	Summary     string
+	Link        string
 	// This indicates the timestamp when the cve was first published in the cve feeds.
 	PublishedOn *timestamppb.Timestamp
 	// Time when the CVE was first seen in the system.
 	CreatedAt          *timestamppb.Timestamp
 	LastModified       *timestamppb.Timestamp
 	References         []*CVE_Reference
-	ScoreVersion       *CVE_ScoreVersion
+	ScoreVersion       CVE_ScoreVersion
 	CvssV2             *CVSSV2
 	CvssV3             *CVSSV3
-	Suppressed         *bool
+	Suppressed         bool
 	SuppressActivation *timestamppb.Timestamp
 	SuppressExpiry     *timestamppb.Timestamp
 	DistroSpecifics    map[string]*CVE_DistroSpecific
-	Severity           *VulnerabilitySeverity
+	Severity           VulnerabilitySeverity
 }
 
 func (b0 CVE_builder) Build() *CVE {
 	m0 := &CVE{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 19)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 19)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 19)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 19)
-		x.xxx_hidden_Type = *b.Type
-	}
-	x.xxx_hidden_Types = b.Types
-	if b.Summary != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 19)
-		x.xxx_hidden_Summary = b.Summary
-	}
-	if b.Link != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 19)
-		x.xxx_hidden_Link = b.Link
-	}
-	x.xxx_hidden_PublishedOn = b.PublishedOn
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_LastModified = b.LastModified
-	x.xxx_hidden_References = &b.References
-	if b.ScoreVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 19)
-		x.xxx_hidden_ScoreVersion = *b.ScoreVersion
-	}
-	x.xxx_hidden_CvssV2 = b.CvssV2
-	x.xxx_hidden_CvssV3 = b.CvssV3
-	if b.Suppressed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 19)
-		x.xxx_hidden_Suppressed = *b.Suppressed
-	}
-	x.xxx_hidden_SuppressActivation = b.SuppressActivation
-	x.xxx_hidden_SuppressExpiry = b.SuppressExpiry
-	x.xxx_hidden_DistroSpecifics = b.DistroSpecifics
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 18, 19)
-		x.xxx_hidden_Severity = *b.Severity
-	}
+	x.Id = b.Id
+	x.Cvss = b.Cvss
+	x.ImpactScore = b.ImpactScore
+	x.Type = b.Type
+	x.Types = b.Types
+	x.Summary = b.Summary
+	x.Link = b.Link
+	x.PublishedOn = b.PublishedOn
+	x.CreatedAt = b.CreatedAt
+	x.LastModified = b.LastModified
+	x.References = b.References
+	x.ScoreVersion = b.ScoreVersion
+	x.CvssV2 = b.CvssV2
+	x.CvssV3 = b.CvssV3
+	x.Suppressed = b.Suppressed
+	x.SuppressActivation = b.SuppressActivation
+	x.SuppressExpiry = b.SuppressExpiry
+	x.DistroSpecifics = b.DistroSpecifics
+	x.Severity = b.Severity
 	return m0
 }
 
 type CVEInfo struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cve          *string                `protobuf:"bytes,1,opt,name=cve"`
-	xxx_hidden_Summary      *string                `protobuf:"bytes,2,opt,name=summary"`
-	xxx_hidden_Link         *string                `protobuf:"bytes,3,opt,name=link"`
-	xxx_hidden_PublishedOn  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn"`
-	xxx_hidden_CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt"`
-	xxx_hidden_LastModified *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_modified,json=lastModified"`
-	xxx_hidden_ScoreVersion CVEInfo_ScoreVersion   `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,enum=storage.CVEInfo_ScoreVersion"`
-	xxx_hidden_CvssV2       *CVSSV2                `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2"`
-	xxx_hidden_CvssV3       *CVSSV3                `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3"`
-	xxx_hidden_References   *[]*CVEInfo_Reference  `protobuf:"bytes,10,rep,name=references"`
-	xxx_hidden_CvssMetrics  *[]*CVSSScore          `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics"`
-	xxx_hidden_Epss         *EPSS                  `protobuf:"bytes,12,opt,name=epss"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state   protoimpl.MessageState `protogen:"hybrid.v1"`
+	Cve     string                 `protobuf:"bytes,1,opt,name=cve" json:"cve,omitempty" search:"CVE,store" sql:"index=btree"` // @gotags: search:"CVE,store" sql:"index=btree"
+	Summary string                 `protobuf:"bytes,2,opt,name=summary" json:"summary,omitempty"`
+	Link    string                 `protobuf:"bytes,3,opt,name=link" json:"link,omitempty"`
+	// This indicates the timestamp when the cve was first published in the cve feeds.
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn" json:"published_on,omitempty" search:"CVE Published On"` // @gotags: search:"CVE Published On"
+	// Time when the CVE was first seen in the system.
+	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
+	LastModified *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_modified,json=lastModified" json:"last_modified,omitempty"`
+	ScoreVersion CVEInfo_ScoreVersion   `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,enum=storage.CVEInfo_ScoreVersion" json:"score_version,omitempty"`
+	// CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
+	CvssV2     *CVSSV2              `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2" json:"cvss_v2,omitempty"`
+	CvssV3     *CVSSV3              `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3" json:"cvss_v3,omitempty"`
+	References []*CVEInfo_Reference `protobuf:"bytes,10,rep,name=references" json:"references,omitempty"`
+	// cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
+	CvssMetrics   []*CVSSScore `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics" json:"cvss_metrics,omitempty"`
+	Epss          *EPSS        `protobuf:"bytes,12,opt,name=epss" json:"epss,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CVEInfo) Reset() {
@@ -1595,281 +1402,214 @@ func (x *CVEInfo) ProtoReflect() protoreflect.Message {
 
 func (x *CVEInfo) GetCve() string {
 	if x != nil {
-		if x.xxx_hidden_Cve != nil {
-			return *x.xxx_hidden_Cve
-		}
-		return ""
+		return x.Cve
 	}
 	return ""
 }
 
 func (x *CVEInfo) GetSummary() string {
 	if x != nil {
-		if x.xxx_hidden_Summary != nil {
-			return *x.xxx_hidden_Summary
-		}
-		return ""
+		return x.Summary
 	}
 	return ""
 }
 
 func (x *CVEInfo) GetLink() string {
 	if x != nil {
-		if x.xxx_hidden_Link != nil {
-			return *x.xxx_hidden_Link
-		}
-		return ""
+		return x.Link
 	}
 	return ""
 }
 
 func (x *CVEInfo) GetPublishedOn() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_PublishedOn
+		return x.PublishedOn
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_CreatedAt
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetLastModified() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_LastModified
+		return x.LastModified
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetScoreVersion() CVEInfo_ScoreVersion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			return x.xxx_hidden_ScoreVersion
-		}
+		return x.ScoreVersion
 	}
 	return CVEInfo_V2
 }
 
 func (x *CVEInfo) GetCvssV2() *CVSSV2 {
 	if x != nil {
-		return x.xxx_hidden_CvssV2
+		return x.CvssV2
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetCvssV3() *CVSSV3 {
 	if x != nil {
-		return x.xxx_hidden_CvssV3
+		return x.CvssV3
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetReferences() []*CVEInfo_Reference {
 	if x != nil {
-		if x.xxx_hidden_References != nil {
-			return *x.xxx_hidden_References
-		}
+		return x.References
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetCvssMetrics() []*CVSSScore {
 	if x != nil {
-		if x.xxx_hidden_CvssMetrics != nil {
-			return *x.xxx_hidden_CvssMetrics
-		}
+		return x.CvssMetrics
 	}
 	return nil
 }
 
 func (x *CVEInfo) GetEpss() *EPSS {
 	if x != nil {
-		return x.xxx_hidden_Epss
+		return x.Epss
 	}
 	return nil
 }
 
 func (x *CVEInfo) SetCve(v string) {
-	x.xxx_hidden_Cve = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 12)
+	x.Cve = v
 }
 
 func (x *CVEInfo) SetSummary(v string) {
-	x.xxx_hidden_Summary = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 12)
+	x.Summary = v
 }
 
 func (x *CVEInfo) SetLink(v string) {
-	x.xxx_hidden_Link = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
+	x.Link = v
 }
 
 func (x *CVEInfo) SetPublishedOn(v *timestamppb.Timestamp) {
-	x.xxx_hidden_PublishedOn = v
+	x.PublishedOn = v
 }
 
 func (x *CVEInfo) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
+	x.CreatedAt = v
 }
 
 func (x *CVEInfo) SetLastModified(v *timestamppb.Timestamp) {
-	x.xxx_hidden_LastModified = v
+	x.LastModified = v
 }
 
 func (x *CVEInfo) SetScoreVersion(v CVEInfo_ScoreVersion) {
-	x.xxx_hidden_ScoreVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 12)
+	x.ScoreVersion = v
 }
 
 func (x *CVEInfo) SetCvssV2(v *CVSSV2) {
-	x.xxx_hidden_CvssV2 = v
+	x.CvssV2 = v
 }
 
 func (x *CVEInfo) SetCvssV3(v *CVSSV3) {
-	x.xxx_hidden_CvssV3 = v
+	x.CvssV3 = v
 }
 
 func (x *CVEInfo) SetReferences(v []*CVEInfo_Reference) {
-	x.xxx_hidden_References = &v
+	x.References = v
 }
 
 func (x *CVEInfo) SetCvssMetrics(v []*CVSSScore) {
-	x.xxx_hidden_CvssMetrics = &v
+	x.CvssMetrics = v
 }
 
 func (x *CVEInfo) SetEpss(v *EPSS) {
-	x.xxx_hidden_Epss = v
-}
-
-func (x *CVEInfo) HasCve() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVEInfo) HasSummary() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CVEInfo) HasLink() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.Epss = v
 }
 
 func (x *CVEInfo) HasPublishedOn() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_PublishedOn != nil
+	return x.PublishedOn != nil
 }
 
 func (x *CVEInfo) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CreatedAt != nil
+	return x.CreatedAt != nil
 }
 
 func (x *CVEInfo) HasLastModified() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LastModified != nil
-}
-
-func (x *CVEInfo) HasScoreVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	return x.LastModified != nil
 }
 
 func (x *CVEInfo) HasCvssV2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV2 != nil
+	return x.CvssV2 != nil
 }
 
 func (x *CVEInfo) HasCvssV3() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV3 != nil
+	return x.CvssV3 != nil
 }
 
 func (x *CVEInfo) HasEpss() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Epss != nil
-}
-
-func (x *CVEInfo) ClearCve() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Cve = nil
-}
-
-func (x *CVEInfo) ClearSummary() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Summary = nil
-}
-
-func (x *CVEInfo) ClearLink() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Link = nil
+	return x.Epss != nil
 }
 
 func (x *CVEInfo) ClearPublishedOn() {
-	x.xxx_hidden_PublishedOn = nil
+	x.PublishedOn = nil
 }
 
 func (x *CVEInfo) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
+	x.CreatedAt = nil
 }
 
 func (x *CVEInfo) ClearLastModified() {
-	x.xxx_hidden_LastModified = nil
-}
-
-func (x *CVEInfo) ClearScoreVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_ScoreVersion = CVEInfo_V2
+	x.LastModified = nil
 }
 
 func (x *CVEInfo) ClearCvssV2() {
-	x.xxx_hidden_CvssV2 = nil
+	x.CvssV2 = nil
 }
 
 func (x *CVEInfo) ClearCvssV3() {
-	x.xxx_hidden_CvssV3 = nil
+	x.CvssV3 = nil
 }
 
 func (x *CVEInfo) ClearEpss() {
-	x.xxx_hidden_Epss = nil
+	x.Epss = nil
 }
 
 type CVEInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Cve     *string
-	Summary *string
-	Link    *string
+	Cve     string
+	Summary string
+	Link    string
 	// This indicates the timestamp when the cve was first published in the cve feeds.
 	PublishedOn *timestamppb.Timestamp
 	// Time when the CVE was first seen in the system.
 	CreatedAt    *timestamppb.Timestamp
 	LastModified *timestamppb.Timestamp
-	ScoreVersion *CVEInfo_ScoreVersion
+	ScoreVersion CVEInfo_ScoreVersion
 	// CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
 	CvssV2     *CVSSV2
 	CvssV3     *CVSSV3
@@ -1883,41 +1623,27 @@ func (b0 CVEInfo_builder) Build() *CVEInfo {
 	m0 := &CVEInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Cve != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 12)
-		x.xxx_hidden_Cve = b.Cve
-	}
-	if b.Summary != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
-		x.xxx_hidden_Summary = b.Summary
-	}
-	if b.Link != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
-		x.xxx_hidden_Link = b.Link
-	}
-	x.xxx_hidden_PublishedOn = b.PublishedOn
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_LastModified = b.LastModified
-	if b.ScoreVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 12)
-		x.xxx_hidden_ScoreVersion = *b.ScoreVersion
-	}
-	x.xxx_hidden_CvssV2 = b.CvssV2
-	x.xxx_hidden_CvssV3 = b.CvssV3
-	x.xxx_hidden_References = &b.References
-	x.xxx_hidden_CvssMetrics = &b.CvssMetrics
-	x.xxx_hidden_Epss = b.Epss
+	x.Cve = b.Cve
+	x.Summary = b.Summary
+	x.Link = b.Link
+	x.PublishedOn = b.PublishedOn
+	x.CreatedAt = b.CreatedAt
+	x.LastModified = b.LastModified
+	x.ScoreVersion = b.ScoreVersion
+	x.CvssV2 = b.CvssV2
+	x.CvssV3 = b.CvssV3
+	x.References = b.References
+	x.CvssMetrics = b.CvssMetrics
+	x.Epss = b.Epss
 	return m0
 }
 
 type Advisory struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Link        *string                `protobuf:"bytes,2,opt,name=link"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" search:"Advisory Name,store"` // @gotags: search:"Advisory Name,store"
+	Link          string                 `protobuf:"bytes,2,opt,name=link" json:"link,omitempty" search:"Advisory Link,store"` // @gotags: search:"Advisory Link,store"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Advisory) Reset() {
@@ -1947,77 +1673,39 @@ func (x *Advisory) ProtoReflect() protoreflect.Message {
 
 func (x *Advisory) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Advisory) GetLink() string {
 	if x != nil {
-		if x.xxx_hidden_Link != nil {
-			return *x.xxx_hidden_Link
-		}
-		return ""
+		return x.Link
 	}
 	return ""
 }
 
 func (x *Advisory) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *Advisory) SetLink(v string) {
-	x.xxx_hidden_Link = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *Advisory) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Advisory) HasLink() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Advisory) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Advisory) ClearLink() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Link = nil
+	x.Link = v
 }
 
 type Advisory_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name *string
-	Link *string
+	Name string
+	Link string
 }
 
 func (b0 Advisory_builder) Build() *Advisory {
 	m0 := &Advisory{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Link != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Link = b.Link
-	}
+	x.Name = b.Name
+	x.Link = b.Link
 	return m0
 }
 
@@ -2025,23 +1713,27 @@ func (b0 Advisory_builder) Build() *Advisory {
 //
 // Deprecated: Marked as deprecated in storage/cve.proto.
 type ImageCVE struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo"`
-	xxx_hidden_OperatingSystem *string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem"`
-	xxx_hidden_Cvss            float32                `protobuf:"fixed32,4,opt,name=cvss"`
-	xxx_hidden_Severity        VulnerabilitySeverity  `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_ImpactScore     float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Snoozed         bool                   `protobuf:"varint,7,opt,name=snoozed"`
-	xxx_hidden_SnoozeStart     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart"`
-	xxx_hidden_SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry"`
-	xxx_hidden_Nvdcvss         float32                `protobuf:"fixed32,10,opt,name=nvdcvss"`
-	xxx_hidden_CvssMetrics     *[]*CVSSScore          `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics"`
-	xxx_hidden_NvdScoreVersion CvssScoreVersion       `protobuf:"varint,12,opt,name=nvd_score_version,json=nvdScoreVersion,enum=storage.CvssScoreVersion"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo" json:"cve_base_info,omitempty"`
+	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	// cvss stores ACS preferred cvss score
+	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
+	Severity    VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
+	ImpactScore float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	// Deprecated: Marked as deprecated in storage/cve.proto.
+	Snoozed bool `protobuf:"varint,7,opt,name=snoozed" json:"snoozed,omitempty" search:"CVE Snoozed"` // @gotags: search:"CVE Snoozed"
+	// Deprecated: Marked as deprecated in storage/cve.proto.
+	SnoozeStart *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart" json:"snooze_start,omitempty"`
+	// Deprecated: Marked as deprecated in storage/cve.proto.
+	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	// nvdcvss stores cvss score for a cve from NVD
+	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
+	// cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
+	CvssMetrics     []*CVSSScore     `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics" json:"cvss_metrics,omitempty"`
+	NvdScoreVersion CvssScoreVersion `protobuf:"varint,12,opt,name=nvd_score_version,json=nvdScoreVersion,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ImageCVE) Reset() {
@@ -2071,50 +1763,42 @@ func (x *ImageCVE) ProtoReflect() protoreflect.Message {
 
 func (x *ImageCVE) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ImageCVE) GetCveBaseInfo() *CVEInfo {
 	if x != nil {
-		return x.xxx_hidden_CveBaseInfo
+		return x.CveBaseInfo
 	}
 	return nil
 }
 
 func (x *ImageCVE) GetOperatingSystem() string {
 	if x != nil {
-		if x.xxx_hidden_OperatingSystem != nil {
-			return *x.xxx_hidden_OperatingSystem
-		}
-		return ""
+		return x.OperatingSystem
 	}
 	return ""
 }
 
 func (x *ImageCVE) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *ImageCVE) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *ImageCVE) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
@@ -2122,7 +1806,7 @@ func (x *ImageCVE) GetImpactScore() float32 {
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) GetSnoozed() bool {
 	if x != nil {
-		return x.xxx_hidden_Snoozed
+		return x.Snoozed
 	}
 	return false
 }
@@ -2130,7 +1814,7 @@ func (x *ImageCVE) GetSnoozed() bool {
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeStart
+		return x.SnoozeStart
 	}
 	return nil
 }
@@ -2138,143 +1822,88 @@ func (x *ImageCVE) GetSnoozeStart() *timestamppb.Timestamp {
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeExpiry
+		return x.SnoozeExpiry
 	}
 	return nil
 }
 
 func (x *ImageCVE) GetNvdcvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Nvdcvss
+		return x.Nvdcvss
 	}
 	return 0
 }
 
 func (x *ImageCVE) GetCvssMetrics() []*CVSSScore {
 	if x != nil {
-		if x.xxx_hidden_CvssMetrics != nil {
-			return *x.xxx_hidden_CvssMetrics
-		}
+		return x.CvssMetrics
 	}
 	return nil
 }
 
 func (x *ImageCVE) GetNvdScoreVersion() CvssScoreVersion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
-			return x.xxx_hidden_NvdScoreVersion
-		}
+		return x.NvdScoreVersion
 	}
 	return CvssScoreVersion_UNKNOWN_VERSION
 }
 
 func (x *ImageCVE) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 12)
+	x.Id = v
 }
 
 func (x *ImageCVE) SetCveBaseInfo(v *CVEInfo) {
-	x.xxx_hidden_CveBaseInfo = v
+	x.CveBaseInfo = v
 }
 
 func (x *ImageCVE) SetOperatingSystem(v string) {
-	x.xxx_hidden_OperatingSystem = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
+	x.OperatingSystem = v
 }
 
 func (x *ImageCVE) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 12)
+	x.Cvss = v
 }
 
 func (x *ImageCVE) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 12)
+	x.Severity = v
 }
 
 func (x *ImageCVE) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 12)
+	x.ImpactScore = v
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) SetSnoozed(v bool) {
-	x.xxx_hidden_Snoozed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 12)
+	x.Snoozed = v
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) SetSnoozeStart(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeStart = v
+	x.SnoozeStart = v
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) SetSnoozeExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeExpiry = v
+	x.SnoozeExpiry = v
 }
 
 func (x *ImageCVE) SetNvdcvss(v float32) {
-	x.xxx_hidden_Nvdcvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 12)
+	x.Nvdcvss = v
 }
 
 func (x *ImageCVE) SetCvssMetrics(v []*CVSSScore) {
-	x.xxx_hidden_CvssMetrics = &v
+	x.CvssMetrics = v
 }
 
 func (x *ImageCVE) SetNvdScoreVersion(v CvssScoreVersion) {
-	x.xxx_hidden_NvdScoreVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
-}
-
-func (x *ImageCVE) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.NvdScoreVersion = v
 }
 
 func (x *ImageCVE) HasCveBaseInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CveBaseInfo != nil
-}
-
-func (x *ImageCVE) HasOperatingSystem() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ImageCVE) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ImageCVE) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ImageCVE) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-// Deprecated: Marked as deprecated in storage/cve.proto.
-func (x *ImageCVE) HasSnoozed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	return x.CveBaseInfo != nil
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
@@ -2282,7 +1911,7 @@ func (x *ImageCVE) HasSnoozeStart() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeStart != nil
+	return x.SnoozeStart != nil
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
@@ -2290,166 +1919,97 @@ func (x *ImageCVE) HasSnoozeExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeExpiry != nil
-}
-
-func (x *ImageCVE) HasNvdcvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ImageCVE) HasNvdScoreVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ImageCVE) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.SnoozeExpiry != nil
 }
 
 func (x *ImageCVE) ClearCveBaseInfo() {
-	x.xxx_hidden_CveBaseInfo = nil
-}
-
-func (x *ImageCVE) ClearOperatingSystem() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_OperatingSystem = nil
-}
-
-func (x *ImageCVE) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *ImageCVE) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *ImageCVE) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-// Deprecated: Marked as deprecated in storage/cve.proto.
-func (x *ImageCVE) ClearSnoozed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Snoozed = false
+	x.CveBaseInfo = nil
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) ClearSnoozeStart() {
-	x.xxx_hidden_SnoozeStart = nil
+	x.SnoozeStart = nil
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVE) ClearSnoozeExpiry() {
-	x.xxx_hidden_SnoozeExpiry = nil
-}
-
-func (x *ImageCVE) ClearNvdcvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Nvdcvss = 0
-}
-
-func (x *ImageCVE) ClearNvdScoreVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_NvdScoreVersion = CvssScoreVersion_UNKNOWN_VERSION
+	x.SnoozeExpiry = nil
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 type ImageCVE_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
+	Id              string
 	CveBaseInfo     *CVEInfo
-	OperatingSystem *string
+	OperatingSystem string
 	// cvss stores ACS preferred cvss score
-	Cvss        *float32
-	Severity    *VulnerabilitySeverity
-	ImpactScore *float32
+	Cvss        float32
+	Severity    VulnerabilitySeverity
+	ImpactScore float32
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	Snoozed *bool
+	Snoozed bool
 	// Deprecated: Marked as deprecated in storage/cve.proto.
 	SnoozeStart *timestamppb.Timestamp
 	// Deprecated: Marked as deprecated in storage/cve.proto.
 	SnoozeExpiry *timestamppb.Timestamp
 	// nvdcvss stores cvss score for a cve from NVD
-	Nvdcvss *float32
+	Nvdcvss float32
 	// cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
 	CvssMetrics     []*CVSSScore
-	NvdScoreVersion *CvssScoreVersion
+	NvdScoreVersion CvssScoreVersion
 }
 
 func (b0 ImageCVE_builder) Build() *ImageCVE {
 	m0 := &ImageCVE{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 12)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_CveBaseInfo = b.CveBaseInfo
-	if b.OperatingSystem != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
-		x.xxx_hidden_OperatingSystem = b.OperatingSystem
-	}
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 12)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 12)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 12)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Snoozed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 12)
-		x.xxx_hidden_Snoozed = *b.Snoozed
-	}
-	x.xxx_hidden_SnoozeStart = b.SnoozeStart
-	x.xxx_hidden_SnoozeExpiry = b.SnoozeExpiry
-	if b.Nvdcvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 12)
-		x.xxx_hidden_Nvdcvss = *b.Nvdcvss
-	}
-	x.xxx_hidden_CvssMetrics = &b.CvssMetrics
-	if b.NvdScoreVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
-		x.xxx_hidden_NvdScoreVersion = *b.NvdScoreVersion
-	}
+	x.Id = b.Id
+	x.CveBaseInfo = b.CveBaseInfo
+	x.OperatingSystem = b.OperatingSystem
+	x.Cvss = b.Cvss
+	x.Severity = b.Severity
+	x.ImpactScore = b.ImpactScore
+	x.Snoozed = b.Snoozed
+	x.SnoozeStart = b.SnoozeStart
+	x.SnoozeExpiry = b.SnoozeExpiry
+	x.Nvdcvss = b.Nvdcvss
+	x.CvssMetrics = b.CvssMetrics
+	x.NvdScoreVersion = b.NvdScoreVersion
 	return m0
 }
 
 type ImageCVEV2 struct {
-	state                           protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Id                   *string                 `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ImageId              *string                 `protobuf:"bytes,2,opt,name=image_id,json=imageId"`
-	xxx_hidden_CveBaseInfo          *CVEInfo                `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo"`
-	xxx_hidden_Cvss                 float32                 `protobuf:"fixed32,4,opt,name=cvss"`
-	xxx_hidden_Severity             VulnerabilitySeverity   `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_ImpactScore          float32                 `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Nvdcvss              float32                 `protobuf:"fixed32,7,opt,name=nvdcvss"`
-	xxx_hidden_NvdScoreVersion      CvssScoreVersion        `protobuf:"varint,8,opt,name=nvd_score_version,json=nvdScoreVersion,enum=storage.CvssScoreVersion"`
-	xxx_hidden_FirstImageOccurrence *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence"`
-	xxx_hidden_State                VulnerabilityState      `protobuf:"varint,10,opt,name=state,enum=storage.VulnerabilityState"`
-	xxx_hidden_IsFixable            bool                    `protobuf:"varint,11,opt,name=is_fixable,json=isFixable"`
-	xxx_hidden_HasFixedBy           isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	xxx_hidden_ComponentId          *string                 `protobuf:"bytes,13,opt,name=component_id,json=componentId"`
-	xxx_hidden_Advisory             *Advisory               `protobuf:"bytes,14,opt,name=advisory"`
-	xxx_hidden_ImageIdV2            *string                 `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2"`
-	XXX_raceDetectHookData          protoimpl.RaceDetectHookData
-	XXX_presence                    [1]uint32
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// keeping id similar construction for now during investigation.  It will include component and index
+	// within the component
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	// was hash index, making it btree
+	//
+	// Deprecated: Marked as deprecated in storage/cve.proto.
+	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
+	CveBaseInfo *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo" json:"cve_base_info,omitempty"`
+	// cvss stores ACS preferred cvss score
+	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
+	Severity    VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"` // @gotags: search:"Severity" sql:"index=btree"
+	ImpactScore float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	// nvdcvss stores cvss score for a cve from NVD
+	Nvdcvss              float32                `protobuf:"fixed32,7,opt,name=nvdcvss" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
+	NvdScoreVersion      CvssScoreVersion       `protobuf:"varint,8,opt,name=nvd_score_version,json=nvdScoreVersion,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
+	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=first_image_occurrence,json=firstImageOccurrence" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	State                VulnerabilityState     `protobuf:"varint,10,opt,name=state,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                           // @gotags: search:"Vulnerability State" sql:"index=btree"
+	IsFixable            bool                   `protobuf:"varint,11,opt,name=is_fixable,json=isFixable" json:"is_fixable,omitempty" search:"Fixable,store"`                                  // @gotags: search:"Fixable,store"
+	// Whether there is a version the CVE is fixed in the component.
+	//
+	// Types that are valid to be assigned to HasFixedBy:
+	//
+	//	*ImageCVEV2_FixedBy
+	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+	Advisory      *Advisory               `protobuf:"bytes,14,opt,name=advisory" json:"advisory,omitempty"`
+	ImageIdV2     string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageCVEV2) Reset() {
@@ -2479,10 +2039,7 @@ func (x *ImageCVEV2) ProtoReflect() protoreflect.Message {
 
 func (x *ImageCVEV2) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
@@ -2490,381 +2047,233 @@ func (x *ImageCVEV2) GetId() string {
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVEV2) GetImageId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageId != nil {
-			return *x.xxx_hidden_ImageId
-		}
-		return ""
+		return x.ImageId
 	}
 	return ""
 }
 
 func (x *ImageCVEV2) GetCveBaseInfo() *CVEInfo {
 	if x != nil {
-		return x.xxx_hidden_CveBaseInfo
+		return x.CveBaseInfo
 	}
 	return nil
 }
 
 func (x *ImageCVEV2) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *ImageCVEV2) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *ImageCVEV2) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *ImageCVEV2) GetNvdcvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Nvdcvss
+		return x.Nvdcvss
 	}
 	return 0
 }
 
 func (x *ImageCVEV2) GetNvdScoreVersion() CvssScoreVersion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			return x.xxx_hidden_NvdScoreVersion
-		}
+		return x.NvdScoreVersion
 	}
 	return CvssScoreVersion_UNKNOWN_VERSION
 }
 
 func (x *ImageCVEV2) GetFirstImageOccurrence() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_FirstImageOccurrence
+		return x.FirstImageOccurrence
 	}
 	return nil
 }
 
 func (x *ImageCVEV2) GetState() VulnerabilityState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_State
-		}
+		return x.State
 	}
 	return VulnerabilityState_OBSERVED
 }
 
 func (x *ImageCVEV2) GetIsFixable() bool {
 	if x != nil {
-		return x.xxx_hidden_IsFixable
+		return x.IsFixable
 	}
 	return false
 }
 
-func (x *ImageCVEV2) GetFixedBy() string {
+func (x *ImageCVEV2) GetHasFixedBy() isImageCVEV2_HasFixedBy {
 	if x != nil {
-		if x, ok := x.xxx_hidden_HasFixedBy.(*imageCVEV2_FixedBy); ok {
+		return x.HasFixedBy
+	}
+	return nil
+}
+
+func (x *ImageCVEV2) Get_FixedBy() string {
+	if x != nil {
+		if x, ok := x.HasFixedBy.(*ImageCVEV2_FixedBy); ok {
 			return x.FixedBy
 		}
 	}
 	return ""
 }
 
+// Deprecated: Use Get_FixedBy instead.
+func (x *ImageCVEV2) GetFixedBy() string {
+	return x.Get_FixedBy()
+}
+
 func (x *ImageCVEV2) GetComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_ComponentId != nil {
-			return *x.xxx_hidden_ComponentId
-		}
-		return ""
+		return x.ComponentId
 	}
 	return ""
 }
 
 func (x *ImageCVEV2) GetAdvisory() *Advisory {
 	if x != nil {
-		return x.xxx_hidden_Advisory
+		return x.Advisory
 	}
 	return nil
 }
 
 func (x *ImageCVEV2) GetImageIdV2() string {
 	if x != nil {
-		if x.xxx_hidden_ImageIdV2 != nil {
-			return *x.xxx_hidden_ImageIdV2
-		}
-		return ""
+		return x.ImageIdV2
 	}
 	return ""
 }
 
 func (x *ImageCVEV2) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 15)
+	x.Id = v
 }
 
 // Deprecated: Marked as deprecated in storage/cve.proto.
 func (x *ImageCVEV2) SetImageId(v string) {
-	x.xxx_hidden_ImageId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 15)
+	x.ImageId = v
 }
 
 func (x *ImageCVEV2) SetCveBaseInfo(v *CVEInfo) {
-	x.xxx_hidden_CveBaseInfo = v
+	x.CveBaseInfo = v
 }
 
 func (x *ImageCVEV2) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 15)
+	x.Cvss = v
 }
 
 func (x *ImageCVEV2) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 15)
+	x.Severity = v
 }
 
 func (x *ImageCVEV2) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 15)
+	x.ImpactScore = v
 }
 
 func (x *ImageCVEV2) SetNvdcvss(v float32) {
-	x.xxx_hidden_Nvdcvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 15)
+	x.Nvdcvss = v
 }
 
 func (x *ImageCVEV2) SetNvdScoreVersion(v CvssScoreVersion) {
-	x.xxx_hidden_NvdScoreVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 15)
+	x.NvdScoreVersion = v
 }
 
 func (x *ImageCVEV2) SetFirstImageOccurrence(v *timestamppb.Timestamp) {
-	x.xxx_hidden_FirstImageOccurrence = v
+	x.FirstImageOccurrence = v
 }
 
 func (x *ImageCVEV2) SetState(v VulnerabilityState) {
-	x.xxx_hidden_State = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 15)
+	x.State = v
 }
 
 func (x *ImageCVEV2) SetIsFixable(v bool) {
-	x.xxx_hidden_IsFixable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 15)
+	x.IsFixable = v
 }
 
-func (x *ImageCVEV2) SetFixedBy(v string) {
-	x.xxx_hidden_HasFixedBy = &imageCVEV2_FixedBy{v}
+func (x *ImageCVEV2) Set_FixedBy(v string) {
+	x.HasFixedBy = &ImageCVEV2_FixedBy{v}
 }
 
 func (x *ImageCVEV2) SetComponentId(v string) {
-	x.xxx_hidden_ComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 15)
+	x.ComponentId = v
 }
 
 func (x *ImageCVEV2) SetAdvisory(v *Advisory) {
-	x.xxx_hidden_Advisory = v
+	x.Advisory = v
 }
 
 func (x *ImageCVEV2) SetImageIdV2(v string) {
-	x.xxx_hidden_ImageIdV2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 15)
-}
-
-func (x *ImageCVEV2) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-// Deprecated: Marked as deprecated in storage/cve.proto.
-func (x *ImageCVEV2) HasImageId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.ImageIdV2 = v
 }
 
 func (x *ImageCVEV2) HasCveBaseInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CveBaseInfo != nil
-}
-
-func (x *ImageCVEV2) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ImageCVEV2) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ImageCVEV2) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ImageCVEV2) HasNvdcvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ImageCVEV2) HasNvdScoreVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.CveBaseInfo != nil
 }
 
 func (x *ImageCVEV2) HasFirstImageOccurrence() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_FirstImageOccurrence != nil
-}
-
-func (x *ImageCVEV2) HasState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ImageCVEV2) HasIsFixable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
+	return x.FirstImageOccurrence != nil
 }
 
 func (x *ImageCVEV2) HasHasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HasFixedBy != nil
+	return x.HasFixedBy != nil
 }
 
-func (x *ImageCVEV2) HasFixedBy() bool {
+func (x *ImageCVEV2) Has_FixedBy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_HasFixedBy.(*imageCVEV2_FixedBy)
+	_, ok := x.HasFixedBy.(*ImageCVEV2_FixedBy)
 	return ok
-}
-
-func (x *ImageCVEV2) HasComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
 }
 
 func (x *ImageCVEV2) HasAdvisory() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Advisory != nil
-}
-
-func (x *ImageCVEV2) HasImageIdV2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 14)
-}
-
-func (x *ImageCVEV2) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-// Deprecated: Marked as deprecated in storage/cve.proto.
-func (x *ImageCVEV2) ClearImageId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ImageId = nil
+	return x.Advisory != nil
 }
 
 func (x *ImageCVEV2) ClearCveBaseInfo() {
-	x.xxx_hidden_CveBaseInfo = nil
-}
-
-func (x *ImageCVEV2) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *ImageCVEV2) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *ImageCVEV2) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *ImageCVEV2) ClearNvdcvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Nvdcvss = 0
-}
-
-func (x *ImageCVEV2) ClearNvdScoreVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_NvdScoreVersion = CvssScoreVersion_UNKNOWN_VERSION
+	x.CveBaseInfo = nil
 }
 
 func (x *ImageCVEV2) ClearFirstImageOccurrence() {
-	x.xxx_hidden_FirstImageOccurrence = nil
-}
-
-func (x *ImageCVEV2) ClearState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_State = VulnerabilityState_OBSERVED
-}
-
-func (x *ImageCVEV2) ClearIsFixable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_IsFixable = false
+	x.FirstImageOccurrence = nil
 }
 
 func (x *ImageCVEV2) ClearHasFixedBy() {
-	x.xxx_hidden_HasFixedBy = nil
+	x.HasFixedBy = nil
 }
 
-func (x *ImageCVEV2) ClearFixedBy() {
-	if _, ok := x.xxx_hidden_HasFixedBy.(*imageCVEV2_FixedBy); ok {
-		x.xxx_hidden_HasFixedBy = nil
+func (x *ImageCVEV2) Clear_FixedBy() {
+	if _, ok := x.HasFixedBy.(*ImageCVEV2_FixedBy); ok {
+		x.HasFixedBy = nil
 	}
 }
 
-func (x *ImageCVEV2) ClearComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_ComponentId = nil
-}
-
 func (x *ImageCVEV2) ClearAdvisory() {
-	x.xxx_hidden_Advisory = nil
-}
-
-func (x *ImageCVEV2) ClearImageIdV2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 14)
-	x.xxx_hidden_ImageIdV2 = nil
+	x.Advisory = nil
 }
 
 const ImageCVEV2_HasFixedBy_not_set_case case_ImageCVEV2_HasFixedBy = 0
@@ -2874,8 +2283,8 @@ func (x *ImageCVEV2) WhichHasFixedBy() case_ImageCVEV2_HasFixedBy {
 	if x == nil {
 		return ImageCVEV2_HasFixedBy_not_set_case
 	}
-	switch x.xxx_hidden_HasFixedBy.(type) {
-	case *imageCVEV2_FixedBy:
+	switch x.HasFixedBy.(type) {
+	case *ImageCVEV2_FixedBy:
 		return ImageCVEV2_FixedBy_case
 	default:
 		return ImageCVEV2_HasFixedBy_not_set_case
@@ -2887,86 +2296,53 @@ type ImageCVEV2_builder struct {
 
 	// keeping id similar construction for now during investigation.  It will include component and index
 	// within the component
-	Id *string
+	Id string
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	ImageId     *string
+	ImageId     string
 	CveBaseInfo *CVEInfo
 	// cvss stores ACS preferred cvss score
-	Cvss        *float32
-	Severity    *VulnerabilitySeverity
-	ImpactScore *float32
+	Cvss        float32
+	Severity    VulnerabilitySeverity
+	ImpactScore float32
 	// nvdcvss stores cvss score for a cve from NVD
-	Nvdcvss              *float32
-	NvdScoreVersion      *CvssScoreVersion
+	Nvdcvss              float32
+	NvdScoreVersion      CvssScoreVersion
 	FirstImageOccurrence *timestamppb.Timestamp
-	State                *VulnerabilityState
-	IsFixable            *bool
+	State                VulnerabilityState
+	IsFixable            bool
 	// Whether there is a version the CVE is fixed in the component.
 
-	// Fields of oneof xxx_hidden_HasFixedBy:
+	// Fields of oneof HasFixedBy:
 	FixedBy *string
-	// -- end of xxx_hidden_HasFixedBy
-	ComponentId *string
+	// -- end of HasFixedBy
+	ComponentId string
 	Advisory    *Advisory
-	ImageIdV2   *string
+	ImageIdV2   string
 }
 
 func (b0 ImageCVEV2_builder) Build() *ImageCVEV2 {
 	m0 := &ImageCVEV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 15)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ImageId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 15)
-		x.xxx_hidden_ImageId = b.ImageId
-	}
-	x.xxx_hidden_CveBaseInfo = b.CveBaseInfo
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 15)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 15)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 15)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Nvdcvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 15)
-		x.xxx_hidden_Nvdcvss = *b.Nvdcvss
-	}
-	if b.NvdScoreVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 15)
-		x.xxx_hidden_NvdScoreVersion = *b.NvdScoreVersion
-	}
-	x.xxx_hidden_FirstImageOccurrence = b.FirstImageOccurrence
-	if b.State != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 15)
-		x.xxx_hidden_State = *b.State
-	}
-	if b.IsFixable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 15)
-		x.xxx_hidden_IsFixable = *b.IsFixable
-	}
+	x.Id = b.Id
+	x.ImageId = b.ImageId
+	x.CveBaseInfo = b.CveBaseInfo
+	x.Cvss = b.Cvss
+	x.Severity = b.Severity
+	x.ImpactScore = b.ImpactScore
+	x.Nvdcvss = b.Nvdcvss
+	x.NvdScoreVersion = b.NvdScoreVersion
+	x.FirstImageOccurrence = b.FirstImageOccurrence
+	x.State = b.State
+	x.IsFixable = b.IsFixable
 	if b.FixedBy != nil {
-		x.xxx_hidden_HasFixedBy = &imageCVEV2_FixedBy{*b.FixedBy}
+		x.HasFixedBy = &ImageCVEV2_FixedBy{*b.FixedBy}
 	}
-	if b.ComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 15)
-		x.xxx_hidden_ComponentId = b.ComponentId
-	}
-	x.xxx_hidden_Advisory = b.Advisory
-	if b.ImageIdV2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 15)
-		x.xxx_hidden_ImageIdV2 = b.ImageIdV2
-	}
+	x.ComponentId = b.ComponentId
+	x.Advisory = b.Advisory
+	x.ImageIdV2 = b.ImageIdV2
 	return m0
 }
 
@@ -2984,29 +2360,27 @@ type isImageCVEV2_HasFixedBy interface {
 	isImageCVEV2_HasFixedBy()
 }
 
-type imageCVEV2_FixedBy struct {
+type ImageCVEV2_FixedBy struct {
 	FixedBy string `protobuf:"bytes,12,opt,name=fixed_by,json=fixedBy,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
 }
 
-func (*imageCVEV2_FixedBy) isImageCVEV2_HasFixedBy() {}
+func (*ImageCVEV2_FixedBy) isImageCVEV2_HasFixedBy() {}
 
 type NodeCVE struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo"`
-	xxx_hidden_OperatingSystem *string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem"`
-	xxx_hidden_Cvss            float32                `protobuf:"fixed32,4,opt,name=cvss"`
-	xxx_hidden_Severity        VulnerabilitySeverity  `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_ImpactScore     float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Snoozed         bool                   `protobuf:"varint,7,opt,name=snoozed"`
-	xxx_hidden_SnoozeStart     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart"`
-	xxx_hidden_SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry"`
-	xxx_hidden_Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned"`
-	xxx_hidden_OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo" json:"cve_base_info,omitempty"`
+	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	Cvss            float32                `protobuf:"fixed32,4,opt,name=cvss" json:"cvss,omitempty" search:"CVSS,store"`                                            // @gotags: search:"CVSS,store"
+	Severity        VulnerabilitySeverity  `protobuf:"varint,5,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`  // @gotags: search:"Severity"
+	ImpactScore     float32                `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty" search:"Impact Score"`           // @gotags: search:"Impact Score"
+	Snoozed         bool                   `protobuf:"varint,7,opt,name=snoozed" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // @gotags: search:"CVE Snoozed"
+	SnoozeStart     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart" json:"snooze_start,omitempty"`
+	SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`  // @gotags: search:"CVE Snooze Expiry,hidden"
+	Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned" json:"orphaned,omitempty" search:"CVE Orphaned,hidden"`                            // @gotags: search:"CVE Orphaned,hidden"
+	OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime" json:"orphaned_time,omitempty" search:"CVE Orphaned Time,hidden"` // @gotags: search:"CVE Orphaned Time,hidden"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *NodeCVE) Reset() {
@@ -3036,281 +2410,182 @@ func (x *NodeCVE) ProtoReflect() protoreflect.Message {
 
 func (x *NodeCVE) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *NodeCVE) GetCveBaseInfo() *CVEInfo {
 	if x != nil {
-		return x.xxx_hidden_CveBaseInfo
+		return x.CveBaseInfo
 	}
 	return nil
 }
 
 func (x *NodeCVE) GetOperatingSystem() string {
 	if x != nil {
-		if x.xxx_hidden_OperatingSystem != nil {
-			return *x.xxx_hidden_OperatingSystem
-		}
-		return ""
+		return x.OperatingSystem
 	}
 	return ""
 }
 
 func (x *NodeCVE) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *NodeCVE) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *NodeCVE) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *NodeCVE) GetSnoozed() bool {
 	if x != nil {
-		return x.xxx_hidden_Snoozed
+		return x.Snoozed
 	}
 	return false
 }
 
 func (x *NodeCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeStart
+		return x.SnoozeStart
 	}
 	return nil
 }
 
 func (x *NodeCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeExpiry
+		return x.SnoozeExpiry
 	}
 	return nil
 }
 
 func (x *NodeCVE) GetOrphaned() bool {
 	if x != nil {
-		return x.xxx_hidden_Orphaned
+		return x.Orphaned
 	}
 	return false
 }
 
 func (x *NodeCVE) GetOrphanedTime() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_OrphanedTime
+		return x.OrphanedTime
 	}
 	return nil
 }
 
 func (x *NodeCVE) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *NodeCVE) SetCveBaseInfo(v *CVEInfo) {
-	x.xxx_hidden_CveBaseInfo = v
+	x.CveBaseInfo = v
 }
 
 func (x *NodeCVE) SetOperatingSystem(v string) {
-	x.xxx_hidden_OperatingSystem = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.OperatingSystem = v
 }
 
 func (x *NodeCVE) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.Cvss = v
 }
 
 func (x *NodeCVE) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.Severity = v
 }
 
 func (x *NodeCVE) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	x.ImpactScore = v
 }
 
 func (x *NodeCVE) SetSnoozed(v bool) {
-	x.xxx_hidden_Snoozed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
+	x.Snoozed = v
 }
 
 func (x *NodeCVE) SetSnoozeStart(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeStart = v
+	x.SnoozeStart = v
 }
 
 func (x *NodeCVE) SetSnoozeExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeExpiry = v
+	x.SnoozeExpiry = v
 }
 
 func (x *NodeCVE) SetOrphaned(v bool) {
-	x.xxx_hidden_Orphaned = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.Orphaned = v
 }
 
 func (x *NodeCVE) SetOrphanedTime(v *timestamppb.Timestamp) {
-	x.xxx_hidden_OrphanedTime = v
-}
-
-func (x *NodeCVE) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.OrphanedTime = v
 }
 
 func (x *NodeCVE) HasCveBaseInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CveBaseInfo != nil
-}
-
-func (x *NodeCVE) HasOperatingSystem() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *NodeCVE) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *NodeCVE) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *NodeCVE) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *NodeCVE) HasSnoozed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+	return x.CveBaseInfo != nil
 }
 
 func (x *NodeCVE) HasSnoozeStart() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeStart != nil
+	return x.SnoozeStart != nil
 }
 
 func (x *NodeCVE) HasSnoozeExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeExpiry != nil
-}
-
-func (x *NodeCVE) HasOrphaned() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+	return x.SnoozeExpiry != nil
 }
 
 func (x *NodeCVE) HasOrphanedTime() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_OrphanedTime != nil
-}
-
-func (x *NodeCVE) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.OrphanedTime != nil
 }
 
 func (x *NodeCVE) ClearCveBaseInfo() {
-	x.xxx_hidden_CveBaseInfo = nil
-}
-
-func (x *NodeCVE) ClearOperatingSystem() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_OperatingSystem = nil
-}
-
-func (x *NodeCVE) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *NodeCVE) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *NodeCVE) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *NodeCVE) ClearSnoozed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Snoozed = false
+	x.CveBaseInfo = nil
 }
 
 func (x *NodeCVE) ClearSnoozeStart() {
-	x.xxx_hidden_SnoozeStart = nil
+	x.SnoozeStart = nil
 }
 
 func (x *NodeCVE) ClearSnoozeExpiry() {
-	x.xxx_hidden_SnoozeExpiry = nil
-}
-
-func (x *NodeCVE) ClearOrphaned() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Orphaned = false
+	x.SnoozeExpiry = nil
 }
 
 func (x *NodeCVE) ClearOrphanedTime() {
-	x.xxx_hidden_OrphanedTime = nil
+	x.OrphanedTime = nil
 }
 
 type NodeCVE_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
+	Id              string
 	CveBaseInfo     *CVEInfo
-	OperatingSystem *string
-	Cvss            *float32
-	Severity        *VulnerabilitySeverity
-	ImpactScore     *float32
-	Snoozed         *bool
+	OperatingSystem string
+	Cvss            float32
+	Severity        VulnerabilitySeverity
+	ImpactScore     float32
+	Snoozed         bool
 	SnoozeStart     *timestamppb.Timestamp
 	SnoozeExpiry    *timestamppb.Timestamp
-	Orphaned        *bool
+	Orphaned        bool
 	OrphanedTime    *timestamppb.Timestamp
 }
 
@@ -3318,56 +2593,33 @@ func (b0 NodeCVE_builder) Build() *NodeCVE {
 	m0 := &NodeCVE{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_CveBaseInfo = b.CveBaseInfo
-	if b.OperatingSystem != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_OperatingSystem = b.OperatingSystem
-	}
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Snoozed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
-		x.xxx_hidden_Snoozed = *b.Snoozed
-	}
-	x.xxx_hidden_SnoozeStart = b.SnoozeStart
-	x.xxx_hidden_SnoozeExpiry = b.SnoozeExpiry
-	if b.Orphaned != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_Orphaned = *b.Orphaned
-	}
-	x.xxx_hidden_OrphanedTime = b.OrphanedTime
+	x.Id = b.Id
+	x.CveBaseInfo = b.CveBaseInfo
+	x.OperatingSystem = b.OperatingSystem
+	x.Cvss = b.Cvss
+	x.Severity = b.Severity
+	x.ImpactScore = b.ImpactScore
+	x.Snoozed = b.Snoozed
+	x.SnoozeStart = b.SnoozeStart
+	x.SnoozeExpiry = b.SnoozeExpiry
+	x.Orphaned = b.Orphaned
+	x.OrphanedTime = b.OrphanedTime
 	return m0
 }
 
 type ClusterCVE struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id           *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_CveBaseInfo  *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo"`
-	xxx_hidden_Cvss         float32                `protobuf:"fixed32,3,opt,name=cvss"`
-	xxx_hidden_Severity     VulnerabilitySeverity  `protobuf:"varint,4,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_ImpactScore  float32                `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Snoozed      bool                   `protobuf:"varint,6,opt,name=snoozed"`
-	xxx_hidden_SnoozeStart  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart"`
-	xxx_hidden_SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry"`
-	xxx_hidden_Type         CVE_CVEType            `protobuf:"varint,9,opt,name=type,enum=storage.CVE_CVEType"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	CveBaseInfo   *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo" json:"cve_base_info,omitempty"`
+	Cvss          float32                `protobuf:"fixed32,3,opt,name=cvss" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
+	Severity      VulnerabilitySeverity  `protobuf:"varint,4,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
+	ImpactScore   float32                `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	Snoozed       bool                   `protobuf:"varint,6,opt,name=snoozed" json:"snoozed,omitempty" search:"CVE Snoozed"`                                      // @gotags: search:"CVE Snoozed"
+	SnoozeStart   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart" json:"snooze_start,omitempty"`
+	SnoozeExpiry  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	Type          CVE_CVEType            `protobuf:"varint,9,opt,name=type,enum=storage.CVE_CVEType" json:"type,omitempty" search:"CVE Type"`           // @gotags: search:"CVE Type"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClusterCVE) Reset() {
@@ -3397,278 +2649,177 @@ func (x *ClusterCVE) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterCVE) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ClusterCVE) GetCveBaseInfo() *CVEInfo {
 	if x != nil {
-		return x.xxx_hidden_CveBaseInfo
+		return x.CveBaseInfo
 	}
 	return nil
 }
 
 func (x *ClusterCVE) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *ClusterCVE) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *ClusterCVE) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *ClusterCVE) GetSnoozed() bool {
 	if x != nil {
-		return x.xxx_hidden_Snoozed
+		return x.Snoozed
 	}
 	return false
 }
 
 func (x *ClusterCVE) GetSnoozeStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeStart
+		return x.SnoozeStart
 	}
 	return nil
 }
 
 func (x *ClusterCVE) GetSnoozeExpiry() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_SnoozeExpiry
+		return x.SnoozeExpiry
 	}
 	return nil
 }
 
 func (x *ClusterCVE) GetType() CVE_CVEType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return CVE_UNKNOWN_CVE
 }
 
 func (x *ClusterCVE) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
+	x.Id = v
 }
 
 func (x *ClusterCVE) SetCveBaseInfo(v *CVEInfo) {
-	x.xxx_hidden_CveBaseInfo = v
+	x.CveBaseInfo = v
 }
 
 func (x *ClusterCVE) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	x.Cvss = v
 }
 
 func (x *ClusterCVE) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
+	x.Severity = v
 }
 
 func (x *ClusterCVE) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
+	x.ImpactScore = v
 }
 
 func (x *ClusterCVE) SetSnoozed(v bool) {
-	x.xxx_hidden_Snoozed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+	x.Snoozed = v
 }
 
 func (x *ClusterCVE) SetSnoozeStart(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeStart = v
+	x.SnoozeStart = v
 }
 
 func (x *ClusterCVE) SetSnoozeExpiry(v *timestamppb.Timestamp) {
-	x.xxx_hidden_SnoozeExpiry = v
+	x.SnoozeExpiry = v
 }
 
 func (x *ClusterCVE) SetType(v CVE_CVEType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
-}
-
-func (x *ClusterCVE) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Type = v
 }
 
 func (x *ClusterCVE) HasCveBaseInfo() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CveBaseInfo != nil
-}
-
-func (x *ClusterCVE) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ClusterCVE) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ClusterCVE) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ClusterCVE) HasSnoozed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return x.CveBaseInfo != nil
 }
 
 func (x *ClusterCVE) HasSnoozeStart() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeStart != nil
+	return x.SnoozeStart != nil
 }
 
 func (x *ClusterCVE) HasSnoozeExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SnoozeExpiry != nil
-}
-
-func (x *ClusterCVE) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ClusterCVE) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.SnoozeExpiry != nil
 }
 
 func (x *ClusterCVE) ClearCveBaseInfo() {
-	x.xxx_hidden_CveBaseInfo = nil
-}
-
-func (x *ClusterCVE) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *ClusterCVE) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *ClusterCVE) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *ClusterCVE) ClearSnoozed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Snoozed = false
+	x.CveBaseInfo = nil
 }
 
 func (x *ClusterCVE) ClearSnoozeStart() {
-	x.xxx_hidden_SnoozeStart = nil
+	x.SnoozeStart = nil
 }
 
 func (x *ClusterCVE) ClearSnoozeExpiry() {
-	x.xxx_hidden_SnoozeExpiry = nil
-}
-
-func (x *ClusterCVE) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Type = CVE_UNKNOWN_CVE
+	x.SnoozeExpiry = nil
 }
 
 type ClusterCVE_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
+	Id           string
 	CveBaseInfo  *CVEInfo
-	Cvss         *float32
-	Severity     *VulnerabilitySeverity
-	ImpactScore  *float32
-	Snoozed      *bool
+	Cvss         float32
+	Severity     VulnerabilitySeverity
+	ImpactScore  float32
+	Snoozed      bool
 	SnoozeStart  *timestamppb.Timestamp
 	SnoozeExpiry *timestamppb.Timestamp
-	Type         *CVE_CVEType
+	Type         CVE_CVEType
 }
 
 func (b0 ClusterCVE_builder) Build() *ClusterCVE {
 	m0 := &ClusterCVE{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_CveBaseInfo = b.CveBaseInfo
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Snoozed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
-		x.xxx_hidden_Snoozed = *b.Snoozed
-	}
-	x.xxx_hidden_SnoozeStart = b.SnoozeStart
-	x.xxx_hidden_SnoozeExpiry = b.SnoozeExpiry
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
-		x.xxx_hidden_Type = *b.Type
-	}
+	x.Id = b.Id
+	x.CveBaseInfo = b.CveBaseInfo
+	x.Cvss = b.Cvss
+	x.Severity = b.Severity
+	x.ImpactScore = b.ImpactScore
+	x.Snoozed = b.Snoozed
+	x.SnoozeStart = b.SnoozeStart
+	x.SnoozeExpiry = b.SnoozeExpiry
+	x.Type = b.Type
 	return m0
 }
 
 type CVSSScore struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Source      Source                 `protobuf:"varint,1,opt,name=source,enum=storage.Source"`
-	xxx_hidden_Url         *string                `protobuf:"bytes,2,opt,name=url"`
-	xxx_hidden_CvssScore   isCVSSScore_CvssScore  `protobuf_oneof:"cvss_score"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"hybrid.v1"`
+	Source Source                 `protobuf:"varint,1,opt,name=source,enum=storage.Source" json:"source,omitempty"`
+	Url    string                 `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	// Types that are valid to be assigned to CvssScore:
+	//
+	//	*CVSSScore_Cvssv2
+	//	*CVSSScore_Cvssv3
+	CvssScore     isCVSSScore_CvssScore `protobuf_oneof:"cvss_score"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CVSSScore) Reset() {
@@ -3698,26 +2849,28 @@ func (x *CVSSScore) ProtoReflect() protoreflect.Message {
 
 func (x *CVSSScore) GetSource() Source {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Source
-		}
+		return x.Source
 	}
 	return Source_SOURCE_UNKNOWN
 }
 
 func (x *CVSSScore) GetUrl() string {
 	if x != nil {
-		if x.xxx_hidden_Url != nil {
-			return *x.xxx_hidden_Url
-		}
-		return ""
+		return x.Url
 	}
 	return ""
 }
 
+func (x *CVSSScore) GetCvssScore() isCVSSScore_CvssScore {
+	if x != nil {
+		return x.CvssScore
+	}
+	return nil
+}
+
 func (x *CVSSScore) GetCvssv2() *CVSSV2 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv2); ok {
+		if x, ok := x.CvssScore.(*CVSSScore_Cvssv2); ok {
 			return x.Cvssv2
 		}
 	}
@@ -3726,7 +2879,7 @@ func (x *CVSSScore) GetCvssv2() *CVSSV2 {
 
 func (x *CVSSScore) GetCvssv3() *CVSSV3 {
 	if x != nil {
-		if x, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv3); ok {
+		if x, ok := x.CvssScore.(*CVSSScore_Cvssv3); ok {
 			return x.Cvssv3
 		}
 	}
@@ -3734,57 +2887,41 @@ func (x *CVSSScore) GetCvssv3() *CVSSV3 {
 }
 
 func (x *CVSSScore) SetSource(v Source) {
-	x.xxx_hidden_Source = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Source = v
 }
 
 func (x *CVSSScore) SetUrl(v string) {
-	x.xxx_hidden_Url = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Url = v
 }
 
 func (x *CVSSScore) SetCvssv2(v *CVSSV2) {
 	if v == nil {
-		x.xxx_hidden_CvssScore = nil
+		x.CvssScore = nil
 		return
 	}
-	x.xxx_hidden_CvssScore = &cVSSScore_Cvssv2{v}
+	x.CvssScore = &CVSSScore_Cvssv2{v}
 }
 
 func (x *CVSSScore) SetCvssv3(v *CVSSV3) {
 	if v == nil {
-		x.xxx_hidden_CvssScore = nil
+		x.CvssScore = nil
 		return
 	}
-	x.xxx_hidden_CvssScore = &cVSSScore_Cvssv3{v}
-}
-
-func (x *CVSSScore) HasSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVSSScore) HasUrl() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.CvssScore = &CVSSScore_Cvssv3{v}
 }
 
 func (x *CVSSScore) HasCvssScore() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssScore != nil
+	return x.CvssScore != nil
 }
 
 func (x *CVSSScore) HasCvssv2() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv2)
+	_, ok := x.CvssScore.(*CVSSScore_Cvssv2)
 	return ok
 }
 
@@ -3792,33 +2929,23 @@ func (x *CVSSScore) HasCvssv3() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv3)
+	_, ok := x.CvssScore.(*CVSSScore_Cvssv3)
 	return ok
 }
 
-func (x *CVSSScore) ClearSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Source = Source_SOURCE_UNKNOWN
-}
-
-func (x *CVSSScore) ClearUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Url = nil
-}
-
 func (x *CVSSScore) ClearCvssScore() {
-	x.xxx_hidden_CvssScore = nil
+	x.CvssScore = nil
 }
 
 func (x *CVSSScore) ClearCvssv2() {
-	if _, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv2); ok {
-		x.xxx_hidden_CvssScore = nil
+	if _, ok := x.CvssScore.(*CVSSScore_Cvssv2); ok {
+		x.CvssScore = nil
 	}
 }
 
 func (x *CVSSScore) ClearCvssv3() {
-	if _, ok := x.xxx_hidden_CvssScore.(*cVSSScore_Cvssv3); ok {
-		x.xxx_hidden_CvssScore = nil
+	if _, ok := x.CvssScore.(*CVSSScore_Cvssv3); ok {
+		x.CvssScore = nil
 	}
 }
 
@@ -3830,10 +2957,10 @@ func (x *CVSSScore) WhichCvssScore() case_CVSSScore_CvssScore {
 	if x == nil {
 		return CVSSScore_CvssScore_not_set_case
 	}
-	switch x.xxx_hidden_CvssScore.(type) {
-	case *cVSSScore_Cvssv2:
+	switch x.CvssScore.(type) {
+	case *CVSSScore_Cvssv2:
 		return CVSSScore_Cvssv2_case
-	case *cVSSScore_Cvssv3:
+	case *CVSSScore_Cvssv3:
 		return CVSSScore_Cvssv3_case
 	default:
 		return CVSSScore_CvssScore_not_set_case
@@ -3843,31 +2970,25 @@ func (x *CVSSScore) WhichCvssScore() case_CVSSScore_CvssScore {
 type CVSSScore_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Source *Source
-	Url    *string
-	// Fields of oneof xxx_hidden_CvssScore:
+	Source Source
+	Url    string
+	// Fields of oneof CvssScore:
 	Cvssv2 *CVSSV2
 	Cvssv3 *CVSSV3
-	// -- end of xxx_hidden_CvssScore
+	// -- end of CvssScore
 }
 
 func (b0 CVSSScore_builder) Build() *CVSSScore {
 	m0 := &CVSSScore{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Source != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Source = *b.Source
-	}
-	if b.Url != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Url = b.Url
-	}
+	x.Source = b.Source
+	x.Url = b.Url
 	if b.Cvssv2 != nil {
-		x.xxx_hidden_CvssScore = &cVSSScore_Cvssv2{b.Cvssv2}
+		x.CvssScore = &CVSSScore_Cvssv2{b.Cvssv2}
 	}
 	if b.Cvssv3 != nil {
-		x.xxx_hidden_CvssScore = &cVSSScore_Cvssv3{b.Cvssv3}
+		x.CvssScore = &CVSSScore_Cvssv3{b.Cvssv3}
 	}
 	return m0
 }
@@ -3886,35 +3007,33 @@ type isCVSSScore_CvssScore interface {
 	isCVSSScore_CvssScore()
 }
 
-type cVSSScore_Cvssv2 struct {
+type CVSSScore_Cvssv2 struct {
 	Cvssv2 *CVSSV2 `protobuf:"bytes,3,opt,name=cvssv2,oneof"`
 }
 
-type cVSSScore_Cvssv3 struct {
+type CVSSScore_Cvssv3 struct {
 	Cvssv3 *CVSSV3 `protobuf:"bytes,4,opt,name=cvssv3,oneof"`
 }
 
-func (*cVSSScore_Cvssv2) isCVSSScore_CvssScore() {}
+func (*CVSSScore_Cvssv2) isCVSSScore_CvssScore() {}
 
-func (*cVSSScore_Cvssv3) isCVSSScore_CvssScore() {}
+func (*CVSSScore_Cvssv3) isCVSSScore_CvssScore() {}
 
 type CVSSV2 struct {
-	state                          protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Vector              *string                 `protobuf:"bytes,1,opt,name=vector"`
-	xxx_hidden_AttackVector        CVSSV2_AttackVector     `protobuf:"varint,2,opt,name=attack_vector,json=attackVector,enum=storage.CVSSV2_AttackVector"`
-	xxx_hidden_AccessComplexity    CVSSV2_AccessComplexity `protobuf:"varint,3,opt,name=access_complexity,json=accessComplexity,enum=storage.CVSSV2_AccessComplexity"`
-	xxx_hidden_Authentication      CVSSV2_Authentication   `protobuf:"varint,4,opt,name=authentication,enum=storage.CVSSV2_Authentication"`
-	xxx_hidden_Confidentiality     CVSSV2_Impact           `protobuf:"varint,5,opt,name=confidentiality,enum=storage.CVSSV2_Impact"`
-	xxx_hidden_Integrity           CVSSV2_Impact           `protobuf:"varint,6,opt,name=integrity,enum=storage.CVSSV2_Impact"`
-	xxx_hidden_Availability        CVSSV2_Impact           `protobuf:"varint,7,opt,name=availability,enum=storage.CVSSV2_Impact"`
-	xxx_hidden_ExploitabilityScore float32                 `protobuf:"fixed32,8,opt,name=exploitability_score,json=exploitabilityScore"`
-	xxx_hidden_ImpactScore         float32                 `protobuf:"fixed32,9,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_Score               float32                 `protobuf:"fixed32,10,opt,name=score"`
-	xxx_hidden_Severity            CVSSV2_Severity         `protobuf:"varint,11,opt,name=severity,enum=storage.CVSSV2_Severity"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state               protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Vector              string                  `protobuf:"bytes,1,opt,name=vector" json:"vector,omitempty"`
+	AttackVector        CVSSV2_AttackVector     `protobuf:"varint,2,opt,name=attack_vector,json=attackVector,enum=storage.CVSSV2_AttackVector" json:"attack_vector,omitempty"`
+	AccessComplexity    CVSSV2_AccessComplexity `protobuf:"varint,3,opt,name=access_complexity,json=accessComplexity,enum=storage.CVSSV2_AccessComplexity" json:"access_complexity,omitempty"`
+	Authentication      CVSSV2_Authentication   `protobuf:"varint,4,opt,name=authentication,enum=storage.CVSSV2_Authentication" json:"authentication,omitempty"`
+	Confidentiality     CVSSV2_Impact           `protobuf:"varint,5,opt,name=confidentiality,enum=storage.CVSSV2_Impact" json:"confidentiality,omitempty"`
+	Integrity           CVSSV2_Impact           `protobuf:"varint,6,opt,name=integrity,enum=storage.CVSSV2_Impact" json:"integrity,omitempty"`
+	Availability        CVSSV2_Impact           `protobuf:"varint,7,opt,name=availability,enum=storage.CVSSV2_Impact" json:"availability,omitempty"`
+	ExploitabilityScore float32                 `protobuf:"fixed32,8,opt,name=exploitability_score,json=exploitabilityScore" json:"exploitability_score,omitempty"`
+	ImpactScore         float32                 `protobuf:"fixed32,9,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty"`
+	Score               float32                 `protobuf:"fixed32,10,opt,name=score" json:"score,omitempty"`
+	Severity            CVSSV2_Severity         `protobuf:"varint,11,opt,name=severity,enum=storage.CVSSV2_Severity" json:"severity,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CVSSV2) Reset() {
@@ -3944,371 +3063,176 @@ func (x *CVSSV2) ProtoReflect() protoreflect.Message {
 
 func (x *CVSSV2) GetVector() string {
 	if x != nil {
-		if x.xxx_hidden_Vector != nil {
-			return *x.xxx_hidden_Vector
-		}
-		return ""
+		return x.Vector
 	}
 	return ""
 }
 
 func (x *CVSSV2) GetAttackVector() CVSSV2_AttackVector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_AttackVector
-		}
+		return x.AttackVector
 	}
 	return CVSSV2_ATTACK_LOCAL
 }
 
 func (x *CVSSV2) GetAccessComplexity() CVSSV2_AccessComplexity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_AccessComplexity
-		}
+		return x.AccessComplexity
 	}
 	return CVSSV2_ACCESS_HIGH
 }
 
 func (x *CVSSV2) GetAuthentication() CVSSV2_Authentication {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Authentication
-		}
+		return x.Authentication
 	}
 	return CVSSV2_AUTH_MULTIPLE
 }
 
 func (x *CVSSV2) GetConfidentiality() CVSSV2_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_Confidentiality
-		}
+		return x.Confidentiality
 	}
 	return CVSSV2_IMPACT_NONE
 }
 
 func (x *CVSSV2) GetIntegrity() CVSSV2_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_Integrity
-		}
+		return x.Integrity
 	}
 	return CVSSV2_IMPACT_NONE
 }
 
 func (x *CVSSV2) GetAvailability() CVSSV2_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			return x.xxx_hidden_Availability
-		}
+		return x.Availability
 	}
 	return CVSSV2_IMPACT_NONE
 }
 
 func (x *CVSSV2) GetExploitabilityScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ExploitabilityScore
+		return x.ExploitabilityScore
 	}
 	return 0
 }
 
 func (x *CVSSV2) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *CVSSV2) GetScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_Score
+		return x.Score
 	}
 	return 0
 }
 
 func (x *CVSSV2) GetSeverity() CVSSV2_Severity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return CVSSV2_UNKNOWN
 }
 
 func (x *CVSSV2) SetVector(v string) {
-	x.xxx_hidden_Vector = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Vector = v
 }
 
 func (x *CVSSV2) SetAttackVector(v CVSSV2_AttackVector) {
-	x.xxx_hidden_AttackVector = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.AttackVector = v
 }
 
 func (x *CVSSV2) SetAccessComplexity(v CVSSV2_AccessComplexity) {
-	x.xxx_hidden_AccessComplexity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.AccessComplexity = v
 }
 
 func (x *CVSSV2) SetAuthentication(v CVSSV2_Authentication) {
-	x.xxx_hidden_Authentication = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.Authentication = v
 }
 
 func (x *CVSSV2) SetConfidentiality(v CVSSV2_Impact) {
-	x.xxx_hidden_Confidentiality = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.Confidentiality = v
 }
 
 func (x *CVSSV2) SetIntegrity(v CVSSV2_Impact) {
-	x.xxx_hidden_Integrity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	x.Integrity = v
 }
 
 func (x *CVSSV2) SetAvailability(v CVSSV2_Impact) {
-	x.xxx_hidden_Availability = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
+	x.Availability = v
 }
 
 func (x *CVSSV2) SetExploitabilityScore(v float32) {
-	x.xxx_hidden_ExploitabilityScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	x.ExploitabilityScore = v
 }
 
 func (x *CVSSV2) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.ImpactScore = v
 }
 
 func (x *CVSSV2) SetScore(v float32) {
-	x.xxx_hidden_Score = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.Score = v
 }
 
 func (x *CVSSV2) SetSeverity(v CVSSV2_Severity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *CVSSV2) HasVector() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVSSV2) HasAttackVector() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CVSSV2) HasAccessComplexity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CVSSV2) HasAuthentication() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *CVSSV2) HasConfidentiality() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *CVSSV2) HasIntegrity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *CVSSV2) HasAvailability() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *CVSSV2) HasExploitabilityScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *CVSSV2) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *CVSSV2) HasScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *CVSSV2) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *CVSSV2) ClearVector() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Vector = nil
-}
-
-func (x *CVSSV2) ClearAttackVector() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_AttackVector = CVSSV2_ATTACK_LOCAL
-}
-
-func (x *CVSSV2) ClearAccessComplexity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_AccessComplexity = CVSSV2_ACCESS_HIGH
-}
-
-func (x *CVSSV2) ClearAuthentication() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Authentication = CVSSV2_AUTH_MULTIPLE
-}
-
-func (x *CVSSV2) ClearConfidentiality() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Confidentiality = CVSSV2_IMPACT_NONE
-}
-
-func (x *CVSSV2) ClearIntegrity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Integrity = CVSSV2_IMPACT_NONE
-}
-
-func (x *CVSSV2) ClearAvailability() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Availability = CVSSV2_IMPACT_NONE
-}
-
-func (x *CVSSV2) ClearExploitabilityScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_ExploitabilityScore = 0
-}
-
-func (x *CVSSV2) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *CVSSV2) ClearScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Score = 0
-}
-
-func (x *CVSSV2) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_Severity = CVSSV2_UNKNOWN
+	x.Severity = v
 }
 
 type CVSSV2_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Vector              *string
-	AttackVector        *CVSSV2_AttackVector
-	AccessComplexity    *CVSSV2_AccessComplexity
-	Authentication      *CVSSV2_Authentication
-	Confidentiality     *CVSSV2_Impact
-	Integrity           *CVSSV2_Impact
-	Availability        *CVSSV2_Impact
-	ExploitabilityScore *float32
-	ImpactScore         *float32
-	Score               *float32
-	Severity            *CVSSV2_Severity
+	Vector              string
+	AttackVector        CVSSV2_AttackVector
+	AccessComplexity    CVSSV2_AccessComplexity
+	Authentication      CVSSV2_Authentication
+	Confidentiality     CVSSV2_Impact
+	Integrity           CVSSV2_Impact
+	Availability        CVSSV2_Impact
+	ExploitabilityScore float32
+	ImpactScore         float32
+	Score               float32
+	Severity            CVSSV2_Severity
 }
 
 func (b0 CVSSV2_builder) Build() *CVSSV2 {
 	m0 := &CVSSV2{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Vector != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Vector = b.Vector
-	}
-	if b.AttackVector != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_AttackVector = *b.AttackVector
-	}
-	if b.AccessComplexity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_AccessComplexity = *b.AccessComplexity
-	}
-	if b.Authentication != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_Authentication = *b.Authentication
-	}
-	if b.Confidentiality != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_Confidentiality = *b.Confidentiality
-	}
-	if b.Integrity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_Integrity = *b.Integrity
-	}
-	if b.Availability != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
-		x.xxx_hidden_Availability = *b.Availability
-	}
-	if b.ExploitabilityScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
-		x.xxx_hidden_ExploitabilityScore = *b.ExploitabilityScore
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.Score != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_Score = *b.Score
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_Severity = *b.Severity
-	}
+	x.Vector = b.Vector
+	x.AttackVector = b.AttackVector
+	x.AccessComplexity = b.AccessComplexity
+	x.Authentication = b.Authentication
+	x.Confidentiality = b.Confidentiality
+	x.Integrity = b.Integrity
+	x.Availability = b.Availability
+	x.ExploitabilityScore = b.ExploitabilityScore
+	x.ImpactScore = b.ImpactScore
+	x.Score = b.Score
+	x.Severity = b.Severity
 	return m0
 }
 
 type CVSSV3 struct {
-	state                          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Vector              *string                `protobuf:"bytes,1,opt,name=vector"`
-	xxx_hidden_ExploitabilityScore float32                `protobuf:"fixed32,2,opt,name=exploitability_score,json=exploitabilityScore"`
-	xxx_hidden_ImpactScore         float32                `protobuf:"fixed32,3,opt,name=impact_score,json=impactScore"`
-	xxx_hidden_AttackVector        CVSSV3_AttackVector    `protobuf:"varint,4,opt,name=attack_vector,json=attackVector,enum=storage.CVSSV3_AttackVector"`
-	xxx_hidden_AttackComplexity    CVSSV3_Complexity      `protobuf:"varint,5,opt,name=attack_complexity,json=attackComplexity,enum=storage.CVSSV3_Complexity"`
-	xxx_hidden_PrivilegesRequired  CVSSV3_Privileges      `protobuf:"varint,6,opt,name=privileges_required,json=privilegesRequired,enum=storage.CVSSV3_Privileges"`
-	xxx_hidden_UserInteraction     CVSSV3_UserInteraction `protobuf:"varint,7,opt,name=user_interaction,json=userInteraction,enum=storage.CVSSV3_UserInteraction"`
-	xxx_hidden_Scope               CVSSV3_Scope           `protobuf:"varint,8,opt,name=scope,enum=storage.CVSSV3_Scope"`
-	xxx_hidden_Confidentiality     CVSSV3_Impact          `protobuf:"varint,9,opt,name=confidentiality,enum=storage.CVSSV3_Impact"`
-	xxx_hidden_Integrity           CVSSV3_Impact          `protobuf:"varint,10,opt,name=integrity,enum=storage.CVSSV3_Impact"`
-	xxx_hidden_Availability        CVSSV3_Impact          `protobuf:"varint,11,opt,name=availability,enum=storage.CVSSV3_Impact"`
-	xxx_hidden_Score               float32                `protobuf:"fixed32,12,opt,name=score"`
-	xxx_hidden_Severity            CVSSV3_Severity        `protobuf:"varint,13,opt,name=severity,enum=storage.CVSSV3_Severity"`
-	XXX_raceDetectHookData         protoimpl.RaceDetectHookData
-	XXX_presence                   [1]uint32
-	unknownFields                  protoimpl.UnknownFields
-	sizeCache                      protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"hybrid.v1"`
+	Vector              string                 `protobuf:"bytes,1,opt,name=vector" json:"vector,omitempty"`
+	ExploitabilityScore float32                `protobuf:"fixed32,2,opt,name=exploitability_score,json=exploitabilityScore" json:"exploitability_score,omitempty"`
+	ImpactScore         float32                `protobuf:"fixed32,3,opt,name=impact_score,json=impactScore" json:"impact_score,omitempty"`
+	AttackVector        CVSSV3_AttackVector    `protobuf:"varint,4,opt,name=attack_vector,json=attackVector,enum=storage.CVSSV3_AttackVector" json:"attack_vector,omitempty"`
+	AttackComplexity    CVSSV3_Complexity      `protobuf:"varint,5,opt,name=attack_complexity,json=attackComplexity,enum=storage.CVSSV3_Complexity" json:"attack_complexity,omitempty"`
+	PrivilegesRequired  CVSSV3_Privileges      `protobuf:"varint,6,opt,name=privileges_required,json=privilegesRequired,enum=storage.CVSSV3_Privileges" json:"privileges_required,omitempty"`
+	UserInteraction     CVSSV3_UserInteraction `protobuf:"varint,7,opt,name=user_interaction,json=userInteraction,enum=storage.CVSSV3_UserInteraction" json:"user_interaction,omitempty"`
+	Scope               CVSSV3_Scope           `protobuf:"varint,8,opt,name=scope,enum=storage.CVSSV3_Scope" json:"scope,omitempty"`
+	Confidentiality     CVSSV3_Impact          `protobuf:"varint,9,opt,name=confidentiality,enum=storage.CVSSV3_Impact" json:"confidentiality,omitempty"`
+	Integrity           CVSSV3_Impact          `protobuf:"varint,10,opt,name=integrity,enum=storage.CVSSV3_Impact" json:"integrity,omitempty"`
+	Availability        CVSSV3_Impact          `protobuf:"varint,11,opt,name=availability,enum=storage.CVSSV3_Impact" json:"availability,omitempty"`
+	Score               float32                `protobuf:"fixed32,12,opt,name=score" json:"score,omitempty"`
+	Severity            CVSSV3_Severity        `protobuf:"varint,13,opt,name=severity,enum=storage.CVSSV3_Severity" json:"severity,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CVSSV3) Reset() {
@@ -4338,425 +3262,194 @@ func (x *CVSSV3) ProtoReflect() protoreflect.Message {
 
 func (x *CVSSV3) GetVector() string {
 	if x != nil {
-		if x.xxx_hidden_Vector != nil {
-			return *x.xxx_hidden_Vector
-		}
-		return ""
+		return x.Vector
 	}
 	return ""
 }
 
 func (x *CVSSV3) GetExploitabilityScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ExploitabilityScore
+		return x.ExploitabilityScore
 	}
 	return 0
 }
 
 func (x *CVSSV3) GetImpactScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_ImpactScore
+		return x.ImpactScore
 	}
 	return 0
 }
 
 func (x *CVSSV3) GetAttackVector() CVSSV3_AttackVector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_AttackVector
-		}
+		return x.AttackVector
 	}
 	return CVSSV3_ATTACK_LOCAL
 }
 
 func (x *CVSSV3) GetAttackComplexity() CVSSV3_Complexity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			return x.xxx_hidden_AttackComplexity
-		}
+		return x.AttackComplexity
 	}
 	return CVSSV3_COMPLEXITY_LOW
 }
 
 func (x *CVSSV3) GetPrivilegesRequired() CVSSV3_Privileges {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_PrivilegesRequired
-		}
+		return x.PrivilegesRequired
 	}
 	return CVSSV3_PRIVILEGE_NONE
 }
 
 func (x *CVSSV3) GetUserInteraction() CVSSV3_UserInteraction {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			return x.xxx_hidden_UserInteraction
-		}
+		return x.UserInteraction
 	}
 	return CVSSV3_UI_NONE
 }
 
 func (x *CVSSV3) GetScope() CVSSV3_Scope {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			return x.xxx_hidden_Scope
-		}
+		return x.Scope
 	}
 	return CVSSV3_UNCHANGED
 }
 
 func (x *CVSSV3) GetConfidentiality() CVSSV3_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			return x.xxx_hidden_Confidentiality
-		}
+		return x.Confidentiality
 	}
 	return CVSSV3_IMPACT_NONE
 }
 
 func (x *CVSSV3) GetIntegrity() CVSSV3_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			return x.xxx_hidden_Integrity
-		}
+		return x.Integrity
 	}
 	return CVSSV3_IMPACT_NONE
 }
 
 func (x *CVSSV3) GetAvailability() CVSSV3_Impact {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			return x.xxx_hidden_Availability
-		}
+		return x.Availability
 	}
 	return CVSSV3_IMPACT_NONE
 }
 
 func (x *CVSSV3) GetScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_Score
+		return x.Score
 	}
 	return 0
 }
 
 func (x *CVSSV3) GetSeverity() CVSSV3_Severity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 12) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return CVSSV3_UNKNOWN
 }
 
 func (x *CVSSV3) SetVector(v string) {
-	x.xxx_hidden_Vector = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 13)
+	x.Vector = v
 }
 
 func (x *CVSSV3) SetExploitabilityScore(v float32) {
-	x.xxx_hidden_ExploitabilityScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 13)
+	x.ExploitabilityScore = v
 }
 
 func (x *CVSSV3) SetImpactScore(v float32) {
-	x.xxx_hidden_ImpactScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 13)
+	x.ImpactScore = v
 }
 
 func (x *CVSSV3) SetAttackVector(v CVSSV3_AttackVector) {
-	x.xxx_hidden_AttackVector = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 13)
+	x.AttackVector = v
 }
 
 func (x *CVSSV3) SetAttackComplexity(v CVSSV3_Complexity) {
-	x.xxx_hidden_AttackComplexity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 13)
+	x.AttackComplexity = v
 }
 
 func (x *CVSSV3) SetPrivilegesRequired(v CVSSV3_Privileges) {
-	x.xxx_hidden_PrivilegesRequired = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 13)
+	x.PrivilegesRequired = v
 }
 
 func (x *CVSSV3) SetUserInteraction(v CVSSV3_UserInteraction) {
-	x.xxx_hidden_UserInteraction = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 13)
+	x.UserInteraction = v
 }
 
 func (x *CVSSV3) SetScope(v CVSSV3_Scope) {
-	x.xxx_hidden_Scope = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 13)
+	x.Scope = v
 }
 
 func (x *CVSSV3) SetConfidentiality(v CVSSV3_Impact) {
-	x.xxx_hidden_Confidentiality = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 13)
+	x.Confidentiality = v
 }
 
 func (x *CVSSV3) SetIntegrity(v CVSSV3_Impact) {
-	x.xxx_hidden_Integrity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 13)
+	x.Integrity = v
 }
 
 func (x *CVSSV3) SetAvailability(v CVSSV3_Impact) {
-	x.xxx_hidden_Availability = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 13)
+	x.Availability = v
 }
 
 func (x *CVSSV3) SetScore(v float32) {
-	x.xxx_hidden_Score = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 13)
+	x.Score = v
 }
 
 func (x *CVSSV3) SetSeverity(v CVSSV3_Severity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 13)
-}
-
-func (x *CVSSV3) HasVector() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVSSV3) HasExploitabilityScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CVSSV3) HasImpactScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *CVSSV3) HasAttackVector() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *CVSSV3) HasAttackComplexity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *CVSSV3) HasPrivilegesRequired() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *CVSSV3) HasUserInteraction() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *CVSSV3) HasScope() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *CVSSV3) HasConfidentiality() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *CVSSV3) HasIntegrity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *CVSSV3) HasAvailability() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *CVSSV3) HasScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *CVSSV3) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *CVSSV3) ClearVector() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Vector = nil
-}
-
-func (x *CVSSV3) ClearExploitabilityScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ExploitabilityScore = 0
-}
-
-func (x *CVSSV3) ClearImpactScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ImpactScore = 0
-}
-
-func (x *CVSSV3) ClearAttackVector() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_AttackVector = CVSSV3_ATTACK_LOCAL
-}
-
-func (x *CVSSV3) ClearAttackComplexity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_AttackComplexity = CVSSV3_COMPLEXITY_LOW
-}
-
-func (x *CVSSV3) ClearPrivilegesRequired() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_PrivilegesRequired = CVSSV3_PRIVILEGE_NONE
-}
-
-func (x *CVSSV3) ClearUserInteraction() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_UserInteraction = CVSSV3_UI_NONE
-}
-
-func (x *CVSSV3) ClearScope() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Scope = CVSSV3_UNCHANGED
-}
-
-func (x *CVSSV3) ClearConfidentiality() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Confidentiality = CVSSV3_IMPACT_NONE
-}
-
-func (x *CVSSV3) ClearIntegrity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Integrity = CVSSV3_IMPACT_NONE
-}
-
-func (x *CVSSV3) ClearAvailability() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_Availability = CVSSV3_IMPACT_NONE
-}
-
-func (x *CVSSV3) ClearScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_Score = 0
-}
-
-func (x *CVSSV3) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_Severity = CVSSV3_UNKNOWN
+	x.Severity = v
 }
 
 type CVSSV3_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Vector              *string
-	ExploitabilityScore *float32
-	ImpactScore         *float32
-	AttackVector        *CVSSV3_AttackVector
-	AttackComplexity    *CVSSV3_Complexity
-	PrivilegesRequired  *CVSSV3_Privileges
-	UserInteraction     *CVSSV3_UserInteraction
-	Scope               *CVSSV3_Scope
-	Confidentiality     *CVSSV3_Impact
-	Integrity           *CVSSV3_Impact
-	Availability        *CVSSV3_Impact
-	Score               *float32
-	Severity            *CVSSV3_Severity
+	Vector              string
+	ExploitabilityScore float32
+	ImpactScore         float32
+	AttackVector        CVSSV3_AttackVector
+	AttackComplexity    CVSSV3_Complexity
+	PrivilegesRequired  CVSSV3_Privileges
+	UserInteraction     CVSSV3_UserInteraction
+	Scope               CVSSV3_Scope
+	Confidentiality     CVSSV3_Impact
+	Integrity           CVSSV3_Impact
+	Availability        CVSSV3_Impact
+	Score               float32
+	Severity            CVSSV3_Severity
 }
 
 func (b0 CVSSV3_builder) Build() *CVSSV3 {
 	m0 := &CVSSV3{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Vector != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 13)
-		x.xxx_hidden_Vector = b.Vector
-	}
-	if b.ExploitabilityScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 13)
-		x.xxx_hidden_ExploitabilityScore = *b.ExploitabilityScore
-	}
-	if b.ImpactScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 13)
-		x.xxx_hidden_ImpactScore = *b.ImpactScore
-	}
-	if b.AttackVector != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 13)
-		x.xxx_hidden_AttackVector = *b.AttackVector
-	}
-	if b.AttackComplexity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 13)
-		x.xxx_hidden_AttackComplexity = *b.AttackComplexity
-	}
-	if b.PrivilegesRequired != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 13)
-		x.xxx_hidden_PrivilegesRequired = *b.PrivilegesRequired
-	}
-	if b.UserInteraction != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 13)
-		x.xxx_hidden_UserInteraction = *b.UserInteraction
-	}
-	if b.Scope != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 13)
-		x.xxx_hidden_Scope = *b.Scope
-	}
-	if b.Confidentiality != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 13)
-		x.xxx_hidden_Confidentiality = *b.Confidentiality
-	}
-	if b.Integrity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 13)
-		x.xxx_hidden_Integrity = *b.Integrity
-	}
-	if b.Availability != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 13)
-		x.xxx_hidden_Availability = *b.Availability
-	}
-	if b.Score != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 13)
-		x.xxx_hidden_Score = *b.Score
-	}
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 13)
-		x.xxx_hidden_Severity = *b.Severity
-	}
+	x.Vector = b.Vector
+	x.ExploitabilityScore = b.ExploitabilityScore
+	x.ImpactScore = b.ImpactScore
+	x.AttackVector = b.AttackVector
+	x.AttackComplexity = b.AttackComplexity
+	x.PrivilegesRequired = b.PrivilegesRequired
+	x.UserInteraction = b.UserInteraction
+	x.Scope = b.Scope
+	x.Confidentiality = b.Confidentiality
+	x.Integrity = b.Integrity
+	x.Availability = b.Availability
+	x.Score = b.Score
+	x.Severity = b.Severity
 	return m0
 }
 
 type CVE_DistroSpecific struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Severity     VulnerabilitySeverity  `protobuf:"varint,1,opt,name=severity,enum=storage.VulnerabilitySeverity"`
-	xxx_hidden_Cvss         float32                `protobuf:"fixed32,2,opt,name=cvss"`
-	xxx_hidden_ScoreVersion CVE_ScoreVersion       `protobuf:"varint,3,opt,name=score_version,json=scoreVersion,enum=storage.CVE_ScoreVersion"`
-	xxx_hidden_CvssV2       *CVSSV2                `protobuf:"bytes,4,opt,name=cvss_v2,json=cvssV2"`
-	xxx_hidden_CvssV3       *CVSSV3                `protobuf:"bytes,5,opt,name=cvss_v3,json=cvssV3"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Severity      VulnerabilitySeverity  `protobuf:"varint,1,opt,name=severity,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
+	Cvss          float32                `protobuf:"fixed32,2,opt,name=cvss" json:"cvss,omitempty"`
+	ScoreVersion  CVE_ScoreVersion       `protobuf:"varint,3,opt,name=score_version,json=scoreVersion,enum=storage.CVE_ScoreVersion" json:"score_version,omitempty"`
+	CvssV2        *CVSSV2                `protobuf:"bytes,4,opt,name=cvss_v2,json=cvssV2" json:"cvss_v2,omitempty"`
+	CvssV3        *CVSSV3                `protobuf:"bytes,5,opt,name=cvss_v3,json=cvssV3" json:"cvss_v3,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CVE_DistroSpecific) Reset() {
@@ -4786,130 +3479,87 @@ func (x *CVE_DistroSpecific) ProtoReflect() protoreflect.Message {
 
 func (x *CVE_DistroSpecific) GetSeverity() VulnerabilitySeverity {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Severity
-		}
+		return x.Severity
 	}
 	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 }
 
 func (x *CVE_DistroSpecific) GetCvss() float32 {
 	if x != nil {
-		return x.xxx_hidden_Cvss
+		return x.Cvss
 	}
 	return 0
 }
 
 func (x *CVE_DistroSpecific) GetScoreVersion() CVE_ScoreVersion {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_ScoreVersion
-		}
+		return x.ScoreVersion
 	}
 	return CVE_V2
 }
 
 func (x *CVE_DistroSpecific) GetCvssV2() *CVSSV2 {
 	if x != nil {
-		return x.xxx_hidden_CvssV2
+		return x.CvssV2
 	}
 	return nil
 }
 
 func (x *CVE_DistroSpecific) GetCvssV3() *CVSSV3 {
 	if x != nil {
-		return x.xxx_hidden_CvssV3
+		return x.CvssV3
 	}
 	return nil
 }
 
 func (x *CVE_DistroSpecific) SetSeverity(v VulnerabilitySeverity) {
-	x.xxx_hidden_Severity = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Severity = v
 }
 
 func (x *CVE_DistroSpecific) SetCvss(v float32) {
-	x.xxx_hidden_Cvss = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Cvss = v
 }
 
 func (x *CVE_DistroSpecific) SetScoreVersion(v CVE_ScoreVersion) {
-	x.xxx_hidden_ScoreVersion = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.ScoreVersion = v
 }
 
 func (x *CVE_DistroSpecific) SetCvssV2(v *CVSSV2) {
-	x.xxx_hidden_CvssV2 = v
+	x.CvssV2 = v
 }
 
 func (x *CVE_DistroSpecific) SetCvssV3(v *CVSSV3) {
-	x.xxx_hidden_CvssV3 = v
-}
-
-func (x *CVE_DistroSpecific) HasSeverity() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVE_DistroSpecific) HasCvss() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CVE_DistroSpecific) HasScoreVersion() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.CvssV3 = v
 }
 
 func (x *CVE_DistroSpecific) HasCvssV2() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV2 != nil
+	return x.CvssV2 != nil
 }
 
 func (x *CVE_DistroSpecific) HasCvssV3() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_CvssV3 != nil
-}
-
-func (x *CVE_DistroSpecific) ClearSeverity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Severity = VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-}
-
-func (x *CVE_DistroSpecific) ClearCvss() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Cvss = 0
-}
-
-func (x *CVE_DistroSpecific) ClearScoreVersion() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ScoreVersion = CVE_V2
+	return x.CvssV3 != nil
 }
 
 func (x *CVE_DistroSpecific) ClearCvssV2() {
-	x.xxx_hidden_CvssV2 = nil
+	x.CvssV2 = nil
 }
 
 func (x *CVE_DistroSpecific) ClearCvssV3() {
-	x.xxx_hidden_CvssV3 = nil
+	x.CvssV3 = nil
 }
 
 type CVE_DistroSpecific_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Severity     *VulnerabilitySeverity
-	Cvss         *float32
-	ScoreVersion *CVE_ScoreVersion
+	Severity     VulnerabilitySeverity
+	Cvss         float32
+	ScoreVersion CVE_ScoreVersion
 	CvssV2       *CVSSV2
 	CvssV3       *CVSSV3
 }
@@ -4918,31 +3568,20 @@ func (b0 CVE_DistroSpecific_builder) Build() *CVE_DistroSpecific {
 	m0 := &CVE_DistroSpecific{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Severity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Severity = *b.Severity
-	}
-	if b.Cvss != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Cvss = *b.Cvss
-	}
-	if b.ScoreVersion != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_ScoreVersion = *b.ScoreVersion
-	}
-	x.xxx_hidden_CvssV2 = b.CvssV2
-	x.xxx_hidden_CvssV3 = b.CvssV3
+	x.Severity = b.Severity
+	x.Cvss = b.Cvss
+	x.ScoreVersion = b.ScoreVersion
+	x.CvssV2 = b.CvssV2
+	x.CvssV3 = b.CvssV3
 	return m0
 }
 
 type CVE_Reference struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_URI         *string                `protobuf:"bytes,1,opt,name=URI"`
-	xxx_hidden_Tags        []string               `protobuf:"bytes,2,rep,name=tags"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	URI           string                 `protobuf:"bytes,1,opt,name=URI" json:"URI,omitempty"`
+	Tags          []string               `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CVE_Reference) Reset() {
@@ -4972,46 +3611,30 @@ func (x *CVE_Reference) ProtoReflect() protoreflect.Message {
 
 func (x *CVE_Reference) GetURI() string {
 	if x != nil {
-		if x.xxx_hidden_URI != nil {
-			return *x.xxx_hidden_URI
-		}
-		return ""
+		return x.URI
 	}
 	return ""
 }
 
 func (x *CVE_Reference) GetTags() []string {
 	if x != nil {
-		return x.xxx_hidden_Tags
+		return x.Tags
 	}
 	return nil
 }
 
 func (x *CVE_Reference) SetURI(v string) {
-	x.xxx_hidden_URI = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.URI = v
 }
 
 func (x *CVE_Reference) SetTags(v []string) {
-	x.xxx_hidden_Tags = v
-}
-
-func (x *CVE_Reference) HasURI() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVE_Reference) ClearURI() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_URI = nil
+	x.Tags = v
 }
 
 type CVE_Reference_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	URI  *string
+	URI  string
 	Tags []string
 }
 
@@ -5019,22 +3642,17 @@ func (b0 CVE_Reference_builder) Build() *CVE_Reference {
 	m0 := &CVE_Reference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.URI != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_URI = b.URI
-	}
-	x.xxx_hidden_Tags = b.Tags
+	x.URI = b.URI
+	x.Tags = b.Tags
 	return m0
 }
 
 type CVEInfo_Reference struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_URI         *string                `protobuf:"bytes,1,opt,name=URI"`
-	xxx_hidden_Tags        []string               `protobuf:"bytes,2,rep,name=tags"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	URI           string                 `protobuf:"bytes,1,opt,name=URI" json:"URI,omitempty"`
+	Tags          []string               `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CVEInfo_Reference) Reset() {
@@ -5064,46 +3682,30 @@ func (x *CVEInfo_Reference) ProtoReflect() protoreflect.Message {
 
 func (x *CVEInfo_Reference) GetURI() string {
 	if x != nil {
-		if x.xxx_hidden_URI != nil {
-			return *x.xxx_hidden_URI
-		}
-		return ""
+		return x.URI
 	}
 	return ""
 }
 
 func (x *CVEInfo_Reference) GetTags() []string {
 	if x != nil {
-		return x.xxx_hidden_Tags
+		return x.Tags
 	}
 	return nil
 }
 
 func (x *CVEInfo_Reference) SetURI(v string) {
-	x.xxx_hidden_URI = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.URI = v
 }
 
 func (x *CVEInfo_Reference) SetTags(v []string) {
-	x.xxx_hidden_Tags = v
-}
-
-func (x *CVEInfo_Reference) HasURI() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CVEInfo_Reference) ClearURI() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_URI = nil
+	x.Tags = v
 }
 
 type CVEInfo_Reference_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	URI  *string
+	URI  string
 	Tags []string
 }
 
@@ -5111,11 +3713,8 @@ func (b0 CVEInfo_Reference_builder) Build() *CVEInfo_Reference {
 	m0 := &CVEInfo_Reference{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.URI != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_URI = b.URI
-	}
-	x.xxx_hidden_Tags = b.Tags
+	x.URI = b.URI
+	x.Tags = b.Tags
 	return m0
 }
 
@@ -5372,8 +3971,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\x10CvssScoreVersion\x12\x13\n" +
 	"\x0fUNKNOWN_VERSION\x10\x00\x12\x06\n" +
 	"\x02V2\x10\x01\x12\x06\n" +
-	"\x02V3\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x02V3\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_cve_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
 var file_storage_cve_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
@@ -5496,11 +4095,11 @@ func file_storage_cve_proto_init() {
 		return
 	}
 	file_storage_cve_proto_msgTypes[5].OneofWrappers = []any{
-		(*imageCVEV2_FixedBy)(nil),
+		(*ImageCVEV2_FixedBy)(nil),
 	}
 	file_storage_cve_proto_msgTypes[8].OneofWrappers = []any{
-		(*cVSSScore_Cvssv2)(nil),
-		(*cVSSScore_Cvssv3)(nil),
+		(*CVSSScore_Cvssv2)(nil),
+		(*CVSSScore_Cvssv3)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

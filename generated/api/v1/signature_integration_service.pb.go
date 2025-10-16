@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/signature_integration_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,14 +26,10 @@ const (
 )
 
 type ListSignatureIntegrationsResponse struct {
-	state                   protoimpl.MessageState           `protogen:"opaque.v1"`
-	xxx_hidden_Integrations *[]*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState          `protogen:"hybrid.v1"`
+	Integrations  []*storage.SignatureIntegration `protobuf:"bytes,1,rep,name=integrations" json:"integrations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListSignatureIntegrationsResponse) Reset() {
@@ -61,27 +59,13 @@ func (x *ListSignatureIntegrationsResponse) ProtoReflect() protoreflect.Message 
 
 func (x *ListSignatureIntegrationsResponse) GetIntegrations() []*storage.SignatureIntegration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Integrations) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.SignatureIntegration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Integrations
 	}
 	return nil
 }
 
 func (x *ListSignatureIntegrationsResponse) SetIntegrations(v []*storage.SignatureIntegration) {
-	var sv *[]*storage.SignatureIntegration
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.SignatureIntegration{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Integrations), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Integrations = v
 }
 
 type ListSignatureIntegrationsResponse_builder struct {
@@ -94,10 +78,7 @@ func (b0 ListSignatureIntegrationsResponse_builder) Build() *ListSignatureIntegr
 	m0 := &ListSignatureIntegrationsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Integrations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Integrations = &b.Integrations
-	}
+	x.Integrations = b.Integrations
 	return m0
 }
 
@@ -113,8 +94,8 @@ const file_api_v1_signature_integration_service_proto_rawDesc = "" +
 	"\x17GetSignatureIntegration\x12\x10.v1.ResourceByID\x1a\x1d.storage.SignatureIntegration\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/signatureintegrations/{id}\x12~\n" +
 	"\x18PostSignatureIntegration\x12\x1d.storage.SignatureIntegration\x1a\x1d.storage.SignatureIntegration\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/signatureintegrations\x12n\n" +
 	"\x17PutSignatureIntegration\x12\x1d.storage.SignatureIntegration\x1a\t.v1.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/signatureintegrations/{id}\x12a\n" +
-	"\x1aDeleteSignatureIntegration\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/v1/signatureintegrations/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\x1aDeleteSignatureIntegration\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/v1/signatureintegrations/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_signature_integration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_signature_integration_service_proto_goTypes = []any{

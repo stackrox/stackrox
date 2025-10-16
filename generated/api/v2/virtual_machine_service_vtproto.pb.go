@@ -4,10 +4,11 @@ package v2
 
 import "google.golang.org/protobuf/proto"
 
-func (m *VirtualMachine) SizeVT() int                   { return proto.Size(m) }
-func (m *VirtualMachine) CloneVT() *VirtualMachine      { return proto.Clone(m).(*VirtualMachine) }
-func (m *VirtualMachine) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachine) SizeVT() int                    { return proto.Size(m) }
+func (m *VirtualMachine) CloneVT() *VirtualMachine       { return proto.Clone(m).(*VirtualMachine) }
+func (m *VirtualMachine) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachine) EqualVT(n *VirtualMachine) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *VirtualMachineScan) SizeVT() int { return proto.Size(m) }
 func (m *VirtualMachineScan) CloneVT() *VirtualMachineScan {
 	return proto.Clone(m).(*VirtualMachineScan)
 }
-func (m *VirtualMachineScan) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *VirtualMachineScan) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachineScan) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *VirtualMachineScan) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachineScan) EqualVT(n *VirtualMachineScan) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VirtualMachineScan) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,6 +30,9 @@ func (m *GetVirtualMachineRequest) CloneVT() *GetVirtualMachineRequest {
 }
 func (m *GetVirtualMachineRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetVirtualMachineRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetVirtualMachineRequest) EqualVT(n *GetVirtualMachineRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetVirtualMachineRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,6 +43,9 @@ func (m *ListVirtualMachinesResponse) CloneVT() *ListVirtualMachinesResponse {
 }
 func (m *ListVirtualMachinesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListVirtualMachinesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListVirtualMachinesResponse) EqualVT(n *ListVirtualMachinesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListVirtualMachinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -50,6 +58,9 @@ func (m *ListVirtualMachinesRequest) CloneVT() *ListVirtualMachinesRequest {
 }
 func (m *ListVirtualMachinesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListVirtualMachinesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListVirtualMachinesRequest) EqualVT(n *ListVirtualMachinesRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListVirtualMachinesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

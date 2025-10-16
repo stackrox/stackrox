@@ -8,8 +8,9 @@ func (m *DeclarativeConfigHealth) SizeVT() int { return proto.Size(m) }
 func (m *DeclarativeConfigHealth) CloneVT() *DeclarativeConfigHealth {
 	return proto.Clone(m).(*DeclarativeConfigHealth)
 }
-func (m *DeclarativeConfigHealth) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeclarativeConfigHealth) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeclarativeConfigHealth) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *DeclarativeConfigHealth) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *DeclarativeConfigHealth) EqualVT(n *DeclarativeConfigHealth) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeclarativeConfigHealth) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

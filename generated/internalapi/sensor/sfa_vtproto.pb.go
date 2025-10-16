@@ -4,10 +4,11 @@ package sensor
 
 import "google.golang.org/protobuf/proto"
 
-func (m *FileActivityBase) SizeVT() int                   { return proto.Size(m) }
-func (m *FileActivityBase) CloneVT() *FileActivityBase    { return proto.Clone(m).(*FileActivityBase) }
-func (m *FileActivityBase) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FileActivityBase) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileActivityBase) SizeVT() int                      { return proto.Size(m) }
+func (m *FileActivityBase) CloneVT() *FileActivityBase       { return proto.Clone(m).(*FileActivityBase) }
+func (m *FileActivityBase) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *FileActivityBase) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *FileActivityBase) EqualVT(n *FileActivityBase) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileActivityBase) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *FileCreation) SizeVT() int                   { return proto.Size(m) }
 func (m *FileCreation) CloneVT() *FileCreation        { return proto.Clone(m).(*FileCreation) }
 func (m *FileCreation) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileCreation) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileCreation) EqualVT(n *FileCreation) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileCreation) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *FileUnlink) SizeVT() int                   { return proto.Size(m) }
 func (m *FileUnlink) CloneVT() *FileUnlink          { return proto.Clone(m).(*FileUnlink) }
 func (m *FileUnlink) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileUnlink) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileUnlink) EqualVT(n *FileUnlink) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileUnlink) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,6 +35,7 @@ func (m *FileRename) SizeVT() int                   { return proto.Size(m) }
 func (m *FileRename) CloneVT() *FileRename          { return proto.Clone(m).(*FileRename) }
 func (m *FileRename) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileRename) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileRename) EqualVT(n *FileRename) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileRename) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,8 +44,9 @@ func (m *FilePermissionChange) SizeVT() int { return proto.Size(m) }
 func (m *FilePermissionChange) CloneVT() *FilePermissionChange {
 	return proto.Clone(m).(*FilePermissionChange)
 }
-func (m *FilePermissionChange) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FilePermissionChange) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FilePermissionChange) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *FilePermissionChange) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *FilePermissionChange) EqualVT(n *FilePermissionChange) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FilePermissionChange) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -50,8 +55,9 @@ func (m *FileOwnershipChange) SizeVT() int { return proto.Size(m) }
 func (m *FileOwnershipChange) CloneVT() *FileOwnershipChange {
 	return proto.Clone(m).(*FileOwnershipChange)
 }
-func (m *FileOwnershipChange) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FileOwnershipChange) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileOwnershipChange) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *FileOwnershipChange) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *FileOwnershipChange) EqualVT(n *FileOwnershipChange) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileOwnershipChange) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -60,6 +66,7 @@ func (m *FileWrite) SizeVT() int                   { return proto.Size(m) }
 func (m *FileWrite) CloneVT() *FileWrite           { return proto.Clone(m).(*FileWrite) }
 func (m *FileWrite) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileWrite) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileWrite) EqualVT(n *FileWrite) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileWrite) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -68,6 +75,7 @@ func (m *FileOpen) SizeVT() int                   { return proto.Size(m) }
 func (m *FileOpen) CloneVT() *FileOpen            { return proto.Clone(m).(*FileOpen) }
 func (m *FileOpen) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileOpen) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileOpen) EqualVT(n *FileOpen) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileOpen) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -76,6 +84,7 @@ func (m *FileActivity) SizeVT() int                   { return proto.Size(m) }
 func (m *FileActivity) CloneVT() *FileActivity        { return proto.Clone(m).(*FileActivity) }
 func (m *FileActivity) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FileActivity) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FileActivity) EqualVT(n *FileActivity) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

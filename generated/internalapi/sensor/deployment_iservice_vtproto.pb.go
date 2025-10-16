@@ -10,6 +10,9 @@ func (m *GetDeploymentForPodRequest) CloneVT() *GetDeploymentForPodRequest {
 }
 func (m *GetDeploymentForPodRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetDeploymentForPodRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetDeploymentForPodRequest) EqualVT(n *GetDeploymentForPodRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetDeploymentForPodRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -8,8 +8,9 @@ func (m *MsgFromAdmissionControl) SizeVT() int { return proto.Size(m) }
 func (m *MsgFromAdmissionControl) CloneVT() *MsgFromAdmissionControl {
 	return proto.Clone(m).(*MsgFromAdmissionControl)
 }
-func (m *MsgFromAdmissionControl) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MsgFromAdmissionControl) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MsgFromAdmissionControl) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *MsgFromAdmissionControl) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *MsgFromAdmissionControl) EqualVT(n *MsgFromAdmissionControl) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MsgFromAdmissionControl) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *MsgToAdmissionControl) SizeVT() int { return proto.Size(m) }
 func (m *MsgToAdmissionControl) CloneVT() *MsgToAdmissionControl {
 	return proto.Clone(m).(*MsgToAdmissionControl)
 }
-func (m *MsgToAdmissionControl) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MsgToAdmissionControl) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *MsgToAdmissionControl) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *MsgToAdmissionControl) EqualVT(n *MsgToAdmissionControl) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MsgToAdmissionControl) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -12,6 +12,9 @@ func (m *UpgradeCheckInFromUpgraderRequest) MarshalVT() ([]byte, error) { return
 func (m *UpgradeCheckInFromUpgraderRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpgradeCheckInFromUpgraderRequest) EqualVT(n *UpgradeCheckInFromUpgraderRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpgradeCheckInFromUpgraderRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -26,6 +29,9 @@ func (m *UpgradeCheckInFromUpgraderResponse) MarshalVT() ([]byte, error) { retur
 func (m *UpgradeCheckInFromUpgraderResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpgradeCheckInFromUpgraderResponse) EqualVT(n *UpgradeCheckInFromUpgraderResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpgradeCheckInFromUpgraderResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -39,6 +45,9 @@ func (m *UpgradeCheckInFromSensorRequest) CloneVT() *UpgradeCheckInFromSensorReq
 func (m *UpgradeCheckInFromSensorRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *UpgradeCheckInFromSensorRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpgradeCheckInFromSensorRequest) EqualVT(n *UpgradeCheckInFromSensorRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -56,6 +65,9 @@ func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) MarshalVT() ([]byte,
 func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) EqualVT(n *UpgradeCheckInFromSensorRequest_PodErrorCondition) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpgradeCheckInFromSensorRequest_PodErrorCondition) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -71,6 +83,9 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) MarshalVT() ([]byte, 
 }
 func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodState) EqualVT(n *UpgradeCheckInFromSensorRequest_UpgraderPodState) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -88,6 +103,9 @@ func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) MarshalVT() ([]byte,
 func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) EqualVT(n *UpgradeCheckInFromSensorRequest_UpgraderPodStates) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpgradeCheckInFromSensorRequest_UpgraderPodStates) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -101,6 +119,9 @@ func (m *UpgradeCheckInResponseDetails) CloneVT() *UpgradeCheckInResponseDetails
 func (m *UpgradeCheckInResponseDetails) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *UpgradeCheckInResponseDetails) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpgradeCheckInResponseDetails) EqualVT(n *UpgradeCheckInResponseDetails) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -117,6 +138,9 @@ func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) MarshalVT() ([]byte,
 }
 func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpgradeCheckInResponseDetails_NoUpgradeInProgress) EqualVT(n *UpgradeCheckInResponseDetails_NoUpgradeInProgress) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

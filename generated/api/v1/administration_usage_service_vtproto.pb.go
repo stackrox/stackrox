@@ -8,6 +8,7 @@ func (m *TimeRange) SizeVT() int                   { return proto.Size(m) }
 func (m *TimeRange) CloneVT() *TimeRange           { return proto.Clone(m).(*TimeRange) }
 func (m *TimeRange) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TimeRange) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TimeRange) EqualVT(n *TimeRange) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TimeRange) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *SecuredUnitsUsageResponse) CloneVT() *SecuredUnitsUsageResponse {
 }
 func (m *SecuredUnitsUsageResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SecuredUnitsUsageResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecuredUnitsUsageResponse) EqualVT(n *SecuredUnitsUsageResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecuredUnitsUsageResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -29,6 +33,9 @@ func (m *MaxSecuredUnitsUsageResponse) CloneVT() *MaxSecuredUnitsUsageResponse {
 func (m *MaxSecuredUnitsUsageResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *MaxSecuredUnitsUsageResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *MaxSecuredUnitsUsageResponse) EqualVT(n *MaxSecuredUnitsUsageResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

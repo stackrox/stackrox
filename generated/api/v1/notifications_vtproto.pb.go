@@ -10,6 +10,9 @@ func (m *NetworkPolicyNotification) CloneVT() *NetworkPolicyNotification {
 }
 func (m *NetworkPolicyNotification) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NetworkPolicyNotification) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkPolicyNotification) EqualVT(n *NetworkPolicyNotification) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkPolicyNotification) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *NamespaceMetadata) SizeVT() int                   { return proto.Size(m) }
-func (m *NamespaceMetadata) CloneVT() *NamespaceMetadata   { return proto.Clone(m).(*NamespaceMetadata) }
-func (m *NamespaceMetadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NamespaceMetadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NamespaceMetadata) SizeVT() int                       { return proto.Size(m) }
+func (m *NamespaceMetadata) CloneVT() *NamespaceMetadata       { return proto.Clone(m).(*NamespaceMetadata) }
+func (m *NamespaceMetadata) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *NamespaceMetadata) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *NamespaceMetadata) EqualVT(n *NamespaceMetadata) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NamespaceMetadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

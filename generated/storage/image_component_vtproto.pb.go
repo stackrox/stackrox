@@ -4,18 +4,20 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ImageComponent) SizeVT() int                   { return proto.Size(m) }
-func (m *ImageComponent) CloneVT() *ImageComponent      { return proto.Clone(m).(*ImageComponent) }
-func (m *ImageComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImageComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponent) SizeVT() int                    { return proto.Size(m) }
+func (m *ImageComponent) CloneVT() *ImageComponent       { return proto.Clone(m).(*ImageComponent) }
+func (m *ImageComponent) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ImageComponent) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponent) EqualVT(n *ImageComponent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ImageComponentV2) SizeVT() int                   { return proto.Size(m) }
-func (m *ImageComponentV2) CloneVT() *ImageComponentV2    { return proto.Clone(m).(*ImageComponentV2) }
-func (m *ImageComponentV2) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponentV2) SizeVT() int                      { return proto.Size(m) }
+func (m *ImageComponentV2) CloneVT() *ImageComponentV2       { return proto.Clone(m).(*ImageComponentV2) }
+func (m *ImageComponentV2) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ImageComponentV2) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ImageComponentV2) EqualVT(n *ImageComponentV2) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageComponentV2) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

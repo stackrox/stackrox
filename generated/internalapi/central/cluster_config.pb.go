@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/cluster_config.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -23,14 +25,10 @@ const (
 )
 
 type ClusterConfig struct {
-	state             protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Config *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=config"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
+	Config        *storage.DynamicClusterConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClusterConfig) Reset() {
@@ -60,37 +58,24 @@ func (x *ClusterConfig) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterConfig) GetConfig() *storage.DynamicClusterConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.DynamicClusterConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Config
 	}
 	return nil
 }
 
 func (x *ClusterConfig) SetConfig(v *storage.DynamicClusterConfig) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Config = v
 }
 
 func (x *ClusterConfig) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Config != nil
 }
 
 func (x *ClusterConfig) ClearConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*storage.DynamicClusterConfig)(nil))
+	x.Config = nil
 }
 
 type ClusterConfig_builder struct {
@@ -103,10 +88,7 @@ func (b0 ClusterConfig_builder) Build() *ClusterConfig {
 	m0 := &ClusterConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Config != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Config = b.Config
-	}
+	x.Config = b.Config
 	return m0
 }
 
@@ -116,7 +98,7 @@ const file_internalapi_central_cluster_config_proto_rawDesc = "" +
 	"\n" +
 	"(internalapi/central/cluster_config.proto\x12\acentral\x1a\x15storage/cluster.proto\x1a!google/protobuf/go_features.proto\"J\n" +
 	"\rClusterConfig\x129\n" +
-	"\x06config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigB\x02(\x01R\x06configB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x06config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigB\x02(\x01R\x06configB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_cluster_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_cluster_config_proto_goTypes = []any{

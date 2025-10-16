@@ -8,16 +8,18 @@ func (m *GetLogLevelRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetLogLevelRequest) CloneVT() *GetLogLevelRequest {
 	return proto.Clone(m).(*GetLogLevelRequest)
 }
-func (m *GetLogLevelRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetLogLevelRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetLogLevelRequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *GetLogLevelRequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *GetLogLevelRequest) EqualVT(n *GetLogLevelRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetLogLevelRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *LogLevelRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *LogLevelRequest) CloneVT() *LogLevelRequest     { return proto.Clone(m).(*LogLevelRequest) }
-func (m *LogLevelRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *LogLevelRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LogLevelRequest) SizeVT() int                     { return proto.Size(m) }
+func (m *LogLevelRequest) CloneVT() *LogLevelRequest       { return proto.Clone(m).(*LogLevelRequest) }
+func (m *LogLevelRequest) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *LogLevelRequest) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *LogLevelRequest) EqualVT(n *LogLevelRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LogLevelRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,14 +28,16 @@ func (m *ModuleLevel) SizeVT() int                   { return proto.Size(m) }
 func (m *ModuleLevel) CloneVT() *ModuleLevel         { return proto.Clone(m).(*ModuleLevel) }
 func (m *ModuleLevel) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ModuleLevel) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ModuleLevel) EqualVT(n *ModuleLevel) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ModuleLevel) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *LogLevelResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *LogLevelResponse) CloneVT() *LogLevelResponse    { return proto.Clone(m).(*LogLevelResponse) }
-func (m *LogLevelResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *LogLevelResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LogLevelResponse) SizeVT() int                      { return proto.Size(m) }
+func (m *LogLevelResponse) CloneVT() *LogLevelResponse       { return proto.Clone(m).(*LogLevelResponse) }
+func (m *LogLevelResponse) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *LogLevelResponse) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *LogLevelResponse) EqualVT(n *LogLevelResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LogLevelResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -44,6 +48,9 @@ func (m *AuthorizationTraceResponse) CloneVT() *AuthorizationTraceResponse {
 }
 func (m *AuthorizationTraceResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AuthorizationTraceResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AuthorizationTraceResponse) EqualVT(n *AuthorizationTraceResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AuthorizationTraceResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -55,6 +62,9 @@ func (m *AuthorizationTraceResponse_Request) CloneVT() *AuthorizationTraceRespon
 func (m *AuthorizationTraceResponse_Request) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AuthorizationTraceResponse_Request) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthorizationTraceResponse_Request) EqualVT(n *AuthorizationTraceResponse_Request) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -70,6 +80,9 @@ func (m *AuthorizationTraceResponse_Response) MarshalVT() ([]byte, error) { retu
 func (m *AuthorizationTraceResponse_Response) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *AuthorizationTraceResponse_Response) EqualVT(n *AuthorizationTraceResponse_Response) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AuthorizationTraceResponse_Response) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -83,6 +96,9 @@ func (m *AuthorizationTraceResponse_User) CloneVT() *AuthorizationTraceResponse_
 func (m *AuthorizationTraceResponse_User) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AuthorizationTraceResponse_User) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthorizationTraceResponse_User) EqualVT(n *AuthorizationTraceResponse_User) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -98,6 +114,9 @@ func (m *AuthorizationTraceResponse_User_Role) MarshalVT() ([]byte, error) { ret
 func (m *AuthorizationTraceResponse_User_Role) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *AuthorizationTraceResponse_User_Role) EqualVT(n *AuthorizationTraceResponse_User_Role) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AuthorizationTraceResponse_User_Role) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -111,6 +130,9 @@ func (m *AuthorizationTraceResponse_Trace) CloneVT() *AuthorizationTraceResponse
 func (m *AuthorizationTraceResponse_Trace) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AuthorizationTraceResponse_Trace) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthorizationTraceResponse_Trace) EqualVT(n *AuthorizationTraceResponse_Trace) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -127,6 +149,9 @@ func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) MarshalVT() ([]byte
 }
 func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) EqualVT(n *AuthorizationTraceResponse_Trace_BuiltInAuthorizer) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

@@ -10,6 +10,9 @@ func (m *ListServiceAccountResponse) CloneVT() *ListServiceAccountResponse {
 }
 func (m *ListServiceAccountResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListServiceAccountResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListServiceAccountResponse) EqualVT(n *ListServiceAccountResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListServiceAccountResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +21,9 @@ func (m *ServiceAccountAndRoles) SizeVT() int { return proto.Size(m) }
 func (m *ServiceAccountAndRoles) CloneVT() *ServiceAccountAndRoles {
 	return proto.Clone(m).(*ServiceAccountAndRoles)
 }
-func (m *ServiceAccountAndRoles) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ServiceAccountAndRoles) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceAccountAndRoles) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *ServiceAccountAndRoles) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceAccountAndRoles) EqualVT(n *ServiceAccountAndRoles) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ServiceAccountAndRoles) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,6 +34,9 @@ func (m *GetServiceAccountResponse) CloneVT() *GetServiceAccountResponse {
 }
 func (m *GetServiceAccountResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetServiceAccountResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetServiceAccountResponse) EqualVT(n *GetServiceAccountResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetServiceAccountResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,6 +47,9 @@ func (m *SADeploymentRelationship) CloneVT() *SADeploymentRelationship {
 }
 func (m *SADeploymentRelationship) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SADeploymentRelationship) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SADeploymentRelationship) EqualVT(n *SADeploymentRelationship) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SADeploymentRelationship) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -8,6 +8,7 @@ func (m *GetCertExpiry) SizeVT() int                   { return proto.Size(m) }
 func (m *GetCertExpiry) CloneVT() *GetCertExpiry       { return proto.Clone(m).(*GetCertExpiry) }
 func (m *GetCertExpiry) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetCertExpiry) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCertExpiry) EqualVT(n *GetCertExpiry) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCertExpiry) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *GetCertExpiry_Request) SizeVT() int { return proto.Size(m) }
 func (m *GetCertExpiry_Request) CloneVT() *GetCertExpiry_Request {
 	return proto.Clone(m).(*GetCertExpiry_Request)
 }
-func (m *GetCertExpiry_Request) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCertExpiry_Request) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCertExpiry_Request) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GetCertExpiry_Request) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GetCertExpiry_Request) EqualVT(n *GetCertExpiry_Request) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCertExpiry_Request) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *GetCertExpiry_Response) SizeVT() int { return proto.Size(m) }
 func (m *GetCertExpiry_Response) CloneVT() *GetCertExpiry_Response {
 	return proto.Clone(m).(*GetCertExpiry_Response)
 }
-func (m *GetCertExpiry_Response) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetCertExpiry_Response) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetCertExpiry_Response) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *GetCertExpiry_Response) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *GetCertExpiry_Response) EqualVT(n *GetCertExpiry_Response) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetCertExpiry_Response) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

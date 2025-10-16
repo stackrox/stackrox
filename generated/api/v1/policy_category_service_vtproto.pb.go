@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *PolicyCategory) SizeVT() int                   { return proto.Size(m) }
-func (m *PolicyCategory) CloneVT() *PolicyCategory      { return proto.Clone(m).(*PolicyCategory) }
-func (m *PolicyCategory) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategory) SizeVT() int                    { return proto.Size(m) }
+func (m *PolicyCategory) CloneVT() *PolicyCategory       { return proto.Clone(m).(*PolicyCategory) }
+func (m *PolicyCategory) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *PolicyCategory) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *PolicyCategory) EqualVT(n *PolicyCategory) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PolicyCategory) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,9 @@ func (m *PostPolicyCategoryRequest) CloneVT() *PostPolicyCategoryRequest {
 }
 func (m *PostPolicyCategoryRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PostPolicyCategoryRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PostPolicyCategoryRequest) EqualVT(n *PostPolicyCategoryRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PostPolicyCategoryRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,6 +32,9 @@ func (m *GetPolicyCategoriesResponse) CloneVT() *GetPolicyCategoriesResponse {
 }
 func (m *GetPolicyCategoriesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetPolicyCategoriesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetPolicyCategoriesResponse) EqualVT(n *GetPolicyCategoriesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetPolicyCategoriesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -40,6 +47,9 @@ func (m *RenamePolicyCategoryRequest) CloneVT() *RenamePolicyCategoryRequest {
 }
 func (m *RenamePolicyCategoryRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RenamePolicyCategoryRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RenamePolicyCategoryRequest) EqualVT(n *RenamePolicyCategoryRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RenamePolicyCategoryRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -52,6 +62,9 @@ func (m *DeletePolicyCategoryRequest) CloneVT() *DeletePolicyCategoryRequest {
 }
 func (m *DeletePolicyCategoryRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DeletePolicyCategoryRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeletePolicyCategoryRequest) EqualVT(n *DeletePolicyCategoryRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeletePolicyCategoryRequest) UnmarshalVTUnsafe(dAtA []byte) error {

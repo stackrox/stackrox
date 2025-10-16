@@ -8,8 +8,9 @@ func (m *ReportConfiguration) SizeVT() int { return proto.Size(m) }
 func (m *ReportConfiguration) CloneVT() *ReportConfiguration {
 	return proto.Clone(m).(*ReportConfiguration)
 }
-func (m *ReportConfiguration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ReportConfiguration) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ReportConfiguration) EqualVT(n *ReportConfiguration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ReportConfiguration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *ReportLastRunStatus) SizeVT() int { return proto.Size(m) }
 func (m *ReportLastRunStatus) CloneVT() *ReportLastRunStatus {
 	return proto.Clone(m).(*ReportLastRunStatus)
 }
-func (m *ReportLastRunStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ReportLastRunStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ReportLastRunStatus) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ReportLastRunStatus) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ReportLastRunStatus) EqualVT(n *ReportLastRunStatus) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ReportLastRunStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,6 +32,9 @@ func (m *VulnerabilityReportFilters) CloneVT() *VulnerabilityReportFilters {
 }
 func (m *VulnerabilityReportFilters) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *VulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VulnerabilityReportFilters) EqualVT(n *VulnerabilityReportFilters) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,6 +43,7 @@ func (m *ResourceScope) SizeVT() int                   { return proto.Size(m) }
 func (m *ResourceScope) CloneVT() *ResourceScope       { return proto.Clone(m).(*ResourceScope) }
 func (m *ResourceScope) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ResourceScope) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceScope) EqualVT(n *ResourceScope) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceScope) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -49,6 +55,9 @@ func (m *ViewBasedVulnerabilityReportFilters) CloneVT() *ViewBasedVulnerabilityR
 func (m *ViewBasedVulnerabilityReportFilters) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ViewBasedVulnerabilityReportFilters) EqualVT(n *ViewBasedVulnerabilityReportFilters) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

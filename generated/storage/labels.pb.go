@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/labels.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -127,15 +129,13 @@ func (x SetBasedLabelSelector_Operator) Number() protoreflect.EnumNumber {
 //
 // Next available tag: 3
 type LabelSelector struct {
-	state                   protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_MatchLabels  map[string]string             `protobuf:"bytes,1,rep,name=match_labels,json=matchLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Requirements *[]*LabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// This is actually a oneof, but we can't make it one due to backwards
+	// compatibility constraints.
+	MatchLabels   map[string]string            `protobuf:"bytes,1,rep,name=match_labels,json=matchLabels" json:"match_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Requirements  []*LabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements" json:"requirements,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LabelSelector) Reset() {
@@ -165,38 +165,24 @@ func (x *LabelSelector) ProtoReflect() protoreflect.Message {
 
 func (x *LabelSelector) GetMatchLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_MatchLabels
+		return x.MatchLabels
 	}
 	return nil
 }
 
 func (x *LabelSelector) GetRequirements() []*LabelSelector_Requirement {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Requirements) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*LabelSelector_Requirement
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Requirements
 	}
 	return nil
 }
 
 func (x *LabelSelector) SetMatchLabels(v map[string]string) {
-	x.xxx_hidden_MatchLabels = v
+	x.MatchLabels = v
 }
 
 func (x *LabelSelector) SetRequirements(v []*LabelSelector_Requirement) {
-	var sv *[]*LabelSelector_Requirement
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*LabelSelector_Requirement{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Requirements = v
 }
 
 type LabelSelector_builder struct {
@@ -212,11 +198,8 @@ func (b0 LabelSelector_builder) Build() *LabelSelector {
 	m0 := &LabelSelector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_MatchLabels = b.MatchLabels
-	if b.Requirements != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Requirements = &b.Requirements
-	}
+	x.MatchLabels = b.MatchLabels
+	x.Requirements = b.Requirements
 	return m0
 }
 
@@ -224,14 +207,10 @@ func (b0 LabelSelector_builder) Build() *LabelSelector {
 //
 // Next available tag: 3
 type SetBasedLabelSelector struct {
-	state                   protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_Requirements *[]*SetBasedLabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState               `protogen:"hybrid.v1"`
+	Requirements  []*SetBasedLabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements" json:"requirements,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SetBasedLabelSelector) Reset() {
@@ -261,27 +240,13 @@ func (x *SetBasedLabelSelector) ProtoReflect() protoreflect.Message {
 
 func (x *SetBasedLabelSelector) GetRequirements() []*SetBasedLabelSelector_Requirement {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Requirements) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*SetBasedLabelSelector_Requirement
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Requirements
 	}
 	return nil
 }
 
 func (x *SetBasedLabelSelector) SetRequirements(v []*SetBasedLabelSelector_Requirement) {
-	var sv *[]*SetBasedLabelSelector_Requirement
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SetBasedLabelSelector_Requirement{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Requirements), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Requirements = v
 }
 
 type SetBasedLabelSelector_builder struct {
@@ -294,23 +259,18 @@ func (b0 SetBasedLabelSelector_builder) Build() *SetBasedLabelSelector {
 	m0 := &SetBasedLabelSelector{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Requirements != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Requirements = &b.Requirements
-	}
+	x.Requirements = b.Requirements
 	return m0
 }
 
 // Next available tag: 4
 type LabelSelector_Requirement struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Op          LabelSelector_Operator `protobuf:"varint,2,opt,name=op,enum=storage.LabelSelector_Operator"`
-	xxx_hidden_Values      []string               `protobuf:"bytes,3,rep,name=values"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Op            LabelSelector_Operator `protobuf:"varint,2,opt,name=op,enum=storage.LabelSelector_Operator" json:"op,omitempty"`
+	Values        []string               `protobuf:"bytes,3,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LabelSelector_Requirement) Reset() {
@@ -340,73 +300,42 @@ func (x *LabelSelector_Requirement) ProtoReflect() protoreflect.Message {
 
 func (x *LabelSelector_Requirement) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *LabelSelector_Requirement) GetOp() LabelSelector_Operator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Op
-		}
+		return x.Op
 	}
 	return LabelSelector_UNKNOWN
 }
 
 func (x *LabelSelector_Requirement) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *LabelSelector_Requirement) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Key = v
 }
 
 func (x *LabelSelector_Requirement) SetOp(v LabelSelector_Operator) {
-	x.xxx_hidden_Op = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Op = v
 }
 
 func (x *LabelSelector_Requirement) SetValues(v []string) {
-	x.xxx_hidden_Values = v
-}
-
-func (x *LabelSelector_Requirement) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *LabelSelector_Requirement) HasOp() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *LabelSelector_Requirement) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *LabelSelector_Requirement) ClearOp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Op = LabelSelector_UNKNOWN
+	x.Values = v
 }
 
 type LabelSelector_Requirement_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key    *string
-	Op     *LabelSelector_Operator
+	Key    string
+	Op     LabelSelector_Operator
 	Values []string
 }
 
@@ -414,28 +343,20 @@ func (b0 LabelSelector_Requirement_builder) Build() *LabelSelector_Requirement {
 	m0 := &LabelSelector_Requirement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Op != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Op = *b.Op
-	}
-	x.xxx_hidden_Values = b.Values
+	x.Key = b.Key
+	x.Op = b.Op
+	x.Values = b.Values
 	return m0
 }
 
 // Next available tag: 4
 type SetBasedLabelSelector_Requirement struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                        `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Op          SetBasedLabelSelector_Operator `protobuf:"varint,2,opt,name=op,enum=storage.SetBasedLabelSelector_Operator"`
-	xxx_hidden_Values      []string                       `protobuf:"bytes,3,rep,name=values"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState         `protogen:"hybrid.v1"`
+	Key           string                         `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Op            SetBasedLabelSelector_Operator `protobuf:"varint,2,opt,name=op,enum=storage.SetBasedLabelSelector_Operator" json:"op,omitempty"`
+	Values        []string                       `protobuf:"bytes,3,rep,name=values" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SetBasedLabelSelector_Requirement) Reset() {
@@ -465,73 +386,42 @@ func (x *SetBasedLabelSelector_Requirement) ProtoReflect() protoreflect.Message 
 
 func (x *SetBasedLabelSelector_Requirement) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *SetBasedLabelSelector_Requirement) GetOp() SetBasedLabelSelector_Operator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Op
-		}
+		return x.Op
 	}
 	return SetBasedLabelSelector_UNKNOWN
 }
 
 func (x *SetBasedLabelSelector_Requirement) GetValues() []string {
 	if x != nil {
-		return x.xxx_hidden_Values
+		return x.Values
 	}
 	return nil
 }
 
 func (x *SetBasedLabelSelector_Requirement) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Key = v
 }
 
 func (x *SetBasedLabelSelector_Requirement) SetOp(v SetBasedLabelSelector_Operator) {
-	x.xxx_hidden_Op = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Op = v
 }
 
 func (x *SetBasedLabelSelector_Requirement) SetValues(v []string) {
-	x.xxx_hidden_Values = v
-}
-
-func (x *SetBasedLabelSelector_Requirement) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SetBasedLabelSelector_Requirement) HasOp() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SetBasedLabelSelector_Requirement) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *SetBasedLabelSelector_Requirement) ClearOp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Op = SetBasedLabelSelector_UNKNOWN
+	x.Values = v
 }
 
 type SetBasedLabelSelector_Requirement_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key    *string
-	Op     *SetBasedLabelSelector_Operator
+	Key    string
+	Op     SetBasedLabelSelector_Operator
 	Values []string
 }
 
@@ -539,15 +429,9 @@ func (b0 SetBasedLabelSelector_Requirement_builder) Build() *SetBasedLabelSelect
 	m0 := &SetBasedLabelSelector_Requirement{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Op != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Op = *b.Op
-	}
-	x.xxx_hidden_Values = b.Values
+	x.Key = b.Key
+	x.Op = b.Op
+	x.Values = b.Values
 	return m0
 }
 
@@ -589,8 +473,8 @@ const file_storage_labels_proto_rawDesc = "" +
 	"\n" +
 	"\x06EXISTS\x10\x03\x12\x0e\n" +
 	"\n" +
-	"NOT_EXISTS\x10\x04J\x04\b\x01\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"NOT_EXISTS\x10\x04J\x04\b\x01\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_labels_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_labels_proto_msgTypes = make([]protoimpl.MessageInfo, 5)

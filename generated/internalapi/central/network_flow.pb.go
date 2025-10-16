@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/network_flow.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -24,16 +26,13 @@ const (
 )
 
 type NetworkFlowUpdate struct {
-	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Updated          *[]*storage.NetworkFlow     `protobuf:"bytes,1,rep,name=updated"`
-	xxx_hidden_UpdatedEndpoints *[]*storage.NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints"`
-	xxx_hidden_Time             *timestamppb.Timestamp      `protobuf:"bytes,2,opt,name=time"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Network flows that were added or removed from the last time state was sent to Central.
+	Updated          []*storage.NetworkFlow     `protobuf:"bytes,1,rep,name=updated" json:"updated,omitempty"`
+	UpdatedEndpoints []*storage.NetworkEndpoint `protobuf:"bytes,3,rep,name=updated_endpoints,json=updatedEndpoints" json:"updated_endpoints,omitempty"`
+	Time             *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *NetworkFlowUpdate) Reset() {
@@ -63,87 +62,46 @@ func (x *NetworkFlowUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkFlowUpdate) GetUpdated() []*storage.NetworkFlow {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Updated) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.NetworkFlow
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Updated), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Updated
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) GetUpdatedEndpoints() []*storage.NetworkEndpoint {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_UpdatedEndpoints) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*storage.NetworkEndpoint
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.UpdatedEndpoints
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) GetTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Time) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Time), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Time
 	}
 	return nil
 }
 
 func (x *NetworkFlowUpdate) SetUpdated(v []*storage.NetworkFlow) {
-	var sv *[]*storage.NetworkFlow
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Updated), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.NetworkFlow{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Updated), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Updated = v
 }
 
 func (x *NetworkFlowUpdate) SetUpdatedEndpoints(v []*storage.NetworkEndpoint) {
-	var sv *[]*storage.NetworkEndpoint
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.NetworkEndpoint{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_UpdatedEndpoints), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.UpdatedEndpoints = v
 }
 
 func (x *NetworkFlowUpdate) SetTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-	}
+	x.Time = v
 }
 
 func (x *NetworkFlowUpdate) HasTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.Time != nil
 }
 
 func (x *NetworkFlowUpdate) ClearTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Time, (*timestamppb.Timestamp)(nil))
+	x.Time = nil
 }
 
 type NetworkFlowUpdate_builder struct {
@@ -159,31 +117,18 @@ func (b0 NetworkFlowUpdate_builder) Build() *NetworkFlowUpdate {
 	m0 := &NetworkFlowUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Updated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Updated = &b.Updated
-	}
-	if b.UpdatedEndpoints != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_UpdatedEndpoints = &b.UpdatedEndpoints
-	}
-	if b.Time != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Time = b.Time
-	}
+	x.Updated = b.Updated
+	x.UpdatedEndpoints = b.UpdatedEndpoints
+	x.Time = b.Time
 	return m0
 }
 
 type PushNetworkEntitiesRequest struct {
-	state               protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Entities *[]*storage.NetworkEntityInfo `protobuf:"bytes,1,rep,name=entities"`
-	xxx_hidden_SeqID    int64                         `protobuf:"varint,2,opt,name=seqID"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	Entities      []*storage.NetworkEntityInfo `protobuf:"bytes,1,rep,name=entities" json:"entities,omitempty"`
+	SeqID         int64                        `protobuf:"varint,2,opt,name=seqID" json:"seqID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PushNetworkEntitiesRequest) Reset() {
@@ -213,72 +158,39 @@ func (x *PushNetworkEntitiesRequest) ProtoReflect() protoreflect.Message {
 
 func (x *PushNetworkEntitiesRequest) GetEntities() []*storage.NetworkEntityInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Entities) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.NetworkEntityInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Entities), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Entities
 	}
 	return nil
 }
 
 func (x *PushNetworkEntitiesRequest) GetSeqID() int64 {
 	if x != nil {
-		return x.xxx_hidden_SeqID
+		return x.SeqID
 	}
 	return 0
 }
 
 func (x *PushNetworkEntitiesRequest) SetEntities(v []*storage.NetworkEntityInfo) {
-	var sv *[]*storage.NetworkEntityInfo
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Entities), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.NetworkEntityInfo{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Entities), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Entities = v
 }
 
 func (x *PushNetworkEntitiesRequest) SetSeqID(v int64) {
-	x.xxx_hidden_SeqID = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *PushNetworkEntitiesRequest) HasSeqID() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PushNetworkEntitiesRequest) ClearSeqID() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_SeqID = 0
+	x.SeqID = v
 }
 
 type PushNetworkEntitiesRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Entities []*storage.NetworkEntityInfo
-	SeqID    *int64
+	SeqID    int64
 }
 
 func (b0 PushNetworkEntitiesRequest_builder) Build() *PushNetworkEntitiesRequest {
 	m0 := &PushNetworkEntitiesRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Entities != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Entities = &b.Entities
-	}
-	if b.SeqID != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_SeqID = *b.SeqID
-	}
+	x.Entities = b.Entities
+	x.SeqID = b.SeqID
 	return m0
 }
 
@@ -293,7 +205,7 @@ const file_internalapi_central_network_flow_proto_rawDesc = "" +
 	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\x04time\"n\n" +
 	"\x1aPushNetworkEntitiesRequest\x12:\n" +
 	"\bentities\x18\x01 \x03(\v2\x1a.storage.NetworkEntityInfoB\x02(\x01R\bentities\x12\x14\n" +
-	"\x05seqID\x18\x02 \x01(\x03R\x05seqIDB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05seqID\x18\x02 \x01(\x03R\x05seqIDB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_network_flow_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_central_network_flow_proto_goTypes = []any{

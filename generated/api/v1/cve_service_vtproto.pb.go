@@ -8,8 +8,9 @@ func (m *SuppressCVERequest) SizeVT() int { return proto.Size(m) }
 func (m *SuppressCVERequest) CloneVT() *SuppressCVERequest {
 	return proto.Clone(m).(*SuppressCVERequest)
 }
-func (m *SuppressCVERequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SuppressCVERequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SuppressCVERequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *SuppressCVERequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *SuppressCVERequest) EqualVT(n *SuppressCVERequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SuppressCVERequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *UnsuppressCVERequest) SizeVT() int { return proto.Size(m) }
 func (m *UnsuppressCVERequest) CloneVT() *UnsuppressCVERequest {
 	return proto.Clone(m).(*UnsuppressCVERequest)
 }
-func (m *UnsuppressCVERequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UnsuppressCVERequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UnsuppressCVERequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *UnsuppressCVERequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *UnsuppressCVERequest) EqualVT(n *UnsuppressCVERequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UnsuppressCVERequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -10,6 +10,9 @@ func (m *GetImageIntegrationsRequest) CloneVT() *GetImageIntegrationsRequest {
 }
 func (m *GetImageIntegrationsRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetImageIntegrationsRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetImageIntegrationsRequest) EqualVT(n *GetImageIntegrationsRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetImageIntegrationsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *GetImageIntegrationsResponse) MarshalVT() ([]byte, error) { return prot
 func (m *GetImageIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetImageIntegrationsResponse) EqualVT(n *GetImageIntegrationsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetImageIntegrationsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -37,6 +43,9 @@ func (m *UpdateImageIntegrationRequest) CloneVT() *UpdateImageIntegrationRequest
 func (m *UpdateImageIntegrationRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *UpdateImageIntegrationRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpdateImageIntegrationRequest) EqualVT(n *UpdateImageIntegrationRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

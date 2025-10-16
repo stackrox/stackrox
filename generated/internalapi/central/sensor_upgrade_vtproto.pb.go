@@ -8,8 +8,9 @@ func (m *SensorUpgradeTrigger) SizeVT() int { return proto.Size(m) }
 func (m *SensorUpgradeTrigger) CloneVT() *SensorUpgradeTrigger {
 	return proto.Clone(m).(*SensorUpgradeTrigger)
 }
-func (m *SensorUpgradeTrigger) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *SensorUpgradeTrigger) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorUpgradeTrigger) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *SensorUpgradeTrigger) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *SensorUpgradeTrigger) EqualVT(n *SensorUpgradeTrigger) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorUpgradeTrigger) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *SensorUpgradeTrigger_EnvVarDef) CloneVT() *SensorUpgradeTrigger_EnvVarD
 func (m *SensorUpgradeTrigger_EnvVarDef) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *SensorUpgradeTrigger_EnvVarDef) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *SensorUpgradeTrigger_EnvVarDef) EqualVT(n *SensorUpgradeTrigger_EnvVarDef) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

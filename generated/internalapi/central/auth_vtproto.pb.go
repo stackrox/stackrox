@@ -4,10 +4,11 @@ package central
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ServiceCertAuth) SizeVT() int                   { return proto.Size(m) }
-func (m *ServiceCertAuth) CloneVT() *ServiceCertAuth     { return proto.Clone(m).(*ServiceCertAuth) }
-func (m *ServiceCertAuth) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ServiceCertAuth) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceCertAuth) SizeVT() int                     { return proto.Size(m) }
+func (m *ServiceCertAuth) CloneVT() *ServiceCertAuth       { return proto.Clone(m).(*ServiceCertAuth) }
+func (m *ServiceCertAuth) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ServiceCertAuth) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceCertAuth) EqualVT(n *ServiceCertAuth) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ServiceCertAuth) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

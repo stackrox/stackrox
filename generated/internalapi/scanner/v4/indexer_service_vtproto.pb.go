@@ -8,8 +8,9 @@ func (m *ContainerImageLocator) SizeVT() int { return proto.Size(m) }
 func (m *ContainerImageLocator) CloneVT() *ContainerImageLocator {
 	return proto.Clone(m).(*ContainerImageLocator)
 }
-func (m *ContainerImageLocator) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ContainerImageLocator) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ContainerImageLocator) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ContainerImageLocator) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ContainerImageLocator) EqualVT(n *ContainerImageLocator) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ContainerImageLocator) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *CreateIndexReportRequest) CloneVT() *CreateIndexReportRequest {
 }
 func (m *CreateIndexReportRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CreateIndexReportRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateIndexReportRequest) EqualVT(n *CreateIndexReportRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,8 +32,9 @@ func (m *GetIndexReportRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetIndexReportRequest) CloneVT() *GetIndexReportRequest {
 	return proto.Clone(m).(*GetIndexReportRequest)
 }
-func (m *GetIndexReportRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetIndexReportRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetIndexReportRequest) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *GetIndexReportRequest) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *GetIndexReportRequest) EqualVT(n *GetIndexReportRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,8 +43,9 @@ func (m *HasIndexReportRequest) SizeVT() int { return proto.Size(m) }
 func (m *HasIndexReportRequest) CloneVT() *HasIndexReportRequest {
 	return proto.Clone(m).(*HasIndexReportRequest)
 }
-func (m *HasIndexReportRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *HasIndexReportRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *HasIndexReportRequest) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *HasIndexReportRequest) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *HasIndexReportRequest) EqualVT(n *HasIndexReportRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *HasIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -48,8 +54,9 @@ func (m *HasIndexReportResponse) SizeVT() int { return proto.Size(m) }
 func (m *HasIndexReportResponse) CloneVT() *HasIndexReportResponse {
 	return proto.Clone(m).(*HasIndexReportResponse)
 }
-func (m *HasIndexReportResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *HasIndexReportResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *HasIndexReportResponse) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *HasIndexReportResponse) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *HasIndexReportResponse) EqualVT(n *HasIndexReportResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *HasIndexReportResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -62,6 +69,9 @@ func (m *GetOrCreateIndexReportRequest) MarshalVT() ([]byte, error) { return pro
 func (m *GetOrCreateIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetOrCreateIndexReportRequest) EqualVT(n *GetOrCreateIndexReportRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetOrCreateIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -72,8 +82,9 @@ func (m *StoreIndexReportRequest) SizeVT() int { return proto.Size(m) }
 func (m *StoreIndexReportRequest) CloneVT() *StoreIndexReportRequest {
 	return proto.Clone(m).(*StoreIndexReportRequest)
 }
-func (m *StoreIndexReportRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *StoreIndexReportRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *StoreIndexReportRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *StoreIndexReportRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *StoreIndexReportRequest) EqualVT(n *StoreIndexReportRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *StoreIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -84,6 +95,9 @@ func (m *StoreIndexReportResponse) CloneVT() *StoreIndexReportResponse {
 }
 func (m *StoreIndexReportResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *StoreIndexReportResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *StoreIndexReportResponse) EqualVT(n *StoreIndexReportResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *StoreIndexReportResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/network_baseline_sync.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -23,14 +25,10 @@ const (
 )
 
 type NetworkBaselineSync struct {
-	state                       protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_NetworkBaselines *[]*storage.NetworkBaseline `protobuf:"bytes,1,rep,name=network_baselines,json=networkBaselines"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState     `protogen:"hybrid.v1"`
+	NetworkBaselines []*storage.NetworkBaseline `protobuf:"bytes,1,rep,name=network_baselines,json=networkBaselines" json:"network_baselines,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineSync) Reset() {
@@ -60,27 +58,13 @@ func (x *NetworkBaselineSync) ProtoReflect() protoreflect.Message {
 
 func (x *NetworkBaselineSync) GetNetworkBaselines() []*storage.NetworkBaseline {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_NetworkBaselines) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.NetworkBaseline
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_NetworkBaselines), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.NetworkBaselines
 	}
 	return nil
 }
 
 func (x *NetworkBaselineSync) SetNetworkBaselines(v []*storage.NetworkBaseline) {
-	var sv *[]*storage.NetworkBaseline
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_NetworkBaselines), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.NetworkBaseline{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_NetworkBaselines), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.NetworkBaselines = v
 }
 
 type NetworkBaselineSync_builder struct {
@@ -93,10 +77,7 @@ func (b0 NetworkBaselineSync_builder) Build() *NetworkBaselineSync {
 	m0 := &NetworkBaselineSync{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.NetworkBaselines != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_NetworkBaselines = &b.NetworkBaselines
-	}
+	x.NetworkBaselines = b.NetworkBaselines
 	return m0
 }
 
@@ -106,7 +87,7 @@ const file_internalapi_central_network_baseline_sync_proto_rawDesc = "" +
 	"\n" +
 	"/internalapi/central/network_baseline_sync.proto\x12\acentral\x1a\x1estorage/network_baseline.proto\x1a!google/protobuf/go_features.proto\"`\n" +
 	"\x13NetworkBaselineSync\x12I\n" +
-	"\x11network_baselines\x18\x01 \x03(\v2\x18.storage.NetworkBaselineB\x02(\x01R\x10networkBaselinesB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x11network_baselines\x18\x01 \x03(\v2\x18.storage.NetworkBaselineB\x02(\x01R\x10networkBaselinesB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_network_baseline_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_central_network_baseline_sync_proto_goTypes = []any{

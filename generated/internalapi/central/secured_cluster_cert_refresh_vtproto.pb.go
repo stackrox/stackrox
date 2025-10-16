@@ -12,6 +12,9 @@ func (m *SecuredClusterCertsIssueError) MarshalVT() ([]byte, error) { return pro
 func (m *SecuredClusterCertsIssueError) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *SecuredClusterCertsIssueError) EqualVT(n *SecuredClusterCertsIssueError) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecuredClusterCertsIssueError) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -26,6 +29,9 @@ func (m *IssueSecuredClusterCertsRequest) MarshalVT() ([]byte, error) { return p
 func (m *IssueSecuredClusterCertsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *IssueSecuredClusterCertsRequest) EqualVT(n *IssueSecuredClusterCertsRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IssueSecuredClusterCertsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -39,6 +45,9 @@ func (m *IssueSecuredClusterCertsResponse) CloneVT() *IssueSecuredClusterCertsRe
 func (m *IssueSecuredClusterCertsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *IssueSecuredClusterCertsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *IssueSecuredClusterCertsResponse) EqualVT(n *IssueSecuredClusterCertsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

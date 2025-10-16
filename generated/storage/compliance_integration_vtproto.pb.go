@@ -8,8 +8,9 @@ func (m *ComplianceIntegration) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceIntegration) CloneVT() *ComplianceIntegration {
 	return proto.Clone(m).(*ComplianceIntegration)
 }
-func (m *ComplianceIntegration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceIntegration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceIntegration) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceIntegration) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceIntegration) EqualVT(n *ComplianceIntegration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceIntegration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

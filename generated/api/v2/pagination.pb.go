@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v2/pagination.proto
 
+//go:build !protoopaque
+
 package v2
 
 import (
@@ -69,13 +71,11 @@ func (x Aggregation) Number() protoreflect.EnumNumber {
 }
 
 type AggregateBy struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AggrFunc    Aggregation            `protobuf:"varint,1,opt,name=aggrFunc,enum=v2.Aggregation"`
-	xxx_hidden_Distinct    bool                   `protobuf:"varint,2,opt,name=distinct"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	AggrFunc      Aggregation            `protobuf:"varint,1,opt,name=aggrFunc,enum=v2.Aggregation" json:"aggrFunc,omitempty"`
+	Distinct      bool                   `protobuf:"varint,2,opt,name=distinct" json:"distinct,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AggregateBy) Reset() {
@@ -105,85 +105,50 @@ func (x *AggregateBy) ProtoReflect() protoreflect.Message {
 
 func (x *AggregateBy) GetAggrFunc() Aggregation {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_AggrFunc
-		}
+		return x.AggrFunc
 	}
 	return Aggregation_UNSET
 }
 
 func (x *AggregateBy) GetDistinct() bool {
 	if x != nil {
-		return x.xxx_hidden_Distinct
+		return x.Distinct
 	}
 	return false
 }
 
 func (x *AggregateBy) SetAggrFunc(v Aggregation) {
-	x.xxx_hidden_AggrFunc = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.AggrFunc = v
 }
 
 func (x *AggregateBy) SetDistinct(v bool) {
-	x.xxx_hidden_Distinct = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *AggregateBy) HasAggrFunc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *AggregateBy) HasDistinct() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *AggregateBy) ClearAggrFunc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_AggrFunc = Aggregation_UNSET
-}
-
-func (x *AggregateBy) ClearDistinct() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Distinct = false
+	x.Distinct = v
 }
 
 type AggregateBy_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	AggrFunc *Aggregation
-	Distinct *bool
+	AggrFunc Aggregation
+	Distinct bool
 }
 
 func (b0 AggregateBy_builder) Build() *AggregateBy {
 	m0 := &AggregateBy{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.AggrFunc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_AggrFunc = *b.AggrFunc
-	}
-	if b.Distinct != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Distinct = *b.Distinct
-	}
+	x.AggrFunc = b.AggrFunc
+	x.Distinct = b.Distinct
 	return m0
 }
 
 type SortOption struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Field       *string                `protobuf:"bytes,1,opt,name=field"`
-	xxx_hidden_Reversed    bool                   `protobuf:"varint,2,opt,name=reversed"`
-	xxx_hidden_AggregateBy *AggregateBy           `protobuf:"bytes,3,opt,name=aggregate_by,json=aggregateBy"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state    protoimpl.MessageState `protogen:"hybrid.v1"`
+	Field    string                 `protobuf:"bytes,1,opt,name=field" json:"field,omitempty"`
+	Reversed bool                   `protobuf:"varint,2,opt,name=reversed" json:"reversed,omitempty"`
+	// This field is under development. It is not supported on any REST APIs.
+	AggregateBy   *AggregateBy `protobuf:"bytes,3,opt,name=aggregate_by,json=aggregateBy" json:"aggregate_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SortOption) Reset() {
@@ -213,82 +178,53 @@ func (x *SortOption) ProtoReflect() protoreflect.Message {
 
 func (x *SortOption) GetField() string {
 	if x != nil {
-		if x.xxx_hidden_Field != nil {
-			return *x.xxx_hidden_Field
-		}
-		return ""
+		return x.Field
 	}
 	return ""
 }
 
 func (x *SortOption) GetReversed() bool {
 	if x != nil {
-		return x.xxx_hidden_Reversed
+		return x.Reversed
 	}
 	return false
 }
 
 func (x *SortOption) GetAggregateBy() *AggregateBy {
 	if x != nil {
-		return x.xxx_hidden_AggregateBy
+		return x.AggregateBy
 	}
 	return nil
 }
 
 func (x *SortOption) SetField(v string) {
-	x.xxx_hidden_Field = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Field = v
 }
 
 func (x *SortOption) SetReversed(v bool) {
-	x.xxx_hidden_Reversed = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Reversed = v
 }
 
 func (x *SortOption) SetAggregateBy(v *AggregateBy) {
-	x.xxx_hidden_AggregateBy = v
-}
-
-func (x *SortOption) HasField() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SortOption) HasReversed() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.AggregateBy = v
 }
 
 func (x *SortOption) HasAggregateBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AggregateBy != nil
-}
-
-func (x *SortOption) ClearField() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Field = nil
-}
-
-func (x *SortOption) ClearReversed() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Reversed = false
+	return x.AggregateBy != nil
 }
 
 func (x *SortOption) ClearAggregateBy() {
-	x.xxx_hidden_AggregateBy = nil
+	x.AggregateBy = nil
 }
 
 type SortOption_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Field    *string
-	Reversed *bool
+	Field    string
+	Reversed bool
 	// This field is under development. It is not supported on any REST APIs.
 	AggregateBy *AggregateBy
 }
@@ -297,30 +233,21 @@ func (b0 SortOption_builder) Build() *SortOption {
 	m0 := &SortOption{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Field != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Field = b.Field
-	}
-	if b.Reversed != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Reversed = *b.Reversed
-	}
-	x.xxx_hidden_AggregateBy = b.AggregateBy
+	x.Field = b.Field
+	x.Reversed = b.Reversed
+	x.AggregateBy = b.AggregateBy
 	return m0
 }
 
 type Pagination struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Limit       int32                  `protobuf:"varint,1,opt,name=limit"`
-	xxx_hidden_Offset      int32                  `protobuf:"varint,2,opt,name=offset"`
-	xxx_hidden_SortOption  *SortOption            `protobuf:"bytes,3,opt,name=sort_option,json=sortOption"`
-	xxx_hidden_SortOptions *[]*SortOption         `protobuf:"bytes,4,rep,name=sort_options,json=sortOptions"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"hybrid.v1"`
+	Limit      int32                  `protobuf:"varint,1,opt,name=limit" json:"limit,omitempty"`
+	Offset     int32                  `protobuf:"varint,2,opt,name=offset" json:"offset,omitempty"`
+	SortOption *SortOption            `protobuf:"bytes,3,opt,name=sort_option,json=sortOption" json:"sort_option,omitempty"`
+	// This field is under development. It is not supported on any REST APIs.
+	SortOptions   []*SortOption `protobuf:"bytes,4,rep,name=sort_options,json=sortOptions" json:"sort_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Pagination) Reset() {
@@ -350,104 +277,64 @@ func (x *Pagination) ProtoReflect() protoreflect.Message {
 
 func (x *Pagination) GetLimit() int32 {
 	if x != nil {
-		return x.xxx_hidden_Limit
+		return x.Limit
 	}
 	return 0
 }
 
 func (x *Pagination) GetOffset() int32 {
 	if x != nil {
-		return x.xxx_hidden_Offset
+		return x.Offset
 	}
 	return 0
 }
 
 func (x *Pagination) GetSortOption() *SortOption {
 	if x != nil {
-		return x.xxx_hidden_SortOption
+		return x.SortOption
 	}
 	return nil
 }
 
 func (x *Pagination) GetSortOptions() []*SortOption {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_SortOptions) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*SortOption
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.SortOptions
 	}
 	return nil
 }
 
 func (x *Pagination) SetLimit(v int32) {
-	x.xxx_hidden_Limit = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Limit = v
 }
 
 func (x *Pagination) SetOffset(v int32) {
-	x.xxx_hidden_Offset = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Offset = v
 }
 
 func (x *Pagination) SetSortOption(v *SortOption) {
-	x.xxx_hidden_SortOption = v
+	x.SortOption = v
 }
 
 func (x *Pagination) SetSortOptions(v []*SortOption) {
-	var sv *[]*SortOption
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SortOption{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_SortOptions), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Pagination) HasLimit() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Pagination) HasOffset() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.SortOptions = v
 }
 
 func (x *Pagination) HasSortOption() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SortOption != nil
-}
-
-func (x *Pagination) ClearLimit() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Limit = 0
-}
-
-func (x *Pagination) ClearOffset() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Offset = 0
+	return x.SortOption != nil
 }
 
 func (x *Pagination) ClearSortOption() {
-	x.xxx_hidden_SortOption = nil
+	x.SortOption = nil
 }
 
 type Pagination_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Limit      *int32
-	Offset     *int32
+	Limit      int32
+	Offset     int32
 	SortOption *SortOption
 	// This field is under development. It is not supported on any REST APIs.
 	SortOptions []*SortOption
@@ -457,19 +344,10 @@ func (b0 Pagination_builder) Build() *Pagination {
 	m0 := &Pagination{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Limit != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Limit = *b.Limit
-	}
-	if b.Offset != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Offset = *b.Offset
-	}
-	x.xxx_hidden_SortOption = b.SortOption
-	if b.SortOptions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_SortOptions = &b.SortOptions
-	}
+	x.Limit = b.Limit
+	x.Offset = b.Offset
+	x.SortOption = b.SortOption
+	x.SortOptions = b.SortOptions
 	return m0
 }
 
@@ -497,8 +375,8 @@ const file_api_v2_pagination_proto_rawDesc = "" +
 	"\x05UNSET\x10\x00\x12\t\n" +
 	"\x05COUNT\x10\x01\x12\a\n" +
 	"\x03MIN\x10\x02\x12\a\n" +
-	"\x03MAX\x10\x03B/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x03MAX\x10\x03B7\n" +
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_v2_pagination_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v2_pagination_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

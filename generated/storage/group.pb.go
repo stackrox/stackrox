@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/group.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,13 +25,14 @@ const (
 
 // Group is a GroupProperties : Role mapping.
 type Group struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Props       *GroupProperties       `protobuf:"bytes,1,opt,name=props"`
-	xxx_hidden_RoleName    *string                `protobuf:"bytes,3,opt,name=role_name,json=roleName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// GroupProperties define the properties of a group, applying to users when their properties match.
+	// They also uniquely identify the group with the props.id field.
+	Props *GroupProperties `protobuf:"bytes,1,opt,name=props" json:"props,omitempty"`
+	// This is the name of the role that will apply to users in this group.
+	RoleName      string `protobuf:"bytes,3,opt,name=role_name,json=roleName" json:"role_name,omitempty" search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"` // @gotags: search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Group) Reset() {
@@ -59,51 +62,35 @@ func (x *Group) ProtoReflect() protoreflect.Message {
 
 func (x *Group) GetProps() *GroupProperties {
 	if x != nil {
-		return x.xxx_hidden_Props
+		return x.Props
 	}
 	return nil
 }
 
 func (x *Group) GetRoleName() string {
 	if x != nil {
-		if x.xxx_hidden_RoleName != nil {
-			return *x.xxx_hidden_RoleName
-		}
-		return ""
+		return x.RoleName
 	}
 	return ""
 }
 
 func (x *Group) SetProps(v *GroupProperties) {
-	x.xxx_hidden_Props = v
+	x.Props = v
 }
 
 func (x *Group) SetRoleName(v string) {
-	x.xxx_hidden_RoleName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.RoleName = v
 }
 
 func (x *Group) HasProps() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Props != nil
-}
-
-func (x *Group) HasRoleName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Props != nil
 }
 
 func (x *Group) ClearProps() {
-	x.xxx_hidden_Props = nil
-}
-
-func (x *Group) ClearRoleName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_RoleName = nil
+	x.Props = nil
 }
 
 type Group_builder struct {
@@ -113,18 +100,15 @@ type Group_builder struct {
 	// They also uniquely identify the group with the props.id field.
 	Props *GroupProperties
 	// This is the name of the role that will apply to users in this group.
-	RoleName *string
+	RoleName string
 }
 
 func (b0 Group_builder) Build() *Group {
 	m0 := &Group{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Props = b.Props
-	if b.RoleName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_RoleName = b.RoleName
-	}
+	x.Props = b.Props
+	x.RoleName = b.RoleName
 	return m0
 }
 
@@ -137,16 +121,15 @@ func (b0 Group_builder) Build() *Group {
 //
 // Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 type GroupProperties struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                `protobuf:"bytes,4,opt,name=id"`
-	xxx_hidden_Traits         *Traits                `protobuf:"bytes,5,opt,name=traits"`
-	xxx_hidden_AuthProviderId *string                `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId"`
-	xxx_hidden_Key            *string                `protobuf:"bytes,2,opt,name=key"`
-	xxx_hidden_Value          *string                `protobuf:"bytes,3,opt,name=value"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Unique identifier for group properties and respectively the group.
+	Id             string  `protobuf:"bytes,4,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Traits         *Traits `protobuf:"bytes,5,opt,name=traits" json:"traits,omitempty"`
+	AuthProviderId string  `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId" json:"auth_provider_id,omitempty" search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"` // @gotags: search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Key            string  `protobuf:"bytes,2,opt,name=key" json:"key,omitempty" search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                               // @gotags: search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	Value          string  `protobuf:"bytes,3,opt,name=value" json:"value,omitempty" search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"`                                           // @gotags: search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GroupProperties) Reset() {
@@ -176,166 +159,90 @@ func (x *GroupProperties) ProtoReflect() protoreflect.Message {
 
 func (x *GroupProperties) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GroupProperties) GetTraits() *Traits {
 	if x != nil {
-		return x.xxx_hidden_Traits
+		return x.Traits
 	}
 	return nil
 }
 
 func (x *GroupProperties) GetAuthProviderId() string {
 	if x != nil {
-		if x.xxx_hidden_AuthProviderId != nil {
-			return *x.xxx_hidden_AuthProviderId
-		}
-		return ""
+		return x.AuthProviderId
 	}
 	return ""
 }
 
 func (x *GroupProperties) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *GroupProperties) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *GroupProperties) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *GroupProperties) SetTraits(v *Traits) {
-	x.xxx_hidden_Traits = v
+	x.Traits = v
 }
 
 func (x *GroupProperties) SetAuthProviderId(v string) {
-	x.xxx_hidden_AuthProviderId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.AuthProviderId = v
 }
 
 func (x *GroupProperties) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Key = v
 }
 
 func (x *GroupProperties) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *GroupProperties) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Value = v
 }
 
 func (x *GroupProperties) HasTraits() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Traits != nil
-}
-
-func (x *GroupProperties) HasAuthProviderId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *GroupProperties) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *GroupProperties) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *GroupProperties) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.Traits != nil
 }
 
 func (x *GroupProperties) ClearTraits() {
-	x.xxx_hidden_Traits = nil
-}
-
-func (x *GroupProperties) ClearAuthProviderId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_AuthProviderId = nil
-}
-
-func (x *GroupProperties) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *GroupProperties) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Value = nil
+	x.Traits = nil
 }
 
 type GroupProperties_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Unique identifier for group properties and respectively the group.
-	Id             *string
+	Id             string
 	Traits         *Traits
-	AuthProviderId *string
-	Key            *string
-	Value          *string
+	AuthProviderId string
+	Key            string
+	Value          string
 }
 
 func (b0 GroupProperties_builder) Build() *GroupProperties {
 	m0 := &GroupProperties{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_Traits = b.Traits
-	if b.AuthProviderId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_AuthProviderId = b.AuthProviderId
-	}
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_Value = b.Value
-	}
+	x.Id = b.Id
+	x.Traits = b.Traits
+	x.AuthProviderId = b.AuthProviderId
+	x.Key = b.Key
+	x.Value = b.Value
 	return m0
 }
 
@@ -352,8 +259,8 @@ const file_storage_group_proto_rawDesc = "" +
 	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x12(\n" +
 	"\x10auth_provider_id\x18\x01 \x01(\tR\x0eauthProviderId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05valueB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x03 \x01(\tR\x05valueB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_group_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_group_proto_goTypes = []any{

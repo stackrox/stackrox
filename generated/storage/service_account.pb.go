@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/service_account.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -26,24 +28,20 @@ const (
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type ServiceAccount struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id               *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name             *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Namespace        *string                `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_ClusterName      *string                `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_ClusterId        *string                `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations      map[string]string      `protobuf:"bytes,7,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt"`
-	xxx_hidden_AutomountToken   bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken"`
-	xxx_hidden_Secrets          []string               `protobuf:"bytes,10,rep,name=secrets"`
-	xxx_hidden_ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                             // @gotags: sql:"pk,type(uuid)"
+	Name             string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Service Account,store"`                                                                                         // @gotags: search:"Service Account,store"
+	Namespace        string                 `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                                                                               // @gotags: search:"Namespace,store"
+	ClusterName      string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster,store"`                                                        // @gotags: search:"Cluster,store"
+	ClusterId        string                 `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                              // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Service Account Label"`           // @gotags: search:"Service Account Label"
+	Annotations      map[string]string      `protobuf:"bytes,7,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
+	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	AutomountToken   bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken" json:"automount_token,omitempty"`
+	Secrets          []string               `protobuf:"bytes,10,rep,name=secrets" json:"secrets,omitempty"`
+	ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets" json:"image_pull_secrets,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ServiceAccount) Reset() {
@@ -73,254 +71,148 @@ func (x *ServiceAccount) ProtoReflect() protoreflect.Message {
 
 func (x *ServiceAccount) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ServiceAccount) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ServiceAccount) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ServiceAccount) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *ServiceAccount) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ServiceAccount) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *ServiceAccount) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *ServiceAccount) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *ServiceAccount) GetAutomountToken() bool {
 	if x != nil {
-		return x.xxx_hidden_AutomountToken
+		return x.AutomountToken
 	}
 	return false
 }
 
 func (x *ServiceAccount) GetSecrets() []string {
 	if x != nil {
-		return x.xxx_hidden_Secrets
+		return x.Secrets
 	}
 	return nil
 }
 
 func (x *ServiceAccount) GetImagePullSecrets() []string {
 	if x != nil {
-		return x.xxx_hidden_ImagePullSecrets
+		return x.ImagePullSecrets
 	}
 	return nil
 }
 
 func (x *ServiceAccount) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *ServiceAccount) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.Name = v
 }
 
 func (x *ServiceAccount) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.Namespace = v
 }
 
 func (x *ServiceAccount) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.ClusterName = v
 }
 
 func (x *ServiceAccount) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.ClusterId = v
 }
 
 func (x *ServiceAccount) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *ServiceAccount) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *ServiceAccount) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
-	}
+	x.CreatedAt = v
 }
 
 func (x *ServiceAccount) SetAutomountToken(v bool) {
-	x.xxx_hidden_AutomountToken = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.AutomountToken = v
 }
 
 func (x *ServiceAccount) SetSecrets(v []string) {
-	x.xxx_hidden_Secrets = v
+	x.Secrets = v
 }
 
 func (x *ServiceAccount) SetImagePullSecrets(v []string) {
-	x.xxx_hidden_ImagePullSecrets = v
-}
-
-func (x *ServiceAccount) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ServiceAccount) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ServiceAccount) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ServiceAccount) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ServiceAccount) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.ImagePullSecrets = v
 }
 
 func (x *ServiceAccount) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ServiceAccount) HasAutomountToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ServiceAccount) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ServiceAccount) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ServiceAccount) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *ServiceAccount) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *ServiceAccount) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterId = nil
+	return x.CreatedAt != nil
 }
 
 func (x *ServiceAccount) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ServiceAccount) ClearAutomountToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_AutomountToken = false
+	x.CreatedAt = nil
 }
 
 type ServiceAccount_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id               *string
-	Name             *string
-	Namespace        *string
-	ClusterName      *string
-	ClusterId        *string
+	Id               string
+	Name             string
+	Namespace        string
+	ClusterName      string
+	ClusterId        string
 	Labels           map[string]string
 	Annotations      map[string]string
 	CreatedAt        *timestamppb.Timestamp
-	AutomountToken   *bool
+	AutomountToken   bool
 	Secrets          []string
 	ImagePullSecrets []string
 }
@@ -329,38 +221,17 @@ func (b0 ServiceAccount_builder) Build() *ServiceAccount {
 	m0 := &ServiceAccount{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
-	if b.AutomountToken != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_AutomountToken = *b.AutomountToken
-	}
-	x.xxx_hidden_Secrets = b.Secrets
-	x.xxx_hidden_ImagePullSecrets = b.ImagePullSecrets
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Namespace = b.Namespace
+	x.ClusterName = b.ClusterName
+	x.ClusterId = b.ClusterId
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.CreatedAt = b.CreatedAt
+	x.AutomountToken = b.AutomountToken
+	x.Secrets = b.Secrets
+	x.ImagePullSecrets = b.ImagePullSecrets
 	return m0
 }
 
@@ -389,8 +260,8 @@ const file_storage_service_account_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_service_account_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_storage_service_account_proto_goTypes = []any{

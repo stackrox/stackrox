@@ -8,8 +8,9 @@ func (m *NotifierConfiguration) SizeVT() int { return proto.Size(m) }
 func (m *NotifierConfiguration) CloneVT() *NotifierConfiguration {
 	return proto.Clone(m).(*NotifierConfiguration)
 }
-func (m *NotifierConfiguration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NotifierConfiguration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierConfiguration) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *NotifierConfiguration) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierConfiguration) EqualVT(n *NotifierConfiguration) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NotifierConfiguration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -20,6 +21,9 @@ func (m *EmailNotifierConfiguration) CloneVT() *EmailNotifierConfiguration {
 }
 func (m *EmailNotifierConfiguration) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *EmailNotifierConfiguration) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *EmailNotifierConfiguration) EqualVT(n *EmailNotifierConfiguration) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EmailNotifierConfiguration) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

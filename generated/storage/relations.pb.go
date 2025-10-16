@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/relations.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -26,16 +28,20 @@ const (
 //
 // Deprecated: Marked as deprecated in storage/relations.proto.
 type ImageComponentEdge struct {
-	state                       protoimpl.MessageState             `protogen:"opaque.v1"`
-	xxx_hidden_Id               *string                            `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_HasLayerIndex    isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	xxx_hidden_Location         *string                            `protobuf:"bytes,3,opt,name=location"`
-	xxx_hidden_ImageId          *string                            `protobuf:"bytes,4,opt,name=image_id,json=imageId"`
-	xxx_hidden_ImageComponentId *string                            `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// id is base 64 encoded Image:Component ids.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"` // @gotags: sql:"pk,id"
+	// / Layer that contains this component
+	//
+	// Types that are valid to be assigned to HasLayerIndex:
+	//
+	//	*ImageComponentEdge_LayerIndex
+	HasLayerIndex    isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
+	Location         string                             `protobuf:"bytes,3,opt,name=location" json:"location,omitempty" search:"Component Location,store,hidden"`                                           // @gotags: search:"Component Location,store,hidden"
+	ImageId          string                             `protobuf:"bytes,4,opt,name=image_id,json=imageId" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                              // @gotags: sql:"fk(Image:id),index=hash"
+	ImageComponentId string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ImageComponentEdge) Reset() {
@@ -65,148 +71,96 @@ func (x *ImageComponentEdge) ProtoReflect() protoreflect.Message {
 
 func (x *ImageComponentEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
-func (x *ImageComponentEdge) GetLayerIndex() int32 {
+func (x *ImageComponentEdge) GetHasLayerIndex() isImageComponentEdge_HasLayerIndex {
 	if x != nil {
-		if x, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentEdge_LayerIndex); ok {
+		return x.HasLayerIndex
+	}
+	return nil
+}
+
+func (x *ImageComponentEdge) Get_LayerIndex() int32 {
+	if x != nil {
+		if x, ok := x.HasLayerIndex.(*ImageComponentEdge_LayerIndex); ok {
 			return x.LayerIndex
 		}
 	}
 	return 0
 }
 
+// Deprecated: Use Get_LayerIndex instead.
+func (x *ImageComponentEdge) GetLayerIndex() int32 {
+	return x.Get_LayerIndex()
+}
+
 func (x *ImageComponentEdge) GetLocation() string {
 	if x != nil {
-		if x.xxx_hidden_Location != nil {
-			return *x.xxx_hidden_Location
-		}
-		return ""
+		return x.Location
 	}
 	return ""
 }
 
 func (x *ImageComponentEdge) GetImageId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageId != nil {
-			return *x.xxx_hidden_ImageId
-		}
-		return ""
+		return x.ImageId
 	}
 	return ""
 }
 
 func (x *ImageComponentEdge) GetImageComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageComponentId != nil {
-			return *x.xxx_hidden_ImageComponentId
-		}
-		return ""
+		return x.ImageComponentId
 	}
 	return ""
 }
 
 func (x *ImageComponentEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
-func (x *ImageComponentEdge) SetLayerIndex(v int32) {
-	x.xxx_hidden_HasLayerIndex = &imageComponentEdge_LayerIndex{v}
+func (x *ImageComponentEdge) Set_LayerIndex(v int32) {
+	x.HasLayerIndex = &ImageComponentEdge_LayerIndex{v}
 }
 
 func (x *ImageComponentEdge) SetLocation(v string) {
-	x.xxx_hidden_Location = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Location = v
 }
 
 func (x *ImageComponentEdge) SetImageId(v string) {
-	x.xxx_hidden_ImageId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.ImageId = v
 }
 
 func (x *ImageComponentEdge) SetImageComponentId(v string) {
-	x.xxx_hidden_ImageComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ImageComponentEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ImageComponentId = v
 }
 
 func (x *ImageComponentEdge) HasHasLayerIndex() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HasLayerIndex != nil
+	return x.HasLayerIndex != nil
 }
 
-func (x *ImageComponentEdge) HasLayerIndex() bool {
+func (x *ImageComponentEdge) Has_LayerIndex() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentEdge_LayerIndex)
+	_, ok := x.HasLayerIndex.(*ImageComponentEdge_LayerIndex)
 	return ok
 }
 
-func (x *ImageComponentEdge) HasLocation() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ImageComponentEdge) HasImageId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ImageComponentEdge) HasImageComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ImageComponentEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
 func (x *ImageComponentEdge) ClearHasLayerIndex() {
-	x.xxx_hidden_HasLayerIndex = nil
+	x.HasLayerIndex = nil
 }
 
-func (x *ImageComponentEdge) ClearLayerIndex() {
-	if _, ok := x.xxx_hidden_HasLayerIndex.(*imageComponentEdge_LayerIndex); ok {
-		x.xxx_hidden_HasLayerIndex = nil
+func (x *ImageComponentEdge) Clear_LayerIndex() {
+	if _, ok := x.HasLayerIndex.(*ImageComponentEdge_LayerIndex); ok {
+		x.HasLayerIndex = nil
 	}
-}
-
-func (x *ImageComponentEdge) ClearLocation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Location = nil
-}
-
-func (x *ImageComponentEdge) ClearImageId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ImageId = nil
-}
-
-func (x *ImageComponentEdge) ClearImageComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ImageComponentId = nil
 }
 
 const ImageComponentEdge_HasLayerIndex_not_set_case case_ImageComponentEdge_HasLayerIndex = 0
@@ -216,8 +170,8 @@ func (x *ImageComponentEdge) WhichHasLayerIndex() case_ImageComponentEdge_HasLay
 	if x == nil {
 		return ImageComponentEdge_HasLayerIndex_not_set_case
 	}
-	switch x.xxx_hidden_HasLayerIndex.(type) {
-	case *imageComponentEdge_LayerIndex:
+	switch x.HasLayerIndex.(type) {
+	case *ImageComponentEdge_LayerIndex:
 		return ImageComponentEdge_LayerIndex_case
 	default:
 		return ImageComponentEdge_HasLayerIndex_not_set_case
@@ -229,40 +183,28 @@ type ImageComponentEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// id is base 64 encoded Image:Component ids.
-	Id *string
+	Id string
 	/// Layer that contains this component
 
-	// Fields of oneof xxx_hidden_HasLayerIndex:
+	// Fields of oneof HasLayerIndex:
 	LayerIndex *int32
-	// -- end of xxx_hidden_HasLayerIndex
-	Location         *string
-	ImageId          *string
-	ImageComponentId *string
+	// -- end of HasLayerIndex
+	Location         string
+	ImageId          string
+	ImageComponentId string
 }
 
 func (b0 ImageComponentEdge_builder) Build() *ImageComponentEdge {
 	m0 := &ImageComponentEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
+	x.Id = b.Id
 	if b.LayerIndex != nil {
-		x.xxx_hidden_HasLayerIndex = &imageComponentEdge_LayerIndex{*b.LayerIndex}
+		x.HasLayerIndex = &ImageComponentEdge_LayerIndex{*b.LayerIndex}
 	}
-	if b.Location != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Location = b.Location
-	}
-	if b.ImageId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_ImageId = b.ImageId
-	}
-	if b.ImageComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_ImageComponentId = b.ImageComponentId
-	}
+	x.Location = b.Location
+	x.ImageId = b.ImageId
+	x.ImageComponentId = b.ImageComponentId
 	return m0
 }
 
@@ -280,26 +222,30 @@ type isImageComponentEdge_HasLayerIndex interface {
 	isImageComponentEdge_HasLayerIndex()
 }
 
-type imageComponentEdge_LayerIndex struct {
+type ImageComponentEdge_LayerIndex struct {
 	LayerIndex int32 `protobuf:"varint,2,opt,name=layer_index,json=layerIndex,oneof"`
 }
 
-func (*imageComponentEdge_LayerIndex) isImageComponentEdge_HasLayerIndex() {}
+func (*ImageComponentEdge_LayerIndex) isImageComponentEdge_HasLayerIndex() {}
 
 // This proto has been deprecated
 //
 // Deprecated: Marked as deprecated in storage/relations.proto.
 type ComponentCVEEdge struct {
-	state                       protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id               *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_IsFixable        bool                          `protobuf:"varint,2,opt,name=is_fixable,json=isFixable"`
-	xxx_hidden_HasFixedBy       isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	xxx_hidden_ImageComponentId *string                       `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId"`
-	xxx_hidden_ImageCveId       *string                       `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// base 64 encoded Component:CVE ids.
+	Id        string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
+	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
+	// Whether there is a version the CVE is fixed in the component.
+	//
+	// Types that are valid to be assigned to HasFixedBy:
+	//
+	//	*ComponentCVEEdge_FixedBy
+	HasFixedBy       isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	ImageComponentId string                        `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),index=hash"` // @gotags: sql:"fk(ImageComponent:id),index=hash"
+	ImageCveId       string                        `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ComponentCVEEdge) Reset() {
@@ -329,145 +275,96 @@ func (x *ComponentCVEEdge) ProtoReflect() protoreflect.Message {
 
 func (x *ComponentCVEEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ComponentCVEEdge) GetIsFixable() bool {
 	if x != nil {
-		return x.xxx_hidden_IsFixable
+		return x.IsFixable
 	}
 	return false
 }
 
-func (x *ComponentCVEEdge) GetFixedBy() string {
+func (x *ComponentCVEEdge) GetHasFixedBy() isComponentCVEEdge_HasFixedBy {
 	if x != nil {
-		if x, ok := x.xxx_hidden_HasFixedBy.(*componentCVEEdge_FixedBy); ok {
+		return x.HasFixedBy
+	}
+	return nil
+}
+
+func (x *ComponentCVEEdge) Get_FixedBy() string {
+	if x != nil {
+		if x, ok := x.HasFixedBy.(*ComponentCVEEdge_FixedBy); ok {
 			return x.FixedBy
 		}
 	}
 	return ""
 }
 
+// Deprecated: Use Get_FixedBy instead.
+func (x *ComponentCVEEdge) GetFixedBy() string {
+	return x.Get_FixedBy()
+}
+
 func (x *ComponentCVEEdge) GetImageComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageComponentId != nil {
-			return *x.xxx_hidden_ImageComponentId
-		}
-		return ""
+		return x.ImageComponentId
 	}
 	return ""
 }
 
 func (x *ComponentCVEEdge) GetImageCveId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageCveId != nil {
-			return *x.xxx_hidden_ImageCveId
-		}
-		return ""
+		return x.ImageCveId
 	}
 	return ""
 }
 
 func (x *ComponentCVEEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *ComponentCVEEdge) SetIsFixable(v bool) {
-	x.xxx_hidden_IsFixable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.IsFixable = v
 }
 
-func (x *ComponentCVEEdge) SetFixedBy(v string) {
-	x.xxx_hidden_HasFixedBy = &componentCVEEdge_FixedBy{v}
+func (x *ComponentCVEEdge) Set_FixedBy(v string) {
+	x.HasFixedBy = &ComponentCVEEdge_FixedBy{v}
 }
 
 func (x *ComponentCVEEdge) SetImageComponentId(v string) {
-	x.xxx_hidden_ImageComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.ImageComponentId = v
 }
 
 func (x *ComponentCVEEdge) SetImageCveId(v string) {
-	x.xxx_hidden_ImageCveId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ComponentCVEEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ComponentCVEEdge) HasIsFixable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.ImageCveId = v
 }
 
 func (x *ComponentCVEEdge) HasHasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HasFixedBy != nil
+	return x.HasFixedBy != nil
 }
 
-func (x *ComponentCVEEdge) HasFixedBy() bool {
+func (x *ComponentCVEEdge) Has_FixedBy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_HasFixedBy.(*componentCVEEdge_FixedBy)
+	_, ok := x.HasFixedBy.(*ComponentCVEEdge_FixedBy)
 	return ok
 }
 
-func (x *ComponentCVEEdge) HasImageComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ComponentCVEEdge) HasImageCveId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ComponentCVEEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ComponentCVEEdge) ClearIsFixable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsFixable = false
-}
-
 func (x *ComponentCVEEdge) ClearHasFixedBy() {
-	x.xxx_hidden_HasFixedBy = nil
+	x.HasFixedBy = nil
 }
 
-func (x *ComponentCVEEdge) ClearFixedBy() {
-	if _, ok := x.xxx_hidden_HasFixedBy.(*componentCVEEdge_FixedBy); ok {
-		x.xxx_hidden_HasFixedBy = nil
+func (x *ComponentCVEEdge) Clear_FixedBy() {
+	if _, ok := x.HasFixedBy.(*ComponentCVEEdge_FixedBy); ok {
+		x.HasFixedBy = nil
 	}
-}
-
-func (x *ComponentCVEEdge) ClearImageComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ImageComponentId = nil
-}
-
-func (x *ComponentCVEEdge) ClearImageCveId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ImageCveId = nil
 }
 
 const ComponentCVEEdge_HasFixedBy_not_set_case case_ComponentCVEEdge_HasFixedBy = 0
@@ -477,8 +374,8 @@ func (x *ComponentCVEEdge) WhichHasFixedBy() case_ComponentCVEEdge_HasFixedBy {
 	if x == nil {
 		return ComponentCVEEdge_HasFixedBy_not_set_case
 	}
-	switch x.xxx_hidden_HasFixedBy.(type) {
-	case *componentCVEEdge_FixedBy:
+	switch x.HasFixedBy.(type) {
+	case *ComponentCVEEdge_FixedBy:
 		return ComponentCVEEdge_FixedBy_case
 	default:
 		return ComponentCVEEdge_HasFixedBy_not_set_case
@@ -490,40 +387,28 @@ type ComponentCVEEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// base 64 encoded Component:CVE ids.
-	Id        *string
-	IsFixable *bool
+	Id        string
+	IsFixable bool
 	// Whether there is a version the CVE is fixed in the component.
 
-	// Fields of oneof xxx_hidden_HasFixedBy:
+	// Fields of oneof HasFixedBy:
 	FixedBy *string
-	// -- end of xxx_hidden_HasFixedBy
-	ImageComponentId *string
-	ImageCveId       *string
+	// -- end of HasFixedBy
+	ImageComponentId string
+	ImageCveId       string
 }
 
 func (b0 ComponentCVEEdge_builder) Build() *ComponentCVEEdge {
 	m0 := &ComponentCVEEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.IsFixable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_IsFixable = *b.IsFixable
-	}
+	x.Id = b.Id
+	x.IsFixable = b.IsFixable
 	if b.FixedBy != nil {
-		x.xxx_hidden_HasFixedBy = &componentCVEEdge_FixedBy{*b.FixedBy}
+		x.HasFixedBy = &ComponentCVEEdge_FixedBy{*b.FixedBy}
 	}
-	if b.ImageComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_ImageComponentId = b.ImageComponentId
-	}
-	if b.ImageCveId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_ImageCveId = b.ImageCveId
-	}
+	x.ImageComponentId = b.ImageComponentId
+	x.ImageCveId = b.ImageCveId
 	return m0
 }
 
@@ -541,28 +426,25 @@ type isComponentCVEEdge_HasFixedBy interface {
 	isComponentCVEEdge_HasFixedBy()
 }
 
-type componentCVEEdge_FixedBy struct {
+type ComponentCVEEdge_FixedBy struct {
 	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
 }
 
-func (*componentCVEEdge_FixedBy) isComponentCVEEdge_HasFixedBy() {}
+func (*ComponentCVEEdge_FixedBy) isComponentCVEEdge_HasFixedBy() {}
 
 // This proto has been deprecated
 //
 // Deprecated: Marked as deprecated in storage/relations.proto.
 type ImageCVEEdge struct {
-	state                           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                   *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence"`
-	xxx_hidden_State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,enum=storage.VulnerabilityState"`
-	xxx_hidden_ImageId              *string                `protobuf:"bytes,4,opt,name=image_id,json=imageId"`
-	xxx_hidden_ImageCveId           *string                `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// base 64 encoded Image:CVE ids.
+	Id                   string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                                                   // @gotags: sql:"pk,id"
+	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
+	State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`                            // @gotags: search:"Vulnerability State"
+	ImageId              string                 `protobuf:"bytes,4,opt,name=image_id,json=imageId" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                          // @gotags: sql:"fk(Image:id),index=hash"
+	ImageCveId           string                 `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                               // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ImageCVEEdge) Reset() {
@@ -592,144 +474,68 @@ func (x *ImageCVEEdge) ProtoReflect() protoreflect.Message {
 
 func (x *ImageCVEEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ImageCVEEdge) GetFirstImageOccurrence() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FirstImageOccurrence) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FirstImageOccurrence), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.FirstImageOccurrence
 	}
 	return nil
 }
 
 func (x *ImageCVEEdge) GetState() VulnerabilityState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_State
-		}
+		return x.State
 	}
 	return VulnerabilityState_OBSERVED
 }
 
 func (x *ImageCVEEdge) GetImageId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageId != nil {
-			return *x.xxx_hidden_ImageId
-		}
-		return ""
+		return x.ImageId
 	}
 	return ""
 }
 
 func (x *ImageCVEEdge) GetImageCveId() string {
 	if x != nil {
-		if x.xxx_hidden_ImageCveId != nil {
-			return *x.xxx_hidden_ImageCveId
-		}
-		return ""
+		return x.ImageCveId
 	}
 	return ""
 }
 
 func (x *ImageCVEEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *ImageCVEEdge) SetFirstImageOccurrence(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstImageOccurrence, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
-	}
+	x.FirstImageOccurrence = v
 }
 
 func (x *ImageCVEEdge) SetState(v VulnerabilityState) {
-	x.xxx_hidden_State = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.State = v
 }
 
 func (x *ImageCVEEdge) SetImageId(v string) {
-	x.xxx_hidden_ImageId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.ImageId = v
 }
 
 func (x *ImageCVEEdge) SetImageCveId(v string) {
-	x.xxx_hidden_ImageCveId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ImageCVEEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ImageCveId = v
 }
 
 func (x *ImageCVEEdge) HasFirstImageOccurrence() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ImageCVEEdge) HasState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ImageCVEEdge) HasImageId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ImageCVEEdge) HasImageCveId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ImageCVEEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.FirstImageOccurrence != nil
 }
 
 func (x *ImageCVEEdge) ClearFirstImageOccurrence() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FirstImageOccurrence, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ImageCVEEdge) ClearState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_State = VulnerabilityState_OBSERVED
-}
-
-func (x *ImageCVEEdge) ClearImageId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ImageId = nil
-}
-
-func (x *ImageCVEEdge) ClearImageCveId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ImageCveId = nil
+	x.FirstImageOccurrence = nil
 }
 
 // Deprecated: Marked as deprecated in storage/relations.proto.
@@ -737,49 +543,33 @@ type ImageCVEEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// base 64 encoded Image:CVE ids.
-	Id                   *string
+	Id                   string
 	FirstImageOccurrence *timestamppb.Timestamp
-	State                *VulnerabilityState
-	ImageId              *string
-	ImageCveId           *string
+	State                VulnerabilityState
+	ImageId              string
+	ImageCveId           string
 }
 
 func (b0 ImageCVEEdge_builder) Build() *ImageCVEEdge {
 	m0 := &ImageCVEEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.FirstImageOccurrence != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_FirstImageOccurrence = b.FirstImageOccurrence
-	}
-	if b.State != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_State = *b.State
-	}
-	if b.ImageId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_ImageId = b.ImageId
-	}
-	if b.ImageCveId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_ImageCveId = b.ImageCveId
-	}
+	x.Id = b.Id
+	x.FirstImageOccurrence = b.FirstImageOccurrence
+	x.State = b.State
+	x.ImageId = b.ImageId
+	x.ImageCveId = b.ImageCveId
 	return m0
 }
 
 type NodeComponentEdge struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_NodeId          *string                `protobuf:"bytes,2,opt,name=node_id,json=nodeId"`
-	xxx_hidden_NodeComponentId *string                `protobuf:"bytes,3,opt,name=node_component_id,json=nodeComponentId"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// base 64 encoded Node:Component ids.
+	Id              string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                                    // @gotags: sql:"pk,id"
+	NodeId          string `protobuf:"bytes,2,opt,name=node_id,json=nodeId" json:"node_id,omitempty" sql:"fk(Node:id),index=hash,type(uuid)"`                              // @gotags: sql:"fk(Node:id),index=hash,type(uuid)"
+	NodeComponentId string `protobuf:"bytes,3,opt,name=node_component_id,json=nodeComponentId" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *NodeComponentEdge) Reset() {
@@ -809,124 +599,70 @@ func (x *NodeComponentEdge) ProtoReflect() protoreflect.Message {
 
 func (x *NodeComponentEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *NodeComponentEdge) GetNodeId() string {
 	if x != nil {
-		if x.xxx_hidden_NodeId != nil {
-			return *x.xxx_hidden_NodeId
-		}
-		return ""
+		return x.NodeId
 	}
 	return ""
 }
 
 func (x *NodeComponentEdge) GetNodeComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_NodeComponentId != nil {
-			return *x.xxx_hidden_NodeComponentId
-		}
-		return ""
+		return x.NodeComponentId
 	}
 	return ""
 }
 
 func (x *NodeComponentEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *NodeComponentEdge) SetNodeId(v string) {
-	x.xxx_hidden_NodeId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.NodeId = v
 }
 
 func (x *NodeComponentEdge) SetNodeComponentId(v string) {
-	x.xxx_hidden_NodeComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *NodeComponentEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NodeComponentEdge) HasNodeId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *NodeComponentEdge) HasNodeComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *NodeComponentEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *NodeComponentEdge) ClearNodeId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NodeId = nil
-}
-
-func (x *NodeComponentEdge) ClearNodeComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_NodeComponentId = nil
+	x.NodeComponentId = v
 }
 
 type NodeComponentEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// base 64 encoded Node:Component ids.
-	Id              *string
-	NodeId          *string
-	NodeComponentId *string
+	Id              string
+	NodeId          string
+	NodeComponentId string
 }
 
 func (b0 NodeComponentEdge_builder) Build() *NodeComponentEdge {
 	m0 := &NodeComponentEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.NodeId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_NodeId = b.NodeId
-	}
-	if b.NodeComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_NodeComponentId = b.NodeComponentId
-	}
+	x.Id = b.Id
+	x.NodeId = b.NodeId
+	x.NodeComponentId = b.NodeComponentId
 	return m0
 }
 
 type NodeComponentCVEEdge struct {
-	state                      protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                           `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_IsFixable       bool                              `protobuf:"varint,2,opt,name=is_fixable,json=isFixable"`
-	xxx_hidden_HasFixedBy      isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	xxx_hidden_NodeComponentId *string                           `protobuf:"bytes,4,opt,name=node_component_id,json=nodeComponentId"`
-	xxx_hidden_NodeCveId       *string                           `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
+	IsFixable bool                   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
+	// Whether there is a version the CVE is fixed in the component.
+	//
+	// Types that are valid to be assigned to HasFixedBy:
+	//
+	//	*NodeComponentCVEEdge_FixedBy
+	HasFixedBy      isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	NodeComponentId string                            `protobuf:"bytes,4,opt,name=node_component_id,json=nodeComponentId" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),index=hash"` // @gotags: sql:"fk(NodeComponent:id),index=hash"
+	NodeCveId       string                            `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId" json:"node_cve_id,omitempty" sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *NodeComponentCVEEdge) Reset() {
@@ -956,145 +692,96 @@ func (x *NodeComponentCVEEdge) ProtoReflect() protoreflect.Message {
 
 func (x *NodeComponentCVEEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *NodeComponentCVEEdge) GetIsFixable() bool {
 	if x != nil {
-		return x.xxx_hidden_IsFixable
+		return x.IsFixable
 	}
 	return false
 }
 
-func (x *NodeComponentCVEEdge) GetFixedBy() string {
+func (x *NodeComponentCVEEdge) GetHasFixedBy() isNodeComponentCVEEdge_HasFixedBy {
 	if x != nil {
-		if x, ok := x.xxx_hidden_HasFixedBy.(*nodeComponentCVEEdge_FixedBy); ok {
+		return x.HasFixedBy
+	}
+	return nil
+}
+
+func (x *NodeComponentCVEEdge) Get_FixedBy() string {
+	if x != nil {
+		if x, ok := x.HasFixedBy.(*NodeComponentCVEEdge_FixedBy); ok {
 			return x.FixedBy
 		}
 	}
 	return ""
 }
 
+// Deprecated: Use Get_FixedBy instead.
+func (x *NodeComponentCVEEdge) GetFixedBy() string {
+	return x.Get_FixedBy()
+}
+
 func (x *NodeComponentCVEEdge) GetNodeComponentId() string {
 	if x != nil {
-		if x.xxx_hidden_NodeComponentId != nil {
-			return *x.xxx_hidden_NodeComponentId
-		}
-		return ""
+		return x.NodeComponentId
 	}
 	return ""
 }
 
 func (x *NodeComponentCVEEdge) GetNodeCveId() string {
 	if x != nil {
-		if x.xxx_hidden_NodeCveId != nil {
-			return *x.xxx_hidden_NodeCveId
-		}
-		return ""
+		return x.NodeCveId
 	}
 	return ""
 }
 
 func (x *NodeComponentCVEEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *NodeComponentCVEEdge) SetIsFixable(v bool) {
-	x.xxx_hidden_IsFixable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.IsFixable = v
 }
 
-func (x *NodeComponentCVEEdge) SetFixedBy(v string) {
-	x.xxx_hidden_HasFixedBy = &nodeComponentCVEEdge_FixedBy{v}
+func (x *NodeComponentCVEEdge) Set_FixedBy(v string) {
+	x.HasFixedBy = &NodeComponentCVEEdge_FixedBy{v}
 }
 
 func (x *NodeComponentCVEEdge) SetNodeComponentId(v string) {
-	x.xxx_hidden_NodeComponentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.NodeComponentId = v
 }
 
 func (x *NodeComponentCVEEdge) SetNodeCveId(v string) {
-	x.xxx_hidden_NodeCveId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *NodeComponentCVEEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NodeComponentCVEEdge) HasIsFixable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.NodeCveId = v
 }
 
 func (x *NodeComponentCVEEdge) HasHasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HasFixedBy != nil
+	return x.HasFixedBy != nil
 }
 
-func (x *NodeComponentCVEEdge) HasFixedBy() bool {
+func (x *NodeComponentCVEEdge) Has_FixedBy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_HasFixedBy.(*nodeComponentCVEEdge_FixedBy)
+	_, ok := x.HasFixedBy.(*NodeComponentCVEEdge_FixedBy)
 	return ok
 }
 
-func (x *NodeComponentCVEEdge) HasNodeComponentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *NodeComponentCVEEdge) HasNodeCveId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *NodeComponentCVEEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *NodeComponentCVEEdge) ClearIsFixable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsFixable = false
-}
-
 func (x *NodeComponentCVEEdge) ClearHasFixedBy() {
-	x.xxx_hidden_HasFixedBy = nil
+	x.HasFixedBy = nil
 }
 
-func (x *NodeComponentCVEEdge) ClearFixedBy() {
-	if _, ok := x.xxx_hidden_HasFixedBy.(*nodeComponentCVEEdge_FixedBy); ok {
-		x.xxx_hidden_HasFixedBy = nil
+func (x *NodeComponentCVEEdge) Clear_FixedBy() {
+	if _, ok := x.HasFixedBy.(*NodeComponentCVEEdge_FixedBy); ok {
+		x.HasFixedBy = nil
 	}
-}
-
-func (x *NodeComponentCVEEdge) ClearNodeComponentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_NodeComponentId = nil
-}
-
-func (x *NodeComponentCVEEdge) ClearNodeCveId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_NodeCveId = nil
 }
 
 const NodeComponentCVEEdge_HasFixedBy_not_set_case case_NodeComponentCVEEdge_HasFixedBy = 0
@@ -1104,8 +791,8 @@ func (x *NodeComponentCVEEdge) WhichHasFixedBy() case_NodeComponentCVEEdge_HasFi
 	if x == nil {
 		return NodeComponentCVEEdge_HasFixedBy_not_set_case
 	}
-	switch x.xxx_hidden_HasFixedBy.(type) {
-	case *nodeComponentCVEEdge_FixedBy:
+	switch x.HasFixedBy.(type) {
+	case *NodeComponentCVEEdge_FixedBy:
 		return NodeComponentCVEEdge_FixedBy_case
 	default:
 		return NodeComponentCVEEdge_HasFixedBy_not_set_case
@@ -1115,40 +802,28 @@ func (x *NodeComponentCVEEdge) WhichHasFixedBy() case_NodeComponentCVEEdge_HasFi
 type NodeComponentCVEEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
-	IsFixable *bool
+	Id        string
+	IsFixable bool
 	// Whether there is a version the CVE is fixed in the component.
 
-	// Fields of oneof xxx_hidden_HasFixedBy:
+	// Fields of oneof HasFixedBy:
 	FixedBy *string
-	// -- end of xxx_hidden_HasFixedBy
-	NodeComponentId *string
-	NodeCveId       *string
+	// -- end of HasFixedBy
+	NodeComponentId string
+	NodeCveId       string
 }
 
 func (b0 NodeComponentCVEEdge_builder) Build() *NodeComponentCVEEdge {
 	m0 := &NodeComponentCVEEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.IsFixable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_IsFixable = *b.IsFixable
-	}
+	x.Id = b.Id
+	x.IsFixable = b.IsFixable
 	if b.FixedBy != nil {
-		x.xxx_hidden_HasFixedBy = &nodeComponentCVEEdge_FixedBy{*b.FixedBy}
+		x.HasFixedBy = &NodeComponentCVEEdge_FixedBy{*b.FixedBy}
 	}
-	if b.NodeComponentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_NodeComponentId = b.NodeComponentId
-	}
-	if b.NodeCveId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_NodeCveId = b.NodeCveId
-	}
+	x.NodeComponentId = b.NodeComponentId
+	x.NodeCveId = b.NodeCveId
 	return m0
 }
 
@@ -1166,23 +841,27 @@ type isNodeComponentCVEEdge_HasFixedBy interface {
 	isNodeComponentCVEEdge_HasFixedBy()
 }
 
-type nodeComponentCVEEdge_FixedBy struct {
+type NodeComponentCVEEdge_FixedBy struct {
 	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
 }
 
-func (*nodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
+func (*NodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
 
 type ClusterCVEEdge struct {
-	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                     `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_IsFixable   bool                        `protobuf:"varint,2,opt,name=is_fixable,json=isFixable"`
-	xxx_hidden_HasFixedBy  isClusterCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	xxx_hidden_ClusterId   *string                     `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_CveId       *string                     `protobuf:"bytes,5,opt,name=cve_id,json=cveId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// base 64 encoded Cluster:CVE ids.
+	Id        string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
+	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,store,hidden"` // @gotags: search:"Cluster CVE Fixable,store,hidden"
+	// Whether there is a version the CVE is fixed in the Cluster.
+	//
+	// Types that are valid to be assigned to HasFixedBy:
+	//
+	//	*ClusterCVEEdge_FixedBy
+	HasFixedBy    isClusterCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	ClusterId     string                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" sql:"fk(Cluster:id),type(uuid)"` // @gotags: sql:"fk(Cluster:id),type(uuid)"
+	CveId         string                      `protobuf:"bytes,5,opt,name=cve_id,json=cveId" json:"cve_id,omitempty" sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"`             // @gotags: sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClusterCVEEdge) Reset() {
@@ -1212,145 +891,96 @@ func (x *ClusterCVEEdge) ProtoReflect() protoreflect.Message {
 
 func (x *ClusterCVEEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ClusterCVEEdge) GetIsFixable() bool {
 	if x != nil {
-		return x.xxx_hidden_IsFixable
+		return x.IsFixable
 	}
 	return false
 }
 
-func (x *ClusterCVEEdge) GetFixedBy() string {
+func (x *ClusterCVEEdge) GetHasFixedBy() isClusterCVEEdge_HasFixedBy {
 	if x != nil {
-		if x, ok := x.xxx_hidden_HasFixedBy.(*clusterCVEEdge_FixedBy); ok {
+		return x.HasFixedBy
+	}
+	return nil
+}
+
+func (x *ClusterCVEEdge) Get_FixedBy() string {
+	if x != nil {
+		if x, ok := x.HasFixedBy.(*ClusterCVEEdge_FixedBy); ok {
 			return x.FixedBy
 		}
 	}
 	return ""
 }
 
+// Deprecated: Use Get_FixedBy instead.
+func (x *ClusterCVEEdge) GetFixedBy() string {
+	return x.Get_FixedBy()
+}
+
 func (x *ClusterCVEEdge) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ClusterCVEEdge) GetCveId() string {
 	if x != nil {
-		if x.xxx_hidden_CveId != nil {
-			return *x.xxx_hidden_CveId
-		}
-		return ""
+		return x.CveId
 	}
 	return ""
 }
 
 func (x *ClusterCVEEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *ClusterCVEEdge) SetIsFixable(v bool) {
-	x.xxx_hidden_IsFixable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.IsFixable = v
 }
 
-func (x *ClusterCVEEdge) SetFixedBy(v string) {
-	x.xxx_hidden_HasFixedBy = &clusterCVEEdge_FixedBy{v}
+func (x *ClusterCVEEdge) Set_FixedBy(v string) {
+	x.HasFixedBy = &ClusterCVEEdge_FixedBy{v}
 }
 
 func (x *ClusterCVEEdge) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.ClusterId = v
 }
 
 func (x *ClusterCVEEdge) SetCveId(v string) {
-	x.xxx_hidden_CveId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *ClusterCVEEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ClusterCVEEdge) HasIsFixable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.CveId = v
 }
 
 func (x *ClusterCVEEdge) HasHasFixedBy() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_HasFixedBy != nil
+	return x.HasFixedBy != nil
 }
 
-func (x *ClusterCVEEdge) HasFixedBy() bool {
+func (x *ClusterCVEEdge) Has_FixedBy() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_HasFixedBy.(*clusterCVEEdge_FixedBy)
+	_, ok := x.HasFixedBy.(*ClusterCVEEdge_FixedBy)
 	return ok
 }
 
-func (x *ClusterCVEEdge) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ClusterCVEEdge) HasCveId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ClusterCVEEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ClusterCVEEdge) ClearIsFixable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_IsFixable = false
-}
-
 func (x *ClusterCVEEdge) ClearHasFixedBy() {
-	x.xxx_hidden_HasFixedBy = nil
+	x.HasFixedBy = nil
 }
 
-func (x *ClusterCVEEdge) ClearFixedBy() {
-	if _, ok := x.xxx_hidden_HasFixedBy.(*clusterCVEEdge_FixedBy); ok {
-		x.xxx_hidden_HasFixedBy = nil
+func (x *ClusterCVEEdge) Clear_FixedBy() {
+	if _, ok := x.HasFixedBy.(*ClusterCVEEdge_FixedBy); ok {
+		x.HasFixedBy = nil
 	}
-}
-
-func (x *ClusterCVEEdge) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ClusterCVEEdge) ClearCveId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_CveId = nil
 }
 
 const ClusterCVEEdge_HasFixedBy_not_set_case case_ClusterCVEEdge_HasFixedBy = 0
@@ -1360,8 +990,8 @@ func (x *ClusterCVEEdge) WhichHasFixedBy() case_ClusterCVEEdge_HasFixedBy {
 	if x == nil {
 		return ClusterCVEEdge_HasFixedBy_not_set_case
 	}
-	switch x.xxx_hidden_HasFixedBy.(type) {
-	case *clusterCVEEdge_FixedBy:
+	switch x.HasFixedBy.(type) {
+	case *ClusterCVEEdge_FixedBy:
 		return ClusterCVEEdge_FixedBy_case
 	default:
 		return ClusterCVEEdge_HasFixedBy_not_set_case
@@ -1372,40 +1002,28 @@ type ClusterCVEEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// base 64 encoded Cluster:CVE ids.
-	Id        *string
-	IsFixable *bool
+	Id        string
+	IsFixable bool
 	// Whether there is a version the CVE is fixed in the Cluster.
 
-	// Fields of oneof xxx_hidden_HasFixedBy:
+	// Fields of oneof HasFixedBy:
 	FixedBy *string
-	// -- end of xxx_hidden_HasFixedBy
-	ClusterId *string
-	CveId     *string
+	// -- end of HasFixedBy
+	ClusterId string
+	CveId     string
 }
 
 func (b0 ClusterCVEEdge_builder) Build() *ClusterCVEEdge {
 	m0 := &ClusterCVEEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.IsFixable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_IsFixable = *b.IsFixable
-	}
+	x.Id = b.Id
+	x.IsFixable = b.IsFixable
 	if b.FixedBy != nil {
-		x.xxx_hidden_HasFixedBy = &clusterCVEEdge_FixedBy{*b.FixedBy}
+		x.HasFixedBy = &ClusterCVEEdge_FixedBy{*b.FixedBy}
 	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.CveId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_CveId = b.CveId
-	}
+	x.ClusterId = b.ClusterId
+	x.CveId = b.CveId
 	return m0
 }
 
@@ -1423,21 +1041,19 @@ type isClusterCVEEdge_HasFixedBy interface {
 	isClusterCVEEdge_HasFixedBy()
 }
 
-type clusterCVEEdge_FixedBy struct {
+type ClusterCVEEdge_FixedBy struct {
 	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,oneof" search:"Cluster CVE Fixed By,store,hidden"` // @gotags: search:"Cluster CVE Fixed By,store,hidden"
 }
 
-func (*clusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
+func (*ClusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
 
 type PolicyCategoryEdge struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_PolicyId    *string                `protobuf:"bytes,2,opt,name=policy_id,json=policyId"`
-	xxx_hidden_CategoryId  *string                `protobuf:"bytes,3,opt,name=category_id,json=categoryId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk,id"`                                   // @gotags: sql:"pk,id"
+	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,store,hidden"`       // @gotags: sql:"fk(Policy:id)" search:"Policy ID,store,hidden"
+	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"` // @gotags: sql:"fk(PolicyCategory:id)"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PolicyCategoryEdge) Reset() {
@@ -1467,109 +1083,52 @@ func (x *PolicyCategoryEdge) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyCategoryEdge) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *PolicyCategoryEdge) GetPolicyId() string {
 	if x != nil {
-		if x.xxx_hidden_PolicyId != nil {
-			return *x.xxx_hidden_PolicyId
-		}
-		return ""
+		return x.PolicyId
 	}
 	return ""
 }
 
 func (x *PolicyCategoryEdge) GetCategoryId() string {
 	if x != nil {
-		if x.xxx_hidden_CategoryId != nil {
-			return *x.xxx_hidden_CategoryId
-		}
-		return ""
+		return x.CategoryId
 	}
 	return ""
 }
 
 func (x *PolicyCategoryEdge) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *PolicyCategoryEdge) SetPolicyId(v string) {
-	x.xxx_hidden_PolicyId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.PolicyId = v
 }
 
 func (x *PolicyCategoryEdge) SetCategoryId(v string) {
-	x.xxx_hidden_CategoryId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *PolicyCategoryEdge) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PolicyCategoryEdge) HasPolicyId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PolicyCategoryEdge) HasCategoryId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *PolicyCategoryEdge) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *PolicyCategoryEdge) ClearPolicyId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_PolicyId = nil
-}
-
-func (x *PolicyCategoryEdge) ClearCategoryId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CategoryId = nil
+	x.CategoryId = v
 }
 
 type PolicyCategoryEdge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id         *string
-	PolicyId   *string
-	CategoryId *string
+	Id         string
+	PolicyId   string
+	CategoryId string
 }
 
 func (b0 PolicyCategoryEdge_builder) Build() *PolicyCategoryEdge {
 	m0 := &PolicyCategoryEdge{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.PolicyId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_PolicyId = b.PolicyId
-	}
-	if b.CategoryId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_CategoryId = b.CategoryId
-	}
+	x.Id = b.Id
+	x.PolicyId = b.PolicyId
+	x.CategoryId = b.CategoryId
 	return m0
 }
 
@@ -1627,8 +1186,8 @@ const file_storage_relations_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\tR\n" +
-	"categoryIdB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"categoryIdB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_relations_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storage_relations_proto_goTypes = []any{
@@ -1659,16 +1218,16 @@ func file_storage_relations_proto_init() {
 	}
 	file_storage_cve_proto_init()
 	file_storage_relations_proto_msgTypes[0].OneofWrappers = []any{
-		(*imageComponentEdge_LayerIndex)(nil),
+		(*ImageComponentEdge_LayerIndex)(nil),
 	}
 	file_storage_relations_proto_msgTypes[1].OneofWrappers = []any{
-		(*componentCVEEdge_FixedBy)(nil),
+		(*ComponentCVEEdge_FixedBy)(nil),
 	}
 	file_storage_relations_proto_msgTypes[4].OneofWrappers = []any{
-		(*nodeComponentCVEEdge_FixedBy)(nil),
+		(*NodeComponentCVEEdge_FixedBy)(nil),
 	}
 	file_storage_relations_proto_msgTypes[5].OneofWrappers = []any{
-		(*clusterCVEEdge_FixedBy)(nil),
+		(*ClusterCVEEdge_FixedBy)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

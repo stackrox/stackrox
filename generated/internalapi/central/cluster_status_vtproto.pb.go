@@ -10,6 +10,9 @@ func (m *DeploymentEnvironmentUpdate) CloneVT() *DeploymentEnvironmentUpdate {
 }
 func (m *DeploymentEnvironmentUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DeploymentEnvironmentUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeploymentEnvironmentUpdate) EqualVT(n *DeploymentEnvironmentUpdate) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeploymentEnvironmentUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -20,8 +23,9 @@ func (m *ClusterStatusUpdate) SizeVT() int { return proto.Size(m) }
 func (m *ClusterStatusUpdate) CloneVT() *ClusterStatusUpdate {
 	return proto.Clone(m).(*ClusterStatusUpdate)
 }
-func (m *ClusterStatusUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterStatusUpdate) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterStatusUpdate) EqualVT(n *ClusterStatusUpdate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterStatusUpdate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -30,8 +34,9 @@ func (m *RawClusterHealthInfo) SizeVT() int { return proto.Size(m) }
 func (m *RawClusterHealthInfo) CloneVT() *RawClusterHealthInfo {
 	return proto.Clone(m).(*RawClusterHealthInfo)
 }
-func (m *RawClusterHealthInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RawClusterHealthInfo) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *RawClusterHealthInfo) EqualVT(n *RawClusterHealthInfo) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,8 +45,9 @@ func (m *ClusterHealthResponse) SizeVT() int { return proto.Size(m) }
 func (m *ClusterHealthResponse) CloneVT() *ClusterHealthResponse {
 	return proto.Clone(m).(*ClusterHealthResponse)
 }
-func (m *ClusterHealthResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ClusterHealthResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterHealthResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ClusterHealthResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterHealthResponse) EqualVT(n *ClusterHealthResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterHealthResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

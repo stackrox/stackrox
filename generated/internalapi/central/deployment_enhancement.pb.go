@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/deployment_enhancement.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -23,15 +25,11 @@ const (
 )
 
 type DeploymentEnhancementMessage struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Deployments *[]*storage.Deployment `protobuf:"bytes,2,rep,name=deployments"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Deployments   []*storage.Deployment  `protobuf:"bytes,2,rep,name=deployments" json:"deployments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeploymentEnhancementMessage) Reset() {
@@ -61,60 +59,30 @@ func (x *DeploymentEnhancementMessage) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentEnhancementMessage) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DeploymentEnhancementMessage) GetDeployments() []*storage.Deployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*storage.Deployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Deployments
 	}
 	return nil
 }
 
 func (x *DeploymentEnhancementMessage) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *DeploymentEnhancementMessage) SetDeployments(v []*storage.Deployment) {
-	var sv *[]*storage.Deployment
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Deployment{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *DeploymentEnhancementMessage) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeploymentEnhancementMessage) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	x.Deployments = v
 }
 
 type DeploymentEnhancementMessage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
+	Id          string
 	Deployments []*storage.Deployment
 }
 
@@ -122,22 +90,16 @@ func (b0 DeploymentEnhancementMessage_builder) Build() *DeploymentEnhancementMes
 	m0 := &DeploymentEnhancementMessage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Deployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Deployments = &b.Deployments
-	}
+	x.Id = b.Id
+	x.Deployments = b.Deployments
 	return m0
 }
 
 type DeploymentEnhancementRequest struct {
-	state          protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Msg *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
+	Msg           *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeploymentEnhancementRequest) Reset() {
@@ -167,24 +129,24 @@ func (x *DeploymentEnhancementRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentEnhancementRequest) GetMsg() *DeploymentEnhancementMessage {
 	if x != nil {
-		return x.xxx_hidden_Msg
+		return x.Msg
 	}
 	return nil
 }
 
 func (x *DeploymentEnhancementRequest) SetMsg(v *DeploymentEnhancementMessage) {
-	x.xxx_hidden_Msg = v
+	x.Msg = v
 }
 
 func (x *DeploymentEnhancementRequest) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *DeploymentEnhancementRequest) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 type DeploymentEnhancementRequest_builder struct {
@@ -197,15 +159,15 @@ func (b0 DeploymentEnhancementRequest_builder) Build() *DeploymentEnhancementReq
 	m0 := &DeploymentEnhancementRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Msg = b.Msg
+	x.Msg = b.Msg
 	return m0
 }
 
 type DeploymentEnhancementResponse struct {
-	state          protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Msg *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
+	Msg           *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg" json:"msg,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeploymentEnhancementResponse) Reset() {
@@ -235,24 +197,24 @@ func (x *DeploymentEnhancementResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DeploymentEnhancementResponse) GetMsg() *DeploymentEnhancementMessage {
 	if x != nil {
-		return x.xxx_hidden_Msg
+		return x.Msg
 	}
 	return nil
 }
 
 func (x *DeploymentEnhancementResponse) SetMsg(v *DeploymentEnhancementMessage) {
-	x.xxx_hidden_Msg = v
+	x.Msg = v
 }
 
 func (x *DeploymentEnhancementResponse) HasMsg() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Msg != nil
+	return x.Msg != nil
 }
 
 func (x *DeploymentEnhancementResponse) ClearMsg() {
-	x.xxx_hidden_Msg = nil
+	x.Msg = nil
 }
 
 type DeploymentEnhancementResponse_builder struct {
@@ -265,7 +227,7 @@ func (b0 DeploymentEnhancementResponse_builder) Build() *DeploymentEnhancementRe
 	m0 := &DeploymentEnhancementResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Msg = b.Msg
+	x.Msg = b.Msg
 	return m0
 }
 
@@ -280,7 +242,7 @@ const file_internalapi_central_deployment_enhancement_proto_rawDesc = "" +
 	"\x1cDeploymentEnhancementRequest\x127\n" +
 	"\x03msg\x18\x01 \x01(\v2%.central.DeploymentEnhancementMessageR\x03msg\"X\n" +
 	"\x1dDeploymentEnhancementResponse\x127\n" +
-	"\x03msg\x18\x01 \x01(\v2%.central.DeploymentEnhancementMessageR\x03msgB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x03msg\x18\x01 \x01(\v2%.central.DeploymentEnhancementMessageR\x03msgB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_deployment_enhancement_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_deployment_enhancement_proto_goTypes = []any{

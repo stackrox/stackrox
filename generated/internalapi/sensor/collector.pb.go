@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/collector.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -112,13 +114,13 @@ func (x ExternalIpsDirection) Number() protoreflect.EnumNumber {
 
 // A request message sent by collector to register with Sensor. Typically the first message in any streams.
 type CollectorRegisterRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Hostname    *string                `protobuf:"bytes,1,opt,name=hostname"`
-	xxx_hidden_InstanceId  *string                `protobuf:"bytes,2,opt,name=instance_id,json=instanceId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The hostname on which collector is running.
+	Hostname string `protobuf:"bytes,1,opt,name=hostname" json:"hostname,omitempty"`
+	// A unique identifier for an instance of collector.
+	InstanceId    string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorRegisterRequest) Reset() {
@@ -148,79 +150,41 @@ func (x *CollectorRegisterRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CollectorRegisterRequest) GetHostname() string {
 	if x != nil {
-		if x.xxx_hidden_Hostname != nil {
-			return *x.xxx_hidden_Hostname
-		}
-		return ""
+		return x.Hostname
 	}
 	return ""
 }
 
 func (x *CollectorRegisterRequest) GetInstanceId() string {
 	if x != nil {
-		if x.xxx_hidden_InstanceId != nil {
-			return *x.xxx_hidden_InstanceId
-		}
-		return ""
+		return x.InstanceId
 	}
 	return ""
 }
 
 func (x *CollectorRegisterRequest) SetHostname(v string) {
-	x.xxx_hidden_Hostname = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Hostname = v
 }
 
 func (x *CollectorRegisterRequest) SetInstanceId(v string) {
-	x.xxx_hidden_InstanceId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *CollectorRegisterRequest) HasHostname() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CollectorRegisterRequest) HasInstanceId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CollectorRegisterRequest) ClearHostname() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Hostname = nil
-}
-
-func (x *CollectorRegisterRequest) ClearInstanceId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_InstanceId = nil
+	x.InstanceId = v
 }
 
 type CollectorRegisterRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The hostname on which collector is running.
-	Hostname *string
+	Hostname string
 	// A unique identifier for an instance of collector.
-	InstanceId *string
+	InstanceId string
 }
 
 func (b0 CollectorRegisterRequest_builder) Build() *CollectorRegisterRequest {
 	m0 := &CollectorRegisterRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Hostname != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Hostname = b.Hostname
-	}
-	if b.InstanceId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_InstanceId = b.InstanceId
-	}
+	x.Hostname = b.Hostname
+	x.InstanceId = b.InstanceId
 	return m0
 }
 
@@ -231,10 +195,10 @@ func (b0 CollectorRegisterRequest_builder) Build() *CollectorRegisterRequest {
 // cluster level and the maximum number of open connections reported
 // for each container per minute.
 type CollectorConfig struct {
-	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Networking *CollectorConfig_Networking `protobuf:"bytes,1,opt,name=networking"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Networking    *CollectorConfig_Networking `protobuf:"bytes,1,opt,name=networking" json:"networking,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorConfig) Reset() {
@@ -264,24 +228,24 @@ func (x *CollectorConfig) ProtoReflect() protoreflect.Message {
 
 func (x *CollectorConfig) GetNetworking() *CollectorConfig_Networking {
 	if x != nil {
-		return x.xxx_hidden_Networking
+		return x.Networking
 	}
 	return nil
 }
 
 func (x *CollectorConfig) SetNetworking(v *CollectorConfig_Networking) {
-	x.xxx_hidden_Networking = v
+	x.Networking = v
 }
 
 func (x *CollectorConfig) HasNetworking() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Networking != nil
+	return x.Networking != nil
 }
 
 func (x *CollectorConfig) ClearNetworking() {
-	x.xxx_hidden_Networking = nil
+	x.Networking = nil
 }
 
 type CollectorConfig_builder struct {
@@ -294,32 +258,46 @@ func (b0 CollectorConfig_builder) Build() *CollectorConfig {
 	m0 := &CollectorConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Networking = b.Networking
+	x.Networking = b.Networking
 	return m0
 }
 
 type ProcessSignal struct {
-	state                    protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id            *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_ContainerId   *string                       `protobuf:"bytes,2,opt,name=container_id,json=containerId"`
-	xxx_hidden_CreationTime  *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=creation_time,json=creationTime"`
-	xxx_hidden_Name          *string                       `protobuf:"bytes,4,opt,name=name"`
-	xxx_hidden_Args          *string                       `protobuf:"bytes,5,opt,name=args"`
-	xxx_hidden_ExecFilePath  *string                       `protobuf:"bytes,6,opt,name=exec_file_path,json=execFilePath"`
-	xxx_hidden_Pid           uint32                        `protobuf:"varint,7,opt,name=pid"`
-	xxx_hidden_Uid           uint32                        `protobuf:"varint,8,opt,name=uid"`
-	xxx_hidden_Gid           uint32                        `protobuf:"varint,9,opt,name=gid"`
-	xxx_hidden_Scraped       bool                          `protobuf:"varint,10,opt,name=scraped"`
-	xxx_hidden_LineageInfo   *[]*ProcessSignal_LineageInfo `protobuf:"bytes,11,rep,name=lineage_info,json=lineageInfo"`
-	xxx_hidden_LoginUid      uint32                        `protobuf:"varint,12,opt,name=login_uid,json=loginUid"`
-	xxx_hidden_Username      *string                       `protobuf:"bytes,13,opt,name=username"`
-	xxx_hidden_InRootMountNs bool                          `protobuf:"varint,14,opt,name=in_root_mount_ns,json=inRootMountNs"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// A unique UUID for identifying the message
+	// We have this here instead of at the top level
+	// because we want to have each message to be
+	// self contained.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// ID of container associated with this process
+	ContainerId string `protobuf:"bytes,2,opt,name=container_id,json=containerId" json:"container_id,omitempty"`
+	// Process creation time
+	CreationTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=creation_time,json=creationTime" json:"creation_time,omitempty"`
+	// Process name
+	Name string `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	// Process arguments
+	Args string `protobuf:"bytes,5,opt,name=args" json:"args,omitempty"`
+	// Process executable file path
+	ExecFilePath string `protobuf:"bytes,6,opt,name=exec_file_path,json=execFilePath" json:"exec_file_path,omitempty"`
+	// Host process ID
+	Pid uint32 `protobuf:"varint,7,opt,name=pid" json:"pid,omitempty"`
+	// Real user ID
+	Uid uint32 `protobuf:"varint,8,opt,name=uid" json:"uid,omitempty"`
+	// Real group ID
+	Gid uint32 `protobuf:"varint,9,opt,name=gid" json:"gid,omitempty"`
+	// Signal origin
+	Scraped bool `protobuf:"varint,10,opt,name=scraped" json:"scraped,omitempty"`
+	// Process LineageInfo
+	LineageInfo []*ProcessSignal_LineageInfo `protobuf:"bytes,11,rep,name=lineage_info,json=lineageInfo" json:"lineage_info,omitempty"`
+	// SFA fields
+	// User ID used for login to the system
+	LoginUid uint32 `protobuf:"varint,12,opt,name=login_uid,json=loginUid" json:"login_uid,omitempty"`
+	// string representation of the process uid
+	Username string `protobuf:"bytes,13,opt,name=username" json:"username,omitempty"`
+	// whether the process is running on the root mount namespace
+	InRootMountNs bool `protobuf:"varint,14,opt,name=in_root_mount_ns,json=inRootMountNs" json:"in_root_mount_ns,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProcessSignal) Reset() {
@@ -349,368 +327,167 @@ func (x *ProcessSignal) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessSignal) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetContainerId() string {
 	if x != nil {
-		if x.xxx_hidden_ContainerId != nil {
-			return *x.xxx_hidden_ContainerId
-		}
-		return ""
+		return x.ContainerId
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetCreationTime() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreationTime) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreationTime), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreationTime
 	}
 	return nil
 }
 
 func (x *ProcessSignal) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetArgs() string {
 	if x != nil {
-		if x.xxx_hidden_Args != nil {
-			return *x.xxx_hidden_Args
-		}
-		return ""
+		return x.Args
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetExecFilePath() string {
 	if x != nil {
-		if x.xxx_hidden_ExecFilePath != nil {
-			return *x.xxx_hidden_ExecFilePath
-		}
-		return ""
+		return x.ExecFilePath
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetPid() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Pid
+		return x.Pid
 	}
 	return 0
 }
 
 func (x *ProcessSignal) GetUid() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Uid
+		return x.Uid
 	}
 	return 0
 }
 
 func (x *ProcessSignal) GetGid() uint32 {
 	if x != nil {
-		return x.xxx_hidden_Gid
+		return x.Gid
 	}
 	return 0
 }
 
 func (x *ProcessSignal) GetScraped() bool {
 	if x != nil {
-		return x.xxx_hidden_Scraped
+		return x.Scraped
 	}
 	return false
 }
 
 func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 10) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LineageInfo) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *[]*ProcessSignal_LineageInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.LineageInfo
 	}
 	return nil
 }
 
 func (x *ProcessSignal) GetLoginUid() uint32 {
 	if x != nil {
-		return x.xxx_hidden_LoginUid
+		return x.LoginUid
 	}
 	return 0
 }
 
 func (x *ProcessSignal) GetUsername() string {
 	if x != nil {
-		if x.xxx_hidden_Username != nil {
-			return *x.xxx_hidden_Username
-		}
-		return ""
+		return x.Username
 	}
 	return ""
 }
 
 func (x *ProcessSignal) GetInRootMountNs() bool {
 	if x != nil {
-		return x.xxx_hidden_InRootMountNs
+		return x.InRootMountNs
 	}
 	return false
 }
 
 func (x *ProcessSignal) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
+	x.Id = v
 }
 
 func (x *ProcessSignal) SetContainerId(v string) {
-	x.xxx_hidden_ContainerId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
+	x.ContainerId = v
 }
 
 func (x *ProcessSignal) SetCreationTime(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
-	}
+	x.CreationTime = v
 }
 
 func (x *ProcessSignal) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 14)
+	x.Name = v
 }
 
 func (x *ProcessSignal) SetArgs(v string) {
-	x.xxx_hidden_Args = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 14)
+	x.Args = v
 }
 
 func (x *ProcessSignal) SetExecFilePath(v string) {
-	x.xxx_hidden_ExecFilePath = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 14)
+	x.ExecFilePath = v
 }
 
 func (x *ProcessSignal) SetPid(v uint32) {
-	x.xxx_hidden_Pid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 14)
+	x.Pid = v
 }
 
 func (x *ProcessSignal) SetUid(v uint32) {
-	x.xxx_hidden_Uid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 14)
+	x.Uid = v
 }
 
 func (x *ProcessSignal) SetGid(v uint32) {
-	x.xxx_hidden_Gid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 14)
+	x.Gid = v
 }
 
 func (x *ProcessSignal) SetScraped(v bool) {
-	x.xxx_hidden_Scraped = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 14)
+	x.Scraped = v
 }
 
 func (x *ProcessSignal) SetLineageInfo(v []*ProcessSignal_LineageInfo) {
-	var sv *[]*ProcessSignal_LineageInfo
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ProcessSignal_LineageInfo{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_LineageInfo), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 14)
+	x.LineageInfo = v
 }
 
 func (x *ProcessSignal) SetLoginUid(v uint32) {
-	x.xxx_hidden_LoginUid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 14)
+	x.LoginUid = v
 }
 
 func (x *ProcessSignal) SetUsername(v string) {
-	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 14)
+	x.Username = v
 }
 
 func (x *ProcessSignal) SetInRootMountNs(v bool) {
-	x.xxx_hidden_InRootMountNs = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 14)
-}
-
-func (x *ProcessSignal) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessSignal) HasContainerId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.InRootMountNs = v
 }
 
 func (x *ProcessSignal) HasCreationTime() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ProcessSignal) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ProcessSignal) HasArgs() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ProcessSignal) HasExecFilePath() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ProcessSignal) HasPid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ProcessSignal) HasUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ProcessSignal) HasGid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *ProcessSignal) HasScraped() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
-}
-
-func (x *ProcessSignal) HasLoginUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *ProcessSignal) HasUsername() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *ProcessSignal) HasInRootMountNs() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
-}
-
-func (x *ProcessSignal) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ProcessSignal) ClearContainerId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ContainerId = nil
+	return x.CreationTime != nil
 }
 
 func (x *ProcessSignal) ClearCreationTime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreationTime, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ProcessSignal) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ProcessSignal) ClearArgs() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Args = nil
-}
-
-func (x *ProcessSignal) ClearExecFilePath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ExecFilePath = nil
-}
-
-func (x *ProcessSignal) ClearPid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_Pid = 0
-}
-
-func (x *ProcessSignal) ClearUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Uid = 0
-}
-
-func (x *ProcessSignal) ClearGid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Gid = 0
-}
-
-func (x *ProcessSignal) ClearScraped() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
-	x.xxx_hidden_Scraped = false
-}
-
-func (x *ProcessSignal) ClearLoginUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	x.xxx_hidden_LoginUid = 0
-}
-
-func (x *ProcessSignal) ClearUsername() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_Username = nil
-}
-
-func (x *ProcessSignal) ClearInRootMountNs() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
-	x.xxx_hidden_InRootMountNs = false
+	x.CreationTime = nil
 }
 
 type ProcessSignal_builder struct {
@@ -720,107 +497,63 @@ type ProcessSignal_builder struct {
 	// We have this here instead of at the top level
 	// because we want to have each message to be
 	// self contained.
-	Id *string
+	Id string
 	// ID of container associated with this process
-	ContainerId *string
+	ContainerId string
 	// Process creation time
 	CreationTime *timestamppb.Timestamp
 	// Process name
-	Name *string
+	Name string
 	// Process arguments
-	Args *string
+	Args string
 	// Process executable file path
-	ExecFilePath *string
+	ExecFilePath string
 	// Host process ID
-	Pid *uint32
+	Pid uint32
 	// Real user ID
-	Uid *uint32
+	Uid uint32
 	// Real group ID
-	Gid *uint32
+	Gid uint32
 	// Signal origin
-	Scraped *bool
+	Scraped bool
 	// Process LineageInfo
 	LineageInfo []*ProcessSignal_LineageInfo
 	// SFA fields
 	// User ID used for login to the system
-	LoginUid *uint32
+	LoginUid uint32
 	// string representation of the process uid
-	Username *string
+	Username string
 	// whether the process is running on the root mount namespace
-	InRootMountNs *bool
+	InRootMountNs bool
 }
 
 func (b0 ProcessSignal_builder) Build() *ProcessSignal {
 	m0 := &ProcessSignal{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.ContainerId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
-		x.xxx_hidden_ContainerId = b.ContainerId
-	}
-	if b.CreationTime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
-		x.xxx_hidden_CreationTime = b.CreationTime
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Args != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 14)
-		x.xxx_hidden_Args = b.Args
-	}
-	if b.ExecFilePath != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 14)
-		x.xxx_hidden_ExecFilePath = b.ExecFilePath
-	}
-	if b.Pid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 14)
-		x.xxx_hidden_Pid = *b.Pid
-	}
-	if b.Uid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 14)
-		x.xxx_hidden_Uid = *b.Uid
-	}
-	if b.Gid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 14)
-		x.xxx_hidden_Gid = *b.Gid
-	}
-	if b.Scraped != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
-		x.xxx_hidden_Scraped = *b.Scraped
-	}
-	if b.LineageInfo != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 14)
-		x.xxx_hidden_LineageInfo = &b.LineageInfo
-	}
-	if b.LoginUid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 14)
-		x.xxx_hidden_LoginUid = *b.LoginUid
-	}
-	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 14)
-		x.xxx_hidden_Username = b.Username
-	}
-	if b.InRootMountNs != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 14)
-		x.xxx_hidden_InRootMountNs = *b.InRootMountNs
-	}
+	x.Id = b.Id
+	x.ContainerId = b.ContainerId
+	x.CreationTime = b.CreationTime
+	x.Name = b.Name
+	x.Args = b.Args
+	x.ExecFilePath = b.ExecFilePath
+	x.Pid = b.Pid
+	x.Uid = b.Uid
+	x.Gid = b.Gid
+	x.Scraped = b.Scraped
+	x.LineageInfo = b.LineageInfo
+	x.LoginUid = b.LoginUid
+	x.Username = b.Username
+	x.InRootMountNs = b.InRootMountNs
 	return m0
 }
 
 type CollectorConfig_ExternalIPs struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled     ExternalIpsEnabled     `protobuf:"varint,1,opt,name=enabled,enum=sensor.ExternalIpsEnabled"`
-	xxx_hidden_Direction   ExternalIpsDirection   `protobuf:"varint,2,opt,name=direction,enum=sensor.ExternalIpsDirection"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Enabled       ExternalIpsEnabled     `protobuf:"varint,1,opt,name=enabled,enum=sensor.ExternalIpsEnabled" json:"enabled,omitempty"`
+	Direction     ExternalIpsDirection   `protobuf:"varint,2,opt,name=direction,enum=sensor.ExternalIpsDirection" json:"direction,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorConfig_ExternalIPs) Reset() {
@@ -850,86 +583,48 @@ func (x *CollectorConfig_ExternalIPs) ProtoReflect() protoreflect.Message {
 
 func (x *CollectorConfig_ExternalIPs) GetEnabled() ExternalIpsEnabled {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Enabled
-		}
+		return x.Enabled
 	}
 	return ExternalIpsEnabled_DISABLED
 }
 
 func (x *CollectorConfig_ExternalIPs) GetDirection() ExternalIpsDirection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Direction
-		}
+		return x.Direction
 	}
 	return ExternalIpsDirection_UNSPECIFIED
 }
 
 func (x *CollectorConfig_ExternalIPs) SetEnabled(v ExternalIpsEnabled) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Enabled = v
 }
 
 func (x *CollectorConfig_ExternalIPs) SetDirection(v ExternalIpsDirection) {
-	x.xxx_hidden_Direction = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *CollectorConfig_ExternalIPs) HasEnabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CollectorConfig_ExternalIPs) HasDirection() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CollectorConfig_ExternalIPs) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = ExternalIpsEnabled_DISABLED
-}
-
-func (x *CollectorConfig_ExternalIPs) ClearDirection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Direction = ExternalIpsDirection_UNSPECIFIED
+	x.Direction = v
 }
 
 type CollectorConfig_ExternalIPs_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Enabled   *ExternalIpsEnabled
-	Direction *ExternalIpsDirection
+	Enabled   ExternalIpsEnabled
+	Direction ExternalIpsDirection
 }
 
 func (b0 CollectorConfig_ExternalIPs_builder) Build() *CollectorConfig_ExternalIPs {
 	m0 := &CollectorConfig_ExternalIPs{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
-	if b.Direction != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Direction = *b.Direction
-	}
+	x.Enabled = b.Enabled
+	x.Direction = b.Direction
 	return m0
 }
 
 type CollectorConfig_Networking struct {
-	state                              protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_ExternalIps             *CollectorConfig_ExternalIPs `protobuf:"bytes,1,opt,name=external_ips,json=externalIps"`
-	xxx_hidden_MaxConnectionsPerMinute int64                        `protobuf:"varint,2,opt,name=max_connections_per_minute,json=maxConnectionsPerMinute"`
-	XXX_raceDetectHookData             protoimpl.RaceDetectHookData
-	XXX_presence                       [1]uint32
-	unknownFields                      protoimpl.UnknownFields
-	sizeCache                          protoimpl.SizeCache
+	state                   protoimpl.MessageState       `protogen:"hybrid.v1"`
+	ExternalIps             *CollectorConfig_ExternalIPs `protobuf:"bytes,1,opt,name=external_ips,json=externalIps" json:"external_ips,omitempty"`
+	MaxConnectionsPerMinute int64                        `protobuf:"varint,2,opt,name=max_connections_per_minute,json=maxConnectionsPerMinute" json:"max_connections_per_minute,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *CollectorConfig_Networking) Reset() {
@@ -959,77 +654,59 @@ func (x *CollectorConfig_Networking) ProtoReflect() protoreflect.Message {
 
 func (x *CollectorConfig_Networking) GetExternalIps() *CollectorConfig_ExternalIPs {
 	if x != nil {
-		return x.xxx_hidden_ExternalIps
+		return x.ExternalIps
 	}
 	return nil
 }
 
 func (x *CollectorConfig_Networking) GetMaxConnectionsPerMinute() int64 {
 	if x != nil {
-		return x.xxx_hidden_MaxConnectionsPerMinute
+		return x.MaxConnectionsPerMinute
 	}
 	return 0
 }
 
 func (x *CollectorConfig_Networking) SetExternalIps(v *CollectorConfig_ExternalIPs) {
-	x.xxx_hidden_ExternalIps = v
+	x.ExternalIps = v
 }
 
 func (x *CollectorConfig_Networking) SetMaxConnectionsPerMinute(v int64) {
-	x.xxx_hidden_MaxConnectionsPerMinute = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.MaxConnectionsPerMinute = v
 }
 
 func (x *CollectorConfig_Networking) HasExternalIps() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExternalIps != nil
-}
-
-func (x *CollectorConfig_Networking) HasMaxConnectionsPerMinute() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.ExternalIps != nil
 }
 
 func (x *CollectorConfig_Networking) ClearExternalIps() {
-	x.xxx_hidden_ExternalIps = nil
-}
-
-func (x *CollectorConfig_Networking) ClearMaxConnectionsPerMinute() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_MaxConnectionsPerMinute = 0
+	x.ExternalIps = nil
 }
 
 type CollectorConfig_Networking_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ExternalIps             *CollectorConfig_ExternalIPs
-	MaxConnectionsPerMinute *int64
+	MaxConnectionsPerMinute int64
 }
 
 func (b0 CollectorConfig_Networking_builder) Build() *CollectorConfig_Networking {
 	m0 := &CollectorConfig_Networking{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ExternalIps = b.ExternalIps
-	if b.MaxConnectionsPerMinute != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_MaxConnectionsPerMinute = *b.MaxConnectionsPerMinute
-	}
+	x.ExternalIps = b.ExternalIps
+	x.MaxConnectionsPerMinute = b.MaxConnectionsPerMinute
 	return m0
 }
 
 type ProcessSignal_LineageInfo struct {
-	state                         protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ParentUid          uint32                 `protobuf:"varint,1,opt,name=parent_uid,json=parentUid"`
-	xxx_hidden_ParentExecFilePath *string                `protobuf:"bytes,2,opt,name=parent_exec_file_path,json=parentExecFilePath"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"hybrid.v1"`
+	ParentUid          uint32                 `protobuf:"varint,1,opt,name=parent_uid,json=parentUid" json:"parent_uid,omitempty"`
+	ParentExecFilePath string                 `protobuf:"bytes,2,opt,name=parent_exec_file_path,json=parentExecFilePath" json:"parent_exec_file_path,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ProcessSignal_LineageInfo) Reset() {
@@ -1059,74 +736,39 @@ func (x *ProcessSignal_LineageInfo) ProtoReflect() protoreflect.Message {
 
 func (x *ProcessSignal_LineageInfo) GetParentUid() uint32 {
 	if x != nil {
-		return x.xxx_hidden_ParentUid
+		return x.ParentUid
 	}
 	return 0
 }
 
 func (x *ProcessSignal_LineageInfo) GetParentExecFilePath() string {
 	if x != nil {
-		if x.xxx_hidden_ParentExecFilePath != nil {
-			return *x.xxx_hidden_ParentExecFilePath
-		}
-		return ""
+		return x.ParentExecFilePath
 	}
 	return ""
 }
 
 func (x *ProcessSignal_LineageInfo) SetParentUid(v uint32) {
-	x.xxx_hidden_ParentUid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ParentUid = v
 }
 
 func (x *ProcessSignal_LineageInfo) SetParentExecFilePath(v string) {
-	x.xxx_hidden_ParentExecFilePath = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ProcessSignal_LineageInfo) HasParentUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ProcessSignal_LineageInfo) HasParentExecFilePath() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ProcessSignal_LineageInfo) ClearParentUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ParentUid = 0
-}
-
-func (x *ProcessSignal_LineageInfo) ClearParentExecFilePath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ParentExecFilePath = nil
+	x.ParentExecFilePath = v
 }
 
 type ProcessSignal_LineageInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ParentUid          *uint32
-	ParentExecFilePath *string
+	ParentUid          uint32
+	ParentExecFilePath string
 }
 
 func (b0 ProcessSignal_LineageInfo_builder) Build() *ProcessSignal_LineageInfo {
 	m0 := &ProcessSignal_LineageInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ParentUid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ParentUid = *b.ParentUid
-	}
-	if b.ParentExecFilePath != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ParentExecFilePath = b.ParentExecFilePath
-	}
+	x.ParentUid = b.ParentUid
+	x.ParentExecFilePath = b.ParentExecFilePath
 	return m0
 }
 
@@ -1178,7 +820,7 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\x04BOTH\x10\x01\x12\v\n" +
 	"\aINGRESS\x10\x02\x12\n" +
 	"\n" +
-	"\x06EGRESS\x10\x03B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x06EGRESS\x10\x03B0Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_collector_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 6)

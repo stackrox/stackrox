@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ExternalBackup) SizeVT() int                   { return proto.Size(m) }
-func (m *ExternalBackup) CloneVT() *ExternalBackup      { return proto.Clone(m).(*ExternalBackup) }
-func (m *ExternalBackup) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExternalBackup) SizeVT() int                    { return proto.Size(m) }
+func (m *ExternalBackup) CloneVT() *ExternalBackup       { return proto.Clone(m).(*ExternalBackup) }
+func (m *ExternalBackup) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ExternalBackup) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ExternalBackup) EqualVT(n *ExternalBackup) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExternalBackup) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *S3Config) SizeVT() int                   { return proto.Size(m) }
 func (m *S3Config) CloneVT() *S3Config            { return proto.Clone(m).(*S3Config) }
 func (m *S3Config) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *S3Config) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *S3Config) EqualVT(n *S3Config) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *S3Config) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *S3Compatible) SizeVT() int                   { return proto.Size(m) }
 func (m *S3Compatible) CloneVT() *S3Compatible        { return proto.Clone(m).(*S3Compatible) }
 func (m *S3Compatible) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *S3Compatible) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *S3Compatible) EqualVT(n *S3Compatible) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *S3Compatible) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,6 +35,7 @@ func (m *GCSConfig) SizeVT() int                   { return proto.Size(m) }
 func (m *GCSConfig) CloneVT() *GCSConfig           { return proto.Clone(m).(*GCSConfig) }
 func (m *GCSConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GCSConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GCSConfig) EqualVT(n *GCSConfig) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GCSConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

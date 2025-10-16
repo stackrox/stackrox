@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/sensor_upgrade_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -65,14 +67,10 @@ func (x GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) Number() 
 }
 
 type UpdateSensorUpgradeConfigRequest struct {
-	state             protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Config *storage.SensorUpgradeConfig `protobuf:"bytes,1,opt,name=config"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState       `protogen:"hybrid.v1"`
+	Config        *storage.SensorUpgradeConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) Reset() {
@@ -102,37 +100,24 @@ func (x *UpdateSensorUpgradeConfigRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateSensorUpgradeConfigRequest) GetConfig() *storage.SensorUpgradeConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.SensorUpgradeConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Config
 	}
 	return nil
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) SetConfig(v *storage.SensorUpgradeConfig) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Config = v
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Config != nil
 }
 
 func (x *UpdateSensorUpgradeConfigRequest) ClearConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*storage.SensorUpgradeConfig)(nil))
+	x.Config = nil
 }
 
 type UpdateSensorUpgradeConfigRequest_builder struct {
@@ -145,22 +130,15 @@ func (b0 UpdateSensorUpgradeConfigRequest_builder) Build() *UpdateSensorUpgradeC
 	m0 := &UpdateSensorUpgradeConfigRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Config != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Config = b.Config
-	}
+	x.Config = b.Config
 	return m0
 }
 
 type GetSensorUpgradeConfigResponse struct {
-	state             protoimpl.MessageState                        `protogen:"opaque.v1"`
-	xxx_hidden_Config *GetSensorUpgradeConfigResponse_UpgradeConfig `protobuf:"bytes,1,opt,name=config"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                        `protogen:"hybrid.v1"`
+	Config        *GetSensorUpgradeConfigResponse_UpgradeConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSensorUpgradeConfigResponse) Reset() {
@@ -190,37 +168,24 @@ func (x *GetSensorUpgradeConfigResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetSensorUpgradeConfigResponse) GetConfig() *GetSensorUpgradeConfigResponse_UpgradeConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Config) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *GetSensorUpgradeConfigResponse_UpgradeConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Config), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Config
 	}
 	return nil
 }
 
 func (x *GetSensorUpgradeConfigResponse) SetConfig(v *GetSensorUpgradeConfigResponse_UpgradeConfig) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Config = v
 }
 
 func (x *GetSensorUpgradeConfigResponse) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Config != nil
 }
 
 func (x *GetSensorUpgradeConfigResponse) ClearConfig() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Config, (*GetSensorUpgradeConfigResponse_UpgradeConfig)(nil))
+	x.Config = nil
 }
 
 type GetSensorUpgradeConfigResponse_builder struct {
@@ -233,21 +198,16 @@ func (b0 GetSensorUpgradeConfigResponse_builder) Build() *GetSensorUpgradeConfig
 	m0 := &GetSensorUpgradeConfigResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Config != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Config = b.Config
-	}
+	x.Config = b.Config
 	return m0
 }
 
 type GetSensorUpgradeConfigResponse_UpgradeConfig struct {
-	state                         protoimpl.MessageState                                        `protogen:"opaque.v1"`
-	xxx_hidden_EnableAutoUpgrade  bool                                                          `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade"`
-	xxx_hidden_AutoUpgradeFeature GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus `protobuf:"varint,2,opt,name=auto_upgrade_feature,json=autoUpgradeFeature,enum=v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus"`
-	XXX_raceDetectHookData        protoimpl.RaceDetectHookData
-	XXX_presence                  [1]uint32
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	state              protoimpl.MessageState                                        `protogen:"hybrid.v1"`
+	EnableAutoUpgrade  bool                                                          `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade" json:"enable_auto_upgrade,omitempty"`
+	AutoUpgradeFeature GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus `protobuf:"varint,2,opt,name=auto_upgrade_feature,json=autoUpgradeFeature,enum=v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus" json:"auto_upgrade_feature,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) Reset() {
@@ -277,73 +237,39 @@ func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) ProtoReflect() protorefle
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) GetEnableAutoUpgrade() bool {
 	if x != nil {
-		return x.xxx_hidden_EnableAutoUpgrade
+		return x.EnableAutoUpgrade
 	}
 	return false
 }
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) GetAutoUpgradeFeature() GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_AutoUpgradeFeature
-		}
+		return x.AutoUpgradeFeature
 	}
 	return GetSensorUpgradeConfigResponse_NOT_SUPPORTED
 }
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) SetEnableAutoUpgrade(v bool) {
-	x.xxx_hidden_EnableAutoUpgrade = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.EnableAutoUpgrade = v
 }
 
 func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) SetAutoUpgradeFeature(v GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) {
-	x.xxx_hidden_AutoUpgradeFeature = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) HasEnableAutoUpgrade() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) HasAutoUpgradeFeature() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) ClearEnableAutoUpgrade() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_EnableAutoUpgrade = false
-}
-
-func (x *GetSensorUpgradeConfigResponse_UpgradeConfig) ClearAutoUpgradeFeature() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_AutoUpgradeFeature = GetSensorUpgradeConfigResponse_NOT_SUPPORTED
+	x.AutoUpgradeFeature = v
 }
 
 type GetSensorUpgradeConfigResponse_UpgradeConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	EnableAutoUpgrade  *bool
-	AutoUpgradeFeature *GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus
+	EnableAutoUpgrade  bool
+	AutoUpgradeFeature GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus
 }
 
 func (b0 GetSensorUpgradeConfigResponse_UpgradeConfig_builder) Build() *GetSensorUpgradeConfigResponse_UpgradeConfig {
 	m0 := &GetSensorUpgradeConfigResponse_UpgradeConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.EnableAutoUpgrade != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_EnableAutoUpgrade = *b.EnableAutoUpgrade
-	}
-	if b.AutoUpgradeFeature != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_AutoUpgradeFeature = *b.AutoUpgradeFeature
-	}
+	x.EnableAutoUpgrade = b.EnableAutoUpgrade
+	x.AutoUpgradeFeature = b.AutoUpgradeFeature
 	return m0
 }
 
@@ -366,8 +292,8 @@ const file_api_v1_sensor_upgrade_service_proto_rawDesc = "" +
 	"\x16GetSensorUpgradeConfig\x12\t.v1.Empty\x1a\".v1.GetSensorUpgradeConfigResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/sensorupgrades/config\x12r\n" +
 	"\x19UpdateSensorUpgradeConfig\x12$.v1.UpdateSensorUpgradeConfigRequest\x1a\t.v1.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/sensorupgrades/config\x12\\\n" +
 	"\x14TriggerSensorUpgrade\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"'\x82\xd3\xe4\x93\x02!\"\x1f/v1/sensorupgrades/cluster/{id}\x12l\n" +
-	"\x19TriggerSensorCertRotation\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"2\x82\xd3\xe4\x93\x02,\"*/v1/sensorupgrades/rotateclustercerts/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x02b\beditionsp\xe8\a"
+	"\x19TriggerSensorCertRotation\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"2\x82\xd3\xe4\x93\x02,\"*/v1/sensorupgrades/rotateclustercerts/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x02b\beditionsp\xe8\a"
 
 var file_api_v1_sensor_upgrade_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_v1_sensor_upgrade_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)

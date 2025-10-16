@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *InstallationInfo) SizeVT() int                   { return proto.Size(m) }
-func (m *InstallationInfo) CloneVT() *InstallationInfo    { return proto.Clone(m).(*InstallationInfo) }
-func (m *InstallationInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InstallationInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InstallationInfo) SizeVT() int                      { return proto.Size(m) }
+func (m *InstallationInfo) CloneVT() *InstallationInfo       { return proto.Clone(m).(*InstallationInfo) }
+func (m *InstallationInfo) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *InstallationInfo) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *InstallationInfo) EqualVT(n *InstallationInfo) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InstallationInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

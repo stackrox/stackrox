@@ -10,6 +10,9 @@ func (m *AdmissionControlSettings) CloneVT() *AdmissionControlSettings {
 }
 func (m *AdmissionControlSettings) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AdmissionControlSettings) EqualVT(n *AdmissionControlSettings) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +21,9 @@ func (m *AdmissionControlAlerts) SizeVT() int { return proto.Size(m) }
 func (m *AdmissionControlAlerts) CloneVT() *AdmissionControlAlerts {
 	return proto.Clone(m).(*AdmissionControlAlerts)
 }
-func (m *AdmissionControlAlerts) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *AdmissionControlAlerts) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AdmissionControlAlerts) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *AdmissionControlAlerts) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *AdmissionControlAlerts) EqualVT(n *AdmissionControlAlerts) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AdmissionControlAlerts) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -31,6 +35,9 @@ func (m *AdmCtrlUpdateResourceRequest) CloneVT() *AdmCtrlUpdateResourceRequest {
 func (m *AdmCtrlUpdateResourceRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AdmCtrlUpdateResourceRequest) EqualVT(n *AdmCtrlUpdateResourceRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -47,6 +54,9 @@ func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) MarshalVT() ([]byte, erro
 }
 func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AdmCtrlUpdateResourceRequest_ResourcesSynced) EqualVT(n *AdmCtrlUpdateResourceRequest_ResourcesSynced) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

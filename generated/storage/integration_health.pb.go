@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/integration_health.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -117,19 +119,16 @@ func (x IntegrationHealth_Type) Number() protoreflect.EnumNumber {
 }
 
 type IntegrationHealth struct {
-	state                    protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_Id            *string                  `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name          *string                  `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Type          IntegrationHealth_Type   `protobuf:"varint,3,opt,name=type,enum=storage.IntegrationHealth_Type"`
-	xxx_hidden_Status        IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,enum=storage.IntegrationHealth_Status"`
-	xxx_hidden_ErrorMessage  *string                  `protobuf:"bytes,5,opt,name=error_message,json=errorMessage"`
-	xxx_hidden_LastTimestamp *timestamppb.Timestamp   `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state        protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Id           string                   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name         string                   `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Type         IntegrationHealth_Type   `protobuf:"varint,3,opt,name=type,enum=storage.IntegrationHealth_Type" json:"type,omitempty"`
+	Status       IntegrationHealth_Status `protobuf:"varint,4,opt,name=status,enum=storage.IntegrationHealth_Status" json:"status,omitempty"`
+	ErrorMessage string                   `protobuf:"bytes,5,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	// Timestamp when the status was ascertained
+	LastTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_timestamp,json=lastTimestamp" json:"last_timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IntegrationHealth) Reset() {
@@ -159,180 +158,89 @@ func (x *IntegrationHealth) ProtoReflect() protoreflect.Message {
 
 func (x *IntegrationHealth) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetType() IntegrationHealth_Type {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return IntegrationHealth_UNKNOWN
 }
 
 func (x *IntegrationHealth) GetStatus() IntegrationHealth_Status {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Status
-		}
+		return x.Status
 	}
 	return IntegrationHealth_UNINITIALIZED
 }
 
 func (x *IntegrationHealth) GetErrorMessage() string {
 	if x != nil {
-		if x.xxx_hidden_ErrorMessage != nil {
-			return *x.xxx_hidden_ErrorMessage
-		}
-		return ""
+		return x.ErrorMessage
 	}
 	return ""
 }
 
 func (x *IntegrationHealth) GetLastTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastTimestamp) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastTimestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastTimestamp
 	}
 	return nil
 }
 
 func (x *IntegrationHealth) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Id = v
 }
 
 func (x *IntegrationHealth) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Name = v
 }
 
 func (x *IntegrationHealth) SetType(v IntegrationHealth_Type) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Type = v
 }
 
 func (x *IntegrationHealth) SetStatus(v IntegrationHealth_Status) {
-	x.xxx_hidden_Status = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Status = v
 }
 
 func (x *IntegrationHealth) SetErrorMessage(v string) {
-	x.xxx_hidden_ErrorMessage = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.ErrorMessage = v
 }
 
 func (x *IntegrationHealth) SetLastTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-	}
-}
-
-func (x *IntegrationHealth) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *IntegrationHealth) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *IntegrationHealth) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *IntegrationHealth) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *IntegrationHealth) HasErrorMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.LastTimestamp = v
 }
 
 func (x *IntegrationHealth) HasLastTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *IntegrationHealth) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *IntegrationHealth) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *IntegrationHealth) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Type = IntegrationHealth_UNKNOWN
-}
-
-func (x *IntegrationHealth) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Status = IntegrationHealth_UNINITIALIZED
-}
-
-func (x *IntegrationHealth) ClearErrorMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ErrorMessage = nil
+	return x.LastTimestamp != nil
 }
 
 func (x *IntegrationHealth) ClearLastTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastTimestamp, (*timestamppb.Timestamp)(nil))
+	x.LastTimestamp = nil
 }
 
 type IntegrationHealth_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id           *string
-	Name         *string
-	Type         *IntegrationHealth_Type
-	Status       *IntegrationHealth_Status
-	ErrorMessage *string
+	Id           string
+	Name         string
+	Type         IntegrationHealth_Type
+	Status       IntegrationHealth_Status
+	ErrorMessage string
 	// Timestamp when the status was ascertained
 	LastTimestamp *timestamppb.Timestamp
 }
@@ -341,30 +249,12 @@ func (b0 IntegrationHealth_builder) Build() *IntegrationHealth {
 	m0 := &IntegrationHealth{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Type = *b.Type
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Status = *b.Status
-	}
-	if b.ErrorMessage != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_ErrorMessage = b.ErrorMessage
-	}
-	if b.LastTimestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_LastTimestamp = b.LastTimestamp
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Type = b.Type
+	x.Status = b.Status
+	x.ErrorMessage = b.ErrorMessage
+	x.LastTimestamp = b.LastTimestamp
 	return m0
 }
 
@@ -390,8 +280,8 @@ const file_storage_integration_health_proto_rawDesc = "" +
 	"\bNOTIFIER\x10\x02\x12\n" +
 	"\n" +
 	"\x06BACKUP\x10\x03\x12\x16\n" +
-	"\x12DECLARATIVE_CONFIG\x10\x04B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x12DECLARATIVE_CONFIG\x10\x04B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_integration_health_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_integration_health_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

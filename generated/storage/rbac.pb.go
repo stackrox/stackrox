@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/rbac.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -128,23 +130,19 @@ func (x PermissionLevel) Number() protoreflect.EnumNumber {
 // Properties of an individual k8s Role or ClusterRole.
 // ////////////////////////////////////////
 type K8SRole struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole"`
-	xxx_hidden_Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
-	xxx_hidden_Rules       *[]*PolicyRule         `protobuf:"bytes,10,rep,name=rules"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Role ID,hidden" sql:"pk,type(uuid)"`                                                                                             // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Role"`                                                                                         // @gotags: search:"Role"
+	Namespace     string                 `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                                                                               // @gotags: search:"Namespace,store"
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                              // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster"`                                                        // @gotags: search:"Cluster"
+	ClusterRole   bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole" json:"cluster_role,omitempty" search:"Cluster Role"`                                                       // @gotags: search:"Cluster Role"
+	Labels        map[string]string      `protobuf:"bytes,7,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Role Label"`           // @gotags: search:"Role Label"
+	Annotations   map[string]string      `protobuf:"bytes,8,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Role Annotation"` // @gotags: search:"Role Annotation"
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Rules         []*PolicyRule          `protobuf:"bytes,10,rep,name=rules" json:"rules,omitempty" sensorhash:"set"` // @gotags: sensorhash:"set"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *K8SRole) Reset() {
@@ -174,254 +172,134 @@ func (x *K8SRole) ProtoReflect() protoreflect.Message {
 
 func (x *K8SRole) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *K8SRole) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *K8SRole) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *K8SRole) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *K8SRole) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *K8SRole) GetClusterRole() bool {
 	if x != nil {
-		return x.xxx_hidden_ClusterRole
+		return x.ClusterRole
 	}
 	return false
 }
 
 func (x *K8SRole) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *K8SRole) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *K8SRole) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *K8SRole) GetRules() []*PolicyRule {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Rules) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *[]*PolicyRule
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Rules
 	}
 	return nil
 }
 
 func (x *K8SRole) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 10)
+	x.Id = v
 }
 
 func (x *K8SRole) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 10)
+	x.Name = v
 }
 
 func (x *K8SRole) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	x.Namespace = v
 }
 
 func (x *K8SRole) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 10)
+	x.ClusterId = v
 }
 
 func (x *K8SRole) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 10)
+	x.ClusterName = v
 }
 
 func (x *K8SRole) SetClusterRole(v bool) {
-	x.xxx_hidden_ClusterRole = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 10)
+	x.ClusterRole = v
 }
 
 func (x *K8SRole) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *K8SRole) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *K8SRole) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 10)
-	}
+	x.CreatedAt = v
 }
 
 func (x *K8SRole) SetRules(v []*PolicyRule) {
-	var sv *[]*PolicyRule
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PolicyRule{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Rules), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
-}
-
-func (x *K8SRole) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *K8SRole) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *K8SRole) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *K8SRole) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *K8SRole) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *K8SRole) HasClusterRole() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.Rules = v
 }
 
 func (x *K8SRole) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *K8SRole) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *K8SRole) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *K8SRole) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *K8SRole) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *K8SRole) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *K8SRole) ClearClusterRole() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ClusterRole = false
+	return x.CreatedAt != nil
 }
 
 func (x *K8SRole) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
+	x.CreatedAt = nil
 }
 
 type K8SRole_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	Namespace   *string
-	ClusterId   *string
-	ClusterName *string
-	ClusterRole *bool
+	Id          string
+	Name        string
+	Namespace   string
+	ClusterId   string
+	ClusterName string
+	ClusterRole bool
 	Labels      map[string]string
 	Annotations map[string]string
 	CreatedAt   *timestamppb.Timestamp
@@ -432,54 +310,30 @@ func (b0 K8SRole_builder) Build() *K8SRole {
 	m0 := &K8SRole{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 10)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 10)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 10)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 10)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.ClusterRole != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 10)
-		x.xxx_hidden_ClusterRole = *b.ClusterRole
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 10)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
-	if b.Rules != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
-		x.xxx_hidden_Rules = &b.Rules
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Namespace = b.Namespace
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.ClusterRole = b.ClusterRole
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.CreatedAt = b.CreatedAt
+	x.Rules = b.Rules
 	return m0
 }
 
 // Properties of an individual rules that grant permissions to resources.
 // ////////////////////////////////////////
 type PolicyRule struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Verbs           []string               `protobuf:"bytes,1,rep,name=verbs"`
-	xxx_hidden_ApiGroups       []string               `protobuf:"bytes,2,rep,name=api_groups,json=apiGroups"`
-	xxx_hidden_Resources       []string               `protobuf:"bytes,3,rep,name=resources"`
-	xxx_hidden_NonResourceUrls []string               `protobuf:"bytes,4,rep,name=non_resource_urls,json=nonResourceUrls"`
-	xxx_hidden_ResourceNames   []string               `protobuf:"bytes,5,rep,name=resource_names,json=resourceNames"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Verbs           []string               `protobuf:"bytes,1,rep,name=verbs" json:"verbs,omitempty"`
+	ApiGroups       []string               `protobuf:"bytes,2,rep,name=api_groups,json=apiGroups" json:"api_groups,omitempty"`
+	Resources       []string               `protobuf:"bytes,3,rep,name=resources" json:"resources,omitempty"`
+	NonResourceUrls []string               `protobuf:"bytes,4,rep,name=non_resource_urls,json=nonResourceUrls" json:"non_resource_urls,omitempty"`
+	ResourceNames   []string               `protobuf:"bytes,5,rep,name=resource_names,json=resourceNames" json:"resource_names,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PolicyRule) Reset() {
@@ -509,57 +363,57 @@ func (x *PolicyRule) ProtoReflect() protoreflect.Message {
 
 func (x *PolicyRule) GetVerbs() []string {
 	if x != nil {
-		return x.xxx_hidden_Verbs
+		return x.Verbs
 	}
 	return nil
 }
 
 func (x *PolicyRule) GetApiGroups() []string {
 	if x != nil {
-		return x.xxx_hidden_ApiGroups
+		return x.ApiGroups
 	}
 	return nil
 }
 
 func (x *PolicyRule) GetResources() []string {
 	if x != nil {
-		return x.xxx_hidden_Resources
+		return x.Resources
 	}
 	return nil
 }
 
 func (x *PolicyRule) GetNonResourceUrls() []string {
 	if x != nil {
-		return x.xxx_hidden_NonResourceUrls
+		return x.NonResourceUrls
 	}
 	return nil
 }
 
 func (x *PolicyRule) GetResourceNames() []string {
 	if x != nil {
-		return x.xxx_hidden_ResourceNames
+		return x.ResourceNames
 	}
 	return nil
 }
 
 func (x *PolicyRule) SetVerbs(v []string) {
-	x.xxx_hidden_Verbs = v
+	x.Verbs = v
 }
 
 func (x *PolicyRule) SetApiGroups(v []string) {
-	x.xxx_hidden_ApiGroups = v
+	x.ApiGroups = v
 }
 
 func (x *PolicyRule) SetResources(v []string) {
-	x.xxx_hidden_Resources = v
+	x.Resources = v
 }
 
 func (x *PolicyRule) SetNonResourceUrls(v []string) {
-	x.xxx_hidden_NonResourceUrls = v
+	x.NonResourceUrls = v
 }
 
 func (x *PolicyRule) SetResourceNames(v []string) {
-	x.xxx_hidden_ResourceNames = v
+	x.ResourceNames = v
 }
 
 type PolicyRule_builder struct {
@@ -576,35 +430,34 @@ func (b0 PolicyRule_builder) Build() *PolicyRule {
 	m0 := &PolicyRule{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Verbs = b.Verbs
-	x.xxx_hidden_ApiGroups = b.ApiGroups
-	x.xxx_hidden_Resources = b.Resources
-	x.xxx_hidden_NonResourceUrls = b.NonResourceUrls
-	x.xxx_hidden_ResourceNames = b.ResourceNames
+	x.Verbs = b.Verbs
+	x.ApiGroups = b.ApiGroups
+	x.Resources = b.Resources
+	x.NonResourceUrls = b.NonResourceUrls
+	x.ResourceNames = b.ResourceNames
 	return m0
 }
 
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
 // ////////////////////////////////////////
 type K8SRoleBinding struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName *string                `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_ClusterRole bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole"`
-	xxx_hidden_Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt"`
-	xxx_hidden_Subjects    *[]*Subject            `protobuf:"bytes,10,rep,name=subjects"`
-	xxx_hidden_RoleId      *string                `protobuf:"bytes,11,opt,name=role_id,json=roleId"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Role Binding ID,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Role Binding ID,hidden" sql:"pk,type(uuid)"
+	Name        string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Role Binding"`                                  // @gotags: search:"Role Binding"
+	Namespace   string                 `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
+	ClusterId   string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
+	// ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
+	// the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
+	// empty and cluster role is true, the binding is a cluster role binding.
+	ClusterRole   bool                   `protobuf:"varint,6,opt,name=cluster_role,json=clusterRole" json:"cluster_role,omitempty" search:"Cluster Role"`                                                       // @gotags: search:"Cluster Role"
+	Labels        map[string]string      `protobuf:"bytes,7,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Role Binding Label"`           // @gotags: search:"Role Binding Label"
+	Annotations   map[string]string      `protobuf:"bytes,8,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Role Binding Annotation"` // @gotags: search:"Role Binding Annotation"
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Subjects      []*Subject             `protobuf:"bytes,10,rep,name=subjects" json:"subjects,omitempty"`
+	RoleId        string                 `protobuf:"bytes,11,opt,name=role_id,json=roleId" json:"role_id,omitempty" search:"Role ID" sql:"type(uuid)"` // @gotags: search:"Role ID" sql:"type(uuid)"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *K8SRoleBinding) Reset() {
@@ -634,350 +487,185 @@ func (x *K8SRoleBinding) ProtoReflect() protoreflect.Message {
 
 func (x *K8SRoleBinding) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) GetClusterRole() bool {
 	if x != nil {
-		return x.xxx_hidden_ClusterRole
+		return x.ClusterRole
 	}
 	return false
 }
 
 func (x *K8SRoleBinding) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *K8SRoleBinding) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *K8SRoleBinding) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *K8SRoleBinding) GetSubjects() []*Subject {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Subjects) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *[]*Subject
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Subjects
 	}
 	return nil
 }
 
 func (x *K8SRoleBinding) GetRoleId() string {
 	if x != nil {
-		if x.xxx_hidden_RoleId != nil {
-			return *x.xxx_hidden_RoleId
-		}
-		return ""
+		return x.RoleId
 	}
 	return ""
 }
 
 func (x *K8SRoleBinding) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *K8SRoleBinding) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	x.Name = v
 }
 
 func (x *K8SRoleBinding) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	x.Namespace = v
 }
 
 func (x *K8SRoleBinding) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	x.ClusterId = v
 }
 
 func (x *K8SRoleBinding) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.ClusterName = v
 }
 
 func (x *K8SRoleBinding) SetClusterRole(v bool) {
-	x.xxx_hidden_ClusterRole = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	x.ClusterRole = v
 }
 
 func (x *K8SRoleBinding) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *K8SRoleBinding) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *K8SRoleBinding) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
-	}
+	x.CreatedAt = v
 }
 
 func (x *K8SRoleBinding) SetSubjects(v []*Subject) {
-	var sv *[]*Subject
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Subject{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Subjects), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	x.Subjects = v
 }
 
 func (x *K8SRoleBinding) SetRoleId(v string) {
-	x.xxx_hidden_RoleId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
-}
-
-func (x *K8SRoleBinding) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *K8SRoleBinding) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *K8SRoleBinding) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *K8SRoleBinding) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *K8SRoleBinding) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *K8SRoleBinding) HasClusterRole() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.RoleId = v
 }
 
 func (x *K8SRoleBinding) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
-}
-
-func (x *K8SRoleBinding) HasRoleId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
-}
-
-func (x *K8SRoleBinding) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *K8SRoleBinding) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *K8SRoleBinding) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *K8SRoleBinding) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *K8SRoleBinding) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *K8SRoleBinding) ClearClusterRole() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ClusterRole = false
+	return x.CreatedAt != nil
 }
 
 func (x *K8SRoleBinding) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *K8SRoleBinding) ClearRoleId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
-	x.xxx_hidden_RoleId = nil
+	x.CreatedAt = nil
 }
 
 type K8SRoleBinding_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Name        *string
-	Namespace   *string
-	ClusterId   *string
-	ClusterName *string
+	Id          string
+	Name        string
+	Namespace   string
+	ClusterId   string
+	ClusterName string
 	// ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
 	// the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
 	// empty and cluster role is true, the binding is a cluster role binding.
-	ClusterRole *bool
+	ClusterRole bool
 	Labels      map[string]string
 	Annotations map[string]string
 	CreatedAt   *timestamppb.Timestamp
 	Subjects    []*Subject
-	RoleId      *string
+	RoleId      string
 }
 
 func (b0 K8SRoleBinding_builder) Build() *K8SRoleBinding {
 	m0 := &K8SRoleBinding{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.ClusterRole != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_ClusterRole = *b.ClusterRole
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
-	if b.Subjects != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
-		x.xxx_hidden_Subjects = &b.Subjects
-	}
-	if b.RoleId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
-		x.xxx_hidden_RoleId = b.RoleId
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Namespace = b.Namespace
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.ClusterRole = b.ClusterRole
+	x.Labels = b.Labels
+	x.Annotations = b.Annotations
+	x.CreatedAt = b.CreatedAt
+	x.Subjects = b.Subjects
+	x.RoleId = b.RoleId
 	return m0
 }
 
 // Properties of an individual subjects who are granted roles via role bindings.
 // ////////////////////////////////////////
 type Subject struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,4,opt,name=id"`
-	xxx_hidden_Kind        SubjectKind            `protobuf:"varint,1,opt,name=kind,enum=storage.SubjectKind"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Namespace   *string                `protobuf:"bytes,3,opt,name=namespace"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName *string                `protobuf:"bytes,6,opt,name=cluster_name,json=clusterName"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,4,opt,name=id" json:"id,omitempty"`                               // ID is derived from base64 of cluster id and name
+	Kind          SubjectKind            `protobuf:"varint,1,opt,name=kind,enum=storage.SubjectKind" json:"kind,omitempty" search:"Subject Kind"` // @gotags: search:"Subject Kind"
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Subject"`                           // @gotags: search:"Subject"
+	Namespace     string                 `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	ClusterName   string                 `protobuf:"bytes,6,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Subject) Reset() {
@@ -1007,204 +695,91 @@ func (x *Subject) ProtoReflect() protoreflect.Message {
 
 func (x *Subject) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Subject) GetKind() SubjectKind {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Kind
-		}
+		return x.Kind
 	}
 	return SubjectKind_UNSET_KIND
 }
 
 func (x *Subject) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Subject) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *Subject) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *Subject) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *Subject) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Id = v
 }
 
 func (x *Subject) SetKind(v SubjectKind) {
-	x.xxx_hidden_Kind = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Kind = v
 }
 
 func (x *Subject) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Name = v
 }
 
 func (x *Subject) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Namespace = v
 }
 
 func (x *Subject) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.ClusterId = v
 }
 
 func (x *Subject) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *Subject) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Subject) HasKind() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Subject) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Subject) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Subject) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *Subject) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *Subject) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *Subject) ClearKind() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Kind = SubjectKind_UNSET_KIND
-}
-
-func (x *Subject) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Subject) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *Subject) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *Subject) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ClusterName = nil
+	x.ClusterName = v
 }
 
 type Subject_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          *string
-	Kind        *SubjectKind
-	Name        *string
-	Namespace   *string
-	ClusterId   *string
-	ClusterName *string
+	Id          string
+	Kind        SubjectKind
+	Name        string
+	Namespace   string
+	ClusterId   string
+	ClusterName string
 }
 
 func (b0 Subject_builder) Build() *Subject {
 	m0 := &Subject{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Kind != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Kind = *b.Kind
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
+	x.Id = b.Id
+	x.Kind = b.Kind
+	x.Name = b.Name
+	x.Namespace = b.Namespace
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
 	return m0
 }
 
@@ -1282,8 +857,8 @@ const file_storage_rbac_proto_rawDesc = "" +
 	"\aDEFAULT\x10\x02\x12\x19\n" +
 	"\x15ELEVATED_IN_NAMESPACE\x10\x03\x12\x19\n" +
 	"\x15ELEVATED_CLUSTER_WIDE\x10\x04\x12\x11\n" +
-	"\rCLUSTER_ADMIN\x10\x05B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\rCLUSTER_ADMIN\x10\x05B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_rbac_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_rbac_proto_msgTypes = make([]protoimpl.MessageInfo, 8)

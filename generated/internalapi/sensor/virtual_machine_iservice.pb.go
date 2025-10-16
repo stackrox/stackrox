@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/virtual_machine_iservice.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -23,14 +25,10 @@ const (
 )
 
 type UpsertVirtualMachineIndexReportRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_IndexReport *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	IndexReport   *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport" json:"index_report,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) Reset() {
@@ -60,37 +58,24 @@ func (x *UpsertVirtualMachineIndexReportRequest) ProtoReflect() protoreflect.Mes
 
 func (x *UpsertVirtualMachineIndexReportRequest) GetIndexReport() *v1.IndexReport {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_IndexReport) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *v1.IndexReport
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_IndexReport), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.IndexReport
 	}
 	return nil
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) SetIndexReport(v *v1.IndexReport) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IndexReport, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.IndexReport = v
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) HasIndexReport() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.IndexReport != nil
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) ClearIndexReport() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_IndexReport, (*v1.IndexReport)(nil))
+	x.IndexReport = nil
 }
 
 type UpsertVirtualMachineIndexReportRequest_builder struct {
@@ -103,20 +88,15 @@ func (b0 UpsertVirtualMachineIndexReportRequest_builder) Build() *UpsertVirtualM
 	m0 := &UpsertVirtualMachineIndexReportRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.IndexReport != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_IndexReport = b.IndexReport
-	}
+	x.IndexReport = b.IndexReport
 	return m0
 }
 
 type UpsertVirtualMachineIndexReportResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Success     bool                   `protobuf:"varint,1,opt,name=success"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) Reset() {
@@ -146,42 +126,26 @@ func (x *UpsertVirtualMachineIndexReportResponse) ProtoReflect() protoreflect.Me
 
 func (x *UpsertVirtualMachineIndexReportResponse) GetSuccess() bool {
 	if x != nil {
-		return x.xxx_hidden_Success
+		return x.Success
 	}
 	return false
 }
 
 func (x *UpsertVirtualMachineIndexReportResponse) SetSuccess(v bool) {
-	x.xxx_hidden_Success = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *UpsertVirtualMachineIndexReportResponse) HasSuccess() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UpsertVirtualMachineIndexReportResponse) ClearSuccess() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Success = false
+	x.Success = v
 }
 
 type UpsertVirtualMachineIndexReportResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Success *bool
+	Success bool
 }
 
 func (b0 UpsertVirtualMachineIndexReportResponse_builder) Build() *UpsertVirtualMachineIndexReportResponse {
 	m0 := &UpsertVirtualMachineIndexReportResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Success != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Success = *b.Success
-	}
+	x.Success = b.Success
 	return m0
 }
 
@@ -195,7 +159,7 @@ const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
 	" VirtualMachineIndexReportService\x12\x84\x01\n" +
-	"\x1fUpsertVirtualMachineIndexReport\x12..sensor.UpsertVirtualMachineIndexReportRequest\x1a/.sensor.UpsertVirtualMachineIndexReportResponse\"\x00B%Z\x1b./internalapi/sensor;sensor\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x1fUpsertVirtualMachineIndexReport\x12..sensor.UpsertVirtualMachineIndexReportRequest\x1a/.sensor.UpsertVirtualMachineIndexReportResponse\"\x00B-Z\x1b./internalapi/sensor;sensor\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{

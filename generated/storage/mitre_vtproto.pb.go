@@ -8,30 +8,34 @@ func (m *MitreTactic) SizeVT() int                   { return proto.Size(m) }
 func (m *MitreTactic) CloneVT() *MitreTactic         { return proto.Clone(m).(*MitreTactic) }
 func (m *MitreTactic) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *MitreTactic) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MitreTactic) EqualVT(n *MitreTactic) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreTactic) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MitreTechnique) SizeVT() int                   { return proto.Size(m) }
-func (m *MitreTechnique) CloneVT() *MitreTechnique      { return proto.Clone(m).(*MitreTechnique) }
-func (m *MitreTechnique) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MitreTechnique) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MitreTechnique) SizeVT() int                    { return proto.Size(m) }
+func (m *MitreTechnique) CloneVT() *MitreTechnique       { return proto.Clone(m).(*MitreTechnique) }
+func (m *MitreTechnique) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *MitreTechnique) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *MitreTechnique) EqualVT(n *MitreTechnique) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreTechnique) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MitreAttackVector) SizeVT() int                   { return proto.Size(m) }
-func (m *MitreAttackVector) CloneVT() *MitreAttackVector   { return proto.Clone(m).(*MitreAttackVector) }
-func (m *MitreAttackVector) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MitreAttackVector) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackVector) SizeVT() int                       { return proto.Size(m) }
+func (m *MitreAttackVector) CloneVT() *MitreAttackVector       { return proto.Clone(m).(*MitreAttackVector) }
+func (m *MitreAttackVector) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *MitreAttackVector) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackVector) EqualVT(n *MitreAttackVector) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreAttackVector) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *MitreAttackMatrix) SizeVT() int                   { return proto.Size(m) }
-func (m *MitreAttackMatrix) CloneVT() *MitreAttackMatrix   { return proto.Clone(m).(*MitreAttackMatrix) }
-func (m *MitreAttackMatrix) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MitreAttackMatrix) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackMatrix) SizeVT() int                       { return proto.Size(m) }
+func (m *MitreAttackMatrix) CloneVT() *MitreAttackMatrix       { return proto.Clone(m).(*MitreAttackMatrix) }
+func (m *MitreAttackMatrix) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *MitreAttackMatrix) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackMatrix) EqualVT(n *MitreAttackMatrix) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreAttackMatrix) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -44,16 +48,20 @@ func (m *MitreAttackMatrix_MatrixInfo) MarshalVT() ([]byte, error) { return prot
 func (m *MitreAttackMatrix_MatrixInfo) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *MitreAttackMatrix_MatrixInfo) EqualVT(n *MitreAttackMatrix_MatrixInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreAttackMatrix_MatrixInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *MitreAttackBundle) SizeVT() int                   { return proto.Size(m) }
-func (m *MitreAttackBundle) CloneVT() *MitreAttackBundle   { return proto.Clone(m).(*MitreAttackBundle) }
-func (m *MitreAttackBundle) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *MitreAttackBundle) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackBundle) SizeVT() int                       { return proto.Size(m) }
+func (m *MitreAttackBundle) CloneVT() *MitreAttackBundle       { return proto.Clone(m).(*MitreAttackBundle) }
+func (m *MitreAttackBundle) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *MitreAttackBundle) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *MitreAttackBundle) EqualVT(n *MitreAttackBundle) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *MitreAttackBundle) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

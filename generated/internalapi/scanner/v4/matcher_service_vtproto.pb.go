@@ -10,22 +10,27 @@ func (m *GetVulnerabilitiesRequest) CloneVT() *GetVulnerabilitiesRequest {
 }
 func (m *GetVulnerabilitiesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetVulnerabilitiesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetVulnerabilitiesRequest) EqualVT(n *GetVulnerabilitiesRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetVulnerabilitiesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetSBOMRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *GetSBOMRequest) CloneVT() *GetSBOMRequest      { return proto.Clone(m).(*GetSBOMRequest) }
-func (m *GetSBOMRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetSBOMRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetSBOMRequest) SizeVT() int                    { return proto.Size(m) }
+func (m *GetSBOMRequest) CloneVT() *GetSBOMRequest       { return proto.Clone(m).(*GetSBOMRequest) }
+func (m *GetSBOMRequest) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *GetSBOMRequest) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *GetSBOMRequest) EqualVT(n *GetSBOMRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetSBOMRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetSBOMResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *GetSBOMResponse) CloneVT() *GetSBOMResponse     { return proto.Clone(m).(*GetSBOMResponse) }
-func (m *GetSBOMResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetSBOMResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetSBOMResponse) SizeVT() int                     { return proto.Size(m) }
+func (m *GetSBOMResponse) CloneVT() *GetSBOMResponse       { return proto.Clone(m).(*GetSBOMResponse) }
+func (m *GetSBOMResponse) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *GetSBOMResponse) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *GetSBOMResponse) EqualVT(n *GetSBOMResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetSBOMResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +39,7 @@ func (m *Metadata) SizeVT() int                   { return proto.Size(m) }
 func (m *Metadata) CloneVT() *Metadata            { return proto.Clone(m).(*Metadata) }
 func (m *Metadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Metadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Metadata) EqualVT(n *Metadata) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Metadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

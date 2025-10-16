@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/central/secured_cluster_cert_refresh.proto
 
+//go:build !protoopaque
+
 package central
 
 import (
@@ -23,12 +25,10 @@ const (
 )
 
 type SecuredClusterCertsIssueError struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Message     *string                `protobuf:"bytes,1,opt,name=message"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SecuredClusterCertsIssueError) Reset() {
@@ -58,56 +58,36 @@ func (x *SecuredClusterCertsIssueError) ProtoReflect() protoreflect.Message {
 
 func (x *SecuredClusterCertsIssueError) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *SecuredClusterCertsIssueError) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *SecuredClusterCertsIssueError) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SecuredClusterCertsIssueError) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Message = nil
+	x.Message = v
 }
 
 type SecuredClusterCertsIssueError_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Message *string
+	Message string
 }
 
 func (b0 SecuredClusterCertsIssueError_builder) Build() *SecuredClusterCertsIssueError {
 	m0 := &SecuredClusterCertsIssueError{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Message = b.Message
-	}
+	x.Message = b.Message
 	return m0
 }
 
 type IssueSecuredClusterCertsRequest struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RequestId     *string                `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	xxx_hidden_CaFingerprint *string                `protobuf:"bytes,2,opt,name=ca_fingerprint,json=caFingerprint"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"hybrid.v1"`
+	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
+	// Optional: hex-encoded SHA-512_256 fingerprint of the Sensor's currently trusted CA
+	CaFingerprint string `protobuf:"bytes,2,opt,name=ca_fingerprint,json=caFingerprint" json:"ca_fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IssueSecuredClusterCertsRequest) Reset() {
@@ -137,91 +117,53 @@ func (x *IssueSecuredClusterCertsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *IssueSecuredClusterCertsRequest) GetRequestId() string {
 	if x != nil {
-		if x.xxx_hidden_RequestId != nil {
-			return *x.xxx_hidden_RequestId
-		}
-		return ""
+		return x.RequestId
 	}
 	return ""
 }
 
 func (x *IssueSecuredClusterCertsRequest) GetCaFingerprint() string {
 	if x != nil {
-		if x.xxx_hidden_CaFingerprint != nil {
-			return *x.xxx_hidden_CaFingerprint
-		}
-		return ""
+		return x.CaFingerprint
 	}
 	return ""
 }
 
 func (x *IssueSecuredClusterCertsRequest) SetRequestId(v string) {
-	x.xxx_hidden_RequestId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.RequestId = v
 }
 
 func (x *IssueSecuredClusterCertsRequest) SetCaFingerprint(v string) {
-	x.xxx_hidden_CaFingerprint = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *IssueSecuredClusterCertsRequest) HasRequestId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *IssueSecuredClusterCertsRequest) HasCaFingerprint() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *IssueSecuredClusterCertsRequest) ClearRequestId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RequestId = nil
-}
-
-func (x *IssueSecuredClusterCertsRequest) ClearCaFingerprint() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CaFingerprint = nil
+	x.CaFingerprint = v
 }
 
 type IssueSecuredClusterCertsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RequestId *string
+	RequestId string
 	// Optional: hex-encoded SHA-512_256 fingerprint of the Sensor's currently trusted CA
-	CaFingerprint *string
+	CaFingerprint string
 }
 
 func (b0 IssueSecuredClusterCertsRequest_builder) Build() *IssueSecuredClusterCertsRequest {
 	m0 := &IssueSecuredClusterCertsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RequestId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_RequestId = b.RequestId
-	}
-	if b.CaFingerprint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_CaFingerprint = b.CaFingerprint
-	}
+	x.RequestId = b.RequestId
+	x.CaFingerprint = b.CaFingerprint
 	return m0
 }
 
 type IssueSecuredClusterCertsResponse struct {
-	state                protoimpl.MessageState                      `protogen:"opaque.v1"`
-	xxx_hidden_RequestId *string                                     `protobuf:"bytes,1,opt,name=request_id,json=requestId"`
-	xxx_hidden_Response  isIssueSecuredClusterCertsResponse_Response `protobuf_oneof:"response"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"hybrid.v1"`
+	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId" json:"request_id,omitempty"`
+	// Types that are valid to be assigned to Response:
+	//
+	//	*IssueSecuredClusterCertsResponse_Certificates
+	//	*IssueSecuredClusterCertsResponse_Error
+	Response      isIssueSecuredClusterCertsResponse_Response `protobuf_oneof:"response"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *IssueSecuredClusterCertsResponse) Reset() {
@@ -251,17 +193,21 @@ func (x *IssueSecuredClusterCertsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *IssueSecuredClusterCertsResponse) GetRequestId() string {
 	if x != nil {
-		if x.xxx_hidden_RequestId != nil {
-			return *x.xxx_hidden_RequestId
-		}
-		return ""
+		return x.RequestId
 	}
 	return ""
 }
 
+func (x *IssueSecuredClusterCertsResponse) GetResponse() isIssueSecuredClusterCertsResponse_Response {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
 func (x *IssueSecuredClusterCertsResponse) GetCertificates() *storage.TypedServiceCertificateSet {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Certificates); ok {
+		if x, ok := x.Response.(*IssueSecuredClusterCertsResponse_Certificates); ok {
 			return x.Certificates
 		}
 	}
@@ -270,7 +216,7 @@ func (x *IssueSecuredClusterCertsResponse) GetCertificates() *storage.TypedServi
 
 func (x *IssueSecuredClusterCertsResponse) GetError() *SecuredClusterCertsIssueError {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Error); ok {
+		if x, ok := x.Response.(*IssueSecuredClusterCertsResponse_Error); ok {
 			return x.Error
 		}
 	}
@@ -278,45 +224,37 @@ func (x *IssueSecuredClusterCertsResponse) GetError() *SecuredClusterCertsIssueE
 }
 
 func (x *IssueSecuredClusterCertsResponse) SetRequestId(v string) {
-	x.xxx_hidden_RequestId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.RequestId = v
 }
 
 func (x *IssueSecuredClusterCertsResponse) SetCertificates(v *storage.TypedServiceCertificateSet) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &issueSecuredClusterCertsResponse_Certificates{v}
+	x.Response = &IssueSecuredClusterCertsResponse_Certificates{v}
 }
 
 func (x *IssueSecuredClusterCertsResponse) SetError(v *SecuredClusterCertsIssueError) {
 	if v == nil {
-		x.xxx_hidden_Response = nil
+		x.Response = nil
 		return
 	}
-	x.xxx_hidden_Response = &issueSecuredClusterCertsResponse_Error{v}
-}
-
-func (x *IssueSecuredClusterCertsResponse) HasRequestId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Response = &IssueSecuredClusterCertsResponse_Error{v}
 }
 
 func (x *IssueSecuredClusterCertsResponse) HasResponse() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Response != nil
+	return x.Response != nil
 }
 
 func (x *IssueSecuredClusterCertsResponse) HasCertificates() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Certificates)
+	_, ok := x.Response.(*IssueSecuredClusterCertsResponse_Certificates)
 	return ok
 }
 
@@ -324,28 +262,23 @@ func (x *IssueSecuredClusterCertsResponse) HasError() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Error)
+	_, ok := x.Response.(*IssueSecuredClusterCertsResponse_Error)
 	return ok
 }
 
-func (x *IssueSecuredClusterCertsResponse) ClearRequestId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_RequestId = nil
-}
-
 func (x *IssueSecuredClusterCertsResponse) ClearResponse() {
-	x.xxx_hidden_Response = nil
+	x.Response = nil
 }
 
 func (x *IssueSecuredClusterCertsResponse) ClearCertificates() {
-	if _, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Certificates); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*IssueSecuredClusterCertsResponse_Certificates); ok {
+		x.Response = nil
 	}
 }
 
 func (x *IssueSecuredClusterCertsResponse) ClearError() {
-	if _, ok := x.xxx_hidden_Response.(*issueSecuredClusterCertsResponse_Error); ok {
-		x.xxx_hidden_Response = nil
+	if _, ok := x.Response.(*IssueSecuredClusterCertsResponse_Error); ok {
+		x.Response = nil
 	}
 }
 
@@ -357,10 +290,10 @@ func (x *IssueSecuredClusterCertsResponse) WhichResponse() case_IssueSecuredClus
 	if x == nil {
 		return IssueSecuredClusterCertsResponse_Response_not_set_case
 	}
-	switch x.xxx_hidden_Response.(type) {
-	case *issueSecuredClusterCertsResponse_Certificates:
+	switch x.Response.(type) {
+	case *IssueSecuredClusterCertsResponse_Certificates:
 		return IssueSecuredClusterCertsResponse_Certificates_case
-	case *issueSecuredClusterCertsResponse_Error:
+	case *IssueSecuredClusterCertsResponse_Error:
 		return IssueSecuredClusterCertsResponse_Error_case
 	default:
 		return IssueSecuredClusterCertsResponse_Response_not_set_case
@@ -370,26 +303,23 @@ func (x *IssueSecuredClusterCertsResponse) WhichResponse() case_IssueSecuredClus
 type IssueSecuredClusterCertsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RequestId *string
-	// Fields of oneof xxx_hidden_Response:
+	RequestId string
+	// Fields of oneof Response:
 	Certificates *storage.TypedServiceCertificateSet
 	Error        *SecuredClusterCertsIssueError
-	// -- end of xxx_hidden_Response
+	// -- end of Response
 }
 
 func (b0 IssueSecuredClusterCertsResponse_builder) Build() *IssueSecuredClusterCertsResponse {
 	m0 := &IssueSecuredClusterCertsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.RequestId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_RequestId = b.RequestId
-	}
+	x.RequestId = b.RequestId
 	if b.Certificates != nil {
-		x.xxx_hidden_Response = &issueSecuredClusterCertsResponse_Certificates{b.Certificates}
+		x.Response = &IssueSecuredClusterCertsResponse_Certificates{b.Certificates}
 	}
 	if b.Error != nil {
-		x.xxx_hidden_Response = &issueSecuredClusterCertsResponse_Error{b.Error}
+		x.Response = &IssueSecuredClusterCertsResponse_Error{b.Error}
 	}
 	return m0
 }
@@ -408,17 +338,17 @@ type isIssueSecuredClusterCertsResponse_Response interface {
 	isIssueSecuredClusterCertsResponse_Response()
 }
 
-type issueSecuredClusterCertsResponse_Certificates struct {
+type IssueSecuredClusterCertsResponse_Certificates struct {
 	Certificates *storage.TypedServiceCertificateSet `protobuf:"bytes,2,opt,name=certificates,oneof"`
 }
 
-type issueSecuredClusterCertsResponse_Error struct {
+type IssueSecuredClusterCertsResponse_Error struct {
 	Error *SecuredClusterCertsIssueError `protobuf:"bytes,3,opt,name=error,oneof"`
 }
 
-func (*issueSecuredClusterCertsResponse_Certificates) isIssueSecuredClusterCertsResponse_Response() {}
+func (*IssueSecuredClusterCertsResponse_Certificates) isIssueSecuredClusterCertsResponse_Response() {}
 
-func (*issueSecuredClusterCertsResponse_Error) isIssueSecuredClusterCertsResponse_Response() {}
+func (*IssueSecuredClusterCertsResponse_Error) isIssueSecuredClusterCertsResponse_Response() {}
 
 var File_internalapi_central_secured_cluster_cert_refresh_proto protoreflect.FileDescriptor
 
@@ -437,7 +367,7 @@ const file_internalapi_central_secured_cluster_cert_refresh_proto_rawDesc = "" +
 	"\fcertificates\x18\x02 \x01(\v2#.storage.TypedServiceCertificateSetB\x02(\x01H\x00R\fcertificates\x12>\n" +
 	"\x05error\x18\x03 \x01(\v2&.central.SecuredClusterCertsIssueErrorH\x00R\x05errorB\n" +
 	"\n" +
-	"\bresponseB'Z\x1d./internalapi/central;central\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\bresponseB/Z\x1d./internalapi/central;central\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_central_secured_cluster_cert_refresh_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_secured_cluster_cert_refresh_proto_goTypes = []any{
@@ -462,8 +392,8 @@ func file_internalapi_central_secured_cluster_cert_refresh_proto_init() {
 		return
 	}
 	file_internalapi_central_secured_cluster_cert_refresh_proto_msgTypes[2].OneofWrappers = []any{
-		(*issueSecuredClusterCertsResponse_Certificates)(nil),
-		(*issueSecuredClusterCertsResponse_Error)(nil),
+		(*IssueSecuredClusterCertsResponse_Certificates)(nil),
+		(*IssueSecuredClusterCertsResponse_Error)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

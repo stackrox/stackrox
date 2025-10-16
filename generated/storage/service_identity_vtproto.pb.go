@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ServiceIdentity) SizeVT() int                   { return proto.Size(m) }
-func (m *ServiceIdentity) CloneVT() *ServiceIdentity     { return proto.Clone(m).(*ServiceIdentity) }
-func (m *ServiceIdentity) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ServiceIdentity) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceIdentity) SizeVT() int                     { return proto.Size(m) }
+func (m *ServiceIdentity) CloneVT() *ServiceIdentity       { return proto.Clone(m).(*ServiceIdentity) }
+func (m *ServiceIdentity) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ServiceIdentity) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceIdentity) EqualVT(n *ServiceIdentity) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ServiceIdentity) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *ServiceCertificate) SizeVT() int { return proto.Size(m) }
 func (m *ServiceCertificate) CloneVT() *ServiceCertificate {
 	return proto.Clone(m).(*ServiceCertificate)
 }
-func (m *ServiceCertificate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ServiceCertificate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceCertificate) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ServiceCertificate) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ServiceCertificate) EqualVT(n *ServiceCertificate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ServiceCertificate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *TypedServiceCertificate) SizeVT() int { return proto.Size(m) }
 func (m *TypedServiceCertificate) CloneVT() *TypedServiceCertificate {
 	return proto.Clone(m).(*TypedServiceCertificate)
 }
-func (m *TypedServiceCertificate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *TypedServiceCertificate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TypedServiceCertificate) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *TypedServiceCertificate) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *TypedServiceCertificate) EqualVT(n *TypedServiceCertificate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TypedServiceCertificate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,6 +41,9 @@ func (m *TypedServiceCertificateSet) CloneVT() *TypedServiceCertificateSet {
 }
 func (m *TypedServiceCertificateSet) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *TypedServiceCertificateSet) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *TypedServiceCertificateSet) EqualVT(n *TypedServiceCertificateSet) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *TypedServiceCertificateSet) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

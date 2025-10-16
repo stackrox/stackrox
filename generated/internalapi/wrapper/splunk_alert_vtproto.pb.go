@@ -8,6 +8,7 @@ func (m *SplunkEvent) SizeVT() int                   { return proto.Size(m) }
 func (m *SplunkEvent) CloneVT() *SplunkEvent         { return proto.Clone(m).(*SplunkEvent) }
 func (m *SplunkEvent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SplunkEvent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SplunkEvent) EqualVT(n *SplunkEvent) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SplunkEvent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

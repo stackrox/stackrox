@@ -8,8 +8,9 @@ func (m *GetNotifiersRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetNotifiersRequest) CloneVT() *GetNotifiersRequest {
 	return proto.Clone(m).(*GetNotifiersRequest)
 }
-func (m *GetNotifiersRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetNotifiersRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetNotifiersRequest) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *GetNotifiersRequest) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *GetNotifiersRequest) EqualVT(n *GetNotifiersRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNotifiersRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *GetNotifiersResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetNotifiersResponse) CloneVT() *GetNotifiersResponse {
 	return proto.Clone(m).(*GetNotifiersResponse)
 }
-func (m *GetNotifiersResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetNotifiersResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GetNotifiersResponse) EqualVT(n *GetNotifiersResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNotifiersResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,8 +30,9 @@ func (m *DeleteNotifierRequest) SizeVT() int { return proto.Size(m) }
 func (m *DeleteNotifierRequest) CloneVT() *DeleteNotifierRequest {
 	return proto.Clone(m).(*DeleteNotifierRequest)
 }
-func (m *DeleteNotifierRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeleteNotifierRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteNotifierRequest) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *DeleteNotifierRequest) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteNotifierRequest) EqualVT(n *DeleteNotifierRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteNotifierRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -38,8 +41,9 @@ func (m *UpdateNotifierRequest) SizeVT() int { return proto.Size(m) }
 func (m *UpdateNotifierRequest) CloneVT() *UpdateNotifierRequest {
 	return proto.Clone(m).(*UpdateNotifierRequest)
 }
-func (m *UpdateNotifierRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UpdateNotifierRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateNotifierRequest) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *UpdateNotifierRequest) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateNotifierRequest) EqualVT(n *UpdateNotifierRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateNotifierRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

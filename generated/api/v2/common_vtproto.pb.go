@@ -8,6 +8,7 @@ func (m *ResourceByID) SizeVT() int                   { return proto.Size(m) }
 func (m *ResourceByID) CloneVT() *ResourceByID        { return proto.Clone(m).(*ResourceByID) }
 func (m *ResourceByID) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ResourceByID) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ResourceByID) EqualVT(n *ResourceByID) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ResourceByID) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *Empty) SizeVT() int                   { return proto.Size(m) }
 func (m *Empty) CloneVT() *Empty               { return proto.Clone(m).(*Empty) }
 func (m *Empty) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Empty) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Empty) EqualVT(n *Empty) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Empty) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *Schedule) SizeVT() int                   { return proto.Size(m) }
 func (m *Schedule) CloneVT() *Schedule            { return proto.Clone(m).(*Schedule) }
 func (m *Schedule) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Schedule) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Schedule) EqualVT(n *Schedule) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Schedule) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,8 +35,9 @@ func (m *Schedule_DaysOfWeek) SizeVT() int { return proto.Size(m) }
 func (m *Schedule_DaysOfWeek) CloneVT() *Schedule_DaysOfWeek {
 	return proto.Clone(m).(*Schedule_DaysOfWeek)
 }
-func (m *Schedule_DaysOfWeek) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *Schedule_DaysOfWeek) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Schedule_DaysOfWeek) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *Schedule_DaysOfWeek) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *Schedule_DaysOfWeek) EqualVT(n *Schedule_DaysOfWeek) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Schedule_DaysOfWeek) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,8 +46,9 @@ func (m *Schedule_DaysOfMonth) SizeVT() int { return proto.Size(m) }
 func (m *Schedule_DaysOfMonth) CloneVT() *Schedule_DaysOfMonth {
 	return proto.Clone(m).(*Schedule_DaysOfMonth)
 }
-func (m *Schedule_DaysOfMonth) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *Schedule_DaysOfMonth) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Schedule_DaysOfMonth) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *Schedule_DaysOfMonth) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *Schedule_DaysOfMonth) EqualVT(n *Schedule_DaysOfMonth) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Schedule_DaysOfMonth) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

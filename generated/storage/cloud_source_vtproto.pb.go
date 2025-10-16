@@ -8,6 +8,7 @@ func (m *CloudSource) SizeVT() int                   { return proto.Size(m) }
 func (m *CloudSource) CloneVT() *CloudSource         { return proto.Clone(m).(*CloudSource) }
 func (m *CloudSource) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CloudSource) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource) EqualVT(n *CloudSource) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CloudSource) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *CloudSource_Credentials) SizeVT() int { return proto.Size(m) }
 func (m *CloudSource_Credentials) CloneVT() *CloudSource_Credentials {
 	return proto.Clone(m).(*CloudSource_Credentials)
 }
-func (m *CloudSource_Credentials) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CloudSource_Credentials) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource_Credentials) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *CloudSource_Credentials) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *CloudSource_Credentials) EqualVT(n *CloudSource_Credentials) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CloudSource_Credentials) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,8 +28,9 @@ func (m *PaladinCloudConfig) SizeVT() int { return proto.Size(m) }
 func (m *PaladinCloudConfig) CloneVT() *PaladinCloudConfig {
 	return proto.Clone(m).(*PaladinCloudConfig)
 }
-func (m *PaladinCloudConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PaladinCloudConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PaladinCloudConfig) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *PaladinCloudConfig) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *PaladinCloudConfig) EqualVT(n *PaladinCloudConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PaladinCloudConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -36,6 +39,7 @@ func (m *OCMConfig) SizeVT() int                   { return proto.Size(m) }
 func (m *OCMConfig) CloneVT() *OCMConfig           { return proto.Clone(m).(*OCMConfig) }
 func (m *OCMConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *OCMConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *OCMConfig) EqualVT(n *OCMConfig) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *OCMConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

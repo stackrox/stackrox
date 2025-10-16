@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *InitBundleMeta) SizeVT() int                   { return proto.Size(m) }
-func (m *InitBundleMeta) CloneVT() *InitBundleMeta      { return proto.Clone(m).(*InitBundleMeta) }
-func (m *InitBundleMeta) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMeta) SizeVT() int                    { return proto.Size(m) }
+func (m *InitBundleMeta) CloneVT() *InitBundleMeta       { return proto.Clone(m).(*InitBundleMeta) }
+func (m *InitBundleMeta) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *InitBundleMeta) EqualVT(n *InitBundleMeta) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

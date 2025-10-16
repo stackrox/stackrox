@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/notifier_enc_config.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,12 +25,10 @@ const (
 
 // Next Tag: 2
 type NotifierEncConfig struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ActiveKeyIndex int32                  `protobuf:"varint,1,opt,name=active_key_index,json=activeKeyIndex"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"hybrid.v1"`
+	ActiveKeyIndex int32                  `protobuf:"varint,1,opt,name=active_key_index,json=activeKeyIndex" json:"active_key_index,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *NotifierEncConfig) Reset() {
@@ -58,42 +58,26 @@ func (x *NotifierEncConfig) ProtoReflect() protoreflect.Message {
 
 func (x *NotifierEncConfig) GetActiveKeyIndex() int32 {
 	if x != nil {
-		return x.xxx_hidden_ActiveKeyIndex
+		return x.ActiveKeyIndex
 	}
 	return 0
 }
 
 func (x *NotifierEncConfig) SetActiveKeyIndex(v int32) {
-	x.xxx_hidden_ActiveKeyIndex = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *NotifierEncConfig) HasActiveKeyIndex() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *NotifierEncConfig) ClearActiveKeyIndex() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ActiveKeyIndex = 0
+	x.ActiveKeyIndex = v
 }
 
 type NotifierEncConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	ActiveKeyIndex *int32
+	ActiveKeyIndex int32
 }
 
 func (b0 NotifierEncConfig_builder) Build() *NotifierEncConfig {
 	m0 := &NotifierEncConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ActiveKeyIndex != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_ActiveKeyIndex = *b.ActiveKeyIndex
-	}
+	x.ActiveKeyIndex = b.ActiveKeyIndex
 	return m0
 }
 
@@ -103,8 +87,8 @@ const file_storage_notifier_enc_config_proto_rawDesc = "" +
 	"\n" +
 	"!storage/notifier_enc_config.proto\x12\astorage\x1a!google/protobuf/go_features.proto\"=\n" +
 	"\x11NotifierEncConfig\x12(\n" +
-	"\x10active_key_index\x18\x01 \x01(\x05R\x0eactiveKeyIndexB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x10active_key_index\x18\x01 \x01(\x05R\x0eactiveKeyIndexB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_notifier_enc_config_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_notifier_enc_config_proto_goTypes = []any{

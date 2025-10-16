@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *PutConfigRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *PutConfigRequest) CloneVT() *PutConfigRequest    { return proto.Clone(m).(*PutConfigRequest) }
-func (m *PutConfigRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PutConfigRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PutConfigRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *PutConfigRequest) CloneVT() *PutConfigRequest       { return proto.Clone(m).(*PutConfigRequest) }
+func (m *PutConfigRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *PutConfigRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *PutConfigRequest) EqualVT(n *PutConfigRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PutConfigRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *DayOption) SizeVT() int                   { return proto.Size(m) }
 func (m *DayOption) CloneVT() *DayOption           { return proto.Clone(m).(*DayOption) }
 func (m *DayOption) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DayOption) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DayOption) EqualVT(n *DayOption) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DayOption) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -27,6 +29,9 @@ func (m *VulnerabilityExceptionConfig) CloneVT() *VulnerabilityExceptionConfig {
 func (m *VulnerabilityExceptionConfig) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *VulnerabilityExceptionConfig) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *VulnerabilityExceptionConfig) EqualVT(n *VulnerabilityExceptionConfig) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -44,6 +49,9 @@ func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalVT() ([]byte, er
 func (m *VulnerabilityExceptionConfig_FixableCVEOptions) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) EqualVT(n *VulnerabilityExceptionConfig_FixableCVEOptions) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnerabilityExceptionConfig_FixableCVEOptions) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -59,6 +67,9 @@ func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalVT() ([]byte, error)
 }
 func (m *VulnerabilityExceptionConfig_ExpiryOptions) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) EqualVT(n *VulnerabilityExceptionConfig_ExpiryOptions) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -76,6 +87,9 @@ func (m *GetVulnerabilityExceptionConfigResponse) MarshalVT() ([]byte, error) {
 func (m *GetVulnerabilityExceptionConfigResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetVulnerabilityExceptionConfigResponse) EqualVT(n *GetVulnerabilityExceptionConfigResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetVulnerabilityExceptionConfigResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -91,6 +105,9 @@ func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalVT() ([]byte, error) 
 }
 func (m *UpdateVulnerabilityExceptionConfigRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpdateVulnerabilityExceptionConfigRequest) EqualVT(n *UpdateVulnerabilityExceptionConfigRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -108,6 +125,9 @@ func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalVT() ([]byte, error)
 func (m *UpdateVulnerabilityExceptionConfigResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpdateVulnerabilityExceptionConfigResponse) EqualVT(n *UpdateVulnerabilityExceptionConfigResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateVulnerabilityExceptionConfigResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -121,6 +141,9 @@ func (m *PutPlatformComponentConfigRequest) CloneVT() *PutPlatformComponentConfi
 func (m *PutPlatformComponentConfigRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *PutPlatformComponentConfigRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *PutPlatformComponentConfigRequest) EqualVT(n *PutPlatformComponentConfigRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -137,6 +160,9 @@ func (m *GetDefaultRedHatLayeredProductsRegexResponse) MarshalVT() ([]byte, erro
 }
 func (m *GetDefaultRedHatLayeredProductsRegexResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetDefaultRedHatLayeredProductsRegexResponse) EqualVT(n *GetDefaultRedHatLayeredProductsRegexResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

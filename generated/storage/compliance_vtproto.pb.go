@@ -8,8 +8,9 @@ func (m *ComplianceResource) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceResource) CloneVT() *ComplianceResource {
 	return proto.Clone(m).(*ComplianceResource)
 }
-func (m *ComplianceResource) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceResource) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceResource) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ComplianceResource) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceResource) EqualVT(n *ComplianceResource) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceResource) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *ComplianceResource_ClusterName) CloneVT() *ComplianceResource_ClusterNa
 func (m *ComplianceResource_ClusterName) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ComplianceResource_ClusterName) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ComplianceResource_ClusterName) EqualVT(n *ComplianceResource_ClusterName) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -36,6 +40,9 @@ func (m *ComplianceResource_DeploymentName) MarshalVT() ([]byte, error) { return
 func (m *ComplianceResource_DeploymentName) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComplianceResource_DeploymentName) EqualVT(n *ComplianceResource_DeploymentName) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceResource_DeploymentName) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -48,6 +55,9 @@ func (m *ComplianceResource_NodeName) CloneVT() *ComplianceResource_NodeName {
 }
 func (m *ComplianceResource_NodeName) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ComplianceResource_NodeName) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceResource_NodeName) EqualVT(n *ComplianceResource_NodeName) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceResource_NodeName) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -58,8 +68,9 @@ func (m *ComplianceResultValue) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceResultValue) CloneVT() *ComplianceResultValue {
 	return proto.Clone(m).(*ComplianceResultValue)
 }
-func (m *ComplianceResultValue) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceResultValue) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceResultValue) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceResultValue) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceResultValue) EqualVT(n *ComplianceResultValue) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceResultValue) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -72,6 +83,9 @@ func (m *ComplianceResultValue_Evidence) MarshalVT() ([]byte, error) { return pr
 func (m *ComplianceResultValue_Evidence) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComplianceResultValue_Evidence) EqualVT(n *ComplianceResultValue_Evidence) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceResultValue_Evidence) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -82,16 +96,18 @@ func (m *ComplianceControlResult) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceControlResult) CloneVT() *ComplianceControlResult {
 	return proto.Clone(m).(*ComplianceControlResult)
 }
-func (m *ComplianceControlResult) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceControlResult) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceControlResult) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *ComplianceControlResult) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceControlResult) EqualVT(n *ComplianceControlResult) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceControlResult) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ComplianceDomain) SizeVT() int                   { return proto.Size(m) }
-func (m *ComplianceDomain) CloneVT() *ComplianceDomain    { return proto.Clone(m).(*ComplianceDomain) }
-func (m *ComplianceDomain) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceDomain) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain) SizeVT() int                      { return proto.Size(m) }
+func (m *ComplianceDomain) CloneVT() *ComplianceDomain       { return proto.Clone(m).(*ComplianceDomain) }
+func (m *ComplianceDomain) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ComplianceDomain) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain) EqualVT(n *ComplianceDomain) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceDomain) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -102,6 +118,9 @@ func (m *ComplianceDomain_Cluster) CloneVT() *ComplianceDomain_Cluster {
 }
 func (m *ComplianceDomain_Cluster) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ComplianceDomain_Cluster) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain_Cluster) EqualVT(n *ComplianceDomain_Cluster) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceDomain_Cluster) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -110,8 +129,9 @@ func (m *ComplianceDomain_Node) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceDomain_Node) CloneVT() *ComplianceDomain_Node {
 	return proto.Clone(m).(*ComplianceDomain_Node)
 }
-func (m *ComplianceDomain_Node) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceDomain_Node) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain_Node) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceDomain_Node) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain_Node) EqualVT(n *ComplianceDomain_Node) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceDomain_Node) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -122,6 +142,9 @@ func (m *ComplianceDomain_Deployment) CloneVT() *ComplianceDomain_Deployment {
 }
 func (m *ComplianceDomain_Deployment) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ComplianceDomain_Deployment) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceDomain_Deployment) EqualVT(n *ComplianceDomain_Deployment) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceDomain_Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -132,8 +155,9 @@ func (m *ComplianceRunMetadata) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceRunMetadata) CloneVT() *ComplianceRunMetadata {
 	return proto.Clone(m).(*ComplianceRunMetadata)
 }
-func (m *ComplianceRunMetadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceRunMetadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceRunMetadata) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceRunMetadata) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceRunMetadata) EqualVT(n *ComplianceRunMetadata) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceRunMetadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -142,8 +166,9 @@ func (m *ComplianceRunResults) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceRunResults) CloneVT() *ComplianceRunResults {
 	return proto.Clone(m).(*ComplianceRunResults)
 }
-func (m *ComplianceRunResults) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceRunResults) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceRunResults) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *ComplianceRunResults) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceRunResults) EqualVT(n *ComplianceRunResults) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceRunResults) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -156,16 +181,20 @@ func (m *ComplianceRunResults_EntityResults) MarshalVT() ([]byte, error) { retur
 func (m *ComplianceRunResults_EntityResults) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComplianceRunResults_EntityResults) EqualVT(n *ComplianceRunResults_EntityResults) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceRunResults_EntityResults) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *ComplianceStrings) SizeVT() int                   { return proto.Size(m) }
-func (m *ComplianceStrings) CloneVT() *ComplianceStrings   { return proto.Clone(m).(*ComplianceStrings) }
-func (m *ComplianceStrings) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceStrings) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceStrings) SizeVT() int                       { return proto.Size(m) }
+func (m *ComplianceStrings) CloneVT() *ComplianceStrings       { return proto.Clone(m).(*ComplianceStrings) }
+func (m *ComplianceStrings) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ComplianceStrings) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceStrings) EqualVT(n *ComplianceStrings) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceStrings) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -174,8 +203,9 @@ func (m *ComplianceAggregation) SizeVT() int { return proto.Size(m) }
 func (m *ComplianceAggregation) CloneVT() *ComplianceAggregation {
 	return proto.Clone(m).(*ComplianceAggregation)
 }
-func (m *ComplianceAggregation) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ComplianceAggregation) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceAggregation) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ComplianceAggregation) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ComplianceAggregation) EqualVT(n *ComplianceAggregation) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceAggregation) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -187,6 +217,9 @@ func (m *ComplianceAggregation_AggregationKey) CloneVT() *ComplianceAggregation_
 func (m *ComplianceAggregation_AggregationKey) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ComplianceAggregation_AggregationKey) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ComplianceAggregation_AggregationKey) EqualVT(n *ComplianceAggregation_AggregationKey) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -202,6 +235,9 @@ func (m *ComplianceAggregation_Result) MarshalVT() ([]byte, error) { return prot
 func (m *ComplianceAggregation_Result) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComplianceAggregation_Result) EqualVT(n *ComplianceAggregation_Result) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceAggregation_Result) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -215,6 +251,9 @@ func (m *ComplianceAggregation_Source) CloneVT() *ComplianceAggregation_Source {
 func (m *ComplianceAggregation_Source) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ComplianceAggregation_Source) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ComplianceAggregation_Source) EqualVT(n *ComplianceAggregation_Source) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -230,6 +269,9 @@ func (m *ComplianceAggregation_Response) MarshalVT() ([]byte, error) { return pr
 func (m *ComplianceAggregation_Response) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComplianceAggregation_Response) EqualVT(n *ComplianceAggregation_Response) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComplianceAggregation_Response) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -243,6 +285,9 @@ func (m *PreComputedComplianceAggregation) CloneVT() *PreComputedComplianceAggre
 func (m *PreComputedComplianceAggregation) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *PreComputedComplianceAggregation) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *PreComputedComplianceAggregation) EqualVT(n *PreComputedComplianceAggregation) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

@@ -8,8 +8,9 @@ func (m *NetworkGraphConfig) SizeVT() int { return proto.Size(m) }
 func (m *NetworkGraphConfig) CloneVT() *NetworkGraphConfig {
 	return proto.Clone(m).(*NetworkGraphConfig)
 }
-func (m *NetworkGraphConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NetworkGraphConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkGraphConfig) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *NetworkGraphConfig) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkGraphConfig) EqualVT(n *NetworkGraphConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkGraphConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

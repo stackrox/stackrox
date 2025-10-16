@@ -8,6 +8,7 @@ func (m *RawQuery) SizeVT() int                   { return proto.Size(m) }
 func (m *RawQuery) CloneVT() *RawQuery            { return proto.Clone(m).(*RawQuery) }
 func (m *RawQuery) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *RawQuery) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *RawQuery) EqualVT(n *RawQuery) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *RawQuery) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

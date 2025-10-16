@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v2/vuln_exception_service.proto
 
+//go:build !protoopaque
+
 package v2
 
 import (
@@ -120,17 +122,13 @@ func (x ExceptionExpiry_ExpiryType) Number() protoreflect.EnumNumber {
 }
 
 type Comment struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Message   *string                `protobuf:"bytes,2,opt,name=message"`
-	xxx_hidden_User      *SlimUser              `protobuf:"bytes,3,opt,name=user"`
-	xxx_hidden_CreatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
+	User          *SlimUser              `protobuf:"bytes,3,opt,name=user" json:"user,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Comment) Reset() {
@@ -160,120 +158,75 @@ func (x *Comment) ProtoReflect() protoreflect.Message {
 
 func (x *Comment) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Comment) GetMessage() string {
 	if x != nil {
-		if x.xxx_hidden_Message != nil {
-			return *x.xxx_hidden_Message
-		}
-		return ""
+		return x.Message
 	}
 	return ""
 }
 
 func (x *Comment) GetUser() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_User
+		return x.User
 	}
 	return nil
 }
 
 func (x *Comment) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *Comment) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Id = v
 }
 
 func (x *Comment) SetMessage(v string) {
-	x.xxx_hidden_Message = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Message = v
 }
 
 func (x *Comment) SetUser(v *SlimUser) {
-	x.xxx_hidden_User = v
+	x.User = v
 }
 
 func (x *Comment) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-	}
-}
-
-func (x *Comment) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Comment) HasMessage() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.CreatedAt = v
 }
 
 func (x *Comment) HasUser() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_User != nil
+	return x.User != nil
 }
 
 func (x *Comment) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Comment) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *Comment) ClearMessage() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Message = nil
+	return x.CreatedAt != nil
 }
 
 func (x *Comment) ClearUser() {
-	x.xxx_hidden_User = nil
+	x.User = nil
 }
 
 func (x *Comment) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
+	x.CreatedAt = nil
 }
 
 type Comment_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
-	Message   *string
+	Id        string
+	Message   string
 	User      *SlimUser
 	CreatedAt *timestamppb.Timestamp
 }
@@ -282,32 +235,24 @@ func (b0 Comment_builder) Build() *Comment {
 	m0 := &Comment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Message != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Message = b.Message
-	}
-	x.xxx_hidden_User = b.User
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
+	x.Id = b.Id
+	x.Message = b.Message
+	x.User = b.User
+	x.CreatedAt = b.CreatedAt
 	return m0
 }
 
 type ExceptionExpiry struct {
-	state                 protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_ExpiryType ExceptionExpiry_ExpiryType `protobuf:"varint,1,opt,name=expiry_type,json=expiryType,enum=v2.ExceptionExpiry_ExpiryType"`
-	xxx_hidden_ExpiresOn  *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// This field can be used only for deferral requests. It indicates the type of expiry set for the request.
+	// `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
+	// `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
+	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
+	ExpiryType ExceptionExpiry_ExpiryType `protobuf:"varint,1,opt,name=expiry_type,json=expiryType,enum=v2.ExceptionExpiry_ExpiryType" json:"expiry_type,omitempty"`
+	// Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
+	ExpiresOn     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn" json:"expires_on,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExceptionExpiry) Reset() {
@@ -337,63 +282,35 @@ func (x *ExceptionExpiry) ProtoReflect() protoreflect.Message {
 
 func (x *ExceptionExpiry) GetExpiryType() ExceptionExpiry_ExpiryType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_ExpiryType
-		}
+		return x.ExpiryType
 	}
 	return ExceptionExpiry_TIME
 }
 
 func (x *ExceptionExpiry) GetExpiresOn() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExpiresOn) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExpiresOn), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.ExpiresOn
 	}
 	return nil
 }
 
 func (x *ExceptionExpiry) SetExpiryType(v ExceptionExpiry_ExpiryType) {
-	x.xxx_hidden_ExpiryType = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.ExpiryType = v
 }
 
 func (x *ExceptionExpiry) SetExpiresOn(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresOn, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *ExceptionExpiry) HasExpiryType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ExpiresOn = v
 }
 
 func (x *ExceptionExpiry) HasExpiresOn() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ExceptionExpiry) ClearExpiryType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ExpiryType = ExceptionExpiry_TIME
+	return x.ExpiresOn != nil
 }
 
 func (x *ExceptionExpiry) ClearExpiresOn() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_ExpiresOn, (*timestamppb.Timestamp)(nil))
+	x.ExpiresOn = nil
 }
 
 type ExceptionExpiry_builder struct {
@@ -403,7 +320,7 @@ type ExceptionExpiry_builder struct {
 	// `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
 	// `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
 	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-	ExpiryType *ExceptionExpiry_ExpiryType
+	ExpiryType ExceptionExpiry_ExpiryType
 	// Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
 	ExpiresOn *timestamppb.Timestamp
 }
@@ -412,22 +329,16 @@ func (b0 ExceptionExpiry_builder) Build() *ExceptionExpiry {
 	m0 := &ExceptionExpiry{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ExpiryType != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_ExpiryType = *b.ExpiryType
-	}
-	if b.ExpiresOn != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ExpiresOn = b.ExpiresOn
-	}
+	x.ExpiryType = b.ExpiryType
+	x.ExpiresOn = b.ExpiresOn
 	return m0
 }
 
 type DeferralRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Expiry *ExceptionExpiry       `protobuf:"bytes,1,opt,name=expiry"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Expiry        *ExceptionExpiry       `protobuf:"bytes,1,opt,name=expiry" json:"expiry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeferralRequest) Reset() {
@@ -457,24 +368,24 @@ func (x *DeferralRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeferralRequest) GetExpiry() *ExceptionExpiry {
 	if x != nil {
-		return x.xxx_hidden_Expiry
+		return x.Expiry
 	}
 	return nil
 }
 
 func (x *DeferralRequest) SetExpiry(v *ExceptionExpiry) {
-	x.xxx_hidden_Expiry = v
+	x.Expiry = v
 }
 
 func (x *DeferralRequest) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiry != nil
+	return x.Expiry != nil
 }
 
 func (x *DeferralRequest) ClearExpiry() {
-	x.xxx_hidden_Expiry = nil
+	x.Expiry = nil
 }
 
 type DeferralRequest_builder struct {
@@ -487,12 +398,12 @@ func (b0 DeferralRequest_builder) Build() *DeferralRequest {
 	m0 := &DeferralRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Expiry = b.Expiry
+	x.Expiry = b.Expiry
 	return m0
 }
 
 type FalsePositiveRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -537,27 +448,37 @@ func (b0 FalsePositiveRequest_builder) Build() *FalsePositiveRequest {
 // Next available tag: 16
 // VulnerabilityException represents a vulnerability exception such as deferral and false-positive.
 type VulnerabilityException struct {
-	state                  protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                             `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name        *string                             `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_TargetState VulnerabilityState                  `protobuf:"varint,3,opt,name=target_state,json=targetState,enum=v2.VulnerabilityState"`
-	xxx_hidden_Status      ExceptionStatus                     `protobuf:"varint,4,opt,name=status,enum=v2.ExceptionStatus"`
-	xxx_hidden_Expired     bool                                `protobuf:"varint,5,opt,name=expired"`
-	xxx_hidden_Requester   *SlimUser                           `protobuf:"bytes,6,opt,name=requester"`
-	xxx_hidden_Approvers   *[]*SlimUser                        `protobuf:"bytes,7,rep,name=approvers"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp              `protobuf:"bytes,8,opt,name=created_at,json=createdAt"`
-	xxx_hidden_LastUpdated *timestamppb.Timestamp              `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated"`
-	xxx_hidden_Comments    *[]*Comment                         `protobuf:"bytes,10,rep,name=comments"`
-	xxx_hidden_Scope       *VulnerabilityException_Scope       `protobuf:"bytes,11,opt,name=scope"`
-	xxx_hidden_Req         isVulnerabilityException_Req        `protobuf_oneof:"req"`
-	xxx_hidden_Cves        []string                            `protobuf:"bytes,14,rep,name=cves"`
-	xxx_hidden_UpdatedReq  isVulnerabilityException_UpdatedReq `protobuf_oneof:"updated_req"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Auto-generated display name of the exception.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	// Indicates the state that the vulnerabilities will move to once the exception is enforced.
+	TargetState VulnerabilityState `protobuf:"varint,3,opt,name=target_state,json=targetState,enum=v2.VulnerabilityState" json:"target_state,omitempty"`
+	// Indicates the status of the exception.
+	Status ExceptionStatus `protobuf:"varint,4,opt,name=status,enum=v2.ExceptionStatus" json:"status,omitempty"`
+	// If set to `true`, this field indicates that the exception is no longer enforced.
+	Expired     bool                   `protobuf:"varint,5,opt,name=expired" json:"expired,omitempty"`
+	Requester   *SlimUser              `protobuf:"bytes,6,opt,name=requester" json:"requester,omitempty"`
+	Approvers   []*SlimUser            `protobuf:"bytes,7,rep,name=approvers" json:"approvers,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated" json:"last_updated,omitempty"`
+	Comments    []*Comment             `protobuf:"bytes,10,rep,name=comments" json:"comments,omitempty"`
+	// Indicates the scope of enforcement of the exception.
+	Scope *VulnerabilityException_Scope `protobuf:"bytes,11,opt,name=scope" json:"scope,omitempty"`
+	// Types that are valid to be assigned to Req:
+	//
+	//	*VulnerabilityException_DeferralRequest
+	//	*VulnerabilityException_FalsePositiveRequest
+	Req isVulnerabilityException_Req `protobuf_oneof:"req"`
+	// Indicates the CVEs to which the exception applies.
+	Cves []string `protobuf:"bytes,14,rep,name=cves" json:"cves,omitempty"`
+	// Types that are valid to be assigned to UpdatedReq:
+	//
+	//	*VulnerabilityException_DeferralUpdate
+	//	*VulnerabilityException_FalsePositiveUpdate
+	UpdatedReq    isVulnerabilityException_UpdatedReq `protobuf_oneof:"updated_req"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VulnerabilityException) Reset() {
@@ -587,122 +508,91 @@ func (x *VulnerabilityException) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityException) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *VulnerabilityException) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *VulnerabilityException) GetTargetState() VulnerabilityState {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_TargetState
-		}
+		return x.TargetState
 	}
 	return VulnerabilityState_OBSERVED
 }
 
 func (x *VulnerabilityException) GetStatus() ExceptionStatus {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Status
-		}
+		return x.Status
 	}
 	return ExceptionStatus_PENDING
 }
 
 func (x *VulnerabilityException) GetExpired() bool {
 	if x != nil {
-		return x.xxx_hidden_Expired
+		return x.Expired
 	}
 	return false
 }
 
 func (x *VulnerabilityException) GetRequester() *SlimUser {
 	if x != nil {
-		return x.xxx_hidden_Requester
+		return x.Requester
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetApprovers() []*SlimUser {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Approvers) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *[]*SlimUser
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Approvers), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Approvers
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_CreatedAt) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_CreatedAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.CreatedAt
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 8) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LastUpdated) {
-				protoimpl.X.UnmarshalField(x, 9)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LastUpdated), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.LastUpdated
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetComments() []*Comment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 9) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Comments) {
-				protoimpl.X.UnmarshalField(x, 10)
-			}
-			var rv *[]*Comment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Comments
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetScope() *VulnerabilityException_Scope {
 	if x != nil {
-		return x.xxx_hidden_Scope
+		return x.Scope
+	}
+	return nil
+}
+
+func (x *VulnerabilityException) GetReq() isVulnerabilityException_Req {
+	if x != nil {
+		return x.Req
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetDeferralRequest() *DeferralRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Req.(*vulnerabilityException_DeferralRequest); ok {
+		if x, ok := x.Req.(*VulnerabilityException_DeferralRequest); ok {
 			return x.DeferralRequest
 		}
 	}
@@ -711,7 +601,7 @@ func (x *VulnerabilityException) GetDeferralRequest() *DeferralRequest {
 
 func (x *VulnerabilityException) GetFalsePositiveRequest() *FalsePositiveRequest {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Req.(*vulnerabilityException_FalsePositiveRequest); ok {
+		if x, ok := x.Req.(*VulnerabilityException_FalsePositiveRequest); ok {
 			return x.FalsePositiveRequest
 		}
 	}
@@ -720,14 +610,21 @@ func (x *VulnerabilityException) GetFalsePositiveRequest() *FalsePositiveRequest
 
 func (x *VulnerabilityException) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
+	}
+	return nil
+}
+
+func (x *VulnerabilityException) GetUpdatedReq() isVulnerabilityException_UpdatedReq {
+	if x != nil {
+		return x.UpdatedReq
 	}
 	return nil
 }
 
 func (x *VulnerabilityException) GetDeferralUpdate() *DeferralUpdate {
 	if x != nil {
-		if x, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_DeferralUpdate); ok {
+		if x, ok := x.UpdatedReq.(*VulnerabilityException_DeferralUpdate); ok {
 			return x.DeferralUpdate
 		}
 	}
@@ -736,7 +633,7 @@ func (x *VulnerabilityException) GetDeferralUpdate() *DeferralUpdate {
 
 func (x *VulnerabilityException) GetFalsePositiveUpdate() *FalsePositiveUpdate {
 	if x != nil {
-		if x, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_FalsePositiveUpdate); ok {
+		if x, ok := x.UpdatedReq.(*VulnerabilityException_FalsePositiveUpdate); ok {
 			return x.FalsePositiveUpdate
 		}
 	}
@@ -744,189 +641,125 @@ func (x *VulnerabilityException) GetFalsePositiveUpdate() *FalsePositiveUpdate {
 }
 
 func (x *VulnerabilityException) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 14)
+	x.Id = v
 }
 
 func (x *VulnerabilityException) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 14)
+	x.Name = v
 }
 
 func (x *VulnerabilityException) SetTargetState(v VulnerabilityState) {
-	x.xxx_hidden_TargetState = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 14)
+	x.TargetState = v
 }
 
 func (x *VulnerabilityException) SetStatus(v ExceptionStatus) {
-	x.xxx_hidden_Status = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 14)
+	x.Status = v
 }
 
 func (x *VulnerabilityException) SetExpired(v bool) {
-	x.xxx_hidden_Expired = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 14)
+	x.Expired = v
 }
 
 func (x *VulnerabilityException) SetRequester(v *SlimUser) {
-	x.xxx_hidden_Requester = v
+	x.Requester = v
 }
 
 func (x *VulnerabilityException) SetApprovers(v []*SlimUser) {
-	var sv *[]*SlimUser
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Approvers), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*SlimUser{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Approvers), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 14)
+	x.Approvers = v
 }
 
 func (x *VulnerabilityException) SetCreatedAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 14)
-	}
+	x.CreatedAt = v
 }
 
 func (x *VulnerabilityException) SetLastUpdated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 14)
-	}
+	x.LastUpdated = v
 }
 
 func (x *VulnerabilityException) SetComments(v []*Comment) {
-	var sv *[]*Comment
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Comment{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Comments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 14)
+	x.Comments = v
 }
 
 func (x *VulnerabilityException) SetScope(v *VulnerabilityException_Scope) {
-	x.xxx_hidden_Scope = v
+	x.Scope = v
 }
 
 func (x *VulnerabilityException) SetDeferralRequest(v *DeferralRequest) {
 	if v == nil {
-		x.xxx_hidden_Req = nil
+		x.Req = nil
 		return
 	}
-	x.xxx_hidden_Req = &vulnerabilityException_DeferralRequest{v}
+	x.Req = &VulnerabilityException_DeferralRequest{v}
 }
 
 func (x *VulnerabilityException) SetFalsePositiveRequest(v *FalsePositiveRequest) {
 	if v == nil {
-		x.xxx_hidden_Req = nil
+		x.Req = nil
 		return
 	}
-	x.xxx_hidden_Req = &vulnerabilityException_FalsePositiveRequest{v}
+	x.Req = &VulnerabilityException_FalsePositiveRequest{v}
 }
 
 func (x *VulnerabilityException) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 func (x *VulnerabilityException) SetDeferralUpdate(v *DeferralUpdate) {
 	if v == nil {
-		x.xxx_hidden_UpdatedReq = nil
+		x.UpdatedReq = nil
 		return
 	}
-	x.xxx_hidden_UpdatedReq = &vulnerabilityException_DeferralUpdate{v}
+	x.UpdatedReq = &VulnerabilityException_DeferralUpdate{v}
 }
 
 func (x *VulnerabilityException) SetFalsePositiveUpdate(v *FalsePositiveUpdate) {
 	if v == nil {
-		x.xxx_hidden_UpdatedReq = nil
+		x.UpdatedReq = nil
 		return
 	}
-	x.xxx_hidden_UpdatedReq = &vulnerabilityException_FalsePositiveUpdate{v}
-}
-
-func (x *VulnerabilityException) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *VulnerabilityException) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *VulnerabilityException) HasTargetState() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *VulnerabilityException) HasStatus() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *VulnerabilityException) HasExpired() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.UpdatedReq = &VulnerabilityException_FalsePositiveUpdate{v}
 }
 
 func (x *VulnerabilityException) HasRequester() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Requester != nil
+	return x.Requester != nil
 }
 
 func (x *VulnerabilityException) HasCreatedAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return x.CreatedAt != nil
 }
 
 func (x *VulnerabilityException) HasLastUpdated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return x.LastUpdated != nil
 }
 
 func (x *VulnerabilityException) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Scope != nil
+	return x.Scope != nil
 }
 
 func (x *VulnerabilityException) HasReq() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Req != nil
+	return x.Req != nil
 }
 
 func (x *VulnerabilityException) HasDeferralRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Req.(*vulnerabilityException_DeferralRequest)
+	_, ok := x.Req.(*VulnerabilityException_DeferralRequest)
 	return ok
 }
 
@@ -934,7 +767,7 @@ func (x *VulnerabilityException) HasFalsePositiveRequest() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Req.(*vulnerabilityException_FalsePositiveRequest)
+	_, ok := x.Req.(*VulnerabilityException_FalsePositiveRequest)
 	return ok
 }
 
@@ -942,14 +775,14 @@ func (x *VulnerabilityException) HasUpdatedReq() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_UpdatedReq != nil
+	return x.UpdatedReq != nil
 }
 
 func (x *VulnerabilityException) HasDeferralUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_DeferralUpdate)
+	_, ok := x.UpdatedReq.(*VulnerabilityException_DeferralUpdate)
 	return ok
 }
 
@@ -957,82 +790,55 @@ func (x *VulnerabilityException) HasFalsePositiveUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_FalsePositiveUpdate)
+	_, ok := x.UpdatedReq.(*VulnerabilityException_FalsePositiveUpdate)
 	return ok
 }
 
-func (x *VulnerabilityException) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *VulnerabilityException) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *VulnerabilityException) ClearTargetState() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_TargetState = VulnerabilityState_OBSERVED
-}
-
-func (x *VulnerabilityException) ClearStatus() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Status = ExceptionStatus_PENDING
-}
-
-func (x *VulnerabilityException) ClearExpired() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Expired = false
-}
-
 func (x *VulnerabilityException) ClearRequester() {
-	x.xxx_hidden_Requester = nil
+	x.Requester = nil
 }
 
 func (x *VulnerabilityException) ClearCreatedAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_CreatedAt, (*timestamppb.Timestamp)(nil))
+	x.CreatedAt = nil
 }
 
 func (x *VulnerabilityException) ClearLastUpdated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_LastUpdated, (*timestamppb.Timestamp)(nil))
+	x.LastUpdated = nil
 }
 
 func (x *VulnerabilityException) ClearScope() {
-	x.xxx_hidden_Scope = nil
+	x.Scope = nil
 }
 
 func (x *VulnerabilityException) ClearReq() {
-	x.xxx_hidden_Req = nil
+	x.Req = nil
 }
 
 func (x *VulnerabilityException) ClearDeferralRequest() {
-	if _, ok := x.xxx_hidden_Req.(*vulnerabilityException_DeferralRequest); ok {
-		x.xxx_hidden_Req = nil
+	if _, ok := x.Req.(*VulnerabilityException_DeferralRequest); ok {
+		x.Req = nil
 	}
 }
 
 func (x *VulnerabilityException) ClearFalsePositiveRequest() {
-	if _, ok := x.xxx_hidden_Req.(*vulnerabilityException_FalsePositiveRequest); ok {
-		x.xxx_hidden_Req = nil
+	if _, ok := x.Req.(*VulnerabilityException_FalsePositiveRequest); ok {
+		x.Req = nil
 	}
 }
 
 func (x *VulnerabilityException) ClearUpdatedReq() {
-	x.xxx_hidden_UpdatedReq = nil
+	x.UpdatedReq = nil
 }
 
 func (x *VulnerabilityException) ClearDeferralUpdate() {
-	if _, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_DeferralUpdate); ok {
-		x.xxx_hidden_UpdatedReq = nil
+	if _, ok := x.UpdatedReq.(*VulnerabilityException_DeferralUpdate); ok {
+		x.UpdatedReq = nil
 	}
 }
 
 func (x *VulnerabilityException) ClearFalsePositiveUpdate() {
-	if _, ok := x.xxx_hidden_UpdatedReq.(*vulnerabilityException_FalsePositiveUpdate); ok {
-		x.xxx_hidden_UpdatedReq = nil
+	if _, ok := x.UpdatedReq.(*VulnerabilityException_FalsePositiveUpdate); ok {
+		x.UpdatedReq = nil
 	}
 }
 
@@ -1044,10 +850,10 @@ func (x *VulnerabilityException) WhichReq() case_VulnerabilityException_Req {
 	if x == nil {
 		return VulnerabilityException_Req_not_set_case
 	}
-	switch x.xxx_hidden_Req.(type) {
-	case *vulnerabilityException_DeferralRequest:
+	switch x.Req.(type) {
+	case *VulnerabilityException_DeferralRequest:
 		return VulnerabilityException_DeferralRequest_case
-	case *vulnerabilityException_FalsePositiveRequest:
+	case *VulnerabilityException_FalsePositiveRequest:
 		return VulnerabilityException_FalsePositiveRequest_case
 	default:
 		return VulnerabilityException_Req_not_set_case
@@ -1062,10 +868,10 @@ func (x *VulnerabilityException) WhichUpdatedReq() case_VulnerabilityException_U
 	if x == nil {
 		return VulnerabilityException_UpdatedReq_not_set_case
 	}
-	switch x.xxx_hidden_UpdatedReq.(type) {
-	case *vulnerabilityException_DeferralUpdate:
+	switch x.UpdatedReq.(type) {
+	case *VulnerabilityException_DeferralUpdate:
 		return VulnerabilityException_DeferralUpdate_case
-	case *vulnerabilityException_FalsePositiveUpdate:
+	case *VulnerabilityException_FalsePositiveUpdate:
 		return VulnerabilityException_FalsePositiveUpdate_case
 	default:
 		return VulnerabilityException_UpdatedReq_not_set_case
@@ -1075,15 +881,15 @@ func (x *VulnerabilityException) WhichUpdatedReq() case_VulnerabilityException_U
 type VulnerabilityException_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id *string
+	Id string
 	// Auto-generated display name of the exception.
-	Name *string
+	Name string
 	// Indicates the state that the vulnerabilities will move to once the exception is enforced.
-	TargetState *VulnerabilityState
+	TargetState VulnerabilityState
 	// Indicates the status of the exception.
-	Status *ExceptionStatus
+	Status ExceptionStatus
 	// If set to `true`, this field indicates that the exception is no longer enforced.
-	Expired     *bool
+	Expired     bool
 	Requester   *SlimUser
 	Approvers   []*SlimUser
 	CreatedAt   *timestamppb.Timestamp
@@ -1091,74 +897,47 @@ type VulnerabilityException_builder struct {
 	Comments    []*Comment
 	// Indicates the scope of enforcement of the exception.
 	Scope *VulnerabilityException_Scope
-	// Fields of oneof xxx_hidden_Req:
+	// Fields of oneof Req:
 	DeferralRequest      *DeferralRequest
 	FalsePositiveRequest *FalsePositiveRequest
-	// -- end of xxx_hidden_Req
+	// -- end of Req
 	// Indicates the CVEs to which the exception applies.
 	Cves []string
-	// Fields of oneof xxx_hidden_UpdatedReq:
+	// Fields of oneof UpdatedReq:
 	// If set, indicates the update to be applied to the original deferral exception.
 	DeferralUpdate *DeferralUpdate
 	// If set, indicates the update to be applied to the original false-positive exception.
 	FalsePositiveUpdate *FalsePositiveUpdate
-	// -- end of xxx_hidden_UpdatedReq
+	// -- end of UpdatedReq
 }
 
 func (b0 VulnerabilityException_builder) Build() *VulnerabilityException {
 	m0 := &VulnerabilityException{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 14)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 14)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.TargetState != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 14)
-		x.xxx_hidden_TargetState = *b.TargetState
-	}
-	if b.Status != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 14)
-		x.xxx_hidden_Status = *b.Status
-	}
-	if b.Expired != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 14)
-		x.xxx_hidden_Expired = *b.Expired
-	}
-	x.xxx_hidden_Requester = b.Requester
-	if b.Approvers != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 14)
-		x.xxx_hidden_Approvers = &b.Approvers
-	}
-	if b.CreatedAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 14)
-		x.xxx_hidden_CreatedAt = b.CreatedAt
-	}
-	if b.LastUpdated != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 14)
-		x.xxx_hidden_LastUpdated = b.LastUpdated
-	}
-	if b.Comments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 14)
-		x.xxx_hidden_Comments = &b.Comments
-	}
-	x.xxx_hidden_Scope = b.Scope
+	x.Id = b.Id
+	x.Name = b.Name
+	x.TargetState = b.TargetState
+	x.Status = b.Status
+	x.Expired = b.Expired
+	x.Requester = b.Requester
+	x.Approvers = b.Approvers
+	x.CreatedAt = b.CreatedAt
+	x.LastUpdated = b.LastUpdated
+	x.Comments = b.Comments
+	x.Scope = b.Scope
 	if b.DeferralRequest != nil {
-		x.xxx_hidden_Req = &vulnerabilityException_DeferralRequest{b.DeferralRequest}
+		x.Req = &VulnerabilityException_DeferralRequest{b.DeferralRequest}
 	}
 	if b.FalsePositiveRequest != nil {
-		x.xxx_hidden_Req = &vulnerabilityException_FalsePositiveRequest{b.FalsePositiveRequest}
+		x.Req = &VulnerabilityException_FalsePositiveRequest{b.FalsePositiveRequest}
 	}
-	x.xxx_hidden_Cves = b.Cves
+	x.Cves = b.Cves
 	if b.DeferralUpdate != nil {
-		x.xxx_hidden_UpdatedReq = &vulnerabilityException_DeferralUpdate{b.DeferralUpdate}
+		x.UpdatedReq = &VulnerabilityException_DeferralUpdate{b.DeferralUpdate}
 	}
 	if b.FalsePositiveUpdate != nil {
-		x.xxx_hidden_UpdatedReq = &vulnerabilityException_FalsePositiveUpdate{b.FalsePositiveUpdate}
+		x.UpdatedReq = &VulnerabilityException_FalsePositiveUpdate{b.FalsePositiveUpdate}
 	}
 	return m0
 }
@@ -1187,42 +966,44 @@ type isVulnerabilityException_Req interface {
 	isVulnerabilityException_Req()
 }
 
-type vulnerabilityException_DeferralRequest struct {
+type VulnerabilityException_DeferralRequest struct {
 	DeferralRequest *DeferralRequest `protobuf:"bytes,12,opt,name=deferral_request,json=deferralRequest,oneof"`
 }
 
-type vulnerabilityException_FalsePositiveRequest struct {
+type VulnerabilityException_FalsePositiveRequest struct {
 	FalsePositiveRequest *FalsePositiveRequest `protobuf:"bytes,13,opt,name=false_positive_request,json=falsePositiveRequest,oneof"`
 }
 
-func (*vulnerabilityException_DeferralRequest) isVulnerabilityException_Req() {}
+func (*VulnerabilityException_DeferralRequest) isVulnerabilityException_Req() {}
 
-func (*vulnerabilityException_FalsePositiveRequest) isVulnerabilityException_Req() {}
+func (*VulnerabilityException_FalsePositiveRequest) isVulnerabilityException_Req() {}
 
 type isVulnerabilityException_UpdatedReq interface {
 	isVulnerabilityException_UpdatedReq()
 }
 
-type vulnerabilityException_DeferralUpdate struct {
+type VulnerabilityException_DeferralUpdate struct {
 	// If set, indicates the update to be applied to the original deferral exception.
 	DeferralUpdate *DeferralUpdate `protobuf:"bytes,15,opt,name=deferral_update,json=deferralUpdate,oneof"`
 }
 
-type vulnerabilityException_FalsePositiveUpdate struct {
+type VulnerabilityException_FalsePositiveUpdate struct {
 	// If set, indicates the update to be applied to the original false-positive exception.
 	FalsePositiveUpdate *FalsePositiveUpdate `protobuf:"bytes,16,opt,name=false_positive_update,json=falsePositiveUpdate,oneof"`
 }
 
-func (*vulnerabilityException_DeferralUpdate) isVulnerabilityException_UpdatedReq() {}
+func (*VulnerabilityException_DeferralUpdate) isVulnerabilityException_UpdatedReq() {}
 
-func (*vulnerabilityException_FalsePositiveUpdate) isVulnerabilityException_UpdatedReq() {}
+func (*VulnerabilityException_FalsePositiveUpdate) isVulnerabilityException_UpdatedReq() {}
 
 type DeferralUpdate struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cves   []string               `protobuf:"bytes,1,rep,name=cves"`
-	xxx_hidden_Expiry *ExceptionExpiry       `protobuf:"bytes,2,opt,name=expiry"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Use this field to update the CVEs of a deferral exception.
+	Cves []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	// Use this field to update the exception expiry.
+	Expiry        *ExceptionExpiry `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeferralUpdate) Reset() {
@@ -1252,35 +1033,35 @@ func (x *DeferralUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *DeferralUpdate) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *DeferralUpdate) GetExpiry() *ExceptionExpiry {
 	if x != nil {
-		return x.xxx_hidden_Expiry
+		return x.Expiry
 	}
 	return nil
 }
 
 func (x *DeferralUpdate) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 func (x *DeferralUpdate) SetExpiry(v *ExceptionExpiry) {
-	x.xxx_hidden_Expiry = v
+	x.Expiry = v
 }
 
 func (x *DeferralUpdate) HasExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Expiry != nil
+	return x.Expiry != nil
 }
 
 func (x *DeferralUpdate) ClearExpiry() {
-	x.xxx_hidden_Expiry = nil
+	x.Expiry = nil
 }
 
 type DeferralUpdate_builder struct {
@@ -1296,16 +1077,17 @@ func (b0 DeferralUpdate_builder) Build() *DeferralUpdate {
 	m0 := &DeferralUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
-	x.xxx_hidden_Expiry = b.Expiry
+	x.Cves = b.Cves
+	x.Expiry = b.Expiry
 	return m0
 }
 
 type FalsePositiveUpdate struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cves []string               `protobuf:"bytes,1,rep,name=cves"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Use this field to update the CVEs of a false-positive exception.
+	Cves          []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FalsePositiveUpdate) Reset() {
@@ -1335,13 +1117,13 @@ func (x *FalsePositiveUpdate) ProtoReflect() protoreflect.Message {
 
 func (x *FalsePositiveUpdate) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *FalsePositiveUpdate) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 type FalsePositiveUpdate_builder struct {
@@ -1355,15 +1137,15 @@ func (b0 FalsePositiveUpdate_builder) Build() *FalsePositiveUpdate {
 	m0 := &FalsePositiveUpdate{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
+	x.Cves = b.Cves
 	return m0
 }
 
 type GetVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetVulnerabilityExceptionResponse) Reset() {
@@ -1393,24 +1175,24 @@ func (x *GetVulnerabilityExceptionResponse) ProtoReflect() protoreflect.Message 
 
 func (x *GetVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *GetVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *GetVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *GetVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type GetVulnerabilityExceptionResponse_builder struct {
@@ -1423,19 +1205,15 @@ func (b0 GetVulnerabilityExceptionResponse_builder) Build() *GetVulnerabilityExc
 	m0 := &GetVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type ListVulnerabilityExceptionsResponse struct {
-	state                 protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Exceptions *[]*VulnerabilityException `protobuf:"bytes,1,rep,name=exceptions"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Exceptions    []*VulnerabilityException `protobuf:"bytes,1,rep,name=exceptions" json:"exceptions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListVulnerabilityExceptionsResponse) Reset() {
@@ -1465,27 +1243,13 @@ func (x *ListVulnerabilityExceptionsResponse) ProtoReflect() protoreflect.Messag
 
 func (x *ListVulnerabilityExceptionsResponse) GetExceptions() []*VulnerabilityException {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Exceptions) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*VulnerabilityException
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exceptions), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Exceptions
 	}
 	return nil
 }
 
 func (x *ListVulnerabilityExceptionsResponse) SetExceptions(v []*VulnerabilityException) {
-	var sv *[]*VulnerabilityException
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Exceptions), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*VulnerabilityException{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Exceptions), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Exceptions = v
 }
 
 type ListVulnerabilityExceptionsResponse_builder struct {
@@ -1498,26 +1262,23 @@ func (b0 ListVulnerabilityExceptionsResponse_builder) Build() *ListVulnerability
 	m0 := &ListVulnerabilityExceptionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Exceptions != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Exceptions = &b.Exceptions
-	}
+	x.Exceptions = b.Exceptions
 	return m0
 }
 
 // next available tag: 6
 type CreateDeferVulnerabilityExceptionRequest struct {
-	state                      protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Cves            []string                      `protobuf:"bytes,1,rep,name=cves"`
-	xxx_hidden_Comment         *string                       `protobuf:"bytes,2,opt,name=comment"`
-	xxx_hidden_Scope           *VulnerabilityException_Scope `protobuf:"bytes,3,opt,name=scope"`
-	xxx_hidden_ExceptionExpiry *ExceptionExpiry              `protobuf:"bytes,4,opt,name=exception_expiry,json=exceptionExpiry"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// REQUIRED. The CVEs to which the exception should be applied.
+	Cves []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	// REQUIRED. The rationale for creating the exception.
+	Comment string `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
+	// REQUIRED. The scope of enforcement of the exception.
+	Scope *VulnerabilityException_Scope `protobuf:"bytes,3,opt,name=scope" json:"scope,omitempty"`
+	// REQUIRED. The type of expiry to be enforced for the request.
+	ExceptionExpiry *ExceptionExpiry `protobuf:"bytes,4,opt,name=exception_expiry,json=exceptionExpiry" json:"exception_expiry,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) Reset() {
@@ -1547,97 +1308,68 @@ func (x *CreateDeferVulnerabilityExceptionRequest) ProtoReflect() protoreflect.M
 
 func (x *CreateDeferVulnerabilityExceptionRequest) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) GetComment() string {
 	if x != nil {
-		if x.xxx_hidden_Comment != nil {
-			return *x.xxx_hidden_Comment
-		}
-		return ""
+		return x.Comment
 	}
 	return ""
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) GetScope() *VulnerabilityException_Scope {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *VulnerabilityException_Scope
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Scope
 	}
 	return nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) GetExceptionExpiry() *ExceptionExpiry {
 	if x != nil {
-		return x.xxx_hidden_ExceptionExpiry
+		return x.ExceptionExpiry
 	}
 	return nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) SetComment(v string) {
-	x.xxx_hidden_Comment = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Comment = v
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) SetScope(v *VulnerabilityException_Scope) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
-	}
+	x.Scope = v
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) SetExceptionExpiry(v *ExceptionExpiry) {
-	x.xxx_hidden_ExceptionExpiry = v
-}
-
-func (x *CreateDeferVulnerabilityExceptionRequest) HasComment() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.ExceptionExpiry = v
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.Scope != nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) HasExceptionExpiry() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ExceptionExpiry != nil
-}
-
-func (x *CreateDeferVulnerabilityExceptionRequest) ClearComment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Comment = nil
+	return x.ExceptionExpiry != nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) ClearScope() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, (*VulnerabilityException_Scope)(nil))
+	x.Scope = nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionRequest) ClearExceptionExpiry() {
-	x.xxx_hidden_ExceptionExpiry = nil
+	x.ExceptionExpiry = nil
 }
 
 type CreateDeferVulnerabilityExceptionRequest_builder struct {
@@ -1646,7 +1378,7 @@ type CreateDeferVulnerabilityExceptionRequest_builder struct {
 	// REQUIRED. The CVEs to which the exception should be applied.
 	Cves []string
 	// REQUIRED. The rationale for creating the exception.
-	Comment *string
+	Comment string
 	// REQUIRED. The scope of enforcement of the exception.
 	Scope *VulnerabilityException_Scope
 	// REQUIRED. The type of expiry to be enforced for the request.
@@ -1657,24 +1389,18 @@ func (b0 CreateDeferVulnerabilityExceptionRequest_builder) Build() *CreateDeferV
 	m0 := &CreateDeferVulnerabilityExceptionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
-	if b.Comment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Comment = b.Comment
-	}
-	if b.Scope != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Scope = b.Scope
-	}
-	x.xxx_hidden_ExceptionExpiry = b.ExceptionExpiry
+	x.Cves = b.Cves
+	x.Comment = b.Comment
+	x.Scope = b.Scope
+	x.ExceptionExpiry = b.ExceptionExpiry
 	return m0
 }
 
 type CreateDeferVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateDeferVulnerabilityExceptionResponse) Reset() {
@@ -1704,24 +1430,24 @@ func (x *CreateDeferVulnerabilityExceptionResponse) ProtoReflect() protoreflect.
 
 func (x *CreateDeferVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *CreateDeferVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *CreateDeferVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type CreateDeferVulnerabilityExceptionResponse_builder struct {
@@ -1734,21 +1460,20 @@ func (b0 CreateDeferVulnerabilityExceptionResponse_builder) Build() *CreateDefer
 	m0 := &CreateDeferVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type CreateFalsePositiveVulnerabilityExceptionRequest struct {
-	state              protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Cves    []string                      `protobuf:"bytes,1,rep,name=cves"`
-	xxx_hidden_Scope   *VulnerabilityException_Scope `protobuf:"bytes,2,opt,name=scope"`
-	xxx_hidden_Comment *string                       `protobuf:"bytes,3,opt,name=comment"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// REQUIRED. The CVEs to which the exception should be applied.
+	Cves []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	// REQUIRED. The scope of enforcement of the exception.
+	Scope *VulnerabilityException_Scope `protobuf:"bytes,2,opt,name=scope" json:"scope,omitempty"`
+	// REQUIRED. The rationale for creating the exception.
+	Comment       string `protobuf:"bytes,3,opt,name=comment" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) Reset() {
@@ -1778,75 +1503,46 @@ func (x *CreateFalsePositiveVulnerabilityExceptionRequest) ProtoReflect() protor
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) GetScope() *VulnerabilityException_Scope {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Scope) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *VulnerabilityException_Scope
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Scope), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Scope
 	}
 	return nil
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) GetComment() string {
 	if x != nil {
-		if x.xxx_hidden_Comment != nil {
-			return *x.xxx_hidden_Comment
-		}
-		return ""
+		return x.Comment
 	}
 	return ""
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) SetScope(v *VulnerabilityException_Scope) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
-	}
+	x.Scope = v
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) SetComment(v string) {
-	x.xxx_hidden_Comment = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+	x.Comment = v
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) HasScope() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CreateFalsePositiveVulnerabilityExceptionRequest) HasComment() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.Scope != nil
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionRequest) ClearScope() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Scope, (*VulnerabilityException_Scope)(nil))
-}
-
-func (x *CreateFalsePositiveVulnerabilityExceptionRequest) ClearComment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Comment = nil
+	x.Scope = nil
 }
 
 type CreateFalsePositiveVulnerabilityExceptionRequest_builder struct {
@@ -1857,30 +1553,24 @@ type CreateFalsePositiveVulnerabilityExceptionRequest_builder struct {
 	// REQUIRED. The scope of enforcement of the exception.
 	Scope *VulnerabilityException_Scope
 	// REQUIRED. The rationale for creating the exception.
-	Comment *string
+	Comment string
 }
 
 func (b0 CreateFalsePositiveVulnerabilityExceptionRequest_builder) Build() *CreateFalsePositiveVulnerabilityExceptionRequest {
 	m0 := &CreateFalsePositiveVulnerabilityExceptionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
-	if b.Scope != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Scope = b.Scope
-	}
-	if b.Comment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Comment = b.Comment
-	}
+	x.Cves = b.Cves
+	x.Scope = b.Scope
+	x.Comment = b.Comment
 	return m0
 }
 
 type CreateFalsePositiveVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionResponse) Reset() {
@@ -1910,24 +1600,24 @@ func (x *CreateFalsePositiveVulnerabilityExceptionResponse) ProtoReflect() proto
 
 func (x *CreateFalsePositiveVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *CreateFalsePositiveVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type CreateFalsePositiveVulnerabilityExceptionResponse_builder struct {
@@ -1940,18 +1630,18 @@ func (b0 CreateFalsePositiveVulnerabilityExceptionResponse_builder) Build() *Cre
 	m0 := &CreateFalsePositiveVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type ApproveVulnerabilityExceptionRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// REQUIRED. The ID of vulnerability exception to be approved.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// REQUIRED. The rationale for approving the exception.
+	Comment       string `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApproveVulnerabilityExceptionRequest) Reset() {
@@ -1981,87 +1671,49 @@ func (x *ApproveVulnerabilityExceptionRequest) ProtoReflect() protoreflect.Messa
 
 func (x *ApproveVulnerabilityExceptionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ApproveVulnerabilityExceptionRequest) GetComment() string {
 	if x != nil {
-		if x.xxx_hidden_Comment != nil {
-			return *x.xxx_hidden_Comment
-		}
-		return ""
+		return x.Comment
 	}
 	return ""
 }
 
 func (x *ApproveVulnerabilityExceptionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *ApproveVulnerabilityExceptionRequest) SetComment(v string) {
-	x.xxx_hidden_Comment = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *ApproveVulnerabilityExceptionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ApproveVulnerabilityExceptionRequest) HasComment() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ApproveVulnerabilityExceptionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ApproveVulnerabilityExceptionRequest) ClearComment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Comment = nil
+	x.Comment = v
 }
 
 type ApproveVulnerabilityExceptionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// REQUIRED. The ID of vulnerability exception to be approved.
-	Id *string
+	Id string
 	// REQUIRED. The rationale for approving the exception.
-	Comment *string
+	Comment string
 }
 
 func (b0 ApproveVulnerabilityExceptionRequest_builder) Build() *ApproveVulnerabilityExceptionRequest {
 	m0 := &ApproveVulnerabilityExceptionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Comment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Comment = b.Comment
-	}
+	x.Id = b.Id
+	x.Comment = b.Comment
 	return m0
 }
 
 type ApproveVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApproveVulnerabilityExceptionResponse) Reset() {
@@ -2091,24 +1743,24 @@ func (x *ApproveVulnerabilityExceptionResponse) ProtoReflect() protoreflect.Mess
 
 func (x *ApproveVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *ApproveVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *ApproveVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *ApproveVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type ApproveVulnerabilityExceptionResponse_builder struct {
@@ -2121,18 +1773,18 @@ func (b0 ApproveVulnerabilityExceptionResponse_builder) Build() *ApproveVulnerab
 	m0 := &ApproveVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type DenyVulnerabilityExceptionRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Comment     *string                `protobuf:"bytes,2,opt,name=comment"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// REQUIRED. The ID of vulnerability exception to be denied.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// REQUIRED. The rationale for denying the exception.
+	Comment       string `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DenyVulnerabilityExceptionRequest) Reset() {
@@ -2162,87 +1814,49 @@ func (x *DenyVulnerabilityExceptionRequest) ProtoReflect() protoreflect.Message 
 
 func (x *DenyVulnerabilityExceptionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DenyVulnerabilityExceptionRequest) GetComment() string {
 	if x != nil {
-		if x.xxx_hidden_Comment != nil {
-			return *x.xxx_hidden_Comment
-		}
-		return ""
+		return x.Comment
 	}
 	return ""
 }
 
 func (x *DenyVulnerabilityExceptionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *DenyVulnerabilityExceptionRequest) SetComment(v string) {
-	x.xxx_hidden_Comment = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *DenyVulnerabilityExceptionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DenyVulnerabilityExceptionRequest) HasComment() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DenyVulnerabilityExceptionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *DenyVulnerabilityExceptionRequest) ClearComment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Comment = nil
+	x.Comment = v
 }
 
 type DenyVulnerabilityExceptionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// REQUIRED. The ID of vulnerability exception to be denied.
-	Id *string
+	Id string
 	// REQUIRED. The rationale for denying the exception.
-	Comment *string
+	Comment string
 }
 
 func (b0 DenyVulnerabilityExceptionRequest_builder) Build() *DenyVulnerabilityExceptionRequest {
 	m0 := &DenyVulnerabilityExceptionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Comment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Comment = b.Comment
-	}
+	x.Id = b.Id
+	x.Comment = b.Comment
 	return m0
 }
 
 type DenyVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DenyVulnerabilityExceptionResponse) Reset() {
@@ -2272,24 +1886,24 @@ func (x *DenyVulnerabilityExceptionResponse) ProtoReflect() protoreflect.Message
 
 func (x *DenyVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *DenyVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *DenyVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *DenyVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type DenyVulnerabilityExceptionResponse_builder struct {
@@ -2302,19 +1916,23 @@ func (b0 DenyVulnerabilityExceptionResponse_builder) Build() *DenyVulnerabilityE
 	m0 := &DenyVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type UpdateVulnerabilityExceptionRequest struct {
-	state                  protoimpl.MessageState                       `protogen:"opaque.v1"`
-	xxx_hidden_Id          *string                                      `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Comment     *string                                      `protobuf:"bytes,2,opt,name=comment"`
-	xxx_hidden_Update      isUpdateVulnerabilityExceptionRequest_Update `protobuf_oneof:"update"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// REQUIRED. The ID of vulnerability exception to be updated.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// REQUIRED. The rationale for updating the exception.
+	Comment string `protobuf:"bytes,2,opt,name=comment" json:"comment,omitempty"`
+	// Types that are valid to be assigned to Update:
+	//
+	//	*UpdateVulnerabilityExceptionRequest_DeferralUpdate
+	//	*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate
+	Update        isUpdateVulnerabilityExceptionRequest_Update `protobuf_oneof:"update"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) Reset() {
@@ -2344,27 +1962,28 @@ func (x *UpdateVulnerabilityExceptionRequest) ProtoReflect() protoreflect.Messag
 
 func (x *UpdateVulnerabilityExceptionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) GetComment() string {
 	if x != nil {
-		if x.xxx_hidden_Comment != nil {
-			return *x.xxx_hidden_Comment
-		}
-		return ""
+		return x.Comment
 	}
 	return ""
 }
 
+func (x *UpdateVulnerabilityExceptionRequest) GetUpdate() isUpdateVulnerabilityExceptionRequest_Update {
+	if x != nil {
+		return x.Update
+	}
+	return nil
+}
+
 func (x *UpdateVulnerabilityExceptionRequest) GetDeferralUpdate() *DeferralUpdate {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_DeferralUpdate); ok {
+		if x, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_DeferralUpdate); ok {
 			return x.DeferralUpdate
 		}
 	}
@@ -2373,7 +1992,7 @@ func (x *UpdateVulnerabilityExceptionRequest) GetDeferralUpdate() *DeferralUpdat
 
 func (x *UpdateVulnerabilityExceptionRequest) GetFalsePositiveUpdate() *FalsePositiveUpdate {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_FalsePositiveUpdate); ok {
+		if x, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate); ok {
 			return x.FalsePositiveUpdate
 		}
 	}
@@ -2381,57 +2000,41 @@ func (x *UpdateVulnerabilityExceptionRequest) GetFalsePositiveUpdate() *FalsePos
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) SetComment(v string) {
-	x.xxx_hidden_Comment = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Comment = v
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) SetDeferralUpdate(v *DeferralUpdate) {
 	if v == nil {
-		x.xxx_hidden_Update = nil
+		x.Update = nil
 		return
 	}
-	x.xxx_hidden_Update = &updateVulnerabilityExceptionRequest_DeferralUpdate{v}
+	x.Update = &UpdateVulnerabilityExceptionRequest_DeferralUpdate{v}
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) SetFalsePositiveUpdate(v *FalsePositiveUpdate) {
 	if v == nil {
-		x.xxx_hidden_Update = nil
+		x.Update = nil
 		return
 	}
-	x.xxx_hidden_Update = &updateVulnerabilityExceptionRequest_FalsePositiveUpdate{v}
-}
-
-func (x *UpdateVulnerabilityExceptionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UpdateVulnerabilityExceptionRequest) HasComment() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	x.Update = &UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate{v}
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) HasUpdate() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Update != nil
+	return x.Update != nil
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) HasDeferralUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_DeferralUpdate)
+	_, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_DeferralUpdate)
 	return ok
 }
 
@@ -2439,33 +2042,23 @@ func (x *UpdateVulnerabilityExceptionRequest) HasFalsePositiveUpdate() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_FalsePositiveUpdate)
+	_, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate)
 	return ok
 }
 
-func (x *UpdateVulnerabilityExceptionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *UpdateVulnerabilityExceptionRequest) ClearComment() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Comment = nil
-}
-
 func (x *UpdateVulnerabilityExceptionRequest) ClearUpdate() {
-	x.xxx_hidden_Update = nil
+	x.Update = nil
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) ClearDeferralUpdate() {
-	if _, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_DeferralUpdate); ok {
-		x.xxx_hidden_Update = nil
+	if _, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_DeferralUpdate); ok {
+		x.Update = nil
 	}
 }
 
 func (x *UpdateVulnerabilityExceptionRequest) ClearFalsePositiveUpdate() {
-	if _, ok := x.xxx_hidden_Update.(*updateVulnerabilityExceptionRequest_FalsePositiveUpdate); ok {
-		x.xxx_hidden_Update = nil
+	if _, ok := x.Update.(*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate); ok {
+		x.Update = nil
 	}
 }
 
@@ -2477,10 +2070,10 @@ func (x *UpdateVulnerabilityExceptionRequest) WhichUpdate() case_UpdateVulnerabi
 	if x == nil {
 		return UpdateVulnerabilityExceptionRequest_Update_not_set_case
 	}
-	switch x.xxx_hidden_Update.(type) {
-	case *updateVulnerabilityExceptionRequest_DeferralUpdate:
+	switch x.Update.(type) {
+	case *UpdateVulnerabilityExceptionRequest_DeferralUpdate:
 		return UpdateVulnerabilityExceptionRequest_DeferralUpdate_case
-	case *updateVulnerabilityExceptionRequest_FalsePositiveUpdate:
+	case *UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate:
 		return UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate_case
 	default:
 		return UpdateVulnerabilityExceptionRequest_Update_not_set_case
@@ -2491,34 +2084,28 @@ type UpdateVulnerabilityExceptionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// REQUIRED. The ID of vulnerability exception to be updated.
-	Id *string
+	Id string
 	// REQUIRED. The rationale for updating the exception.
-	Comment *string
-	// Fields of oneof xxx_hidden_Update:
+	Comment string
+	// Fields of oneof Update:
 	// Use this field to update a deferral exception.
 	DeferralUpdate *DeferralUpdate
 	// Use this field to update a false-positive exception.
 	FalsePositiveUpdate *FalsePositiveUpdate
-	// -- end of xxx_hidden_Update
+	// -- end of Update
 }
 
 func (b0 UpdateVulnerabilityExceptionRequest_builder) Build() *UpdateVulnerabilityExceptionRequest {
 	m0 := &UpdateVulnerabilityExceptionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Comment != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Comment = b.Comment
-	}
+	x.Id = b.Id
+	x.Comment = b.Comment
 	if b.DeferralUpdate != nil {
-		x.xxx_hidden_Update = &updateVulnerabilityExceptionRequest_DeferralUpdate{b.DeferralUpdate}
+		x.Update = &UpdateVulnerabilityExceptionRequest_DeferralUpdate{b.DeferralUpdate}
 	}
 	if b.FalsePositiveUpdate != nil {
-		x.xxx_hidden_Update = &updateVulnerabilityExceptionRequest_FalsePositiveUpdate{b.FalsePositiveUpdate}
+		x.Update = &UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate{b.FalsePositiveUpdate}
 	}
 	return m0
 }
@@ -2537,27 +2124,27 @@ type isUpdateVulnerabilityExceptionRequest_Update interface {
 	isUpdateVulnerabilityExceptionRequest_Update()
 }
 
-type updateVulnerabilityExceptionRequest_DeferralUpdate struct {
+type UpdateVulnerabilityExceptionRequest_DeferralUpdate struct {
 	// Use this field to update a deferral exception.
 	DeferralUpdate *DeferralUpdate `protobuf:"bytes,3,opt,name=deferral_update,json=deferralUpdate,oneof"`
 }
 
-type updateVulnerabilityExceptionRequest_FalsePositiveUpdate struct {
+type UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate struct {
 	// Use this field to update a false-positive exception.
 	FalsePositiveUpdate *FalsePositiveUpdate `protobuf:"bytes,4,opt,name=false_positive_update,json=falsePositiveUpdate,oneof"`
 }
 
-func (*updateVulnerabilityExceptionRequest_DeferralUpdate) isUpdateVulnerabilityExceptionRequest_Update() {
+func (*UpdateVulnerabilityExceptionRequest_DeferralUpdate) isUpdateVulnerabilityExceptionRequest_Update() {
 }
 
-func (*updateVulnerabilityExceptionRequest_FalsePositiveUpdate) isUpdateVulnerabilityExceptionRequest_Update() {
+func (*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate) isUpdateVulnerabilityExceptionRequest_Update() {
 }
 
 type UpdateVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateVulnerabilityExceptionResponse) Reset() {
@@ -2587,24 +2174,24 @@ func (x *UpdateVulnerabilityExceptionResponse) ProtoReflect() protoreflect.Messa
 
 func (x *UpdateVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *UpdateVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *UpdateVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *UpdateVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type UpdateVulnerabilityExceptionResponse_builder struct {
@@ -2617,15 +2204,15 @@ func (b0 UpdateVulnerabilityExceptionResponse_builder) Build() *UpdateVulnerabil
 	m0 := &UpdateVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type CancelVulnerabilityExceptionResponse struct {
-	state                protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Exception *VulnerabilityException `protobuf:"bytes,1,opt,name=exception"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception" json:"exception,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CancelVulnerabilityExceptionResponse) Reset() {
@@ -2655,24 +2242,24 @@ func (x *CancelVulnerabilityExceptionResponse) ProtoReflect() protoreflect.Messa
 
 func (x *CancelVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if x != nil {
-		return x.xxx_hidden_Exception
+		return x.Exception
 	}
 	return nil
 }
 
 func (x *CancelVulnerabilityExceptionResponse) SetException(v *VulnerabilityException) {
-	x.xxx_hidden_Exception = v
+	x.Exception = v
 }
 
 func (x *CancelVulnerabilityExceptionResponse) HasException() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Exception != nil
+	return x.Exception != nil
 }
 
 func (x *CancelVulnerabilityExceptionResponse) ClearException() {
-	x.xxx_hidden_Exception = nil
+	x.Exception = nil
 }
 
 type CancelVulnerabilityExceptionResponse_builder struct {
@@ -2685,15 +2272,16 @@ func (b0 CancelVulnerabilityExceptionResponse_builder) Build() *CancelVulnerabil
 	m0 := &CancelVulnerabilityExceptionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Exception = b.Exception
+	x.Exception = b.Exception
 	return m0
 }
 
 type VulnerabilityException_Scope struct {
-	state                 protoimpl.MessageState              `protogen:"opaque.v1"`
-	xxx_hidden_ImageScope *VulnerabilityException_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// This field can be used to apply the exception to selected images.
+	ImageScope    *VulnerabilityException_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope" json:"image_scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VulnerabilityException_Scope) Reset() {
@@ -2723,24 +2311,24 @@ func (x *VulnerabilityException_Scope) ProtoReflect() protoreflect.Message {
 
 func (x *VulnerabilityException_Scope) GetImageScope() *VulnerabilityException_Scope_Image {
 	if x != nil {
-		return x.xxx_hidden_ImageScope
+		return x.ImageScope
 	}
 	return nil
 }
 
 func (x *VulnerabilityException_Scope) SetImageScope(v *VulnerabilityException_Scope_Image) {
-	x.xxx_hidden_ImageScope = v
+	x.ImageScope = v
 }
 
 func (x *VulnerabilityException_Scope) HasImageScope() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ImageScope != nil
+	return x.ImageScope != nil
 }
 
 func (x *VulnerabilityException_Scope) ClearImageScope() {
-	x.xxx_hidden_ImageScope = nil
+	x.ImageScope = nil
 }
 
 type VulnerabilityException_Scope_builder struct {
@@ -2754,19 +2342,17 @@ func (b0 VulnerabilityException_Scope_builder) Build() *VulnerabilityException_S
 	m0 := &VulnerabilityException_Scope{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_ImageScope = b.ImageScope
+	x.ImageScope = b.ImageScope
 	return m0
 }
 
 type VulnerabilityException_Scope_Image struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Registry    *string                `protobuf:"bytes,1,opt,name=registry"`
-	xxx_hidden_Remote      *string                `protobuf:"bytes,2,opt,name=remote"`
-	xxx_hidden_Tag         *string                `protobuf:"bytes,3,opt,name=tag"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Registry      string                 `protobuf:"bytes,1,opt,name=registry" json:"registry,omitempty"`
+	Remote        string                 `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty"`
+	Tag           string                 `protobuf:"bytes,3,opt,name=tag" json:"tag,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VulnerabilityException_Scope_Image) Reset() {
@@ -2796,109 +2382,52 @@ func (x *VulnerabilityException_Scope_Image) ProtoReflect() protoreflect.Message
 
 func (x *VulnerabilityException_Scope_Image) GetRegistry() string {
 	if x != nil {
-		if x.xxx_hidden_Registry != nil {
-			return *x.xxx_hidden_Registry
-		}
-		return ""
+		return x.Registry
 	}
 	return ""
 }
 
 func (x *VulnerabilityException_Scope_Image) GetRemote() string {
 	if x != nil {
-		if x.xxx_hidden_Remote != nil {
-			return *x.xxx_hidden_Remote
-		}
-		return ""
+		return x.Remote
 	}
 	return ""
 }
 
 func (x *VulnerabilityException_Scope_Image) GetTag() string {
 	if x != nil {
-		if x.xxx_hidden_Tag != nil {
-			return *x.xxx_hidden_Tag
-		}
-		return ""
+		return x.Tag
 	}
 	return ""
 }
 
 func (x *VulnerabilityException_Scope_Image) SetRegistry(v string) {
-	x.xxx_hidden_Registry = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Registry = v
 }
 
 func (x *VulnerabilityException_Scope_Image) SetRemote(v string) {
-	x.xxx_hidden_Remote = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Remote = v
 }
 
 func (x *VulnerabilityException_Scope_Image) SetTag(v string) {
-	x.xxx_hidden_Tag = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *VulnerabilityException_Scope_Image) HasRegistry() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *VulnerabilityException_Scope_Image) HasRemote() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *VulnerabilityException_Scope_Image) HasTag() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *VulnerabilityException_Scope_Image) ClearRegistry() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Registry = nil
-}
-
-func (x *VulnerabilityException_Scope_Image) ClearRemote() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Remote = nil
-}
-
-func (x *VulnerabilityException_Scope_Image) ClearTag() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Tag = nil
+	x.Tag = v
 }
 
 type VulnerabilityException_Scope_Image_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Registry *string
-	Remote   *string
-	Tag      *string
+	Registry string
+	Remote   string
+	Tag      string
 }
 
 func (b0 VulnerabilityException_Scope_Image_builder) Build() *VulnerabilityException_Scope_Image {
 	m0 := &VulnerabilityException_Scope_Image{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Registry != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Registry = b.Registry
-	}
-	if b.Remote != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Remote = b.Remote
-	}
-	if b.Tag != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Tag = b.Tag
-	}
+	x.Registry = b.Registry
+	x.Remote = b.Remote
+	x.Tag = b.Tag
 	return m0
 }
 
@@ -3013,8 +2542,8 @@ const file_api_v2_vuln_exception_service_proto_rawDesc = "" +
 	"\x1aDenyVulnerabilityException\x12%.v2.DenyVulnerabilityExceptionRequest\x1a&.v2.DenyVulnerabilityExceptionResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v2/vulnerability-exceptions/{id}/deny\x12\x9f\x01\n" +
 	"\x1cUpdateVulnerabilityException\x12'.v2.UpdateVulnerabilityExceptionRequest\x1a(.v2.UpdateVulnerabilityExceptionResponse\",\x82\xd3\xe4\x93\x02&:\x01*2!/v2/vulnerability-exceptions/{id}\x12\x8c\x01\n" +
 	"\x1cCancelVulnerabilityException\x12\x10.v2.ResourceByID\x1a(.v2.CancelVulnerabilityExceptionResponse\"0\x82\xd3\xe4\x93\x02*\"(/v2/vulnerability-exceptions/{id}/cancel\x12f\n" +
-	"\x1cDeleteVulnerabilityException\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\")\x82\xd3\xe4\x93\x02#*!/v2/vulnerability-exceptions/{id}B/\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\x05\xd2>\x02\x10\x03X\x04b\beditionsp\xe8\a"
+	"\x1cDeleteVulnerabilityException\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\")\x82\xd3\xe4\x93\x02#*!/v2/vulnerability-exceptions/{id}B7\n" +
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x04b\beditionsp\xe8\a"
 
 var file_api_v2_vuln_exception_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_vuln_exception_service_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
@@ -3118,14 +2647,14 @@ func file_api_v2_vuln_exception_service_proto_init() {
 	file_api_v2_user_proto_init()
 	file_api_v2_vuln_state_proto_init()
 	file_api_v2_vuln_exception_service_proto_msgTypes[4].OneofWrappers = []any{
-		(*vulnerabilityException_DeferralRequest)(nil),
-		(*vulnerabilityException_FalsePositiveRequest)(nil),
-		(*vulnerabilityException_DeferralUpdate)(nil),
-		(*vulnerabilityException_FalsePositiveUpdate)(nil),
+		(*VulnerabilityException_DeferralRequest)(nil),
+		(*VulnerabilityException_FalsePositiveRequest)(nil),
+		(*VulnerabilityException_DeferralUpdate)(nil),
+		(*VulnerabilityException_FalsePositiveUpdate)(nil),
 	}
 	file_api_v2_vuln_exception_service_proto_msgTypes[17].OneofWrappers = []any{
-		(*updateVulnerabilityExceptionRequest_DeferralUpdate)(nil),
-		(*updateVulnerabilityExceptionRequest_FalsePositiveUpdate)(nil),
+		(*UpdateVulnerabilityExceptionRequest_DeferralUpdate)(nil),
+		(*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

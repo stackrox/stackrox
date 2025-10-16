@@ -4,18 +4,20 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *GetGroupsRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *GetGroupsRequest) CloneVT() *GetGroupsRequest    { return proto.Clone(m).(*GetGroupsRequest) }
-func (m *GetGroupsRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetGroupsRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetGroupsRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *GetGroupsRequest) CloneVT() *GetGroupsRequest       { return proto.Clone(m).(*GetGroupsRequest) }
+func (m *GetGroupsRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *GetGroupsRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *GetGroupsRequest) EqualVT(n *GetGroupsRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetGroupsRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetGroupsResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *GetGroupsResponse) CloneVT() *GetGroupsResponse   { return proto.Clone(m).(*GetGroupsResponse) }
-func (m *GetGroupsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetGroupsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetGroupsResponse) SizeVT() int                       { return proto.Size(m) }
+func (m *GetGroupsResponse) CloneVT() *GetGroupsResponse       { return proto.Clone(m).(*GetGroupsResponse) }
+func (m *GetGroupsResponse) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *GetGroupsResponse) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *GetGroupsResponse) EqualVT(n *GetGroupsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetGroupsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *GroupBatchUpdateRequest) SizeVT() int { return proto.Size(m) }
 func (m *GroupBatchUpdateRequest) CloneVT() *GroupBatchUpdateRequest {
 	return proto.Clone(m).(*GroupBatchUpdateRequest)
 }
-func (m *GroupBatchUpdateRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GroupBatchUpdateRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GroupBatchUpdateRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *GroupBatchUpdateRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *GroupBatchUpdateRequest) EqualVT(n *GroupBatchUpdateRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GroupBatchUpdateRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,8 +37,9 @@ func (m *DeleteGroupRequest) SizeVT() int { return proto.Size(m) }
 func (m *DeleteGroupRequest) CloneVT() *DeleteGroupRequest {
 	return proto.Clone(m).(*DeleteGroupRequest)
 }
-func (m *DeleteGroupRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeleteGroupRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteGroupRequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *DeleteGroupRequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *DeleteGroupRequest) EqualVT(n *DeleteGroupRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeleteGroupRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -44,8 +48,9 @@ func (m *UpdateGroupRequest) SizeVT() int { return proto.Size(m) }
 func (m *UpdateGroupRequest) CloneVT() *UpdateGroupRequest {
 	return proto.Clone(m).(*UpdateGroupRequest)
 }
-func (m *UpdateGroupRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *UpdateGroupRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateGroupRequest) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *UpdateGroupRequest) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateGroupRequest) EqualVT(n *UpdateGroupRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateGroupRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

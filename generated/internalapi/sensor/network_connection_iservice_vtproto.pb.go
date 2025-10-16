@@ -12,6 +12,9 @@ func (m *NetworkConnectionInfoMessage) MarshalVT() ([]byte, error) { return prot
 func (m *NetworkConnectionInfoMessage) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NetworkConnectionInfoMessage) EqualVT(n *NetworkConnectionInfoMessage) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkConnectionInfoMessage) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -24,6 +27,9 @@ func (m *NetworkFlowsControlMessage) CloneVT() *NetworkFlowsControlMessage {
 }
 func (m *NetworkFlowsControlMessage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NetworkFlowsControlMessage) EqualVT(n *NetworkFlowsControlMessage) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NetworkFlowsControlMessage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,6 +38,7 @@ func (m *IPAddressList) SizeVT() int                   { return proto.Size(m) }
 func (m *IPAddressList) CloneVT() *IPAddressList       { return proto.Clone(m).(*IPAddressList) }
 func (m *IPAddressList) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *IPAddressList) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *IPAddressList) EqualVT(n *IPAddressList) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IPAddressList) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,6 +47,7 @@ func (m *IPNetworkList) SizeVT() int                   { return proto.Size(m) }
 func (m *IPNetworkList) CloneVT() *IPNetworkList       { return proto.Clone(m).(*IPNetworkList) }
 func (m *IPNetworkList) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *IPNetworkList) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *IPNetworkList) EqualVT(n *IPNetworkList) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *IPNetworkList) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

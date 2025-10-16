@@ -8,8 +8,9 @@ func (m *AdministrationEvent) SizeVT() int { return proto.Size(m) }
 func (m *AdministrationEvent) CloneVT() *AdministrationEvent {
 	return proto.Clone(m).(*AdministrationEvent)
 }
-func (m *AdministrationEvent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *AdministrationEvent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *AdministrationEvent) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *AdministrationEvent) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *AdministrationEvent) EqualVT(n *AdministrationEvent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *AdministrationEvent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -21,6 +22,9 @@ func (m *AdministrationEvent_Resource) CloneVT() *AdministrationEvent_Resource {
 func (m *AdministrationEvent_Resource) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AdministrationEvent_Resource) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AdministrationEvent_Resource) EqualVT(n *AdministrationEvent_Resource) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

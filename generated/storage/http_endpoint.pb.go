@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/http_endpoint.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,21 +24,20 @@ const (
 )
 
 type HTTPEndpointConfig struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Endpoint      *string                `protobuf:"bytes,1,opt,name=endpoint"`
-	xxx_hidden_SkipTlsVerify bool                   `protobuf:"varint,2,opt,name=skip_tls_verify,json=skipTlsVerify"`
-	xxx_hidden_CaCert        *string                `protobuf:"bytes,3,opt,name=ca_cert,json=caCert"`
-	xxx_hidden_Username      *string                `protobuf:"bytes,4,opt,name=username"`
-	xxx_hidden_Password      *string                `protobuf:"bytes,5,opt,name=password"`
-	xxx_hidden_Headers       *[]*KeyValuePair       `protobuf:"bytes,6,rep,name=headers"`
-	xxx_hidden_ClientCertPem *string                `protobuf:"bytes,7,opt,name=client_cert_pem,json=clientCertPem"`
-	xxx_hidden_ClientKeyPem  *string                `protobuf:"bytes,8,opt,name=client_key_pem,json=clientKeyPem"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	SkipTlsVerify bool                   `protobuf:"varint,2,opt,name=skip_tls_verify,json=skipTlsVerify" json:"skip_tls_verify,omitempty"`
+	CaCert        string                 `protobuf:"bytes,3,opt,name=ca_cert,json=caCert" json:"ca_cert,omitempty"`
+	Username      string                 `protobuf:"bytes,4,opt,name=username" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	// The password for the integration. The server will mask the value of this credential in responses and logs.
+	Password string          `protobuf:"bytes,5,opt,name=password" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Headers  []*KeyValuePair `protobuf:"bytes,6,rep,name=headers" json:"headers,omitempty"`
+	// The client certificate in PEM format for the integration.
+	ClientCertPem string `protobuf:"bytes,7,opt,name=client_cert_pem,json=clientCertPem" json:"client_cert_pem,omitempty"`
+	// The client key in PEM format for the integration. The server will mask the value of this credential in responses and logs.
+	ClientKeyPem  string `protobuf:"bytes,8,opt,name=client_key_pem,json=clientKeyPem" json:"client_key_pem,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HTTPEndpointConfig) Reset() {
@@ -66,267 +67,120 @@ func (x *HTTPEndpointConfig) ProtoReflect() protoreflect.Message {
 
 func (x *HTTPEndpointConfig) GetEndpoint() string {
 	if x != nil {
-		if x.xxx_hidden_Endpoint != nil {
-			return *x.xxx_hidden_Endpoint
-		}
-		return ""
+		return x.Endpoint
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) GetSkipTlsVerify() bool {
 	if x != nil {
-		return x.xxx_hidden_SkipTlsVerify
+		return x.SkipTlsVerify
 	}
 	return false
 }
 
 func (x *HTTPEndpointConfig) GetCaCert() string {
 	if x != nil {
-		if x.xxx_hidden_CaCert != nil {
-			return *x.xxx_hidden_CaCert
-		}
-		return ""
+		return x.CaCert
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) GetUsername() string {
 	if x != nil {
-		if x.xxx_hidden_Username != nil {
-			return *x.xxx_hidden_Username
-		}
-		return ""
+		return x.Username
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) GetPassword() string {
 	if x != nil {
-		if x.xxx_hidden_Password != nil {
-			return *x.xxx_hidden_Password
-		}
-		return ""
+		return x.Password
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) GetHeaders() []*KeyValuePair {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Headers) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *[]*KeyValuePair
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Headers
 	}
 	return nil
 }
 
 func (x *HTTPEndpointConfig) GetClientCertPem() string {
 	if x != nil {
-		if x.xxx_hidden_ClientCertPem != nil {
-			return *x.xxx_hidden_ClientCertPem
-		}
-		return ""
+		return x.ClientCertPem
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) GetClientKeyPem() string {
 	if x != nil {
-		if x.xxx_hidden_ClientKeyPem != nil {
-			return *x.xxx_hidden_ClientKeyPem
-		}
-		return ""
+		return x.ClientKeyPem
 	}
 	return ""
 }
 
 func (x *HTTPEndpointConfig) SetEndpoint(v string) {
-	x.xxx_hidden_Endpoint = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Endpoint = v
 }
 
 func (x *HTTPEndpointConfig) SetSkipTlsVerify(v bool) {
-	x.xxx_hidden_SkipTlsVerify = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.SkipTlsVerify = v
 }
 
 func (x *HTTPEndpointConfig) SetCaCert(v string) {
-	x.xxx_hidden_CaCert = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.CaCert = v
 }
 
 func (x *HTTPEndpointConfig) SetUsername(v string) {
-	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.Username = v
 }
 
 func (x *HTTPEndpointConfig) SetPassword(v string) {
-	x.xxx_hidden_Password = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.Password = v
 }
 
 func (x *HTTPEndpointConfig) SetHeaders(v []*KeyValuePair) {
-	var sv *[]*KeyValuePair
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*KeyValuePair{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Headers), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	x.Headers = v
 }
 
 func (x *HTTPEndpointConfig) SetClientCertPem(v string) {
-	x.xxx_hidden_ClientCertPem = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	x.ClientCertPem = v
 }
 
 func (x *HTTPEndpointConfig) SetClientKeyPem(v string) {
-	x.xxx_hidden_ClientKeyPem = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
-}
-
-func (x *HTTPEndpointConfig) HasEndpoint() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *HTTPEndpointConfig) HasSkipTlsVerify() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *HTTPEndpointConfig) HasCaCert() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *HTTPEndpointConfig) HasUsername() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *HTTPEndpointConfig) HasPassword() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *HTTPEndpointConfig) HasClientCertPem() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *HTTPEndpointConfig) HasClientKeyPem() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *HTTPEndpointConfig) ClearEndpoint() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Endpoint = nil
-}
-
-func (x *HTTPEndpointConfig) ClearSkipTlsVerify() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_SkipTlsVerify = false
-}
-
-func (x *HTTPEndpointConfig) ClearCaCert() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CaCert = nil
-}
-
-func (x *HTTPEndpointConfig) ClearUsername() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Username = nil
-}
-
-func (x *HTTPEndpointConfig) ClearPassword() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Password = nil
-}
-
-func (x *HTTPEndpointConfig) ClearClientCertPem() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_ClientCertPem = nil
-}
-
-func (x *HTTPEndpointConfig) ClearClientKeyPem() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_ClientKeyPem = nil
+	x.ClientKeyPem = v
 }
 
 type HTTPEndpointConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Endpoint      *string
-	SkipTlsVerify *bool
-	CaCert        *string
-	Username      *string
+	Endpoint      string
+	SkipTlsVerify bool
+	CaCert        string
+	Username      string
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password *string
+	Password string
 	Headers  []*KeyValuePair
 	// The client certificate in PEM format for the integration.
-	ClientCertPem *string
+	ClientCertPem string
 	// The client key in PEM format for the integration. The server will mask the value of this credential in responses and logs.
-	ClientKeyPem *string
+	ClientKeyPem string
 }
 
 func (b0 HTTPEndpointConfig_builder) Build() *HTTPEndpointConfig {
 	m0 := &HTTPEndpointConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Endpoint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Endpoint = b.Endpoint
-	}
-	if b.SkipTlsVerify != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_SkipTlsVerify = *b.SkipTlsVerify
-	}
-	if b.CaCert != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_CaCert = b.CaCert
-	}
-	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_Username = b.Username
-	}
-	if b.Password != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_Password = b.Password
-	}
-	if b.Headers != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_Headers = &b.Headers
-	}
-	if b.ClientCertPem != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_ClientCertPem = b.ClientCertPem
-	}
-	if b.ClientKeyPem != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
-		x.xxx_hidden_ClientKeyPem = b.ClientKeyPem
-	}
+	x.Endpoint = b.Endpoint
+	x.SkipTlsVerify = b.SkipTlsVerify
+	x.CaCert = b.CaCert
+	x.Username = b.Username
+	x.Password = b.Password
+	x.Headers = b.Headers
+	x.ClientCertPem = b.ClientCertPem
+	x.ClientKeyPem = b.ClientKeyPem
 	return m0
 }
 
@@ -343,8 +197,8 @@ const file_storage_http_endpoint_proto_rawDesc = "" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x123\n" +
 	"\aheaders\x18\x06 \x03(\v2\x15.storage.KeyValuePairB\x02(\x01R\aheaders\x12&\n" +
 	"\x0fclient_cert_pem\x18\a \x01(\tR\rclientCertPem\x12$\n" +
-	"\x0eclient_key_pem\x18\b \x01(\tR\fclientKeyPemB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x0eclient_key_pem\x18\b \x01(\tR\fclientKeyPemB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_http_endpoint_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_http_endpoint_proto_goTypes = []any{

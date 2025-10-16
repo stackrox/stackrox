@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/administration_usage_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -25,15 +27,11 @@ const (
 
 // TimeRange allows for requesting data by a time range.
 type TimeRange struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_From *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from"`
-	xxx_hidden_To   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TimeRange) Reset() {
@@ -63,72 +61,46 @@ func (x *TimeRange) ProtoReflect() protoreflect.Message {
 
 func (x *TimeRange) GetFrom() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_From) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_From), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.From
 	}
 	return nil
 }
 
 func (x *TimeRange) GetTo() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_To) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_To), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.To
 	}
 	return nil
 }
 
 func (x *TimeRange) SetFrom(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_From, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.From = v
 }
 
 func (x *TimeRange) SetTo(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_To, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.To = v
 }
 
 func (x *TimeRange) HasFrom() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.From != nil
 }
 
 func (x *TimeRange) HasTo() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.To != nil
 }
 
 func (x *TimeRange) ClearFrom() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_From, (*timestamppb.Timestamp)(nil))
+	x.From = nil
 }
 
 func (x *TimeRange) ClearTo() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_To, (*timestamppb.Timestamp)(nil))
+	x.To = nil
 }
 
 type TimeRange_builder struct {
@@ -142,27 +114,19 @@ func (b0 TimeRange_builder) Build() *TimeRange {
 	m0 := &TimeRange{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.From != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_From = b.From
-	}
-	if b.To != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_To = b.To
-	}
+	x.From = b.From
+	x.To = b.To
 	return m0
 }
 
 // SecuredUnitsUsageResponse holds the values of the currently observable
 // administration usage metrics.
 type SecuredUnitsUsageResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_NumNodes    int64                  `protobuf:"varint,1,opt,name=num_nodes,json=numNodes"`
-	xxx_hidden_NumCpuUnits int64                  `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	NumNodes      int64                  `protobuf:"varint,1,opt,name=num_nodes,json=numNodes" json:"num_nodes,omitempty"`
+	NumCpuUnits   int64                  `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits" json:"num_cpu_units,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SecuredUnitsUsageResponse) Reset() {
@@ -192,71 +156,39 @@ func (x *SecuredUnitsUsageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *SecuredUnitsUsageResponse) GetNumNodes() int64 {
 	if x != nil {
-		return x.xxx_hidden_NumNodes
+		return x.NumNodes
 	}
 	return 0
 }
 
 func (x *SecuredUnitsUsageResponse) GetNumCpuUnits() int64 {
 	if x != nil {
-		return x.xxx_hidden_NumCpuUnits
+		return x.NumCpuUnits
 	}
 	return 0
 }
 
 func (x *SecuredUnitsUsageResponse) SetNumNodes(v int64) {
-	x.xxx_hidden_NumNodes = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.NumNodes = v
 }
 
 func (x *SecuredUnitsUsageResponse) SetNumCpuUnits(v int64) {
-	x.xxx_hidden_NumCpuUnits = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *SecuredUnitsUsageResponse) HasNumNodes() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SecuredUnitsUsageResponse) HasNumCpuUnits() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SecuredUnitsUsageResponse) ClearNumNodes() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_NumNodes = 0
-}
-
-func (x *SecuredUnitsUsageResponse) ClearNumCpuUnits() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_NumCpuUnits = 0
+	x.NumCpuUnits = v
 }
 
 type SecuredUnitsUsageResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	NumNodes    *int64
-	NumCpuUnits *int64
+	NumNodes    int64
+	NumCpuUnits int64
 }
 
 func (b0 SecuredUnitsUsageResponse_builder) Build() *SecuredUnitsUsageResponse {
 	m0 := &SecuredUnitsUsageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.NumNodes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_NumNodes = *b.NumNodes
-	}
-	if b.NumCpuUnits != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_NumCpuUnits = *b.NumCpuUnits
-	}
+	x.NumNodes = b.NumNodes
+	x.NumCpuUnits = b.NumCpuUnits
 	return m0
 }
 
@@ -264,17 +196,13 @@ func (b0 SecuredUnitsUsageResponse_builder) Build() *SecuredUnitsUsageResponse {
 // and CPU Units (as reported by Kubernetes) with the time at which these
 // values were aggregated, with the aggregation period accuracy (1h).
 type MaxSecuredUnitsUsageResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_MaxNodesAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt"`
-	xxx_hidden_MaxNodes      int64                  `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes"`
-	xxx_hidden_MaxCpuUnitsAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=max_cpu_units_at,json=maxCpuUnitsAt"`
-	xxx_hidden_MaxCpuUnits   int64                  `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	MaxNodesAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt" json:"max_nodes_at,omitempty"`
+	MaxNodes      int64                  `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes" json:"max_nodes,omitempty"`
+	MaxCpuUnitsAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=max_cpu_units_at,json=maxCpuUnitsAt" json:"max_cpu_units_at,omitempty"`
+	MaxCpuUnits   int64                  `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits" json:"max_cpu_units,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MaxSecuredUnitsUsageResponse) Reset() {
@@ -304,151 +232,87 @@ func (x *MaxSecuredUnitsUsageResponse) ProtoReflect() protoreflect.Message {
 
 func (x *MaxSecuredUnitsUsageResponse) GetMaxNodesAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MaxNodesAt) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MaxNodesAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.MaxNodesAt
 	}
 	return nil
 }
 
 func (x *MaxSecuredUnitsUsageResponse) GetMaxNodes() int64 {
 	if x != nil {
-		return x.xxx_hidden_MaxNodes
+		return x.MaxNodes
 	}
 	return 0
 }
 
 func (x *MaxSecuredUnitsUsageResponse) GetMaxCpuUnitsAt() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_MaxCpuUnitsAt) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_MaxCpuUnitsAt), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.MaxCpuUnitsAt
 	}
 	return nil
 }
 
 func (x *MaxSecuredUnitsUsageResponse) GetMaxCpuUnits() int64 {
 	if x != nil {
-		return x.xxx_hidden_MaxCpuUnits
+		return x.MaxCpuUnits
 	}
 	return 0
 }
 
 func (x *MaxSecuredUnitsUsageResponse) SetMaxNodesAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MaxNodesAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-	}
+	x.MaxNodesAt = v
 }
 
 func (x *MaxSecuredUnitsUsageResponse) SetMaxNodes(v int64) {
-	x.xxx_hidden_MaxNodes = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.MaxNodes = v
 }
 
 func (x *MaxSecuredUnitsUsageResponse) SetMaxCpuUnitsAt(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MaxCpuUnitsAt, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
-	}
+	x.MaxCpuUnitsAt = v
 }
 
 func (x *MaxSecuredUnitsUsageResponse) SetMaxCpuUnits(v int64) {
-	x.xxx_hidden_MaxCpuUnits = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
+	x.MaxCpuUnits = v
 }
 
 func (x *MaxSecuredUnitsUsageResponse) HasMaxNodesAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *MaxSecuredUnitsUsageResponse) HasMaxNodes() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.MaxNodesAt != nil
 }
 
 func (x *MaxSecuredUnitsUsageResponse) HasMaxCpuUnitsAt() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *MaxSecuredUnitsUsageResponse) HasMaxCpuUnits() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return x.MaxCpuUnitsAt != nil
 }
 
 func (x *MaxSecuredUnitsUsageResponse) ClearMaxNodesAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MaxNodesAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *MaxSecuredUnitsUsageResponse) ClearMaxNodes() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_MaxNodes = 0
+	x.MaxNodesAt = nil
 }
 
 func (x *MaxSecuredUnitsUsageResponse) ClearMaxCpuUnitsAt() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_MaxCpuUnitsAt, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *MaxSecuredUnitsUsageResponse) ClearMaxCpuUnits() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_MaxCpuUnits = 0
+	x.MaxCpuUnitsAt = nil
 }
 
 type MaxSecuredUnitsUsageResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	MaxNodesAt    *timestamppb.Timestamp
-	MaxNodes      *int64
+	MaxNodes      int64
 	MaxCpuUnitsAt *timestamppb.Timestamp
-	MaxCpuUnits   *int64
+	MaxCpuUnits   int64
 }
 
 func (b0 MaxSecuredUnitsUsageResponse_builder) Build() *MaxSecuredUnitsUsageResponse {
 	m0 := &MaxSecuredUnitsUsageResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.MaxNodesAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_MaxNodesAt = b.MaxNodesAt
-	}
-	if b.MaxNodes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_MaxNodes = *b.MaxNodes
-	}
-	if b.MaxCpuUnitsAt != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_MaxCpuUnitsAt = b.MaxCpuUnitsAt
-	}
-	if b.MaxCpuUnits != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_MaxCpuUnits = *b.MaxCpuUnits
-	}
+	x.MaxNodesAt = b.MaxNodesAt
+	x.MaxNodes = b.MaxNodes
+	x.MaxCpuUnitsAt = b.MaxCpuUnitsAt
+	x.MaxCpuUnits = b.MaxCpuUnits
 	return m0
 }
 
@@ -471,8 +335,8 @@ const file_api_v1_administration_usage_service_proto_rawDesc = "" +
 	"\rmax_cpu_units\x18\x04 \x01(\x03R\vmaxCpuUnits2\x9d\x02\n" +
 	"\x1aAdministrationUsageService\x12\x7f\n" +
 	"\x1bGetCurrentSecuredUnitsUsage\x12\t.v1.Empty\x1a\x1d.v1.SecuredUnitsUsageResponse\"6\x82\xd3\xe4\x93\x020\x12./v1/administration/usage/secured-units/current\x12~\n" +
-	"\x17GetMaxSecuredUnitsUsage\x12\r.v1.TimeRange\x1a .v1.MaxSecuredUnitsUsageResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/administration/usage/secured-units/maxB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x17GetMaxSecuredUnitsUsage\x12\r.v1.TimeRange\x1a .v1.MaxSecuredUnitsUsageResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/administration/usage/secured-units/maxB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_administration_usage_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_api_v1_administration_usage_service_proto_goTypes = []any{

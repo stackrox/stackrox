@@ -8,24 +8,27 @@ func (m *ProcessBaselineKey) SizeVT() int { return proto.Size(m) }
 func (m *ProcessBaselineKey) CloneVT() *ProcessBaselineKey {
 	return proto.Clone(m).(*ProcessBaselineKey)
 }
-func (m *ProcessBaselineKey) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessBaselineKey) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaselineKey) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ProcessBaselineKey) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaselineKey) EqualVT(n *ProcessBaselineKey) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessBaselineKey) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ProcessBaseline) SizeVT() int                   { return proto.Size(m) }
-func (m *ProcessBaseline) CloneVT() *ProcessBaseline     { return proto.Clone(m).(*ProcessBaseline) }
-func (m *ProcessBaseline) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaseline) SizeVT() int                     { return proto.Size(m) }
+func (m *ProcessBaseline) CloneVT() *ProcessBaseline       { return proto.Clone(m).(*ProcessBaseline) }
+func (m *ProcessBaseline) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ProcessBaseline) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaseline) EqualVT(n *ProcessBaseline) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessBaseline) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *BaselineElement) SizeVT() int                   { return proto.Size(m) }
-func (m *BaselineElement) CloneVT() *BaselineElement     { return proto.Clone(m).(*BaselineElement) }
-func (m *BaselineElement) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *BaselineElement) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BaselineElement) SizeVT() int                     { return proto.Size(m) }
+func (m *BaselineElement) CloneVT() *BaselineElement       { return proto.Clone(m).(*BaselineElement) }
+func (m *BaselineElement) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *BaselineElement) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *BaselineElement) EqualVT(n *BaselineElement) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BaselineElement) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,7 @@ func (m *BaselineItem) SizeVT() int                   { return proto.Size(m) }
 func (m *BaselineItem) CloneVT() *BaselineItem        { return proto.Clone(m).(*BaselineItem) }
 func (m *BaselineItem) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *BaselineItem) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *BaselineItem) EqualVT(n *BaselineItem) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *BaselineItem) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -46,6 +50,9 @@ func (m *ContainerNameAndBaselineStatus) MarshalVT() ([]byte, error) { return pr
 func (m *ContainerNameAndBaselineStatus) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ContainerNameAndBaselineStatus) EqualVT(n *ContainerNameAndBaselineStatus) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ContainerNameAndBaselineStatus) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -56,8 +63,9 @@ func (m *ProcessBaselineResults) SizeVT() int { return proto.Size(m) }
 func (m *ProcessBaselineResults) CloneVT() *ProcessBaselineResults {
 	return proto.Clone(m).(*ProcessBaselineResults)
 }
-func (m *ProcessBaselineResults) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ProcessBaselineResults) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaselineResults) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *ProcessBaselineResults) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessBaselineResults) EqualVT(n *ProcessBaselineResults) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessBaselineResults) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

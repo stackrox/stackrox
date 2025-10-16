@@ -8,6 +8,7 @@ func (m *ClusterConfig) SizeVT() int                   { return proto.Size(m) }
 func (m *ClusterConfig) CloneVT() *ClusterConfig       { return proto.Clone(m).(*ClusterConfig) }
 func (m *ClusterConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ClusterConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ClusterConfig) EqualVT(n *ClusterConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

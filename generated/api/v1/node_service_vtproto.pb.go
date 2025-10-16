@@ -4,34 +4,38 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *ListNodesRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *ListNodesRequest) CloneVT() *ListNodesRequest    { return proto.Clone(m).(*ListNodesRequest) }
-func (m *ListNodesRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListNodesRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListNodesRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *ListNodesRequest) CloneVT() *ListNodesRequest       { return proto.Clone(m).(*ListNodesRequest) }
+func (m *ListNodesRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ListNodesRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ListNodesRequest) EqualVT(n *ListNodesRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListNodesRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ListNodesResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *ListNodesResponse) CloneVT() *ListNodesResponse   { return proto.Clone(m).(*ListNodesResponse) }
-func (m *ListNodesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ListNodesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListNodesResponse) SizeVT() int                       { return proto.Size(m) }
+func (m *ListNodesResponse) CloneVT() *ListNodesResponse       { return proto.Clone(m).(*ListNodesResponse) }
+func (m *ListNodesResponse) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ListNodesResponse) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ListNodesResponse) EqualVT(n *ListNodesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListNodesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetNodeRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *GetNodeRequest) CloneVT() *GetNodeRequest      { return proto.Clone(m).(*GetNodeRequest) }
-func (m *GetNodeRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetNodeRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetNodeRequest) SizeVT() int                    { return proto.Size(m) }
+func (m *GetNodeRequest) CloneVT() *GetNodeRequest       { return proto.Clone(m).(*GetNodeRequest) }
+func (m *GetNodeRequest) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *GetNodeRequest) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *GetNodeRequest) EqualVT(n *GetNodeRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNodeRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ExportNodeRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *ExportNodeRequest) CloneVT() *ExportNodeRequest   { return proto.Clone(m).(*ExportNodeRequest) }
-func (m *ExportNodeRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportNodeRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportNodeRequest) SizeVT() int                       { return proto.Size(m) }
+func (m *ExportNodeRequest) CloneVT() *ExportNodeRequest       { return proto.Clone(m).(*ExportNodeRequest) }
+func (m *ExportNodeRequest) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ExportNodeRequest) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ExportNodeRequest) EqualVT(n *ExportNodeRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportNodeRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -40,8 +44,9 @@ func (m *ExportNodeResponse) SizeVT() int { return proto.Size(m) }
 func (m *ExportNodeResponse) CloneVT() *ExportNodeResponse {
 	return proto.Clone(m).(*ExportNodeResponse)
 }
-func (m *ExportNodeResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportNodeResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportNodeResponse) MarshalVT() ([]byte, error)         { return proto.Marshal(m) }
+func (m *ExportNodeResponse) UnmarshalVT(dAtA []byte) error      { return proto.Unmarshal(dAtA, m) }
+func (m *ExportNodeResponse) EqualVT(n *ExportNodeResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportNodeResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

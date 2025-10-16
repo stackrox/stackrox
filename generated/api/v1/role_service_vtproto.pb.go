@@ -8,14 +8,16 @@ func (m *Permission) SizeVT() int                   { return proto.Size(m) }
 func (m *Permission) CloneVT() *Permission          { return proto.Clone(m).(*Permission) }
 func (m *Permission) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Permission) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Permission) EqualVT(n *Permission) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Permission) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *GetRolesResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *GetRolesResponse) CloneVT() *GetRolesResponse    { return proto.Clone(m).(*GetRolesResponse) }
-func (m *GetRolesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetRolesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetRolesResponse) SizeVT() int                      { return proto.Size(m) }
+func (m *GetRolesResponse) CloneVT() *GetRolesResponse       { return proto.Clone(m).(*GetRolesResponse) }
+func (m *GetRolesResponse) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *GetRolesResponse) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *GetRolesResponse) EqualVT(n *GetRolesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetRolesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,8 +26,9 @@ func (m *GetPermissionsResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetPermissionsResponse) CloneVT() *GetPermissionsResponse {
 	return proto.Clone(m).(*GetPermissionsResponse)
 }
-func (m *GetPermissionsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetPermissionsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetPermissionsResponse) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *GetPermissionsResponse) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *GetPermissionsResponse) EqualVT(n *GetPermissionsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetPermissionsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,8 +37,9 @@ func (m *GetResourcesResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetResourcesResponse) CloneVT() *GetResourcesResponse {
 	return proto.Clone(m).(*GetResourcesResponse)
 }
-func (m *GetResourcesResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetResourcesResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetResourcesResponse) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *GetResourcesResponse) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *GetResourcesResponse) EqualVT(n *GetResourcesResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetResourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -46,6 +50,9 @@ func (m *ListPermissionSetsResponse) CloneVT() *ListPermissionSetsResponse {
 }
 func (m *ListPermissionSetsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListPermissionSetsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListPermissionSetsResponse) EqualVT(n *ListPermissionSetsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListPermissionSetsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -58,6 +65,9 @@ func (m *ListSimpleAccessScopesResponse) MarshalVT() ([]byte, error) { return pr
 func (m *ListSimpleAccessScopesResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ListSimpleAccessScopesResponse) EqualVT(n *ListSimpleAccessScopesResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListSimpleAccessScopesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -68,6 +78,7 @@ func (m *ScopeObject) SizeVT() int                   { return proto.Size(m) }
 func (m *ScopeObject) CloneVT() *ScopeObject         { return proto.Clone(m).(*ScopeObject) }
 func (m *ScopeObject) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScopeObject) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScopeObject) EqualVT(n *ScopeObject) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScopeObject) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -79,6 +90,9 @@ func (m *GetClustersForPermissionsResponse) CloneVT() *GetClustersForPermissions
 func (m *GetClustersForPermissionsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetClustersForPermissionsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetClustersForPermissionsResponse) EqualVT(n *GetClustersForPermissionsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -96,6 +110,9 @@ func (m *GetNamespacesForClusterAndPermissionsResponse) MarshalVT() ([]byte, err
 func (m *GetNamespacesForClusterAndPermissionsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetNamespacesForClusterAndPermissionsResponse) EqualVT(n *GetNamespacesForClusterAndPermissionsResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetNamespacesForClusterAndPermissionsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -109,6 +126,9 @@ func (m *ComputeEffectiveAccessScopeRequest) CloneVT() *ComputeEffectiveAccessSc
 func (m *ComputeEffectiveAccessScopeRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ComputeEffectiveAccessScopeRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ComputeEffectiveAccessScopeRequest) EqualVT(n *ComputeEffectiveAccessScopeRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -126,16 +146,20 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) MarshalVT() ([]byte, error)
 func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ComputeEffectiveAccessScopeRequest_Payload) EqualVT(n *ComputeEffectiveAccessScopeRequest_Payload) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *CreateRoleRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *CreateRoleRequest) CloneVT() *CreateRoleRequest   { return proto.Clone(m).(*CreateRoleRequest) }
-func (m *CreateRoleRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CreateRoleRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CreateRoleRequest) SizeVT() int                       { return proto.Size(m) }
+func (m *CreateRoleRequest) CloneVT() *CreateRoleRequest       { return proto.Clone(m).(*CreateRoleRequest) }
+func (m *CreateRoleRequest) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *CreateRoleRequest) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *CreateRoleRequest) EqualVT(n *CreateRoleRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateRoleRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -147,6 +171,9 @@ func (m *GetClustersForPermissionsRequest) CloneVT() *GetClustersForPermissionsR
 func (m *GetClustersForPermissionsRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetClustersForPermissionsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetClustersForPermissionsRequest) EqualVT(n *GetClustersForPermissionsRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -163,6 +190,9 @@ func (m *GetNamespaceForClusterAndPermissionsRequest) MarshalVT() ([]byte, error
 }
 func (m *GetNamespaceForClusterAndPermissionsRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetNamespaceForClusterAndPermissionsRequest) EqualVT(n *GetNamespaceForClusterAndPermissionsRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

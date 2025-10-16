@@ -12,6 +12,9 @@ func (m *ProcessListeningOnPortsUpdate) MarshalVT() ([]byte, error) { return pro
 func (m *ProcessListeningOnPortsUpdate) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ProcessListeningOnPortsUpdate) EqualVT(n *ProcessListeningOnPortsUpdate) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessListeningOnPortsUpdate) UnmarshalVTUnsafe(dAtA []byte) error {

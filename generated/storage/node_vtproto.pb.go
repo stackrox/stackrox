@@ -8,6 +8,7 @@ func (m *Node) SizeVT() int                   { return proto.Size(m) }
 func (m *Node) CloneVT() *Node                { return proto.Clone(m).(*Node) }
 func (m *Node) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Node) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Node) EqualVT(n *Node) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Node) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *NodeScan) SizeVT() int                   { return proto.Size(m) }
 func (m *NodeScan) CloneVT() *NodeScan            { return proto.Clone(m).(*NodeScan) }
 func (m *NodeScan) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NodeScan) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeScan) EqualVT(n *NodeScan) bool      { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeScan) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *NodeInventory) SizeVT() int                   { return proto.Size(m) }
 func (m *NodeInventory) CloneVT() *NodeInventory       { return proto.Clone(m).(*NodeInventory) }
 func (m *NodeInventory) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NodeInventory) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeInventory) EqualVT(n *NodeInventory) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeInventory) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -34,6 +37,9 @@ func (m *NodeInventory_Components) CloneVT() *NodeInventory_Components {
 }
 func (m *NodeInventory_Components) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NodeInventory_Components) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeInventory_Components) EqualVT(n *NodeInventory_Components) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeInventory_Components) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -45,6 +51,9 @@ func (m *NodeInventory_Components_RHELComponent) CloneVT() *NodeInventory_Compon
 func (m *NodeInventory_Components_RHELComponent) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *NodeInventory_Components_RHELComponent) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NodeInventory_Components_RHELComponent) EqualVT(n *NodeInventory_Components_RHELComponent) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -61,6 +70,9 @@ func (m *NodeInventory_Components_RHELComponent_Executable) MarshalVT() ([]byte,
 }
 func (m *NodeInventory_Components_RHELComponent_Executable) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *NodeInventory_Components_RHELComponent_Executable) EqualVT(n *NodeInventory_Components_RHELComponent_Executable) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -80,6 +92,9 @@ func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) M
 func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) EqualVT(n *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -92,6 +107,9 @@ func (m *EmbeddedNodeScanComponent) CloneVT() *EmbeddedNodeScanComponent {
 }
 func (m *EmbeddedNodeScanComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *EmbeddedNodeScanComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *EmbeddedNodeScanComponent) EqualVT(n *EmbeddedNodeScanComponent) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EmbeddedNodeScanComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

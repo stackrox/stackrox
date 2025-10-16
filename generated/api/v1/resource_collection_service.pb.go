@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/resource_collection_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,10 +26,10 @@ const (
 )
 
 type ListCollectionSelectorsResponse struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Selectors []string               `protobuf:"bytes,1,rep,name=selectors"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Selectors     []string               `protobuf:"bytes,1,rep,name=selectors" json:"selectors,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCollectionSelectorsResponse) Reset() {
@@ -57,13 +59,13 @@ func (x *ListCollectionSelectorsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListCollectionSelectorsResponse) GetSelectors() []string {
 	if x != nil {
-		return x.xxx_hidden_Selectors
+		return x.Selectors
 	}
 	return nil
 }
 
 func (x *ListCollectionSelectorsResponse) SetSelectors(v []string) {
-	x.xxx_hidden_Selectors = v
+	x.Selectors = v
 }
 
 type ListCollectionSelectorsResponse_builder struct {
@@ -76,20 +78,16 @@ func (b0 ListCollectionSelectorsResponse_builder) Build() *ListCollectionSelecto
 	m0 := &ListCollectionSelectorsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Selectors = b.Selectors
+	x.Selectors = b.Selectors
 	return m0
 }
 
 type GetCollectionRequest struct {
-	state              protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_Id      *string                           `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Options *CollectionDeploymentMatchOptions `protobuf:"bytes,2,opt,name=options"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState            `protogen:"hybrid.v1"`
+	Id            string                            `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Options       *CollectionDeploymentMatchOptions `protobuf:"bytes,2,opt,name=options" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionRequest) Reset() {
@@ -119,70 +117,41 @@ func (x *GetCollectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetCollectionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *GetCollectionRequest) GetOptions() *CollectionDeploymentMatchOptions {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Options) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *CollectionDeploymentMatchOptions
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Options), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Options
 	}
 	return nil
 }
 
 func (x *GetCollectionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Id = v
 }
 
 func (x *GetCollectionRequest) SetOptions(v *CollectionDeploymentMatchOptions) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *GetCollectionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Options = v
 }
 
 func (x *GetCollectionRequest) HasOptions() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *GetCollectionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.Options != nil
 }
 
 func (x *GetCollectionRequest) ClearOptions() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, (*CollectionDeploymentMatchOptions)(nil))
+	x.Options = nil
 }
 
 type GetCollectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id      *string
+	Id      string
 	Options *CollectionDeploymentMatchOptions
 }
 
@@ -190,27 +159,17 @@ func (b0 GetCollectionRequest_builder) Build() *GetCollectionRequest {
 	m0 := &GetCollectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Options != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Options = b.Options
-	}
+	x.Id = b.Id
+	x.Options = b.Options
 	return m0
 }
 
 type CollectionDeploymentMatchOptions struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_WithMatches bool                   `protobuf:"varint,1,opt,name=with_matches,json=withMatches"`
-	xxx_hidden_FilterQuery *RawQuery              `protobuf:"bytes,2,opt,name=filter_query,json=filterQuery"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	WithMatches   bool                   `protobuf:"varint,1,opt,name=with_matches,json=withMatches" json:"with_matches,omitempty"`
+	FilterQuery   *RawQuery              `protobuf:"bytes,2,opt,name=filter_query,json=filterQuery" json:"filter_query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectionDeploymentMatchOptions) Reset() {
@@ -240,67 +199,41 @@ func (x *CollectionDeploymentMatchOptions) ProtoReflect() protoreflect.Message {
 
 func (x *CollectionDeploymentMatchOptions) GetWithMatches() bool {
 	if x != nil {
-		return x.xxx_hidden_WithMatches
+		return x.WithMatches
 	}
 	return false
 }
 
 func (x *CollectionDeploymentMatchOptions) GetFilterQuery() *RawQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_FilterQuery) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *RawQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_FilterQuery), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.FilterQuery
 	}
 	return nil
 }
 
 func (x *CollectionDeploymentMatchOptions) SetWithMatches(v bool) {
-	x.xxx_hidden_WithMatches = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.WithMatches = v
 }
 
 func (x *CollectionDeploymentMatchOptions) SetFilterQuery(v *RawQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FilterQuery, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
-}
-
-func (x *CollectionDeploymentMatchOptions) HasWithMatches() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.FilterQuery = v
 }
 
 func (x *CollectionDeploymentMatchOptions) HasFilterQuery() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CollectionDeploymentMatchOptions) ClearWithMatches() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_WithMatches = false
+	return x.FilterQuery != nil
 }
 
 func (x *CollectionDeploymentMatchOptions) ClearFilterQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_FilterQuery, (*RawQuery)(nil))
+	x.FilterQuery = nil
 }
 
 type CollectionDeploymentMatchOptions_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	WithMatches *bool
+	WithMatches bool
 	FilterQuery *RawQuery
 }
 
@@ -308,27 +241,17 @@ func (b0 CollectionDeploymentMatchOptions_builder) Build() *CollectionDeployment
 	m0 := &CollectionDeploymentMatchOptions{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.WithMatches != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_WithMatches = *b.WithMatches
-	}
-	if b.FilterQuery != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_FilterQuery = b.FilterQuery
-	}
+	x.WithMatches = b.WithMatches
+	x.FilterQuery = b.FilterQuery
 	return m0
 }
 
 type GetCollectionResponse struct {
-	state                  protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Collection  *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection"`
-	xxx_hidden_Deployments *[]*storage.ListDeployment  `protobuf:"bytes,2,rep,name=deployments"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection" json:"collection,omitempty"`
+	Deployments   []*storage.ListDeployment   `protobuf:"bytes,2,rep,name=deployments" json:"deployments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionResponse) Reset() {
@@ -358,62 +281,35 @@ func (x *GetCollectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCollectionResponse) GetCollection() *storage.ResourceCollection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Collection) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ResourceCollection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Collection), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Collection
 	}
 	return nil
 }
 
 func (x *GetCollectionResponse) GetDeployments() []*storage.ListDeployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*storage.ListDeployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Deployments
 	}
 	return nil
 }
 
 func (x *GetCollectionResponse) SetCollection(v *storage.ResourceCollection) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Collection = v
 }
 
 func (x *GetCollectionResponse) SetDeployments(v []*storage.ListDeployment) {
-	var sv *[]*storage.ListDeployment
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ListDeployment{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Deployments = v
 }
 
 func (x *GetCollectionResponse) HasCollection() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Collection != nil
 }
 
 func (x *GetCollectionResponse) ClearCollection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, (*storage.ResourceCollection)(nil))
+	x.Collection = nil
 }
 
 type GetCollectionResponse_builder struct {
@@ -427,26 +323,16 @@ func (b0 GetCollectionResponse_builder) Build() *GetCollectionResponse {
 	m0 := &GetCollectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Collection != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Collection = b.Collection
-	}
-	if b.Deployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Deployments = &b.Deployments
-	}
+	x.Collection = b.Collection
+	x.Deployments = b.Deployments
 	return m0
 }
 
 type GetCollectionCountRequest struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query *RawQuery              `protobuf:"bytes,1,opt,name=query"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionCountRequest) Reset() {
@@ -476,37 +362,24 @@ func (x *GetCollectionCountRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GetCollectionCountRequest) GetQuery() *RawQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *RawQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Query
 	}
 	return nil
 }
 
 func (x *GetCollectionCountRequest) SetQuery(v *RawQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Query = v
 }
 
 func (x *GetCollectionCountRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Query != nil
 }
 
 func (x *GetCollectionCountRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*RawQuery)(nil))
+	x.Query = nil
 }
 
 type GetCollectionCountRequest_builder struct {
@@ -519,20 +392,15 @@ func (b0 GetCollectionCountRequest_builder) Build() *GetCollectionCountRequest {
 	m0 := &GetCollectionCountRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Query = b.Query
 	return m0
 }
 
 type GetCollectionCountResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Count       int32                  `protobuf:"varint,1,opt,name=count"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCollectionCountResponse) Reset() {
@@ -562,57 +430,37 @@ func (x *GetCollectionCountResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetCollectionCountResponse) GetCount() int32 {
 	if x != nil {
-		return x.xxx_hidden_Count
+		return x.Count
 	}
 	return 0
 }
 
 func (x *GetCollectionCountResponse) SetCount(v int32) {
-	x.xxx_hidden_Count = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *GetCollectionCountResponse) HasCount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *GetCollectionCountResponse) ClearCount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Count = 0
+	x.Count = v
 }
 
 type GetCollectionCountResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Count *int32
+	Count int32
 }
 
 func (b0 GetCollectionCountResponse_builder) Build() *GetCollectionCountResponse {
 	m0 := &GetCollectionCountResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Count != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Count = *b.Count
-	}
+	x.Count = b.Count
 	return m0
 }
 
 type CreateCollectionRequest struct {
-	state                            protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Name                  *string                      `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Description           *string                      `protobuf:"bytes,2,opt,name=description"`
-	xxx_hidden_ResourceSelectors     *[]*storage.ResourceSelector `protobuf:"bytes,3,rep,name=resource_selectors,json=resourceSelectors"`
-	xxx_hidden_EmbeddedCollectionIds []string                     `protobuf:"bytes,4,rep,name=embedded_collection_ids,json=embeddedCollectionIds"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                 protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Name                  string                      `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Description           string                      `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	ResourceSelectors     []*storage.ResourceSelector `protobuf:"bytes,3,rep,name=resource_selectors,json=resourceSelectors" json:"resource_selectors,omitempty"`
+	EmbeddedCollectionIds []string                    `protobuf:"bytes,4,rep,name=embedded_collection_ids,json=embeddedCollectionIds" json:"embedded_collection_ids,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *CreateCollectionRequest) Reset() {
@@ -642,99 +490,53 @@ func (x *CreateCollectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCollectionRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *CreateCollectionRequest) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *CreateCollectionRequest) GetResourceSelectors() []*storage.ResourceSelector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResourceSelectors) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*storage.ResourceSelector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ResourceSelectors
 	}
 	return nil
 }
 
 func (x *CreateCollectionRequest) GetEmbeddedCollectionIds() []string {
 	if x != nil {
-		return x.xxx_hidden_EmbeddedCollectionIds
+		return x.EmbeddedCollectionIds
 	}
 	return nil
 }
 
 func (x *CreateCollectionRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Name = v
 }
 
 func (x *CreateCollectionRequest) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Description = v
 }
 
 func (x *CreateCollectionRequest) SetResourceSelectors(v []*storage.ResourceSelector) {
-	var sv *[]*storage.ResourceSelector
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ResourceSelector{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.ResourceSelectors = v
 }
 
 func (x *CreateCollectionRequest) SetEmbeddedCollectionIds(v []string) {
-	x.xxx_hidden_EmbeddedCollectionIds = v
-}
-
-func (x *CreateCollectionRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *CreateCollectionRequest) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *CreateCollectionRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *CreateCollectionRequest) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Description = nil
+	x.EmbeddedCollectionIds = v
 }
 
 type CreateCollectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name                  *string
-	Description           *string
+	Name                  string
+	Description           string
 	ResourceSelectors     []*storage.ResourceSelector
 	EmbeddedCollectionIds []string
 }
@@ -743,31 +545,18 @@ func (b0 CreateCollectionRequest_builder) Build() *CreateCollectionRequest {
 	m0 := &CreateCollectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.ResourceSelectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
-	}
-	x.xxx_hidden_EmbeddedCollectionIds = b.EmbeddedCollectionIds
+	x.Name = b.Name
+	x.Description = b.Description
+	x.ResourceSelectors = b.ResourceSelectors
+	x.EmbeddedCollectionIds = b.EmbeddedCollectionIds
 	return m0
 }
 
 type CreateCollectionResponse struct {
-	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Collection *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection" json:"collection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCollectionResponse) Reset() {
@@ -797,37 +586,24 @@ func (x *CreateCollectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *CreateCollectionResponse) GetCollection() *storage.ResourceCollection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Collection) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ResourceCollection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Collection), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Collection
 	}
 	return nil
 }
 
 func (x *CreateCollectionResponse) SetCollection(v *storage.ResourceCollection) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Collection = v
 }
 
 func (x *CreateCollectionResponse) HasCollection() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Collection != nil
 }
 
 func (x *CreateCollectionResponse) ClearCollection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, (*storage.ResourceCollection)(nil))
+	x.Collection = nil
 }
 
 type CreateCollectionResponse_builder struct {
@@ -840,26 +616,19 @@ func (b0 CreateCollectionResponse_builder) Build() *CreateCollectionResponse {
 	m0 := &CreateCollectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Collection != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Collection = b.Collection
-	}
+	x.Collection = b.Collection
 	return m0
 }
 
 type UpdateCollectionRequest struct {
-	state                            protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Id                    *string                      `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                  *string                      `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Description           *string                      `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_ResourceSelectors     *[]*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors"`
-	xxx_hidden_EmbeddedCollectionIds []string                     `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                 protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Id                    string                      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name                  string                      `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Description           string                      `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	ResourceSelectors     []*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors" json:"resource_selectors,omitempty"`
+	EmbeddedCollectionIds []string                    `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds" json:"embedded_collection_ids,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *UpdateCollectionRequest) Reset() {
@@ -889,127 +658,65 @@ func (x *UpdateCollectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateCollectionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *UpdateCollectionRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *UpdateCollectionRequest) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *UpdateCollectionRequest) GetResourceSelectors() []*storage.ResourceSelector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResourceSelectors) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*storage.ResourceSelector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ResourceSelectors
 	}
 	return nil
 }
 
 func (x *UpdateCollectionRequest) GetEmbeddedCollectionIds() []string {
 	if x != nil {
-		return x.xxx_hidden_EmbeddedCollectionIds
+		return x.EmbeddedCollectionIds
 	}
 	return nil
 }
 
 func (x *UpdateCollectionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *UpdateCollectionRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Name = v
 }
 
 func (x *UpdateCollectionRequest) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Description = v
 }
 
 func (x *UpdateCollectionRequest) SetResourceSelectors(v []*storage.ResourceSelector) {
-	var sv *[]*storage.ResourceSelector
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ResourceSelector{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.ResourceSelectors = v
 }
 
 func (x *UpdateCollectionRequest) SetEmbeddedCollectionIds(v []string) {
-	x.xxx_hidden_EmbeddedCollectionIds = v
-}
-
-func (x *UpdateCollectionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UpdateCollectionRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *UpdateCollectionRequest) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *UpdateCollectionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *UpdateCollectionRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *UpdateCollectionRequest) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
+	x.EmbeddedCollectionIds = v
 }
 
 type UpdateCollectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                    *string
-	Name                  *string
-	Description           *string
+	Id                    string
+	Name                  string
+	Description           string
 	ResourceSelectors     []*storage.ResourceSelector
 	EmbeddedCollectionIds []string
 }
@@ -1018,35 +725,19 @@ func (b0 UpdateCollectionRequest_builder) Build() *UpdateCollectionRequest {
 	m0 := &UpdateCollectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.ResourceSelectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
-	}
-	x.xxx_hidden_EmbeddedCollectionIds = b.EmbeddedCollectionIds
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Description = b.Description
+	x.ResourceSelectors = b.ResourceSelectors
+	x.EmbeddedCollectionIds = b.EmbeddedCollectionIds
 	return m0
 }
 
 type UpdateCollectionResponse struct {
-	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Collection *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState      `protogen:"hybrid.v1"`
+	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection" json:"collection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCollectionResponse) Reset() {
@@ -1076,37 +767,24 @@ func (x *UpdateCollectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateCollectionResponse) GetCollection() *storage.ResourceCollection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Collection) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.ResourceCollection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Collection), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Collection
 	}
 	return nil
 }
 
 func (x *UpdateCollectionResponse) SetCollection(v *storage.ResourceCollection) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Collection = v
 }
 
 func (x *UpdateCollectionResponse) HasCollection() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Collection != nil
 }
 
 func (x *UpdateCollectionResponse) ClearCollection() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Collection, (*storage.ResourceCollection)(nil))
+	x.Collection = nil
 }
 
 type UpdateCollectionResponse_builder struct {
@@ -1119,27 +797,20 @@ func (b0 UpdateCollectionResponse_builder) Build() *UpdateCollectionResponse {
 	m0 := &UpdateCollectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Collection != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Collection = b.Collection
-	}
+	x.Collection = b.Collection
 	return m0
 }
 
 type DryRunCollectionRequest struct {
-	state                            protoimpl.MessageState            `protogen:"opaque.v1"`
-	xxx_hidden_Name                  *string                           `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Id                    *string                           `protobuf:"bytes,2,opt,name=id"`
-	xxx_hidden_Description           *string                           `protobuf:"bytes,3,opt,name=description"`
-	xxx_hidden_ResourceSelectors     *[]*storage.ResourceSelector      `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors"`
-	xxx_hidden_EmbeddedCollectionIds []string                          `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds"`
-	xxx_hidden_Options               *CollectionDeploymentMatchOptions `protobuf:"bytes,6,opt,name=options"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                 protoimpl.MessageState            `protogen:"hybrid.v1"`
+	Name                  string                            `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Id                    string                            `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"` // set if dryrun on existing collections
+	Description           string                            `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	ResourceSelectors     []*storage.ResourceSelector       `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors" json:"resource_selectors,omitempty"`
+	EmbeddedCollectionIds []string                          `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds" json:"embedded_collection_ids,omitempty"`
+	Options               *CollectionDeploymentMatchOptions `protobuf:"bytes,6,opt,name=options" json:"options,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *DryRunCollectionRequest) Reset() {
@@ -1169,162 +840,87 @@ func (x *DryRunCollectionRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DryRunCollectionRequest) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *DryRunCollectionRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DryRunCollectionRequest) GetDescription() string {
 	if x != nil {
-		if x.xxx_hidden_Description != nil {
-			return *x.xxx_hidden_Description
-		}
-		return ""
+		return x.Description
 	}
 	return ""
 }
 
 func (x *DryRunCollectionRequest) GetResourceSelectors() []*storage.ResourceSelector {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ResourceSelectors) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *[]*storage.ResourceSelector
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ResourceSelectors
 	}
 	return nil
 }
 
 func (x *DryRunCollectionRequest) GetEmbeddedCollectionIds() []string {
 	if x != nil {
-		return x.xxx_hidden_EmbeddedCollectionIds
+		return x.EmbeddedCollectionIds
 	}
 	return nil
 }
 
 func (x *DryRunCollectionRequest) GetOptions() *CollectionDeploymentMatchOptions {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Options) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *CollectionDeploymentMatchOptions
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Options), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Options
 	}
 	return nil
 }
 
 func (x *DryRunCollectionRequest) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Name = v
 }
 
 func (x *DryRunCollectionRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Id = v
 }
 
 func (x *DryRunCollectionRequest) SetDescription(v string) {
-	x.xxx_hidden_Description = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Description = v
 }
 
 func (x *DryRunCollectionRequest) SetResourceSelectors(v []*storage.ResourceSelector) {
-	var sv *[]*storage.ResourceSelector
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ResourceSelector{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ResourceSelectors), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.ResourceSelectors = v
 }
 
 func (x *DryRunCollectionRequest) SetEmbeddedCollectionIds(v []string) {
-	x.xxx_hidden_EmbeddedCollectionIds = v
+	x.EmbeddedCollectionIds = v
 }
 
 func (x *DryRunCollectionRequest) SetOptions(v *CollectionDeploymentMatchOptions) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-	}
-}
-
-func (x *DryRunCollectionRequest) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DryRunCollectionRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DryRunCollectionRequest) HasDescription() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	x.Options = v
 }
 
 func (x *DryRunCollectionRequest) HasOptions() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *DryRunCollectionRequest) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *DryRunCollectionRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *DryRunCollectionRequest) ClearDescription() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Description = nil
+	return x.Options != nil
 }
 
 func (x *DryRunCollectionRequest) ClearOptions() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Options, (*CollectionDeploymentMatchOptions)(nil))
+	x.Options = nil
 }
 
 type DryRunCollectionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name                  *string
-	Id                    *string
-	Description           *string
+	Name                  string
+	Id                    string
+	Description           string
 	ResourceSelectors     []*storage.ResourceSelector
 	EmbeddedCollectionIds []string
 	Options               *CollectionDeploymentMatchOptions
@@ -1334,39 +930,20 @@ func (b0 DryRunCollectionRequest_builder) Build() *DryRunCollectionRequest {
 	m0 := &DryRunCollectionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Description != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Description = b.Description
-	}
-	if b.ResourceSelectors != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_ResourceSelectors = &b.ResourceSelectors
-	}
-	x.xxx_hidden_EmbeddedCollectionIds = b.EmbeddedCollectionIds
-	if b.Options != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_Options = b.Options
-	}
+	x.Name = b.Name
+	x.Id = b.Id
+	x.Description = b.Description
+	x.ResourceSelectors = b.ResourceSelectors
+	x.EmbeddedCollectionIds = b.EmbeddedCollectionIds
+	x.Options = b.Options
 	return m0
 }
 
 type DryRunCollectionResponse struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Deployments *[]*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState    `protogen:"hybrid.v1"`
+	Deployments   []*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments" json:"deployments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DryRunCollectionResponse) Reset() {
@@ -1396,27 +973,13 @@ func (x *DryRunCollectionResponse) ProtoReflect() protoreflect.Message {
 
 func (x *DryRunCollectionResponse) GetDeployments() []*storage.ListDeployment {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Deployments) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.ListDeployment
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Deployments
 	}
 	return nil
 }
 
 func (x *DryRunCollectionResponse) SetDeployments(v []*storage.ListDeployment) {
-	var sv *[]*storage.ListDeployment
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ListDeployment{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Deployments), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Deployments = v
 }
 
 type DryRunCollectionResponse_builder struct {
@@ -1429,22 +992,15 @@ func (b0 DryRunCollectionResponse_builder) Build() *DryRunCollectionResponse {
 	m0 := &DryRunCollectionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Deployments != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Deployments = &b.Deployments
-	}
+	x.Deployments = b.Deployments
 	return m0
 }
 
 type ListCollectionsRequest struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Query *RawQuery              `protobuf:"bytes,1,opt,name=query"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCollectionsRequest) Reset() {
@@ -1474,37 +1030,24 @@ func (x *ListCollectionsRequest) ProtoReflect() protoreflect.Message {
 
 func (x *ListCollectionsRequest) GetQuery() *RawQuery {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Query) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *RawQuery
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Query), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Query
 	}
 	return nil
 }
 
 func (x *ListCollectionsRequest) SetQuery(v *RawQuery) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-	}
+	x.Query = v
 }
 
 func (x *ListCollectionsRequest) HasQuery() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return x.Query != nil
 }
 
 func (x *ListCollectionsRequest) ClearQuery() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Query, (*RawQuery)(nil))
+	x.Query = nil
 }
 
 type ListCollectionsRequest_builder struct {
@@ -1517,22 +1060,15 @@ func (b0 ListCollectionsRequest_builder) Build() *ListCollectionsRequest {
 	m0 := &ListCollectionsRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Query != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Query = b.Query
-	}
+	x.Query = b.Query
 	return m0
 }
 
 type ListCollectionsResponse struct {
-	state                  protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_Collections *[]*storage.ResourceCollection `protobuf:"bytes,1,rep,name=collections"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"hybrid.v1"`
+	Collections   []*storage.ResourceCollection `protobuf:"bytes,1,rep,name=collections" json:"collections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCollectionsResponse) Reset() {
@@ -1562,27 +1098,13 @@ func (x *ListCollectionsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *ListCollectionsResponse) GetCollections() []*storage.ResourceCollection {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Collections) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.ResourceCollection
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Collections), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Collections
 	}
 	return nil
 }
 
 func (x *ListCollectionsResponse) SetCollections(v []*storage.ResourceCollection) {
-	var sv *[]*storage.ResourceCollection
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Collections), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.ResourceCollection{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Collections), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Collections = v
 }
 
 type ListCollectionsResponse_builder struct {
@@ -1595,10 +1117,7 @@ func (b0 ListCollectionsResponse_builder) Build() *ListCollectionsResponse {
 	m0 := &ListCollectionsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Collections != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Collections = &b.Collections
-	}
+	x.Collections = b.Collections
 	return m0
 }
 
@@ -1664,8 +1183,8 @@ const file_api_v1_resource_collection_service_proto_rawDesc = "" +
 	"\x10UpdateCollection\x12\x1b.v1.UpdateCollectionRequest\x1a\x1c.v1.UpdateCollectionResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*2\x14/v1/collections/{id}\x12c\n" +
 	"\x0fListCollections\x12\x1a.v1.ListCollectionsRequest\x1a\x1b.v1.ListCollectionsResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/collections\x12M\n" +
 	"\x10DeleteCollection\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/collections/{id}\x12p\n" +
-	"\x10DryRunCollection\x12\x1b.v1.DryRunCollectionRequest\x1a\x1c.v1.DryRunCollectionResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/collections/dryrunB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x03b\beditionsp\xe8\a"
+	"\x10DryRunCollection\x12\x1b.v1.DryRunCollectionRequest\x1a\x1c.v1.DryRunCollectionResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/collections/dryrunB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x03b\beditionsp\xe8\a"
 
 var file_api_v1_resource_collection_service_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_api_v1_resource_collection_service_proto_goTypes = []any{

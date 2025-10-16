@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/delegated_registry_config.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -71,16 +73,12 @@ func (x DelegatedRegistryConfig_EnabledFor) Number() protoreflect.EnumNumber {
 //
 // Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 type DelegatedRegistryConfig struct {
-	state                       protoimpl.MessageState                        `protogen:"opaque.v1"`
-	xxx_hidden_EnabledFor       DelegatedRegistryConfig_EnabledFor            `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=storage.DelegatedRegistryConfig_EnabledFor"`
-	xxx_hidden_DefaultClusterId *string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId"`
-	xxx_hidden_Registries       *[]*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state            protoimpl.MessageState                       `protogen:"hybrid.v1"`
+	EnabledFor       DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
+	DefaultClusterId string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId" json:"default_cluster_id,omitempty"`
+	Registries       []*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries" json:"registries,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig) Reset() {
@@ -110,87 +108,42 @@ func (x *DelegatedRegistryConfig) ProtoReflect() protoreflect.Message {
 
 func (x *DelegatedRegistryConfig) GetEnabledFor() DelegatedRegistryConfig_EnabledFor {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_EnabledFor
-		}
+		return x.EnabledFor
 	}
 	return DelegatedRegistryConfig_NONE
 }
 
 func (x *DelegatedRegistryConfig) GetDefaultClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_DefaultClusterId != nil {
-			return *x.xxx_hidden_DefaultClusterId
-		}
-		return ""
+		return x.DefaultClusterId
 	}
 	return ""
 }
 
 func (x *DelegatedRegistryConfig) GetRegistries() []*DelegatedRegistryConfig_DelegatedRegistry {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Registries) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *[]*DelegatedRegistryConfig_DelegatedRegistry
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Registries
 	}
 	return nil
 }
 
 func (x *DelegatedRegistryConfig) SetEnabledFor(v DelegatedRegistryConfig_EnabledFor) {
-	x.xxx_hidden_EnabledFor = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.EnabledFor = v
 }
 
 func (x *DelegatedRegistryConfig) SetDefaultClusterId(v string) {
-	x.xxx_hidden_DefaultClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.DefaultClusterId = v
 }
 
 func (x *DelegatedRegistryConfig) SetRegistries(v []*DelegatedRegistryConfig_DelegatedRegistry) {
-	var sv *[]*DelegatedRegistryConfig_DelegatedRegistry
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*DelegatedRegistryConfig_DelegatedRegistry{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Registries), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *DelegatedRegistryConfig) HasEnabledFor() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DelegatedRegistryConfig) HasDefaultClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DelegatedRegistryConfig) ClearEnabledFor() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_EnabledFor = DelegatedRegistryConfig_NONE
-}
-
-func (x *DelegatedRegistryConfig) ClearDefaultClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_DefaultClusterId = nil
+	x.Registries = v
 }
 
 type DelegatedRegistryConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	EnabledFor       *DelegatedRegistryConfig_EnabledFor
-	DefaultClusterId *string
+	EnabledFor       DelegatedRegistryConfig_EnabledFor
+	DefaultClusterId string
 	Registries       []*DelegatedRegistryConfig_DelegatedRegistry
 }
 
@@ -198,29 +151,18 @@ func (b0 DelegatedRegistryConfig_builder) Build() *DelegatedRegistryConfig {
 	m0 := &DelegatedRegistryConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.EnabledFor != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_EnabledFor = *b.EnabledFor
-	}
-	if b.DefaultClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_DefaultClusterId = b.DefaultClusterId
-	}
-	if b.Registries != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Registries = &b.Registries
-	}
+	x.EnabledFor = b.EnabledFor
+	x.DefaultClusterId = b.DefaultClusterId
+	x.Registries = b.Registries
 	return m0
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
-	xxx_hidden_ClusterId   *string                `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) Reset() {
@@ -250,77 +192,39 @@ func (x *DelegatedRegistryConfig_DelegatedRegistry) ProtoReflect() protoreflect.
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) GetPath() string {
 	if x != nil {
-		if x.xxx_hidden_Path != nil {
-			return *x.xxx_hidden_Path
-		}
-		return ""
+		return x.Path
 	}
 	return ""
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) SetPath(v string) {
-	x.xxx_hidden_Path = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Path = v
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) HasPath() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) ClearPath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Path = nil
-}
-
-func (x *DelegatedRegistryConfig_DelegatedRegistry) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ClusterId = nil
+	x.ClusterId = v
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Path      *string
-	ClusterId *string
+	Path      string
+	ClusterId string
 }
 
 func (b0 DelegatedRegistryConfig_DelegatedRegistry_builder) Build() *DelegatedRegistryConfig_DelegatedRegistry {
 	m0 := &DelegatedRegistryConfig_DelegatedRegistry{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Path != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Path = b.Path
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
+	x.Path = b.Path
+	x.ClusterId = b.ClusterId
 	return m0
 }
 
@@ -344,8 +248,8 @@ const file_storage_delegated_registry_config_proto_rawDesc = "" +
 	"EnabledFor\x12\b\n" +
 	"\x04NONE\x10\x00\x12\a\n" +
 	"\x03ALL\x10\x01\x12\f\n" +
-	"\bSPECIFIC\x10\x02B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\bSPECIFIC\x10\x02B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_delegated_registry_config_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_delegated_registry_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

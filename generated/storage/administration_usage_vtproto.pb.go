@@ -8,6 +8,7 @@ func (m *SecuredUnits) SizeVT() int                   { return proto.Size(m) }
 func (m *SecuredUnits) CloneVT() *SecuredUnits        { return proto.Clone(m).(*SecuredUnits) }
 func (m *SecuredUnits) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SecuredUnits) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SecuredUnits) EqualVT(n *SecuredUnits) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SecuredUnits) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

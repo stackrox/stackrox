@@ -8,22 +8,25 @@ func (m *Comment) SizeVT() int                   { return proto.Size(m) }
 func (m *Comment) CloneVT() *Comment             { return proto.Clone(m).(*Comment) }
 func (m *Comment) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Comment) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Comment) EqualVT(n *Comment) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Comment) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ExceptionExpiry) SizeVT() int                   { return proto.Size(m) }
-func (m *ExceptionExpiry) CloneVT() *ExceptionExpiry     { return proto.Clone(m).(*ExceptionExpiry) }
-func (m *ExceptionExpiry) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExceptionExpiry) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExceptionExpiry) SizeVT() int                     { return proto.Size(m) }
+func (m *ExceptionExpiry) CloneVT() *ExceptionExpiry       { return proto.Clone(m).(*ExceptionExpiry) }
+func (m *ExceptionExpiry) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *ExceptionExpiry) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *ExceptionExpiry) EqualVT(n *ExceptionExpiry) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExceptionExpiry) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *DeferralRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *DeferralRequest) CloneVT() *DeferralRequest     { return proto.Clone(m).(*DeferralRequest) }
-func (m *DeferralRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeferralRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeferralRequest) SizeVT() int                     { return proto.Size(m) }
+func (m *DeferralRequest) CloneVT() *DeferralRequest       { return proto.Clone(m).(*DeferralRequest) }
+func (m *DeferralRequest) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *DeferralRequest) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *DeferralRequest) EqualVT(n *DeferralRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeferralRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -32,8 +35,9 @@ func (m *FalsePositiveRequest) SizeVT() int { return proto.Size(m) }
 func (m *FalsePositiveRequest) CloneVT() *FalsePositiveRequest {
 	return proto.Clone(m).(*FalsePositiveRequest)
 }
-func (m *FalsePositiveRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FalsePositiveRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FalsePositiveRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *FalsePositiveRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *FalsePositiveRequest) EqualVT(n *FalsePositiveRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FalsePositiveRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -42,8 +46,9 @@ func (m *VulnerabilityException) SizeVT() int { return proto.Size(m) }
 func (m *VulnerabilityException) CloneVT() *VulnerabilityException {
 	return proto.Clone(m).(*VulnerabilityException)
 }
-func (m *VulnerabilityException) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *VulnerabilityException) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VulnerabilityException) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *VulnerabilityException) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *VulnerabilityException) EqualVT(n *VulnerabilityException) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnerabilityException) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -55,6 +60,9 @@ func (m *VulnerabilityException_Scope) CloneVT() *VulnerabilityException_Scope {
 func (m *VulnerabilityException_Scope) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *VulnerabilityException_Scope) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *VulnerabilityException_Scope) EqualVT(n *VulnerabilityException_Scope) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -70,16 +78,20 @@ func (m *VulnerabilityException_Scope_Image) MarshalVT() ([]byte, error) { retur
 func (m *VulnerabilityException_Scope_Image) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *VulnerabilityException_Scope_Image) EqualVT(n *VulnerabilityException_Scope_Image) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VulnerabilityException_Scope_Image) UnmarshalVTUnsafe(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *DeferralUpdate) SizeVT() int                   { return proto.Size(m) }
-func (m *DeferralUpdate) CloneVT() *DeferralUpdate      { return proto.Clone(m).(*DeferralUpdate) }
-func (m *DeferralUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *DeferralUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DeferralUpdate) SizeVT() int                    { return proto.Size(m) }
+func (m *DeferralUpdate) CloneVT() *DeferralUpdate       { return proto.Clone(m).(*DeferralUpdate) }
+func (m *DeferralUpdate) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *DeferralUpdate) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *DeferralUpdate) EqualVT(n *DeferralUpdate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeferralUpdate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -88,8 +100,9 @@ func (m *FalsePositiveUpdate) SizeVT() int { return proto.Size(m) }
 func (m *FalsePositiveUpdate) CloneVT() *FalsePositiveUpdate {
 	return proto.Clone(m).(*FalsePositiveUpdate)
 }
-func (m *FalsePositiveUpdate) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *FalsePositiveUpdate) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FalsePositiveUpdate) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *FalsePositiveUpdate) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *FalsePositiveUpdate) EqualVT(n *FalsePositiveUpdate) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FalsePositiveUpdate) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -101,6 +114,9 @@ func (m *GetVulnerabilityExceptionResponse) CloneVT() *GetVulnerabilityException
 func (m *GetVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetVulnerabilityExceptionResponse) EqualVT(n *GetVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -115,6 +131,9 @@ func (m *ListVulnerabilityExceptionsResponse) CloneVT() *ListVulnerabilityExcept
 func (m *ListVulnerabilityExceptionsResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ListVulnerabilityExceptionsResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ListVulnerabilityExceptionsResponse) EqualVT(n *ListVulnerabilityExceptionsResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -132,6 +151,9 @@ func (m *CreateDeferVulnerabilityExceptionRequest) MarshalVT() ([]byte, error) {
 func (m *CreateDeferVulnerabilityExceptionRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CreateDeferVulnerabilityExceptionRequest) EqualVT(n *CreateDeferVulnerabilityExceptionRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateDeferVulnerabilityExceptionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -147,6 +169,9 @@ func (m *CreateDeferVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) 
 }
 func (m *CreateDeferVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CreateDeferVulnerabilityExceptionResponse) EqualVT(n *CreateDeferVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -164,6 +189,9 @@ func (m *CreateFalsePositiveVulnerabilityExceptionRequest) MarshalVT() ([]byte, 
 func (m *CreateFalsePositiveVulnerabilityExceptionRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CreateFalsePositiveVulnerabilityExceptionRequest) EqualVT(n *CreateFalsePositiveVulnerabilityExceptionRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateFalsePositiveVulnerabilityExceptionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -180,6 +208,9 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalVT() ([]byte,
 func (m *CreateFalsePositiveVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *CreateFalsePositiveVulnerabilityExceptionResponse) EqualVT(n *CreateFalsePositiveVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CreateFalsePositiveVulnerabilityExceptionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -193,6 +224,9 @@ func (m *ApproveVulnerabilityExceptionRequest) CloneVT() *ApproveVulnerabilityEx
 func (m *ApproveVulnerabilityExceptionRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ApproveVulnerabilityExceptionRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ApproveVulnerabilityExceptionRequest) EqualVT(n *ApproveVulnerabilityExceptionRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -208,6 +242,9 @@ func (m *ApproveVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) { re
 func (m *ApproveVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ApproveVulnerabilityExceptionResponse) EqualVT(n *ApproveVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ApproveVulnerabilityExceptionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -221,6 +258,9 @@ func (m *DenyVulnerabilityExceptionRequest) CloneVT() *DenyVulnerabilityExceptio
 func (m *DenyVulnerabilityExceptionRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *DenyVulnerabilityExceptionRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DenyVulnerabilityExceptionRequest) EqualVT(n *DenyVulnerabilityExceptionRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -236,6 +276,9 @@ func (m *DenyVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) { retur
 func (m *DenyVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DenyVulnerabilityExceptionResponse) EqualVT(n *DenyVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DenyVulnerabilityExceptionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -249,6 +292,9 @@ func (m *UpdateVulnerabilityExceptionRequest) CloneVT() *UpdateVulnerabilityExce
 func (m *UpdateVulnerabilityExceptionRequest) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *UpdateVulnerabilityExceptionRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *UpdateVulnerabilityExceptionRequest) EqualVT(n *UpdateVulnerabilityExceptionRequest) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -264,6 +310,9 @@ func (m *UpdateVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) { ret
 func (m *UpdateVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *UpdateVulnerabilityExceptionResponse) EqualVT(n *UpdateVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateVulnerabilityExceptionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -277,6 +326,9 @@ func (m *CancelVulnerabilityExceptionResponse) CloneVT() *CancelVulnerabilityExc
 func (m *CancelVulnerabilityExceptionResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *CancelVulnerabilityExceptionResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *CancelVulnerabilityExceptionResponse) EqualVT(n *CancelVulnerabilityExceptionResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

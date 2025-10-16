@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/taints.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -113,14 +115,12 @@ func (x Toleration_Operator) Number() protoreflect.EnumNumber {
 }
 
 type Taint struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,2,opt,name=value"`
-	xxx_hidden_TaintEffect TaintEffect            `protobuf:"varint,3,opt,name=taint_effect,json=taintEffect,enum=storage.TaintEffect"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty" search:"Taint Key"`                                                              // @gotags: search:"Taint Key"
+	Value         string                 `protobuf:"bytes,2,opt,name=value" json:"value,omitempty" search:"Taint Value"`                                                          // @gotags: search:"Taint Value"
+	TaintEffect   TaintEffect            `protobuf:"varint,3,opt,name=taint_effect,json=taintEffect,enum=storage.TaintEffect" json:"taint_effect,omitempty" search:"Taint Effect"` // @gotags: search:"Taint Effect"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Taint) Reset() {
@@ -150,121 +150,63 @@ func (x *Taint) ProtoReflect() protoreflect.Message {
 
 func (x *Taint) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *Taint) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *Taint) GetTaintEffect() TaintEffect {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_TaintEffect
-		}
+		return x.TaintEffect
 	}
 	return TaintEffect_UNKNOWN_TAINT_EFFECT
 }
 
 func (x *Taint) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Key = v
 }
 
 func (x *Taint) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Value = v
 }
 
 func (x *Taint) SetTaintEffect(v TaintEffect) {
-	x.xxx_hidden_TaintEffect = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *Taint) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Taint) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Taint) HasTaintEffect() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Taint) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *Taint) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *Taint) ClearTaintEffect() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_TaintEffect = TaintEffect_UNKNOWN_TAINT_EFFECT
+	x.TaintEffect = v
 }
 
 type Taint_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key         *string
-	Value       *string
-	TaintEffect *TaintEffect
+	Key         string
+	Value       string
+	TaintEffect TaintEffect
 }
 
 func (b0 Taint_builder) Build() *Taint {
 	m0 := &Taint{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.TaintEffect != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_TaintEffect = *b.TaintEffect
-	}
+	x.Key = b.Key
+	x.Value = b.Value
+	x.TaintEffect = b.TaintEffect
 	return m0
 }
 
 type Toleration struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Key         *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Operator    Toleration_Operator    `protobuf:"varint,2,opt,name=operator,enum=storage.Toleration_Operator"`
-	xxx_hidden_Value       *string                `protobuf:"bytes,3,opt,name=value"`
-	xxx_hidden_TaintEffect TaintEffect            `protobuf:"varint,4,opt,name=taint_effect,json=taintEffect,enum=storage.TaintEffect"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key" json:"key,omitempty" search:"Toleration Key"` // @gotags: search:"Toleration Key"
+	Operator      Toleration_Operator    `protobuf:"varint,2,opt,name=operator,enum=storage.Toleration_Operator" json:"operator,omitempty"`
+	Value         string                 `protobuf:"bytes,3,opt,name=value" json:"value,omitempty" search:"Toleration Value"` // @gotags: search:"Toleration Value"
+	TaintEffect   TaintEffect            `protobuf:"varint,4,opt,name=taint_effect,json=taintEffect,enum=storage.TaintEffect" json:"taint_effect,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Toleration) Reset() {
@@ -294,139 +236,65 @@ func (x *Toleration) ProtoReflect() protoreflect.Message {
 
 func (x *Toleration) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *Toleration) GetOperator() Toleration_Operator {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			return x.xxx_hidden_Operator
-		}
+		return x.Operator
 	}
 	return Toleration_TOLERATION_OPERATION_UNKNOWN
 }
 
 func (x *Toleration) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *Toleration) GetTaintEffect() TaintEffect {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_TaintEffect
-		}
+		return x.TaintEffect
 	}
 	return TaintEffect_UNKNOWN_TAINT_EFFECT
 }
 
 func (x *Toleration) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.Key = v
 }
 
 func (x *Toleration) SetOperator(v Toleration_Operator) {
-	x.xxx_hidden_Operator = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Operator = v
 }
 
 func (x *Toleration) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Value = v
 }
 
 func (x *Toleration) SetTaintEffect(v TaintEffect) {
-	x.xxx_hidden_TaintEffect = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Toleration) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Toleration) HasOperator() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Toleration) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Toleration) HasTaintEffect() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Toleration) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *Toleration) ClearOperator() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Operator = Toleration_TOLERATION_OPERATION_UNKNOWN
-}
-
-func (x *Toleration) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *Toleration) ClearTaintEffect() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_TaintEffect = TaintEffect_UNKNOWN_TAINT_EFFECT
+	x.TaintEffect = v
 }
 
 type Toleration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key         *string
-	Operator    *Toleration_Operator
-	Value       *string
-	TaintEffect *TaintEffect
+	Key         string
+	Operator    Toleration_Operator
+	Value       string
+	TaintEffect TaintEffect
 }
 
 func (b0 Toleration_builder) Build() *Toleration {
 	m0 := &Toleration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Operator != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Operator = *b.Operator
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.TaintEffect != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_TaintEffect = *b.TaintEffect
-	}
+	x.Key = b.Key
+	x.Operator = b.Operator
+	x.Value = b.Value
+	x.TaintEffect = b.TaintEffect
 	return m0
 }
 
@@ -453,8 +321,8 @@ const file_storage_taints_proto_rawDesc = "" +
 	"\x14UNKNOWN_TAINT_EFFECT\x10\x00\x12\x1c\n" +
 	"\x18NO_SCHEDULE_TAINT_EFFECT\x10\x01\x12#\n" +
 	"\x1fPREFER_NO_SCHEDULE_TAINT_EFFECT\x10\x02\x12\x1b\n" +
-	"\x17NO_EXECUTE_TAINT_EFFECT\x10\x03B6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x17NO_EXECUTE_TAINT_EFFECT\x10\x03B>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_taints_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_storage_taints_proto_msgTypes = make([]protoimpl.MessageInfo, 2)

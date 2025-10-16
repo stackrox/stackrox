@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: internalapi/sensor/sfa_iservice.proto
 
+//go:build !protoopaque
+
 package sensor
 
 import (
@@ -28,7 +30,7 @@ const file_internalapi_sensor_sfa_iservice_proto_rawDesc = "" +
 	"\n" +
 	"%internalapi/sensor/sfa_iservice.proto\x12\x06sensor\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cinternalapi/sensor/sfa.proto\x1a!google/protobuf/go_features.proto2T\n" +
 	"\x13FileActivityService\x12=\n" +
-	"\vCommunicate\x12\x14.sensor.FileActivity\x1a\x16.google.protobuf.Empty(\x01B(Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\vCommunicate\x12\x14.sensor.FileActivity\x1a\x16.google.protobuf.Empty(\x01B0Z\x1b./internalapi/sensor;sensor\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_internalapi_sensor_sfa_iservice_proto_goTypes = []any{
 	(*FileActivity)(nil),  // 0: sensor.FileActivity

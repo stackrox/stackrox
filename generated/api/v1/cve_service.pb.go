@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/cve_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,15 +26,19 @@ const (
 )
 
 type SuppressCVERequest struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cves     []string               `protobuf:"bytes,1,rep,name=cves"`
-	xxx_hidden_Duration *durationpb.Duration   `protobuf:"bytes,3,opt,name=duration"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+	// For example, CVE-2021-44832.
+	Cves []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	// In JSON format, the Duration type is encoded as a string rather than an object,
+	// where the string ends in the suffix "s" (indicating seconds) and is preceded by the number of seconds,
+	// with nanoseconds expressed as fractional seconds.
+	// For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
+	// while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
+	// and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
+	Duration      *durationpb.Duration `protobuf:"bytes,3,opt,name=duration" json:"duration,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SuppressCVERequest) Reset() {
@@ -62,48 +68,35 @@ func (x *SuppressCVERequest) ProtoReflect() protoreflect.Message {
 
 func (x *SuppressCVERequest) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *SuppressCVERequest) GetDuration() *durationpb.Duration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Duration) {
-				protoimpl.X.UnmarshalField(x, 3)
-			}
-			var rv *durationpb.Duration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Duration), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Duration
 	}
 	return nil
 }
 
 func (x *SuppressCVERequest) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 func (x *SuppressCVERequest) SetDuration(v *durationpb.Duration) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Duration, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-	}
+	x.Duration = v
 }
 
 func (x *SuppressCVERequest) HasDuration() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Duration != nil
 }
 
 func (x *SuppressCVERequest) ClearDuration() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Duration, (*durationpb.Duration)(nil))
+	x.Duration = nil
 }
 
 type SuppressCVERequest_builder struct {
@@ -125,19 +118,18 @@ func (b0 SuppressCVERequest_builder) Build() *SuppressCVERequest {
 	m0 := &SuppressCVERequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
-	if b.Duration != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Duration = b.Duration
-	}
+	x.Cves = b.Cves
+	x.Duration = b.Duration
 	return m0
 }
 
 type UnsuppressCVERequest struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Cves []string               `protobuf:"bytes,1,rep,name=cves"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+	// For example, CVE-2021-44832.
+	Cves          []string `protobuf:"bytes,1,rep,name=cves" json:"cves,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UnsuppressCVERequest) Reset() {
@@ -167,13 +159,13 @@ func (x *UnsuppressCVERequest) ProtoReflect() protoreflect.Message {
 
 func (x *UnsuppressCVERequest) GetCves() []string {
 	if x != nil {
-		return x.xxx_hidden_Cves
+		return x.Cves
 	}
 	return nil
 }
 
 func (x *UnsuppressCVERequest) SetCves(v []string) {
-	x.xxx_hidden_Cves = v
+	x.Cves = v
 }
 
 type UnsuppressCVERequest_builder struct {
@@ -188,7 +180,7 @@ func (b0 UnsuppressCVERequest_builder) Build() *UnsuppressCVERequest {
 	m0 := &UnsuppressCVERequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Cves = b.Cves
+	x.Cves = b.Cves
 	return m0
 }
 
@@ -210,8 +202,8 @@ const file_api_v1_cve_service_proto_rawDesc = "" +
 	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/nodecves/unsuppress2\xc9\x01\n" +
 	"\x11ClusterCVEService\x12V\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/clustercves/suppress\x12\\\n" +
-	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppressB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppressB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_cve_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_v1_cve_service_proto_goTypes = []any{

@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/report_notifier_configuration.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -22,11 +24,25 @@ const (
 )
 
 type NotifierConfiguration struct {
-	state                     protoimpl.MessageState                 `protogen:"opaque.v1"`
-	xxx_hidden_NotifierConfig isNotifierConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
-	xxx_hidden_Ref            isNotifierConfiguration_Ref            `protobuf_oneof:"ref"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to NotifierConfig:
+	//
+	//	*NotifierConfiguration_EmailConfig
+	NotifierConfig isNotifierConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
+	// oneof is only used to work around the postgres store limitation. The oneof wrapper can be removed in future
+	// without any impact on the wiring.
+	//
+	// @mandar: "It appears that the DB upserts are encountering failures when handling unset string foreign keys.
+	// My educated assumption is that this might be attributed to the distinction between empty strings and null
+	// values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
+	// unset value, which is a requirement within SQL."
+	//
+	// Types that are valid to be assigned to Ref:
+	//
+	//	*NotifierConfiguration_Id
+	Ref           isNotifierConfiguration_Ref `protobuf_oneof:"ref"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NotifierConfiguration) Reset() {
@@ -54,18 +70,32 @@ func (x *NotifierConfiguration) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *NotifierConfiguration) GetNotifierConfig() isNotifierConfiguration_NotifierConfig {
+	if x != nil {
+		return x.NotifierConfig
+	}
+	return nil
+}
+
 func (x *NotifierConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
 	if x != nil {
-		if x, ok := x.xxx_hidden_NotifierConfig.(*notifierConfiguration_EmailConfig); ok {
+		if x, ok := x.NotifierConfig.(*NotifierConfiguration_EmailConfig); ok {
 			return x.EmailConfig
 		}
 	}
 	return nil
 }
 
+func (x *NotifierConfiguration) GetRef() isNotifierConfiguration_Ref {
+	if x != nil {
+		return x.Ref
+	}
+	return nil
+}
+
 func (x *NotifierConfiguration) GetId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Ref.(*notifierConfiguration_Id); ok {
+		if x, ok := x.Ref.(*NotifierConfiguration_Id); ok {
 			return x.Id
 		}
 	}
@@ -74,28 +104,28 @@ func (x *NotifierConfiguration) GetId() string {
 
 func (x *NotifierConfiguration) SetEmailConfig(v *EmailNotifierConfiguration) {
 	if v == nil {
-		x.xxx_hidden_NotifierConfig = nil
+		x.NotifierConfig = nil
 		return
 	}
-	x.xxx_hidden_NotifierConfig = &notifierConfiguration_EmailConfig{v}
+	x.NotifierConfig = &NotifierConfiguration_EmailConfig{v}
 }
 
 func (x *NotifierConfiguration) SetId(v string) {
-	x.xxx_hidden_Ref = &notifierConfiguration_Id{v}
+	x.Ref = &NotifierConfiguration_Id{v}
 }
 
 func (x *NotifierConfiguration) HasNotifierConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_NotifierConfig != nil
+	return x.NotifierConfig != nil
 }
 
 func (x *NotifierConfiguration) HasEmailConfig() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_NotifierConfig.(*notifierConfiguration_EmailConfig)
+	_, ok := x.NotifierConfig.(*NotifierConfiguration_EmailConfig)
 	return ok
 }
 
@@ -103,34 +133,34 @@ func (x *NotifierConfiguration) HasRef() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Ref != nil
+	return x.Ref != nil
 }
 
 func (x *NotifierConfiguration) HasId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Ref.(*notifierConfiguration_Id)
+	_, ok := x.Ref.(*NotifierConfiguration_Id)
 	return ok
 }
 
 func (x *NotifierConfiguration) ClearNotifierConfig() {
-	x.xxx_hidden_NotifierConfig = nil
+	x.NotifierConfig = nil
 }
 
 func (x *NotifierConfiguration) ClearEmailConfig() {
-	if _, ok := x.xxx_hidden_NotifierConfig.(*notifierConfiguration_EmailConfig); ok {
-		x.xxx_hidden_NotifierConfig = nil
+	if _, ok := x.NotifierConfig.(*NotifierConfiguration_EmailConfig); ok {
+		x.NotifierConfig = nil
 	}
 }
 
 func (x *NotifierConfiguration) ClearRef() {
-	x.xxx_hidden_Ref = nil
+	x.Ref = nil
 }
 
 func (x *NotifierConfiguration) ClearId() {
-	if _, ok := x.xxx_hidden_Ref.(*notifierConfiguration_Id); ok {
-		x.xxx_hidden_Ref = nil
+	if _, ok := x.Ref.(*NotifierConfiguration_Id); ok {
+		x.Ref = nil
 	}
 }
 
@@ -141,8 +171,8 @@ func (x *NotifierConfiguration) WhichNotifierConfig() case_NotifierConfiguration
 	if x == nil {
 		return NotifierConfiguration_NotifierConfig_not_set_case
 	}
-	switch x.xxx_hidden_NotifierConfig.(type) {
-	case *notifierConfiguration_EmailConfig:
+	switch x.NotifierConfig.(type) {
+	case *NotifierConfiguration_EmailConfig:
 		return NotifierConfiguration_EmailConfig_case
 	default:
 		return NotifierConfiguration_NotifierConfig_not_set_case
@@ -156,8 +186,8 @@ func (x *NotifierConfiguration) WhichRef() case_NotifierConfiguration_Ref {
 	if x == nil {
 		return NotifierConfiguration_Ref_not_set_case
 	}
-	switch x.xxx_hidden_Ref.(type) {
-	case *notifierConfiguration_Id:
+	switch x.Ref.(type) {
+	case *NotifierConfiguration_Id:
 		return NotifierConfiguration_Id_case
 	default:
 		return NotifierConfiguration_Ref_not_set_case
@@ -167,9 +197,9 @@ func (x *NotifierConfiguration) WhichRef() case_NotifierConfiguration_Ref {
 type NotifierConfiguration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_NotifierConfig:
+	// Fields of oneof NotifierConfig:
 	EmailConfig *EmailNotifierConfiguration
-	// -- end of xxx_hidden_NotifierConfig
+	// -- end of NotifierConfig
 	// oneof is only used to work around the postgres store limitation. The oneof wrapper can be removed in future
 	// without any impact on the wiring.
 	//
@@ -178,9 +208,9 @@ type NotifierConfiguration_builder struct {
 	// values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
 	// unset value, which is a requirement within SQL."
 
-	// Fields of oneof xxx_hidden_Ref:
+	// Fields of oneof Ref:
 	Id *string
-	// -- end of xxx_hidden_Ref
+	// -- end of Ref
 }
 
 func (b0 NotifierConfiguration_builder) Build() *NotifierConfiguration {
@@ -188,10 +218,10 @@ func (b0 NotifierConfiguration_builder) Build() *NotifierConfiguration {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.EmailConfig != nil {
-		x.xxx_hidden_NotifierConfig = &notifierConfiguration_EmailConfig{b.EmailConfig}
+		x.NotifierConfig = &NotifierConfiguration_EmailConfig{b.EmailConfig}
 	}
 	if b.Id != nil {
-		x.xxx_hidden_Ref = &notifierConfiguration_Id{*b.Id}
+		x.Ref = &NotifierConfiguration_Id{*b.Id}
 	}
 	return m0
 }
@@ -220,32 +250,30 @@ type isNotifierConfiguration_NotifierConfig interface {
 	isNotifierConfiguration_NotifierConfig()
 }
 
-type notifierConfiguration_EmailConfig struct {
+type NotifierConfiguration_EmailConfig struct {
 	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,1,opt,name=email_config,json=emailConfig,oneof"`
 }
 
-func (*notifierConfiguration_EmailConfig) isNotifierConfiguration_NotifierConfig() {}
+func (*NotifierConfiguration_EmailConfig) isNotifierConfiguration_NotifierConfig() {}
 
 type isNotifierConfiguration_Ref interface {
 	isNotifierConfiguration_Ref()
 }
 
-type notifierConfiguration_Id struct {
+type NotifierConfiguration_Id struct {
 	Id string `protobuf:"bytes,2,opt,name=id,oneof" sql:"fk(Notifier:id),restrict-delete"` // @gotags: sql:"fk(Notifier:id),restrict-delete"
 }
 
-func (*notifierConfiguration_Id) isNotifierConfiguration_Ref() {}
+func (*NotifierConfiguration_Id) isNotifierConfiguration_Ref() {}
 
 type EmailNotifierConfiguration struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_NotifierId    *string                `protobuf:"bytes,1,opt,name=notifier_id,json=notifierId"`
-	xxx_hidden_MailingLists  []string               `protobuf:"bytes,2,rep,name=mailing_lists,json=mailingLists"`
-	xxx_hidden_CustomSubject *string                `protobuf:"bytes,3,opt,name=custom_subject,json=customSubject"`
-	xxx_hidden_CustomBody    *string                `protobuf:"bytes,4,opt,name=custom_body,json=customBody"`
-	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
-	XXX_presence             [1]uint32
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	NotifierId    string                 `protobuf:"bytes,1,opt,name=notifier_id,json=notifierId" json:"notifier_id,omitempty"`
+	MailingLists  []string               `protobuf:"bytes,2,rep,name=mailing_lists,json=mailingLists" json:"mailing_lists,omitempty"`
+	CustomSubject string                 `protobuf:"bytes,3,opt,name=custom_subject,json=customSubject" json:"custom_subject,omitempty"`
+	CustomBody    string                 `protobuf:"bytes,4,opt,name=custom_body,json=customBody" json:"custom_body,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EmailNotifierConfiguration) Reset() {
@@ -275,122 +303,65 @@ func (x *EmailNotifierConfiguration) ProtoReflect() protoreflect.Message {
 
 func (x *EmailNotifierConfiguration) GetNotifierId() string {
 	if x != nil {
-		if x.xxx_hidden_NotifierId != nil {
-			return *x.xxx_hidden_NotifierId
-		}
-		return ""
+		return x.NotifierId
 	}
 	return ""
 }
 
 func (x *EmailNotifierConfiguration) GetMailingLists() []string {
 	if x != nil {
-		return x.xxx_hidden_MailingLists
+		return x.MailingLists
 	}
 	return nil
 }
 
 func (x *EmailNotifierConfiguration) GetCustomSubject() string {
 	if x != nil {
-		if x.xxx_hidden_CustomSubject != nil {
-			return *x.xxx_hidden_CustomSubject
-		}
-		return ""
+		return x.CustomSubject
 	}
 	return ""
 }
 
 func (x *EmailNotifierConfiguration) GetCustomBody() string {
 	if x != nil {
-		if x.xxx_hidden_CustomBody != nil {
-			return *x.xxx_hidden_CustomBody
-		}
-		return ""
+		return x.CustomBody
 	}
 	return ""
 }
 
 func (x *EmailNotifierConfiguration) SetNotifierId(v string) {
-	x.xxx_hidden_NotifierId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.NotifierId = v
 }
 
 func (x *EmailNotifierConfiguration) SetMailingLists(v []string) {
-	x.xxx_hidden_MailingLists = v
+	x.MailingLists = v
 }
 
 func (x *EmailNotifierConfiguration) SetCustomSubject(v string) {
-	x.xxx_hidden_CustomSubject = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.CustomSubject = v
 }
 
 func (x *EmailNotifierConfiguration) SetCustomBody(v string) {
-	x.xxx_hidden_CustomBody = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *EmailNotifierConfiguration) HasNotifierId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *EmailNotifierConfiguration) HasCustomSubject() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *EmailNotifierConfiguration) HasCustomBody() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *EmailNotifierConfiguration) ClearNotifierId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_NotifierId = nil
-}
-
-func (x *EmailNotifierConfiguration) ClearCustomSubject() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_CustomSubject = nil
-}
-
-func (x *EmailNotifierConfiguration) ClearCustomBody() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_CustomBody = nil
+	x.CustomBody = v
 }
 
 type EmailNotifierConfiguration_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	NotifierId    *string
+	NotifierId    string
 	MailingLists  []string
-	CustomSubject *string
-	CustomBody    *string
+	CustomSubject string
+	CustomBody    string
 }
 
 func (b0 EmailNotifierConfiguration_builder) Build() *EmailNotifierConfiguration {
 	m0 := &EmailNotifierConfiguration{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.NotifierId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_NotifierId = b.NotifierId
-	}
-	x.xxx_hidden_MailingLists = b.MailingLists
-	if b.CustomSubject != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_CustomSubject = b.CustomSubject
-	}
-	if b.CustomBody != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_CustomBody = b.CustomBody
-	}
+	x.NotifierId = b.NotifierId
+	x.MailingLists = b.MailingLists
+	x.CustomSubject = b.CustomSubject
+	x.CustomBody = b.CustomBody
 	return m0
 }
 
@@ -410,8 +381,8 @@ const file_storage_report_notifier_configuration_proto_rawDesc = "" +
 	"\rmailing_lists\x18\x02 \x03(\tR\fmailingLists\x12%\n" +
 	"\x0ecustom_subject\x18\x03 \x01(\tR\rcustomSubject\x12\x1f\n" +
 	"\vcustom_body\x18\x04 \x01(\tR\n" +
-	"customBodyB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"customBodyB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_report_notifier_configuration_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_report_notifier_configuration_proto_goTypes = []any{
@@ -433,8 +404,8 @@ func file_storage_report_notifier_configuration_proto_init() {
 		return
 	}
 	file_storage_report_notifier_configuration_proto_msgTypes[0].OneofWrappers = []any{
-		(*notifierConfiguration_EmailConfig)(nil),
-		(*notifierConfiguration_Id)(nil),
+		(*NotifierConfiguration_EmailConfig)(nil),
+		(*NotifierConfiguration_Id)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

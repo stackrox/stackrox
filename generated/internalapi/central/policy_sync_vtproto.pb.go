@@ -8,6 +8,7 @@ func (m *PolicySync) SizeVT() int                   { return proto.Size(m) }
 func (m *PolicySync) CloneVT() *PolicySync          { return proto.Clone(m).(*PolicySync) }
 func (m *PolicySync) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PolicySync) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PolicySync) EqualVT(n *PolicySync) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PolicySync) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

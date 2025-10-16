@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/log.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -23,16 +25,12 @@ const (
 )
 
 type LogImbue struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp"`
-	xxx_hidden_Log       []byte                 `protobuf:"bytes,3,opt,name=log"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" sql:"pk"`               // @gotags: sql:"pk"
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty" search:"Log Imbue Creation Time,hidden"` // @gotags: search:"Log Imbue Creation Time,hidden"
+	Log           []byte                 `protobuf:"bytes,3,opt,name=log" json:"log,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LogImbue) Reset() {
@@ -62,97 +60,55 @@ func (x *LogImbue) ProtoReflect() protoreflect.Message {
 
 func (x *LogImbue) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *LogImbue) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Timestamp) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Timestamp), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Timestamp
 	}
 	return nil
 }
 
 func (x *LogImbue) GetLog() []byte {
 	if x != nil {
-		return x.xxx_hidden_Log
+		return x.Log
 	}
 	return nil
 }
 
 func (x *LogImbue) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Id = v
 }
 
 func (x *LogImbue) SetTimestamp(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
-	}
+	x.Timestamp = v
 }
 
 func (x *LogImbue) SetLog(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
-	x.xxx_hidden_Log = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *LogImbue) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.Log = v
 }
 
 func (x *LogImbue) HasTimestamp() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *LogImbue) HasLog() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *LogImbue) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.Timestamp != nil
 }
 
 func (x *LogImbue) ClearTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Timestamp, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *LogImbue) ClearLog() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Log = nil
+	x.Timestamp = nil
 }
 
 type LogImbue_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
+	Id        string
 	Timestamp *timestamppb.Timestamp
 	Log       []byte
 }
@@ -161,18 +117,9 @@ func (b0 LogImbue_builder) Build() *LogImbue {
 	m0 := &LogImbue{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Timestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Timestamp = b.Timestamp
-	}
-	if b.Log != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Log = b.Log
-	}
+	x.Id = b.Id
+	x.Timestamp = b.Timestamp
+	x.Log = b.Log
 	return m0
 }
 
@@ -184,8 +131,8 @@ const file_storage_log_proto_rawDesc = "" +
 	"\bLogImbue\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\ttimestamp\x12\x10\n" +
-	"\x03log\x18\x03 \x01(\fR\x03logB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x03log\x18\x03 \x01(\fR\x03logB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_log_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_log_proto_goTypes = []any{

@@ -8,6 +8,7 @@ func (m *FeatureFlag) SizeVT() int                   { return proto.Size(m) }
 func (m *FeatureFlag) CloneVT() *FeatureFlag         { return proto.Clone(m).(*FeatureFlag) }
 func (m *FeatureFlag) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *FeatureFlag) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *FeatureFlag) EqualVT(n *FeatureFlag) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *FeatureFlag) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,8 +17,9 @@ func (m *GetFeatureFlagsResponse) SizeVT() int { return proto.Size(m) }
 func (m *GetFeatureFlagsResponse) CloneVT() *GetFeatureFlagsResponse {
 	return proto.Clone(m).(*GetFeatureFlagsResponse)
 }
-func (m *GetFeatureFlagsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetFeatureFlagsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetFeatureFlagsResponse) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *GetFeatureFlagsResponse) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *GetFeatureFlagsResponse) EqualVT(n *GetFeatureFlagsResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetFeatureFlagsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

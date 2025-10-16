@@ -8,22 +8,25 @@ func (m *PodsResponse) SizeVT() int                   { return proto.Size(m) }
 func (m *PodsResponse) CloneVT() *PodsResponse        { return proto.Clone(m).(*PodsResponse) }
 func (m *PodsResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PodsResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PodsResponse) EqualVT(n *PodsResponse) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PodsResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ExportPodRequest) SizeVT() int                   { return proto.Size(m) }
-func (m *ExportPodRequest) CloneVT() *ExportPodRequest    { return proto.Clone(m).(*ExportPodRequest) }
-func (m *ExportPodRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportPodRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportPodRequest) SizeVT() int                      { return proto.Size(m) }
+func (m *ExportPodRequest) CloneVT() *ExportPodRequest       { return proto.Clone(m).(*ExportPodRequest) }
+func (m *ExportPodRequest) MarshalVT() ([]byte, error)       { return proto.Marshal(m) }
+func (m *ExportPodRequest) UnmarshalVT(dAtA []byte) error    { return proto.Unmarshal(dAtA, m) }
+func (m *ExportPodRequest) EqualVT(n *ExportPodRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportPodRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ExportPodResponse) SizeVT() int                   { return proto.Size(m) }
-func (m *ExportPodResponse) CloneVT() *ExportPodResponse   { return proto.Clone(m).(*ExportPodResponse) }
-func (m *ExportPodResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExportPodResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExportPodResponse) SizeVT() int                       { return proto.Size(m) }
+func (m *ExportPodResponse) CloneVT() *ExportPodResponse       { return proto.Clone(m).(*ExportPodResponse) }
+func (m *ExportPodResponse) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *ExportPodResponse) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *ExportPodResponse) EqualVT(n *ExportPodResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExportPodResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

@@ -8,6 +8,7 @@ func (m *NodeComponent) SizeVT() int                   { return proto.Size(m) }
 func (m *NodeComponent) CloneVT() *NodeComponent       { return proto.Clone(m).(*NodeComponent) }
 func (m *NodeComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *NodeComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NodeComponent) EqualVT(n *NodeComponent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NodeComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

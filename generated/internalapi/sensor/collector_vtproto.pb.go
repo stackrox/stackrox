@@ -10,14 +10,18 @@ func (m *CollectorRegisterRequest) CloneVT() *CollectorRegisterRequest {
 }
 func (m *CollectorRegisterRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CollectorRegisterRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CollectorRegisterRequest) EqualVT(n *CollectorRegisterRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectorRegisterRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CollectorConfig) SizeVT() int                   { return proto.Size(m) }
-func (m *CollectorConfig) CloneVT() *CollectorConfig     { return proto.Clone(m).(*CollectorConfig) }
-func (m *CollectorConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CollectorConfig) SizeVT() int                     { return proto.Size(m) }
+func (m *CollectorConfig) CloneVT() *CollectorConfig       { return proto.Clone(m).(*CollectorConfig) }
+func (m *CollectorConfig) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *CollectorConfig) EqualVT(n *CollectorConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectorConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -28,6 +32,9 @@ func (m *CollectorConfig_ExternalIPs) CloneVT() *CollectorConfig_ExternalIPs {
 }
 func (m *CollectorConfig_ExternalIPs) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CollectorConfig_ExternalIPs) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CollectorConfig_ExternalIPs) EqualVT(n *CollectorConfig_ExternalIPs) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectorConfig_ExternalIPs) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -40,6 +47,9 @@ func (m *CollectorConfig_Networking) CloneVT() *CollectorConfig_Networking {
 }
 func (m *CollectorConfig_Networking) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CollectorConfig_Networking) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CollectorConfig_Networking) EqualVT(n *CollectorConfig_Networking) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CollectorConfig_Networking) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -48,6 +58,7 @@ func (m *ProcessSignal) SizeVT() int                   { return proto.Size(m) }
 func (m *ProcessSignal) CloneVT() *ProcessSignal       { return proto.Clone(m).(*ProcessSignal) }
 func (m *ProcessSignal) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessSignal) EqualVT(n *ProcessSignal) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -58,6 +69,9 @@ func (m *ProcessSignal_LineageInfo) CloneVT() *ProcessSignal_LineageInfo {
 }
 func (m *ProcessSignal_LineageInfo) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ProcessSignal_LineageInfo) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ProcessSignal_LineageInfo) EqualVT(n *ProcessSignal_LineageInfo) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ProcessSignal_LineageInfo) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

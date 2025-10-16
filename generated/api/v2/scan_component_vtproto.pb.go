@@ -8,6 +8,7 @@ func (m *ScanComponent) SizeVT() int                   { return proto.Size(m) }
 func (m *ScanComponent) CloneVT() *ScanComponent       { return proto.Clone(m).(*ScanComponent) }
 func (m *ScanComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ScanComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ScanComponent) EqualVT(n *ScanComponent) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ScanComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

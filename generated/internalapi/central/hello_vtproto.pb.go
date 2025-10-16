@@ -8,8 +8,9 @@ func (m *HelmManagedConfigInit) SizeVT() int { return proto.Size(m) }
 func (m *HelmManagedConfigInit) CloneVT() *HelmManagedConfigInit {
 	return proto.Clone(m).(*HelmManagedConfigInit)
 }
-func (m *HelmManagedConfigInit) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *HelmManagedConfigInit) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *HelmManagedConfigInit) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *HelmManagedConfigInit) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *HelmManagedConfigInit) EqualVT(n *HelmManagedConfigInit) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *HelmManagedConfigInit) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,6 +19,7 @@ func (m *SensorHello) SizeVT() int                   { return proto.Size(m) }
 func (m *SensorHello) CloneVT() *SensorHello         { return proto.Clone(m).(*SensorHello) }
 func (m *SensorHello) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *SensorHello) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *SensorHello) EqualVT(n *SensorHello) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *SensorHello) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -26,6 +28,7 @@ func (m *CentralHello) SizeVT() int                   { return proto.Size(m) }
 func (m *CentralHello) CloneVT() *CentralHello        { return proto.Clone(m).(*CentralHello) }
 func (m *CentralHello) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *CentralHello) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CentralHello) EqualVT(n *CentralHello) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CentralHello) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

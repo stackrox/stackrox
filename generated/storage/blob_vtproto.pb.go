@@ -8,6 +8,7 @@ func (m *Blob) SizeVT() int                   { return proto.Size(m) }
 func (m *Blob) CloneVT() *Blob                { return proto.Clone(m).(*Blob) }
 func (m *Blob) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Blob) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Blob) EqualVT(n *Blob) bool          { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Blob) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

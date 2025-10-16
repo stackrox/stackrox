@@ -8,6 +8,7 @@ func (m *Image) SizeVT() int                   { return proto.Size(m) }
 func (m *Image) CloneVT() *Image               { return proto.Clone(m).(*Image) }
 func (m *Image) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Image) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Image) EqualVT(n *Image) bool         { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Image) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -16,6 +17,7 @@ func (m *DataSource) SizeVT() int                   { return proto.Size(m) }
 func (m *DataSource) CloneVT() *DataSource          { return proto.Clone(m).(*DataSource) }
 func (m *DataSource) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *DataSource) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *DataSource) EqualVT(n *DataSource) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DataSource) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -24,6 +26,7 @@ func (m *ImageScan) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageScan) CloneVT() *ImageScan           { return proto.Clone(m).(*ImageScan) }
 func (m *ImageScan) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageScan) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageScan) EqualVT(n *ImageScan) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageScan) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -35,6 +38,9 @@ func (m *ImageSignatureVerificationData) CloneVT() *ImageSignatureVerificationDa
 func (m *ImageSignatureVerificationData) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *ImageSignatureVerificationData) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *ImageSignatureVerificationData) EqualVT(n *ImageSignatureVerificationData) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -50,6 +56,9 @@ func (m *ImageSignatureVerificationResult) MarshalVT() ([]byte, error) { return 
 func (m *ImageSignatureVerificationResult) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *ImageSignatureVerificationResult) EqualVT(n *ImageSignatureVerificationResult) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageSignatureVerificationResult) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -62,6 +71,9 @@ func (m *EmbeddedImageScanComponent) CloneVT() *EmbeddedImageScanComponent {
 }
 func (m *EmbeddedImageScanComponent) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *EmbeddedImageScanComponent) EqualVT(n *EmbeddedImageScanComponent) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EmbeddedImageScanComponent) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -74,6 +86,9 @@ func (m *EmbeddedImageScanComponent_Executable) MarshalVT() ([]byte, error) { re
 func (m *EmbeddedImageScanComponent_Executable) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *EmbeddedImageScanComponent_Executable) EqualVT(n *EmbeddedImageScanComponent_Executable) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *EmbeddedImageScanComponent_Executable) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -84,6 +99,7 @@ func (m *License) SizeVT() int                   { return proto.Size(m) }
 func (m *License) CloneVT() *License             { return proto.Clone(m).(*License) }
 func (m *License) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *License) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *License) EqualVT(n *License) bool       { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *License) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -92,14 +108,16 @@ func (m *ImageMetadata) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageMetadata) CloneVT() *ImageMetadata       { return proto.Clone(m).(*ImageMetadata) }
 func (m *ImageMetadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageMetadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageMetadata) EqualVT(n *ImageMetadata) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageMetadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *ImageSignature) SizeVT() int                   { return proto.Size(m) }
-func (m *ImageSignature) CloneVT() *ImageSignature      { return proto.Clone(m).(*ImageSignature) }
-func (m *ImageSignature) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ImageSignature) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageSignature) SizeVT() int                    { return proto.Size(m) }
+func (m *ImageSignature) CloneVT() *ImageSignature       { return proto.Clone(m).(*ImageSignature) }
+func (m *ImageSignature) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *ImageSignature) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *ImageSignature) EqualVT(n *ImageSignature) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageSignature) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -108,14 +126,16 @@ func (m *Signature) SizeVT() int                   { return proto.Size(m) }
 func (m *Signature) CloneVT() *Signature           { return proto.Clone(m).(*Signature) }
 func (m *Signature) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Signature) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Signature) EqualVT(n *Signature) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Signature) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CosignSignature) SizeVT() int                   { return proto.Size(m) }
-func (m *CosignSignature) CloneVT() *CosignSignature     { return proto.Clone(m).(*CosignSignature) }
-func (m *CosignSignature) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CosignSignature) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CosignSignature) SizeVT() int                     { return proto.Size(m) }
+func (m *CosignSignature) CloneVT() *CosignSignature       { return proto.Clone(m).(*CosignSignature) }
+func (m *CosignSignature) MarshalVT() ([]byte, error)      { return proto.Marshal(m) }
+func (m *CosignSignature) UnmarshalVT(dAtA []byte) error   { return proto.Unmarshal(dAtA, m) }
+func (m *CosignSignature) EqualVT(n *CosignSignature) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CosignSignature) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -124,6 +144,7 @@ func (m *V2Metadata) SizeVT() int                   { return proto.Size(m) }
 func (m *V2Metadata) CloneVT() *V2Metadata          { return proto.Clone(m).(*V2Metadata) }
 func (m *V2Metadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *V2Metadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *V2Metadata) EqualVT(n *V2Metadata) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *V2Metadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -132,6 +153,7 @@ func (m *V1Metadata) SizeVT() int                   { return proto.Size(m) }
 func (m *V1Metadata) CloneVT() *V1Metadata          { return proto.Clone(m).(*V1Metadata) }
 func (m *V1Metadata) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *V1Metadata) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *V1Metadata) EqualVT(n *V1Metadata) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *V1Metadata) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -140,6 +162,7 @@ func (m *ImageLayer) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageLayer) CloneVT() *ImageLayer          { return proto.Clone(m).(*ImageLayer) }
 func (m *ImageLayer) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageLayer) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageLayer) EqualVT(n *ImageLayer) bool    { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageLayer) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -148,6 +171,7 @@ func (m *ImageName) SizeVT() int                   { return proto.Size(m) }
 func (m *ImageName) CloneVT() *ImageName           { return proto.Clone(m).(*ImageName) }
 func (m *ImageName) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ImageName) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ImageName) EqualVT(n *ImageName) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ImageName) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -156,6 +180,7 @@ func (m *ListImage) SizeVT() int                   { return proto.Size(m) }
 func (m *ListImage) CloneVT() *ListImage           { return proto.Clone(m).(*ListImage) }
 func (m *ListImage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *ListImage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ListImage) EqualVT(n *ListImage) bool     { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ListImage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -164,6 +189,7 @@ func (m *WatchedImage) SizeVT() int                   { return proto.Size(m) }
 func (m *WatchedImage) CloneVT() *WatchedImage        { return proto.Clone(m).(*WatchedImage) }
 func (m *WatchedImage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *WatchedImage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *WatchedImage) EqualVT(n *WatchedImage) bool  { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *WatchedImage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

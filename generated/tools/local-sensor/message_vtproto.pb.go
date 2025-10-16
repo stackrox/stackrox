@@ -8,8 +8,9 @@ func (m *LocalSensorPolicies) SizeVT() int { return proto.Size(m) }
 func (m *LocalSensorPolicies) CloneVT() *LocalSensorPolicies {
 	return proto.Clone(m).(*LocalSensorPolicies)
 }
-func (m *LocalSensorPolicies) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *LocalSensorPolicies) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *LocalSensorPolicies) MarshalVT() ([]byte, error)          { return proto.Marshal(m) }
+func (m *LocalSensorPolicies) UnmarshalVT(dAtA []byte) error       { return proto.Unmarshal(dAtA, m) }
+func (m *LocalSensorPolicies) EqualVT(n *LocalSensorPolicies) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *LocalSensorPolicies) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

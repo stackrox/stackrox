@@ -8,8 +8,9 @@ func (m *GetAuthProviderRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetAuthProviderRequest) CloneVT() *GetAuthProviderRequest {
 	return proto.Clone(m).(*GetAuthProviderRequest)
 }
-func (m *GetAuthProviderRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetAuthProviderRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetAuthProviderRequest) MarshalVT() ([]byte, error)             { return proto.Marshal(m) }
+func (m *GetAuthProviderRequest) UnmarshalVT(dAtA []byte) error          { return proto.Unmarshal(dAtA, m) }
+func (m *GetAuthProviderRequest) EqualVT(n *GetAuthProviderRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetAuthProviderRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +19,9 @@ func (m *GetAuthProvidersRequest) SizeVT() int { return proto.Size(m) }
 func (m *GetAuthProvidersRequest) CloneVT() *GetAuthProvidersRequest {
 	return proto.Clone(m).(*GetAuthProvidersRequest)
 }
-func (m *GetAuthProvidersRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *GetAuthProvidersRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetAuthProvidersRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *GetAuthProvidersRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *GetAuthProvidersRequest) EqualVT(n *GetAuthProvidersRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetAuthProvidersRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -31,6 +33,9 @@ func (m *GetLoginAuthProvidersResponse) CloneVT() *GetLoginAuthProvidersResponse
 func (m *GetLoginAuthProvidersResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *GetLoginAuthProvidersResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *GetLoginAuthProvidersResponse) EqualVT(n *GetLoginAuthProvidersResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -48,6 +53,9 @@ func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) MarshalVT() ([]byte, e
 func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) EqualVT(n *GetLoginAuthProvidersResponse_LoginAuthProvider) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetLoginAuthProvidersResponse_LoginAuthProvider) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -60,6 +68,9 @@ func (m *GetAuthProvidersResponse) CloneVT() *GetAuthProvidersResponse {
 }
 func (m *GetAuthProvidersResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetAuthProvidersResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetAuthProvidersResponse) EqualVT(n *GetAuthProvidersResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetAuthProvidersResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -68,8 +79,9 @@ func (m *PostAuthProviderRequest) SizeVT() int { return proto.Size(m) }
 func (m *PostAuthProviderRequest) CloneVT() *PostAuthProviderRequest {
 	return proto.Clone(m).(*PostAuthProviderRequest)
 }
-func (m *PostAuthProviderRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *PostAuthProviderRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PostAuthProviderRequest) MarshalVT() ([]byte, error)              { return proto.Marshal(m) }
+func (m *PostAuthProviderRequest) UnmarshalVT(dAtA []byte) error           { return proto.Unmarshal(dAtA, m) }
+func (m *PostAuthProviderRequest) EqualVT(n *PostAuthProviderRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PostAuthProviderRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -80,6 +92,9 @@ func (m *UpdateAuthProviderRequest) CloneVT() *UpdateAuthProviderRequest {
 }
 func (m *UpdateAuthProviderRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *UpdateAuthProviderRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *UpdateAuthProviderRequest) EqualVT(n *UpdateAuthProviderRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *UpdateAuthProviderRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -88,8 +103,9 @@ func (m *ExchangeTokenRequest) SizeVT() int { return proto.Size(m) }
 func (m *ExchangeTokenRequest) CloneVT() *ExchangeTokenRequest {
 	return proto.Clone(m).(*ExchangeTokenRequest)
 }
-func (m *ExchangeTokenRequest) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExchangeTokenRequest) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExchangeTokenRequest) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *ExchangeTokenRequest) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *ExchangeTokenRequest) EqualVT(n *ExchangeTokenRequest) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExchangeTokenRequest) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -98,8 +114,9 @@ func (m *ExchangeTokenResponse) SizeVT() int { return proto.Size(m) }
 func (m *ExchangeTokenResponse) CloneVT() *ExchangeTokenResponse {
 	return proto.Clone(m).(*ExchangeTokenResponse)
 }
-func (m *ExchangeTokenResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *ExchangeTokenResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *ExchangeTokenResponse) MarshalVT() ([]byte, error)            { return proto.Marshal(m) }
+func (m *ExchangeTokenResponse) UnmarshalVT(dAtA []byte) error         { return proto.Unmarshal(dAtA, m) }
+func (m *ExchangeTokenResponse) EqualVT(n *ExchangeTokenResponse) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *ExchangeTokenResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -111,6 +128,9 @@ func (m *AvailableProviderTypesResponse) CloneVT() *AvailableProviderTypesRespon
 func (m *AvailableProviderTypesResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *AvailableProviderTypesResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AvailableProviderTypesResponse) EqualVT(n *AvailableProviderTypesResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.
@@ -127,6 +147,9 @@ func (m *AvailableProviderTypesResponse_AuthProviderType) MarshalVT() ([]byte, e
 }
 func (m *AvailableProviderTypesResponse_AuthProviderType) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *AvailableProviderTypesResponse_AuthProviderType) EqualVT(n *AvailableProviderTypesResponse_AuthProviderType) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

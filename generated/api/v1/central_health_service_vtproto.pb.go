@@ -10,6 +10,9 @@ func (m *GetUpgradeStatusResponse) CloneVT() *GetUpgradeStatusResponse {
 }
 func (m *GetUpgradeStatusResponse) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *GetUpgradeStatusResponse) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *GetUpgradeStatusResponse) EqualVT(n *GetUpgradeStatusResponse) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *GetUpgradeStatusResponse) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
@@ -18,8 +21,9 @@ func (m *CentralUpgradeStatus) SizeVT() int { return proto.Size(m) }
 func (m *CentralUpgradeStatus) CloneVT() *CentralUpgradeStatus {
 	return proto.Clone(m).(*CentralUpgradeStatus)
 }
-func (m *CentralUpgradeStatus) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *CentralUpgradeStatus) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *CentralUpgradeStatus) MarshalVT() ([]byte, error)           { return proto.Marshal(m) }
+func (m *CentralUpgradeStatus) UnmarshalVT(dAtA []byte) error        { return proto.Unmarshal(dAtA, m) }
+func (m *CentralUpgradeStatus) EqualVT(n *CentralUpgradeStatus) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *CentralUpgradeStatus) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

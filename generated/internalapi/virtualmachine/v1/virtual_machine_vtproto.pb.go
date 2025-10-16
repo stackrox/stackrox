@@ -4,10 +4,11 @@ package v1
 
 import "google.golang.org/protobuf/proto"
 
-func (m *VirtualMachine) SizeVT() int                   { return proto.Size(m) }
-func (m *VirtualMachine) CloneVT() *VirtualMachine      { return proto.Clone(m).(*VirtualMachine) }
-func (m *VirtualMachine) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachine) SizeVT() int                    { return proto.Size(m) }
+func (m *VirtualMachine) CloneVT() *VirtualMachine       { return proto.Clone(m).(*VirtualMachine) }
+func (m *VirtualMachine) MarshalVT() ([]byte, error)     { return proto.Marshal(m) }
+func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error  { return proto.Unmarshal(dAtA, m) }
+func (m *VirtualMachine) EqualVT(n *VirtualMachine) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

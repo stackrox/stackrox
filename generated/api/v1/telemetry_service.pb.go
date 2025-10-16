@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/telemetry_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -25,12 +27,11 @@ const (
 )
 
 type ConfigureTelemetryRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Enabled     bool                   `protobuf:"varint,1,opt,name=enabled"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
+	Enabled       bool `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConfigureTelemetryRequest) Reset() {
@@ -61,46 +62,28 @@ func (x *ConfigureTelemetryRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
 func (x *ConfigureTelemetryRequest) GetEnabled() bool {
 	if x != nil {
-		return x.xxx_hidden_Enabled
+		return x.Enabled
 	}
 	return false
 }
 
 // Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
 func (x *ConfigureTelemetryRequest) SetEnabled(v bool) {
-	x.xxx_hidden_Enabled = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-// Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
-func (x *ConfigureTelemetryRequest) HasEnabled() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-// Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
-func (x *ConfigureTelemetryRequest) ClearEnabled() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Enabled = false
+	x.Enabled = v
 }
 
 type ConfigureTelemetryRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Deprecated: Marked as deprecated in api/v1/telemetry_service.proto.
-	Enabled *bool
+	Enabled bool
 }
 
 func (b0 ConfigureTelemetryRequest_builder) Build() *ConfigureTelemetryRequest {
 	m0 := &ConfigureTelemetryRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Enabled != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Enabled = *b.Enabled
-	}
+	x.Enabled = b.Enabled
 	return m0
 }
 
@@ -115,8 +98,8 @@ const file_api_v1_telemetry_service_proto_rawDesc = "" +
 	"\x19GetTelemetryConfiguration\x12\t.v1.Empty\x1a\x1f.storage.TelemetryConfiguration\"\"\x82\xd3\xe4\x93\x02\x19\x12\x17/v1/telemetry/configure\x88\x02\x01\x12{\n" +
 	"\x12ConfigureTelemetry\x12\x1d.v1.ConfigureTelemetryRequest\x1a\x1f.storage.TelemetryConfiguration\"%\x82\xd3\xe4\x93\x02\x1c:\x01*\x1a\x17/v1/telemetry/configure\x88\x02\x01\x12N\n" +
 	"\tGetConfig\x12\t.v1.Empty\x1a\x18.central.TelemetryConfig\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/telemetry/config\x12M\n" +
-	"\x10PostConfigReload\x12\t.v1.Empty\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d\"\x1b/v1/telemetry/config/reloadB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"\x10PostConfigReload\x12\t.v1.Empty\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d\"\x1b/v1/telemetry/config/reloadB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_telemetry_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_telemetry_service_proto_goTypes = []any{

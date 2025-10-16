@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/group_service.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -24,13 +26,25 @@ const (
 )
 
 type GetGroupsRequest struct {
-	state                        protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_AuthProviderIdOpt isGetGroupsRequest_AuthProviderIdOpt `protobuf_oneof:"auth_provider_id_opt"`
-	xxx_hidden_KeyOpt            isGetGroupsRequest_KeyOpt            `protobuf_oneof:"key_opt"`
-	xxx_hidden_ValueOpt          isGetGroupsRequest_ValueOpt          `protobuf_oneof:"value_opt"`
-	xxx_hidden_IdOpt             isGetGroupsRequest_IdOpt             `protobuf_oneof:"id_opt"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to AuthProviderIdOpt:
+	//
+	//	*GetGroupsRequest_AuthProviderId
+	AuthProviderIdOpt isGetGroupsRequest_AuthProviderIdOpt `protobuf_oneof:"auth_provider_id_opt"`
+	// Types that are valid to be assigned to KeyOpt:
+	//
+	//	*GetGroupsRequest_Key
+	KeyOpt isGetGroupsRequest_KeyOpt `protobuf_oneof:"key_opt"`
+	// Types that are valid to be assigned to ValueOpt:
+	//
+	//	*GetGroupsRequest_Value
+	ValueOpt isGetGroupsRequest_ValueOpt `protobuf_oneof:"value_opt"`
+	// Types that are valid to be assigned to IdOpt:
+	//
+	//	*GetGroupsRequest_Id
+	IdOpt         isGetGroupsRequest_IdOpt `protobuf_oneof:"id_opt"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetGroupsRequest) Reset() {
@@ -58,36 +72,64 @@ func (x *GetGroupsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *GetGroupsRequest) GetAuthProviderIdOpt() isGetGroupsRequest_AuthProviderIdOpt {
+	if x != nil {
+		return x.AuthProviderIdOpt
+	}
+	return nil
+}
+
 func (x *GetGroupsRequest) GetAuthProviderId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_AuthProviderIdOpt.(*getGroupsRequest_AuthProviderId); ok {
+		if x, ok := x.AuthProviderIdOpt.(*GetGroupsRequest_AuthProviderId); ok {
 			return x.AuthProviderId
 		}
 	}
 	return ""
 }
 
+func (x *GetGroupsRequest) GetKeyOpt() isGetGroupsRequest_KeyOpt {
+	if x != nil {
+		return x.KeyOpt
+	}
+	return nil
+}
+
 func (x *GetGroupsRequest) GetKey() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_KeyOpt.(*getGroupsRequest_Key); ok {
+		if x, ok := x.KeyOpt.(*GetGroupsRequest_Key); ok {
 			return x.Key
 		}
 	}
 	return ""
 }
 
+func (x *GetGroupsRequest) GetValueOpt() isGetGroupsRequest_ValueOpt {
+	if x != nil {
+		return x.ValueOpt
+	}
+	return nil
+}
+
 func (x *GetGroupsRequest) GetValue() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_ValueOpt.(*getGroupsRequest_Value); ok {
+		if x, ok := x.ValueOpt.(*GetGroupsRequest_Value); ok {
 			return x.Value
 		}
 	}
 	return ""
 }
 
+func (x *GetGroupsRequest) GetIdOpt() isGetGroupsRequest_IdOpt {
+	if x != nil {
+		return x.IdOpt
+	}
+	return nil
+}
+
 func (x *GetGroupsRequest) GetId() string {
 	if x != nil {
-		if x, ok := x.xxx_hidden_IdOpt.(*getGroupsRequest_Id); ok {
+		if x, ok := x.IdOpt.(*GetGroupsRequest_Id); ok {
 			return x.Id
 		}
 	}
@@ -95,33 +137,33 @@ func (x *GetGroupsRequest) GetId() string {
 }
 
 func (x *GetGroupsRequest) SetAuthProviderId(v string) {
-	x.xxx_hidden_AuthProviderIdOpt = &getGroupsRequest_AuthProviderId{v}
+	x.AuthProviderIdOpt = &GetGroupsRequest_AuthProviderId{v}
 }
 
 func (x *GetGroupsRequest) SetKey(v string) {
-	x.xxx_hidden_KeyOpt = &getGroupsRequest_Key{v}
+	x.KeyOpt = &GetGroupsRequest_Key{v}
 }
 
 func (x *GetGroupsRequest) SetValue(v string) {
-	x.xxx_hidden_ValueOpt = &getGroupsRequest_Value{v}
+	x.ValueOpt = &GetGroupsRequest_Value{v}
 }
 
 func (x *GetGroupsRequest) SetId(v string) {
-	x.xxx_hidden_IdOpt = &getGroupsRequest_Id{v}
+	x.IdOpt = &GetGroupsRequest_Id{v}
 }
 
 func (x *GetGroupsRequest) HasAuthProviderIdOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_AuthProviderIdOpt != nil
+	return x.AuthProviderIdOpt != nil
 }
 
 func (x *GetGroupsRequest) HasAuthProviderId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_AuthProviderIdOpt.(*getGroupsRequest_AuthProviderId)
+	_, ok := x.AuthProviderIdOpt.(*GetGroupsRequest_AuthProviderId)
 	return ok
 }
 
@@ -129,14 +171,14 @@ func (x *GetGroupsRequest) HasKeyOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_KeyOpt != nil
+	return x.KeyOpt != nil
 }
 
 func (x *GetGroupsRequest) HasKey() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_KeyOpt.(*getGroupsRequest_Key)
+	_, ok := x.KeyOpt.(*GetGroupsRequest_Key)
 	return ok
 }
 
@@ -144,14 +186,14 @@ func (x *GetGroupsRequest) HasValueOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ValueOpt != nil
+	return x.ValueOpt != nil
 }
 
 func (x *GetGroupsRequest) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_ValueOpt.(*getGroupsRequest_Value)
+	_, ok := x.ValueOpt.(*GetGroupsRequest_Value)
 	return ok
 }
 
@@ -159,54 +201,54 @@ func (x *GetGroupsRequest) HasIdOpt() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_IdOpt != nil
+	return x.IdOpt != nil
 }
 
 func (x *GetGroupsRequest) HasId() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_IdOpt.(*getGroupsRequest_Id)
+	_, ok := x.IdOpt.(*GetGroupsRequest_Id)
 	return ok
 }
 
 func (x *GetGroupsRequest) ClearAuthProviderIdOpt() {
-	x.xxx_hidden_AuthProviderIdOpt = nil
+	x.AuthProviderIdOpt = nil
 }
 
 func (x *GetGroupsRequest) ClearAuthProviderId() {
-	if _, ok := x.xxx_hidden_AuthProviderIdOpt.(*getGroupsRequest_AuthProviderId); ok {
-		x.xxx_hidden_AuthProviderIdOpt = nil
+	if _, ok := x.AuthProviderIdOpt.(*GetGroupsRequest_AuthProviderId); ok {
+		x.AuthProviderIdOpt = nil
 	}
 }
 
 func (x *GetGroupsRequest) ClearKeyOpt() {
-	x.xxx_hidden_KeyOpt = nil
+	x.KeyOpt = nil
 }
 
 func (x *GetGroupsRequest) ClearKey() {
-	if _, ok := x.xxx_hidden_KeyOpt.(*getGroupsRequest_Key); ok {
-		x.xxx_hidden_KeyOpt = nil
+	if _, ok := x.KeyOpt.(*GetGroupsRequest_Key); ok {
+		x.KeyOpt = nil
 	}
 }
 
 func (x *GetGroupsRequest) ClearValueOpt() {
-	x.xxx_hidden_ValueOpt = nil
+	x.ValueOpt = nil
 }
 
 func (x *GetGroupsRequest) ClearValue() {
-	if _, ok := x.xxx_hidden_ValueOpt.(*getGroupsRequest_Value); ok {
-		x.xxx_hidden_ValueOpt = nil
+	if _, ok := x.ValueOpt.(*GetGroupsRequest_Value); ok {
+		x.ValueOpt = nil
 	}
 }
 
 func (x *GetGroupsRequest) ClearIdOpt() {
-	x.xxx_hidden_IdOpt = nil
+	x.IdOpt = nil
 }
 
 func (x *GetGroupsRequest) ClearId() {
-	if _, ok := x.xxx_hidden_IdOpt.(*getGroupsRequest_Id); ok {
-		x.xxx_hidden_IdOpt = nil
+	if _, ok := x.IdOpt.(*GetGroupsRequest_Id); ok {
+		x.IdOpt = nil
 	}
 }
 
@@ -217,8 +259,8 @@ func (x *GetGroupsRequest) WhichAuthProviderIdOpt() case_GetGroupsRequest_AuthPr
 	if x == nil {
 		return GetGroupsRequest_AuthProviderIdOpt_not_set_case
 	}
-	switch x.xxx_hidden_AuthProviderIdOpt.(type) {
-	case *getGroupsRequest_AuthProviderId:
+	switch x.AuthProviderIdOpt.(type) {
+	case *GetGroupsRequest_AuthProviderId:
 		return GetGroupsRequest_AuthProviderId_case
 	default:
 		return GetGroupsRequest_AuthProviderIdOpt_not_set_case
@@ -232,8 +274,8 @@ func (x *GetGroupsRequest) WhichKeyOpt() case_GetGroupsRequest_KeyOpt {
 	if x == nil {
 		return GetGroupsRequest_KeyOpt_not_set_case
 	}
-	switch x.xxx_hidden_KeyOpt.(type) {
-	case *getGroupsRequest_Key:
+	switch x.KeyOpt.(type) {
+	case *GetGroupsRequest_Key:
 		return GetGroupsRequest_Key_case
 	default:
 		return GetGroupsRequest_KeyOpt_not_set_case
@@ -247,8 +289,8 @@ func (x *GetGroupsRequest) WhichValueOpt() case_GetGroupsRequest_ValueOpt {
 	if x == nil {
 		return GetGroupsRequest_ValueOpt_not_set_case
 	}
-	switch x.xxx_hidden_ValueOpt.(type) {
-	case *getGroupsRequest_Value:
+	switch x.ValueOpt.(type) {
+	case *GetGroupsRequest_Value:
 		return GetGroupsRequest_Value_case
 	default:
 		return GetGroupsRequest_ValueOpt_not_set_case
@@ -262,8 +304,8 @@ func (x *GetGroupsRequest) WhichIdOpt() case_GetGroupsRequest_IdOpt {
 	if x == nil {
 		return GetGroupsRequest_IdOpt_not_set_case
 	}
-	switch x.xxx_hidden_IdOpt.(type) {
-	case *getGroupsRequest_Id:
+	switch x.IdOpt.(type) {
+	case *GetGroupsRequest_Id:
 		return GetGroupsRequest_Id_case
 	default:
 		return GetGroupsRequest_IdOpt_not_set_case
@@ -273,18 +315,18 @@ func (x *GetGroupsRequest) WhichIdOpt() case_GetGroupsRequest_IdOpt {
 type GetGroupsRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_AuthProviderIdOpt:
+	// Fields of oneof AuthProviderIdOpt:
 	AuthProviderId *string
-	// -- end of xxx_hidden_AuthProviderIdOpt
-	// Fields of oneof xxx_hidden_KeyOpt:
+	// -- end of AuthProviderIdOpt
+	// Fields of oneof KeyOpt:
 	Key *string
-	// -- end of xxx_hidden_KeyOpt
-	// Fields of oneof xxx_hidden_ValueOpt:
+	// -- end of KeyOpt
+	// Fields of oneof ValueOpt:
 	Value *string
-	// -- end of xxx_hidden_ValueOpt
-	// Fields of oneof xxx_hidden_IdOpt:
+	// -- end of ValueOpt
+	// Fields of oneof IdOpt:
 	Id *string
-	// -- end of xxx_hidden_IdOpt
+	// -- end of IdOpt
 }
 
 func (b0 GetGroupsRequest_builder) Build() *GetGroupsRequest {
@@ -292,16 +334,16 @@ func (b0 GetGroupsRequest_builder) Build() *GetGroupsRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.AuthProviderId != nil {
-		x.xxx_hidden_AuthProviderIdOpt = &getGroupsRequest_AuthProviderId{*b.AuthProviderId}
+		x.AuthProviderIdOpt = &GetGroupsRequest_AuthProviderId{*b.AuthProviderId}
 	}
 	if b.Key != nil {
-		x.xxx_hidden_KeyOpt = &getGroupsRequest_Key{*b.Key}
+		x.KeyOpt = &GetGroupsRequest_Key{*b.Key}
 	}
 	if b.Value != nil {
-		x.xxx_hidden_ValueOpt = &getGroupsRequest_Value{*b.Value}
+		x.ValueOpt = &GetGroupsRequest_Value{*b.Value}
 	}
 	if b.Id != nil {
-		x.xxx_hidden_IdOpt = &getGroupsRequest_Id{*b.Id}
+		x.IdOpt = &GetGroupsRequest_Id{*b.Id}
 	}
 	return m0
 }
@@ -350,53 +392,49 @@ type isGetGroupsRequest_AuthProviderIdOpt interface {
 	isGetGroupsRequest_AuthProviderIdOpt()
 }
 
-type getGroupsRequest_AuthProviderId struct {
+type GetGroupsRequest_AuthProviderId struct {
 	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,oneof"`
 }
 
-func (*getGroupsRequest_AuthProviderId) isGetGroupsRequest_AuthProviderIdOpt() {}
+func (*GetGroupsRequest_AuthProviderId) isGetGroupsRequest_AuthProviderIdOpt() {}
 
 type isGetGroupsRequest_KeyOpt interface {
 	isGetGroupsRequest_KeyOpt()
 }
 
-type getGroupsRequest_Key struct {
+type GetGroupsRequest_Key struct {
 	Key string `protobuf:"bytes,2,opt,name=key,oneof"`
 }
 
-func (*getGroupsRequest_Key) isGetGroupsRequest_KeyOpt() {}
+func (*GetGroupsRequest_Key) isGetGroupsRequest_KeyOpt() {}
 
 type isGetGroupsRequest_ValueOpt interface {
 	isGetGroupsRequest_ValueOpt()
 }
 
-type getGroupsRequest_Value struct {
+type GetGroupsRequest_Value struct {
 	Value string `protobuf:"bytes,3,opt,name=value,oneof"`
 }
 
-func (*getGroupsRequest_Value) isGetGroupsRequest_ValueOpt() {}
+func (*GetGroupsRequest_Value) isGetGroupsRequest_ValueOpt() {}
 
 type isGetGroupsRequest_IdOpt interface {
 	isGetGroupsRequest_IdOpt()
 }
 
-type getGroupsRequest_Id struct {
+type GetGroupsRequest_Id struct {
 	Id string `protobuf:"bytes,4,opt,name=id,oneof"`
 }
 
-func (*getGroupsRequest_Id) isGetGroupsRequest_IdOpt() {}
+func (*GetGroupsRequest_Id) isGetGroupsRequest_IdOpt() {}
 
 // API for updating Groups and getting users.
 // Next Available Tag: 2
 type GetGroupsResponse struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Groups *[]*storage.Group      `protobuf:"bytes,1,rep,name=groups"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Groups        []*storage.Group       `protobuf:"bytes,1,rep,name=groups" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetGroupsResponse) Reset() {
@@ -426,27 +464,13 @@ func (x *GetGroupsResponse) ProtoReflect() protoreflect.Message {
 
 func (x *GetGroupsResponse) GetGroups() []*storage.Group {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Groups) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.Group
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Groups
 	}
 	return nil
 }
 
 func (x *GetGroupsResponse) SetGroups(v []*storage.Group) {
-	var sv *[]*storage.Group
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Group{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Groups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Groups = v
 }
 
 type GetGroupsResponse_builder struct {
@@ -459,26 +483,25 @@ func (b0 GetGroupsResponse_builder) Build() *GetGroupsResponse {
 	m0 := &GetGroupsResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Groups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Groups = &b.Groups
-	}
+	x.Groups = b.Groups
 	return m0
 }
 
 // GroupBatchUpdateRequest is an in transaction batch update to the groups present.
 // Next Available Tag: 3
 type GroupBatchUpdateRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PreviousGroups *[]*storage.Group      `protobuf:"bytes,1,rep,name=previous_groups,json=previousGroups"`
-	xxx_hidden_RequiredGroups *[]*storage.Group      `protobuf:"bytes,2,rep,name=required_groups,json=requiredGroups"`
-	xxx_hidden_Force          bool                   `protobuf:"varint,3,opt,name=force"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Previous groups are the groups expected to be present in the store.
+	// Performs a diff on the GroupProperties present in previous_groups and required_groups:
+	// 1) if in previous_groups but not required_groups, it gets deleted.
+	// 2) if in previous_groups and required_groups, it gets updated.
+	// 3) if not in previous_groups but in required_groups, it gets added.
+	PreviousGroups []*storage.Group `protobuf:"bytes,1,rep,name=previous_groups,json=previousGroups" json:"previous_groups,omitempty"`
+	// Required groups are the groups we want to mutate the previous groups into.
+	RequiredGroups []*storage.Group `protobuf:"bytes,2,rep,name=required_groups,json=requiredGroups" json:"required_groups,omitempty"`
+	Force          bool             `protobuf:"varint,3,opt,name=force" json:"force,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GroupBatchUpdateRequest) Reset() {
@@ -508,76 +531,35 @@ func (x *GroupBatchUpdateRequest) ProtoReflect() protoreflect.Message {
 
 func (x *GroupBatchUpdateRequest) GetPreviousGroups() []*storage.Group {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_PreviousGroups) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*storage.Group
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.PreviousGroups
 	}
 	return nil
 }
 
 func (x *GroupBatchUpdateRequest) GetRequiredGroups() []*storage.Group {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 1) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_RequiredGroups) {
-				protoimpl.X.UnmarshalField(x, 2)
-			}
-			var rv *[]*storage.Group
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.RequiredGroups
 	}
 	return nil
 }
 
 func (x *GroupBatchUpdateRequest) GetForce() bool {
 	if x != nil {
-		return x.xxx_hidden_Force
+		return x.Force
 	}
 	return false
 }
 
 func (x *GroupBatchUpdateRequest) SetPreviousGroups(v []*storage.Group) {
-	var sv *[]*storage.Group
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Group{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_PreviousGroups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.PreviousGroups = v
 }
 
 func (x *GroupBatchUpdateRequest) SetRequiredGroups(v []*storage.Group) {
-	var sv *[]*storage.Group
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*storage.Group{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_RequiredGroups), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.RequiredGroups = v
 }
 
 func (x *GroupBatchUpdateRequest) SetForce(v bool) {
-	x.xxx_hidden_Force = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *GroupBatchUpdateRequest) HasForce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *GroupBatchUpdateRequest) ClearForce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Force = false
+	x.Force = v
 }
 
 type GroupBatchUpdateRequest_builder struct {
@@ -591,39 +573,29 @@ type GroupBatchUpdateRequest_builder struct {
 	PreviousGroups []*storage.Group
 	// Required groups are the groups we want to mutate the previous groups into.
 	RequiredGroups []*storage.Group
-	Force          *bool
+	Force          bool
 }
 
 func (b0 GroupBatchUpdateRequest_builder) Build() *GroupBatchUpdateRequest {
 	m0 := &GroupBatchUpdateRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.PreviousGroups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_PreviousGroups = &b.PreviousGroups
-	}
-	if b.RequiredGroups != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_RequiredGroups = &b.RequiredGroups
-	}
-	if b.Force != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Force = *b.Force
-	}
+	x.PreviousGroups = b.PreviousGroups
+	x.RequiredGroups = b.RequiredGroups
+	x.Force = b.Force
 	return m0
 }
 
 type DeleteGroupRequest struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AuthProviderId *string                `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId"`
-	xxx_hidden_Key            *string                `protobuf:"bytes,2,opt,name=key"`
-	xxx_hidden_Value          *string                `protobuf:"bytes,3,opt,name=value"`
-	xxx_hidden_Id             *string                `protobuf:"bytes,4,opt,name=id"`
-	xxx_hidden_Force          bool                   `protobuf:"varint,5,opt,name=force"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId" json:"auth_provider_id,omitempty"`
+	Key            string `protobuf:"bytes,2,opt,name=key" json:"key,omitempty"`
+	Value          string `protobuf:"bytes,3,opt,name=value" json:"value,omitempty"`
+	Id             string `protobuf:"bytes,4,opt,name=id" json:"id,omitempty"`
+	Force          bool   `protobuf:"varint,5,opt,name=force" json:"force,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DeleteGroupRequest) Reset() {
@@ -653,184 +625,88 @@ func (x *DeleteGroupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *DeleteGroupRequest) GetAuthProviderId() string {
 	if x != nil {
-		if x.xxx_hidden_AuthProviderId != nil {
-			return *x.xxx_hidden_AuthProviderId
-		}
-		return ""
+		return x.AuthProviderId
 	}
 	return ""
 }
 
 func (x *DeleteGroupRequest) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *DeleteGroupRequest) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *DeleteGroupRequest) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *DeleteGroupRequest) GetForce() bool {
 	if x != nil {
-		return x.xxx_hidden_Force
+		return x.Force
 	}
 	return false
 }
 
 func (x *DeleteGroupRequest) SetAuthProviderId(v string) {
-	x.xxx_hidden_AuthProviderId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.AuthProviderId = v
 }
 
 func (x *DeleteGroupRequest) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	x.Key = v
 }
 
 func (x *DeleteGroupRequest) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.Value = v
 }
 
 func (x *DeleteGroupRequest) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.Id = v
 }
 
 func (x *DeleteGroupRequest) SetForce(v bool) {
-	x.xxx_hidden_Force = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-func (x *DeleteGroupRequest) HasAuthProviderId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *DeleteGroupRequest) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *DeleteGroupRequest) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *DeleteGroupRequest) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *DeleteGroupRequest) HasForce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *DeleteGroupRequest) ClearAuthProviderId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_AuthProviderId = nil
-}
-
-func (x *DeleteGroupRequest) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *DeleteGroupRequest) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *DeleteGroupRequest) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *DeleteGroupRequest) ClearForce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Force = false
+	x.Force = v
 }
 
 type DeleteGroupRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
-	AuthProviderId *string
-	Key            *string
-	Value          *string
-	Id             *string
-	Force          *bool
+	AuthProviderId string
+	Key            string
+	Value          string
+	Id             string
+	Force          bool
 }
 
 func (b0 DeleteGroupRequest_builder) Build() *DeleteGroupRequest {
 	m0 := &DeleteGroupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.AuthProviderId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_AuthProviderId = b.AuthProviderId
-	}
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Force != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_Force = *b.Force
-	}
+	x.AuthProviderId = b.AuthProviderId
+	x.Key = b.Key
+	x.Value = b.Value
+	x.Id = b.Id
+	x.Force = b.Force
 	return m0
 }
 
 type UpdateGroupRequest struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Group *storage.Group         `protobuf:"bytes,1,opt,name=group"`
-	xxx_hidden_Force bool                   `protobuf:"varint,2,opt,name=force"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Group         *storage.Group         `protobuf:"bytes,1,opt,name=group" json:"group,omitempty"`
+	Force         bool                   `protobuf:"varint,2,opt,name=force" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateGroupRequest) Reset() {
@@ -860,82 +736,50 @@ func (x *UpdateGroupRequest) ProtoReflect() protoreflect.Message {
 
 func (x *UpdateGroupRequest) GetGroup() *storage.Group {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Group) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *storage.Group
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Group), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Group
 	}
 	return nil
 }
 
 func (x *UpdateGroupRequest) GetForce() bool {
 	if x != nil {
-		return x.xxx_hidden_Force
+		return x.Force
 	}
 	return false
 }
 
 func (x *UpdateGroupRequest) SetGroup(v *storage.Group) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Group, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
-	}
+	x.Group = v
 }
 
 func (x *UpdateGroupRequest) SetForce(v bool) {
-	x.xxx_hidden_Force = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+	x.Force = v
 }
 
 func (x *UpdateGroupRequest) HasGroup() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *UpdateGroupRequest) HasForce() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return x.Group != nil
 }
 
 func (x *UpdateGroupRequest) ClearGroup() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Group, (*storage.Group)(nil))
-}
-
-func (x *UpdateGroupRequest) ClearForce() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Force = false
+	x.Group = nil
 }
 
 type UpdateGroupRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Group *storage.Group
-	Force *bool
+	Force bool
 }
 
 func (b0 UpdateGroupRequest_builder) Build() *UpdateGroupRequest {
 	m0 := &UpdateGroupRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Group != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Group = b.Group
-	}
-	if b.Force != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Force = *b.Force
-	}
+	x.Group = b.Group
+	x.Force = b.Force
 	return m0
 }
 
@@ -978,8 +822,8 @@ const file_api_v1_group_service_proto_rawDesc = "" +
 	"\vUpdateGroup\x12\x16.v1.UpdateGroupRequest\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13:\x05group\x1a\n" +
 	"/v1/groups\x12D\n" +
 	"\vDeleteGroup\x12\x16.v1.DeleteGroupRequest\x1a\t.v1.Empty\"\x12\x82\xd3\xe4\x93\x02\f*\n" +
-	"/v1/groupsB/\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\x05\xd2>\x02\x10\x03X\x01b\beditionsp\xe8\a"
+	"/v1/groupsB7\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01X\x01b\beditionsp\xe8\a"
 
 var file_api_v1_group_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_group_service_proto_goTypes = []any{
@@ -1023,10 +867,10 @@ func file_api_v1_group_service_proto_init() {
 	}
 	file_api_v1_empty_proto_init()
 	file_api_v1_group_service_proto_msgTypes[0].OneofWrappers = []any{
-		(*getGroupsRequest_AuthProviderId)(nil),
-		(*getGroupsRequest_Key)(nil),
-		(*getGroupsRequest_Value)(nil),
-		(*getGroupsRequest_Id)(nil),
+		(*GetGroupsRequest_AuthProviderId)(nil),
+		(*GetGroupsRequest_Key)(nil),
+		(*GetGroupsRequest_Value)(nil),
+		(*GetGroupsRequest_Id)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

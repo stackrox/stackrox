@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: api/v1/signal.proto
 
+//go:build !protoopaque
+
 package v1
 
 import (
@@ -25,10 +27,13 @@ const (
 // Signal message tracks process and network activity.
 // Specifically, process launches and network connects/accepts.
 type Signal struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Signal isSignal_Signal        `protobuf_oneof:"signal"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Types that are valid to be assigned to Signal:
+	//
+	//	*Signal_ProcessSignal
+	Signal        isSignal_Signal `protobuf_oneof:"signal"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Signal) Reset() {
@@ -56,9 +61,16 @@ func (x *Signal) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+func (x *Signal) GetSignal() isSignal_Signal {
+	if x != nil {
+		return x.Signal
+	}
+	return nil
+}
+
 func (x *Signal) GetProcessSignal() *storage.ProcessSignal {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Signal.(*signal_ProcessSignal); ok {
+		if x, ok := x.Signal.(*Signal_ProcessSignal); ok {
 			return x.ProcessSignal
 		}
 	}
@@ -67,34 +79,34 @@ func (x *Signal) GetProcessSignal() *storage.ProcessSignal {
 
 func (x *Signal) SetProcessSignal(v *storage.ProcessSignal) {
 	if v == nil {
-		x.xxx_hidden_Signal = nil
+		x.Signal = nil
 		return
 	}
-	x.xxx_hidden_Signal = &signal_ProcessSignal{v}
+	x.Signal = &Signal_ProcessSignal{v}
 }
 
 func (x *Signal) HasSignal() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Signal != nil
+	return x.Signal != nil
 }
 
 func (x *Signal) HasProcessSignal() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Signal.(*signal_ProcessSignal)
+	_, ok := x.Signal.(*Signal_ProcessSignal)
 	return ok
 }
 
 func (x *Signal) ClearSignal() {
-	x.xxx_hidden_Signal = nil
+	x.Signal = nil
 }
 
 func (x *Signal) ClearProcessSignal() {
-	if _, ok := x.xxx_hidden_Signal.(*signal_ProcessSignal); ok {
-		x.xxx_hidden_Signal = nil
+	if _, ok := x.Signal.(*Signal_ProcessSignal); ok {
+		x.Signal = nil
 	}
 }
 
@@ -105,8 +117,8 @@ func (x *Signal) WhichSignal() case_Signal_Signal {
 	if x == nil {
 		return Signal_Signal_not_set_case
 	}
-	switch x.xxx_hidden_Signal.(type) {
-	case *signal_ProcessSignal:
+	switch x.Signal.(type) {
+	case *Signal_ProcessSignal:
 		return Signal_ProcessSignal_case
 	default:
 		return Signal_Signal_not_set_case
@@ -116,9 +128,9 @@ func (x *Signal) WhichSignal() case_Signal_Signal {
 type Signal_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	// Fields of oneof xxx_hidden_Signal:
+	// Fields of oneof Signal:
 	ProcessSignal *storage.ProcessSignal
-	// -- end of xxx_hidden_Signal
+	// -- end of Signal
 }
 
 func (b0 Signal_builder) Build() *Signal {
@@ -126,7 +138,7 @@ func (b0 Signal_builder) Build() *Signal {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.ProcessSignal != nil {
-		x.xxx_hidden_Signal = &signal_ProcessSignal{b.ProcessSignal}
+		x.Signal = &Signal_ProcessSignal{b.ProcessSignal}
 	}
 	return m0
 }
@@ -145,11 +157,11 @@ type isSignal_Signal interface {
 	isSignal_Signal()
 }
 
-type signal_ProcessSignal struct {
+type Signal_ProcessSignal struct {
 	ProcessSignal *storage.ProcessSignal `protobuf:"bytes,1,opt,name=process_signal,json=processSignal,oneof"`
 }
 
-func (*signal_ProcessSignal) isSignal_Signal() {}
+func (*Signal_ProcessSignal) isSignal_Signal() {}
 
 var File_api_v1_signal_proto protoreflect.FileDescriptor
 
@@ -158,8 +170,8 @@ const file_api_v1_signal_proto_rawDesc = "" +
 	"\x13api/v1/signal.proto\x12\x02v1\x1a\x1fstorage/process_indicator.proto\x1a!google/protobuf/go_features.proto\"W\n" +
 	"\x06Signal\x12C\n" +
 	"\x0eprocess_signal\x18\x01 \x01(\v2\x16.storage.ProcessSignalB\x02(\x01H\x00R\rprocessSignalB\b\n" +
-	"\x06signalB2\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\xf8\x01\x01\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\x06signalB:\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1\xf8\x01\x01\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_api_v1_signal_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_api_v1_signal_proto_goTypes = []any{
@@ -181,7 +193,7 @@ func file_api_v1_signal_proto_init() {
 		return
 	}
 	file_api_v1_signal_proto_msgTypes[0].OneofWrappers = []any{
-		(*signal_ProcessSignal)(nil),
+		(*Signal_ProcessSignal)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

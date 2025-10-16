@@ -4,10 +4,11 @@ package storage
 
 import "google.golang.org/protobuf/proto"
 
-func (m *NotifierEncConfig) SizeVT() int                   { return proto.Size(m) }
-func (m *NotifierEncConfig) CloneVT() *NotifierEncConfig   { return proto.Clone(m).(*NotifierEncConfig) }
-func (m *NotifierEncConfig) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
-func (m *NotifierEncConfig) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierEncConfig) SizeVT() int                       { return proto.Size(m) }
+func (m *NotifierEncConfig) CloneVT() *NotifierEncConfig       { return proto.Clone(m).(*NotifierEncConfig) }
+func (m *NotifierEncConfig) MarshalVT() ([]byte, error)        { return proto.Marshal(m) }
+func (m *NotifierEncConfig) UnmarshalVT(dAtA []byte) error     { return proto.Unmarshal(dAtA, m) }
+func (m *NotifierEncConfig) EqualVT(n *NotifierEncConfig) bool { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *NotifierEncConfig) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

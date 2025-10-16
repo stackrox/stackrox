@@ -8,6 +8,7 @@ func (m *Traits) SizeVT() int                   { return proto.Size(m) }
 func (m *Traits) CloneVT() *Traits              { return proto.Clone(m).(*Traits) }
 func (m *Traits) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *Traits) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *Traits) EqualVT(n *Traits) bool        { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *Traits) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }

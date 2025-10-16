@@ -12,6 +12,9 @@ func (m *DeploymentEnhancementMessage) MarshalVT() ([]byte, error) { return prot
 func (m *DeploymentEnhancementMessage) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DeploymentEnhancementMessage) EqualVT(n *DeploymentEnhancementMessage) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeploymentEnhancementMessage) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -26,6 +29,9 @@ func (m *DeploymentEnhancementRequest) MarshalVT() ([]byte, error) { return prot
 func (m *DeploymentEnhancementRequest) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
 }
+func (m *DeploymentEnhancementRequest) EqualVT(n *DeploymentEnhancementRequest) bool {
+	return proto.Equal(m, n)
+}
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *DeploymentEnhancementRequest) UnmarshalVTUnsafe(dAtA []byte) error {
@@ -39,6 +45,9 @@ func (m *DeploymentEnhancementResponse) CloneVT() *DeploymentEnhancementResponse
 func (m *DeploymentEnhancementResponse) MarshalVT() ([]byte, error) { return proto.Marshal(m) }
 func (m *DeploymentEnhancementResponse) UnmarshalVT(dAtA []byte) error {
 	return proto.Unmarshal(dAtA, m)
+}
+func (m *DeploymentEnhancementResponse) EqualVT(n *DeploymentEnhancementResponse) bool {
+	return proto.Equal(m, n)
 }
 
 // Deprecated: Use UnmarshalVT instead.

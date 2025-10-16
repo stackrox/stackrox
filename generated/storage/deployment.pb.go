@@ -4,6 +4,8 @@
 // 	protoc        v6.32.1
 // source: storage/deployment.proto
 
+//go:build !protoopaque
+
 package storage
 
 import (
@@ -222,44 +224,40 @@ func (x SecurityContext_SeccompProfile_ProfileType) Number() protoreflect.EnumNu
 
 // Next available tag: 36
 type Deployment struct {
-	state                                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id                            *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                          *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Hash                          uint64                 `protobuf:"varint,26,opt,name=hash"`
-	xxx_hidden_Type                          *string                `protobuf:"bytes,4,opt,name=type"`
-	xxx_hidden_Namespace                     *string                `protobuf:"bytes,5,opt,name=namespace"`
-	xxx_hidden_NamespaceId                   *string                `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId"`
-	xxx_hidden_OrchestratorComponent         bool                   `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent"`
-	xxx_hidden_Replicas                      int64                  `protobuf:"varint,6,opt,name=replicas"`
-	xxx_hidden_Labels                        map[string]string      `protobuf:"bytes,7,rep,name=labels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_PodLabels                     map[string]string      `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_LabelSelector                 *LabelSelector         `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector"`
-	xxx_hidden_Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created"`
-	xxx_hidden_ClusterId                     *string                `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_ClusterName                   *string                `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName"`
-	xxx_hidden_Containers                    *[]*Container          `protobuf:"bytes,11,rep,name=containers"`
-	xxx_hidden_Annotations                   map[string]string      `protobuf:"bytes,14,rep,name=annotations" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Priority                      int64                  `protobuf:"varint,15,opt,name=priority"`
-	xxx_hidden_Inactive                      bool                   `protobuf:"varint,16,opt,name=inactive"`
-	xxx_hidden_ImagePullSecrets              []string               `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets"`
-	xxx_hidden_ServiceAccount                *string                `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount"`
-	xxx_hidden_ServiceAccountPermissionLevel PermissionLevel        `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,enum=storage.PermissionLevel"`
-	xxx_hidden_AutomountServiceAccountToken  bool                   `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken"`
-	xxx_hidden_HostNetwork                   bool                   `protobuf:"varint,21,opt,name=host_network,json=hostNetwork"`
-	xxx_hidden_HostPid                       bool                   `protobuf:"varint,31,opt,name=host_pid,json=hostPid"`
-	xxx_hidden_HostIpc                       bool                   `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc"`
-	xxx_hidden_RuntimeClass                  *string                `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass"`
-	xxx_hidden_Tolerations                   *[]*Toleration         `protobuf:"bytes,22,rep,name=tolerations"`
-	xxx_hidden_Ports                         *[]*PortConfig         `protobuf:"bytes,24,rep,name=ports"`
-	xxx_hidden_StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp"`
-	xxx_hidden_RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore"`
-	xxx_hidden_PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id                            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"
+	Name                          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Deployment,store"`                                                                                                       // @gotags: search:"Deployment,store"
+	Hash                          uint64                 `protobuf:"varint,26,opt,name=hash" json:"hash,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                                                     // @gotags: hash:"ignore" sensorhash:"ignore"
+	Type                          string                 `protobuf:"bytes,4,opt,name=type" json:"type,omitempty" search:"Deployment Type"`                                                                                                       // @gotags: search:"Deployment Type"
+	Namespace                     string                 `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
+	NamespaceId                   string                 `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId" json:"namespace_id,omitempty" search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"`                                                                     // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
+	OrchestratorComponent         bool                   `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent" json:"orchestrator_component,omitempty" search:"Orchestrator Component"`                                      // @gotags: search:"Orchestrator Component"
+	Replicas                      int64                  `protobuf:"varint,6,opt,name=replicas" json:"replicas,omitempty" policy:"Replicas"`                                                                                              // @gotags: policy:"Replicas"
+	Labels                        map[string]string      `protobuf:"bytes,7,rep,name=labels" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label,store"`                         // @gotags: search:"Deployment Label,store"
+	PodLabels                     map[string]string      `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label,store"` // @gotags: search:"Pod Label,store"
+	LabelSelector                 *LabelSelector         `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector" json:"label_selector,omitempty"`
+	Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created" json:"created,omitempty" search:"Created,store,hidden" hash:"ignore"`                             // @gotags: search:"Created,store,hidden" hash:"ignore"
+	ClusterId                     string                 `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`        // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName                   string                 `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
+	Containers                    []*Container           `protobuf:"bytes,11,rep,name=containers" json:"containers,omitempty"`
+	Annotations                   map[string]string      `protobuf:"bytes,14,rep,name=annotations" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"` // @gotags: search:"Deployment Annotation"
+	Priority                      int64                  `protobuf:"varint,15,opt,name=priority" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
+	Inactive                      bool                   `protobuf:"varint,16,opt,name=inactive" json:"inactive,omitempty"`
+	ImagePullSecrets              []string               `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
+	ServiceAccount                string                 `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
+	ServiceAccountPermissionLevel PermissionLevel        `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,enum=storage.PermissionLevel" json:"service_account_permission_level,omitempty" search:"Service Account Permission Level,store"` // @gotags: search:"Service Account Permission Level,store"
+	AutomountServiceAccountToken  bool                   `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken" json:"automount_service_account_token,omitempty" policy:"Automount Service Account Token"`                                 // @gotags: policy:"Automount Service Account Token"
+	HostNetwork                   bool                   `protobuf:"varint,21,opt,name=host_network,json=hostNetwork" json:"host_network,omitempty" policy:"Host Network"`                                                                                        // @gotags: policy:"Host Network"
+	HostPid                       bool                   `protobuf:"varint,31,opt,name=host_pid,json=hostPid" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                    // @gotags: policy:"Host PID"
+	HostIpc                       bool                   `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                    // @gotags: policy:"Host IPC"
+	RuntimeClass                  string                 `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                      // @gotags: policy:"Runtime Class"
+	Tolerations                   []*Toleration          `protobuf:"bytes,22,rep,name=tolerations" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
+	Ports                         []*PortConfig          `protobuf:"bytes,24,rep,name=ports" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
+	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
+	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
+	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
@@ -289,901 +287,452 @@ func (x *Deployment) ProtoReflect() protoreflect.Message {
 
 func (x *Deployment) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Deployment) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Deployment) GetHash() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Hash
+		return x.Hash
 	}
 	return 0
 }
 
 func (x *Deployment) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *Deployment) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *Deployment) GetNamespaceId() string {
 	if x != nil {
-		if x.xxx_hidden_NamespaceId != nil {
-			return *x.xxx_hidden_NamespaceId
-		}
-		return ""
+		return x.NamespaceId
 	}
 	return ""
 }
 
 func (x *Deployment) GetOrchestratorComponent() bool {
 	if x != nil {
-		return x.xxx_hidden_OrchestratorComponent
+		return x.OrchestratorComponent
 	}
 	return false
 }
 
 func (x *Deployment) GetReplicas() int64 {
 	if x != nil {
-		return x.xxx_hidden_Replicas
+		return x.Replicas
 	}
 	return 0
 }
 
 func (x *Deployment) GetLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Labels
+		return x.Labels
 	}
 	return nil
 }
 
 func (x *Deployment) GetPodLabels() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_PodLabels
+		return x.PodLabels
 	}
 	return nil
 }
 
 func (x *Deployment) GetLabelSelector() *LabelSelector {
 	if x != nil {
-		return x.xxx_hidden_LabelSelector
+		return x.LabelSelector
 	}
 	return nil
 }
 
 func (x *Deployment) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 11) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Created
 	}
 	return nil
 }
 
 func (x *Deployment) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *Deployment) GetClusterName() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterName != nil {
-			return *x.xxx_hidden_ClusterName
-		}
-		return ""
+		return x.ClusterName
 	}
 	return ""
 }
 
 func (x *Deployment) GetContainers() []*Container {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 14) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Containers) {
-				protoimpl.X.UnmarshalField(x, 11)
-			}
-			var rv *[]*Container
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Containers
 	}
 	return nil
 }
 
 func (x *Deployment) GetAnnotations() map[string]string {
 	if x != nil {
-		return x.xxx_hidden_Annotations
+		return x.Annotations
 	}
 	return nil
 }
 
 func (x *Deployment) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *Deployment) GetInactive() bool {
 	if x != nil {
-		return x.xxx_hidden_Inactive
+		return x.Inactive
 	}
 	return false
 }
 
 func (x *Deployment) GetImagePullSecrets() []string {
 	if x != nil {
-		return x.xxx_hidden_ImagePullSecrets
+		return x.ImagePullSecrets
 	}
 	return nil
 }
 
 func (x *Deployment) GetServiceAccount() string {
 	if x != nil {
-		if x.xxx_hidden_ServiceAccount != nil {
-			return *x.xxx_hidden_ServiceAccount
-		}
-		return ""
+		return x.ServiceAccount
 	}
 	return ""
 }
 
 func (x *Deployment) GetServiceAccountPermissionLevel() PermissionLevel {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 20) {
-			return x.xxx_hidden_ServiceAccountPermissionLevel
-		}
+		return x.ServiceAccountPermissionLevel
 	}
 	return PermissionLevel_UNSET
 }
 
 func (x *Deployment) GetAutomountServiceAccountToken() bool {
 	if x != nil {
-		return x.xxx_hidden_AutomountServiceAccountToken
+		return x.AutomountServiceAccountToken
 	}
 	return false
 }
 
 func (x *Deployment) GetHostNetwork() bool {
 	if x != nil {
-		return x.xxx_hidden_HostNetwork
+		return x.HostNetwork
 	}
 	return false
 }
 
 func (x *Deployment) GetHostPid() bool {
 	if x != nil {
-		return x.xxx_hidden_HostPid
+		return x.HostPid
 	}
 	return false
 }
 
 func (x *Deployment) GetHostIpc() bool {
 	if x != nil {
-		return x.xxx_hidden_HostIpc
+		return x.HostIpc
 	}
 	return false
 }
 
 func (x *Deployment) GetRuntimeClass() string {
 	if x != nil {
-		if x.xxx_hidden_RuntimeClass != nil {
-			return *x.xxx_hidden_RuntimeClass
-		}
-		return ""
+		return x.RuntimeClass
 	}
 	return ""
 }
 
 func (x *Deployment) GetTolerations() []*Toleration {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 26) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Tolerations) {
-				protoimpl.X.UnmarshalField(x, 22)
-			}
-			var rv *[]*Toleration
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Tolerations
 	}
 	return nil
 }
 
 func (x *Deployment) GetPorts() []*PortConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 27) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
-				protoimpl.X.UnmarshalField(x, 24)
-			}
-			var rv *[]*PortConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Ports
 	}
 	return nil
 }
 
 func (x *Deployment) GetStateTimestamp() int64 {
 	if x != nil {
-		return x.xxx_hidden_StateTimestamp
+		return x.StateTimestamp
 	}
 	return 0
 }
 
 func (x *Deployment) GetRiskScore() float32 {
 	if x != nil {
-		return x.xxx_hidden_RiskScore
+		return x.RiskScore
 	}
 	return 0
 }
 
 func (x *Deployment) GetPlatformComponent() bool {
 	if x != nil {
-		return x.xxx_hidden_PlatformComponent
+		return x.PlatformComponent
 	}
 	return false
 }
 
 func (x *Deployment) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 31)
+	x.Id = v
 }
 
 func (x *Deployment) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 31)
+	x.Name = v
 }
 
 func (x *Deployment) SetHash(v uint64) {
-	x.xxx_hidden_Hash = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 31)
+	x.Hash = v
 }
 
 func (x *Deployment) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 31)
+	x.Type = v
 }
 
 func (x *Deployment) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 31)
+	x.Namespace = v
 }
 
 func (x *Deployment) SetNamespaceId(v string) {
-	x.xxx_hidden_NamespaceId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 31)
+	x.NamespaceId = v
 }
 
 func (x *Deployment) SetOrchestratorComponent(v bool) {
-	x.xxx_hidden_OrchestratorComponent = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 31)
+	x.OrchestratorComponent = v
 }
 
 func (x *Deployment) SetReplicas(v int64) {
-	x.xxx_hidden_Replicas = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 31)
+	x.Replicas = v
 }
 
 func (x *Deployment) SetLabels(v map[string]string) {
-	x.xxx_hidden_Labels = v
+	x.Labels = v
 }
 
 func (x *Deployment) SetPodLabels(v map[string]string) {
-	x.xxx_hidden_PodLabels = v
+	x.PodLabels = v
 }
 
 func (x *Deployment) SetLabelSelector(v *LabelSelector) {
-	x.xxx_hidden_LabelSelector = v
+	x.LabelSelector = v
 }
 
 func (x *Deployment) SetCreated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 31)
-	}
+	x.Created = v
 }
 
 func (x *Deployment) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 31)
+	x.ClusterId = v
 }
 
 func (x *Deployment) SetClusterName(v string) {
-	x.xxx_hidden_ClusterName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 13, 31)
+	x.ClusterName = v
 }
 
 func (x *Deployment) SetContainers(v []*Container) {
-	var sv *[]*Container
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Container{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Containers), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 14, 31)
+	x.Containers = v
 }
 
 func (x *Deployment) SetAnnotations(v map[string]string) {
-	x.xxx_hidden_Annotations = v
+	x.Annotations = v
 }
 
 func (x *Deployment) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 16, 31)
+	x.Priority = v
 }
 
 func (x *Deployment) SetInactive(v bool) {
-	x.xxx_hidden_Inactive = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 31)
+	x.Inactive = v
 }
 
 func (x *Deployment) SetImagePullSecrets(v []string) {
-	x.xxx_hidden_ImagePullSecrets = v
+	x.ImagePullSecrets = v
 }
 
 func (x *Deployment) SetServiceAccount(v string) {
-	x.xxx_hidden_ServiceAccount = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 19, 31)
+	x.ServiceAccount = v
 }
 
 func (x *Deployment) SetServiceAccountPermissionLevel(v PermissionLevel) {
-	x.xxx_hidden_ServiceAccountPermissionLevel = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 20, 31)
+	x.ServiceAccountPermissionLevel = v
 }
 
 func (x *Deployment) SetAutomountServiceAccountToken(v bool) {
-	x.xxx_hidden_AutomountServiceAccountToken = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 21, 31)
+	x.AutomountServiceAccountToken = v
 }
 
 func (x *Deployment) SetHostNetwork(v bool) {
-	x.xxx_hidden_HostNetwork = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 22, 31)
+	x.HostNetwork = v
 }
 
 func (x *Deployment) SetHostPid(v bool) {
-	x.xxx_hidden_HostPid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 23, 31)
+	x.HostPid = v
 }
 
 func (x *Deployment) SetHostIpc(v bool) {
-	x.xxx_hidden_HostIpc = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 24, 31)
+	x.HostIpc = v
 }
 
 func (x *Deployment) SetRuntimeClass(v string) {
-	x.xxx_hidden_RuntimeClass = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 25, 31)
+	x.RuntimeClass = v
 }
 
 func (x *Deployment) SetTolerations(v []*Toleration) {
-	var sv *[]*Toleration
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Toleration{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Tolerations), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 26, 31)
+	x.Tolerations = v
 }
 
 func (x *Deployment) SetPorts(v []*PortConfig) {
-	var sv *[]*PortConfig
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PortConfig{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 27, 31)
+	x.Ports = v
 }
 
 func (x *Deployment) SetStateTimestamp(v int64) {
-	x.xxx_hidden_StateTimestamp = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 28, 31)
+	x.StateTimestamp = v
 }
 
 func (x *Deployment) SetRiskScore(v float32) {
-	x.xxx_hidden_RiskScore = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 29, 31)
+	x.RiskScore = v
 }
 
 func (x *Deployment) SetPlatformComponent(v bool) {
-	x.xxx_hidden_PlatformComponent = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 30, 31)
-}
-
-func (x *Deployment) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Deployment) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Deployment) HasHash() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Deployment) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Deployment) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *Deployment) HasNamespaceId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *Deployment) HasOrchestratorComponent() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *Deployment) HasReplicas() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	x.PlatformComponent = v
 }
 
 func (x *Deployment) HasLabelSelector() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LabelSelector != nil
+	return x.LabelSelector != nil
 }
 
 func (x *Deployment) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
-}
-
-func (x *Deployment) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
-}
-
-func (x *Deployment) HasClusterName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 13)
-}
-
-func (x *Deployment) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 16)
-}
-
-func (x *Deployment) HasInactive() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
-}
-
-func (x *Deployment) HasServiceAccount() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 19)
-}
-
-func (x *Deployment) HasServiceAccountPermissionLevel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 20)
-}
-
-func (x *Deployment) HasAutomountServiceAccountToken() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 21)
-}
-
-func (x *Deployment) HasHostNetwork() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 22)
-}
-
-func (x *Deployment) HasHostPid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 23)
-}
-
-func (x *Deployment) HasHostIpc() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 24)
-}
-
-func (x *Deployment) HasRuntimeClass() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 25)
-}
-
-func (x *Deployment) HasStateTimestamp() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 28)
-}
-
-func (x *Deployment) HasRiskScore() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 29)
-}
-
-func (x *Deployment) HasPlatformComponent() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 30)
-}
-
-func (x *Deployment) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *Deployment) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Deployment) ClearHash() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Hash = 0
-}
-
-func (x *Deployment) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *Deployment) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *Deployment) ClearNamespaceId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_NamespaceId = nil
-}
-
-func (x *Deployment) ClearOrchestratorComponent() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_OrchestratorComponent = false
-}
-
-func (x *Deployment) ClearReplicas() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Replicas = 0
+	return x.Created != nil
 }
 
 func (x *Deployment) ClearLabelSelector() {
-	x.xxx_hidden_LabelSelector = nil
+	x.LabelSelector = nil
 }
 
 func (x *Deployment) ClearCreated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *Deployment) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *Deployment) ClearClusterName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 13)
-	x.xxx_hidden_ClusterName = nil
-}
-
-func (x *Deployment) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 16)
-	x.xxx_hidden_Priority = 0
-}
-
-func (x *Deployment) ClearInactive() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
-	x.xxx_hidden_Inactive = false
-}
-
-func (x *Deployment) ClearServiceAccount() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 19)
-	x.xxx_hidden_ServiceAccount = nil
-}
-
-func (x *Deployment) ClearServiceAccountPermissionLevel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 20)
-	x.xxx_hidden_ServiceAccountPermissionLevel = PermissionLevel_UNSET
-}
-
-func (x *Deployment) ClearAutomountServiceAccountToken() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 21)
-	x.xxx_hidden_AutomountServiceAccountToken = false
-}
-
-func (x *Deployment) ClearHostNetwork() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 22)
-	x.xxx_hidden_HostNetwork = false
-}
-
-func (x *Deployment) ClearHostPid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 23)
-	x.xxx_hidden_HostPid = false
-}
-
-func (x *Deployment) ClearHostIpc() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 24)
-	x.xxx_hidden_HostIpc = false
-}
-
-func (x *Deployment) ClearRuntimeClass() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 25)
-	x.xxx_hidden_RuntimeClass = nil
-}
-
-func (x *Deployment) ClearStateTimestamp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 28)
-	x.xxx_hidden_StateTimestamp = 0
-}
-
-func (x *Deployment) ClearRiskScore() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 29)
-	x.xxx_hidden_RiskScore = 0
-}
-
-func (x *Deployment) ClearPlatformComponent() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 30)
-	x.xxx_hidden_PlatformComponent = false
+	x.Created = nil
 }
 
 type Deployment_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id                            *string
-	Name                          *string
-	Hash                          *uint64
-	Type                          *string
-	Namespace                     *string
-	NamespaceId                   *string
-	OrchestratorComponent         *bool
-	Replicas                      *int64
+	Id                            string
+	Name                          string
+	Hash                          uint64
+	Type                          string
+	Namespace                     string
+	NamespaceId                   string
+	OrchestratorComponent         bool
+	Replicas                      int64
 	Labels                        map[string]string
 	PodLabels                     map[string]string
 	LabelSelector                 *LabelSelector
 	Created                       *timestamppb.Timestamp
-	ClusterId                     *string
-	ClusterName                   *string
+	ClusterId                     string
+	ClusterName                   string
 	Containers                    []*Container
 	Annotations                   map[string]string
-	Priority                      *int64
-	Inactive                      *bool
+	Priority                      int64
+	Inactive                      bool
 	ImagePullSecrets              []string
-	ServiceAccount                *string
-	ServiceAccountPermissionLevel *PermissionLevel
-	AutomountServiceAccountToken  *bool
-	HostNetwork                   *bool
-	HostPid                       *bool
-	HostIpc                       *bool
-	RuntimeClass                  *string
+	ServiceAccount                string
+	ServiceAccountPermissionLevel PermissionLevel
+	AutomountServiceAccountToken  bool
+	HostNetwork                   bool
+	HostPid                       bool
+	HostIpc                       bool
+	RuntimeClass                  string
 	Tolerations                   []*Toleration
 	Ports                         []*PortConfig
-	StateTimestamp                *int64
-	RiskScore                     *float32
-	PlatformComponent             *bool
+	StateTimestamp                int64
+	RiskScore                     float32
+	PlatformComponent             bool
 }
 
 func (b0 Deployment_builder) Build() *Deployment {
 	m0 := &Deployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 31)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 31)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Hash != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 31)
-		x.xxx_hidden_Hash = *b.Hash
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 31)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 31)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.NamespaceId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 31)
-		x.xxx_hidden_NamespaceId = b.NamespaceId
-	}
-	if b.OrchestratorComponent != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 31)
-		x.xxx_hidden_OrchestratorComponent = *b.OrchestratorComponent
-	}
-	if b.Replicas != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 31)
-		x.xxx_hidden_Replicas = *b.Replicas
-	}
-	x.xxx_hidden_Labels = b.Labels
-	x.xxx_hidden_PodLabels = b.PodLabels
-	x.xxx_hidden_LabelSelector = b.LabelSelector
-	if b.Created != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 31)
-		x.xxx_hidden_Created = b.Created
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 31)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.ClusterName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 13, 31)
-		x.xxx_hidden_ClusterName = b.ClusterName
-	}
-	if b.Containers != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 14, 31)
-		x.xxx_hidden_Containers = &b.Containers
-	}
-	x.xxx_hidden_Annotations = b.Annotations
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 16, 31)
-		x.xxx_hidden_Priority = *b.Priority
-	}
-	if b.Inactive != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 31)
-		x.xxx_hidden_Inactive = *b.Inactive
-	}
-	x.xxx_hidden_ImagePullSecrets = b.ImagePullSecrets
-	if b.ServiceAccount != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 19, 31)
-		x.xxx_hidden_ServiceAccount = b.ServiceAccount
-	}
-	if b.ServiceAccountPermissionLevel != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 20, 31)
-		x.xxx_hidden_ServiceAccountPermissionLevel = *b.ServiceAccountPermissionLevel
-	}
-	if b.AutomountServiceAccountToken != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 21, 31)
-		x.xxx_hidden_AutomountServiceAccountToken = *b.AutomountServiceAccountToken
-	}
-	if b.HostNetwork != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 22, 31)
-		x.xxx_hidden_HostNetwork = *b.HostNetwork
-	}
-	if b.HostPid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 23, 31)
-		x.xxx_hidden_HostPid = *b.HostPid
-	}
-	if b.HostIpc != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 24, 31)
-		x.xxx_hidden_HostIpc = *b.HostIpc
-	}
-	if b.RuntimeClass != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 25, 31)
-		x.xxx_hidden_RuntimeClass = b.RuntimeClass
-	}
-	if b.Tolerations != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 26, 31)
-		x.xxx_hidden_Tolerations = &b.Tolerations
-	}
-	if b.Ports != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 27, 31)
-		x.xxx_hidden_Ports = &b.Ports
-	}
-	if b.StateTimestamp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 28, 31)
-		x.xxx_hidden_StateTimestamp = *b.StateTimestamp
-	}
-	if b.RiskScore != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 29, 31)
-		x.xxx_hidden_RiskScore = *b.RiskScore
-	}
-	if b.PlatformComponent != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 30, 31)
-		x.xxx_hidden_PlatformComponent = *b.PlatformComponent
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.Hash = b.Hash
+	x.Type = b.Type
+	x.Namespace = b.Namespace
+	x.NamespaceId = b.NamespaceId
+	x.OrchestratorComponent = b.OrchestratorComponent
+	x.Replicas = b.Replicas
+	x.Labels = b.Labels
+	x.PodLabels = b.PodLabels
+	x.LabelSelector = b.LabelSelector
+	x.Created = b.Created
+	x.ClusterId = b.ClusterId
+	x.ClusterName = b.ClusterName
+	x.Containers = b.Containers
+	x.Annotations = b.Annotations
+	x.Priority = b.Priority
+	x.Inactive = b.Inactive
+	x.ImagePullSecrets = b.ImagePullSecrets
+	x.ServiceAccount = b.ServiceAccount
+	x.ServiceAccountPermissionLevel = b.ServiceAccountPermissionLevel
+	x.AutomountServiceAccountToken = b.AutomountServiceAccountToken
+	x.HostNetwork = b.HostNetwork
+	x.HostPid = b.HostPid
+	x.HostIpc = b.HostIpc
+	x.RuntimeClass = b.RuntimeClass
+	x.Tolerations = b.Tolerations
+	x.Ports = b.Ports
+	x.StateTimestamp = b.StateTimestamp
+	x.RiskScore = b.RiskScore
+	x.PlatformComponent = b.PlatformComponent
 	return m0
 }
 
 // Next tag: 13
 type ContainerImage struct {
-	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id             *string                `protobuf:"bytes,4,opt,name=id"`
-	xxx_hidden_Name           *ImageName             `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_NotPullable    bool                   `protobuf:"varint,10,opt,name=not_pullable,json=notPullable"`
-	xxx_hidden_IsClusterLocal bool                   `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal"`
-	xxx_hidden_IdV2           *string                `protobuf:"bytes,12,opt,name=id_v2,json=idV2"`
-	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
-	XXX_presence              [1]uint32
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Deprecated: Marked as deprecated in storage/deployment.proto.
+	Id             string     `protobuf:"bytes,4,opt,name=id" json:"id,omitempty" search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"` // @gotags: search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
+	Name           *ImageName `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	NotPullable    bool       `protobuf:"varint,10,opt,name=not_pullable,json=notPullable" json:"not_pullable,omitempty"`
+	IsClusterLocal bool       `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal" json:"is_cluster_local,omitempty"`
+	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2" json:"id_v2,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ContainerImage) Reset() {
@@ -1214,185 +763,109 @@ func (x *ContainerImage) ProtoReflect() protoreflect.Message {
 // Deprecated: Marked as deprecated in storage/deployment.proto.
 func (x *ContainerImage) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ContainerImage) GetName() *ImageName {
 	if x != nil {
-		return x.xxx_hidden_Name
+		return x.Name
 	}
 	return nil
 }
 
 func (x *ContainerImage) GetNotPullable() bool {
 	if x != nil {
-		return x.xxx_hidden_NotPullable
+		return x.NotPullable
 	}
 	return false
 }
 
 func (x *ContainerImage) GetIsClusterLocal() bool {
 	if x != nil {
-		return x.xxx_hidden_IsClusterLocal
+		return x.IsClusterLocal
 	}
 	return false
 }
 
 func (x *ContainerImage) GetIdV2() string {
 	if x != nil {
-		if x.xxx_hidden_IdV2 != nil {
-			return *x.xxx_hidden_IdV2
-		}
-		return ""
+		return x.IdV2
 	}
 	return ""
 }
 
 // Deprecated: Marked as deprecated in storage/deployment.proto.
 func (x *ContainerImage) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	x.Id = v
 }
 
 func (x *ContainerImage) SetName(v *ImageName) {
-	x.xxx_hidden_Name = v
+	x.Name = v
 }
 
 func (x *ContainerImage) SetNotPullable(v bool) {
-	x.xxx_hidden_NotPullable = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	x.NotPullable = v
 }
 
 func (x *ContainerImage) SetIsClusterLocal(v bool) {
-	x.xxx_hidden_IsClusterLocal = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	x.IsClusterLocal = v
 }
 
 func (x *ContainerImage) SetIdV2(v string) {
-	x.xxx_hidden_IdV2 = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
-}
-
-// Deprecated: Marked as deprecated in storage/deployment.proto.
-func (x *ContainerImage) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.IdV2 = v
 }
 
 func (x *ContainerImage) HasName() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Name != nil
-}
-
-func (x *ContainerImage) HasNotPullable() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ContainerImage) HasIsClusterLocal() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ContainerImage) HasIdV2() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-// Deprecated: Marked as deprecated in storage/deployment.proto.
-func (x *ContainerImage) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.Name != nil
 }
 
 func (x *ContainerImage) ClearName() {
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ContainerImage) ClearNotPullable() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_NotPullable = false
-}
-
-func (x *ContainerImage) ClearIsClusterLocal() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_IsClusterLocal = false
-}
-
-func (x *ContainerImage) ClearIdV2() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_IdV2 = nil
+	x.Name = nil
 }
 
 type ContainerImage_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Deprecated: Marked as deprecated in storage/deployment.proto.
-	Id             *string
+	Id             string
 	Name           *ImageName
-	NotPullable    *bool
-	IsClusterLocal *bool
-	IdV2           *string
+	NotPullable    bool
+	IsClusterLocal bool
+	IdV2           string
 }
 
 func (b0 ContainerImage_builder) Build() *ContainerImage {
 	m0 := &ContainerImage{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_Name = b.Name
-	if b.NotPullable != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
-		x.xxx_hidden_NotPullable = *b.NotPullable
-	}
-	if b.IsClusterLocal != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
-		x.xxx_hidden_IsClusterLocal = *b.IsClusterLocal
-	}
-	if b.IdV2 != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
-		x.xxx_hidden_IdV2 = b.IdV2
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.NotPullable = b.NotPullable
+	x.IsClusterLocal = b.IsClusterLocal
+	x.IdV2 = b.IdV2
 	return m0
 }
 
 type Container struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Config          *ContainerConfig       `protobuf:"bytes,2,opt,name=config"`
-	xxx_hidden_Image           *ContainerImage        `protobuf:"bytes,3,opt,name=image"`
-	xxx_hidden_SecurityContext *SecurityContext       `protobuf:"bytes,4,opt,name=security_context,json=securityContext"`
-	xxx_hidden_Volumes         *[]*Volume             `protobuf:"bytes,5,rep,name=volumes"`
-	xxx_hidden_Ports           *[]*PortConfig         `protobuf:"bytes,6,rep,name=ports"`
-	xxx_hidden_Secrets         *[]*EmbeddedSecret     `protobuf:"bytes,7,rep,name=secrets"`
-	xxx_hidden_Resources       *Resources             `protobuf:"bytes,8,opt,name=resources"`
-	xxx_hidden_Name            *string                `protobuf:"bytes,10,opt,name=name"`
-	xxx_hidden_LivenessProbe   *LivenessProbe         `protobuf:"bytes,11,opt,name=liveness_probe,json=livenessProbe"`
-	xxx_hidden_ReadinessProbe  *ReadinessProbe        `protobuf:"bytes,12,opt,name=readiness_probe,json=readinessProbe"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Config          *ContainerConfig       `protobuf:"bytes,2,opt,name=config" json:"config,omitempty"`
+	Image           *ContainerImage        `protobuf:"bytes,3,opt,name=image" json:"image,omitempty"`
+	SecurityContext *SecurityContext       `protobuf:"bytes,4,opt,name=security_context,json=securityContext" json:"security_context,omitempty"`
+	Volumes         []*Volume              `protobuf:"bytes,5,rep,name=volumes" json:"volumes,omitempty"`
+	Ports           []*PortConfig          `protobuf:"bytes,6,rep,name=ports" json:"ports,omitempty" policy:",ignore" search:"-"` // Policies use the port config on the top-level deployment. @gotags: policy:",ignore" search:"-"
+	Secrets         []*EmbeddedSecret      `protobuf:"bytes,7,rep,name=secrets" json:"secrets,omitempty"`
+	Resources       *Resources             `protobuf:"bytes,8,opt,name=resources" json:"resources,omitempty"`
+	Name            string                 `protobuf:"bytes,10,opt,name=name" json:"name,omitempty" policy:"Container Name"` // @gotags: policy:"Container Name"
+	LivenessProbe   *LivenessProbe         `protobuf:"bytes,11,opt,name=liveness_probe,json=livenessProbe" json:"liveness_probe,omitempty"`
+	ReadinessProbe  *ReadinessProbe        `protobuf:"bytes,12,opt,name=readiness_probe,json=readinessProbe" json:"readiness_probe,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Container) Reset() {
@@ -1422,269 +895,195 @@ func (x *Container) ProtoReflect() protoreflect.Message {
 
 func (x *Container) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Container) GetConfig() *ContainerConfig {
 	if x != nil {
-		return x.xxx_hidden_Config
+		return x.Config
 	}
 	return nil
 }
 
 func (x *Container) GetImage() *ContainerImage {
 	if x != nil {
-		return x.xxx_hidden_Image
+		return x.Image
 	}
 	return nil
 }
 
 func (x *Container) GetSecurityContext() *SecurityContext {
 	if x != nil {
-		return x.xxx_hidden_SecurityContext
+		return x.SecurityContext
 	}
 	return nil
 }
 
 func (x *Container) GetVolumes() []*Volume {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Volumes) {
-				protoimpl.X.UnmarshalField(x, 5)
-			}
-			var rv *[]*Volume
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Volumes
 	}
 	return nil
 }
 
 func (x *Container) GetPorts() []*PortConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Ports) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *[]*PortConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Ports
 	}
 	return nil
 }
 
 func (x *Container) GetSecrets() []*EmbeddedSecret {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Secrets) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *[]*EmbeddedSecret
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Secrets
 	}
 	return nil
 }
 
 func (x *Container) GetResources() *Resources {
 	if x != nil {
-		return x.xxx_hidden_Resources
+		return x.Resources
 	}
 	return nil
 }
 
 func (x *Container) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Container) GetLivenessProbe() *LivenessProbe {
 	if x != nil {
-		return x.xxx_hidden_LivenessProbe
+		return x.LivenessProbe
 	}
 	return nil
 }
 
 func (x *Container) GetReadinessProbe() *ReadinessProbe {
 	if x != nil {
-		return x.xxx_hidden_ReadinessProbe
+		return x.ReadinessProbe
 	}
 	return nil
 }
 
 func (x *Container) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	x.Id = v
 }
 
 func (x *Container) SetConfig(v *ContainerConfig) {
-	x.xxx_hidden_Config = v
+	x.Config = v
 }
 
 func (x *Container) SetImage(v *ContainerImage) {
-	x.xxx_hidden_Image = v
+	x.Image = v
 }
 
 func (x *Container) SetSecurityContext(v *SecurityContext) {
-	x.xxx_hidden_SecurityContext = v
+	x.SecurityContext = v
 }
 
 func (x *Container) SetVolumes(v []*Volume) {
-	var sv *[]*Volume
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Volume{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Volumes), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	x.Volumes = v
 }
 
 func (x *Container) SetPorts(v []*PortConfig) {
-	var sv *[]*PortConfig
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PortConfig{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Ports), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	x.Ports = v
 }
 
 func (x *Container) SetSecrets(v []*EmbeddedSecret) {
-	var sv *[]*EmbeddedSecret
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*EmbeddedSecret{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Secrets), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
+	x.Secrets = v
 }
 
 func (x *Container) SetResources(v *Resources) {
-	x.xxx_hidden_Resources = v
+	x.Resources = v
 }
 
 func (x *Container) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	x.Name = v
 }
 
 func (x *Container) SetLivenessProbe(v *LivenessProbe) {
-	x.xxx_hidden_LivenessProbe = v
+	x.LivenessProbe = v
 }
 
 func (x *Container) SetReadinessProbe(v *ReadinessProbe) {
-	x.xxx_hidden_ReadinessProbe = v
-}
-
-func (x *Container) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.ReadinessProbe = v
 }
 
 func (x *Container) HasConfig() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Config != nil
+	return x.Config != nil
 }
 
 func (x *Container) HasImage() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Image != nil
+	return x.Image != nil
 }
 
 func (x *Container) HasSecurityContext() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SecurityContext != nil
+	return x.SecurityContext != nil
 }
 
 func (x *Container) HasResources() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Resources != nil
-}
-
-func (x *Container) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return x.Resources != nil
 }
 
 func (x *Container) HasLivenessProbe() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_LivenessProbe != nil
+	return x.LivenessProbe != nil
 }
 
 func (x *Container) HasReadinessProbe() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_ReadinessProbe != nil
-}
-
-func (x *Container) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
+	return x.ReadinessProbe != nil
 }
 
 func (x *Container) ClearConfig() {
-	x.xxx_hidden_Config = nil
+	x.Config = nil
 }
 
 func (x *Container) ClearImage() {
-	x.xxx_hidden_Image = nil
+	x.Image = nil
 }
 
 func (x *Container) ClearSecurityContext() {
-	x.xxx_hidden_SecurityContext = nil
+	x.SecurityContext = nil
 }
 
 func (x *Container) ClearResources() {
-	x.xxx_hidden_Resources = nil
-}
-
-func (x *Container) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_Name = nil
+	x.Resources = nil
 }
 
 func (x *Container) ClearLivenessProbe() {
-	x.xxx_hidden_LivenessProbe = nil
+	x.LivenessProbe = nil
 }
 
 func (x *Container) ClearReadinessProbe() {
-	x.xxx_hidden_ReadinessProbe = nil
+	x.ReadinessProbe = nil
 }
 
 type Container_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id              *string
+	Id              string
 	Config          *ContainerConfig
 	Image           *ContainerImage
 	SecurityContext *SecurityContext
@@ -1692,7 +1091,7 @@ type Container_builder struct {
 	Ports           []*PortConfig
 	Secrets         []*EmbeddedSecret
 	Resources       *Resources
-	Name            *string
+	Name            string
 	LivenessProbe   *LivenessProbe
 	ReadinessProbe  *ReadinessProbe
 }
@@ -1701,45 +1100,28 @@ func (b0 Container_builder) Build() *Container {
 	m0 := &Container{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
-		x.xxx_hidden_Id = b.Id
-	}
-	x.xxx_hidden_Config = b.Config
-	x.xxx_hidden_Image = b.Image
-	x.xxx_hidden_SecurityContext = b.SecurityContext
-	if b.Volumes != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
-		x.xxx_hidden_Volumes = &b.Volumes
-	}
-	if b.Ports != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
-		x.xxx_hidden_Ports = &b.Ports
-	}
-	if b.Secrets != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
-		x.xxx_hidden_Secrets = &b.Secrets
-	}
-	x.xxx_hidden_Resources = b.Resources
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
-		x.xxx_hidden_Name = b.Name
-	}
-	x.xxx_hidden_LivenessProbe = b.LivenessProbe
-	x.xxx_hidden_ReadinessProbe = b.ReadinessProbe
+	x.Id = b.Id
+	x.Config = b.Config
+	x.Image = b.Image
+	x.SecurityContext = b.SecurityContext
+	x.Volumes = b.Volumes
+	x.Ports = b.Ports
+	x.Secrets = b.Secrets
+	x.Resources = b.Resources
+	x.Name = b.Name
+	x.LivenessProbe = b.LivenessProbe
+	x.ReadinessProbe = b.ReadinessProbe
 	return m0
 }
 
 type Resources struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_CpuCoresRequest float32                `protobuf:"fixed32,1,opt,name=cpu_cores_request,json=cpuCoresRequest"`
-	xxx_hidden_CpuCoresLimit   float32                `protobuf:"fixed32,2,opt,name=cpu_cores_limit,json=cpuCoresLimit"`
-	xxx_hidden_MemoryMbRequest float32                `protobuf:"fixed32,3,opt,name=memory_mb_request,json=memoryMbRequest"`
-	xxx_hidden_MemoryMbLimit   float32                `protobuf:"fixed32,4,opt,name=memory_mb_limit,json=memoryMbLimit"`
-	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
-	XXX_presence               [1]uint32
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"hybrid.v1"`
+	CpuCoresRequest float32                `protobuf:"fixed32,1,opt,name=cpu_cores_request,json=cpuCoresRequest" json:"cpu_cores_request,omitempty" search:"CPU Cores Request,store"` // @gotags: search:"CPU Cores Request,store"
+	CpuCoresLimit   float32                `protobuf:"fixed32,2,opt,name=cpu_cores_limit,json=cpuCoresLimit" json:"cpu_cores_limit,omitempty" search:"CPU Cores Limit,store"`       // @gotags: search:"CPU Cores Limit,store"
+	MemoryMbRequest float32                `protobuf:"fixed32,3,opt,name=memory_mb_request,json=memoryMbRequest" json:"memory_mb_request,omitempty" search:"Memory Request (MB),store"` // @gotags: search:"Memory Request (MB),store"
+	MemoryMbLimit   float32                `protobuf:"fixed32,4,opt,name=memory_mb_limit,json=memoryMbLimit" json:"memory_mb_limit,omitempty" search:"Memory Limit (MB),store"`       // @gotags: search:"Memory Limit (MB),store"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Resources) Reset() {
@@ -1769,144 +1151,78 @@ func (x *Resources) ProtoReflect() protoreflect.Message {
 
 func (x *Resources) GetCpuCoresRequest() float32 {
 	if x != nil {
-		return x.xxx_hidden_CpuCoresRequest
+		return x.CpuCoresRequest
 	}
 	return 0
 }
 
 func (x *Resources) GetCpuCoresLimit() float32 {
 	if x != nil {
-		return x.xxx_hidden_CpuCoresLimit
+		return x.CpuCoresLimit
 	}
 	return 0
 }
 
 func (x *Resources) GetMemoryMbRequest() float32 {
 	if x != nil {
-		return x.xxx_hidden_MemoryMbRequest
+		return x.MemoryMbRequest
 	}
 	return 0
 }
 
 func (x *Resources) GetMemoryMbLimit() float32 {
 	if x != nil {
-		return x.xxx_hidden_MemoryMbLimit
+		return x.MemoryMbLimit
 	}
 	return 0
 }
 
 func (x *Resources) SetCpuCoresRequest(v float32) {
-	x.xxx_hidden_CpuCoresRequest = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.CpuCoresRequest = v
 }
 
 func (x *Resources) SetCpuCoresLimit(v float32) {
-	x.xxx_hidden_CpuCoresLimit = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.CpuCoresLimit = v
 }
 
 func (x *Resources) SetMemoryMbRequest(v float32) {
-	x.xxx_hidden_MemoryMbRequest = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.MemoryMbRequest = v
 }
 
 func (x *Resources) SetMemoryMbLimit(v float32) {
-	x.xxx_hidden_MemoryMbLimit = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *Resources) HasCpuCoresRequest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Resources) HasCpuCoresLimit() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Resources) HasMemoryMbRequest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Resources) HasMemoryMbLimit() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Resources) ClearCpuCoresRequest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_CpuCoresRequest = 0
-}
-
-func (x *Resources) ClearCpuCoresLimit() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_CpuCoresLimit = 0
-}
-
-func (x *Resources) ClearMemoryMbRequest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_MemoryMbRequest = 0
-}
-
-func (x *Resources) ClearMemoryMbLimit() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_MemoryMbLimit = 0
+	x.MemoryMbLimit = v
 }
 
 type Resources_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	CpuCoresRequest *float32
-	CpuCoresLimit   *float32
-	MemoryMbRequest *float32
-	MemoryMbLimit   *float32
+	CpuCoresRequest float32
+	CpuCoresLimit   float32
+	MemoryMbRequest float32
+	MemoryMbLimit   float32
 }
 
 func (b0 Resources_builder) Build() *Resources {
 	m0 := &Resources{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.CpuCoresRequest != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_CpuCoresRequest = *b.CpuCoresRequest
-	}
-	if b.CpuCoresLimit != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_CpuCoresLimit = *b.CpuCoresLimit
-	}
-	if b.MemoryMbRequest != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_MemoryMbRequest = *b.MemoryMbRequest
-	}
-	if b.MemoryMbLimit != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_MemoryMbLimit = *b.MemoryMbLimit
-	}
+	x.CpuCoresRequest = b.CpuCoresRequest
+	x.CpuCoresLimit = b.CpuCoresLimit
+	x.MemoryMbRequest = b.MemoryMbRequest
+	x.MemoryMbLimit = b.MemoryMbLimit
 	return m0
 }
 
 type Volume struct {
-	state                       protoimpl.MessageState  `protogen:"opaque.v1"`
-	xxx_hidden_Name             *string                 `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Source           *string                 `protobuf:"bytes,2,opt,name=source"`
-	xxx_hidden_Destination      *string                 `protobuf:"bytes,3,opt,name=destination"`
-	xxx_hidden_ReadOnly         bool                    `protobuf:"varint,4,opt,name=read_only,json=readOnly"`
-	xxx_hidden_Type             *string                 `protobuf:"bytes,5,opt,name=type"`
-	xxx_hidden_MountPropagation Volume_MountPropagation `protobuf:"varint,6,opt,name=mount_propagation,json=mountPropagation,enum=storage.Volume_MountPropagation"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state            protoimpl.MessageState  `protogen:"hybrid.v1"`
+	Name             string                  `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" search:"Volume Name,store"`                                                                                       // @gotags: search:"Volume Name,store"
+	Source           string                  `protobuf:"bytes,2,opt,name=source" json:"source,omitempty" search:"Volume Source,store"`                                                                                   // @gotags: search:"Volume Source,store"
+	Destination      string                  `protobuf:"bytes,3,opt,name=destination" json:"destination,omitempty" search:"Volume Destination,store"`                                                                         // @gotags: search:"Volume Destination,store"
+	ReadOnly         bool                    `protobuf:"varint,4,opt,name=read_only,json=readOnly" json:"read_only,omitempty" search:"Volume ReadOnly,store"`                                                              // @gotags: search:"Volume ReadOnly,store"
+	Type             string                  `protobuf:"bytes,5,opt,name=type" json:"type,omitempty" search:"Volume Type,store"`                                                                                       // @gotags: search:"Volume Type,store"
+	MountPropagation Volume_MountPropagation `protobuf:"varint,6,opt,name=mount_propagation,json=mountPropagation,enum=storage.Volume_MountPropagation" json:"mount_propagation,omitempty" policy:"Mount Propagation"` // @gotags: policy:"Mount Propagation"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Volume) Reset() {
@@ -1936,211 +1252,99 @@ func (x *Volume) ProtoReflect() protoreflect.Message {
 
 func (x *Volume) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Volume) GetSource() string {
 	if x != nil {
-		if x.xxx_hidden_Source != nil {
-			return *x.xxx_hidden_Source
-		}
-		return ""
+		return x.Source
 	}
 	return ""
 }
 
 func (x *Volume) GetDestination() string {
 	if x != nil {
-		if x.xxx_hidden_Destination != nil {
-			return *x.xxx_hidden_Destination
-		}
-		return ""
+		return x.Destination
 	}
 	return ""
 }
 
 func (x *Volume) GetReadOnly() bool {
 	if x != nil {
-		return x.xxx_hidden_ReadOnly
+		return x.ReadOnly
 	}
 	return false
 }
 
 func (x *Volume) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *Volume) GetMountPropagation() Volume_MountPropagation {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			return x.xxx_hidden_MountPropagation
-		}
+		return x.MountPropagation
 	}
 	return Volume_NONE
 }
 
 func (x *Volume) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Name = v
 }
 
 func (x *Volume) SetSource(v string) {
-	x.xxx_hidden_Source = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.Source = v
 }
 
 func (x *Volume) SetDestination(v string) {
-	x.xxx_hidden_Destination = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Destination = v
 }
 
 func (x *Volume) SetReadOnly(v bool) {
-	x.xxx_hidden_ReadOnly = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.ReadOnly = v
 }
 
 func (x *Volume) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.Type = v
 }
 
 func (x *Volume) SetMountPropagation(v Volume_MountPropagation) {
-	x.xxx_hidden_MountPropagation = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *Volume) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Volume) HasSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Volume) HasDestination() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Volume) HasReadOnly() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Volume) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *Volume) HasMountPropagation() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *Volume) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Volume) ClearSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Source = nil
-}
-
-func (x *Volume) ClearDestination() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Destination = nil
-}
-
-func (x *Volume) ClearReadOnly() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ReadOnly = false
-}
-
-func (x *Volume) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *Volume) ClearMountPropagation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_MountPropagation = Volume_NONE
+	x.MountPropagation = v
 }
 
 type Volume_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name             *string
-	Source           *string
-	Destination      *string
-	ReadOnly         *bool
-	Type             *string
-	MountPropagation *Volume_MountPropagation
+	Name             string
+	Source           string
+	Destination      string
+	ReadOnly         bool
+	Type             string
+	MountPropagation Volume_MountPropagation
 }
 
 func (b0 Volume_builder) Build() *Volume {
 	m0 := &Volume{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Source != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_Source = b.Source
-	}
-	if b.Destination != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Destination = b.Destination
-	}
-	if b.ReadOnly != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_ReadOnly = *b.ReadOnly
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.MountPropagation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_MountPropagation = *b.MountPropagation
-	}
+	x.Name = b.Name
+	x.Source = b.Source
+	x.Destination = b.Destination
+	x.ReadOnly = b.ReadOnly
+	x.Type = b.Type
+	x.MountPropagation = b.MountPropagation
 	return m0
 }
 
 type LivenessProbe struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Defined     bool                   `protobuf:"varint,1,opt,name=defined"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Defined       bool                   `protobuf:"varint,1,opt,name=defined" json:"defined,omitempty" policy:"Liveness Probe Defined"` // @gotags: policy:"Liveness Probe Defined"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LivenessProbe) Reset() {
@@ -2170,52 +1374,34 @@ func (x *LivenessProbe) ProtoReflect() protoreflect.Message {
 
 func (x *LivenessProbe) GetDefined() bool {
 	if x != nil {
-		return x.xxx_hidden_Defined
+		return x.Defined
 	}
 	return false
 }
 
 func (x *LivenessProbe) SetDefined(v bool) {
-	x.xxx_hidden_Defined = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *LivenessProbe) HasDefined() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *LivenessProbe) ClearDefined() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Defined = false
+	x.Defined = v
 }
 
 type LivenessProbe_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Defined *bool
+	Defined bool
 }
 
 func (b0 LivenessProbe_builder) Build() *LivenessProbe {
 	m0 := &LivenessProbe{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Defined != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Defined = *b.Defined
-	}
+	x.Defined = b.Defined
 	return m0
 }
 
 type ReadinessProbe struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Defined     bool                   `protobuf:"varint,1,opt,name=defined"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Defined       bool                   `protobuf:"varint,1,opt,name=defined" json:"defined,omitempty" policy:"Readiness Probe Defined"` // @gotags: policy:"Readiness Probe Defined"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadinessProbe) Reset() {
@@ -2245,62 +1431,46 @@ func (x *ReadinessProbe) ProtoReflect() protoreflect.Message {
 
 func (x *ReadinessProbe) GetDefined() bool {
 	if x != nil {
-		return x.xxx_hidden_Defined
+		return x.Defined
 	}
 	return false
 }
 
 func (x *ReadinessProbe) SetDefined(v bool) {
-	x.xxx_hidden_Defined = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
-}
-
-func (x *ReadinessProbe) HasDefined() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ReadinessProbe) ClearDefined() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Defined = false
+	x.Defined = v
 }
 
 type ReadinessProbe_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Defined *bool
+	Defined bool
 }
 
 func (b0 ReadinessProbe_builder) Build() *ReadinessProbe {
 	m0 := &ReadinessProbe{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Defined != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Defined = *b.Defined
-	}
+	x.Defined = b.Defined
 	return m0
 }
 
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 type Pod struct {
-	state                          protoimpl.MessageState        `protogen:"opaque.v1"`
-	xxx_hidden_Id                  *string                       `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Name                *string                       `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_DeploymentId        *string                       `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId"`
-	xxx_hidden_Namespace           *string                       `protobuf:"bytes,4,opt,name=namespace"`
-	xxx_hidden_ClusterId           *string                       `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_LiveInstances       *[]*ContainerInstance         `protobuf:"bytes,6,rep,name=live_instances,json=liveInstances"`
-	xxx_hidden_TerminatedInstances *[]*Pod_ContainerInstanceList `protobuf:"bytes,7,rep,name=terminated_instances,json=terminatedInstances"`
-	xxx_hidden_Started             *timestamppb.Timestamp        `protobuf:"bytes,8,opt,name=started"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// Pod UID
+	Id            string               `protobuf:"bytes,1,opt,name=id" json:"id,omitempty" search:"Pod ID,hidden" sql:"pk,type(uuid)"`                                         // @gotags: search:"Pod ID,hidden" sql:"pk,type(uuid)"
+	Name          string               `protobuf:"bytes,2,opt,name=name" json:"name,omitempty" search:"Pod Name,hidden"`                                     // @gotags: search:"Pod Name,hidden"
+	DeploymentId  string               `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"
+	Namespace     string               `protobuf:"bytes,4,opt,name=namespace" json:"namespace,omitempty" search:"Namespace,store"`                           // @gotags: search:"Namespace,store"
+	ClusterId     string               `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	LiveInstances []*ContainerInstance `protobuf:"bytes,6,rep,name=live_instances,json=liveInstances" json:"live_instances,omitempty"`
+	// Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
+	// There is one bucket (list) per container name.
+	TerminatedInstances []*Pod_ContainerInstanceList `protobuf:"bytes,7,rep,name=terminated_instances,json=terminatedInstances" json:"terminated_instances,omitempty" search:"-"` // @gotags: search:"-"
+	// Time Kubernetes reports the pod was created.
+	Started       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started" json:"started,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Pod) Reset() {
@@ -2330,233 +1500,112 @@ func (x *Pod) ProtoReflect() protoreflect.Message {
 
 func (x *Pod) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *Pod) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *Pod) GetDeploymentId() string {
 	if x != nil {
-		if x.xxx_hidden_DeploymentId != nil {
-			return *x.xxx_hidden_DeploymentId
-		}
-		return ""
+		return x.DeploymentId
 	}
 	return ""
 }
 
 func (x *Pod) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *Pod) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *Pod) GetLiveInstances() []*ContainerInstance {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_LiveInstances) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *[]*ContainerInstance
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.LiveInstances
 	}
 	return nil
 }
 
 func (x *Pod) GetTerminatedInstances() []*Pod_ContainerInstanceList {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_TerminatedInstances) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *[]*Pod_ContainerInstanceList
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.TerminatedInstances
 	}
 	return nil
 }
 
 func (x *Pod) GetStarted() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 7) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Started) {
-				protoimpl.X.UnmarshalField(x, 8)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Started), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Started
 	}
 	return nil
 }
 
 func (x *Pod) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Id = v
 }
 
 func (x *Pod) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.Name = v
 }
 
 func (x *Pod) SetDeploymentId(v string) {
-	x.xxx_hidden_DeploymentId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.DeploymentId = v
 }
 
 func (x *Pod) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.Namespace = v
 }
 
 func (x *Pod) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.ClusterId = v
 }
 
 func (x *Pod) SetLiveInstances(v []*ContainerInstance) {
-	var sv *[]*ContainerInstance
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ContainerInstance{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_LiveInstances), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	x.LiveInstances = v
 }
 
 func (x *Pod) SetTerminatedInstances(v []*Pod_ContainerInstanceList) {
-	var sv *[]*Pod_ContainerInstanceList
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*Pod_ContainerInstanceList{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_TerminatedInstances), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	x.TerminatedInstances = v
 }
 
 func (x *Pod) SetStarted(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
-	}
-}
-
-func (x *Pod) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *Pod) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *Pod) HasDeploymentId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *Pod) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *Pod) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	x.Started = v
 }
 
 func (x *Pod) HasStarted() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *Pod) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *Pod) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *Pod) ClearDeploymentId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_DeploymentId = nil
-}
-
-func (x *Pod) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Namespace = nil
-}
-
-func (x *Pod) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterId = nil
+	return x.Started != nil
 }
 
 func (x *Pod) ClearStarted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, (*timestamppb.Timestamp)(nil))
+	x.Started = nil
 }
 
 type Pod_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Pod UID
-	Id            *string
-	Name          *string
-	DeploymentId  *string
-	Namespace     *string
-	ClusterId     *string
+	Id            string
+	Name          string
+	DeploymentId  string
+	Namespace     string
+	ClusterId     string
 	LiveInstances []*ContainerInstance
 	// Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
 	// There is one bucket (list) per container name.
@@ -2569,59 +1618,40 @@ func (b0 Pod_builder) Build() *Pod {
 	m0 := &Pod{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.DeploymentId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_DeploymentId = b.DeploymentId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.LiveInstances != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_LiveInstances = &b.LiveInstances
-	}
-	if b.TerminatedInstances != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_TerminatedInstances = &b.TerminatedInstances
-	}
-	if b.Started != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
-		x.xxx_hidden_Started = b.Started
-	}
+	x.Id = b.Id
+	x.Name = b.Name
+	x.DeploymentId = b.DeploymentId
+	x.Namespace = b.Namespace
+	x.ClusterId = b.ClusterId
+	x.LiveInstances = b.LiveInstances
+	x.TerminatedInstances = b.TerminatedInstances
+	x.Started = b.Started
 	return m0
 }
 
 // ContainerInstanceID allows to uniquely identify a container within a cluster.
 type ContainerInstance struct {
-	state                        protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_InstanceId        *ContainerInstanceID   `protobuf:"bytes,1,opt,name=instance_id,json=instanceId"`
-	xxx_hidden_ContainingPodId   *string                `protobuf:"bytes,2,opt,name=containing_pod_id,json=containingPodId"`
-	xxx_hidden_ContainerName     *string                `protobuf:"bytes,6,opt,name=container_name,json=containerName"`
-	xxx_hidden_ContainerIps      []string               `protobuf:"bytes,3,rep,name=container_ips,json=containerIps"`
-	xxx_hidden_Started           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=started"`
-	xxx_hidden_ImageDigest       *string                `protobuf:"bytes,5,opt,name=image_digest,json=imageDigest"`
-	xxx_hidden_Finished          *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=finished"`
-	xxx_hidden_ExitCode          int32                  `protobuf:"varint,8,opt,name=exit_code,json=exitCode"`
-	xxx_hidden_TerminationReason *string                `protobuf:"bytes,9,opt,name=termination_reason,json=terminationReason"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The instance ID of this container.
+	InstanceId *ContainerInstanceID `protobuf:"bytes,1,opt,name=instance_id,json=instanceId" json:"instance_id,omitempty"`
+	// The pod containing this container instance (kubernetes only).
+	ContainingPodId string `protobuf:"bytes,2,opt,name=containing_pod_id,json=containingPodId" json:"containing_pod_id,omitempty"`
+	// Container name.
+	ContainerName string `protobuf:"bytes,6,opt,name=container_name,json=containerName" json:"container_name,omitempty"`
+	// The IP addresses of this container.
+	ContainerIps []string `protobuf:"bytes,3,rep,name=container_ips,json=containerIps" json:"container_ips,omitempty"`
+	// The start time of the container
+	Started *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=started" json:"started,omitempty"`
+	// Image ID
+	ImageDigest string `protobuf:"bytes,5,opt,name=image_digest,json=imageDigest" json:"image_digest,omitempty" search:"Container Image Digest,hidden"` // @gotags: search:"Container Image Digest,hidden"
+	// The finish time of the container, if it finished.
+	Finished *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=finished" json:"finished,omitempty"`
+	// The exit code of the container. Only valid when finished is populated.
+	ExitCode int32 `protobuf:"varint,8,opt,name=exit_code,json=exitCode" json:"exit_code,omitempty"`
+	// The reason for the container's termination, if it finished.
+	TerminationReason string `protobuf:"bytes,9,opt,name=termination_reason,json=terminationReason" json:"termination_reason,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ContainerInstance) Reset() {
@@ -2651,237 +1681,134 @@ func (x *ContainerInstance) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerInstance) GetInstanceId() *ContainerInstanceID {
 	if x != nil {
-		return x.xxx_hidden_InstanceId
+		return x.InstanceId
 	}
 	return nil
 }
 
 func (x *ContainerInstance) GetContainingPodId() string {
 	if x != nil {
-		if x.xxx_hidden_ContainingPodId != nil {
-			return *x.xxx_hidden_ContainingPodId
-		}
-		return ""
+		return x.ContainingPodId
 	}
 	return ""
 }
 
 func (x *ContainerInstance) GetContainerName() string {
 	if x != nil {
-		if x.xxx_hidden_ContainerName != nil {
-			return *x.xxx_hidden_ContainerName
-		}
-		return ""
+		return x.ContainerName
 	}
 	return ""
 }
 
 func (x *ContainerInstance) GetContainerIps() []string {
 	if x != nil {
-		return x.xxx_hidden_ContainerIps
+		return x.ContainerIps
 	}
 	return nil
 }
 
 func (x *ContainerInstance) GetStarted() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 4) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Started) {
-				protoimpl.X.UnmarshalField(x, 4)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Started), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Started
 	}
 	return nil
 }
 
 func (x *ContainerInstance) GetImageDigest() string {
 	if x != nil {
-		if x.xxx_hidden_ImageDigest != nil {
-			return *x.xxx_hidden_ImageDigest
-		}
-		return ""
+		return x.ImageDigest
 	}
 	return ""
 }
 
 func (x *ContainerInstance) GetFinished() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Finished) {
-				protoimpl.X.UnmarshalField(x, 7)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Finished), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Finished
 	}
 	return nil
 }
 
 func (x *ContainerInstance) GetExitCode() int32 {
 	if x != nil {
-		return x.xxx_hidden_ExitCode
+		return x.ExitCode
 	}
 	return 0
 }
 
 func (x *ContainerInstance) GetTerminationReason() string {
 	if x != nil {
-		if x.xxx_hidden_TerminationReason != nil {
-			return *x.xxx_hidden_TerminationReason
-		}
-		return ""
+		return x.TerminationReason
 	}
 	return ""
 }
 
 func (x *ContainerInstance) SetInstanceId(v *ContainerInstanceID) {
-	x.xxx_hidden_InstanceId = v
+	x.InstanceId = v
 }
 
 func (x *ContainerInstance) SetContainingPodId(v string) {
-	x.xxx_hidden_ContainingPodId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
+	x.ContainingPodId = v
 }
 
 func (x *ContainerInstance) SetContainerName(v string) {
-	x.xxx_hidden_ContainerName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
+	x.ContainerName = v
 }
 
 func (x *ContainerInstance) SetContainerIps(v []string) {
-	x.xxx_hidden_ContainerIps = v
+	x.ContainerIps = v
 }
 
 func (x *ContainerInstance) SetStarted(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
-	}
+	x.Started = v
 }
 
 func (x *ContainerInstance) SetImageDigest(v string) {
-	x.xxx_hidden_ImageDigest = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+	x.ImageDigest = v
 }
 
 func (x *ContainerInstance) SetFinished(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Finished, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
-	}
+	x.Finished = v
 }
 
 func (x *ContainerInstance) SetExitCode(v int32) {
-	x.xxx_hidden_ExitCode = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
+	x.ExitCode = v
 }
 
 func (x *ContainerInstance) SetTerminationReason(v string) {
-	x.xxx_hidden_TerminationReason = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
+	x.TerminationReason = v
 }
 
 func (x *ContainerInstance) HasInstanceId() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_InstanceId != nil
-}
-
-func (x *ContainerInstance) HasContainingPodId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ContainerInstance) HasContainerName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return x.InstanceId != nil
 }
 
 func (x *ContainerInstance) HasStarted() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ContainerInstance) HasImageDigest() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	return x.Started != nil
 }
 
 func (x *ContainerInstance) HasFinished() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ContainerInstance) HasExitCode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ContainerInstance) HasTerminationReason() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return x.Finished != nil
 }
 
 func (x *ContainerInstance) ClearInstanceId() {
-	x.xxx_hidden_InstanceId = nil
-}
-
-func (x *ContainerInstance) ClearContainingPodId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ContainingPodId = nil
-}
-
-func (x *ContainerInstance) ClearContainerName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ContainerName = nil
+	x.InstanceId = nil
 }
 
 func (x *ContainerInstance) ClearStarted() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Started, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ContainerInstance) ClearImageDigest() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_ImageDigest = nil
+	x.Started = nil
 }
 
 func (x *ContainerInstance) ClearFinished() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Finished, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ContainerInstance) ClearExitCode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_ExitCode = 0
-}
-
-func (x *ContainerInstance) ClearTerminationReason() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
-	x.xxx_hidden_TerminationReason = nil
+	x.Finished = nil
 }
 
 type ContainerInstance_builder struct {
@@ -2890,69 +1817,49 @@ type ContainerInstance_builder struct {
 	// The instance ID of this container.
 	InstanceId *ContainerInstanceID
 	// The pod containing this container instance (kubernetes only).
-	ContainingPodId *string
+	ContainingPodId string
 	// Container name.
-	ContainerName *string
+	ContainerName string
 	// The IP addresses of this container.
 	ContainerIps []string
 	// The start time of the container
 	Started *timestamppb.Timestamp
 	// Image ID
-	ImageDigest *string
+	ImageDigest string
 	// The finish time of the container, if it finished.
 	Finished *timestamppb.Timestamp
 	// The exit code of the container. Only valid when finished is populated.
-	ExitCode *int32
+	ExitCode int32
 	// The reason for the container's termination, if it finished.
-	TerminationReason *string
+	TerminationReason string
 }
 
 func (b0 ContainerInstance_builder) Build() *ContainerInstance {
 	m0 := &ContainerInstance{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_InstanceId = b.InstanceId
-	if b.ContainingPodId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
-		x.xxx_hidden_ContainingPodId = b.ContainingPodId
-	}
-	if b.ContainerName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
-		x.xxx_hidden_ContainerName = b.ContainerName
-	}
-	x.xxx_hidden_ContainerIps = b.ContainerIps
-	if b.Started != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
-		x.xxx_hidden_Started = b.Started
-	}
-	if b.ImageDigest != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
-		x.xxx_hidden_ImageDigest = b.ImageDigest
-	}
-	if b.Finished != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
-		x.xxx_hidden_Finished = b.Finished
-	}
-	if b.ExitCode != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
-		x.xxx_hidden_ExitCode = *b.ExitCode
-	}
-	if b.TerminationReason != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
-		x.xxx_hidden_TerminationReason = b.TerminationReason
-	}
+	x.InstanceId = b.InstanceId
+	x.ContainingPodId = b.ContainingPodId
+	x.ContainerName = b.ContainerName
+	x.ContainerIps = b.ContainerIps
+	x.Started = b.Started
+	x.ImageDigest = b.ImageDigest
+	x.Finished = b.Finished
+	x.ExitCode = b.ExitCode
+	x.TerminationReason = b.TerminationReason
 	return m0
 }
 
 type ContainerInstanceID struct {
-	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ContainerRuntime ContainerRuntime       `protobuf:"varint,1,opt,name=container_runtime,json=containerRuntime,enum=storage.ContainerRuntime"`
-	xxx_hidden_Id               *string                `protobuf:"bytes,2,opt,name=id"`
-	xxx_hidden_Node             *string                `protobuf:"bytes,3,opt,name=node"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"hybrid.v1"`
+	// The runtime running this container.
+	ContainerRuntime ContainerRuntime `protobuf:"varint,1,opt,name=container_runtime,json=containerRuntime,enum=storage.ContainerRuntime" json:"container_runtime,omitempty"`
+	// The ID of the container, specific to the given runtime.
+	Id string `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	// The node on which this container runs.
+	Node          string `protobuf:"bytes,3,opt,name=node" json:"node,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ContainerInstanceID) Reset() {
@@ -2982,122 +1889,64 @@ func (x *ContainerInstanceID) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerInstanceID) GetContainerRuntime() ContainerRuntime {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_ContainerRuntime
-		}
+		return x.ContainerRuntime
 	}
 	return ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME
 }
 
 func (x *ContainerInstanceID) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ContainerInstanceID) GetNode() string {
 	if x != nil {
-		if x.xxx_hidden_Node != nil {
-			return *x.xxx_hidden_Node
-		}
-		return ""
+		return x.Node
 	}
 	return ""
 }
 
 func (x *ContainerInstanceID) SetContainerRuntime(v ContainerRuntime) {
-	x.xxx_hidden_ContainerRuntime = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.ContainerRuntime = v
 }
 
 func (x *ContainerInstanceID) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Id = v
 }
 
 func (x *ContainerInstanceID) SetNode(v string) {
-	x.xxx_hidden_Node = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *ContainerInstanceID) HasContainerRuntime() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ContainerInstanceID) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ContainerInstanceID) HasNode() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ContainerInstanceID) ClearContainerRuntime() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_ContainerRuntime = ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME
-}
-
-func (x *ContainerInstanceID) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ContainerInstanceID) ClearNode() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Node = nil
+	x.Node = v
 }
 
 type ContainerInstanceID_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// The runtime running this container.
-	ContainerRuntime *ContainerRuntime
+	ContainerRuntime ContainerRuntime
 	// The ID of the container, specific to the given runtime.
-	Id *string
+	Id string
 	// The node on which this container runs.
-	Node *string
+	Node string
 }
 
 func (b0 ContainerInstanceID_builder) Build() *ContainerInstanceID {
 	m0 := &ContainerInstanceID{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.ContainerRuntime != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_ContainerRuntime = *b.ContainerRuntime
-	}
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Node != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_Node = b.Node
-	}
+	x.ContainerRuntime = b.ContainerRuntime
+	x.Id = b.Id
+	x.Node = b.Node
 	return m0
 }
 
 type EmbeddedSecret struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Path        *string                `protobuf:"bytes,2,opt,name=path"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty" search:"Secret"` // @gotags: search:"Secret"
+	Path          string                 `protobuf:"bytes,2,opt,name=path" json:"path,omitempty" search:"Secret Path"` // @gotags: search:"Secret Path"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EmbeddedSecret) Reset() {
@@ -3127,95 +1976,54 @@ func (x *EmbeddedSecret) ProtoReflect() protoreflect.Message {
 
 func (x *EmbeddedSecret) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *EmbeddedSecret) GetPath() string {
 	if x != nil {
-		if x.xxx_hidden_Path != nil {
-			return *x.xxx_hidden_Path
-		}
-		return ""
+		return x.Path
 	}
 	return ""
 }
 
 func (x *EmbeddedSecret) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Name = v
 }
 
 func (x *EmbeddedSecret) SetPath(v string) {
-	x.xxx_hidden_Path = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *EmbeddedSecret) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *EmbeddedSecret) HasPath() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *EmbeddedSecret) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *EmbeddedSecret) ClearPath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Path = nil
+	x.Path = v
 }
 
 type EmbeddedSecret_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name *string
-	Path *string
+	Name string
+	Path string
 }
 
 func (b0 EmbeddedSecret_builder) Build() *EmbeddedSecret {
 	m0 := &EmbeddedSecret{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Path != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Path = b.Path
-	}
+	x.Name = b.Name
+	x.Path = b.Path
 	return m0
 }
 
 // Next Available Tag: 6
 type PortConfig struct {
-	state                    protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Name          *string                     `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_ContainerPort int32                       `protobuf:"varint,2,opt,name=container_port,json=containerPort"`
-	xxx_hidden_Protocol      *string                     `protobuf:"bytes,3,opt,name=protocol"`
-	xxx_hidden_Exposure      PortConfig_ExposureLevel    `protobuf:"varint,4,opt,name=exposure,enum=storage.PortConfig_ExposureLevel"`
-	xxx_hidden_ExposedPort   int32                       `protobuf:"varint,5,opt,name=exposed_port,json=exposedPort"`
-	xxx_hidden_ExposureInfos *[]*PortConfig_ExposureInfo `protobuf:"bytes,6,rep,name=exposure_infos,json=exposureInfos"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Name          string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	ContainerPort int32                    `protobuf:"varint,2,opt,name=container_port,json=containerPort" json:"container_port,omitempty" search:"Port,store"`        // @gotags: search:"Port,store"
+	Protocol      string                   `protobuf:"bytes,3,opt,name=protocol" json:"protocol,omitempty" search:"Port Protocol,store"`                                        // @gotags: search:"Port Protocol,store"
+	Exposure      PortConfig_ExposureLevel `protobuf:"varint,4,opt,name=exposure,enum=storage.PortConfig_ExposureLevel" json:"exposure,omitempty" search:"Max Exposure Level,store"` // @gotags: search:"Max Exposure Level,store"
+	// Deprecated: Marked as deprecated in storage/deployment.proto.
+	ExposedPort   int32                      `protobuf:"varint,5,opt,name=exposed_port,json=exposedPort" json:"exposed_port,omitempty"`
+	ExposureInfos []*PortConfig_ExposureInfo `protobuf:"bytes,6,rep,name=exposure_infos,json=exposureInfos" json:"exposure_infos,omitempty" policy:"Exposure Infos" sensorhash:"set"` // @gotags: policy:"Exposure Infos" sensorhash:"set"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PortConfig) Reset() {
@@ -3245,36 +2053,28 @@ func (x *PortConfig) ProtoReflect() protoreflect.Message {
 
 func (x *PortConfig) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *PortConfig) GetContainerPort() int32 {
 	if x != nil {
-		return x.xxx_hidden_ContainerPort
+		return x.ContainerPort
 	}
 	return 0
 }
 
 func (x *PortConfig) GetProtocol() string {
 	if x != nil {
-		if x.xxx_hidden_Protocol != nil {
-			return *x.xxx_hidden_Protocol
-		}
-		return ""
+		return x.Protocol
 	}
 	return ""
 }
 
 func (x *PortConfig) GetExposure() PortConfig_ExposureLevel {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 3) {
-			return x.xxx_hidden_Exposure
-		}
+		return x.Exposure
 	}
 	return PortConfig_UNSET
 }
@@ -3282,133 +2082,52 @@ func (x *PortConfig) GetExposure() PortConfig_ExposureLevel {
 // Deprecated: Marked as deprecated in storage/deployment.proto.
 func (x *PortConfig) GetExposedPort() int32 {
 	if x != nil {
-		return x.xxx_hidden_ExposedPort
+		return x.ExposedPort
 	}
 	return 0
 }
 
 func (x *PortConfig) GetExposureInfos() []*PortConfig_ExposureInfo {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_ExposureInfos) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *[]*PortConfig_ExposureInfo
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.ExposureInfos
 	}
 	return nil
 }
 
 func (x *PortConfig) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
+	x.Name = v
 }
 
 func (x *PortConfig) SetContainerPort(v int32) {
-	x.xxx_hidden_ContainerPort = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+	x.ContainerPort = v
 }
 
 func (x *PortConfig) SetProtocol(v string) {
-	x.xxx_hidden_Protocol = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+	x.Protocol = v
 }
 
 func (x *PortConfig) SetExposure(v PortConfig_ExposureLevel) {
-	x.xxx_hidden_Exposure = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+	x.Exposure = v
 }
 
 // Deprecated: Marked as deprecated in storage/deployment.proto.
 func (x *PortConfig) SetExposedPort(v int32) {
-	x.xxx_hidden_ExposedPort = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+	x.ExposedPort = v
 }
 
 func (x *PortConfig) SetExposureInfos(v []*PortConfig_ExposureInfo) {
-	var sv *[]*PortConfig_ExposureInfo
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*PortConfig_ExposureInfo{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_ExposureInfos), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
-}
-
-func (x *PortConfig) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PortConfig) HasContainerPort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PortConfig) HasProtocol() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *PortConfig) HasExposure() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-// Deprecated: Marked as deprecated in storage/deployment.proto.
-func (x *PortConfig) HasExposedPort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *PortConfig) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *PortConfig) ClearContainerPort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ContainerPort = 0
-}
-
-func (x *PortConfig) ClearProtocol() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Protocol = nil
-}
-
-func (x *PortConfig) ClearExposure() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Exposure = PortConfig_UNSET
-}
-
-// Deprecated: Marked as deprecated in storage/deployment.proto.
-func (x *PortConfig) ClearExposedPort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ExposedPort = 0
+	x.ExposureInfos = v
 }
 
 type PortConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name          *string
-	ContainerPort *int32
-	Protocol      *string
-	Exposure      *PortConfig_ExposureLevel
+	Name          string
+	ContainerPort int32
+	Protocol      string
+	Exposure      PortConfig_ExposureLevel
 	// Deprecated: Marked as deprecated in storage/deployment.proto.
-	ExposedPort   *int32
+	ExposedPort   int32
 	ExposureInfos []*PortConfig_ExposureInfo
 }
 
@@ -3416,48 +2135,26 @@ func (b0 PortConfig_builder) Build() *PortConfig {
 	m0 := &PortConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.ContainerPort != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
-		x.xxx_hidden_ContainerPort = *b.ContainerPort
-	}
-	if b.Protocol != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
-		x.xxx_hidden_Protocol = b.Protocol
-	}
-	if b.Exposure != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
-		x.xxx_hidden_Exposure = *b.Exposure
-	}
-	if b.ExposedPort != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
-		x.xxx_hidden_ExposedPort = *b.ExposedPort
-	}
-	if b.ExposureInfos != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
-		x.xxx_hidden_ExposureInfos = &b.ExposureInfos
-	}
+	x.Name = b.Name
+	x.ContainerPort = b.ContainerPort
+	x.Protocol = b.Protocol
+	x.Exposure = b.Exposure
+	x.ExposedPort = b.ExposedPort
+	x.ExposureInfos = b.ExposureInfos
 	return m0
 }
 
 type ContainerConfig struct {
-	state                      protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_Env             *[]*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env"`
-	xxx_hidden_Command         []string                              `protobuf:"bytes,2,rep,name=command"`
-	xxx_hidden_Args            []string                              `protobuf:"bytes,3,rep,name=args"`
-	xxx_hidden_Directory       *string                               `protobuf:"bytes,4,opt,name=directory"`
-	xxx_hidden_User            *string                               `protobuf:"bytes,5,opt,name=user"`
-	xxx_hidden_Uid             int64                                 `protobuf:"varint,6,opt,name=uid"`
-	xxx_hidden_AppArmorProfile *string                               `protobuf:"bytes,7,opt,name=app_armor_profile,json=appArmorProfile"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state           protoimpl.MessageState               `protogen:"hybrid.v1"`
+	Env             []*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env" json:"env,omitempty"`
+	Command         []string                             `protobuf:"bytes,2,rep,name=command" json:"command,omitempty"`
+	Args            []string                             `protobuf:"bytes,3,rep,name=args" json:"args,omitempty"`
+	Directory       string                               `protobuf:"bytes,4,opt,name=directory" json:"directory,omitempty"`
+	User            string                               `protobuf:"bytes,5,opt,name=user" json:"user,omitempty"`
+	Uid             int64                                `protobuf:"varint,6,opt,name=uid" json:"uid,omitempty"`
+	AppArmorProfile string                               `protobuf:"bytes,7,opt,name=app_armor_profile,json=appArmorProfile" json:"app_armor_profile,omitempty" policy:"AppArmor Profile"` // @gotags: policy:"AppArmor Profile"
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ContainerConfig) Reset() {
@@ -3487,154 +2184,79 @@ func (x *ContainerConfig) ProtoReflect() protoreflect.Message {
 
 func (x *ContainerConfig) GetEnv() []*ContainerConfig_EnvironmentConfig {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Env) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ContainerConfig_EnvironmentConfig
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Env
 	}
 	return nil
 }
 
 func (x *ContainerConfig) GetCommand() []string {
 	if x != nil {
-		return x.xxx_hidden_Command
+		return x.Command
 	}
 	return nil
 }
 
 func (x *ContainerConfig) GetArgs() []string {
 	if x != nil {
-		return x.xxx_hidden_Args
+		return x.Args
 	}
 	return nil
 }
 
 func (x *ContainerConfig) GetDirectory() string {
 	if x != nil {
-		if x.xxx_hidden_Directory != nil {
-			return *x.xxx_hidden_Directory
-		}
-		return ""
+		return x.Directory
 	}
 	return ""
 }
 
 func (x *ContainerConfig) GetUser() string {
 	if x != nil {
-		if x.xxx_hidden_User != nil {
-			return *x.xxx_hidden_User
-		}
-		return ""
+		return x.User
 	}
 	return ""
 }
 
 func (x *ContainerConfig) GetUid() int64 {
 	if x != nil {
-		return x.xxx_hidden_Uid
+		return x.Uid
 	}
 	return 0
 }
 
 func (x *ContainerConfig) GetAppArmorProfile() string {
 	if x != nil {
-		if x.xxx_hidden_AppArmorProfile != nil {
-			return *x.xxx_hidden_AppArmorProfile
-		}
-		return ""
+		return x.AppArmorProfile
 	}
 	return ""
 }
 
 func (x *ContainerConfig) SetEnv(v []*ContainerConfig_EnvironmentConfig) {
-	var sv *[]*ContainerConfig_EnvironmentConfig
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ContainerConfig_EnvironmentConfig{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Env), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Env = v
 }
 
 func (x *ContainerConfig) SetCommand(v []string) {
-	x.xxx_hidden_Command = v
+	x.Command = v
 }
 
 func (x *ContainerConfig) SetArgs(v []string) {
-	x.xxx_hidden_Args = v
+	x.Args = v
 }
 
 func (x *ContainerConfig) SetDirectory(v string) {
-	x.xxx_hidden_Directory = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	x.Directory = v
 }
 
 func (x *ContainerConfig) SetUser(v string) {
-	x.xxx_hidden_User = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	x.User = v
 }
 
 func (x *ContainerConfig) SetUid(v int64) {
-	x.xxx_hidden_Uid = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	x.Uid = v
 }
 
 func (x *ContainerConfig) SetAppArmorProfile(v string) {
-	x.xxx_hidden_AppArmorProfile = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *ContainerConfig) HasDirectory() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ContainerConfig) HasUser() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ContainerConfig) HasUid() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *ContainerConfig) HasAppArmorProfile() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ContainerConfig) ClearDirectory() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Directory = nil
-}
-
-func (x *ContainerConfig) ClearUser() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_User = nil
-}
-
-func (x *ContainerConfig) ClearUid() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Uid = 0
-}
-
-func (x *ContainerConfig) ClearAppArmorProfile() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_AppArmorProfile = nil
+	x.AppArmorProfile = v
 }
 
 type ContainerConfig_builder struct {
@@ -3643,54 +2265,37 @@ type ContainerConfig_builder struct {
 	Env             []*ContainerConfig_EnvironmentConfig
 	Command         []string
 	Args            []string
-	Directory       *string
-	User            *string
-	Uid             *int64
-	AppArmorProfile *string
+	Directory       string
+	User            string
+	Uid             int64
+	AppArmorProfile string
 }
 
 func (b0 ContainerConfig_builder) Build() *ContainerConfig {
 	m0 := &ContainerConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Env != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Env = &b.Env
-	}
-	x.xxx_hidden_Command = b.Command
-	x.xxx_hidden_Args = b.Args
-	if b.Directory != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
-		x.xxx_hidden_Directory = b.Directory
-	}
-	if b.User != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_User = b.User
-	}
-	if b.Uid != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
-		x.xxx_hidden_Uid = *b.Uid
-	}
-	if b.AppArmorProfile != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_AppArmorProfile = b.AppArmorProfile
-	}
+	x.Env = b.Env
+	x.Command = b.Command
+	x.Args = b.Args
+	x.Directory = b.Directory
+	x.User = b.User
+	x.Uid = b.Uid
+	x.AppArmorProfile = b.AppArmorProfile
 	return m0
 }
 
 type SecurityContext struct {
-	state                               protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Privileged               bool                            `protobuf:"varint,1,opt,name=privileged"`
-	xxx_hidden_Selinux                  *SecurityContext_SELinux        `protobuf:"bytes,2,opt,name=selinux"`
-	xxx_hidden_DropCapabilities         []string                        `protobuf:"bytes,3,rep,name=drop_capabilities,json=dropCapabilities"`
-	xxx_hidden_AddCapabilities          []string                        `protobuf:"bytes,4,rep,name=add_capabilities,json=addCapabilities"`
-	xxx_hidden_ReadOnlyRootFilesystem   bool                            `protobuf:"varint,5,opt,name=read_only_root_filesystem,json=readOnlyRootFilesystem"`
-	xxx_hidden_SeccompProfile           *SecurityContext_SeccompProfile `protobuf:"bytes,6,opt,name=seccomp_profile,json=seccompProfile"`
-	xxx_hidden_AllowPrivilegeEscalation bool                            `protobuf:"varint,7,opt,name=allow_privilege_escalation,json=allowPrivilegeEscalation"`
-	XXX_raceDetectHookData              protoimpl.RaceDetectHookData
-	XXX_presence                        [1]uint32
-	unknownFields                       protoimpl.UnknownFields
-	sizeCache                           protoimpl.SizeCache
+	state                    protoimpl.MessageState          `protogen:"hybrid.v1"`
+	Privileged               bool                            `protobuf:"varint,1,opt,name=privileged" json:"privileged,omitempty" search:"Privileged,store"` // @gotags: search:"Privileged,store"
+	Selinux                  *SecurityContext_SELinux        `protobuf:"bytes,2,opt,name=selinux" json:"selinux,omitempty"`
+	DropCapabilities         []string                        `protobuf:"bytes,3,rep,name=drop_capabilities,json=dropCapabilities" json:"drop_capabilities,omitempty" search:"Drop Capabilities,store"`                        // @gotags: search:"Drop Capabilities,store"
+	AddCapabilities          []string                        `protobuf:"bytes,4,rep,name=add_capabilities,json=addCapabilities" json:"add_capabilities,omitempty" search:"Add Capabilities,store"`                           // @gotags: search:"Add Capabilities,store"
+	ReadOnlyRootFilesystem   bool                            `protobuf:"varint,5,opt,name=read_only_root_filesystem,json=readOnlyRootFilesystem" json:"read_only_root_filesystem,omitempty" search:"Read Only Root Filesystem,store"` // @gotags: search:"Read Only Root Filesystem,store"
+	SeccompProfile           *SecurityContext_SeccompProfile `protobuf:"bytes,6,opt,name=seccomp_profile,json=seccompProfile" json:"seccomp_profile,omitempty"`
+	AllowPrivilegeEscalation bool                            `protobuf:"varint,7,opt,name=allow_privilege_escalation,json=allowPrivilegeEscalation" json:"allow_privilege_escalation,omitempty" policy:"Allow Privilege Escalation"` // @gotags: policy:"Allow Privilege Escalation"
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SecurityContext) Reset() {
@@ -3720,194 +2325,142 @@ func (x *SecurityContext) ProtoReflect() protoreflect.Message {
 
 func (x *SecurityContext) GetPrivileged() bool {
 	if x != nil {
-		return x.xxx_hidden_Privileged
+		return x.Privileged
 	}
 	return false
 }
 
 func (x *SecurityContext) GetSelinux() *SecurityContext_SELinux {
 	if x != nil {
-		return x.xxx_hidden_Selinux
+		return x.Selinux
 	}
 	return nil
 }
 
 func (x *SecurityContext) GetDropCapabilities() []string {
 	if x != nil {
-		return x.xxx_hidden_DropCapabilities
+		return x.DropCapabilities
 	}
 	return nil
 }
 
 func (x *SecurityContext) GetAddCapabilities() []string {
 	if x != nil {
-		return x.xxx_hidden_AddCapabilities
+		return x.AddCapabilities
 	}
 	return nil
 }
 
 func (x *SecurityContext) GetReadOnlyRootFilesystem() bool {
 	if x != nil {
-		return x.xxx_hidden_ReadOnlyRootFilesystem
+		return x.ReadOnlyRootFilesystem
 	}
 	return false
 }
 
 func (x *SecurityContext) GetSeccompProfile() *SecurityContext_SeccompProfile {
 	if x != nil {
-		return x.xxx_hidden_SeccompProfile
+		return x.SeccompProfile
 	}
 	return nil
 }
 
 func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 	if x != nil {
-		return x.xxx_hidden_AllowPrivilegeEscalation
+		return x.AllowPrivilegeEscalation
 	}
 	return false
 }
 
 func (x *SecurityContext) SetPrivileged(v bool) {
-	x.xxx_hidden_Privileged = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	x.Privileged = v
 }
 
 func (x *SecurityContext) SetSelinux(v *SecurityContext_SELinux) {
-	x.xxx_hidden_Selinux = v
+	x.Selinux = v
 }
 
 func (x *SecurityContext) SetDropCapabilities(v []string) {
-	x.xxx_hidden_DropCapabilities = v
+	x.DropCapabilities = v
 }
 
 func (x *SecurityContext) SetAddCapabilities(v []string) {
-	x.xxx_hidden_AddCapabilities = v
+	x.AddCapabilities = v
 }
 
 func (x *SecurityContext) SetReadOnlyRootFilesystem(v bool) {
-	x.xxx_hidden_ReadOnlyRootFilesystem = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	x.ReadOnlyRootFilesystem = v
 }
 
 func (x *SecurityContext) SetSeccompProfile(v *SecurityContext_SeccompProfile) {
-	x.xxx_hidden_SeccompProfile = v
+	x.SeccompProfile = v
 }
 
 func (x *SecurityContext) SetAllowPrivilegeEscalation(v bool) {
-	x.xxx_hidden_AllowPrivilegeEscalation = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
-}
-
-func (x *SecurityContext) HasPrivileged() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	x.AllowPrivilegeEscalation = v
 }
 
 func (x *SecurityContext) HasSelinux() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Selinux != nil
-}
-
-func (x *SecurityContext) HasReadOnlyRootFilesystem() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	return x.Selinux != nil
 }
 
 func (x *SecurityContext) HasSeccompProfile() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_SeccompProfile != nil
-}
-
-func (x *SecurityContext) HasAllowPrivilegeEscalation() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *SecurityContext) ClearPrivileged() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Privileged = false
+	return x.SeccompProfile != nil
 }
 
 func (x *SecurityContext) ClearSelinux() {
-	x.xxx_hidden_Selinux = nil
-}
-
-func (x *SecurityContext) ClearReadOnlyRootFilesystem() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ReadOnlyRootFilesystem = false
+	x.Selinux = nil
 }
 
 func (x *SecurityContext) ClearSeccompProfile() {
-	x.xxx_hidden_SeccompProfile = nil
-}
-
-func (x *SecurityContext) ClearAllowPrivilegeEscalation() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	x.xxx_hidden_AllowPrivilegeEscalation = false
+	x.SeccompProfile = nil
 }
 
 type SecurityContext_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Privileged               *bool
+	Privileged               bool
 	Selinux                  *SecurityContext_SELinux
 	DropCapabilities         []string
 	AddCapabilities          []string
-	ReadOnlyRootFilesystem   *bool
+	ReadOnlyRootFilesystem   bool
 	SeccompProfile           *SecurityContext_SeccompProfile
-	AllowPrivilegeEscalation *bool
+	AllowPrivilegeEscalation bool
 }
 
 func (b0 SecurityContext_builder) Build() *SecurityContext {
 	m0 := &SecurityContext{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Privileged != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
-		x.xxx_hidden_Privileged = *b.Privileged
-	}
-	x.xxx_hidden_Selinux = b.Selinux
-	x.xxx_hidden_DropCapabilities = b.DropCapabilities
-	x.xxx_hidden_AddCapabilities = b.AddCapabilities
-	if b.ReadOnlyRootFilesystem != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
-		x.xxx_hidden_ReadOnlyRootFilesystem = *b.ReadOnlyRootFilesystem
-	}
-	x.xxx_hidden_SeccompProfile = b.SeccompProfile
-	if b.AllowPrivilegeEscalation != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
-		x.xxx_hidden_AllowPrivilegeEscalation = *b.AllowPrivilegeEscalation
-	}
+	x.Privileged = b.Privileged
+	x.Selinux = b.Selinux
+	x.DropCapabilities = b.DropCapabilities
+	x.AddCapabilities = b.AddCapabilities
+	x.ReadOnlyRootFilesystem = b.ReadOnlyRootFilesystem
+	x.SeccompProfile = b.SeccompProfile
+	x.AllowPrivilegeEscalation = b.AllowPrivilegeEscalation
 	return m0
 }
 
 // Next available tag: 9
 type ListDeployment struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id        *string                `protobuf:"bytes,1,opt,name=id"`
-	xxx_hidden_Hash      uint64                 `protobuf:"varint,8,opt,name=hash"`
-	xxx_hidden_Name      *string                `protobuf:"bytes,2,opt,name=name"`
-	xxx_hidden_Cluster   *string                `protobuf:"bytes,3,opt,name=cluster"`
-	xxx_hidden_ClusterId *string                `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId"`
-	xxx_hidden_Namespace *string                `protobuf:"bytes,5,opt,name=namespace"`
-	xxx_hidden_Created   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created"`
-	xxx_hidden_Priority  int64                  `protobuf:"varint,7,opt,name=priority"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Hash          uint64                 `protobuf:"varint,8,opt,name=hash" json:"hash,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Cluster       string                 `protobuf:"bytes,3,opt,name=cluster" json:"cluster,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId" json:"cluster_id,omitempty"`
+	Namespace     string                 `protobuf:"bytes,5,opt,name=namespace" json:"namespace,omitempty"`
+	Created       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created" json:"created,omitempty"`
+	Priority      int64                  `protobuf:"varint,7,opt,name=priority" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListDeployment) Reset() {
@@ -3937,283 +2490,136 @@ func (x *ListDeployment) ProtoReflect() protoreflect.Message {
 
 func (x *ListDeployment) GetId() string {
 	if x != nil {
-		if x.xxx_hidden_Id != nil {
-			return *x.xxx_hidden_Id
-		}
-		return ""
+		return x.Id
 	}
 	return ""
 }
 
 func (x *ListDeployment) GetHash() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Hash
+		return x.Hash
 	}
 	return 0
 }
 
 func (x *ListDeployment) GetName() string {
 	if x != nil {
-		if x.xxx_hidden_Name != nil {
-			return *x.xxx_hidden_Name
-		}
-		return ""
+		return x.Name
 	}
 	return ""
 }
 
 func (x *ListDeployment) GetCluster() string {
 	if x != nil {
-		if x.xxx_hidden_Cluster != nil {
-			return *x.xxx_hidden_Cluster
-		}
-		return ""
+		return x.Cluster
 	}
 	return ""
 }
 
 func (x *ListDeployment) GetClusterId() string {
 	if x != nil {
-		if x.xxx_hidden_ClusterId != nil {
-			return *x.xxx_hidden_ClusterId
-		}
-		return ""
+		return x.ClusterId
 	}
 	return ""
 }
 
 func (x *ListDeployment) GetNamespace() string {
 	if x != nil {
-		if x.xxx_hidden_Namespace != nil {
-			return *x.xxx_hidden_Namespace
-		}
-		return ""
+		return x.Namespace
 	}
 	return ""
 }
 
 func (x *ListDeployment) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 6) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Created) {
-				protoimpl.X.UnmarshalField(x, 6)
-			}
-			var rv *timestamppb.Timestamp
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Created), protoimpl.Pointer(&rv))
-			return rv
-		}
+		return x.Created
 	}
 	return nil
 }
 
 func (x *ListDeployment) GetPriority() int64 {
 	if x != nil {
-		return x.xxx_hidden_Priority
+		return x.Priority
 	}
 	return 0
 }
 
 func (x *ListDeployment) SetId(v string) {
-	x.xxx_hidden_Id = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Id = v
 }
 
 func (x *ListDeployment) SetHash(v uint64) {
-	x.xxx_hidden_Hash = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.Hash = v
 }
 
 func (x *ListDeployment) SetName(v string) {
-	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.Name = v
 }
 
 func (x *ListDeployment) SetCluster(v string) {
-	x.xxx_hidden_Cluster = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.Cluster = v
 }
 
 func (x *ListDeployment) SetClusterId(v string) {
-	x.xxx_hidden_ClusterId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.ClusterId = v
 }
 
 func (x *ListDeployment) SetNamespace(v string) {
-	x.xxx_hidden_Namespace = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	x.Namespace = v
 }
 
 func (x *ListDeployment) SetCreated(v *timestamppb.Timestamp) {
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, v)
-	if v == nil {
-		protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	} else {
-		protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
-	}
+	x.Created = v
 }
 
 func (x *ListDeployment) SetPriority(v int64) {
-	x.xxx_hidden_Priority = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
-}
-
-func (x *ListDeployment) HasId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ListDeployment) HasHash() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ListDeployment) HasName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ListDeployment) HasCluster() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *ListDeployment) HasClusterId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *ListDeployment) HasNamespace() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+	x.Priority = v
 }
 
 func (x *ListDeployment) HasCreated() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
-}
-
-func (x *ListDeployment) HasPriority() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
-}
-
-func (x *ListDeployment) ClearId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Id = nil
-}
-
-func (x *ListDeployment) ClearHash() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Hash = 0
-}
-
-func (x *ListDeployment) ClearName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Name = nil
-}
-
-func (x *ListDeployment) ClearCluster() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Cluster = nil
-}
-
-func (x *ListDeployment) ClearClusterId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ClusterId = nil
-}
-
-func (x *ListDeployment) ClearNamespace() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Namespace = nil
+	return x.Created != nil
 }
 
 func (x *ListDeployment) ClearCreated() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
-	protoimpl.X.AtomicSetPointer(&x.xxx_hidden_Created, (*timestamppb.Timestamp)(nil))
-}
-
-func (x *ListDeployment) ClearPriority() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
-	x.xxx_hidden_Priority = 0
+	x.Created = nil
 }
 
 type ListDeployment_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id        *string
-	Hash      *uint64
-	Name      *string
-	Cluster   *string
-	ClusterId *string
-	Namespace *string
+	Id        string
+	Hash      uint64
+	Name      string
+	Cluster   string
+	ClusterId string
+	Namespace string
 	Created   *timestamppb.Timestamp
-	Priority  *int64
+	Priority  int64
 }
 
 func (b0 ListDeployment_builder) Build() *ListDeployment {
 	m0 := &ListDeployment{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Id != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Id = b.Id
-	}
-	if b.Hash != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_Hash = *b.Hash
-	}
-	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_Name = b.Name
-	}
-	if b.Cluster != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_Cluster = b.Cluster
-	}
-	if b.ClusterId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_ClusterId = b.ClusterId
-	}
-	if b.Namespace != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_Namespace = b.Namespace
-	}
-	if b.Created != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
-		x.xxx_hidden_Created = b.Created
-	}
-	if b.Priority != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
-		x.xxx_hidden_Priority = *b.Priority
-	}
+	x.Id = b.Id
+	x.Hash = b.Hash
+	x.Name = b.Name
+	x.Cluster = b.Cluster
+	x.ClusterId = b.ClusterId
+	x.Namespace = b.Namespace
+	x.Created = b.Created
+	x.Priority = b.Priority
 	return m0
 }
 
 type Pod_ContainerInstanceList struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Instances *[]*ContainerInstance  `protobuf:"bytes,1,rep,name=instances"`
-	// Deprecated: Do not use. This will be deleted in the near future.
-	XXX_lazyUnmarshalInfo  protoimpl.LazyUnmarshalInfo
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	Instances     []*ContainerInstance   `protobuf:"bytes,1,rep,name=instances" json:"instances,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Pod_ContainerInstanceList) Reset() {
@@ -4243,27 +2649,13 @@ func (x *Pod_ContainerInstanceList) ProtoReflect() protoreflect.Message {
 
 func (x *Pod_ContainerInstanceList) GetInstances() []*ContainerInstance {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			if protoimpl.X.AtomicCheckPointerIsNil(&x.xxx_hidden_Instances) {
-				protoimpl.X.UnmarshalField(x, 1)
-			}
-			var rv *[]*ContainerInstance
-			protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&rv))
-			return *rv
-		}
+		return x.Instances
 	}
 	return nil
 }
 
 func (x *Pod_ContainerInstanceList) SetInstances(v []*ContainerInstance) {
-	var sv *[]*ContainerInstance
-	protoimpl.X.AtomicLoadPointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&sv))
-	if sv == nil {
-		sv = &[]*ContainerInstance{}
-		protoimpl.X.AtomicInitializePointer(protoimpl.Pointer(&x.xxx_hidden_Instances), protoimpl.Pointer(&sv))
-	}
-	*sv = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+	x.Instances = v
 }
 
 type Pod_ContainerInstanceList_builder struct {
@@ -4276,27 +2668,26 @@ func (b0 Pod_ContainerInstanceList_builder) Build() *Pod_ContainerInstanceList {
 	m0 := &Pod_ContainerInstanceList{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Instances != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
-		x.xxx_hidden_Instances = &b.Instances
-	}
+	x.Instances = b.Instances
 	return m0
 }
 
 type PortConfig_ExposureInfo struct {
-	state                        protoimpl.MessageState   `protogen:"opaque.v1"`
-	xxx_hidden_Level             PortConfig_ExposureLevel `protobuf:"varint,1,opt,name=level,enum=storage.PortConfig_ExposureLevel"`
-	xxx_hidden_ServiceName       *string                  `protobuf:"bytes,2,opt,name=service_name,json=serviceName"`
-	xxx_hidden_ServiceId         *string                  `protobuf:"bytes,3,opt,name=service_id,json=serviceId"`
-	xxx_hidden_ServiceClusterIp  *string                  `protobuf:"bytes,4,opt,name=service_cluster_ip,json=serviceClusterIp"`
-	xxx_hidden_ServicePort       int32                    `protobuf:"varint,5,opt,name=service_port,json=servicePort"`
-	xxx_hidden_NodePort          int32                    `protobuf:"varint,6,opt,name=node_port,json=nodePort"`
-	xxx_hidden_ExternalIps       []string                 `protobuf:"bytes,7,rep,name=external_ips,json=externalIps"`
-	xxx_hidden_ExternalHostnames []string                 `protobuf:"bytes,8,rep,name=external_hostnames,json=externalHostnames"`
-	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
-	XXX_presence                 [1]uint32
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	state protoimpl.MessageState   `protogen:"hybrid.v1"`
+	Level PortConfig_ExposureLevel `protobuf:"varint,1,opt,name=level,enum=storage.PortConfig_ExposureLevel" json:"level,omitempty" search:"Exposure Level,store"` // @gotags: search:"Exposure Level,store"
+	// only set if level is not HOST
+	ServiceName      string `protobuf:"bytes,2,opt,name=service_name,json=serviceName" json:"service_name,omitempty" search:"Exposing Service,store"` // @gotags: search:"Exposing Service,store"
+	ServiceId        string `protobuf:"bytes,3,opt,name=service_id,json=serviceId" json:"service_id,omitempty"`
+	ServiceClusterIp string `protobuf:"bytes,4,opt,name=service_cluster_ip,json=serviceClusterIp" json:"service_cluster_ip,omitempty"`
+	ServicePort      int32  `protobuf:"varint,5,opt,name=service_port,json=servicePort" json:"service_port,omitempty" search:"Exposing Service Port,store"` // @gotags: search:"Exposing Service Port,store"
+	// only set if level is HOST, NODE, EXTERNAL or ROUTE
+	NodePort int32 `protobuf:"varint,6,opt,name=node_port,json=nodePort" json:"node_port,omitempty" search:"Exposed Node Port,store"` // @gotags: search:"Exposed Node Port,store"
+	// only set if level is EXTERNAL
+	ExternalIps []string `protobuf:"bytes,7,rep,name=external_ips,json=externalIps" json:"external_ips,omitempty" search:"External IP,store"` // @gotags: search:"External IP,store"
+	// only set if level is EXTERNAL or ROUTE
+	ExternalHostnames []string `protobuf:"bytes,8,rep,name=external_hostnames,json=externalHostnames" json:"external_hostnames,omitempty" search:"External Hostname,store"` // @gotags: search:"External Hostname,store"
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PortConfig_ExposureInfo) Reset() {
@@ -4326,192 +2717,103 @@ func (x *PortConfig_ExposureInfo) ProtoReflect() protoreflect.Message {
 
 func (x *PortConfig_ExposureInfo) GetLevel() PortConfig_ExposureLevel {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Level
-		}
+		return x.Level
 	}
 	return PortConfig_UNSET
 }
 
 func (x *PortConfig_ExposureInfo) GetServiceName() string {
 	if x != nil {
-		if x.xxx_hidden_ServiceName != nil {
-			return *x.xxx_hidden_ServiceName
-		}
-		return ""
+		return x.ServiceName
 	}
 	return ""
 }
 
 func (x *PortConfig_ExposureInfo) GetServiceId() string {
 	if x != nil {
-		if x.xxx_hidden_ServiceId != nil {
-			return *x.xxx_hidden_ServiceId
-		}
-		return ""
+		return x.ServiceId
 	}
 	return ""
 }
 
 func (x *PortConfig_ExposureInfo) GetServiceClusterIp() string {
 	if x != nil {
-		if x.xxx_hidden_ServiceClusterIp != nil {
-			return *x.xxx_hidden_ServiceClusterIp
-		}
-		return ""
+		return x.ServiceClusterIp
 	}
 	return ""
 }
 
 func (x *PortConfig_ExposureInfo) GetServicePort() int32 {
 	if x != nil {
-		return x.xxx_hidden_ServicePort
+		return x.ServicePort
 	}
 	return 0
 }
 
 func (x *PortConfig_ExposureInfo) GetNodePort() int32 {
 	if x != nil {
-		return x.xxx_hidden_NodePort
+		return x.NodePort
 	}
 	return 0
 }
 
 func (x *PortConfig_ExposureInfo) GetExternalIps() []string {
 	if x != nil {
-		return x.xxx_hidden_ExternalIps
+		return x.ExternalIps
 	}
 	return nil
 }
 
 func (x *PortConfig_ExposureInfo) GetExternalHostnames() []string {
 	if x != nil {
-		return x.xxx_hidden_ExternalHostnames
+		return x.ExternalHostnames
 	}
 	return nil
 }
 
 func (x *PortConfig_ExposureInfo) SetLevel(v PortConfig_ExposureLevel) {
-	x.xxx_hidden_Level = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	x.Level = v
 }
 
 func (x *PortConfig_ExposureInfo) SetServiceName(v string) {
-	x.xxx_hidden_ServiceName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	x.ServiceName = v
 }
 
 func (x *PortConfig_ExposureInfo) SetServiceId(v string) {
-	x.xxx_hidden_ServiceId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	x.ServiceId = v
 }
 
 func (x *PortConfig_ExposureInfo) SetServiceClusterIp(v string) {
-	x.xxx_hidden_ServiceClusterIp = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	x.ServiceClusterIp = v
 }
 
 func (x *PortConfig_ExposureInfo) SetServicePort(v int32) {
-	x.xxx_hidden_ServicePort = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	x.ServicePort = v
 }
 
 func (x *PortConfig_ExposureInfo) SetNodePort(v int32) {
-	x.xxx_hidden_NodePort = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	x.NodePort = v
 }
 
 func (x *PortConfig_ExposureInfo) SetExternalIps(v []string) {
-	x.xxx_hidden_ExternalIps = v
+	x.ExternalIps = v
 }
 
 func (x *PortConfig_ExposureInfo) SetExternalHostnames(v []string) {
-	x.xxx_hidden_ExternalHostnames = v
-}
-
-func (x *PortConfig_ExposureInfo) HasLevel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *PortConfig_ExposureInfo) HasServiceName() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *PortConfig_ExposureInfo) HasServiceId() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *PortConfig_ExposureInfo) HasServiceClusterIp() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *PortConfig_ExposureInfo) HasServicePort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *PortConfig_ExposureInfo) HasNodePort() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
-}
-
-func (x *PortConfig_ExposureInfo) ClearLevel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Level = PortConfig_UNSET
-}
-
-func (x *PortConfig_ExposureInfo) ClearServiceName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_ServiceName = nil
-}
-
-func (x *PortConfig_ExposureInfo) ClearServiceId() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_ServiceId = nil
-}
-
-func (x *PortConfig_ExposureInfo) ClearServiceClusterIp() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_ServiceClusterIp = nil
-}
-
-func (x *PortConfig_ExposureInfo) ClearServicePort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_ServicePort = 0
-}
-
-func (x *PortConfig_ExposureInfo) ClearNodePort() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_NodePort = 0
+	x.ExternalHostnames = v
 }
 
 type PortConfig_ExposureInfo_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Level *PortConfig_ExposureLevel
+	Level PortConfig_ExposureLevel
 	// only set if level is not HOST
-	ServiceName      *string
-	ServiceId        *string
-	ServiceClusterIp *string
-	ServicePort      *int32
+	ServiceName      string
+	ServiceId        string
+	ServiceClusterIp string
+	ServicePort      int32
 	// only set if level is HOST, NODE, EXTERNAL or ROUTE
-	NodePort *int32
+	NodePort int32
 	// only set if level is EXTERNAL
 	ExternalIps []string
 	// only set if level is EXTERNAL or ROUTE
@@ -4522,44 +2824,24 @@ func (b0 PortConfig_ExposureInfo_builder) Build() *PortConfig_ExposureInfo {
 	m0 := &PortConfig_ExposureInfo{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Level != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
-		x.xxx_hidden_Level = *b.Level
-	}
-	if b.ServiceName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
-		x.xxx_hidden_ServiceName = b.ServiceName
-	}
-	if b.ServiceId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
-		x.xxx_hidden_ServiceId = b.ServiceId
-	}
-	if b.ServiceClusterIp != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
-		x.xxx_hidden_ServiceClusterIp = b.ServiceClusterIp
-	}
-	if b.ServicePort != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_ServicePort = *b.ServicePort
-	}
-	if b.NodePort != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
-		x.xxx_hidden_NodePort = *b.NodePort
-	}
-	x.xxx_hidden_ExternalIps = b.ExternalIps
-	x.xxx_hidden_ExternalHostnames = b.ExternalHostnames
+	x.Level = b.Level
+	x.ServiceName = b.ServiceName
+	x.ServiceId = b.ServiceId
+	x.ServiceClusterIp = b.ServiceClusterIp
+	x.ServicePort = b.ServicePort
+	x.NodePort = b.NodePort
+	x.ExternalIps = b.ExternalIps
+	x.ExternalHostnames = b.ExternalHostnames
 	return m0
 }
 
 type ContainerConfig_EnvironmentConfig struct {
-	state                   protoimpl.MessageState                         `protogen:"opaque.v1"`
-	xxx_hidden_Key          *string                                        `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Value        *string                                        `protobuf:"bytes,2,opt,name=value"`
-	xxx_hidden_EnvVarSource ContainerConfig_EnvironmentConfig_EnvVarSource `protobuf:"varint,3,opt,name=env_var_source,json=envVarSource,enum=storage.ContainerConfig_EnvironmentConfig_EnvVarSource"`
-	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
-	XXX_presence            [1]uint32
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState                         `protogen:"hybrid.v1"`
+	Key           string                                         `protobuf:"bytes,1,opt,name=key" json:"key,omitempty" search:"Environment Key,store"`                                                                                                      // @gotags: search:"Environment Key,store"
+	Value         string                                         `protobuf:"bytes,2,opt,name=value" json:"value,omitempty" search:"Environment Value,store"`                                                                                                  // @gotags: search:"Environment Value,store"
+	EnvVarSource  ContainerConfig_EnvironmentConfig_EnvVarSource `protobuf:"varint,3,opt,name=env_var_source,json=envVarSource,enum=storage.ContainerConfig_EnvironmentConfig_EnvVarSource" json:"env_var_source,omitempty" search:"Environment Variable Source,store"` // @gotags: search:"Environment Variable Source,store"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ContainerConfig_EnvironmentConfig) Reset() {
@@ -4589,121 +2871,63 @@ func (x *ContainerConfig_EnvironmentConfig) ProtoReflect() protoreflect.Message 
 
 func (x *ContainerConfig_EnvironmentConfig) GetKey() string {
 	if x != nil {
-		if x.xxx_hidden_Key != nil {
-			return *x.xxx_hidden_Key
-		}
-		return ""
+		return x.Key
 	}
 	return ""
 }
 
 func (x *ContainerConfig_EnvironmentConfig) GetValue() string {
 	if x != nil {
-		if x.xxx_hidden_Value != nil {
-			return *x.xxx_hidden_Value
-		}
-		return ""
+		return x.Value
 	}
 	return ""
 }
 
 func (x *ContainerConfig_EnvironmentConfig) GetEnvVarSource() ContainerConfig_EnvironmentConfig_EnvVarSource {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 2) {
-			return x.xxx_hidden_EnvVarSource
-		}
+		return x.EnvVarSource
 	}
 	return ContainerConfig_EnvironmentConfig_UNSET
 }
 
 func (x *ContainerConfig_EnvironmentConfig) SetKey(v string) {
-	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
+	x.Key = v
 }
 
 func (x *ContainerConfig_EnvironmentConfig) SetValue(v string) {
-	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
+	x.Value = v
 }
 
 func (x *ContainerConfig_EnvironmentConfig) SetEnvVarSource(v ContainerConfig_EnvironmentConfig_EnvVarSource) {
-	x.xxx_hidden_EnvVarSource = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
-}
-
-func (x *ContainerConfig_EnvironmentConfig) HasKey() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *ContainerConfig_EnvironmentConfig) HasValue() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *ContainerConfig_EnvironmentConfig) HasEnvVarSource() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *ContainerConfig_EnvironmentConfig) ClearKey() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Key = nil
-}
-
-func (x *ContainerConfig_EnvironmentConfig) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Value = nil
-}
-
-func (x *ContainerConfig_EnvironmentConfig) ClearEnvVarSource() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_EnvVarSource = ContainerConfig_EnvironmentConfig_UNSET
+	x.EnvVarSource = v
 }
 
 type ContainerConfig_EnvironmentConfig_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Key          *string
-	Value        *string
-	EnvVarSource *ContainerConfig_EnvironmentConfig_EnvVarSource
+	Key          string
+	Value        string
+	EnvVarSource ContainerConfig_EnvironmentConfig_EnvVarSource
 }
 
 func (b0 ContainerConfig_EnvironmentConfig_builder) Build() *ContainerConfig_EnvironmentConfig {
 	m0 := &ContainerConfig_EnvironmentConfig{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
-		x.xxx_hidden_Key = b.Key
-	}
-	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
-		x.xxx_hidden_Value = b.Value
-	}
-	if b.EnvVarSource != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
-		x.xxx_hidden_EnvVarSource = *b.EnvVarSource
-	}
+	x.Key = b.Key
+	x.Value = b.Value
+	x.EnvVarSource = b.EnvVarSource
 	return m0
 }
 
 type SecurityContext_SELinux struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_User        *string                `protobuf:"bytes,1,opt,name=user"`
-	xxx_hidden_Role        *string                `protobuf:"bytes,2,opt,name=role"`
-	xxx_hidden_Type        *string                `protobuf:"bytes,3,opt,name=type"`
-	xxx_hidden_Level       *string                `protobuf:"bytes,4,opt,name=level"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"hybrid.v1"`
+	User          string                 `protobuf:"bytes,1,opt,name=user" json:"user,omitempty"`
+	Role          string                 `protobuf:"bytes,2,opt,name=role" json:"role,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type" json:"type,omitempty"`
+	Level         string                 `protobuf:"bytes,4,opt,name=level" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SecurityContext_SELinux) Reset() {
@@ -4733,152 +2957,74 @@ func (x *SecurityContext_SELinux) ProtoReflect() protoreflect.Message {
 
 func (x *SecurityContext_SELinux) GetUser() string {
 	if x != nil {
-		if x.xxx_hidden_User != nil {
-			return *x.xxx_hidden_User
-		}
-		return ""
+		return x.User
 	}
 	return ""
 }
 
 func (x *SecurityContext_SELinux) GetRole() string {
 	if x != nil {
-		if x.xxx_hidden_Role != nil {
-			return *x.xxx_hidden_Role
-		}
-		return ""
+		return x.Role
 	}
 	return ""
 }
 
 func (x *SecurityContext_SELinux) GetType() string {
 	if x != nil {
-		if x.xxx_hidden_Type != nil {
-			return *x.xxx_hidden_Type
-		}
-		return ""
+		return x.Type
 	}
 	return ""
 }
 
 func (x *SecurityContext_SELinux) GetLevel() string {
 	if x != nil {
-		if x.xxx_hidden_Level != nil {
-			return *x.xxx_hidden_Level
-		}
-		return ""
+		return x.Level
 	}
 	return ""
 }
 
 func (x *SecurityContext_SELinux) SetUser(v string) {
-	x.xxx_hidden_User = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
+	x.User = v
 }
 
 func (x *SecurityContext_SELinux) SetRole(v string) {
-	x.xxx_hidden_Role = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	x.Role = v
 }
 
 func (x *SecurityContext_SELinux) SetType(v string) {
-	x.xxx_hidden_Type = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	x.Type = v
 }
 
 func (x *SecurityContext_SELinux) SetLevel(v string) {
-	x.xxx_hidden_Level = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 4)
-}
-
-func (x *SecurityContext_SELinux) HasUser() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SecurityContext_SELinux) HasRole() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SecurityContext_SELinux) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
-func (x *SecurityContext_SELinux) HasLevel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
-}
-
-func (x *SecurityContext_SELinux) ClearUser() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_User = nil
-}
-
-func (x *SecurityContext_SELinux) ClearRole() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Role = nil
-}
-
-func (x *SecurityContext_SELinux) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
-	x.xxx_hidden_Type = nil
-}
-
-func (x *SecurityContext_SELinux) ClearLevel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
-	x.xxx_hidden_Level = nil
+	x.Level = v
 }
 
 type SecurityContext_SELinux_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	User  *string
-	Role  *string
-	Type  *string
-	Level *string
+	User  string
+	Role  string
+	Type  string
+	Level string
 }
 
 func (b0 SecurityContext_SELinux_builder) Build() *SecurityContext_SELinux {
 	m0 := &SecurityContext_SELinux{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.User != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
-		x.xxx_hidden_User = b.User
-	}
-	if b.Role != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Role = b.Role
-	}
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
-		x.xxx_hidden_Type = b.Type
-	}
-	if b.Level != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 4)
-		x.xxx_hidden_Level = b.Level
-	}
+	x.User = b.User
+	x.Role = b.Role
+	x.Type = b.Type
+	x.Level = b.Level
 	return m0
 }
 
 type SecurityContext_SeccompProfile struct {
-	state                       protoimpl.MessageState                     `protogen:"opaque.v1"`
-	xxx_hidden_Type             SecurityContext_SeccompProfile_ProfileType `protobuf:"varint,1,opt,name=type,enum=storage.SecurityContext_SeccompProfile_ProfileType"`
-	xxx_hidden_LocalhostProfile *string                                    `protobuf:"bytes,2,opt,name=localhost_profile,json=localhostProfile"`
-	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
-	XXX_presence                [1]uint32
-	unknownFields               protoimpl.UnknownFields
-	sizeCache                   protoimpl.SizeCache
+	state            protoimpl.MessageState                     `protogen:"hybrid.v1"`
+	Type             SecurityContext_SeccompProfile_ProfileType `protobuf:"varint,1,opt,name=type,enum=storage.SecurityContext_SeccompProfile_ProfileType" json:"type,omitempty" policy:"Seccomp Profile Type"` // @gotags: policy:"Seccomp Profile Type"
+	LocalhostProfile string                                     `protobuf:"bytes,2,opt,name=localhost_profile,json=localhostProfile" json:"localhost_profile,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SecurityContext_SeccompProfile) Reset() {
@@ -4908,76 +3054,39 @@ func (x *SecurityContext_SeccompProfile) ProtoReflect() protoreflect.Message {
 
 func (x *SecurityContext_SeccompProfile) GetType() SecurityContext_SeccompProfile_ProfileType {
 	if x != nil {
-		if protoimpl.X.Present(&(x.XXX_presence[0]), 0) {
-			return x.xxx_hidden_Type
-		}
+		return x.Type
 	}
 	return SecurityContext_SeccompProfile_UNCONFINED
 }
 
 func (x *SecurityContext_SeccompProfile) GetLocalhostProfile() string {
 	if x != nil {
-		if x.xxx_hidden_LocalhostProfile != nil {
-			return *x.xxx_hidden_LocalhostProfile
-		}
-		return ""
+		return x.LocalhostProfile
 	}
 	return ""
 }
 
 func (x *SecurityContext_SeccompProfile) SetType(v SecurityContext_SeccompProfile_ProfileType) {
-	x.xxx_hidden_Type = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+	x.Type = v
 }
 
 func (x *SecurityContext_SeccompProfile) SetLocalhostProfile(v string) {
-	x.xxx_hidden_LocalhostProfile = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *SecurityContext_SeccompProfile) HasType() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
-}
-
-func (x *SecurityContext_SeccompProfile) HasLocalhostProfile() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *SecurityContext_SeccompProfile) ClearType() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
-	x.xxx_hidden_Type = SecurityContext_SeccompProfile_UNCONFINED
-}
-
-func (x *SecurityContext_SeccompProfile) ClearLocalhostProfile() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_LocalhostProfile = nil
+	x.LocalhostProfile = v
 }
 
 type SecurityContext_SeccompProfile_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Type             *SecurityContext_SeccompProfile_ProfileType
-	LocalhostProfile *string
+	Type             SecurityContext_SeccompProfile_ProfileType
+	LocalhostProfile string
 }
 
 func (b0 SecurityContext_SeccompProfile_builder) Build() *SecurityContext_SeccompProfile {
 	m0 := &SecurityContext_SeccompProfile{}
 	b, x := &b0, m0
 	_, _ = b, x
-	if b.Type != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
-		x.xxx_hidden_Type = *b.Type
-	}
-	if b.LocalhostProfile != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_LocalhostProfile = b.LocalhostProfile
-	}
+	x.Type = b.Type
+	x.LocalhostProfile = b.LocalhostProfile
 	return m0
 }
 
@@ -5184,8 +3293,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x128\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampB\x02(\x01R\acreated\x12\x1a\n" +
-	"\bpriority\x18\a \x01(\x03R\bpriorityB6\n" +
-	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\x05\xd2>\x02\x10\x03b\beditionsp\xe8\a"
+	"\bpriority\x18\a \x01(\x03R\bpriorityB>\n" +
+	"\x19io.stackrox.proto.storageZ\x11./storage;storage\x92\x03\r\xd2>\x02\x10\x02\b\x02\x10\x01 \x020\x01b\beditionsp\xe8\a"
 
 var file_storage_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 23)

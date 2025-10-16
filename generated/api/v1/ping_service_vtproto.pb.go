@@ -8,6 +8,7 @@ func (m *PongMessage) SizeVT() int                   { return proto.Size(m) }
 func (m *PongMessage) CloneVT() *PongMessage         { return proto.Clone(m).(*PongMessage) }
 func (m *PongMessage) MarshalVT() ([]byte, error)    { return proto.Marshal(m) }
 func (m *PongMessage) UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }
+func (m *PongMessage) EqualVT(n *PongMessage) bool   { return proto.Equal(m, n) }
 
 // Deprecated: Use UnmarshalVT instead.
 func (m *PongMessage) UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
