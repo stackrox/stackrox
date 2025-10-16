@@ -2,7 +2,7 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import pluralize from 'pluralize';
 import type { FormikErrors } from 'formik';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { selectorOptions } from '../types';
 import type { RuleSelectorOption, ScopedResourceSelector, SelectorEntityType } from '../types';
 import ByNameSelector from './ByNameSelector';
@@ -45,10 +45,9 @@ function RuleSelector({
     validationErrors,
     isDisabled = false,
 }: RuleSelectorProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const pluralEntity = pluralize(entityType);
 
-    function onRuleOptionSelect(_, value) {
+    function onRuleOptionSelect(_id: string, value: string) {
         if (!isRuleSelectorOption(value)) {
             return;
         }
@@ -68,19 +67,18 @@ function RuleSelector({
         };
 
         handleChange(entityType, selectorMap[value]);
-        closeSelect();
     }
 
     const selection = scopedResourceSelector.type;
     return (
         <div className="rule-selector">
-            <Select
+            <SelectSingle
+                id={`rule-selector-${entityType.toLowerCase()}`}
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
-                isOpen={isOpen}
-                onToggle={(_e, v) => onToggle(v)}
-                selections={selection}
-                onSelect={onRuleOptionSelect}
+                value={selection}
+                handleSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}
+                maxWidth="100%"
             >
                 <SelectOption value="NoneSpecified">
                     No {pluralEntity.toLowerCase()} specified
@@ -89,7 +87,7 @@ function RuleSelector({
                 <SelectOption value="ByLabel">
                     {pluralEntity} with labels matching exactly
                 </SelectOption>
-            </Select>
+            </SelectSingle>
 
             {scopedResourceSelector.type === 'ByName' && (
                 <ByNameSelector

@@ -6,10 +6,10 @@ import {
     HelperText,
     HelperTextItem,
     Icon,
+    SelectOption,
     TextInput,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 

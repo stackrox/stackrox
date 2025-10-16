@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
-import { Select } from '@patternfly/react-core/deprecated';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import type { ByLabelMatchType, ByNameMatchType, MatchType } from '../types';
 
 export type MatchTypeSelectProps<T extends MatchType> = {
@@ -16,25 +15,19 @@ function MatchTypeSelect<T extends MatchType>({
     children,
     isDisabled = false,
 }: MatchTypeSelectProps<T>) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
-
-    function onSelect(_, value) {
-        onChange(value);
-        closeSelect();
+    function onSelect(_id: string, value: string) {
+        onChange(value as T);
     }
 
     return (
-        <>
-            <Select
-                isOpen={isOpen}
-                onToggle={(_e, v) => onToggle(v)}
-                selections={selected}
-                onSelect={onSelect}
-                isDisabled={isDisabled}
-            >
-                {children}
-            </Select>
-        </>
+        <SelectSingle
+            id="match-type-select"
+            value={selected}
+            handleSelect={onSelect}
+            isDisabled={isDisabled}
+        >
+            {children}
+        </SelectSingle>
     );
 }
 
