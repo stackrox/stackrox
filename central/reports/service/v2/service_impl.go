@@ -41,26 +41,26 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
-		user.With(permissions.View(resources.WorkflowAdministration)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			apiV2.ReportService_GetReportConfiguration_FullMethodName,
 			apiV2.ReportService_CountReportConfigurations_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Integration)): {
 			apiV2.ReportService_PostReportConfiguration_FullMethodName,
 			apiV2.ReportService_UpdateReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
@@ -354,9 +354,6 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 }
 
 func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest) (*apiV2.RunReportResponse, error) {
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
 	if req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
@@ -467,11 +464,6 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 
 // PostViewBasedReport validates a view-based report request and submits it to the report scheduler.
 func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.ReportRequestViewBased) (*apiV2.RunReportResponseViewBased, error) {
-	err := verifyReportSAC(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
 	}
@@ -577,15 +569,4 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
-}
-
-func verifyReportSAC(ctx context.Context) error {
-	// Authorisation: must have write access on workflow administration and read access for Image.
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return err
-	}
-	if err := sac.VerifyAuthzOK(imageSAC.ReadAllowed(ctx)); err != nil {
-		return err
-	}
-	return nil
 }
