@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ReactElement } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -12,8 +12,12 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Select,
+    SelectOption,
+    SelectList,
+    MenuToggle,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
@@ -125,16 +129,18 @@ function ViolationsTablePanel({
         }
     );
 
-    function onToggleSelect(toggleOpen) {
-        setIsSelectOpen(toggleOpen);
+    function onToggleSelect() {
+        setIsSelectOpen(!isSelectOpen);
     }
 
     // Handle setting confirmation modals for bulk actions
     function showResolveConfirmationDialog() {
         setModalType('resolve');
+        setIsSelectOpen(false);
     }
     function showExcludeConfirmationDialog() {
         setModalType('excludeScopes');
+        setIsSelectOpen(false);
     }
 
     // Handle closing confirmation modals for bulk actions;
@@ -159,10 +165,6 @@ function ViolationsTablePanel({
         setPerPage(newPerPage);
     }
 
-    function closeSelect() {
-        setIsSelectOpen(false);
-    }
-
     function resolveAlertAction(addToBaseline, id) {
         return resolveAlert(id, addToBaseline).then(onClearAll, onClearAll);
     }
@@ -180,6 +182,17 @@ function ViolationsTablePanel({
             numResolveable += 1;
         }
     });
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggleSelect}
+            isExpanded={isSelectOpen}
+            isDisabled={!hasSelections}
+        >
+            Row actions
+        </MenuToggle>
+    );
 
     return (
         <>
@@ -221,27 +234,29 @@ function ViolationsTablePanel({
                     {hasActions && (
                         <ToolbarItem align={{ default: 'alignRight' }}>
                             <Select
-                                onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
                                 isOpen={isSelectOpen}
-                                placeholderText="Row actions"
-                                onSelect={closeSelect}
-                                isDisabled={!hasSelections}
+                                onOpenChange={setIsSelectOpen}
+                                toggle={toggle}
                             >
-                                <SelectOption
-                                    key="1"
-                                    value={`Mark as resolved (${numResolveable})`}
-                                    isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
-                                    onClick={showResolveConfirmationDialog}
-                                />
-                                <SelectOption
-                                    key="2"
-                                    value={`Exclude deployments from policy (${numScopesToExclude})`}
-                                    isDisabled={
-                                        !hasWriteAccessForExcludeDeploymentsFromPolicy ||
-                                        numScopesToExclude === 0
-                                    }
-                                    onClick={showExcludeConfirmationDialog}
-                                />
+                                <SelectList>
+                                    <SelectOption
+                                        value="resolve"
+                                        isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
+                                        onClick={showResolveConfirmationDialog}
+                                    >
+                                        Mark as resolved ({numResolveable})
+                                    </SelectOption>
+                                    <SelectOption
+                                        value="exclude"
+                                        isDisabled={
+                                            !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                            numScopesToExclude === 0
+                                        }
+                                        onClick={showExcludeConfirmationDialog}
+                                    >
+                                        Exclude deployments from policy ({numScopesToExclude})
+                                    </SelectOption>
+                                </SelectList>
                             </Select>
                         </ToolbarItem>
                     )}
