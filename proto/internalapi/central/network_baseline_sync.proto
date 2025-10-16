@@ -6,7 +6,13 @@ import "storage/network_baseline.proto";
 import "google/protobuf/go_features.proto";
 
 option go_package = "./internalapi/central;central";
-option features.(pb.go).api_level = API_OPAQUE;
+option features.(pb.go).api_level = API_HYBRID;
+option features.field_presence = IMPLICIT;
+option features.enum_type = OPEN;
+// `packed=false` needs to be transformed to field-level repeated_field_encoding
+// features in Editions syntax
+option features.json_format = ALLOW;
+option features.utf8_validation = VERIFY;
 
 message NetworkBaselineSync {
   repeated storage.NetworkBaseline network_baselines = 1 [lazy = true];

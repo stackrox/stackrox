@@ -8,7 +8,13 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
-option features.(pb.go).api_level = API_OPAQUE;
+option features.(pb.go).api_level = API_HYBRID;
+option features.field_presence = IMPLICIT;
+option features.enum_type = OPEN;
+// `packed=false` needs to be transformed to field-level repeated_field_encoding
+// features in Editions syntax
+option features.json_format = ALLOW;
+option features.utf8_validation = VERIFY;
 
 // This proto is deprecated and replaced by ImageV2.
 // Next Tag: 19

@@ -14,7 +14,13 @@ import "google/protobuf/go_features.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
-option features.(pb.go).api_level = API_OPAQUE;
+option features.(pb.go).api_level = API_HYBRID;
+option features.field_presence = IMPLICIT;
+option features.enum_type = OPEN;
+// `packed=false` needs to be transformed to field-level repeated_field_encoding
+// features in Editions syntax
+option features.json_format = ALLOW;
+option features.utf8_validation = VERIFY;
 
 message GetImageRequest {
   string id = 1;
