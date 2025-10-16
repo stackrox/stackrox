@@ -99,8 +99,6 @@ func (s *migrationTestSuite) TestMigration() {
 
 	s.Require().NoError(migration.Run(dbs))
 
-	// TODO(dont-merge): pull the post-migration dataset from DB
-
 	sql := "SELECT image_name_fullname, image_id, image_idv2, deployments_id, idx FROM deployments_containers"
 	rows, err := s.db.Query(s.ctx, sql)
 	s.Require().NoError(err)
