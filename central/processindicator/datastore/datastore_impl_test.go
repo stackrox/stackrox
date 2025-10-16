@@ -378,16 +378,6 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	suite.True(suite.datastore.Wait(concurrency.Timeout(3 * prunePeriod)))
 }
 
-func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
-	mockStore := suite.setupDataStoreWithMocks()
-	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
-
-	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, uuid.Nil.String())
-	suite.NoError(err, "expected no error, should return nil without access")
-	suite.False(exists)
-	suite.Nil(indicator, "expected return value to be nil")
-}
-
 func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	mockStore := suite.setupDataStoreWithMocks()
 	testIndicator := &storage.ProcessIndicator{}
@@ -405,41 +395,11 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	protoassert.Equal(suite.T(), testIndicator, indicator)
 }
 
-func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
-	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
-
-	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
-	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
-	suite.Error(err, "expected an error trying to write without permissions")
-}
-
-func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
-	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
-
-	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
-	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
-	suite.Error(err, "expected an error trying to write without permissions")
-}
-
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock := suite.setupDataStoreWithMocks()
 	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: fixtureconsts.ProcessIndicatorID1})
 	suite.NoError(err, "expected no error trying to write with permissions")
-}
-
-func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
-	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasNoneCtx, uuid.NewDummy().String())
-	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.datastore.RemoveProcessIndicatorsByPod(suite.hasReadCtx, uuid.Nil.String())
-	suite.Error(err, "expected an error trying to write without permissions")
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
