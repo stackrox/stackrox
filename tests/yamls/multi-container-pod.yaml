@@ -1,6 +1,8 @@
 # Will be used within roxctl_verification.sh.
 # Contains a Pod with multiple containers.
 # Note: pods_test and container_instances_test depend on this.
+#
+# Images are from quay.io/rhacs-eng to avoid Docker Hub rate limits (see qa-tests-backend/scripts/images-to-prefetch.txt)
 apiVersion: v1
 kind: Pod
 metadata:
@@ -12,12 +14,14 @@ spec:
       emptyDir: {}
   containers:
     - name: 1st
-      image: nginx:1.18@sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72
+      image: quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+      imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
           mountPath: /usr/share/nginx/html
     - name: 2nd
-      image: debian:latest@sha256:1e5f2d70c9441c971607727f56d0776fb9eecf23cd37b595b26db7a974b2301d
+      image: quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
+      imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
           mountPath: /html
