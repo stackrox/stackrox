@@ -18,14 +18,16 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
-	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, results)
 }
 
 func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
+	// The access control behaviour in this function is not standard. It also does not respect
+	// some base information security principles (behave the same when the requester
+	// should not be allowed to access the information and if the target information
+	// does not exist).
+	// Backward behaviour consistency for the /v1/deploymentswithprocessinfo endpoint would require
+	// this function to stay as is.
 	elevatedPreSACReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -44,19 +46,5 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 }
 
 func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
-	elevatedPreSACCheckCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.DeploymentExtension),
-		))
-	pWResults, exists, err := d.storage.Get(elevatedPreSACCheckCtx, deploymentID)
-	if err != nil || !exists {
-		return err
-	}
-
-	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, deploymentID)
 }
