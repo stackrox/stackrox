@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/mdlayher/vsock"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestVMRelay(t *testing.T) {
@@ -32,113 +32,33 @@ func (s *relayTestSuite) SetupTest() {
 }
 
 func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
-
-	connWrongAddrType := s.defaultVsockConn()
-	connWrongAddrType.remoteAddr = &net.TCPAddr{}
-
-	cases := map[string]struct {
-		conn             net.Conn
-		shouldError      bool
-		expectedVsockCID uint32
-	}{
-		"wrong type fails": {
-			conn:             connWrongAddrType,
-			shouldError:      true,
-			expectedVsockCID: 0,
-		},
-		"reserved vsock CID fails": {
-			conn:             s.defaultVsockConn().withVsockCID(2),
-			shouldError:      true,
-			expectedVsockCID: 0,
-		},
-		"valid vsock CID succeeds": {
-			conn:             s.defaultVsockConn().withVsockCID(42),
-			shouldError:      false,
-			expectedVsockCID: 42,
-		},
-	}
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			vsockCID, err := extractVsockCIDFromConnection(c.conn)
-			if c.shouldError {
-				s.Require().Error(err)
-			} else {
-				s.Require().NoError(err)
-				s.Equal(c.expectedVsockCID, vsockCID)
-			}
-		})
-	}
-}
-
-func (s *relayTestSuite) TestHandleVsockConnection_RejectsMismatchingVsockCID() {
-	cases := map[string]struct {
-		indexReportVsockCID int
-		connVsockCID        int
-		shouldError         bool
-	}{
-		"mismatching vsock CID fails": {
-			indexReportVsockCID: 42,
-			connVsockCID:        99,
-			shouldError:         true,
-		},
-		"matching vsock CID succeeds": {
-			indexReportVsockCID: 42,
-			connVsockCID:        42,
-			shouldError:         false,
-		},
-	}
-
-	for name, c := range cases {
-		s.Run(name, func() {
-			indexReport := &v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
-			conn, err := newMockVsockConn().withVsockCID(uint32(c.connVsockCID)).withIndexReport(indexReport)
-			s.Require().NoError(err)
-			client := newMockSensorClient()
-
-			relay := s.defaultRelay(s.ctx, client)
-			err = relay.handleVsockConnection(conn)
-			if c.shouldError {
-				s.Require().Error(err)
-				s.Contains(err.Error(), "mismatch")
-				s.Empty(client.capturedRequests)
-			} else {
-				s.Require().NoError(err)
-				s.Len(client.capturedRequests, 1)
-			}
-		})
-	}
-}
-
-func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
-	conn := s.defaultVsockConn().withData([]byte("malformed-data"))
-	client := newMockSensorClient()
-	relay := s.defaultRelay(s.ctx, client)
-
-	err := relay.handleVsockConnection(conn)
-	s.Error(err)
-}
-
-func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() {
 	conn := s.defaultVsockConn()
 
-	// Set up a sensor client that only returns after 500 ms
-	client := newMockSensorClient().withDelay(500 * time.Millisecond)
-
-	// Set up a context that will be canceled after 100 ms
-	cancellableCtx, cancel := context.WithCancel(s.ctx)
-	relay := s.defaultRelay(cancellableCtx, client)
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		cancel()
-	}()
-
-	// When the connection is handled, sending the index report to sensor will hang for 500 ms.
-	// The context will be canceled after 100 ms, that is, while the sensor response is awaited.
-	// Therefore we expect a "context canceled" error
-	err := relay.handleVsockConnection(conn)
+	// Wrong remoteAddr type fails
+	conn.remoteAddr = &net.TCPAddr{}
+	_, err := extractVsockCIDFromConnection(conn)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "context canceled")
+
+	// Right type succeeds
+	conn.remoteAddr = &vsock.Addr{ContextID: 42}
+	vsockCID, err := extractVsockCIDFromConnection(conn)
+	s.Require().NoError(err)
+	s.Require().Equal(uint32(42), vsockCID)
+
+}
+
+func (s *relayTestSuite) TestParseIndexReport() {
+	data := []byte("malformed-data")
+	parsedIndexReport, err := parseIndexReport(data)
+	s.Require().Error(err)
+	s.Require().Nil(parsedIndexReport)
+
+	validIndexReport := &v1.IndexReport{VsockCid: "42"}
+	data, err = proto.Marshal(validIndexReport)
+	s.Require().NoError(err)
+	parsedIndexReport, err = parseIndexReport(data)
+	s.Require().NoError(err)
+	s.Require().True(proto.Equal(validIndexReport, parsedIndexReport))
 }
 
 func (s *relayTestSuite) TestReadFromConn() {
@@ -194,6 +114,41 @@ func (s *relayTestSuite) TestReadFromConn() {
 	}
 }
 
+func (s *relayTestSuite) TestSemaphore() {
+	vsockServer := &vsockServerImpl{
+		semaphore:        semaphore.NewWeighted(1),
+		semaphoreTimeout: 5 * time.Millisecond,
+	}
+
+	// First should succeed
+	err := vsockServer.acquireSemaphore(s.ctx)
+	s.Require().NoError(err)
+
+	// Second should time out
+	err = vsockServer.acquireSemaphore(s.ctx)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "failed to acquire semaphore")
+
+	// After releasing once, a new acquire should succeed
+	vsockServer.releaseSemaphore()
+	err = vsockServer.acquireSemaphore(s.ctx)
+	s.Require().NoError(err)
+}
+
+func (s *relayTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
+	client := newMockSensorClient().withDelay(500 * time.Millisecond)
+	ctx, cancel := context.WithCancel(s.ctx)
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "context canceled")
+}
+
 func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	cases := map[string]struct {
 		err         error
@@ -237,35 +192,39 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 }
 
-func (s *relayTestSuite) TestSemaphore() {
-	vsockServer := &vsockServerImpl{
-		semaphore:        semaphore.NewWeighted(1),
-		semaphoreTimeout: 5 * time.Millisecond,
+func (s *relayTestSuite) TestValidateVsockCID() {
+	cases := map[string]struct {
+		indexReportVsockCID int
+		connVsockCID        int
+		shouldError         bool
+	}{
+		"mismatching vsock CID fails": {
+			indexReportVsockCID: 42,
+			connVsockCID:        99,
+			shouldError:         true,
+		},
+		"matching vsock CID succeeds": {
+			indexReportVsockCID: 42,
+			connVsockCID:        42,
+			shouldError:         false,
+		},
+		"invalid vsock CID fails": {
+			indexReportVsockCID: 1,
+			connVsockCID:        1,
+			shouldError:         true,
+		},
 	}
 
-	// First should succeed
-	err := vsockServer.acquireSemaphore(s.ctx)
-	s.Require().NoError(err)
-
-	// Second should time out
-	err = vsockServer.acquireSemaphore(s.ctx)
-	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "failed to acquire semaphore")
-
-	// After releasing once, a new acquire should succeed
-	vsockServer.releaseSemaphore()
-	err = vsockServer.acquireSemaphore(s.ctx)
-	s.Require().NoError(err)
-}
-
-func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) *Relay {
-	s.T().Setenv(env.VirtualMachinesVsockPort.EnvVar(), "12345")
-	return &Relay{
-		connectionReadTimeout: 10 * time.Second,
-		ctx:                   ctx,
-		sensorClient:          sensorClient,
-		vsockServer:           newVsockServer(),
-		waitAfterFailedAccept: time.Second,
+	for name, c := range cases {
+		s.Run(name, func() {
+			indexReport := v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
+			err := validateVsockCID(&indexReport, uint32(c.connVsockCID))
+			if c.shouldError {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+			}
+		})
 	}
 }
 
