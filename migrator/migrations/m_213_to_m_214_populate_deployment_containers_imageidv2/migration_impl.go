@@ -44,7 +44,7 @@ func migrate(database *types.Databases) error {
 
 	db := database.PostgresDB
 
-	getStmt := `SELECT idx, image_name_fullname, image_id FROM deployments_containers WHERE image_id is not null AND image_id != '' AND image_name_fullname is not null AND image_name_fullname != ''`
+	getStmt := `SELECT image_name_fullname, image_id FROM deployments_containers WHERE image_id is not null AND image_id != '' AND image_name_fullname is not null AND image_name_fullname != ''`
 	rows, err := db.Query(database.DBCtx, getStmt)
 	if err != nil {
 		return err
@@ -55,8 +55,8 @@ func migrate(database *types.Databases) error {
 		return err
 	}
 	for _, container := range containers {
-		updateStmt := `UPDATE deployments_containers SET image_idv2 = $1 WHERE idx = $2`
-		_, err = db.Exec(database.DBCtx, updateStmt, uuid.NewV5FromNonUUIDs(container.ImageNameFullName, container.ImageID).String(), container.Idx)
+		updateStmt := `UPDATE deployments_containers SET image_idv2 = $1 WHERE image_name_fullname = $2 AND image_id = $3`
+		_, err = db.Exec(database.DBCtx, updateStmt, uuid.NewV5FromNonUUIDs(container.ImageNameFullName, container.ImageID).String(), container.ImageNameFullName, container.ImageID)
 		if err != nil {
 			return err
 		}
@@ -69,18 +69,16 @@ func readRows(rows *postgres.Rows) ([]*schema.DeploymentsContainers, error) {
 	var containers []*schema.DeploymentsContainers
 
 	for rows.Next() {
-		var idx int
 		var imageName string
 		var imageId string
 
-		if err := rows.Scan(&idx, &imageName, &imageId); err != nil {
+		if err := rows.Scan(&imageName, &imageId); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
 		container := &schema.DeploymentsContainers{
 			ImageID:           imageId,
 			ImageNameFullName: imageName,
-			Idx:               idx,
 		}
 		containers = append(containers, container)
 	}
