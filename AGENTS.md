@@ -157,3 +157,4 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
+- Use nil-safe getters instead of direct field access in go code
