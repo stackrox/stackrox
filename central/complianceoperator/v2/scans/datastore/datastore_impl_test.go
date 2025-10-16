@@ -225,7 +225,7 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	retrievedObject, found, err := s.dataStore.GetScan(s.hasReadCtx, testScan3.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Equal(testScan3.LastExecutedTime.AsTime(), retrievedObject.LastExecutedTime.AsTime())
+	s.Equal(testScan3.GetLastExecutedTime().AsTime(), retrievedObject.GetLastExecutedTime().AsTime())
 }
 
 func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {

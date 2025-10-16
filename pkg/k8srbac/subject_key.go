@@ -13,9 +13,9 @@ type subjectKey struct {
 
 func keyForSubject(sub *storage.Subject) subjectKey {
 	return subjectKey{
-		name:      sub.Name,
-		clusterID: sub.ClusterId,
-		namespace: sub.Namespace,
-		kind:      sub.Kind,
+		name:      sub.GetName(),
+		clusterID: sub.GetClusterId(),
+		namespace: sub.GetNamespace(),
+		kind:      sub.GetKind(),
 	}
 }

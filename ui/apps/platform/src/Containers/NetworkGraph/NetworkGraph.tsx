@@ -4,18 +4,18 @@ import { Visualization, VisualizationProvider } from '@patternfly/react-topology
 import stylesComponentFactory from './components/stylesComponentFactory';
 import defaultLayoutFactory from './layouts/defaultLayoutFactory';
 import defaultComponentFactory from './components/defaultComponentFactory';
-import { CustomModel, CustomNodeModel } from './types/topology.type';
-import { Simulation } from './utils/getSimulation';
+import type { CustomModel, CustomNodeModel } from './types/topology.type';
+import type { Simulation } from './utils/getSimulation';
 
 import './Topology.css';
-import {
+import type {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
 import SimulationFrame from './simulation/SimulationFrame';
 import TopologyComponent from './TopologyComponent';
-import { EdgeState } from './components/EdgeStateSelect';
-import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
+import type { EdgeState } from './components/EdgeStateSelect';
+import type { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 export type NetworkGraphProps = {
     isReadyForVisualization: boolean;

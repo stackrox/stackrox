@@ -1,5 +1,5 @@
 import { gql, useQuery } from '@apollo/client';
-import { ClusterType } from 'types/cluster.proto';
+import type { ClusterType } from 'types/cluster.proto';
 
 const clusterExtendedDetailsQuery = gql`
     query getClusterExtendedDetails($id: ID!) {

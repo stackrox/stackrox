@@ -1,9 +1,8 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import { IsRouteEnabled } from 'hooks/useIsRouteEnabled';
-import { SearchResultCategory } from 'services/SearchService';
+import type { IsRouteEnabled } from 'hooks/useIsRouteEnabled';
+import type { SearchResultCategory } from 'services/SearchService';
 import {
-    RouteKey,
     clustersBasePath,
     configManagementPath,
     policiesBasePath,
@@ -12,8 +11,9 @@ import {
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesNodeCvesPath,
 } from 'routePaths';
+import type { RouteKey } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
 const configManagementRolesPath = `${configManagementPath}/roles`;
 const configManagementSecretsPath = `${configManagementPath}/secrets`;

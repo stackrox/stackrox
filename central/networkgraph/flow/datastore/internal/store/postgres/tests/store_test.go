@@ -311,7 +311,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 			},
 			ClusterId: clusterID,
@@ -321,7 +321,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesAllOrphaned() {
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity2.GetInfo().Id,
+					Id:   extEntity2.GetInfo().GetId(),
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -388,7 +388,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesPartial() {
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 			},
 			ClusterId: clusterID,
@@ -400,7 +400,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesPartial() {
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -474,7 +474,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesNoneOrphaned() {
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 			},
 			ClusterId: clusterID,
@@ -484,7 +484,7 @@ func (s *NetworkflowStoreSuite) TestPruneExternalEntitiesNoneOrphaned() {
 				DstPort: 22,
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity2.GetInfo().Id,
+					Id:   extEntity2.GetInfo().GetId(),
 				},
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -546,9 +546,9 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 	s.Nil(err)
 
 	nt := networktree.Singleton().CreateNetworkTree(s.ctx, clusterID)
-	err = nt.Insert(extEntity1.Info)
+	err = nt.Insert(extEntity1.GetInfo())
 	s.Nil(err)
-	err = nt.Insert(extEntity2.Info)
+	err = nt.Insert(extEntity2.GetInfo())
 	s.Nil(err)
 
 	flows := []*storage.NetworkFlow{
@@ -557,7 +557,7 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 				DstPort: 22,
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -571,7 +571,7 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 				DstPort: 22,
 				SrcEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity1.GetInfo().Id,
+					Id:   extEntity1.GetInfo().GetId(),
 				},
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -589,7 +589,7 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 				},
 				DstEntity: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   extEntity2.GetInfo().Id,
+					Id:   extEntity2.GetInfo().GetId(),
 				},
 			},
 			ClusterId: clusterID,
@@ -613,8 +613,8 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 	s.Equal(2, count)
 
 	// entities initially in the networktree
-	s.NotNil(nt.Get(extEntity1.GetInfo().Id))
-	s.NotNil(nt.Get(extEntity2.GetInfo().Id))
+	s.NotNil(nt.Get(extEntity1.GetInfo().GetId()))
+	s.NotNil(nt.Get(extEntity2.GetInfo().GetId()))
 
 	// Delete deployment2
 	err = s.flowStore.RemoveFlowsForDeployment(s.ctx, fixtureconsts.Deployment2)
@@ -633,8 +633,8 @@ func (s *NetworkflowStoreSuite) TestRemoveDeplExternalEntitiesOrphaned() {
 	s.Equal(1, count)
 
 	// entities after pruning in the networktree
-	s.NotNil(nt.Get(extEntity1.GetInfo().Id))
-	s.Nil(nt.Get(extEntity2.GetInfo().Id))
+	s.NotNil(nt.Get(extEntity1.GetInfo().GetId()))
+	s.Nil(nt.Get(extEntity2.GetInfo().GetId()))
 }
 
 func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {

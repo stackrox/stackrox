@@ -210,17 +210,17 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			// range. These get reverted to fixed valid values so decoders
 			// do not break.
 			container.Image = containerImage
-			for _, v := range container.Volumes {
+			for _, v := range container.GetVolumes() {
 				v.MountPropagation = storage.Volume_NONE
 			}
-			if container.Config != nil {
-				for _, e := range container.Config.Env {
+			if container.GetConfig() != nil {
+				for _, e := range container.GetConfig().GetEnv() {
 					e.EnvVarSource = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
 				}
 			}
-			for _, portConfig := range container.Ports {
+			for _, portConfig := range container.GetPorts() {
 				portConfig.Exposure = storage.PortConfig_INTERNAL
-				for _, exposureInfo := range portConfig.ExposureInfos {
+				for _, exposureInfo := range portConfig.GetExposureInfos() {
 					exposureInfo.Level = storage.PortConfig_INTERNAL
 				}
 			}
@@ -234,9 +234,9 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			deployment.Namespace = namepsace90pct
 		}
 		// Set the enum values to valid data.
-		for _, portConfig := range deployment.Ports {
+		for _, portConfig := range deployment.GetPorts() {
 			portConfig.Exposure = storage.PortConfig_INTERNAL
-			for _, exposureInfo := range portConfig.ExposureInfos {
+			for _, exposureInfo := range portConfig.GetExposureInfos() {
 				exposureInfo.Level = storage.PortConfig_INTERNAL
 			}
 		}

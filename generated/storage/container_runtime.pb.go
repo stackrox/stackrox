@@ -73,7 +73,7 @@ func (ContainerRuntime) EnumDescriptor() ([]byte, []int) {
 type ContainerRuntimeInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          ContainerRuntime       `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ContainerRuntime" json:"type,omitempty"`
-	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Container Runtime,store"` // @gotags: search:"Container Runtime,store"
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Container Runtime"` // @gotags: search:"Container Runtime"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

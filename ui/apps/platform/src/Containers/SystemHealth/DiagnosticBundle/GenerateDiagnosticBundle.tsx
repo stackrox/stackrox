@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { FormEvent, ReactElement } from 'react';
 import { Button, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
@@ -7,7 +8,8 @@ import { parse } from 'date-fns';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useMetadata from 'hooks/useMetadata';
-import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
+import downloadDiagnostics from 'services/DebugService';
+import type { DiagnosticBundleRequest } from 'services/DebugService';
 import { getVersionedDocs } from 'utils/versioning';
 
 import DiagnosticBundleForm from './DiagnosticBundleForm';
@@ -25,7 +27,7 @@ function GenerateDiagnosticBundle(): ReactElement {
     const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
     const { version } = useMetadata();
 
-    function onChangeStartingTime(event: React.FormEvent<HTMLInputElement>): void {
+    function onChangeStartingTime(event: FormEvent<HTMLInputElement>): void {
         const trimmedText = event.currentTarget.value.trim();
 
         if (trimmedText.length === 0) {

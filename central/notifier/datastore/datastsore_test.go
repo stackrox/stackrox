@@ -107,7 +107,7 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 	scrubbedNotifier, exists, err := s.dataStore.GetScrubbedNotifier(s.hasReadCtx, "test")
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.True(exists, "expected exists to be set to false")
-	s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
+	s.Equal("******", scrubbedNotifier.GetConfig().(*storage.Notifier_Generic).Generic.GetPassword())
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesForEach() {
@@ -139,7 +139,7 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
 		}).Times(1)
 
 	err := s.dataStore.ForEachScrubbedNotifier(s.hasReadCtx, func(scrubbedNotifier *storage.Notifier) error {
-		s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
+		s.Equal("******", scrubbedNotifier.GetConfig().(*storage.Notifier_Generic).Generic.GetPassword())
 		return nil
 	})
 	s.NoError(err, "expected no error trying to read with permissions")

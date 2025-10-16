@@ -24,7 +24,7 @@ const (
 type PolicyCategory struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy Category,store,hidden" sql:"unique"` // @gotags: search:"Policy Category,store,hidden" sql:"unique"
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy Category,hidden" sql:"unique"` // @gotags: search:"Policy Category,hidden" sql:"unique"
 	IsDefault     bool                   `protobuf:"varint,3,opt,name=isDefault,proto3" json:"isDefault,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

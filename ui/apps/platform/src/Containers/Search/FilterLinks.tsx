@@ -1,13 +1,14 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem } from '@patternfly/react-core';
 
-import { SearchResultCategory } from 'services/SearchService';
-import { SearchFilter } from 'types/search';
+import type { SearchResultCategory } from 'services/SearchService';
+import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import NotApplicable from './NotApplicable';
-import { SearchResultCategoryMap } from './searchCategories';
+import type { SearchResultCategoryMap } from './searchCategories';
 
 type FilterLinksProps = {
     filterValue: string;

@@ -1,6 +1,6 @@
 import { EdgeStyle, EdgeTerminalType, NodeShape } from '@patternfly/react-topology';
 
-import {
+import type {
     DeploymentNetworkEntityInfo,
     ExternalSourceNetworkEntityInfo,
     InternetNetworkEntityInfo,
@@ -12,7 +12,7 @@ import {
     InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
-import {
+import type {
     CustomModel,
     CustomNodeModel,
     ExternalGroupNodeModel,

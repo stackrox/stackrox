@@ -351,12 +351,12 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 	// Assume we only receive one status per live container, so we can blindly append.
 	p.LiveInstances = containerInstances(k8sPod)
 	// Create a stable ordering
-	sort.SliceStable(p.LiveInstances, func(i, j int) bool {
-		return p.LiveInstances[i].InstanceId.Id < p.LiveInstances[j].InstanceId.Id
+	sort.SliceStable(p.GetLiveInstances(), func(i, j int) bool {
+		return p.GetLiveInstances()[i].GetInstanceId().GetId() < p.GetLiveInstances()[j].GetInstanceId().GetId()
 	})
 
 	d.podStore.addOrUpdatePod(p)
-	d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
+	d.processFilter.UpdateByGivenContainers(p.GetDeploymentId(), d.podStore.getContainersForDeployment(p.GetNamespace(), p.GetDeploymentId()))
 
 	event := &central.SensorEvent{
 		Id:     p.GetId(),

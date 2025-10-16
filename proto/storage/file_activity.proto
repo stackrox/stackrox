@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/process_indicator.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// FileActivity contains fields related to arbitrary file activity
+// performed by a given process. This activity can come from k8s, or
+// directly on a node.
+//
+// It is currently intended to be used in Sensor and for detection,
+// but will only be stored embedded in an Alert. As a result, it
+// does not currently define a primary key.
+message FileActivity {
+  message FileMetadata {
+    uint32 uid = 1;
+    uint32 gid = 2;
+    uint32 mode = 3;
+    string username = 4;
+    string group = 5;
+  }
+
+  message File {
+    string path = 1; // @gotags: search:"File Path"
+    string host_path = 2; // @gotags: search: "File Host Path"
+    FileMetadata meta = 3;
+  }
+
+  enum Operation {
+    CREATE = 0;
+    UNLINK = 1;
+    RENAME = 2;
+    PERMISSION_CHANGE = 3;
+    OWNERSHIP_CHANGE = 4;
+    WRITE = 5;
+    OPEN = 6;
+  }
+
+  File file = 1;
+  Operation operation = 2; // @gotags: search:"File Operation"
+
+  // specific to `RENAME` activity, the new location / metadata of the file.
+  optional File moved = 3; // @gotags: search:"-"
+
+  // When the file activity happened
+  google.protobuf.Timestamp timestamp = 4;
+
+  // The process that performed the action. May contain deployment/namespace
+  // information.
+  ProcessIndicator process = 5;
+}

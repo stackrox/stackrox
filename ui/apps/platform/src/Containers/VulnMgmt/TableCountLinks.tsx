@@ -1,9 +1,9 @@
 import React, { ReactElement, useContext } from 'react';
 
 import entityTypes, { ResourceType, resourceTypes } from 'constants/entityTypes';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import workflowStateContext from 'Containers/workflowStateContext';
-import fixableVulnTypeContext from 'Containers/VulnMgmt/fixableVulnTypeContext';
+import TableCountLink from './TableCountLink';
+import fixableVulnTypeContext from './fixableVulnTypeContext';
 
 type TableCountLinksProps = {
     row: {

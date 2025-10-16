@@ -1,6 +1,6 @@
 import { subHours, subWeeks, subMonths } from 'date-fns';
 
-import { TimeWindow } from 'constants/timeWindows';
+import type { TimeWindow } from 'constants/timeWindows';
 
 function timeWindowToDate(timeWindow: TimeWindow): Date {
     const now = new Date();

@@ -13,9 +13,21 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.9.0]
+
+
+
+### Added Features
+
 - ROX-30645: Two new API endpoints are added for locking/unlocking process baselines given a cluster ID and an optional set of namespaces.
-- ROX-30279: The `admissionControl.enforce` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
-- ROX-30279: The `admissionControl.enforce` field defaults to true for new installations.
+- ROX-30279: The `admissionControl.enforcement` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
+- ROX-30279: The `admissionControl.enforcement` field defaults to Enabled for new installations.
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
 - ROX-30279: The `admissionControl.failurePolicy` field has been added to the SecuredCluster CRD for controlling admission controller's
   failure policy. It defaults to `Ignore`.
@@ -81,6 +93,7 @@ since 4.7 and prior.
   Using them has no effect.
 - The current hierarchical implementation for defining Collections is deprecated and will be replaced by a more comprehensive search-based definition in the future.
 - The manifest install method is now deprecated and will be removed in the future. Manifest install is currently done using the `roxctl {central,sensor,scanner} generate` command line utility, or by choosing the "Legacy installation method" in the UI. Users should switch to Operator or Helm installation.
+- All GraphQL endpoints are now deprecated and will be removed in the future.  The endpoints were created to support the ACS UI, all other uses are unsupported.
 
 ### Technical Changes
 - ROX-29793: Accessing the Compliance menus (OpenShift Coverage and OpenShift Schedules) and API endpoints (`/v2/compliance/*`) now additionally requires read permissions for the `Cluster` resource.

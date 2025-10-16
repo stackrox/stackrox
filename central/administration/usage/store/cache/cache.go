@@ -80,8 +80,8 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 	var result storage.SecuredUnits
 	u.lastKnown.RAccess(func(m map[string]*storage.SecuredUnits) {
 		for _, v := range m {
-			result.NumNodes += v.NumNodes
-			result.NumCpuUnits += v.NumCpuUnits
+			result.NumNodes += v.GetNumNodes()
+			result.NumCpuUnits += v.GetNumCpuUnits()
 		}
 	})
 	return &result

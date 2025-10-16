@@ -5,10 +5,10 @@ import {
     Stack,
     StackItem,
     EmptyStateHeader,
-    DropEvent,
     SelectOption,
 } from '@patternfly/react-core';
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import type { DropEvent } from '@patternfly/react-core';
+import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import NetworkSimulatorActions from './NetworkSimulatorActions';

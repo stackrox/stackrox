@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -67,7 +66,7 @@ func (e *acscsEmail) Test(ctx context.Context) *notifiers.NotifierError {
 // AlertNotify takes in an alert, generates a message from it and sends it to the ACSCS email service
 func (e *acscsEmail) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := notifiers.SummaryForAlert(alert)
-	body, err := email.PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
+	body, err := email.PlainTextAlert(alert, e.notifier.GetUiEndpoint(), e.mitreStore)
 	if err != nil {
 		e.logError("Generating email content failed", err)
 		return errors.Wrap(err, "failed to generate email text for alert")
@@ -129,7 +128,7 @@ func (e *acscsEmail) logError(msg string, err error) {
 }
 
 func init() {
-	if !features.ACSCSEmailNotifier.Enabled() || !env.ManagedCentral.BooleanSetting() {
+	if !env.ManagedCentral.BooleanSetting() {
 		return
 	}
 

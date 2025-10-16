@@ -59,10 +59,10 @@ func getTestData(t *testing.T) ([]*storage.Deployment, map[string][]*storage.Ima
 	}
 
 	deploymentImages := map[string][]*storage.Image{
-		deployments[0].Id: {images[0]},
-		deployments[1].Id: {images[0], images[1]},
-		deployments[2].Id: {images[2]},
-		deployments[3].Id: {images[3]},
+		deployments[0].GetId(): {images[0]},
+		deployments[1].GetId(): {images[0], images[1]},
+		deployments[2].GetId(): {images[2]},
+		deployments[3].GetId(): {images[3]},
 	}
 	return deployments, deploymentImages
 }
@@ -110,7 +110,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 
 	for _, deployment := range deployments {
 		ds.EXPECT().GetImagesForDeployment(gomock.Any(), deployment).
-			Times(1).Return(deploymentImages[deployment.Id], nil)
+			Times(1).Return(deploymentImages[deployment.GetId()], nil)
 	}
 
 	tracker := New(ds)

@@ -110,10 +110,7 @@ func (cmd *centralCertCommand) certs() error {
 }
 
 func skipTLSValidation() bool {
-	if value := flags.SkipTLSValidation(); value != nil {
-		return *value
-	}
-	return false
+	return flags.SkipTLSValidation()
 }
 
 func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {

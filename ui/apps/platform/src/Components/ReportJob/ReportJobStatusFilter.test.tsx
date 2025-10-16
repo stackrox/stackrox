@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
 import ReportJobStatusFilter, { ensureReportJobStatuses } from './ReportJobStatusFilter';
-import { ReportJobStatus } from './types';
+import type { ReportJobStatus } from './types';
 
 const getCheckboxOption = (name: string) => {
     return screen.getByRole('checkbox', {

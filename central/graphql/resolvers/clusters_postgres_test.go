@@ -55,8 +55,8 @@ func (s *graphQLClusterTestSuite) SetupSuite() {
 
 func (s *graphQLClusterTestSuite) addClusterScopeObject(cluster *storage.Cluster) {
 	scopeObject := &v1.ScopeObject{
-		Id:   cluster.Id,
-		Name: cluster.Name,
+		Id:   cluster.GetId(),
+		Name: cluster.GetName(),
 	}
 	s.scopeObjects = append(s.scopeObjects, scopeObject)
 }
@@ -91,7 +91,7 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(s.clusters[1].Id, s.clusters[2].Id, s.clusters[4].Id),
+					sac.ClusterScopeKeys(s.clusters[1].GetId(), s.clusters[2].GetId(), s.clusters[4].GetId()),
 				),
 			),
 			targetResource:       resources.Compliance,
@@ -103,7 +103,7 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(s.clusters[3].Id),
+					sac.ClusterScopeKeys(s.clusters[3].GetId()),
 				),
 			),
 			targetResource:       resources.Compliance,

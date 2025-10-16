@@ -6,17 +6,11 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 const whenUnlimited = 100
-
-var (
-	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
-)
 
 type datastoreImpl struct {
 	storage store.Store
@@ -26,10 +20,6 @@ func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*stor
 	acc, found, err := d.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
-	}
-
-	if !serviceAccountsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(acc).IsAllowed() {
-		return nil, false, nil
 	}
 
 	return acc, true, nil
@@ -58,22 +48,10 @@ func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) 
 }
 
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
-	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
-	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, id)
 }
 

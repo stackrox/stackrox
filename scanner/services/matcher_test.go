@@ -377,6 +377,6 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 			Contents: &v4.Contents{},
 		})
 		s.Require().NoError(err)
-		s.Equal(res.Sbom, fakeSbomB)
+		s.Equal(res.GetSbom(), fakeSbomB)
 	})
 }

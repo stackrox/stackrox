@@ -5,11 +5,10 @@ import { Truncate } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { TableUIState } from 'utils/getTableUIState';
-import { ClusterType } from 'types/cluster.proto';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { TableUIState } from 'utils/getTableUIState';
+import type { ClusterType } from 'types/cluster.proto';
 
-import { getIsSomeVulnerabilityFixable } from 'Containers/Vulnerabilities/utils/vulnerabilityUtils';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import {
     CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
@@ -18,6 +17,7 @@ import {
 } from '../../utils/sortFields';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
 import { displayClusterType } from '../utils/stringUtils';
+import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 
 export const sortFields = [
     CLUSTER_SORT_FIELD,

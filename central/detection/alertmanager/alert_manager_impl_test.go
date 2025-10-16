@@ -286,7 +286,7 @@ func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -301,7 +301,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	newAlert.Violations[0].Message = "new-violation"
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -313,7 +313,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -329,7 +329,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	newAlert.Violations[0].Message = "new-violation"
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -340,7 +340,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -368,7 +368,7 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -386,8 +386,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	}
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
-	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
+	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -401,7 +401,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -420,8 +420,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	}
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
-	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
+	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -432,7 +432,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -462,7 +462,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
@@ -492,7 +492,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
-		suite.NoError(suite.policySet.UpsertPolicy(a.Policy))
+		suite.NoError(suite.policySet.UpsertPolicy(a.GetPolicy()))
 	}
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 

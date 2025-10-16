@@ -95,7 +95,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) err
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if obj.Id == "" {
+	if obj.GetId() == "" {
 		obj.Id = uuid.NewV4().String()
 	}
 	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")

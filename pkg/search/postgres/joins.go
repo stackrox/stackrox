@@ -122,7 +122,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 	nullableFields := set.NewStringSet()
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().Query.(type) {
+		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
 		case *v1.BaseQuery_DocIdQuery, *v1.BaseQuery_MatchNoneQuery:
 			// nothing to do
 		case *v1.BaseQuery_MatchFieldQuery:
@@ -131,7 +131,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
 			}
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
 				collectedFields.Add(q.GetField())
 				if q.GetValue() == search.NullString {
 					nullableFields.Add(q.GetField())
@@ -141,12 +141,12 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		queries = append(queries, sub.Conjunction.Queries...)
+		queries = append(queries, sub.Conjunction.GetQueries()...)
 	case *v1.Query_Disjunction:
-		queries = append(queries, sub.Disjunction.Queries...)
+		queries = append(queries, sub.Disjunction.GetQueries()...)
 	case *v1.Query_BooleanQuery:
-		queries = append(queries, sub.BooleanQuery.Must.Queries...)
-		queries = append(queries, sub.BooleanQuery.MustNot.Queries...)
+		queries = append(queries, sub.BooleanQuery.GetMust().GetQueries()...)
+		queries = append(queries, sub.BooleanQuery.GetMustNot().GetQueries()...)
 	}
 
 	for _, query := range queries {

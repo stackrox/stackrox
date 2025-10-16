@@ -175,7 +175,6 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
@@ -191,7 +190,6 @@ export_test_environment() {
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
-    ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -307,8 +305,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
@@ -340,8 +336,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_LLM_RISK_RECOMMENDATION'
     customize_envVars+=$'\n        value: "true"'
 
     local scannerV4ScannerComponent="Default"
@@ -687,7 +681,7 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     check_for_stackrox_OOMs "$dir"
@@ -703,7 +697,7 @@ check_for_stackrox_OOMs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local objects
@@ -790,7 +784,7 @@ check_for_stackrox_restarts() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local previous_logs
@@ -822,7 +816,7 @@ check_for_errors_in_stackrox_logs() {
     local dir="$1/stackrox/pods"
 
     if [[ ! -d "${dir}" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local pod_objects=()
@@ -881,7 +875,7 @@ _verify_item_count() {
     # used by ./scripts/ci/collect-service-logs.sh
 
     if [[ ! -f "${dir}/ITEM_COUNT.txt" ]]; then
-        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh"
+        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh)"
     fi
 
     local item_count
@@ -1066,11 +1060,18 @@ remove_existing_stackrox_resources() {
             kubectl delete --wait "$namespace"
         done
 
-        # midstream ocp specific
         if kubectl get ns stackrox-operator >/dev/null 2>&1; then
-            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+            # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
+            # See https://issues.redhat.com/browse/ROX-30450
+            kubectl -n stackrox-operator delete --ignore-not-found --wait subscription.operators.coreos.com --all
+            # Then delete remaining OLM resources.
+            # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
+            # We only care about apiVersion, kind and metadata, which do not contain any templating.
+            awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
+              kubectl -n stackrox-operator delete --ignore-not-found --wait -f -
         fi
         kubectl delete --ignore-not-found ns stackrox-operator --wait
+        kubectl delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
 }

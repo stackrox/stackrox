@@ -14,9 +14,9 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import { getVersionedDocs } from 'utils/versioning';
-import { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
+import type { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 
 import IPMatchFilter from '../common/IPMatchFilter';
 import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';

@@ -1,4 +1,4 @@
-import { ValueOf } from 'utils/type.utils';
+import type { ValueOf } from 'utils/type.utils';
 
 export const jobContextTabs = ['CONFIGURATION_DETAILS', 'ALL_REPORT_JOBS'] as const;
 

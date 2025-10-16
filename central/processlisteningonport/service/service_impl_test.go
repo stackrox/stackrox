@@ -266,9 +266,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			response, err := suite.service.GetListeningEndpoints(suite.hasReadCtx, c.request)
 			suite.NoError(err)
 
-			actualPlops := response.ListeningEndpoints
+			actualPlops := response.GetListeningEndpoints()
 
-			suite.Equal(c.expectedTotalListeningEndpoints, response.TotalListeningEndpoints)
+			suite.Equal(c.expectedTotalListeningEndpoints, response.GetTotalListeningEndpoints())
 
 			protoassert.SlicesEqual(suite.T(), c.expectedPlops, actualPlops)
 		})

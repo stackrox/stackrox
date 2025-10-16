@@ -1,7 +1,7 @@
 import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 
 type PolicyCategoriesListProps = {
     policyCategories: PolicyCategory[];
