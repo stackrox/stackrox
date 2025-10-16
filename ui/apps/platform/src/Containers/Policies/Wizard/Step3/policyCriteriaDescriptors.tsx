@@ -1390,17 +1390,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['RUNTIME'],
     },
     {
-        label: 'Kubernetes API verb',
-        name: 'Kubernetes API Verb',
-        shortName: 'Kubernetes API verb',
-        category: policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS,
-        type: 'select',
-        placeholder: 'Select an API verb',
-        options: [{ label: 'CREATE', value: 'CREATE' }],
-        canBooleanLogic: false,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
         label: 'Kubernetes user name',
         name: 'Kubernetes User Name',
         shortName: 'Kubernetes user name',
