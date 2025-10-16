@@ -34,7 +34,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.4
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.64.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.6
-	github.com/aws/smithy-go v1.23.0
+	github.com/aws/smithy-go v1.23.1
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash v1.1.0
