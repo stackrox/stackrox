@@ -1,5 +1,4 @@
 /* eslint-disable react/no-array-index-key */
-
 import type { FormEvent, ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import { useSelector, useDispatch } from 'react-redux';
