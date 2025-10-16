@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ChangeEventHandler, ReactElement } from 'react';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 

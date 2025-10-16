@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
