@@ -250,6 +250,12 @@ func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[
 			},
 		},
 	}
+	if os.Getenv("ARM64_NODESELECTORS") == "true" {
+		if d.Spec.Template.Spec.NodeSelector == nil {
+			d.Spec.Template.Spec.NodeSelector = make(map[string]string)
+		}
+		d.Spec.Template.Spec.NodeSelector["kubernetes.io/arch"] = "arm64"
+	}
 	_, err := ts.k8s.AppsV1().Deployments(proxyNs).Create(ts.ctx, d, metaV1.CreateOptions{})
 	ts.Require().NoError(err, "cannot create deployment %q in namespace %q", name, proxyNs)
 }
