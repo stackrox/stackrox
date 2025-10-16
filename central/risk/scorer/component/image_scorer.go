@@ -12,7 +12,7 @@ import (
 
 // Scorer is the object that encompasses the multipliers for evaluating component risk
 type ImageScorer interface {
-	Score(ctx context.Context, component scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string) *storage.Risk
+	Score(ctx context.Context, component scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string, index int) *storage.Risk
 }
 
 // NewComponentScorer returns a new scorer that encompasses multipliers for evaluating component risk
@@ -31,7 +31,7 @@ type componentImageScorerImpl struct {
 }
 
 // Score takes a component and evaluates its risk
-func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string) *storage.Risk {
+func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scancomponent.ScanComponent, os string, imageComponent *storage.EmbeddedImageScanComponent, imageID string, index int) *storage.Risk {
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
@@ -47,11 +47,7 @@ func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scan
 	var componentID string
 	var err error
 	if features.FlattenCVEData.Enabled() {
-		componentID, err = scancomponent.ComponentIDV2(imageComponent, imageID)
-		if err != nil {
-			log.Errorf("Unable to score %s: %v", scanComponent.GetName(), err)
-			return nil
-		}
+		componentID = scancomponent.ComponentIDV2(imageComponent, imageID, index)
 	} else {
 		componentID = scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), os)
 	}

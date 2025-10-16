@@ -334,13 +334,9 @@ func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
-		for _, component := range image.GetScan().GetComponents() {
+		for index, component := range image.GetScan().GetComponents() {
 			if features.FlattenCVEData.Enabled() {
-				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-				if err != nil {
-					log.Error(err)
-					continue
-				}
+				componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 			} else {
 				component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
@@ -350,13 +346,9 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
-	for _, component := range image.GetScan().GetComponents() {
+	for index, component := range image.GetScan().GetComponents() {
 		if features.FlattenCVEData.Enabled() {
-			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
+			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 			component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 		} else {
 			component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))

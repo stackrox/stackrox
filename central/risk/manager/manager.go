@@ -211,8 +211,8 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 	}
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
-	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
+	for index, component := range image.GetScan().GetComponents() {
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId(), index)
 	}
 
 	image.RiskScore = risk.Score
@@ -284,16 +284,22 @@ func scannedByScannerV4(img *storage.Image) bool {
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string) {
+func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string, componentIndex int) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID, componentIndex)
 	if risk == nil {
 		return
 	}
 
-	oldScore := e.imageComponentRanker.GetScoreForID(
-		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	var oldScore float32
+	if features.FlattenCVEData.Enabled() {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
+	} else {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	}
 
 	// Image component risk results are currently unused so if the score is the same then no need to upsert
 	if risk.GetScore() == oldScore {
