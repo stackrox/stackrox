@@ -17,21 +17,20 @@ const (
 
 // NewFakeListAlert constructs and returns a new V1.ListAlert object suitable for unit-testing.
 func NewFakeListAlert() *storage.ListAlert {
-	id := FakeAlertID
-	policyId := FakePolicyID
-	clusterName := FakeClusterName
-	return storage.ListAlert_builder{
-		Id: &id,
-		Policy: storage.ListAlertPolicy_builder{
-			Id: &policyId,
-		}.Build(),
-		CommonEntityInfo: storage.ListAlert_CommonEntityInfo_builder{
-			ClusterName: &clusterName,
-		}.Build(),
-		Deployment: storage.ListAlertDeployment_builder{
-			ClusterName: &clusterName,
-		}.Build(),
-	}.Build()
+	return &storage.ListAlert{
+		Id: FakeAlertID,
+		Policy: &storage.ListAlertPolicy{
+			Id: FakePolicyID,
+		},
+		CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{
+			ClusterName: FakeClusterName,
+		},
+		Entity: &storage.ListAlert_Deployment{
+			Deployment: &storage.ListAlertDeployment{
+				ClusterName: FakeClusterName,
+			},
+		},
+	}
 }
 
 // NewFakeListAlertSlice constructs and returns a new slice of storage.ListAlert objects suitable for unit-testing.
@@ -43,42 +42,34 @@ func NewFakeListAlertSlice() []*storage.ListAlert {
 
 // NewFakeAlert constructs and returns a new storage.Alert object suitable for unit-testing.
 func NewFakeAlert() *storage.Alert {
-	id := FakeAlertID
-	lifecycleStage := storage.LifecycleStage_RUNTIME
-	return storage.Alert_builder{
-		Id:             &id,
-		LifecycleStage: &lifecycleStage,
-	}.Build()
+	return &storage.Alert{
+		Id:             FakeAlertID,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	}
 }
 
 // NewFakeAlertWithTwoTags constructs and returns a new storage.Alert object(with tags) suitable for unit-testing.
 func NewFakeAlertWithTwoTags() *storage.Alert {
-	id := FakeAlertID
-	lifecycleStage := storage.LifecycleStage_RUNTIME
-	return storage.Alert_builder{
-		Id:             &id,
-		LifecycleStage: &lifecycleStage,
-	}.Build()
+	return &storage.Alert{
+		Id:             FakeAlertID,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	}
 }
 
 // NewFakeAlertWithThreeTags constructs and returns a new storage.Alert object(with tags) suitable for unit-testing.
 func NewFakeAlertWithThreeTags() *storage.Alert {
-	id := FakeAlertID
-	lifecycleStage := storage.LifecycleStage_RUNTIME
-	return storage.Alert_builder{
-		Id:             &id,
-		LifecycleStage: &lifecycleStage,
-	}.Build()
+	return &storage.Alert{
+		Id:             FakeAlertID,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	}
 }
 
 // NewFakeAlertWithOneTag constructs and returns a new storage.Alert object(with tags) suitable for unit-testing.
 func NewFakeAlertWithOneTag() *storage.Alert {
-	id := FakeAlertID
-	lifecycleStage := storage.LifecycleStage_RUNTIME
-	return storage.Alert_builder{
-		Id:             &id,
-		LifecycleStage: &lifecycleStage,
-	}.Build()
+	return &storage.Alert{
+		Id:             FakeAlertID,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	}
 }
 
 // NewFakeTwoTags constructs and returns a new slice with two fake tags

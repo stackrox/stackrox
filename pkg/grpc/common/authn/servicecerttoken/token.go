@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"google.golang.org/protobuf/proto"
 )
 
 // ParseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
@@ -33,7 +32,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	}
 
 	var auth central.ServiceCertAuth
-	if err := proto.Unmarshal(authBytes, &auth); err != nil {
+	if err := auth.UnmarshalVTUnsafe(authBytes); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal service cert auth structure")
 	}
 
@@ -75,12 +74,12 @@ func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 		return "", errors.Wrap(err, "could not create timestamp proto")
 	}
 
-	auth := central.ServiceCertAuth_builder{
+	auth := &central.ServiceCertAuth{
 		CertDer:     cert.Certificate[0],
 		CurrentTime: tsPb,
-	}.Build()
+	}
 
-	authBytes, err := proto.Marshal(auth)
+	authBytes, err := auth.MarshalVT()
 	if err != nil {
 		return "", errors.Wrap(err, "could not marshal service cert auth structure")
 	}

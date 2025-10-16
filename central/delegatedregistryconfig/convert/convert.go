@@ -24,24 +24,21 @@ func StorageToPublicAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegi
 		regs = make([]*v1.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			clusterId := reg.GetClusterId()
-			path := reg.GetPath()
-			regs[i] = v1.DelegatedRegistryConfig_DelegatedRegistry_builder{
-				ClusterId: &clusterId,
-				Path:      &path,
-			}.Build()
+			regs[i] = &v1.DelegatedRegistryConfig_DelegatedRegistry{
+				ClusterId: reg.GetClusterId(),
+				Path:      reg.GetPath(),
+			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := v1.DelegatedRegistryConfig_EnabledFor(v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()])
-	defaultClusterId := from.GetDefaultClusterId()
+	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return v1.DelegatedRegistryConfig_builder{
-		EnabledFor:       &enabledFor,
-		DefaultClusterId: &defaultClusterId,
+	return &v1.DelegatedRegistryConfig{
+		EnabledFor:       v1.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		DefaultClusterId: from.GetDefaultClusterId(),
 		Registries:       regs,
-	}.Build()
+	}
 }
 
 // PublicAPIToStorage converts a delegated registry config from the type used by the gRPC/REST API
@@ -57,24 +54,21 @@ func PublicAPIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegi
 		regs = make([]*storage.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			clusterId := reg.GetClusterId()
-			path := reg.GetPath()
-			regs[i] = storage.DelegatedRegistryConfig_DelegatedRegistry_builder{
-				ClusterId: &clusterId,
-				Path:      &path,
-			}.Build()
+			regs[i] = &storage.DelegatedRegistryConfig_DelegatedRegistry{
+				ClusterId: reg.GetClusterId(),
+				Path:      reg.GetPath(),
+			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := storage.DelegatedRegistryConfig_EnabledFor(storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()])
-	defaultClusterId := from.GetDefaultClusterId()
+	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return storage.DelegatedRegistryConfig_builder{
-		EnabledFor:       &enabledFor,
-		DefaultClusterId: &defaultClusterId,
+	return &storage.DelegatedRegistryConfig{
+		EnabledFor:       storage.DelegatedRegistryConfig_EnabledFor(enabledFor),
+		DefaultClusterId: from.GetDefaultClusterId(),
 		Registries:       regs,
-	}.Build()
+	}
 }
 
 // PublicAPIToInternalAPI converts a delegated registry config from the type used by the gRPC/REST API
@@ -90,20 +84,19 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			path := reg.GetPath()
-			regs[i] = central.DelegatedRegistryConfig_DelegatedRegistry_builder{
-				Path: &path,
-			}.Build()
+			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
+				Path: reg.GetPath(),
+			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := central.DelegatedRegistryConfig_EnabledFor(storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()])
+	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return central.DelegatedRegistryConfig_builder{
-		EnabledFor: &enabledFor,
+	return &central.DelegatedRegistryConfig{
+		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
 		Registries: regs,
-	}.Build()
+	}
 }
 
 // StorageToInternalAPI converts a delegated registry config from the type used by the storage (db) to
@@ -119,18 +112,17 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			path := reg.GetPath()
-			regs[i] = central.DelegatedRegistryConfig_DelegatedRegistry_builder{
-				Path: &path,
-			}.Build()
+			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
+				Path: reg.GetPath(),
+			}
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
-	enabledFor := central.DelegatedRegistryConfig_EnabledFor(v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()])
+	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return central.DelegatedRegistryConfig_builder{
-		EnabledFor: &enabledFor,
+	return &central.DelegatedRegistryConfig{
+		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
 		Registries: regs,
-	}.Build()
+	}
 }

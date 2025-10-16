@@ -6,11 +6,11 @@ import (
 )
 
 func Traits(traits *v1.Traits) *storage.Traits {
-	result := &storage.Traits{}
-	result.SetMutabilityMode(convertMutabilityModeEnum(traits.GetMutabilityMode()))
-	result.SetVisibility(convertVisibilityEnum(traits.GetVisibility()))
-	result.SetOrigin(convertOriginEnum(traits.GetOrigin()))
-	return result
+	return &storage.Traits{
+		MutabilityMode: convertMutabilityModeEnum(traits.GetMutabilityMode()),
+		Visibility:     convertVisibilityEnum(traits.GetVisibility()),
+		Origin:         convertOriginEnum(traits.GetOrigin()),
+	}
 }
 
 func convertMutabilityModeEnum(val v1.Traits_MutabilityMode) storage.Traits_MutabilityMode {

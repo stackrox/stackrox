@@ -61,22 +61,15 @@ func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	attackVector := attackVectorMap[metrics.AccessVector.String()]
-	accessComplexity := accessComplexityMap[metrics.AccessComplexity.String()]
-	authentication := authenticationMap[metrics.Authentication.String()]
-	confidentiality := impactMap[metrics.ConfidentialityImpact.String()]
-	integrity := impactMap[metrics.IntegrityImpact.String()]
-	availability := impactMap[metrics.AvailabilityImpact.String()]
-
-	return storage.CVSSV2_builder{
-		Vector:           &vectorStr,
-		AttackVector:     &attackVector,
-		AccessComplexity: &accessComplexity,
-		Authentication:   &authentication,
-		Confidentiality:  &confidentiality,
-		Integrity:        &integrity,
-		Availability:     &availability,
-	}.Build(), nil
+	return &storage.CVSSV2{
+		Vector:           vectorStr,
+		AttackVector:     attackVectorMap[metrics.AccessVector.String()],
+		AccessComplexity: accessComplexityMap[metrics.AccessComplexity.String()],
+		Authentication:   authenticationMap[metrics.Authentication.String()],
+		Confidentiality:  impactMap[metrics.ConfidentialityImpact.String()],
+		Integrity:        impactMap[metrics.IntegrityImpact.String()],
+		Availability:     impactMap[metrics.AvailabilityImpact.String()],
+	}, nil
 }
 
 // Severity returns the severity for the cvss v2 score
@@ -101,8 +94,8 @@ func CalculateScores(cvssV2 *storage.CVSSV2) error {
 	if err := vec.Validate(); err != nil {
 		return fmt.Errorf("validating: %w", err)
 	}
-	cvssV2.SetScore(float32(vec.BaseScore()))
-	cvssV2.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
-	cvssV2.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1)))
+	cvssV2.Score = float32(vec.BaseScore())
+	cvssV2.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
+	cvssV2.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1))
 	return nil
 }

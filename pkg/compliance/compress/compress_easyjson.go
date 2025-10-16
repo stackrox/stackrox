@@ -8,6 +8,7 @@ import (
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
+	storage "github.com/stackrox/rox/generated/storage"
 )
 
 // suppress unused package warning
@@ -135,6 +136,62 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		switch key {
+		case "node_check_results":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.NodeCheckResults = make(map[string]*storage.ComplianceResultValue)
+				} else {
+					out.NodeCheckResults = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v3 *storage.ComplianceResultValue
+					if in.IsNull() {
+						in.Skip()
+						v3 = nil
+					} else {
+						if v3 == nil {
+							v3 = new(storage.ComplianceResultValue)
+						}
+						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v3)
+					}
+					(out.NodeCheckResults)[key] = v3
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
+		case "cluster_check_results":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.ClusterCheckResults = make(map[string]*storage.ComplianceResultValue)
+				} else {
+					out.ClusterCheckResults = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v4 *storage.ComplianceResultValue
+					if in.IsNull() {
+						in.Skip()
+						v4 = nil
+					} else {
+						if v4 == nil {
+							v4 = new(storage.ComplianceResultValue)
+						}
+						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v4)
+					}
+					(out.ClusterCheckResults)[key] = v4
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -145,9 +202,231 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in *compliance.ComplianceStandardResult) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in compliance.ComplianceStandardResult) {
 	out.RawByte('{')
 	first := true
 	_ = first
+	if len(in.NodeCheckResults) != 0 {
+		const prefix string = ",\"node_check_results\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('{')
+			v5First := true
+			for v5Name, v5Value := range in.NodeCheckResults {
+				if v5First {
+					v5First = false
+				} else {
+					out.RawByte(',')
+				}
+				out.String(string(v5Name))
+				out.RawByte(':')
+				if v5Value == nil {
+					out.RawString("null")
+				} else {
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v5Value)
+				}
+			}
+			out.RawByte('}')
+		}
+	}
+	if len(in.ClusterCheckResults) != 0 {
+		const prefix string = ",\"cluster_check_results\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('{')
+			v6First := true
+			for v6Name, v6Value := range in.ClusterCheckResults {
+				if v6First {
+					v6First = false
+				} else {
+					out.RawByte(',')
+				}
+				out.String(string(v6Name))
+				out.RawByte(':')
+				if v6Value == nil {
+					out.RawString("null")
+				} else {
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v6Value)
+				}
+			}
+			out.RawByte('}')
+		}
+	}
+	out.RawByte('}')
+}
+func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer, out *storage.ComplianceResultValue) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		switch key {
+		case "evidence":
+			if in.IsNull() {
+				in.Skip()
+				out.Evidence = nil
+			} else {
+				in.Delim('[')
+				if out.Evidence == nil {
+					if !in.IsDelim(']') {
+						out.Evidence = make([]*storage.ComplianceResultValue_Evidence, 0, 8)
+					} else {
+						out.Evidence = []*storage.ComplianceResultValue_Evidence{}
+					}
+				} else {
+					out.Evidence = (out.Evidence)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v7 *storage.ComplianceResultValue_Evidence
+					if in.IsNull() {
+						in.Skip()
+						v7 = nil
+					} else {
+						if v7 == nil {
+							v7 = new(storage.ComplianceResultValue_Evidence)
+						}
+						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(in, v7)
+					}
+					out.Evidence = append(out.Evidence, v7)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "overall_state":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.OverallState = storage.ComplianceState(in.Int32())
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Writer, in storage.ComplianceResultValue) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if len(in.Evidence) != 0 {
+		const prefix string = ",\"evidence\":"
+		first = false
+		out.RawString(prefix[1:])
+		{
+			out.RawByte('[')
+			for v8, v9 := range in.Evidence {
+				if v8 > 0 {
+					out.RawByte(',')
+				}
+				if v9 == nil {
+					out.RawString("null")
+				} else {
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, *v9)
+				}
+			}
+			out.RawByte(']')
+		}
+	}
+	if in.OverallState != 0 {
+		const prefix string = ",\"overall_state\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int32(int32(in.OverallState))
+	}
+	out.RawByte('}')
+}
+func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(in *jlexer.Lexer, out *storage.ComplianceResultValue_Evidence) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		switch key {
+		case "state":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.State = storage.ComplianceState(in.Int32())
+			}
+		case "message":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Message = string(in.String())
+			}
+		case "message_id":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.MessageId = int32(in.Int32())
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out *jwriter.Writer, in storage.ComplianceResultValue_Evidence) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	if in.State != 0 {
+		const prefix string = ",\"state\":"
+		first = false
+		out.RawString(prefix[1:])
+		out.Int32(int32(in.State))
+	}
+	if in.Message != "" {
+		const prefix string = ",\"message\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Message))
+	}
+	if in.MessageId != 0 {
+		const prefix string = ",\"message_id\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int32(int32(in.MessageId))
+	}
 	out.RawByte('}')
 }

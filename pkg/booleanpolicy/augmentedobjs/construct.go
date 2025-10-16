@@ -194,7 +194,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := image
+	img := image.CloneVT()
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
@@ -204,10 +204,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// making it possible to also match for nil objects.
 	// We have to do this at the beginning, so the augmented object contains the field steps.
 	if img.GetSignatureVerificationData().GetResults() == nil {
-		results := []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{}.Build()}
-		img.SetSignatureVerificationData(storage.ImageSignatureVerificationData_builder{
-			Results: results,
-		}.Build())
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: []*storage.ImageSignatureVerificationResult{{}},
+		}
 	}
 
 	obj := pathutil.NewAugmentedObj(img)

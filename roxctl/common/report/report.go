@@ -57,8 +57,9 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 
 	// This object is really just a filler because its a wrapper around the alerts
 	// this is required because jsonpb can only marshal protocompat.Message
-	bdr := &v1.BuildDetectionResponse{}
-	bdr.SetAlerts(alerts)
+	bdr := &v1.BuildDetectionResponse{
+		Alerts: alerts,
+	}
 	if err := jsonutil.MarshalPretty(output, bdr); err != nil {
 		return errors.Wrap(err, "could not marshal alerts")
 	}
@@ -72,9 +73,10 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 func JSONWithRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.DeployDetectionRemark) error {
 	// This object is really just a filler because it's a wrapper around the alerts
 	// this is required because jsonpb can only marshal proto.Message
-	bdr := &v1.ResultAggregation{}
-	bdr.SetAlerts(alerts)
-	bdr.SetRemarks(remarks)
+	bdr := &v1.ResultAggregation{
+		Alerts:  alerts,
+		Remarks: remarks,
+	}
 	if err := jsonutil.MarshalPretty(output, bdr); err != nil {
 		return errors.Wrap(err, "could not marshal alerts")
 	}

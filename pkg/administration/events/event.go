@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"google.golang.org/protobuf/proto"
 )
 
 var rootNamespaceUUID = uuid.FromStringOrPanic("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
@@ -107,23 +106,22 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 // ToStorageEvent converts the event to its storage representation.
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 	tsNow := protocompat.TimestampNow()
-	x := &storage.AdministrationEvent{}
-	x.SetId(GenerateEventID(m))
-	x.SetId(GenerateEventID(m))
-	x.SetType(m.GetType())
-	x.SetLevel(m.GetLevel())
-	x.SetMessage(m.GetMessage())
-	x.SetHint(m.GetHint())
-	x.SetDomain(m.GetDomain())
-	x.SetResource(storage.AdministrationEvent_Resource_builder{
-		Type: proto.String(m.GetResourceType()),
-		Id:   proto.String(m.GetResourceID()),
-		Name: proto.String(m.GetResourceName()),
-	}.Build())
-	x.SetNumOccurrences(1)
-	x.SetCreatedAt(tsNow)
-	x.SetLastOccurredAt(tsNow)
-	return x
+	return &storage.AdministrationEvent{
+		Id:      GenerateEventID(m),
+		Type:    m.GetType(),
+		Level:   m.GetLevel(),
+		Message: m.GetMessage(),
+		Hint:    m.GetHint(),
+		Domain:  m.GetDomain(),
+		Resource: &storage.AdministrationEvent_Resource{
+			Type: m.GetResourceType(),
+			Id:   m.GetResourceID(),
+			Name: m.GetResourceName(),
+		},
+		NumOccurrences: 1,
+		CreatedAt:      tsNow,
+		LastOccurredAt: tsNow,
+	}
 }
 
 // Validate will validate the administration event.

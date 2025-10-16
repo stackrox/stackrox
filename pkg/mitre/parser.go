@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -53,11 +52,11 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 			continue
 		}
 
-		tactics[id] = storage.MitreTactic_builder{
-			Id:          proto.String(id),
-			Name:        proto.String(obj.Name),
-			Description: proto.String(obj.Description),
-		}.Build()
+		tactics[id] = &storage.MitreTactic{
+			Id:          id,
+			Name:        obj.Name,
+			Description: obj.Description,
+		}
 		tacticShortNameMap[obj.XMitreShortname] = id
 	}
 
@@ -87,11 +86,11 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 			continue
 		}
 
-		techniques[techniqueID] = storage.MitreTechnique_builder{
-			Id:          proto.String(techniqueID),
-			Name:        proto.String(obj.Name),
-			Description: proto.String(obj.Description),
-		}.Build()
+		techniques[techniqueID] = &storage.MitreTechnique{
+			Id:          techniqueID,
+			Name:        obj.Name,
+			Description: obj.Description,
+		}
 
 		if obj.XMitreIsSubtechnique {
 			subTechiquesMap[techniqueID] = struct{}{}
@@ -160,15 +159,13 @@ func buildVectors(
 ) []*storage.MitreAttackVector {
 	var vectors []*storage.MitreAttackVector
 	for tacticID, techniquesMap := range tacticTechniquesMap {
-		var vectorTechniques []*storage.MitreTechnique
-		for techniqueID := range techniquesMap {
-			vectorTechniques = append(vectorTechniques, techniques[techniqueID])
+		vector := &storage.MitreAttackVector{
+			Tactic: tactics[tacticID],
 		}
 
-		vector := storage.MitreAttackVector_builder{
-			Tactic:     tactics[tacticID],
-			Techniques: vectorTechniques,
-		}.Build()
+		for techniqueID := range techniquesMap {
+			vector.Techniques = append(vector.Techniques, techniques[techniqueID])
+		}
 		vectors = append(vectors, vector)
 
 		sort.SliceStable(vector.GetTechniques(), func(i, j int) bool {
@@ -189,9 +186,9 @@ func generateBundle(
 	techniqueMatrix map[Platform]map[string]struct{},
 	vectors ...*storage.MitreAttackVector,
 ) *storage.MitreAttackBundle {
-	bundle := storage.MitreAttackBundle_builder{
-		Version: &version,
-	}.Build()
+	bundle := &storage.MitreAttackBundle{
+		Version: version,
+	}
 	for platform, techniqueIDs := range techniqueMatrix {
 		var filteredVectors []*storage.MitreAttackVector
 		for _, vector := range vectors {
@@ -206,25 +203,23 @@ func generateBundle(
 				continue
 			}
 
-			filteredVectors = append(filteredVectors, storage.MitreAttackVector_builder{
+			filteredVectors = append(filteredVectors, &storage.MitreAttackVector{
 				Tactic:     vector.GetTactic(),
 				Techniques: filteredTechniques,
-			}.Build())
+			})
 		}
 
 		if len(filteredVectors) == 0 {
 			continue
 		}
 
-		domainStr := domain.String()
-		platformStr := platform.String()
-		bundle.Matrices = append(bundle.Matrices, storage.MitreAttackMatrix_builder{
-			MatrixInfo: storage.MitreAttackMatrix_MatrixInfo_builder{
-				Domain:   &domainStr,
-				Platform: &platformStr,
-			}.Build(),
+		bundle.Matrices = append(bundle.Matrices, &storage.MitreAttackMatrix{
+			MatrixInfo: &storage.MitreAttackMatrix_MatrixInfo{
+				Domain:   domain.String(),
+				Platform: platform.String(),
+			},
 			Vectors: filteredVectors,
-		}.Build())
+		})
 	}
 
 	sort.SliceStable(bundle.GetMatrices(), func(i, j int) bool {

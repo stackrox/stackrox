@@ -22,39 +22,46 @@ func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt time.Time
 	}
 	expiresOn := createdAt.Add(d).Truncate(time.Second)
 
-	expired := false
-	targetState := storage.VulnerabilityState_DEFERRED
-	status := storage.RequestStatus_APPROVED
-	return storage.VulnerabilityRequest_builder{
-		Expired:     &expired,
-		TargetState: &targetState,
-		Status:      &status,
-		Scope: storage.VulnerabilityRequest_Scope_builder{
-			GlobalScope: storage.VulnerabilityRequest_Scope_Global_builder{}.Build(),
-		}.Build(),
-		Cves: storage.VulnerabilityRequest_CVEs_builder{
-			Cves: request.GetCves(),
-		}.Build(),
-		DeferralReq: storage.DeferralRequest_builder{
-			Expiry: storage.RequestExpiry_builder{
-				ExpiresOn: protocompat.ConvertTimeToTimestampOrNil(&expiresOn),
-			}.Build(),
-		}.Build(),
-	}.Build()
+	return &storage.VulnerabilityRequest{
+		Expired:     false,
+		TargetState: storage.VulnerabilityState_DEFERRED,
+		Status:      storage.RequestStatus_APPROVED,
+		Scope: &storage.VulnerabilityRequest_Scope{
+			Info: &storage.VulnerabilityRequest_Scope_GlobalScope{
+				GlobalScope: &storage.VulnerabilityRequest_Scope_Global{},
+			},
+		},
+		Entities: &storage.VulnerabilityRequest_Cves{
+			Cves: &storage.VulnerabilityRequest_CVEs{
+				Cves: request.GetCves(),
+			},
+		},
+		Req: &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: &storage.RequestExpiry{
+					Expiry: &storage.RequestExpiry_ExpiresOn{
+						ExpiresOn: protocompat.ConvertTimeToTimestampOrNil(&expiresOn),
+					},
+				},
+			},
+		},
+	}
 }
 
 // UnSuppressCVEReqToVulnReq builds a `storage.VulnerabilityRequest` (added in v2 CVE deferral workflow) from `v1.UnsuppressCVERequest` (legacy CVE deferral workflow).
 func UnSuppressCVEReqToVulnReq(request *v1.UnsuppressCVERequest) *storage.VulnerabilityRequest {
-	targetState := storage.VulnerabilityState_DEFERRED
-	status := storage.RequestStatus_APPROVED
-	return storage.VulnerabilityRequest_builder{
-		TargetState: &targetState,
-		Status:      &status,
-		Scope: storage.VulnerabilityRequest_Scope_builder{
-			GlobalScope: storage.VulnerabilityRequest_Scope_Global_builder{}.Build(),
-		}.Build(),
-		Cves: storage.VulnerabilityRequest_CVEs_builder{
-			Cves: request.GetCves(),
-		}.Build(),
-	}.Build()
+	return &storage.VulnerabilityRequest{
+		TargetState: storage.VulnerabilityState_DEFERRED,
+		Status:      storage.RequestStatus_APPROVED,
+		Scope: &storage.VulnerabilityRequest_Scope{
+			Info: &storage.VulnerabilityRequest_Scope_GlobalScope{
+				GlobalScope: &storage.VulnerabilityRequest_Scope_Global{},
+			},
+		},
+		Entities: &storage.VulnerabilityRequest_Cves{
+			Cves: &storage.VulnerabilityRequest_CVEs{
+				Cves: request.GetCves(),
+			},
+		},
+	}
 }

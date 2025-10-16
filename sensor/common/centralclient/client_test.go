@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -395,7 +394,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 				SecondaryCertChain: tc.secondaryChain,
 			}
 
-			trustInfoBytes, err := proto.Marshal(trustInfo)
+			trustInfoBytes, err := trustInfo.MarshalVT()
 			t.Require().NoError(err)
 
 			primarySignature := createSignature(primaryLeaf, trustInfoBytes)

@@ -35,7 +35,6 @@ import (
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
     "gorm.io/gorm"
-    "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -212,7 +211,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
-    serialized, marshalErr := proto.Marshal(obj)
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }
@@ -283,7 +282,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             "to simply use the object.  %s", obj)
             {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
-            serialized, marshalErr := proto.Marshal(obj)
+            serialized, marshalErr := obj.MarshalVT()
             if marshalErr != nil {
                 return marshalErr
             }

@@ -9,33 +9,19 @@ import (
 // DiscoveredCluster converts the given discoveredclusters.DiscoveredCluster
 // to storage.DiscoveredCluster.
 func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.DiscoveredCluster {
-	id := discoveredclusters.GenerateDiscoveredClusterID(cluster)
-	metadataId := cluster.GetID()
-	name := cluster.GetName()
-	clusterType := cluster.GetType()
-	providerType := cluster.GetProviderType()
-	region := cluster.GetRegion()
-	firstDiscoveredAt := protocompat.ConvertTimeToTimestampOrNil(cluster.GetFirstDiscoveredAt())
-
-	metadata := storage.DiscoveredCluster_Metadata_builder{
-		Id:                &metadataId,
-		Name:              &name,
-		Type:              &clusterType,
-		ProviderType:      &providerType,
-		Region:            &region,
-		FirstDiscoveredAt: firstDiscoveredAt,
-	}.Build()
-
-	status := cluster.GetStatus()
-	sourceId := cluster.GetCloudSourceID()
-	lastUpdatedAt := protocompat.TimestampNow()
-
-	storageConfig := storage.DiscoveredCluster_builder{
-		Id:            &id,
-		Metadata:      metadata,
-		Status:        &status,
-		SourceId:      &sourceId,
-		LastUpdatedAt: lastUpdatedAt,
-	}.Build()
+	storageConfig := &storage.DiscoveredCluster{
+		Id: discoveredclusters.GenerateDiscoveredClusterID(cluster),
+		Metadata: &storage.DiscoveredCluster_Metadata{
+			Id:                cluster.GetID(),
+			Name:              cluster.GetName(),
+			Type:              cluster.GetType(),
+			ProviderType:      cluster.GetProviderType(),
+			Region:            cluster.GetRegion(),
+			FirstDiscoveredAt: protocompat.ConvertTimeToTimestampOrNil(cluster.GetFirstDiscoveredAt()),
+		},
+		Status:        cluster.GetStatus(),
+		SourceId:      cluster.GetCloudSourceID(),
+		LastUpdatedAt: protocompat.TimestampNow(),
+	}
 	return storageConfig
 }

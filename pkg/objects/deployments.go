@@ -1,22 +1,19 @@
 package objects
 
-import (
-	"github.com/stackrox/rox/generated/storage"
-	"google.golang.org/protobuf/proto"
-)
+import "github.com/stackrox/rox/generated/storage"
 
 // ToListDeployment converts a deployment to a list deployment.
 func ToListDeployment(d *storage.Deployment) *storage.ListDeployment {
-	return storage.ListDeployment_builder{
-		Id:        proto.String(d.GetId()),
-		Hash:      proto.Uint64(d.GetHash()),
-		Name:      proto.String(d.GetName()),
-		Cluster:   proto.String(d.GetClusterName()),
-		ClusterId: proto.String(d.GetClusterId()),
-		Namespace: proto.String(d.GetNamespace()),
+	return &storage.ListDeployment{
+		Id:        d.GetId(),
+		Hash:      d.GetHash(),
+		Name:      d.GetName(),
+		Cluster:   d.GetClusterName(),
+		ClusterId: d.GetClusterId(),
+		Namespace: d.GetNamespace(),
 		Created:   d.GetCreated(),
-		Priority:  &d.GetPriority(),
-	}.Build()
+		Priority:  d.GetPriority(),
+	}
 }
 
 // ListDeploymentsMapByID converts the given ListDeployment slice into a map indexed by the deployment ID.

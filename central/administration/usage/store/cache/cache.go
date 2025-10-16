@@ -94,10 +94,9 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 // usage counting when customers remove and add clusters within one collection
 // period.
 func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
-	timestamp := protocompat.TimestampNow()
-	result := storage.SecuredUnits_builder{
-		Timestamp: timestamp,
-	}.Build()
+	result := storage.SecuredUnits{
+		Timestamp: protocompat.TimestampNow(),
+	}
 
 	u.mux.Lock()
 	defer u.mux.Unlock()

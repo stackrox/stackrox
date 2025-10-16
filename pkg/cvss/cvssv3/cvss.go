@@ -73,26 +73,17 @@ func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	attackVector := attackVectorMap[metrics.AttackVector.String()]
-	attackComplexity := complexityMap[metrics.AttackComplexity.String()]
-	privilegesRequired := privilegesMap[metrics.PrivilegesRequired.String()]
-	userInteraction := userInteractionMap[metrics.UserInteraction.String()]
-	scope := scopeMap[metrics.Scope.String()]
-	confidentiality := impactMap[metrics.Confidentiality.String()]
-	integrity := impactMap[metrics.Integrity.String()]
-	availability := impactMap[metrics.Availability.String()]
-
-	return storage.CVSSV3_builder{
-		Vector:             &vectorStr,
-		AttackVector:       &attackVector,
-		AttackComplexity:   &attackComplexity,
-		PrivilegesRequired: &privilegesRequired,
-		UserInteraction:    &userInteraction,
-		Scope:              &scope,
-		Confidentiality:    &confidentiality,
-		Integrity:          &integrity,
-		Availability:       &availability,
-	}.Build(), nil
+	return &storage.CVSSV3{
+		Vector:             vectorStr,
+		AttackVector:       attackVectorMap[metrics.AttackVector.String()],
+		AttackComplexity:   complexityMap[metrics.AttackComplexity.String()],
+		PrivilegesRequired: privilegesMap[metrics.PrivilegesRequired.String()],
+		UserInteraction:    userInteractionMap[metrics.UserInteraction.String()],
+		Scope:              scopeMap[metrics.Scope.String()],
+		Confidentiality:    impactMap[metrics.Confidentiality.String()],
+		Integrity:          impactMap[metrics.Integrity.String()],
+		Availability:       impactMap[metrics.Availability.String()],
+	}, nil
 }
 
 // Severity returns the severity for the cvss v3 score
@@ -121,8 +112,8 @@ func CalculateScores(cvssV3 *storage.CVSSV3) error {
 	if err := vec.Validate(); err != nil {
 		return fmt.Errorf("validating: %w", err)
 	}
-	cvssV3.SetScore(float32(vec.BaseScore()))
-	cvssV3.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
-	cvssV3.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1)))
+	cvssV3.Score = float32(vec.BaseScore())
+	cvssV3.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
+	cvssV3.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1))
 	return nil
 }

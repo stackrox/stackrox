@@ -66,33 +66,24 @@ func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
 		serviceAccount = deployment.GetServiceAccount()
 	}
 
-	kind := storage.SubjectKind_SERVICE_ACCOUNT
-	namespace := deployment.GetNamespace()
-	clusterId := deployment.GetClusterId()
-	clusterName := deployment.GetClusterName()
-	return storage.Subject_builder{
-		Kind:        &kind,
-		Name:        &serviceAccount,
-		Namespace:   &namespace,
-		ClusterId:   &clusterId,
-		ClusterName: &clusterName,
-	}.Build()
+	return &storage.Subject{
+		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
+		Name:        serviceAccount,
+		Namespace:   deployment.GetNamespace(),
+		ClusterId:   deployment.GetClusterId(),
+		ClusterName: deployment.GetClusterName(),
+	}
 }
 
 // GetSubjectForServiceAccount returns the subject represented by a service account.
 func GetSubjectForServiceAccount(sa *storage.ServiceAccount) *storage.Subject {
-	kind := storage.SubjectKind_SERVICE_ACCOUNT
-	name := sa.GetName()
-	namespace := sa.GetNamespace()
-	clusterName := sa.GetClusterName()
-	clusterId := sa.GetClusterId()
-	return storage.Subject_builder{
-		Kind:        &kind,
-		Name:        &name,
-		Namespace:   &namespace,
-		ClusterName: &clusterName,
-		ClusterId:   &clusterId,
-	}.Build()
+	return &storage.Subject{
+		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
+		Name:        sa.GetName(),
+		Namespace:   sa.GetNamespace(),
+		ClusterName: sa.GetClusterName(),
+		ClusterId:   sa.GetClusterId(),
+	}
 }
 
 // GetAllSubjects get the subjects of the specified types in the referenced in a set of bindings.

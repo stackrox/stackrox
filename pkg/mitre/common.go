@@ -73,10 +73,10 @@ func FlattenMitreMatrices(matrices ...*storage.MitreAttackMatrix) []*storage.Mit
 			techniquesForTactics = append(techniquesForTactics, techniques[techniqueID])
 		}
 
-		vectors = append(vectors, storage.MitreAttackVector_builder{
+		vectors = append(vectors, &storage.MitreAttackVector{
 			Tactic:     tactics[tacticID],
 			Techniques: techniquesForTactics,
-		}.Build())
+		})
 	}
 	return vectors
 }

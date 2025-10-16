@@ -84,17 +84,17 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	clusterMetadata := getClusterMetadata(ctx, &metadata)
 
-	azureMetadata := storage.AzureProviderMetadata_builder{
-		SubscriptionId: &metadata.Compute.SubscriptionID,
-	}.Build()
-
-	return storage.ProviderMetadata_builder{
-		Region:   &metadata.Compute.Location,
-		Zone:     &metadata.Compute.Zone,
-		Azure:    azureMetadata,
-		Verified: &verified,
+	return &storage.ProviderMetadata{
+		Region: metadata.Compute.Location,
+		Zone:   metadata.Compute.Zone,
+		Provider: &storage.ProviderMetadata_Azure{
+			Azure: &storage.AzureProviderMetadata{
+				SubscriptionId: metadata.Compute.SubscriptionID,
+			},
+		},
+		Verified: verified,
 		Cluster:  clusterMetadata,
-	}.Build(), nil
+	}, nil
 }
 
 func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
@@ -127,12 +127,7 @@ func getClusterMetadataFromNodeLabels(ctx context.Context,
 		clusterName := strings.TrimPrefix(value, "MC_")
 		clusterName = strings.TrimSuffix(clusterName, fmt.Sprintf("_%s", metadata.Compute.Location))
 		clusterID := fmt.Sprintf("%s_%s", metadata.Compute.SubscriptionID, value)
-		clusterType := storage.ClusterMetadata_AKS
-		return storage.ClusterMetadata_builder{
-			Type: &clusterType,
-			Name: &clusterName,
-			Id:   &clusterID,
-		}.Build()
+		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: clusterName, Id: clusterID}
 	}
 	return nil
 }
