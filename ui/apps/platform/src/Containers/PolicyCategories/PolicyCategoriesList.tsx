@@ -1,4 +1,3 @@
-import React from 'react';
 import { SimpleList, SimpleListItem } from '@patternfly/react-core';
 
 import type { PolicyCategory } from 'types/policy.proto';
