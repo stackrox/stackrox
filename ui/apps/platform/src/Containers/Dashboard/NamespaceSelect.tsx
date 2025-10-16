@@ -154,7 +154,9 @@ function NamespaceSelect({
                 >
                     All namespaces
                 </SelectOption>
-                <Divider className="pf-v5-u-mb-0" component="div" />
+                {filteredClusters.length > 0 && (
+                    <Divider className="pf-v5-u-mb-0" component="div" />
+                )}
                 {filteredClusters.map(({ name: clusterName, namespaces }) => (
                     <SelectGroup key={clusterName} label={clusterName}>
                         {namespaces.map(({ metadata: { id, name } }) => (
