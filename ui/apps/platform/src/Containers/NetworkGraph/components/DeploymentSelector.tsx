@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
     Badge,
@@ -39,7 +39,7 @@ function DeploymentSelector({
     setSearchFilter,
 }: DeploymentSelectorProps): ReactElement {
     const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
-    const [input, setInput] = React.useState('');
+    const [input, setInput] = useState('');
 
     const handleTextInputChange = (value: string) => {
         setInput(value);

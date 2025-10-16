@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
     Badge,
@@ -63,7 +63,7 @@ function NamespaceSelector({
     setSearchFilter,
 }: NamespaceSelectorProps): ReactElement {
     const { isOpen: isNamespaceOpen, toggleSelect: toggleIsNamespaceOpen } = useSelectToggle();
-    const [input, setInput] = React.useState('');
+    const [input, setInput] = useState('');
 
     const handleTextInputChange = (value: string) => {
         setInput(value);

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     Alert,
     Bullseye,
@@ -49,10 +50,10 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
 
     // component state
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
-        React.useState<boolean>(false);
+        useState<boolean>(false);
 
-    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
     const {
@@ -89,8 +90,8 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
     const initialExpandedRows = filteredNetworkBaselines
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+    const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     // derived data
     const numBaselines = getNumFlows(filteredNetworkBaselines);

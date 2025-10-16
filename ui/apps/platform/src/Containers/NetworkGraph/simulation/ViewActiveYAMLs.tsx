@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Bullseye,
     EmptyState,
@@ -26,9 +26,9 @@ function ViewActiveYAMLs({
     undoNetworkPolicies,
     onFileInputChange,
 }: ViewActiveYAMLsProps) {
-    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
-        NetworkPolicy | undefined
-    >(networkPolicies?.[0]);
+    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<NetworkPolicy | undefined>(
+        networkPolicies?.[0]
+    );
 
     useEffect(() => {
         if (networkPolicies?.length && !selectedNetworkPolicy) {

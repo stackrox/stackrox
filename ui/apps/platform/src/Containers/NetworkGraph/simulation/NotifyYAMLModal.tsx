@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import { Alert, Bullseye, Button, Modal, Spinner } from '@patternfly/react-core';
 
@@ -23,7 +24,7 @@ function NotifyYAMLModal({
     modification,
 }: NotifyYAMLModalProps): ReactElement {
     const { notifiers, isLoading, error } = useFetchNotifiers();
-    const [errorMessage, setErrorMessage] = React.useState(error);
+    const [errorMessage, setErrorMessage] = useState(error);
     const { selected, allRowsSelected, onSelect, onSelectAll, getSelectedIds, onClearAll } =
         useTableSelection(notifiers);
 

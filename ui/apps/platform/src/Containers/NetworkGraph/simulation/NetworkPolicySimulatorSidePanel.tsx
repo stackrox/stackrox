@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
     Alert,
     Bullseye,
@@ -99,9 +99,9 @@ function NetworkPolicySimulatorSidePanel({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
-        React.useState<boolean>(false);
-    const [isNotifyModalOpen, setIsNotifyModalOpen] = React.useState(false);
-    const [compareModalYAMLs, setCompareModalYAMLs] = React.useState<{
+        useState<boolean>(false);
+    const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
+    const [compareModalYAMLs, setCompareModalYAMLs] = useState<{
         generated: string;
         current: string;
     } | null>(null);
