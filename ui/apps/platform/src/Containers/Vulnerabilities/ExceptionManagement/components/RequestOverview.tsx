@@ -8,16 +8,16 @@ import {
     PageSection,
     Title,
 } from '@patternfly/react-core';
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import {
     RequestComment,
     RequestComments,
-    RequestContext,
     RequestCreatedAt,
     RequestExpires,
     RequestScope,
     RequestedAction,
 } from './ExceptionRequestTableCells';
+import type { RequestContext } from './ExceptionRequestTableCells';
 
 export type RequestOverviewProps = {
     exception: VulnerabilityException;

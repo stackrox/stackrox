@@ -27,11 +27,11 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
-    VulnerabilityException,
     fetchVulnerabilityExceptionById,
     isDeferralException,
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
+import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 import PageTitle from 'Components/PageTitle';
 import NotFoundMessage from 'Components/NotFoundMessage';
