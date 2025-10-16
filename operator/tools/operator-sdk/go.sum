@@ -397,8 +397,8 @@ github.com/operator-framework/ansible-operator-plugins v1.39.0 h1:JLlbdGdnGnF8q8
 github.com/operator-framework/ansible-operator-plugins v1.39.0/go.mod h1:XLMYrKfowmX5leL8V4trkgtxfsXYdLynzyHamOR5xJc=
 github.com/operator-framework/api v0.34.0 h1:REiEaYhG1CWmDoajdcAdZqtgoljWG+ixMY59vUX5pFI=
 github.com/operator-framework/api v0.34.0/go.mod h1:eGncUNIYvWtfGCCKmLzGXvoi3P0TDf3Yd/Z0Sn9E6SQ=
-github.com/operator-framework/operator-lifecycle-manager v0.34.0 h1:J417zKg8x0yiequCkjCizIZjEWnp/fw2XJFGBpaZmTQ=
-github.com/operator-framework/operator-lifecycle-manager v0.34.0/go.mod h1:Ntg9UCn/y9xHv4MA84KEibFNvig9e6edvZqeRRKltmk=
+github.com/operator-framework/operator-lifecycle-manager v0.30.0 h1:tt98f0lx2EfxfE/5PbpUi5fTnDnqZ17zGpftUA6oRm0=
+github.com/operator-framework/operator-lifecycle-manager v0.30.0/go.mod h1:nPbzJVqxAwoUz5q7QovYZcHN/v4in5sucPT2UpF+ikQ=
 github.com/operator-framework/operator-manifest-tools v0.10.0 h1:+vtIElvGQ5e43gCD6fF65a0HNH3AD3LGnukUhpl9kjc=
 github.com/operator-framework/operator-manifest-tools v0.10.0/go.mod h1:eB/wnr0BOhMLNXPeceE+0p3vudP16zDNWP60Hvn3KaM=
 github.com/operator-framework/operator-registry v1.57.0 h1:mQ4c8A8VUxZPJ0QCFRNio+7JEsLX6eKxlDSl6ORCRdk=
