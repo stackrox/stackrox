@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
