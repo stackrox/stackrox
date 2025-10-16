@@ -38,30 +38,29 @@ const (
 
 var (
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
-	imageSAC    = sac.ForResource(resources.Image)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
-		user.With(permissions.View(resources.WorkflowAdministration)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			apiV2.ReportService_GetReportConfiguration_FullMethodName,
 			apiV2.ReportService_CountReportConfigurations_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Image)): {
 			apiV2.ReportService_PostReportConfiguration_FullMethodName,
 			apiV2.ReportService_UpdateReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
@@ -593,15 +592,4 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
-}
-
-func verifyReportSAC(ctx context.Context) error {
-	// Authorisation: must have write access on workflow administration and read access for Image.
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return err
-	}
-	if err := sac.VerifyAuthzOK(imageSAC.ReadAllowed(ctx)); err != nil {
-		return err
-	}
-	return nil
 }
