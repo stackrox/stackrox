@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.8]
+
+### Technical Changes
+- ROX-30909: Fixes lack of data size check in Axios thus preventing possibility of DOS attack (CVE-2025-58754).
+
 ## [4.7.7]
 
 ### Technical Changes
