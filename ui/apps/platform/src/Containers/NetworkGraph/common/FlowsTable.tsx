@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
+
 import type { CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react';
 import {
     ActionsColumn,

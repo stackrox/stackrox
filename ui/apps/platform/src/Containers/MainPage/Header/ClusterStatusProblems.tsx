@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';

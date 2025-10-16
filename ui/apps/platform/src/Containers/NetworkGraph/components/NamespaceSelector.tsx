@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
     Badge,

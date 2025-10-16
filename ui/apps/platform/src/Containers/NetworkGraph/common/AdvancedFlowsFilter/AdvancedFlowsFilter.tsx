@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import {
     Select,

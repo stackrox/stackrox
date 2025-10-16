@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Flex, pluralize } from '@patternfly/react-core';
 
 import DeploymentScopeModal from './DeploymentScopeModal';
