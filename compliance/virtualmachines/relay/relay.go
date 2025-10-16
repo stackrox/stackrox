@@ -27,24 +27,32 @@ import (
 
 var log = logging.LoggerForModule()
 
-type VsockServer struct {
+type vsockServer interface {
+	start() error
+	stop()
+	acquireSemaphore(ctx context.Context) error
+	releaseSemaphore()
+	accept() (net.Conn, error)
+}
+
+type vsockServerImpl struct {
 	listener             *vsock.Listener
 	port                 uint32
 	semaphore            *semaphore.Weighted
 	maxSemaphoreWaitTime time.Duration
 }
 
-func newVsockServer() *VsockServer {
+func newVsockServer() *vsockServerImpl {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
-	return &VsockServer{
+	return &vsockServerImpl{
 		port:                 uint32(port),
 		semaphore:            semaphore.NewWeighted(int64(maxConcurrentConnections)),
 		maxSemaphoreWaitTime: 5 * time.Second,
 	}
 }
 
-func (s *VsockServer) Start() error {
+func (s *vsockServerImpl) start() error {
 	log.Debugf("Starting vsock server on port %d", s.port)
 	l, err := vsock.ListenContextID(vsock.Host, s.port, nil)
 	if err != nil {
@@ -54,7 +62,7 @@ func (s *VsockServer) Start() error {
 	return nil
 }
 
-func (s *VsockServer) Stop() {
+func (s *vsockServerImpl) stop() {
 	log.Infof("Stopping vsock server on port %d", s.port)
 	if s.listener != nil {
 		if err := s.listener.Close(); err != nil {
@@ -63,7 +71,11 @@ func (s *VsockServer) Stop() {
 	}
 }
 
-func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
+func (s *vsockServerImpl) accept() (net.Conn, error) {
+	return s.listener.Accept()
+}
+
+func (s *vsockServerImpl) acquireSemaphore(parentCtx context.Context) error {
 	semCtx, cancel := context.WithTimeout(parentCtx, s.maxSemaphoreWaitTime)
 	defer cancel()
 
@@ -80,7 +92,7 @@ func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
 	return nil
 }
 
-func (s *VsockServer) releaseSemaphore() {
+func (s *vsockServerImpl) releaseSemaphore() {
 	s.semaphore.Release(1)
 	metrics.VsockSemaphoreHoldingSize.Dec()
 }
@@ -89,7 +101,7 @@ type Relay struct {
 	connectionReadTimeout time.Duration
 	ctx                   context.Context
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
-	vsockServer           *VsockServer
+	vsockServer           vsockServer
 	waitAfterFailedAccept time.Duration
 }
 
@@ -106,25 +118,23 @@ func NewRelay(ctx context.Context, conn grpc.ClientConnInterface) *Relay {
 func (r *Relay) Run() error {
 	log.Info("Starting virtual machine relay")
 
-	if err := r.vsockServer.Start(); err != nil {
+	if err := r.vsockServer.start(); err != nil {
 		return errors.Wrap(err, "starting vsock server")
 	}
 
 	go func() {
 		<-r.ctx.Done()
-		r.vsockServer.Stop()
+		r.vsockServer.stop()
 	}()
 
 	for {
 		if err := r.vsockServer.acquireSemaphore(r.ctx); err != nil {
-			log.Warnf("Failed to acquire semaphore to handle connection after %v: %v",
-				r.vsockServer.maxSemaphoreWaitTime, err,
-			)
+			log.Warnf("Failed to acquire semaphore to handle connection: %v", err)
 			continue
 		}
 
-		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.Stop()
-		conn, err := r.vsockServer.listener.Accept()
+		// accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.stop()
+		conn, err := r.vsockServer.accept()
 		if err != nil {
 			r.vsockServer.releaseSemaphore()
 
