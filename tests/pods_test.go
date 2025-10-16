@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -33,64 +34,80 @@ type Event struct {
 	Timestamp graphql.Time `json:"timestamp"`
 }
 
-func TestPod(testT *testing.T) {
-	// https://stack-rox.atlassian.net/browse/ROX-6631
-	// - the process events expected in this test are not reliably detected.
-
-	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
-	client := createK8sClient(testT)
+// setupMultiContainerPodTest handles common pod setup: create K8s pod, wait for running,
+// wait for Central ingestion, get deployment ID and pod data.
+// Returns: k8sPod, deploymentID, pod, cleanup function
+func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func()) {
+	kPod := getPodFromFile(t, "yamls/multi-container-pod.yaml")
+	client := createK8sClient(t)
 
 	var k8sPod *coreV1.Pod
-	// Ensure pod is cleaned up at test end, after all assertions
-	defer teardownPod(testT, client, kPod)
+	cleanup := func() { teardownPod(t, client, kPod) }
 
 	// Retry the entire setup to handle transient K8s API issues, slow pod startup, and Central ingestion lag
-	testutils.Retry(testT, 5, 10*time.Second, func(retryT testutils.T) {
+	testutils.Retry(t, 5, 10*time.Second, func(retryT testutils.T) {
 		// Ensure pod exists (idempotent - safe to retry even if pod already exists)
 		ensurePodExists(retryT, client, kPod)
 		// Wait for pod to be fully running with all containers ready
 		k8sPod = waitForPodRunning(retryT, client, kPod.GetNamespace(), kPod.GetName())
-		testT.Logf("Pod %s is running with all containers ready", kPod.GetName())
+		t.Logf("Pod %s is running with all containers ready", kPod.GetName())
 
 		// Now wait for Central to see the deployment
 		// This can take time as Sensor needs to detect the pod and report it to Central
-		testT.Logf("Waiting for Central to see deployment %s", kPod.GetName())
+		t.Logf("Waiting for Central to see deployment %s", kPod.GetName())
 		waitForDeployment(retryT, kPod.GetName())
-		testT.Logf("Central now sees deployment %s", kPod.GetName())
+		t.Logf("Central now sees deployment %s", kPod.GetName())
 	})
 
 	deploymentID := ""
 	var pod Pod
-	testutils.Retry(testT, 5, 10*time.Second, func(deplRetryT testutils.T) {
-		// Get the test deployment.
+	testutils.Retry(t, 5, 10*time.Second, func(deplRetryT testutils.T) {
 		deploymentID = getDeploymentID(deplRetryT, kPod.GetName())
 		deplRetryT.Logf("Central sees the deployment under ID %s", deploymentID)
-
-		podCount := getPodCount(deplRetryT, deploymentID)
-		deplRetryT.Logf("Pod count: %d", podCount)
-		require.Equal(deplRetryT, 1, podCount)
-
-		// Get the test pod.
 		pods := getPods(deplRetryT, deploymentID)
-		deplRetryT.Logf("Num pods: %d", len(pods))
 		require.Len(deplRetryT, pods, 1)
 		pod = pods[0]
-
-		deplRetryT.Logf("Pod: %+v", pod)
-
-		// Verify the container count.
 		require.Equal(deplRetryT, int32(2), pod.ContainerCount)
-
-		// Verify Pod start time is the creation time.
-		deplRetryT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		deplRetryT.Logf("Creation timestamps comparison: %s vs %s",
+			k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 		require.Equal(deplRetryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 	})
 
+	return k8sPod, deploymentID, pod, cleanup
+}
+
+// skipIfNoCollection skips the test if COLLECTION_METHOD=NO_COLLECTION is set
+func skipIfNoCollection(t *testing.T) {
 	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
-		testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
-			"set to \"NO_COLLECTION\"")
+		t.Logf("Skipping test that relates to events because env var \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"")
+		t.SkipNow()
+	}
+}
+
+// verifyStartTimeBeforeEvents verifies that a start time is not after the earliest event timestamp
+func verifyStartTimeBeforeEvents(t testutils.T, startTime graphql.Time, events []Event, contextMsg string) {
+	if len(events) == 0 {
 		return
 	}
+	earliestEventTime := events[0].Timestamp.Time
+	for _, event := range events[1:] {
+		if event.Timestamp.Time.Before(earliestEventTime) {
+			earliestEventTime = event.Timestamp.Time
+		}
+	}
+	t.Logf("%s start comparison: %s vs %s (earliest event)", contextMsg, startTime, earliestEventTime)
+	require.False(t, startTime.After(earliestEventTime),
+		"%s: start time (%s) should not be after earliest event time (%s)",
+		contextMsg, startTime, earliestEventTime)
+}
+
+func TestPod(testT *testing.T) {
+	// TODO(ROX-6493): the process events expected in this test are not reliably detected.
+	skipIfNoCollection(testT)
+
+	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
+	defer cleanup()
+
 	testutils.Retry(testT, 30, 5*time.Second, func(retryEventsT testutils.T) {
 		events := getEvents(retryEventsT, pod)
 		retryEventsT.Logf("Found %d events: %+v", len(events), events)
@@ -101,62 +118,16 @@ func TestPod(testT *testing.T) {
 		// (/docker-entrypoint.sh, /usr/bin/find, /bin/grep, etc.) that get captured.
 		// This approach makes the test robust against image changes and process lifecycle variations.
 
-		eventNames := make([]string, 0, len(events))
-		for _, event := range events {
-			eventNames = append(eventNames, event.Name)
-		}
-
+		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
 		retryEventsT.Logf("Event names: %+v", eventNames)
 
-		// Always required: long-running processes
-		alwaysRequired := []string{"/bin/sh", "/usr/sbin/nginx"}
-		retryEventsT.Logf("Always required processes: %v", alwaysRequired)
-		for _, required := range alwaysRequired {
-			found := false
-			for _, eventName := range eventNames {
-				if eventName == required {
-					found = true
-					break
-				}
-			}
-			require.True(retryEventsT, found, "required process %q not found in events", required)
-		}
+		// Required processes from both containers
+		requiredProcesses := []string{"/bin/sh", "/usr/sbin/nginx", "/bin/date", "/bin/sleep"}
+		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
+			"Pod: required processes: %v not found in events: %v", requiredProcesses, eventNames)
 
-		// At least one required: processes from the busybox loop.
-		// MYSTERY/BREADCRUMB: /bin/date is consistently NOT captured in some CI runs, while /bin/sleep IS captured.
-		// This is puzzling because:
-		// 1. The loop runs for 60+ seconds (plenty of time for events to be ingested)
-		// 2. The collector CAN capture microsecond-duration processes (we've seen /bin/grep, /usr/bin/find, etc.)
-		// 3. /bin/sleep is captured reliably, proving the loop is running
-		// 4. If sleep is captured, date must have executed 60+ times just before each sleep
-		atLeastOneRequired := []string{"/bin/date", "/bin/sleep"}
-		retryEventsT.Logf("At least one required (short-lived processes): %v", atLeastOneRequired)
-		foundAtLeastOne := false
-		for _, candidate := range atLeastOneRequired {
-			for _, eventName := range eventNames {
-				if eventName == candidate {
-					foundAtLeastOne = true
-					break
-				}
-			}
-			if foundAtLeastOne {
-				break
-			}
-		}
-		require.True(retryEventsT, foundAtLeastOne,
-			"expected at least one of %v, found none", atLeastOneRequired)
-
-		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-		// Find the actual earliest event (GraphQL doesn't guarantee ordering)
-		earliestEventTime := events[0].Timestamp.Time
-		for _, event := range events[1:] {
-			if event.Timestamp.Time.Before(earliestEventTime) {
-				earliestEventTime = event.Timestamp.Time
-			}
-		}
-		retryEventsT.Logf("Pod start comparison: %s vs %s (earliest event)", pod.Started, earliestEventTime)
-		require.False(retryEventsT, pod.Started.After(earliestEventTime),
-			"pod start time (%s) should not be after earliest event time (%s)", pod.Started, earliestEventTime)
+		// Verify the pod's timestamp is no later than the timestamp of the earliest event
+		verifyStartTimeBeforeEvents(retryEventsT, pod.Started, events, "Pod")
 
 		// Verify risk event timeline csv
 		retryEventsT.Logf("Verifying CSV export with %d events", len(eventNames))

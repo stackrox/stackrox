@@ -9,11 +9,7 @@
 
 # Used by tests/yamls/multi-container-pod.yaml (TestPod, TestContainerInstances, roxctl verification)
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
-quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1
 quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
-
-# Used by tests/backup_test.go and tests/excluded_scopes_test.go via setupDeployment
-# (already covered above: quay.io/rhacs-eng/qa-multi-arch-nginx:latest)
 
 # Used by tests/tls_challenge_test.go
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1

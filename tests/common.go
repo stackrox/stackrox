@@ -312,7 +312,9 @@ func waitForPodRunning(t testutils.T, client kubernetes.Interface, podNamespace,
 		// Note: ImagePullBackOff, ErrImagePull, etc. appear in container status, not pod status
 		logMsg := fmt.Sprintf("Pod phase: %s, Reason: %q, Message: %q",
 			k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
+		var containerInfo strings.Builder
 		for _, status := range k8sPod.Status.ContainerStatuses {
+			// Build log message for non-ready containers
 			if !status.Ready {
 				if status.State.Waiting != nil {
 					logMsg += fmt.Sprintf(", Container %q: %q", status.Name, status.State.Waiting.Reason)
@@ -320,20 +322,18 @@ func waitForPodRunning(t testutils.T, client kubernetes.Interface, podNamespace,
 					logMsg += fmt.Sprintf(", Container %q: Terminated (%q)", status.Name, status.State.Terminated.Reason)
 				}
 			}
+			// Build detailed info for error message (always, in case pod is not running)
+			containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
+				status.Name, status.Ready, status.Started != nil && *status.Started))
+			if status.State.Waiting != nil {
+				containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
+					status.State.Waiting.Reason, status.State.Waiting.Message))
+			}
 		}
 		waitT.Logf(logMsg)
 
 		// Provide detailed error message if pod is not running
 		if k8sPod.Status.Phase != coreV1.PodRunning {
-			var containerInfo strings.Builder
-			for _, status := range k8sPod.Status.ContainerStatuses {
-				containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
-					status.Name, status.Ready, status.Started != nil && *status.Started))
-				if status.State.Waiting != nil {
-					containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
-						status.State.Waiting.Reason, status.State.Waiting.Message))
-				}
-			}
 			require.Failf(waitT, "pod not in Running phase",
 				"Pod %s is in %s phase (expected Running)\nContainers:%s\nPod Reason: %s\nPod Message: %s",
 				podName, k8sPod.Status.Phase, containerInfo.String(),
