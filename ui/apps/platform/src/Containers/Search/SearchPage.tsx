@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -12,12 +13,9 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import SearchFilterInput from 'Components/SearchFilterInput';
-import {
-    SearchResponse,
-    fetchGlobalSearchResults,
-    getSearchOptionsForCategory,
-} from 'services/SearchService';
-import { SearchFilter } from 'types/search';
+import { fetchGlobalSearchResults, getSearchOptionsForCategory } from 'services/SearchService';
+import type { SearchResponse } from 'services/SearchService';
+import type { SearchFilter } from 'types/search';
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';

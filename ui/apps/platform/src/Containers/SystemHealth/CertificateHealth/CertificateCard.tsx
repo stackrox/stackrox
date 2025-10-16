@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -16,7 +17,7 @@ import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import { generateCertSecretForComponent } from 'services/CertGenerationService';
 import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
-import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
+import type { CertExpiryComponent } from 'types/credentialExpiryService.proto';
 import {
     getCredentialExpiryPhrase,
     getCredentialExpiryVariant,
