@@ -336,7 +336,7 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentCount() {
 }
 
 func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentSearch() {
-	s.runImageTest("", func(c componentTestCase) {
+	s.runImageTest("TestSACImageComponentSearch", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
 		results, err := s.imageComponentStore.Search(testCtx, nil)
