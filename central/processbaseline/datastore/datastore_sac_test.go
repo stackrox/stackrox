@@ -194,6 +194,68 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
 	}
 }
 
+func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeployment() {
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			deploymentID := uuid.NewV4().String()
+			processBaseline.Key.DeploymentId = deploymentID
+			_, err := s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaseline)
+			s.Require().NoError(err)
+			s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			ctx := s.testContexts[c.ScopeKey]
+			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, deploymentID)
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeploymentOtherDeployment() {
+	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			deploymentID := uuid.NewV4().String()
+			otherDeploymentID := uuid.NewV4().String()
+			s.Require().NotEqual(deploymentID, otherDeploymentID)
+			processBaseline.Key.DeploymentId = deploymentID
+			_, err := s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaseline)
+			s.Require().NoError(err)
+			s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			ctx := s.testContexts[c.ScopeKey]
+			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, otherDeploymentID)
+			if c.ExpectError {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.ExpectedError)
+			} else {
+				s.NoError(err)
+			}
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			s.True(found)
+			protoassert.Equal(s.T(), processBaseline, fetched)
+		})
+	}
+}
+
 func (s *processBaselineSACTestSuite) runSearchRawTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.SearchRawProcessBaselines(ctx, nil)
