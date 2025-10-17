@@ -146,7 +146,7 @@ func waitForDeploymentCountInCentral(t testutils.T, query string, count int) {
 
 }
 
-func waitForDeploymentReadyInK8s(t *testing.T, deploymentName, namespace string) {
+func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string) {
 	client := createK8sClient(t)
 
 	ticker := time.NewTicker(2 * time.Second)
@@ -616,17 +616,17 @@ func getConfig(t testutils.T) *rest.Config {
 	return restCfg
 }
 
-func createK8sClient(t T) kubernetes.Interface {
+func createK8sClient(t testutils.T) kubernetes.Interface {
 	return createK8sClientWithConfig(t, getConfig(t))
 }
 
-func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
+func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
 	// Configure retryable HTTP client for network resilience
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.RetryWaitMin = 500 * time.Millisecond
 	retryClient.RetryWaitMax = 2 * time.Second
-	retryClient.Logger = logWrapper{t: t}
+	retryClient.Logger = t
 	if restCfg.Timeout == 0 {
 		restCfg.Timeout = 30 * time.Second
 	}
@@ -648,19 +648,6 @@ func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
-}
-
-type T interface {
-	testutils.T
-	Logf(string, ...interface{})
-}
-
-type logWrapper struct {
-	t T
-}
-
-func (l logWrapper) Printf(format string, values ...interface{}) {
-	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
