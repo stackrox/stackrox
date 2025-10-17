@@ -225,28 +225,13 @@ func (r *Relay) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, e
 	}
 	metrics.IndexReportsReceived.Inc()
 
-	err = validateVsockCID(indexReport, vsockCID)
+	err = validateReportedVsockCID(indexReport, vsockCID)
 	if err != nil {
-		log.Debugf("Error validating vsock index report: %v", err)
+		log.Debugf("Error validating reported vsock CID: %v", err)
 		return nil, err
 	}
 
 	return indexReport, nil
-}
-
-// validateVsockCID verifies that the vsock CID in the indexReport matches the one extracted from the vsock connection,
-// and that it is a valid value according to the vsock spec (https://www.man7.org/linux/man-pages/man7/vsock.7.html)
-func validateVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
-	// Ensure the reported vsock CID is correct, to prevent spoofing
-	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
-		metrics.IndexReportsMismatchingVsockCID.Inc()
-		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
-	}
-
-	if connVsockCID <= 2 {
-		return fmt.Errorf("invalid vsock context ID: %d (values <=2 are reserved)", connVsockCID)
-	}
-	return nil
 }
 
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
@@ -254,6 +239,11 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	if !ok {
 		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
 			conn.RemoteAddr(), conn.RemoteAddr())
+	}
+
+	// Reject invalid values according to the vsock spec (https://www.man7.org/linux/man-pages/man7/vsock.7.html)
+	if remoteAddr.ContextID <= 2 {
+		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
 	}
 
 	return remoteAddr.ContextID, nil
@@ -349,4 +339,14 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 	metrics.IndexReportsSentToSensor.With(prometheus.Labels{"failed": strconv.FormatBool(err != nil)}).Inc()
 
 	return err
+}
+
+// validateReportedVsockCID checks the vsock CID in the indexReport against the one extracted from the vsock connection
+func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
+	// Ensure the reported vsock CID is correct, to prevent spoofing
+	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
+		metrics.IndexReportsMismatchingVsockCID.Inc()
+		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
+	}
+	return nil
 }
