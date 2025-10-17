@@ -27,12 +27,13 @@ for platform_upper in Linux Darwin Windows; do
     mkdir "${target_dir}/bin/${platform}"
 
     for app in roxagent roxctl; do
+      app_bin="${app}"
       if [[ "${platform_upper}" == "Windows" ]]; then
-        app="${app}.exe"
+        app_bin="${app}.exe"
       fi
 
       # x86_64 binaries don't mention architecture for compatibility with existing users (and their scripts).
-      cp "${source_dir}/bin/${platform_lower}_amd64/${app}" "${target_dir}/bin/${platform}/${app}"
+      cp "${source_dir}/bin/${platform_lower}_amd64/${app_bin}" "${target_dir}/bin/${platform}/${app_bin}"
 
       # Binaries for other architectures should mention arch. The suggestion is to do it in the filename:
       #   https://mirror.openshift.com/pub/rhacs/assets/<version>/<platform>/roxctl-<arch>[.filetype]
@@ -40,12 +41,12 @@ for platform_upper in Linux Darwin Windows; do
       # We may later want to add binaries with explicit x86_64 architecture which would be roxctl-amd64[.exe].
       if [[ "${platform_upper}" == "Linux" ]]; then
         for arch in "arm64" "ppc64le" "s390x"; do
-          cp "${source_dir}/bin/${platform_lower}_${arch}/${app}" "${target_dir}/bin/${platform}/${app}-${arch}"
+          cp "${source_dir}/bin/${platform_lower}_${arch}/${app_bin}" "${target_dir}/bin/${platform}/${app_bin}-${arch}"
         done
       fi
 
       if [[ "${platform_upper}" == "Darwin" ]]; then
-        cp "${source_dir}/bin/${platform_lower}_arm64/${app}" "${target_dir}/bin/${platform}/${app}-arm64"
+        cp "${source_dir}/bin/${platform_lower}_arm64/${app_bin}" "${target_dir}/bin/${platform}/${app_bin}-arm64"
       fi
     done
   done
