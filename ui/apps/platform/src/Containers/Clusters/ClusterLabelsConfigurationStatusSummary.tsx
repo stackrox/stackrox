@@ -3,14 +3,12 @@ import type { ReactElement } from 'react';
 import { Alert, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { Cluster, ClusterManagerType, CompleteClusterConfig } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterLabelsTable from './ClusterLabelsTable';
 import ClusterStatusGrid from './ClusterStatusGrid';
 import ClusterSummaryGrid from './ClusterSummaryGrid';
-import ClusterSummaryLegacy from './Components/ClusterSummaryLegacy';
 import DynamicConfigurationForm from './DynamicConfigurationForm';
 import StaticConfigurationForm from './StaticConfigurationForm';
 
@@ -45,10 +43,6 @@ function ClusterLabelsConfigurationStatusSummary({
     handleChangeAdmissionControllerEnforcementBehavior,
     handleChangeLabels,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdmissionControllerConfigEnabled = isFeatureFlagEnabled(
-        'ROX_ADMISSION_CONTROLLER_CONFIG'
-    );
     const isManagerTypeNonConfigurable =
         managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
         managerType === 'MANAGER_TYPE_HELM_CHART';
@@ -56,21 +50,7 @@ function ClusterLabelsConfigurationStatusSummary({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            {selectedCluster.id && selectedCluster.healthStatus ? (
-                isAdmissionControllerConfigEnabled ? null : (
-                    <ClusterSummaryLegacy
-                        healthStatus={selectedCluster.healthStatus}
-                        status={selectedCluster.status}
-                        centralVersion={centralVersion}
-                        clusterId={selectedCluster.id}
-                        autoRefreshEnabled={selectedCluster.sensorCapabilities?.includes(
-                            'SecuredClusterCertificatesRefresh'
-                        )}
-                        clusterRetentionInfo={clusterRetentionInfo}
-                        isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
-                    />
-                )
-            ) : (
+            {!selectedCluster.id && (
                 <Alert variant="warning" isInline title="Legacy installation method" component="p">
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem>
@@ -152,27 +132,22 @@ function ClusterLabelsConfigurationStatusSummary({
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
             </Flex>
-            {selectedCluster.id &&
-                selectedCluster.healthStatus &&
-                isAdmissionControllerConfigEnabled && (
+            {selectedCluster.id && selectedCluster.healthStatus && (
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                    <Title headingLevel="h2">Cluster status</Title>
                     <Flex
                         direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
                     >
-                        <Title headingLevel="h2">Cluster status</Title>
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsMd' }}
-                        >
-                            <ClusterStatusGrid healthStatus={selectedCluster.healthStatus} />
-                            <ClusterSummaryGrid
-                                centralVersion={centralVersion}
-                                clusterInfo={selectedCluster}
-                                clusterRetentionInfo={clusterRetentionInfo}
-                            />
-                        </Flex>
+                        <ClusterStatusGrid healthStatus={selectedCluster.healthStatus} />
+                        <ClusterSummaryGrid
+                            centralVersion={centralVersion}
+                            clusterInfo={selectedCluster}
+                            clusterRetentionInfo={clusterRetentionInfo}
+                        />
                     </Flex>
-                )}
+                </Flex>
+            )}
         </Flex>
     );
 }

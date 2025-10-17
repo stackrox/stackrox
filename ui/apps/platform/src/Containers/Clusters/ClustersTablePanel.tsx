@@ -16,7 +16,6 @@ import {
 } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
@@ -27,7 +26,6 @@ import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import SearchFilterInput from 'Components/SearchFilterInput';
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
@@ -48,7 +46,7 @@ import {
 import type { SearchCategory } from 'services/SearchService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { toggleRow } from 'utils/checkboxUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
@@ -66,7 +64,6 @@ import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
-import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
 import { searchFilterConfig } from './searchFilterConfig';
 
@@ -111,7 +108,6 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
-    const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
@@ -223,10 +219,6 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
-    function setSelectedClusterId(cluster: Cluster) {
-        navigate(`${clustersBasePath}/${cluster.id}`);
-    }
-
     function upgradeSingleCluster(id) {
         upgradeCluster(id)
             .then(() => {
@@ -295,6 +287,7 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     };
 
     function toggleCluster(id) {
+        // TODO uncouple from CheckboxTable?
         const selection = toggleRow(id, checkedClusterIds);
         setCheckedClusterIds(selection);
 
@@ -302,28 +295,16 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     }
 
     function toggleAllClusters() {
+        // TODO uncouple from CheckboxTable?
+        /*
         const rowsLength = checkedClusterIds.length;
         const ref = tableRef?.reactTable;
         const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
         setCheckedClusterIds(selection);
 
         calculateUpgradeableClusters(selection);
+        */
     }
-
-    const columnOptions = {
-        clusterIdToRetentionInfo,
-        hasWriteAccessForCluster,
-        metadata,
-        rowActions: {
-            onDeleteHandler,
-            upgradeSingleCluster,
-        },
-    };
-    const clusterColumns = getColumnsForClusters(columnOptions);
-
-    // Because clusters are not paginated, make the list display them all.
-    const pageSize =
-        currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
 
     // After there is a response, if there are clusters or search filter.
     // Conditionally render a subsequent error in addition to most recent successful respnse.
@@ -530,36 +511,17 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                         {messages}
                     </div>
                 )}
-                {isClustersPageMigrationEnabled ? (
-                    <ClustersTable
-                        centralVersion={metadata.version}
-                        clusterIdToRetentionInfo={clusterIdToRetentionInfo}
-                        tableState={tableState}
-                        selectedClusterIds={checkedClusterIds}
-                        onClearFilters={() => setSearchFilter({})}
-                        onDeleteCluster={onDeleteHandler}
-                        toggleAllClusters={toggleAllClusters}
-                        toggleCluster={toggleCluster}
-                        upgradeSingleCluster={upgradeSingleCluster}
-                    />
-                ) : (
-                    <CheckboxTable
-                        className="pf-v5-u-background-color-100"
-                        ref={(table) => {
-                            setTableRef(table);
-                        }}
-                        rows={currentClusters}
-                        columns={clusterColumns}
-                        onRowClick={setSelectedClusterId}
-                        toggleRow={toggleCluster}
-                        toggleSelectAll={toggleAllClusters}
-                        selection={checkedClusterIds}
-                        selectedRowId={selectedClusterId}
-                        noDataText="No clusters to show."
-                        minRows={20}
-                        pageSize={pageSize}
-                    />
-                )}
+                <ClustersTable
+                    centralVersion={metadata.version}
+                    clusterIdToRetentionInfo={clusterIdToRetentionInfo}
+                    tableState={tableState}
+                    selectedClusterIds={checkedClusterIds}
+                    onClearFilters={() => setSearchFilter({})}
+                    onDeleteCluster={onDeleteHandler}
+                    toggleAllClusters={toggleAllClusters}
+                    toggleCluster={toggleCluster}
+                    upgradeSingleCluster={upgradeSingleCluster}
+                />
             </PageSection>
             <Dialog
                 className="w-1/3"
