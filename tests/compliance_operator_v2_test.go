@@ -96,7 +96,7 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 	return nil
 }
 
-func createDynamicClient(t T) dynclient.Client {
+func createDynamicClient(t testutils.T) dynclient.Client {
 	restCfg := getConfig(t)
 	restCfg.WarningHandler = rest.NoWarnings{}
 	k8sClient := createK8sClient(t)
