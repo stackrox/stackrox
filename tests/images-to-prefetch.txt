@@ -1,0 +1,20 @@
+# Images used by Go e2e tests (nongroovy-e2e-tests) that will be prefetched
+#
+# This is a minimal subset of qa-tests-backend/scripts/images-to-prefetch.txt,
+# containing only images that are:
+# 1. Actually used by the Go e2e test suite
+# 2. Available in the main prefetch list (verified to exist)
+#
+# If renaming/moving this file, update the reference in scripts/ci/lib.sh
+
+# Used by tests/backup_test.go
+quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+
+# Used by tests/excluded_scopes_test.go
+quay.io/rhacs-eng/qa-multi-arch-nginx:latest
+
+# Used by tests/resourcecollection_test.go
+quay.io/rhacs-eng/qa:nginx-1-14-alpine
+
+# Used by tests/tls_challenge_test.go
+quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
