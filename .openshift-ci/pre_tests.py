@@ -31,31 +31,31 @@ class PreSystemTests:
                 "gather_debug_for_cluster_under_test",
             ],
             check=False,
-            timeout=PreSystemTests.VERSIONS_TIMEOUT,
+            timeout=self.VERSIONS_TIMEOUT,
         )
         subprocess.run(
             [
                 "scripts/ci/lib.sh", "image_prefetcher_prebuilt_start"
             ],
             check=True,
-            timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
+            timeout=self.START_PREFETCH_TIMEOUT,
         )
         if self.run_poll_for_system_test_images:
             subprocess.run(
                 [
                     "scripts/ci/lib.sh",
                     "poll_for_system_test_images",
-                    str(PreSystemTests.POLL_TIMEOUT),
+                    str(self.POLL_TIMEOUT),
                 ],
                 check=True,
-                timeout=PreSystemTests.POLL_TIMEOUT * 1.2,
+                timeout=self.POLL_TIMEOUT * 1.2,
             )
         subprocess.run(
             [
                 "scripts/ci/lib.sh", "image_prefetcher_system_start"
             ],
             check=True,
-            timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
+            timeout=self.START_PREFETCH_TIMEOUT,
         )
 
 
