@@ -25,8 +25,8 @@ type baselineEvaluator struct {
 	baselineLock sync.RWMutex
 }
 
-// NewBaselineEvaluator creates a new baseline evaluator
-func NewBaselineEvaluator() Evaluator {
+// newBaselineEvaluator creates the original baseline evaluator implementation
+func newBaselineEvaluator() Evaluator {
 	return &baselineEvaluator{
 		baselines: make(map[string]map[string]set.StringSet),
 	}
@@ -52,7 +52,7 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 		defer w.baselineLock.Unlock()
 
 		delete(w.baselines[baseline.GetKey().GetDeploymentId()], baseline.GetKey().GetContainerName())
-		log.Infof("Deleted process baseline %s", baseline.GetId())
+		log.Debugf("Deleted process baseline %s", baseline.GetId())
 		return
 	}
 
@@ -75,12 +75,16 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 	}
 	containerNameMap[baseline.GetKey().GetContainerName()] = baselineSet
 
-	log.Infof("Successfully added process baseline %s", baseline.GetId())
+	log.Debugf("Successfully added process baseline %s", baseline.GetId())
 }
 
 // IsInBaseline checks if the process indicator is within a locked baseline
 // If the baseline does not exist, then we return true
 func (w *baselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool {
+	if pi == nil {
+		return false // Treat nil process as within baseline
+	}
+
 	w.baselineLock.RLock()
 	defer w.baselineLock.RUnlock()
 

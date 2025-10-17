@@ -80,6 +80,9 @@ var (
 	// registry host.
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
+	// OptimizedBaselineMemory enables optimized memory usage for baseline detector through process set deduplication
+	OptimizedBaselineMemory = registerFeature("Enable optimized memory usage for baseline detector through process set deduplication", "ROX_OPTIMIZED_BASELINE_MEMORY")
+
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
