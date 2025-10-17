@@ -21,6 +21,9 @@ type nginxImage struct {
 	activeComponents int
 }
 
+// TODO(ROX-29771): When re-enabling this test, replace docker.io images with quay.io equivalents
+// to avoid Docker Hub rate limiting. Use images from qa-tests-backend/scripts/images-to-prefetch.txt
+// such as quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1, nginx-1-17-1, nginx-1.21.1, etc.
 func (i *nginxImage) getImage() string {
 	return fmt.Sprintf("docker.io/library/nginx:%s@%s", i.version, i.SHA)
 }
