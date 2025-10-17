@@ -5,30 +5,29 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/internal/store"
+	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/secret/convert"
-)
-
-var (
-	secretSAC = sac.ForResource(resources.Secret)
 )
 
 type datastoreImpl struct {
 	storage store.Store
 }
 
+func newPostgres(db postgres.DB) DataStore {
+	dbStore := pgStore.New(db)
+	return &datastoreImpl{
+		storage: dbStore,
+	}
+}
+
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
 	secret, exists, err := d.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
-	}
-
-	if !secretSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(secret).IsAllowed() {
-		return nil, false, nil
 	}
 
 	return secret, true, nil
@@ -72,22 +71,10 @@ func (d *datastoreImpl) SearchRawSecrets(ctx context.Context, request *v1.Query)
 }
 
 func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secret) error {
-	if ok, err := secretSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
-	if ok, err := secretSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, id)
 }
 
