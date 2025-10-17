@@ -22,14 +22,17 @@ func UpdateFileActivityAlertViolationMessage(v *storage.Alert_FileActivityViolat
 	var sb strings.Builder
 
 	if pathSet.Cardinality() < 10 {
-		for _, fa := range activity {
-			fmt.Fprintf(&sb, "'%s' accessed (%s) by %s",
+		for i, fa := range activity {
+			if i > 0 {
+				sb.WriteString("; ")
+			}
+			fmt.Fprintf(&sb, "'%v' accessed (%v) by %v",
 				fa.GetFile().GetPath(),
-				fa.GetOperation().Enum().String(),
+				fa.GetOperation(),
 				fa.GetProcess().GetSignal().GetName())
 		}
 	} else {
-		fmt.Fprintf(&sb, "%d files accessed", pathSet.Cardinality())
+		fmt.Fprintf(&sb, "%d sensitive files accessed", pathSet.Cardinality())
 	}
 
 	v.Message = sb.String()
