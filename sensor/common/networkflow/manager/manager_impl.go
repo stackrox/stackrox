@@ -40,6 +40,10 @@ var (
 	enricherCycle    = time.Second * 30
 )
 
+// Define the maximum batch size for messages sent to Central.
+// This is a new constant for the batching requirement.
+const maxMessageBatchSize = 10000
+
 type hostConnections struct {
 	hostname    string
 	mutex       sync.Mutex
@@ -226,6 +230,8 @@ type networkFlowManager struct {
 
 	policyDetector detector.Detector
 
+	processesQueue []*storage.ProcessListeningOnPortFromSensor
+
 	stopper concurrency.Stopper
 	purger  networkFlowComponent
 	pubSub  *internalmessage.MessageSubscriber
@@ -365,21 +371,61 @@ func (m *networkFlowManager) enrichAndSend() {
 	// Run periodic cleanup after all tasks here are done.
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
+	// BEGIN: Batching modification
+	// We need to track if all batches were successfully sent.
+	sentAllConnsEps := true
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
-			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendConnections(currentConns)
-			m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
+		log.Infof("features.BatchSensorToCentralMessages.Enabled()= %+v", features.BatchSensorToCentralMessages.Enabled())
+		if features.BatchSensorToCentralMessages.Enabled() {
+			log.Info("Sending connections in batches")
+			if sent := m.sendConnsEpsInBatches(updatedConns, updatedEndpoints); !sent {
+				sentAllConnsEps = false
+			}
+		} else {
+			log.Info("Sending connections at once")
+			sentAllConnsEps = m.sendConnsEps(updatedConns, updatedEndpoints)
+		}
+
+	}
+
+	log.Infof("sentAllConnsEps= %+v", sentAllConnsEps)
+	if sentAllConnsEps {
+		// Inform the updateComputer that sending has succeeded, but only if ALL batches were sent successfully.
+		m.updateComputer.OnSuccessfulSendConnections(currentConns)
+		m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
+	}
+
+	sentAllProcesses := true
+	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
+		if sent := m.sendProcesses(updatedProcesses); !sent {
+			sentAllProcesses = false
 		}
 	}
 
-	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		if sent := m.sendProcesses(updatedProcesses); sent {
-			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
-		}
+	if sentAllProcesses {
+		// Inform the updateComputer that sending has succeeded, but only if ALL batches were sent successfully.
+		m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
 	}
+	// END: Batching modification
+
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+}
+
+// batchSlice is a generic helper function to split a slice into batches of a maximum size.
+func batchSlice[T any](slice []T, batchSize int) [][]T {
+	if batchSize <= 0 {
+		// Avoid panic if batchSize is invalid.
+		return [][]T{slice}
+	}
+	var batches [][]T
+	for i := 0; i < len(slice); i += batchSize {
+		end := i + batchSize
+		if end > len(slice) {
+			end = len(slice)
+		}
+		batches = append(batches, slice[i:end])
+	}
+	return batches
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
@@ -404,16 +450,111 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 	})
 }
 
+// sendConnsEpsInBatches sends NetworkFlow updates in batches. It returns true only if ALL batches were sent successfully.
+func (m *networkFlowManager) sendConnsEpsInBatches(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
+	connBatches := batchSlice(conns, maxMessageBatchSize)
+	epsBatches := batchSlice(eps, maxMessageBatchSize)
+
+	// Since NetworkFlowUpdate contains both connections and endpoints, we will batch based on the total number of elements
+	// being sent, which is why the original code sends both in one message. To keep this logic, we iterate over the max
+	// number of batches determined by either slice, potentially sending an empty slice for one of the types in a batch.
+	numBatches := len(connBatches)
+	if len(epsBatches) > numBatches {
+		numBatches = len(epsBatches)
+	}
+
+	var detectionContext context.Context
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		detectionContext = context.Background()
+	} else {
+		detectionContext = m.getCurrentContext()
+	}
+
+	for i := 0; i < numBatches; i++ {
+		var connBatch []*storage.NetworkFlow
+		if i < len(connBatches) {
+			connBatch = connBatches[i]
+		}
+		var epsBatch []*storage.NetworkEndpoint
+		if i < len(epsBatches) {
+			epsBatch = epsBatches[i]
+		}
+
+		protoToSend := &central.NetworkFlowUpdate{
+			Updated:          connBatch,
+			UpdatedEndpoints: epsBatch,
+			Time:             protocompat.TimestampNow(),
+		}
+
+		// Before sending, run the flows through policies asynchronously (ProcessNetworkFlow creates a new goroutine for each call)
+		for _, flow := range connBatch {
+			m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
+		}
+
+		log.Infof("Flow update batch %d/%d: %d connections, %d endpoints", i+1, numBatches, len(connBatch), len(epsBatch))
+		if sent := m.sendToCentral(&central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+				NetworkFlowUpdate: protoToSend,
+			},
+		}); !sent {
+			// If sending any batch fails, we stop and return false.
+			return false
+		}
+	}
+	return true
+}
+
+// sendProcesses sends ProcessListeningOnPortsUpdate updates in batches. It returns true only if ALL batches were sent successfully.
 func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListeningOnPortFromSensor) bool {
+
+	if len(processes) == 0 {
+		return true
+	}
+
+	var processesToBeSent []*storage.ProcessListeningOnPortFromSensor
+
+	log.Infof("features.BatchSensorToCentralMessages.Enabled()= %+v", features.BatchSensorToCentralMessages.Enabled())
+	if features.BatchSensorToCentralMessages.Enabled() {
+		log.Info()
+		log.Info("Batching listening endpoints")
+		log.Infof("len(m.processesQueue)= ", len(m.processesQueue))
+		m.processesQueue = append(m.processesQueue, processes...)
+		nToSend := min(len(m.processesQueue), maxMessageBatchSize)
+
+		processesToBeSent = m.processesQueue[0:nToSend]
+		log.Infof("len(m.processesQueue)= ", len(m.processesQueue))
+		log.Infof("len(processesToBeSent)= %+v", len(processesToBeSent))
+		if len(m.processesQueue) > nToSend {
+			m.processesQueue = m.processesQueue[nToSend:]
+			log.Infof("len(m.processesQueue)= ", len(m.processesQueue))
+		} else {
+			m.processesQueue = nil
+		}
+	} else {
+		processesToBeSent = processes
+	}
+
+	log.Infof("len(processesToBeSent)= %+v", len(processesToBeSent))
 	processesToSend := &central.ProcessListeningOnPortsUpdate{
-		ProcessesListeningOnPorts: processes,
+		ProcessesListeningOnPorts: processesToBeSent,
 		Time:                      protocompat.TimestampNow(),
 	}
-	return m.sendToCentral(&central.MsgFromSensor{
+
+	if sent := m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	})
+	}); !sent {
+		// If sending any batch fails, we stop and return false.
+		log.Info("Failed to send listening endpoints")
+		return false
+	}
+	log.Info("Successfully sent listening endpoints")
+	log.Info()
+	log.Info()
+	log.Info()
+
+	return true
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
