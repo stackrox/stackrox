@@ -28,7 +28,7 @@ for platform_upper in Linux Darwin Windows; do
 
     for app in roxagent roxctl; do
       app_bin="${app}"
-      if [[ "${platform_upper}" == "Windows" ]]; then
+      if [[ "${platform}" =~ Windows|windows ]]; then
         app_bin="${app}.exe"
       fi
 
@@ -39,13 +39,13 @@ for platform_upper in Linux Darwin Windows; do
       #   https://mirror.openshift.com/pub/rhacs/assets/<version>/<platform>/roxctl-<arch>[.filetype]
       # See https://issues.redhat.com/browse/ROX-14701.
       # We may later want to add binaries with explicit x86_64 architecture which would be roxctl-amd64[.exe].
-      if [[ "${platform_upper}" == "Linux" ]]; then
+      if [[ "${platform}" =~ Linux|linux ]]; then
         for arch in "arm64" "ppc64le" "s390x"; do
           cp "${source_dir}/bin/${platform_lower}_${arch}/${app_bin}" "${target_dir}/bin/${platform}/${app_bin}-${arch}"
         done
       fi
 
-      if [[ "${platform_upper}" == "Darwin" ]]; then
+      if [[ "${platform}" =~ Darwin|darwin ]]; then
         cp "${source_dir}/bin/${platform_lower}_arm64/${app_bin}" "${target_dir}/bin/${platform}/${app_bin}-arm64"
       fi
     done
@@ -56,5 +56,8 @@ done
 
 find "${target_dir}" -name "sha256sum.txt" -exec rm {} \;
 while IFS='' read -r dir || [[ -n "$dir" ]]; do
-  ( cd "$dir" ; sha256sum ./* >sha256sum.txt )
+  (
+    cd "$dir"
+    sha256sum ./* >sha256sum.txt
+  )
 done < <(find "${target_dir}" -type f -print0 | xargs -0 -n 1 dirname | sort -u)
