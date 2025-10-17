@@ -137,7 +137,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 
 	// wait for deployments to propagate
 	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
-	waitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
+	waitForDeploymentCountInCentral(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
 }
 
 func (s *CollectionE2ETestSuite) TearDownSuite() {
