@@ -1,13 +1,13 @@
 import * as api from '../../constants/apiEndpoints';
 import { selectors, url } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import { addCheckboxSelectFilter } from '../../helpers/compoundFilters';
 import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
     changePolicyStatusInTable,
     cloneFirstPolicyFromTable,
     deletePolicyInTable,
     editFirstPolicyFromTable,
-    searchPolicies,
     visitPolicies,
     visitPoliciesFromLeftNav,
 } from '../../helpers/policies';
@@ -138,7 +138,7 @@ describe('Policies table', () => {
     it('should filter policies by disabled status', () => {
         visitPolicies();
 
-        searchPolicies('Disabled', 'true');
+        addCheckboxSelectFilter('Policy', 'Status', 'Disabled');
         cy.get(`${selectors.table.statusCell}:contains("Disabled")`);
         cy.get(`${selectors.table.statusCell}:contains("Enabled")`).should('not.exist');
     });
@@ -146,7 +146,7 @@ describe('Policies table', () => {
     it('should filter policies by enabled status', () => {
         visitPolicies();
 
-        searchPolicies('Disabled', 'false');
+        addCheckboxSelectFilter('Policy', 'Status', 'Enabled');
         cy.get(`${selectors.table.statusCell}:contains("Disabled")`).should('not.exist');
         cy.get(`${selectors.table.statusCell}:contains("Enabled")`);
     });
@@ -164,7 +164,7 @@ describe('Policies table', () => {
     it('should filter policies by severity', () => {
         visitPolicies();
 
-        searchPolicies('Severity', 'LOW_SEVERITY');
+        addCheckboxSelectFilter('Policy', 'Severity', 'Low');
         cy.get(`${selectors.table.severityCell}:contains("Low")`);
         cy.get(`${selectors.table.severityCell}:contains("Medium")`).should('not.exist');
         cy.get(`${selectors.table.severityCell}:contains("High")`).should('not.exist');

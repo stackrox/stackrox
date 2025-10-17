@@ -14,10 +14,6 @@ const routeMatcherMap = {
         method: 'GET',
         url: api.integrations.notifiers,
     },
-    [searchMetadataOptionsAlias]: {
-        method: 'GET',
-        url: api.search.optionsCategories('POLICIES'),
-    },
     [policiesAlias]: {
         method: 'GET',
         // Include empty search query to distinguish from intercept with search query.
@@ -81,19 +77,6 @@ export function deletePolicyInTable({ policyName, actionText }) {
     cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
     cy.wait('@DELETE_policies/id');
     cy.wait(`@${policiesAlias}`); // assume visitPolicies as a prerequisite
-}
-
-export function searchPolicies(category, value) {
-    cy.intercept({
-        method: 'GET',
-        pathname: api.policies.policies,
-        query: {
-            query: `${category}:${value}`,
-        },
-    }).as('policies?query');
-    cy.get(selectors.table.searchInput).type(`${category}:{enter}`);
-    cy.get(selectors.table.searchInput).type(`${value}{enter}{esc}`);
-    cy.wait('@policies?query');
 }
 
 export function goToFirstPolicy() {

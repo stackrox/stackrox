@@ -27,11 +27,17 @@ import {
 } from '@patternfly/react-table';
 
 import { ListPolicy } from 'types/policy.proto';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import SearchFilterInput from 'Components/SearchFilterInput';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+
 import EnableDisableNotificationModal, {
     EnableDisableType,
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
@@ -50,12 +56,15 @@ import {
     getPolicyOriginLabel,
     isExternalPolicy,
 } from '../policies.utils';
+import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
 
 function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
     return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
 }
+
+const searchFilterConfig = [policySearchFilterConfig];
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -71,8 +80,7 @@ type PoliciesTableProps = {
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     onClickReassessPolicies: () => void;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilter?: SearchFilter;
-    searchOptions: string[];
+    searchFilter: SearchFilter;
 };
 
 function PoliciesTable({
@@ -90,7 +98,6 @@ function PoliciesTable({
     onClickReassessPolicies,
     getSortParams,
     searchFilter,
-    searchOptions,
 }: PoliciesTableProps): React.ReactElement {
     const expandedRowSet = useSet<string>();
     const navigate = useNavigate();
@@ -196,20 +203,28 @@ function PoliciesTable({
             <PageSection isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem
-                            variant="search-filter"
-                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
-                        >
-                            <SearchFilterInput
-                                className="w-full theme-light pf-search-shim"
-                                handleChangeSearchFilter={handleChangeSearchFilter}
-                                placeholder="Filter policies"
-                                searchCategory="POLICIES"
-                                searchFilter={searchFilter ?? {}}
-                                searchOptions={searchOptions}
+                        <ToolbarItem className="pf-v5-u-w-100">
+                            <CompoundSearchFilter
+                                config={searchFilterConfig}
+                                searchFilter={searchFilter}
+                                onSearch={(payload) => {
+                                    onURLSearch(searchFilter, handleChangeSearchFilter, payload);
+                                }}
+                                defaultEntity={'Policy'}
+                                defaultAttribute={'Name'}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem className="pf-v5-u-w-100">
+                            <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={handleChangeSearchFilter}
+                                filterChipGroupDescriptors={makeFilterChipDescriptors(
+                                    searchFilterConfig
+                                )}
                             />
                         </ToolbarItem>
                         <ToolbarGroup
+                            align={{ default: 'alignRight' }}
                             spaceItems={{ default: 'spaceItemsSm' }}
                             variant="button-group"
                         >
@@ -314,6 +329,7 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
+                <Divider component="div" />
                 <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                     <Thead>
                         <Tr>
