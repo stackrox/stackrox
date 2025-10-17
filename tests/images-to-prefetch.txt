@@ -1,0 +1,12 @@
+# Images used by Go e2e tests (nongroovy-e2e-tests) that will be prefetched
+#
+# Since this branch uses docker.io images (not quay.io mirrors), the prefetcher
+# will fetch these standard images to avoid rate limiting issues.
+#
+# If renaming/moving this file, update the reference in scripts/ci/lib.sh
+
+# Used by tests/yamls/multi-container-pod.yaml (TestPod, TestContainerInstances, roxctl verification)
+# Note: These are docker.io images (not quay.io mirrors on this branch)
+docker.io/library/nginx:1.18@sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72
+docker.io/library/debian:latest@sha256:1e5f2d70c9441c971607727f56d0776fb9eecf23cd37b595b26db7a974b2301d
+
