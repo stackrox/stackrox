@@ -103,8 +103,8 @@ var (
 		"processViolation": {
 			"message": "This is a process violation"
 		},
-		"fileActivityViolation": {
-			"message": "This is a file activity violation"
+		"fileAccessViolation": {
+			"message": "This is a file access violation"
 		},
 		"violations": [
 			{

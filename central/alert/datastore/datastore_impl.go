@@ -303,7 +303,7 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 		return alert.GetResource()
 	case *storage.Alert_Image:
 		return nil // This is theoretically possible even though image doesn't have a ns/cluster
-	case *storage.Alert_Host_:
+	case *storage.Alert_Node_:
 		return nil
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
