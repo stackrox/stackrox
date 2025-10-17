@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -53,6 +54,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileActivity for a file-based runtime event
+	FileActivity = "fileActivity"
 )
 
 type metadataAndQB struct {
@@ -873,6 +876,17 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.SensitiveFileActivity.Enabled() {
+		f.registerFieldMetadata(fieldnames.FilePath,
+			querybuilders.ForFieldLabel(search.FilePath), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return absolutePathRegex
+			},
+			[]storage.EventSource{storage.EventSource_HOST_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
+			[]RuntimeFieldType{FileActivity}, operatorsForbidden,
+		)
+	}
 
 	return f
 }
