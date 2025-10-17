@@ -15,14 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-//// NewBaselineEvaluator creates a new baseline evaluator, using optimized implementation if feature flag is enabled
-//func NewBaselineEvaluator() Evaluator {
-//	if features.OptimizedBaselineMemory.Enabled() {
-//		return newOptimizedBaselineEvaluatorRobby()
-//	}
-//	return newBaselineEvaluator()
-//}
-
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
 type optimizedBaselineEvaluatorRobby struct {
 	// deployment -> container name -> content hash (direct access)
@@ -32,11 +24,6 @@ type optimizedBaselineEvaluatorRobby struct {
 	// lock for thread safety
 	lock sync.RWMutex
 }
-
-//type processSetEntry struct {
-//	refCount  int
-//	processes set.StringSet
-//}
 
 // newOptimizedBaselineEvaluator creates the optimized baseline evaluator implementation
 func newOptimizedBaselineEvaluatorRobby() Evaluator {
@@ -63,19 +50,6 @@ func (oe *optimizedBaselineEvaluatorRobby) removeReference(contentHash string) {
 		delete(oe.processSets, contentHash)
 	}
 }
-
-//type string [32]byte
-
-//// computeProcessSetHash creates a deterministic hash for a process set
-//func computeProcessSetHash(processes set.StringSet) string {
-//	// Convert to sorted slice for deterministic hashing
-//	processSlice := processes.AsSlice()
-//	slices.Sort(processSlice)
-//
-//	// Create hash of concatenated processes
-//	content := strings.Join(processSlice, "\n")
-//	return sha256.Sum256([]byte(content))
-//}
 
 // computeProcessSetHash creates a deterministic hash for a process set
 func computeProcessSetHashRobby(processes set.StringSet) string {
