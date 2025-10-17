@@ -26,7 +26,7 @@ func TestExcludedScopes(t *testing.T) {
 
 	setupDeploymentInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName, "default") // prefetched image
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
-	waitForDeployment(t, deploymentName)
+	waitForDeploymentInCentral(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
 	verifyAlertForExcludedScopesRemoval(t, deploymentName)
