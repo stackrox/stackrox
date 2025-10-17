@@ -107,7 +107,7 @@ function PoliciesTablePage({
             })
             .catch((err) => {
                 setPolicies(undefined);
-                setError(new Error(getAxiosErrorMessage(err)));
+                setError(err);
             })
             .finally(() => setIsLoading(false));
     }
