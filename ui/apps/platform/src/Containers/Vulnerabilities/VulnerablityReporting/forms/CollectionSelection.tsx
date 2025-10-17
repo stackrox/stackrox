@@ -1,6 +1,20 @@
-import React, { useMemo, useState, ReactElement, useCallback } from 'react';
-import { Button, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
-import { Select, SelectOption, SelectProps } from '@patternfly/react-core/deprecated';
+import React, { useMemo, useState, ReactElement, useCallback, useRef } from 'react';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    Select,
+    SelectOption,
+    SelectList,
+    MenuToggle,
+    TextInputGroup,
+    TextInputGroupMain,
+    TextInputGroupUtilities,
+    MenuFooter,
+    Spinner,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
@@ -11,7 +25,6 @@ import {
     listCollections,
 } from 'services/CollectionsService';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -49,12 +62,13 @@ function CollectionSelection({
 
     const { analyticsTrack } = useAnalytics();
 
-    const { isOpen, onToggle } = useSelectToggle();
+    const [isOpen, setIsOpen] = useState(false);
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
     const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
 
     const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(modalAction);
     const [search, setSearch] = useState('');
+    const textInputRef = useRef<HTMLInputElement>(null);
 
     const requestFn = useCallback(
         (page: number) => {
@@ -118,31 +132,92 @@ function CollectionSelection({
     }
 
     function onOpenCreateCollectionModal() {
-        onToggle(false);
+        setIsOpen(false);
         setModalAction({ type: 'create' });
         setIsCollectionModalOpen((current) => !current);
     }
 
-    function onScopeChange(_id, scopeId) {
-        const selectedCollection = sortedCollections.find(
-            (collection) => collection.id === scopeId
-        );
-        if (selectedCollection) {
-            onToggle(false);
-            onChange(selectedCollection);
+    function onScopeChange(
+        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        scopeId: string | number | undefined
+    ) {
+        if (typeof scopeId === 'string') {
+            const selectedCollection = sortedCollections.find(
+                (collection) => collection.id === scopeId
+            );
+            if (selectedCollection) {
+                setIsOpen(false);
+                onChange(selectedCollection);
+                setSearch('');
+            }
         }
     }
 
-    let selectLoadingVariant: SelectProps['loadingVariant'];
-
-    if (isFetchingNextPage) {
-        selectLoadingVariant = 'spinner';
-    } else if (!isEndOfResults) {
-        selectLoadingVariant = {
-            text: 'View more',
-            onClick: () => fetchNextPage(),
-        };
+    function onToggleClick() {
+        setIsOpen(!isOpen);
+        if (isOpen) {
+            setSearch('');
+        }
     }
+
+    function onClearInput() {
+        setSearch('');
+        textInputRef.current?.focus();
+    }
+
+    // Get display text for the selected collection
+    const getDisplayValue = (): string => {
+        if (!selectedScope?.id) {
+            return '';
+        }
+        const selectedCollection = sortedCollections.find(
+            (collection) => collection.id === selectedScope.id
+        );
+        return selectedCollection?.name || '';
+    };
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            variant="typeahead"
+            onClick={onToggleClick}
+            isExpanded={isOpen}
+            id={toggleId}
+        >
+            <TextInputGroup>
+                <TextInputGroupMain
+                    value={isOpen ? search : getDisplayValue()}
+                    placeholder="Select a collection"
+                    onChange={(_event, value) => {
+                        setSearch(value);
+                        onValidateField(id);
+                        if (!isOpen) {
+                            setIsOpen(true);
+                        }
+                    }}
+                    onFocus={() => {
+                        if (!isOpen) {
+                            setIsOpen(true);
+                        }
+                    }}
+                    ref={textInputRef}
+                    autoComplete="off"
+                    id={id}
+                />
+                {search && (
+                    <TextInputGroupUtilities>
+                        <Button
+                            variant="plain"
+                            onClick={onClearInput}
+                            aria-label="Clear input"
+                        >
+                            <TimesIcon />
+                        </Button>
+                    </TextInputGroupUtilities>
+                )}
+            </TextInputGroup>
+        </MenuToggle>
+    );
 
     return (
         <>
@@ -153,32 +228,65 @@ function CollectionSelection({
             >
                 <FlexItem>
                     <Select
-                        typeAheadAriaLabel={toggleId}
-                        toggleId={toggleId}
-                        id={id}
-                        onSelect={onScopeChange}
-                        selections={selectedScope?.id}
-                        placeholderText="Select a collection"
-                        variant="typeahead"
+                        id={`${id}-select`}
                         isOpen={isOpen}
-                        onToggle={(_e, isExpanded) => onToggle(isExpanded)}
-                        onTypeaheadInputChanged={(value) => {
-                            setSearch(value);
-                            onValidateField(id);
+                        selected={selectedScope?.id}
+                        onSelect={onScopeChange}
+                        onOpenChange={(nextOpen: boolean) => {
+                            setIsOpen(nextOpen);
+                            if (!nextOpen) {
+                                setSearch('');
+                            }
                         }}
-                        loadingVariant={selectLoadingVariant}
+                        toggle={toggle}
+                        shouldFocusToggleOnSelect
+                        popperProps={{
+                            appendTo: () => document.body,
+                            direction: 'up',
+                            minWidth: '400px',
+                        }}
                         onBlur={(event) => {
                             setSearch('');
-                            onBlur?.(event);
+                            onBlur?.(event as unknown as React.FocusEvent<HTMLInputElement>);
                         }}
-                        style={{
-                            maxHeight: '275px',
-                            overflowY: 'auto',
-                        }}
-                        validated={ValidatedOptions.default}
-                        footer={
-                            hasWriteAccessForCollections &&
-                            isRouteEnabledForCollections && (
+                    >
+                        <SelectList style={{ maxHeight: '275px', overflowY: 'auto' }}>
+                            {sortedCollections.map((collection) => (
+                                <SelectOption
+                                    key={collection.id}
+                                    value={collection.id}
+                                    description={collection.description}
+                                >
+                                    {collection.name}
+                                </SelectOption>
+                            ))}
+                            {isFetchingNextPage && (
+                                <li role="presentation">
+                                    <div className="pf-v5-u-text-align-center pf-v5-u-p-sm">
+                                        <Spinner size="md" />
+                                    </div>
+                                </li>
+                            )}
+                            {!isFetchingNextPage && !isEndOfResults && (
+                                <li
+                                    role="presentation"
+                                    style={{
+                                        padding: 'var(--pf-v5-global--spacer--sm) var(--pf-v5-global--spacer--md)',
+                                        backgroundColor: 'var(--pf-v5-global--BackgroundColor--200)'
+                                    }}
+                                >
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        onClick={() => fetchNextPage()}
+                                    >
+                                        View more
+                                    </Button>
+                                </li>
+                            )}
+                        </SelectList>
+                        {hasWriteAccessForCollections && isRouteEnabledForCollections && (
+                            <MenuFooter>
                                 <Button
                                     variant="link"
                                     isInline
@@ -186,20 +294,8 @@ function CollectionSelection({
                                 >
                                     Create collection
                                 </Button>
-                            )
-                        }
-                        menuAppendTo={() => document.body}
-                        direction="up"
-                    >
-                        {sortedCollections.map((collection) => (
-                            <SelectOption
-                                key={collection.id}
-                                value={collection.id}
-                                description={collection.description}
-                            >
-                                {collection.name}
-                            </SelectOption>
-                        ))}
+                            </MenuFooter>
+                        )}
                     </Select>
                 </FlexItem>
                 {isRouteEnabledForCollections && (
