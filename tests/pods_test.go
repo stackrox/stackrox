@@ -108,7 +108,7 @@ func verifyStartTimeBeforeEvents(t testutils.T, startTime graphql.Time, events [
 
 func TestPod(testT *testing.T) {
 	skipIfNoCollection(testT)
-
+	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
@@ -126,7 +126,7 @@ func TestPod(testT *testing.T) {
 		retryEventsT.Logf("Event names: %+v", eventNames)
 
 		// Required processes from both containers
-		// TODO(ROX-XXXX): Collector cannot reliably detect /bin/date in ubuntu image,
+		// TODO(ROX-31331): Collector cannot reliably detect /bin/date in ubuntu image,
 		// thus not including it in the required processes.
 		requiredProcesses := []string{"/bin/sh", "/usr/sbin/nginx", "/bin/sleep"}
 		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
