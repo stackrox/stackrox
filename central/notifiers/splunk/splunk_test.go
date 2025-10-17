@@ -103,6 +103,9 @@ var (
 		"processViolation": {
 			"message": "This is a process violation"
 		},
+		"fileActivityViolation": {
+			"message": "This is a file activity violation"
+		},
 		"violations": [
 			{
 				"message": "Deployment is affected by 'CVE-2017-15670'"

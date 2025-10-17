@@ -65,6 +65,8 @@ type Alerts struct {
 	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:hash"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
+	HostID                   string                              `gorm:"column:host_id;type:varchar"`
+	HostName                 string                              `gorm:"column:host_name;type:varchar"`
 	ImageID                  string                              `gorm:"column:image_id;type:varchar"`
 	ImageNameRegistry        string                              `gorm:"column:image_name_registry;type:varchar"`
 	ImageNameRemote          string                              `gorm:"column:image_name_remote;type:varchar"`

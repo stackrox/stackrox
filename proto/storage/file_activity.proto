@@ -44,7 +44,7 @@ message FileActivity {
   Operation operation = 2; // @gotags: search:"File Operation"
 
   // specific to `RENAME` activity, the new location / metadata of the file.
-  optional File moved = 3; // @gotags: search:"-"
+  File moved = 3; // @gotags: search:"-"
 
   // When the file activity happened
   google.protobuf.Timestamp timestamp = 4;
