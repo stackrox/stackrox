@@ -15,6 +15,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-30462: Reduced log level for semaphore acquisition failures from ERROR to DEBUG. This eliminates log spam during Central shutdown when multiple scans are queued in parallel, making it easier to identify actual shutdown issues.
 - ROX-30867: Prevents mutex timeouts and reduces strain on Central and Central-DB during high-volume indicator processing, reducing lock contention and transaction duration when writing large batches of process indicators. Previously, batches of 10K indicators were processed in a single transaction with a held lock, causing timeouts with datasets over 500K indicators.
+- ROX-31088: If Compliance Operator is installed, its version is now correctly reported through telemetry.
 
 ## [4.8.4]
 
