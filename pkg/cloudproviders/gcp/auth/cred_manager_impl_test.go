@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -34,6 +35,7 @@ func TestCredentialManager(t *testing.T) {
 	cases := map[string]struct {
 		setupFn  func(k8sClient *fake.Clientset) error
 		expected string
+		changes  int
 	}{
 		"secret added": {
 			setupFn: func(k8sClient *fake.Clientset) error {
@@ -50,6 +52,7 @@ func TestCredentialManager(t *testing.T) {
 				return err
 			},
 			expected: fakeSTSConfig,
+			changes:  1,
 		},
 		"secret updated": {
 			setupFn: func(k8sClient *fake.Clientset) error {
@@ -82,6 +85,7 @@ func TestCredentialManager(t *testing.T) {
 				return err
 			},
 			expected: fakeSTSConfig,
+			changes:  2,
 		},
 		"secret deleted": {
 			setupFn: func(k8sClient *fake.Clientset) error {
@@ -108,6 +112,7 @@ func TestCredentialManager(t *testing.T) {
 				)
 			},
 			expected: "",
+			changes:  2,
 		},
 		"no secret": {
 			setupFn:  func(k8sClient *fake.Clientset) error { return nil },
@@ -118,7 +123,11 @@ func TestCredentialManager(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
-			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {})
+			var wg sync.WaitGroup
+			wg.Add(c.changes)
+			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
+				wg.Done()
+			})
 			manager.Start()
 			defer manager.Stop()
 			require.Eventually(t, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
@@ -126,12 +135,11 @@ func TestCredentialManager(t *testing.T) {
 			err := c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			// Assert that the secret data has been updated.
-			assert.EventuallyWithT(t, func(t *assert.CollectT) {
-				manager.mutex.RLock()
-				defer manager.mutex.RUnlock()
-				assert.Equal(t, []byte(c.expected), manager.stsConfig)
-			}, 5*time.Second, 100*time.Millisecond)
+			wg.Wait()
+
+			manager.mutex.RLock()
+			defer manager.mutex.RUnlock()
+			assert.Equal(t, []byte(c.expected), manager.stsConfig)
 		})
 	}
 }

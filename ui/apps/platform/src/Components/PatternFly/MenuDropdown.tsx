@@ -1,13 +1,10 @@
-import React, { ReactElement, ReactNode, useState } from 'react';
-import {
-    Bullseye,
-    Dropdown,
-    DropdownList,
+import React, { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
+import { Bullseye, Dropdown, DropdownList, MenuToggle, Spinner } from '@patternfly/react-core';
+import type {
     DropdownPopperProps,
-    MenuToggle,
     MenuToggleElement,
     MenuToggleProps,
-    Spinner,
 } from '@patternfly/react-core';
 
 type MenuDropdownProps = {
@@ -18,7 +15,7 @@ type MenuDropdownProps = {
     toggleVariant?: MenuToggleProps['variant'];
     toggleIcon?: ReactNode;
     ariaLabel?: string;
-    onSelect?: (event?: React.MouseEvent<Element, MouseEvent>, value?: string | number) => void;
+    onSelect?: (event?: ReactMouseEvent<Element, MouseEvent>, value?: string | number) => void;
     isDisabled?: boolean;
     isPlain?: boolean;
     isLoading?: boolean;
@@ -59,7 +56,7 @@ function MenuDropdown({
             isPlain={isPlain}
             onSelect={onSelectHandler}
             onOpenChange={(isOpen: boolean) => setIsOpen(isOpen)}
-            toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+            toggle={(toggleRef: Ref<MenuToggleElement>) => (
                 <MenuToggle
                     className={toggleClassName}
                     icon={toggleIcon}

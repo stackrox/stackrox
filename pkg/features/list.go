@@ -30,9 +30,6 @@ var (
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
-	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
-	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
-
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
 
@@ -51,9 +48,6 @@ var (
 	// SensorAggregateDeploymentReferenceOptimization enables a performance improvement by aggregating deployment references when the same reference is queued for processing
 	SensorAggregateDeploymentReferenceOptimization = registerFeature("Enables a performance improvement by aggregating deployment references when the same reference is queued for processing", "ROX_AGGREGATE_DEPLOYMENT_REFERENCE_OPTIMIZATION")
 
-	// ACSCSEmailNotifier enables support for the ACSCS email notifier integration
-	ACSCSEmailNotifier = registerFeature("Enable support for ACSCS Email notifier type", "ROX_ACSCS_EMAIL_NOTIFIER", enabled)
-
 	// AttemptManifestDigest enables attempting to pull manifest digests from registries that historically did not
 	// support it but now appear to (ie: Nexus and RHEL).
 	AttemptManifestDigest = registerFeature("Enables attempts to pull manifest digests for all registry integrations", "ROX_ATTEMPT_MANIFEST_DIGEST", enabled)
@@ -69,9 +63,6 @@ var (
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
-
-	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
-	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL", enabled)
 
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
 	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
@@ -119,9 +110,6 @@ var (
 
 	// Provides only necessary configuration options for admission controller
 	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG", enabled)
-
-	// Intgrate with LLM for risk recommendations
-	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
 
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTO_LOCK_PROCESS_BASELINES", enabled)

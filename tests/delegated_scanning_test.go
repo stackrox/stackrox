@@ -198,7 +198,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.origSensorLogLevel, err = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
 	requireNoErrorOrEnvVarNotFound(t, err)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
-		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
+		_ = ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
 		logf(t, "Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
 
 		ts.waitForHealthyCentralSensorConn()
@@ -236,7 +236,7 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	// not impacted by the additional logging.
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		if ts.origSensorLogLevel != "" {
-			ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
+			_ = ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
 			logf(t, "Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
 		} else {
 			ts.mustDeleteDeploymentEnvVar(ctx, ts.namespace, sensorDeployment, deleScanLogLevelEnvVar)
@@ -1191,7 +1191,6 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 	ctx := ts.ctx
 
 	// Wait for critical components to be healthy.
-	logf(t, "Waiting for Sensor to be ready")
 	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
 
 	logf(t, "Waiting for Central/Sensor connection to be ready")

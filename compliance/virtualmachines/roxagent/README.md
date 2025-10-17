@@ -12,13 +12,13 @@ Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerabili
 
 ```bash
 # Single scan
-sudo ./agent
+sudo ./roxagent
 
 # Daemon mode (scans every 5 minutes)
-sudo ./agent --daemon
+sudo ./roxagent --daemon
 
 # Custom settings
-sudo ./agent --daemon --index-interval 10m --host-path /custom/path --port 2048
+sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 2048
 ```
 
 ## Flags
@@ -43,10 +43,10 @@ The host receives these reports and forwards them to StackRox Central for vulner
 ## Building
 
 ```bash
-go build -o agent .
+go build -o roxagent .
 
 # For Linux VMs
-GOOS=linux GOARCH=amd64 go build -o agent-linux .
+GOOS=linux GOARCH=amd64 go build -o roxagent-linux .
 ```
 
 ## Troubleshooting

@@ -78,6 +78,7 @@ function DashboardPage() {
             <Divider component="div" />
             <PageSection>
                 <Gallery
+                    id="main-dashboard-widget-gallery"
                     style={
                         {
                             // Ensure the grid has never grows large enough to show 4 columns

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/common"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/index"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/index"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	"github.com/stackrox/rox/pkg/logging"
 )
 

@@ -1,5 +1,6 @@
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
 export type DeleteModalProps = {
     title: string;

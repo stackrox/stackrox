@@ -337,7 +337,7 @@ func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
 	retryClient.RetryWaitMax = 2 * time.Second
 	retryClient.Logger = logWrapper{t: t}
 	if restCfg.Timeout == 0 {
-		restCfg.Timeout = 10 * time.Second
+		restCfg.Timeout = 30 * time.Second
 	}
 	// Set retryable timeout to 90% of rest config timeout to allow retries
 	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
@@ -494,6 +494,7 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 
 	timer := time.NewTimer(waitTimeout)
 
+	ks.logf("Waiting for deployment %q in namespace %q to be ready", deploymentName, namespace)
 	for {
 		select {
 		case <-ctx.Done():
@@ -503,7 +504,7 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
 
 			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
-				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation %d", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
 				continue
 			}
 
@@ -511,10 +512,47 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 				ks.logf("deployment %q in namespace %q NOT ready (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 				continue
 			}
+
+			// Ensure all pods are from the current generation (no old pods during rollout).
+			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
+				ks.logf("deployment %q in namespace %q NOT ready, rollout incomplete (%d/%d updated replicas)", deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+				continue
+			}
+
 			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 			return
 		case <-timer.C:
 			ks.T().Fatalf("Timed out waiting for deployment %s", deploymentName)
+		}
+	}
+}
+
+// waitUntilK8sDeploymentGenerationReady waits until a deployment's specified generation is fully rolled out and ready.
+func (ks *KubernetesSuite) waitUntilK8sDeploymentGenerationReady(ctx context.Context, namespace string, deploymentName string, targetGeneration int64) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	ks.logf("Waiting for deployment %q in namespace %q to reach generation %d", deploymentName, namespace, targetGeneration)
+	for {
+		select {
+		case <-ctx.Done():
+			require.NoError(ks.T(), ctx.Err())
+		case <-ticker.C:
+			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
+
+			currentGen := deploy.GetGeneration()
+			if currentGen >= targetGeneration {
+				ks.logf("deployment %q in namespace %q reached generation %d", deploymentName, namespace, currentGen)
+				ks.waitUntilK8sDeploymentReady(ctx, namespace, deploymentName)
+				return
+			}
+			ks.logf("deployment %q in namespace %q waiting for generation update (current: %d, target: %d)", deploymentName, namespace, currentGen, targetGeneration)
+		case <-timer.C:
+			ks.T().Fatalf("Timed out waiting for deployment %s to reach generation %d", deploymentName, targetGeneration)
 		}
 	}
 }
@@ -618,15 +656,18 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 }
 
 // mustSetDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
-func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
+func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) *appsV1.Deployment {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
 	whatVar := fmt.Sprintf("variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
 	ks.logf("Setting %s", whatVar)
+	var patchedDeploy *appsV1.Deployment
 	mustEventually(ks.T(), ctx, func() error {
-		_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+		var err error
+		patchedDeploy, err = ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 		return err
 	}, 5*time.Second, fmt.Sprintf("cannot set %s", whatVar))
+	return patchedDeploy
 }
 
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
