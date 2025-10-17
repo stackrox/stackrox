@@ -53,7 +53,7 @@ $(call go-tool, PROTOC_GO_INJECT_TAG_BIN, github.com/favadi/protoc-go-inject-tag
 ##############
 # Set some platform variables for protoc.
 # If the proto version is changed, be sure it is also changed in qa-tests-backend/build.gradle.
-PROTOC_VERSION := 25.3
+PROTOC_VERSION := 32.1
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 PROTOC_OS = linux
