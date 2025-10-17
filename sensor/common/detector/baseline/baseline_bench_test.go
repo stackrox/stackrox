@@ -32,7 +32,8 @@ func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, basel
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
 
-	memoryMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
+	memoryMB := float64(m2.Alloc-m1.Alloc) / (1024 * 1024)
+	//memoryMB := float64(m2.TotalAlloc-m1.TotalAlloc) / (1024 * 1024)
 	b.Logf("%s Memory: %.1f MB", scenarioName, memoryMB)
 
 	// Show deduplication stats for optimized implementation
@@ -61,80 +62,36 @@ func benchmarkAddBaselinePerformance(b *testing.B, evaluatorFactory func() Evalu
 	}
 }
 
-// BenchmarkBaselineEvaluator_Original_Identical tests original implementation with identical containers
-func BenchmarkBaselineEvaluator_Original_Identical(b *testing.B) {
-	containerCount := 10000
-	scenarioName := "Original Identical_10k"
-	if *benchMax {
-		containerCount = 300000
-		scenarioName = "Original Identical_300k"
-	}
-	baselines := createDuplicateBaselines(containerCount, 25)
-	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
-}
-
-// BenchmarkBaselineEvaluator_Optimized_Identical tests optimized implementation with identical containers
-func BenchmarkBaselineEvaluator_Optimized_Identical(b *testing.B) {
-	containerCount := 10000
-	scenarioName := "Optimized Identical_10k"
-	if *benchMax {
-		containerCount = 300000
-		scenarioName = "Optimized Identical_300k"
-	}
-	baselines := createDuplicateBaselines(containerCount, 25)
-	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
-}
-
-// BenchmarkBaselineEvaluator_Original_Mixed tests original implementation with mixed containers
-func BenchmarkBaselineEvaluator_Original_Mixed(b *testing.B) {
-	containerCount := 10000
+func BenchmarkAllMemory(b *testing.B) {
 	imageTypes := 10
-	scenarioName := "Original Mixed_10k"
-	if *benchMax {
-		containerCount = 300000
-		imageTypes = 100
-		scenarioName = "Original Mixed_300k"
-	}
-	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
-}
-
-// BenchmarkBaselineEvaluator_Optimized_Mixed tests optimized implementation with mixed containers
-func BenchmarkBaselineEvaluator_Optimized_Mixed(b *testing.B) {
 	containerCount := 10000
-	imageTypes := 10
-	scenarioName := "Optimized Mixed_10k"
 	if *benchMax {
 		containerCount = 300000
-		imageTypes = 100
-		scenarioName = "Optimized Mixed_300k"
 	}
-	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
-}
+	duplicateBaselines := createDuplicateBaselines(containerCount, 25)
+	k8sRealisticBaselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
+	uniqueBaselines := createUniqueBaselines(containerCount, 25)
 
-// BenchmarkBaselineEvaluator_Original_Unique tests original implementation with unique containers
-func BenchmarkBaselineEvaluator_Original_Unique(b *testing.B) {
-	containerCount := 10000
-	scenarioName := "Original Unique_10k"
-	if *benchMax {
-		containerCount = 300000
-		scenarioName = "Original Unique_300k"
-	}
-	baselines := createUniqueBaselines(containerCount, 25)
-	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
-}
+	testMap := make(map[string][]*storage.ProcessBaseline)
 
-// BenchmarkBaselineEvaluator_Optimized_Unique tests optimized implementation with unique containers
-func BenchmarkBaselineEvaluator_Optimized_Unique(b *testing.B) {
-	containerCount := 10000
-	scenarioName := "Optimized Unique_10k"
-	if *benchMax {
-		containerCount = 300000
-		scenarioName = "Optimized Unique_300k"
+	testMap["Identical"] = duplicateBaselines
+	testMap["Mixed"] = k8sRealisticBaselines
+	testMap["Unique"] = uniqueBaselines
+
+	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby"}
+
+	for baselineType, baselines := range testMap {
+		for _, evaluatorType := range evaluatorTypes {
+			evaluatorFactory := func() Evaluator { return NewBaselineEvaluator(evaluatorType) }
+			scenarioName := evaluatorType + " " + baselineType + "_10k"
+			if *benchMax {
+				scenarioName = evaluatorType + " " + baselineType + "_300k"
+			}
+			b.Run(scenarioName, func(b *testing.B) {
+				benchmarkMemoryUsage(b, evaluatorFactory, baselines, scenarioName, true)
+			})
+		}
 	}
-	baselines := createUniqueBaselines(containerCount, 25)
-	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
 }
 
 // createDuplicateBaselines creates many baselines with identical process sets

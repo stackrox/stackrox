@@ -12,6 +12,18 @@ var (
 	log = logging.LoggerForModule()
 )
 
+func NewBaselineEvaluator(evaluatorType string) Evaluator {
+	if evaluatorType == "Original" {
+		return newBaselineEvaluator()
+	} else if evaluatorType == "Optimized" {
+		return newOptimizedBaselineEvaluator()
+	} else if evaluatorType == "OptimizedRobby" {
+		return newOptimizedBaselineEvaluatorRobby()
+	}
+
+	return newBaselineEvaluator()
+}
+
 // Evaluator encapsulates the interface to the baseline evaluator
 type Evaluator interface {
 	RemoveDeployment(id string)

@@ -2,6 +2,7 @@ package baseline
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -17,36 +18,36 @@ import (
 //// NewBaselineEvaluator creates a new baseline evaluator, using optimized implementation if feature flag is enabled
 //func NewBaselineEvaluator() Evaluator {
 //	if features.OptimizedBaselineMemory.Enabled() {
-//		return newOptimizedBaselineEvaluator()
+//		return newOptimizedBaselineEvaluatorRobby()
 //	}
 //	return newBaselineEvaluator()
 //}
 
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
-type optimizedBaselineEvaluator struct {
+type optimizedBaselineEvaluatorRobby struct {
 	// deployment -> container name -> content hash (direct access)
-	deploymentBaselines map[string]map[string]HashKey
+	deploymentBaselines map[string]map[string]string
 	// content hash -> reference count and StringSet for deduplication
-	processSets map[HashKey]*processSetEntry
+	processSets map[string]*processSetEntry
 	// lock for thread safety
 	lock sync.RWMutex
 }
 
-type processSetEntry struct {
-	refCount  int
-	processes set.StringSet
-}
+//type processSetEntry struct {
+//	refCount  int
+//	processes set.StringSet
+//}
 
 // newOptimizedBaselineEvaluator creates the optimized baseline evaluator implementation
-func newOptimizedBaselineEvaluator() Evaluator {
-	return &optimizedBaselineEvaluator{
-		deploymentBaselines: make(map[string]map[string]HashKey),
-		processSets:         make(map[HashKey]*processSetEntry),
+func newOptimizedBaselineEvaluatorRobby() Evaluator {
+	return &optimizedBaselineEvaluatorRobby{
+		deploymentBaselines: make(map[string]map[string]string),
+		processSets:         make(map[string]*processSetEntry),
 	}
 }
 
 // removeReference decrements reference count and cleans up if necessary
-func (oe *optimizedBaselineEvaluator) removeReference(contentHash HashKey) {
+func (oe *optimizedBaselineEvaluatorRobby) removeReference(contentHash string) {
 	entry, exists := oe.processSets[contentHash]
 	if !exists {
 		return // Entry doesn't exist or is nil
@@ -63,21 +64,33 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash HashKey) {
 	}
 }
 
-type HashKey [32]byte
+//type string [32]byte
+
+//// computeProcessSetHash creates a deterministic hash for a process set
+//func computeProcessSetHash(processes set.StringSet) string {
+//	// Convert to sorted slice for deterministic hashing
+//	processSlice := processes.AsSlice()
+//	slices.Sort(processSlice)
+//
+//	// Create hash of concatenated processes
+//	content := strings.Join(processSlice, "\n")
+//	return sha256.Sum256([]byte(content))
+//}
 
 // computeProcessSetHash creates a deterministic hash for a process set
-func computeProcessSetHash(processes set.StringSet) HashKey {
-	// Convert to sorted slice for deterministic hashing
-	processSlice := processes.AsSlice()
-	slices.Sort(processSlice)
+func computeProcessSetHashRobby(processes set.StringSet) string {
+        // Convert to sorted slice for deterministic hashing
+        processSlice := processes.AsSlice()
+        slices.Sort(processSlice)
 
-	// Create hash of concatenated processes
-	content := strings.Join(processSlice, "\n")
-	return sha256.Sum256([]byte(content))
+        // Create hash of concatenated processes
+        content := strings.Join(processSlice, "\n")
+        hash := sha256.Sum256([]byte(content))
+        return fmt.Sprintf("%x", hash)
 }
 
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
-func (oe *optimizedBaselineEvaluator) RemoveDeployment(id string) {
+func (oe *optimizedBaselineEvaluatorRobby) RemoveDeployment(id string) {
 	oe.lock.Lock()
 	defer oe.lock.Unlock()
 
@@ -96,7 +109,7 @@ func (oe *optimizedBaselineEvaluator) RemoveDeployment(id string) {
 }
 
 // AddBaseline adds a process baseline to the optimized evaluator
-func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
+func (oe *optimizedBaselineEvaluatorRobby) AddBaseline(baseline *storage.ProcessBaseline) {
 	oe.lock.Lock()
 	defer oe.lock.Unlock()
 
@@ -122,7 +135,7 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 
 	// Update deployment mapping
 	if oe.deploymentBaselines[deploymentID] == nil {
-		oe.deploymentBaselines[deploymentID] = make(map[string]HashKey)
+		oe.deploymentBaselines[deploymentID] = make(map[string]string)
 	}
 
 	// If this deployment/container already has a process set, decrement its ref count
@@ -134,7 +147,7 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 	log.Debugf("Successfully added locked process baseline %s", baseline.GetId())
 }
 
-func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBaseline) {
+func (oe *optimizedBaselineEvaluatorRobby) removeBaseline(baseline *storage.ProcessBaseline) {
 	log.Debugf("Removing (id:%s, UserLockedTimestamp:%v, elements:%v)", baseline.GetId(), baseline.GetUserLockedTimestamp(), baseline.GetElements())
 	deploymentID := baseline.GetKey().GetDeploymentId()
 	containerName := baseline.GetKey().GetContainerName()
@@ -154,8 +167,8 @@ func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBa
 }
 
 // findOrCreateProcessSet finds an existing process set with the same content or creates a new one
-func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) HashKey {
-	contentHash := computeProcessSetHash(processes)
+func (oe *optimizedBaselineEvaluatorRobby) findOrCreateProcessSet(processes set.StringSet) string {
+	contentHash := computeProcessSetHashRobby(processes)
 
 	// Check if we already have this process set
 	if entry, exists := oe.processSets[contentHash]; exists {
@@ -177,7 +190,7 @@ func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.Strin
 }
 
 // IsOutsideLockedBaseline checks if the process indicator is within a locked baseline using optimized lookup
-func (oe *optimizedBaselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool {
+func (oe *optimizedBaselineEvaluatorRobby) IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool {
 	if pi == nil {
 		return false // Treat nil process as within baseline
 	}
