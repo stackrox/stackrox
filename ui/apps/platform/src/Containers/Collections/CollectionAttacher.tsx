@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Flex, SearchInput } from '@patternfly/react-core';
 
 import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
