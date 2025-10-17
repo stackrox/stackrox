@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormikProvider, useFormik } from 'formik';
 import { Alert, Bullseye, Spinner, Modal, Button, Flex } from '@patternfly/react-core';
 import * as Yup from 'yup';

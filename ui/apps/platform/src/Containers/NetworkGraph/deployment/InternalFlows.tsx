@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Bullseye,
@@ -66,8 +66,8 @@ function InternalFlows({
     const hasWriteAccessForActions = hasReadWriteAccess('DeploymentExtension');
 
     // component state
-    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
     const { isOpen: isAnomalousFlowsExpanded, onToggle: toggleAnomalousFlowsExpandable } =
@@ -85,10 +85,10 @@ function InternalFlows({
     const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
+    const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
 
-    const [selectedAnomalousRows, setSelectedAnomalousRows] = React.useState<string[]>([]);
-    const [selectedBaselineRows, setSelectedBaselineRows] = React.useState<string[]>([]);
+    const [selectedAnomalousRows, setSelectedAnomalousRows] = useState<string[]>([]);
+    const [selectedBaselineRows, setSelectedBaselineRows] = useState<string[]>([]);
 
     // derived data
     const anomalousFlows = filteredFlows.filter((flow) => flow.isAnomalous);

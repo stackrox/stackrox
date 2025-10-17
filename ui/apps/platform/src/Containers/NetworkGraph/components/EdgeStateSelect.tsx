@@ -1,4 +1,3 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';

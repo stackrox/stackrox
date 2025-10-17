@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';

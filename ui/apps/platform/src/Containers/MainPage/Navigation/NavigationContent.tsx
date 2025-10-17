@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { Label } from '@patternfly/react-core';
 

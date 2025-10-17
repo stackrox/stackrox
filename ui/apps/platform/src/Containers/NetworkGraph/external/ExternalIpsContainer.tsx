@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import isEmpty from 'lodash/isEmpty';
 
 import useAnalytics, { EXTERNAL_IPS_SIDE_PANEL } from 'hooks/useAnalytics';

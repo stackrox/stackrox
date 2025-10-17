@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
@@ -44,7 +44,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         [networkPolicies]
     );
 
-    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
+    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<
         NetworkPolicyYAML | undefined
     >(allNetworkPoliciesYAML);
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { DropdownItem, Split, SplitItem } from '@patternfly/react-core';
 import type { DropEvent } from '@patternfly/react-core';
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 
 import relatedEntitySVG from 'images/network-graph/related-entity.svg';

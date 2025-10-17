@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
 import { observer, ScaleDetailsLevel } from '@patternfly/react-topology';
 import type {

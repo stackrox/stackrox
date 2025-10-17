@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type {
     ComponentClass,
     FunctionComponent,

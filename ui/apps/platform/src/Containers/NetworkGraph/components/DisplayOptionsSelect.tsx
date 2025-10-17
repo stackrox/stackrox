@@ -1,4 +1,3 @@
-import React from 'react';
 import { Split, SplitItem, SelectGroup, SelectOption } from '@patternfly/react-core';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
