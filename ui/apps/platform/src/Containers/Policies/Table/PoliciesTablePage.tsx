@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import {
-    PageSection,
-    Bullseye,
-    Alert,
-    Spinner,
-    AlertGroup,
-    AlertActionCloseButton,
-    Divider,
-    Button,
-} from '@patternfly/react-core';
+import { AlertGroup, AlertActionCloseButton, Divider, Button, Alert } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 
@@ -32,6 +23,7 @@ import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { applyRegexSearchModifiers, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getTableUIState } from 'utils/getTableUIState';
 
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
@@ -60,8 +52,8 @@ function PoliciesTablePage({
 
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [policies, setPolicies] = useState<ListPolicy[]>([]);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [policies, setPolicies] = useState<ListPolicy[] | undefined>(undefined);
+    const [error, setError] = useState<Error | undefined>(undefined);
     const { toasts, addToast, removeToast } = useToasts();
 
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -111,11 +103,11 @@ function PoliciesTablePage({
                 }
 
                 setPolicies(sortedPolicies);
-                setErrorMessage('');
+                setError(undefined);
             })
-            .catch((error) => {
-                setPolicies([]);
-                setErrorMessage(getAxiosErrorMessage(error));
+            .catch((err) => {
+                setPolicies(undefined);
+                setError(err);
             })
             .finally(() => setIsLoading(false));
     }
@@ -203,44 +195,12 @@ function PoliciesTablePage({
         fetchPolicies(query, sortOption);
     }, [query, sortOption]);
 
-    let pageContent = (
-        <PageSection variant="light" isFilled id="policies-table-loading">
-            <Bullseye>
-                <Spinner />
-            </Bullseye>
-        </PageSection>
-    );
-
-    if (errorMessage) {
-        pageContent = (
-            <PageSection variant="light" isFilled id="policies-table-error">
-                <Bullseye>
-                    <Alert variant="danger" title={errorMessage} component="p" />
-                </Bullseye>
-            </PageSection>
-        );
-    }
-
-    if (!isLoading && !errorMessage) {
-        pageContent = (
-            <PoliciesTable
-                notifiers={notifiers}
-                policies={policies}
-                fetchPoliciesHandler={() => fetchPolicies(query, sortOption)}
-                addToast={addToast}
-                hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                deletePoliciesHandler={deletePoliciesHandler}
-                exportPoliciesHandler={exportPoliciesHandler}
-                saveAsCustomResourceHandler={saveAsCustomResourceHandler}
-                enablePoliciesHandler={enablePoliciesHandler}
-                disablePoliciesHandler={disablePoliciesHandler}
-                handleChangeSearchFilter={handleChangeSearchFilter}
-                onClickReassessPolicies={onClickReassessPolicies}
-                getSortParams={getSortParams}
-                searchFilter={searchFilter}
-            />
-        );
-    }
+    const tableState = getTableUIState({
+        isLoading,
+        data: policies,
+        error,
+        searchFilter,
+    });
 
     return (
         <>
@@ -264,7 +224,22 @@ function PoliciesTablePage({
                 }
             />
             <Divider component="div" />
-            {pageContent}
+            <PoliciesTable
+                notifiers={notifiers}
+                tableState={tableState}
+                fetchPoliciesHandler={() => fetchPolicies(query, sortOption)}
+                addToast={addToast}
+                hasWriteAccessForPolicy={hasWriteAccessForPolicy}
+                deletePoliciesHandler={deletePoliciesHandler}
+                exportPoliciesHandler={exportPoliciesHandler}
+                saveAsCustomResourceHandler={saveAsCustomResourceHandler}
+                enablePoliciesHandler={enablePoliciesHandler}
+                disablePoliciesHandler={disablePoliciesHandler}
+                handleChangeSearchFilter={handleChangeSearchFilter}
+                onClickReassessPolicies={onClickReassessPolicies}
+                getSortParams={getSortParams}
+                searchFilter={searchFilter}
+            />
             <ImportPolicyJSONModal
                 isOpen={isImportModalOpen}
                 cancelModal={() => {
