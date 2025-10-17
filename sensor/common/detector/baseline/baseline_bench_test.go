@@ -200,38 +200,28 @@ func createUniqueBaselines(baselineCount, processCount int) []*storage.ProcessBa
 
 // CPU Performance Benchmarks - Measure computational overhead of adding baselines
 
-// BenchmarkAddBaseline_Original_Identical measures CPU time for original implementation with identical containers
-func BenchmarkAddBaseline_Original_Identical(b *testing.B) {
-	baselines := createDuplicateBaselines(1000, 25) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Identical")
-}
+func BenchmarkAddBaseline(b *testing.B) {
+	containerCount := 1000
+	imageTypes := 10
+	duplicateBaselines := createDuplicateBaselines(containerCount, 25)
+	k8sRealisticBaselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
+	uniqueBaselines := createUniqueBaselines(containerCount, 25)
 
-// BenchmarkAddBaseline_Optimized_Identical measures CPU time for optimized implementation with identical containers
-func BenchmarkAddBaseline_Optimized_Identical(b *testing.B) {
-	baselines := createDuplicateBaselines(1000, 25) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Identical")
-}
+	testMap := make(map[string][]*storage.ProcessBaseline)
 
-// BenchmarkAddBaseline_Original_Mixed measures CPU time for original implementation with mixed containers
-func BenchmarkAddBaseline_Original_Mixed(b *testing.B) {
-	baselines := createK8sRealisticBaselines(1000, 25, 10) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Mixed")
-}
+	testMap["Identical"] = duplicateBaselines
+	testMap["Mixed"] = k8sRealisticBaselines
+	testMap["Unique"] = uniqueBaselines
 
-// BenchmarkAddBaseline_Optimized_Mixed measures CPU time for optimized implementation with mixed containers
-func BenchmarkAddBaseline_Optimized_Mixed(b *testing.B) {
-	baselines := createK8sRealisticBaselines(1000, 25, 10) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Mixed")
-}
+	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby"}
 
-// BenchmarkAddBaseline_Original_Unique measures CPU time for original implementation with unique containers
-func BenchmarkAddBaseline_Original_Unique(b *testing.B) {
-	baselines := createUniqueBaselines(1000, 25) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Unique")
-}
-
-// BenchmarkAddBaseline_Optimized_Unique measures CPU time for optimized implementation with unique containers
-func BenchmarkAddBaseline_Optimized_Unique(b *testing.B) {
-	baselines := createUniqueBaselines(1000, 25) // Smaller dataset for CPU measurement
-	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Unique")
+	for baselineType, baselines := range testMap {
+		for _, evaluatorType := range evaluatorTypes {
+			evaluatorFactory := func() Evaluator { return NewBaselineEvaluator(evaluatorType) }
+			scenarioName := evaluatorType + " " + baselineType
+			b.Run(scenarioName, func(b *testing.B) {
+				benchmarkAddBaselinePerformance(b, evaluatorFactory, baselines, "Optimized Identical")
+			})
+		}
+	}
 }
