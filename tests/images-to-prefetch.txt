@@ -1,12 +1,12 @@
 # Images used by Go e2e tests (nongroovy-e2e-tests) that will be prefetched
 #
-# Since this branch uses docker.io images (not quay.io mirrors), the prefetcher
-# will fetch these standard images to avoid rate limiting issues.
+# This is a minimal subset of qa-tests-backend/scripts/images-to-prefetch.txt,
+# containing only images that are:
+# 1. Actually used by the Go e2e test suite
+# 2. Available in the main prefetch list (verified to exist)
 #
 # If renaming/moving this file, update the reference in scripts/ci/lib.sh
 
 # Used by tests/yamls/multi-container-pod.yaml (TestPod, TestContainerInstances, roxctl verification)
-# Note: These are docker.io images (not quay.io mirrors on this branch)
-docker.io/library/nginx:1.18@sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72
-docker.io/library/debian:latest@sha256:1e5f2d70c9441c971607727f56d0776fb9eecf23cd37b595b26db7a974b2301d
-
+quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
