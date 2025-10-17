@@ -751,13 +751,15 @@ func (x *ImageSignatureVerificationData) GetResults() []*ImageSignatureVerificat
 	return nil
 }
 
-// Next Tag: 6
+// Next Tag: 7
 type ImageSignatureVerificationResult struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	VerificationTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
 	// verifier_id correlates to the ID of the signature integration used to verify the signature.
-	VerifierId string                                  `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
-	Status     ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
+	VerifierId string `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
+	// verifier_name is the name of the signature integration associated with `verifier_id`.
+	VerifierName string                                  `protobuf:"bytes,6,opt,name=verifier_name,json=verifierName,proto3" json:"verifier_name,omitempty"`
+	Status       ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
 	// description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// The full image names that are verified by this specific signature integration ID.
@@ -806,6 +808,13 @@ func (x *ImageSignatureVerificationResult) GetVerificationTime() *timestamppb.Ti
 func (x *ImageSignatureVerificationResult) GetVerifierId() string {
 	if x != nil {
 		return x.VerifierId
+	}
+	return ""
+}
+
+func (x *ImageSignatureVerificationResult) GetVerifierName() string {
+	if x != nil {
+		return x.VerifierName
 	}
 	return ""
 }
@@ -1980,11 +1989,12 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x1fCERTIFIED_RHEL_SCAN_UNAVAILABLE\x10\x06B\v\n" +
 	"\thashoneof\"e\n" +
 	"\x1eImageSignatureVerificationData\x12C\n" +
-	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultR\aresults\"\xb9\x03\n" +
+	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultR\aresults\"\xde\x03\n" +
 	" ImageSignatureVerificationResult\x12G\n" +
 	"\x11verification_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10verificationTime\x12\x1f\n" +
 	"\vverifier_id\x18\x02 \x01(\tR\n" +
-	"verifierId\x12H\n" +
+	"verifierId\x12#\n" +
+	"\rverifier_name\x18\x06 \x01(\tR\fverifierName\x12H\n" +
 	"\x06status\x18\x03 \x01(\x0e20.storage.ImageSignatureVerificationResult.StatusR\x06status\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12:\n" +
 	"\x19verified_image_references\x18\x05 \x03(\tR\x17verifiedImageReferences\"\x82\x01\n" +

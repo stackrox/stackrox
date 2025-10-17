@@ -8776,6 +8776,11 @@
                 "type": "string"
               },
               {
+                "id": 6,
+                "name": "verifier_name",
+                "type": "string"
+              },
+              {
                 "id": 3,
                 "name": "status",
                 "type": "Status"
