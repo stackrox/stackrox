@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -11,6 +12,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 )
+
+var h = xxhash.New()
 
 func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	now := timestamp.Now()
@@ -48,7 +51,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
-						e1p1open.endpointIndicator(deploymentID).BinaryKey(): e1p1open.processListeningIndicator().BinaryKey(),
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p1,
 				},
@@ -73,7 +76,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   0,
 					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
-						e1p1open.endpointIndicator(deploymentID).BinaryKey(): indicator.BinaryHash(0),
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): indicator.BinaryHash(0),
 					},
 					expectedUpdatedProcesses: nil,
 				},
@@ -98,7 +101,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
-						e1p1open.endpointIndicator(deploymentID).BinaryKey(): e1p1open.processListeningIndicator().BinaryKey(),
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p1,
 				},
@@ -109,7 +112,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumUpdatesEndpoint:  0,
 					expectedNumUpdatesProcess:   1,
 					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
-						e1p2open.endpointIndicator(deploymentID).BinaryKey(): e1p2open.processListeningIndicator().BinaryKey(),
+						e1p2open.endpointIndicator(deploymentID).BinaryKey(h): e1p2open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p2,
 				},
@@ -133,7 +136,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumUpdatesEndpoint:  0,
 					expectedNumUpdatesProcess:   0,
 					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
-						e1p1open.endpointIndicator(deploymentID).BinaryKey(): e1p1open.processListeningIndicator().BinaryKey(),
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: nil,
 				},

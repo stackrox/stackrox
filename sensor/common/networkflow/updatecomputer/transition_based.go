@@ -4,6 +4,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -153,8 +154,9 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		return c.cachedUpdatesConn
 	}
 	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
+	h := xxhash.New()
 	for conn, currTS := range current {
-		key := conn.Key()
+		key := conn.Key(h)
 
 		// Check if this connection has been closed recently.
 		prevTsFound, prevTS := c.lookupPrevTimestamp(key)
@@ -280,17 +282,18 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	var procUpdates []*storage.ProcessListeningOnPortFromSensor
 
 	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
+	h := xxhash.New()
 	for ep, p := range enrichedEndpointsProcesses {
 		currTS := p.LastSeen
-		epBinaryKey := ep.BinaryKey()
-		epHashKey := ep.BinaryKey() // Same as epBinaryKey since we only support binary now
+		epBinaryKey := ep.BinaryKey(h)
+		epHashKey := ep.BinaryKey(h) // Same as epBinaryKey since we only support binary now
 		// Check if this endpoint has a process.
 		var procBinaryKey indicator.BinaryHash
 		// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
 		// There is currently no way to get the old processIndicator, so we don't inform Central about the old being closed.
 		// If that is needed, this can be added in the future.
 		if p.ProcessListening != nil {
-			procBinaryKey = p.ProcessListening.BinaryKey()
+			procBinaryKey = p.ProcessListening.BinaryKey(h)
 		}
 		// Based on the categorization, we calculate the transition and whether an update should be sent.
 		sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epBinaryKey, procBinaryKey, c.deduperHasEndpointAndProcess)

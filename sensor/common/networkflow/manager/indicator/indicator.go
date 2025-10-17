@@ -2,6 +2,7 @@ package indicator
 
 import (
 	"fmt"
+	"hash"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -51,8 +52,8 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	return proto
 }
 
-func (i *NetworkConn) Key() string {
-	return i.keyHash()
+func (i *NetworkConn) Key(h hash.Hash64) string {
+	return i.keyHash(h)
 }
 
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
@@ -79,8 +80,8 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 }
 
 // BinaryKey generates a binary hash for memory-efficient storage in dedupers
-func (i *ContainerEndpoint) BinaryKey() BinaryHash {
-	return i.binaryKeyHash()
+func (i *ContainerEndpoint) BinaryKey(h hash.Hash64) BinaryHash {
+	return i.binaryKeyHash(h)
 }
 
 // ProcessListening represents a listening process.
@@ -128,6 +129,6 @@ func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeni
 }
 
 // BinaryKey generates a binary hash for memory-efficient storage in dedupers
-func (i *ProcessListening) BinaryKey() BinaryHash {
-	return i.binaryKeyHash()
+func (i *ProcessListening) BinaryKey(h hash.Hash64) BinaryHash {
+	return i.binaryKeyHash(h)
 }
