@@ -98,7 +98,8 @@ jobs:
           scripts/ci/lib.sh \
             push_helm_charts "${STACKROX_TAG}"
 
-  publish-roxctl:
+  # Publish `roxagent` and `roxctl`.
+  publish-cli:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
@@ -116,13 +117,13 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
-      - name: Publish roxctl to Google Cloud storage
+      - name: Publish cli artifacts to Google Cloud storage
         env:
           STACKROX_TAG: ${{ github.ref_name }}
         run: |
           tar xzf cli-build.tgz
           scripts/ci/lib.sh \
-            publish_roxctl "${STACKROX_TAG}"
+            publish_cli "${STACKROX_TAG}"
 
   publish-openapispec:
     needs: [build, check-scanner-version, check-collector-version, check-is-release]
