@@ -1,5 +1,5 @@
 .gradle
-/build/
+build/
 /buildSrc/build/
 qa-tests-backend.iml
 /out/
