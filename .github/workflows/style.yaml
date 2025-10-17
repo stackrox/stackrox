@@ -241,6 +241,9 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: pycodestyle
+        run: make -C .openshift-ci style
+
       - name: Pylint
         run: make -C .openshift-ci lint
 
