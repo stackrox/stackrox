@@ -7,16 +7,17 @@ plugins {
     codenarc
 }
 
-version = "1.0"
-
-codenarc.configFile = file("./codenarc-rules.groovy")
-codenarc.reportFormat = "text"
+codenarc {
+    configFile = file("./codenarc-rules.groovy")
+    reportFormat = "text"
+}
 
 apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
 project.sourceSets.forEach { sourceSet ->
     sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+    sourceSet.java.setSrcDirs(emptyList<File>())
 }
 
 dependencies {
@@ -72,8 +73,8 @@ dependencies {
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
-        "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
+        codenarc("org.codehaus.groovy:groovy:2.5.10")
+        codenarc("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
     implementation(libs.javers.core)
@@ -104,9 +105,7 @@ tasks.withType<Test>().configureEach {
         junitXml.mergeReruns = true
     }
 
-    useJUnitPlatform {
-        includeTags("Parallel & BAT")
-    }
+    useJUnitPlatform();
 }
 
 tasks.register<Test>("testBegin") {
@@ -237,5 +236,8 @@ tasks.register<Test>("testDeploymentCheck") {
 
 allprojects {
     apply(plugin = "java")
-    group = "io.stackrox"
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 }
