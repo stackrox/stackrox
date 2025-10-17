@@ -830,7 +830,7 @@
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
         "AUDIT_LOG_EVENT",
-        "HOST_EVENT"
+        "NODE_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },

@@ -327,8 +327,8 @@ func GetSerializationTestAlert() *storage.Alert {
 		ProcessViolation: &storage.Alert_ProcessViolation{
 			Message: "This is a process violation",
 		},
-		FileActivityViolation: &storage.Alert_FileActivityViolation{
-			Message: "This is a file activity violation",
+		FileAccessViolation: &storage.Alert_FileAccessViolation{
+			Message: "This is a file access violation",
 		},
 		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
@@ -356,9 +356,9 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 		"message": "This is a process violation",
 		"processes": []
 	},
-	"fileActivityViolation": {
-		"message": "This is a file activity violation",
-		"activity": []
+	"fileAccessViolation": {
+		"message": "This is a file access violation",
+		"accesses": []
 	},
 	"resolvedAt":null,
 	"state": "ACTIVE",
@@ -395,8 +395,8 @@ func GetJSONSerializedTestAlert() string {
 	"processViolation": {
 		"message": "This is a process violation"
 	},
-	"fileActivityViolation": {
-		"message": "This is a file activity violation"
+	"fileAccessViolation": {
+		"message": "This is a file access violation"
 	},
 	"violations": [
 		{

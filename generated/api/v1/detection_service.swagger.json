@@ -146,33 +146,22 @@
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
         "RESOURCE",
-        "HOST"
+        "NODE"
       ],
       "default": "UNSET"
     },
-    "AlertFileActivityViolation": {
+    "AlertFileAccessViolation": {
       "type": "object",
       "properties": {
         "message": {
           "type": "string"
         },
-        "activity": {
+        "accesses": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageFileActivity"
+            "$ref": "#/definitions/storageFileAccess"
           }
-        }
-      }
-    },
-    "AlertHost": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
         }
       }
     },
@@ -284,7 +273,7 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
-    "FileActivityFileMetadata": {
+    "FileAccessFileMetadata": {
       "type": "object",
       "properties": {
         "uid": {
@@ -307,7 +296,7 @@
         }
       }
     },
-    "FileActivityOperation": {
+    "FileAccessOperation": {
       "type": "string",
       "enum": [
         "CREATE",
@@ -569,9 +558,9 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
-        "host": {
-          "$ref": "#/definitions/AlertHost",
-          "title": "Represents an alert on a host/node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        "node": {
+          "$ref": "#/definitions/storageAlertNode",
+          "title": "Represents an alert on a node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
           "type": "array",
@@ -584,8 +573,8 @@
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
         },
-        "fileActivityViolation": {
-          "$ref": "#/definitions/AlertFileActivityViolation"
+        "fileAccessViolation": {
+          "$ref": "#/definitions/AlertFileAccessViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
@@ -664,6 +653,17 @@
         },
         "inactive": {
           "type": "boolean"
+        }
+      }
+    },
+    "storageAlertNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -974,7 +974,7 @@
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
         "AUDIT_LOG_EVENT",
-        "HOST_EVENT"
+        "NODE_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -1015,17 +1015,17 @@
         }
       }
     },
-    "storageFileActivity": {
+    "storageFileAccess": {
       "type": "object",
       "properties": {
         "file": {
-          "$ref": "#/definitions/storageFileActivityFile"
+          "$ref": "#/definitions/storageFileAccessFile"
         },
         "operation": {
-          "$ref": "#/definitions/FileActivityOperation"
+          "$ref": "#/definitions/FileAccessOperation"
         },
         "moved": {
-          "$ref": "#/definitions/storageFileActivityFile",
+          "$ref": "#/definitions/storageFileAccessFile",
           "description": "specific to `RENAME` activity, the new location / metadata of the file."
         },
         "timestamp": {
@@ -1038,9 +1038,9 @@
           "description": "The process that performed the action. May contain deployment/namespace\ninformation."
         }
       },
-      "description": "FileActivity contains fields related to arbitrary file activity\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."
+      "description": "FileAccess contains fields related to arbitrary file accesses\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."
     },
-    "storageFileActivityFile": {
+    "storageFileAccessFile": {
       "type": "object",
       "properties": {
         "path": {
@@ -1050,7 +1050,7 @@
           "type": "string"
         },
         "meta": {
-          "$ref": "#/definitions/FileActivityFileMetadata"
+          "$ref": "#/definitions/FileAccessFileMetadata"
         }
       }
     },

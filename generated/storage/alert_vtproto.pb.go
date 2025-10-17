@@ -107,11 +107,11 @@ func (m *Alert_Resource) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *Alert_Host) CloneVT() *Alert_Host {
+func (m *Alert_Node) CloneVT() *Alert_Node {
 	if m == nil {
-		return (*Alert_Host)(nil)
+		return (*Alert_Node)(nil)
 	}
-	r := new(Alert_Host)
+	r := new(Alert_Node)
 	r.Id = m.Id
 	r.Name = m.Name
 	if len(m.unknownFields) > 0 {
@@ -121,7 +121,7 @@ func (m *Alert_Host) CloneVT() *Alert_Host {
 	return r
 }
 
-func (m *Alert_Host) CloneMessageVT() proto.Message {
+func (m *Alert_Node) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -272,18 +272,18 @@ func (m *Alert_ProcessViolation) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *Alert_FileActivityViolation) CloneVT() *Alert_FileActivityViolation {
+func (m *Alert_FileAccessViolation) CloneVT() *Alert_FileAccessViolation {
 	if m == nil {
-		return (*Alert_FileActivityViolation)(nil)
+		return (*Alert_FileAccessViolation)(nil)
 	}
-	r := new(Alert_FileActivityViolation)
+	r := new(Alert_FileAccessViolation)
 	r.Message = m.Message
-	if rhs := m.Activity; rhs != nil {
-		tmpContainer := make([]*FileActivity, len(rhs))
+	if rhs := m.Accesses; rhs != nil {
+		tmpContainer := make([]*FileAccess, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Activity = tmpContainer
+		r.Accesses = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -292,7 +292,7 @@ func (m *Alert_FileActivityViolation) CloneVT() *Alert_FileActivityViolation {
 	return r
 }
 
-func (m *Alert_FileActivityViolation) CloneMessageVT() proto.Message {
+func (m *Alert_FileAccessViolation) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -327,7 +327,7 @@ func (m *Alert) CloneVT() *Alert {
 	r.Namespace = m.Namespace
 	r.NamespaceId = m.NamespaceId
 	r.ProcessViolation = m.ProcessViolation.CloneVT()
-	r.FileActivityViolation = m.FileActivityViolation.CloneVT()
+	r.FileAccessViolation = m.FileAccessViolation.CloneVT()
 	r.Enforcement = m.Enforcement.CloneVT()
 	r.Time = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Time).CloneVT())
 	r.FirstOccurred = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstOccurred).CloneVT())
@@ -383,12 +383,12 @@ func (m *Alert_Resource_) CloneVT() isAlert_Entity {
 	return r
 }
 
-func (m *Alert_Host_) CloneVT() isAlert_Entity {
+func (m *Alert_Node_) CloneVT() isAlert_Entity {
 	if m == nil {
-		return (*Alert_Host_)(nil)
+		return (*Alert_Node_)(nil)
 	}
-	r := new(Alert_Host_)
-	r.Host = m.Host.CloneVT()
+	r := new(Alert_Node_)
+	r.Node = m.Node.CloneVT()
 	return r
 }
 
@@ -430,11 +430,11 @@ func (m *ListAlert_ResourceEntity) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ListAlert_HostEntity) CloneVT() *ListAlert_HostEntity {
+func (m *ListAlert_NodeEntity) CloneVT() *ListAlert_NodeEntity {
 	if m == nil {
-		return (*ListAlert_HostEntity)(nil)
+		return (*ListAlert_NodeEntity)(nil)
 	}
-	r := new(ListAlert_HostEntity)
+	r := new(ListAlert_NodeEntity)
 	r.Name = m.Name
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -443,7 +443,7 @@ func (m *ListAlert_HostEntity) CloneVT() *ListAlert_HostEntity {
 	return r
 }
 
-func (m *ListAlert_HostEntity) CloneMessageVT() proto.Message {
+func (m *ListAlert_NodeEntity) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -492,12 +492,12 @@ func (m *ListAlert_Resource) CloneVT() isListAlert_Entity {
 	return r
 }
 
-func (m *ListAlert_Host) CloneVT() isListAlert_Entity {
+func (m *ListAlert_Node) CloneVT() isListAlert_Entity {
 	if m == nil {
-		return (*ListAlert_Host)(nil)
+		return (*ListAlert_Node)(nil)
 	}
-	r := new(ListAlert_Host)
-	r.Host = m.Host.CloneVT()
+	r := new(ListAlert_Node)
+	r.Node = m.Node.CloneVT()
 	return r
 }
 
@@ -705,7 +705,7 @@ func (this *Alert_Resource) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *Alert_Host) EqualVT(that *Alert_Host) bool {
+func (this *Alert_Node) EqualVT(that *Alert_Node) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -720,8 +720,8 @@ func (this *Alert_Host) EqualVT(that *Alert_Host) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *Alert_Host) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*Alert_Host)
+func (this *Alert_Node) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Alert_Node)
 	if !ok {
 		return false
 	}
@@ -961,7 +961,7 @@ func (this *Alert_ProcessViolation) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *Alert_FileActivityViolation) EqualVT(that *Alert_FileActivityViolation) bool {
+func (this *Alert_FileAccessViolation) EqualVT(that *Alert_FileAccessViolation) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -970,17 +970,17 @@ func (this *Alert_FileActivityViolation) EqualVT(that *Alert_FileActivityViolati
 	if this.Message != that.Message {
 		return false
 	}
-	if len(this.Activity) != len(that.Activity) {
+	if len(this.Accesses) != len(that.Accesses) {
 		return false
 	}
-	for i, vx := range this.Activity {
-		vy := that.Activity[i]
+	for i, vx := range this.Accesses {
+		vy := that.Accesses[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &FileActivity{}
+				p = &FileAccess{}
 			}
 			if q == nil {
-				q = &FileActivity{}
+				q = &FileAccess{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -990,8 +990,8 @@ func (this *Alert_FileActivityViolation) EqualVT(that *Alert_FileActivityViolati
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *Alert_FileActivityViolation) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*Alert_FileActivityViolation)
+func (this *Alert_FileAccessViolation) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Alert_FileAccessViolation)
 	if !ok {
 		return false
 	}
@@ -1097,7 +1097,7 @@ func (this *Alert) EqualVT(that *Alert) bool {
 	if this.EntityType != that.EntityType {
 		return false
 	}
-	if !this.FileActivityViolation.EqualVT(that.FileActivityViolation) {
+	if !this.FileAccessViolation.EqualVT(that.FileAccessViolation) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1185,8 +1185,8 @@ func (this *Alert_Resource_) EqualVT(thatIface isAlert_Entity) bool {
 	return true
 }
 
-func (this *Alert_Host_) EqualVT(thatIface isAlert_Entity) bool {
-	that, ok := thatIface.(*Alert_Host_)
+func (this *Alert_Node_) EqualVT(thatIface isAlert_Entity) bool {
+	that, ok := thatIface.(*Alert_Node_)
 	if !ok {
 		return false
 	}
@@ -1196,12 +1196,12 @@ func (this *Alert_Host_) EqualVT(thatIface isAlert_Entity) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.Host, that.Host; p != q {
+	if p, q := this.Node, that.Node; p != q {
 		if p == nil {
-			p = &Alert_Host{}
+			p = &Alert_Node{}
 		}
 		if q == nil {
-			q = &Alert_Host{}
+			q = &Alert_Node{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1260,7 +1260,7 @@ func (this *ListAlert_ResourceEntity) EqualMessageVT(thatMsg proto.Message) bool
 	}
 	return this.EqualVT(that)
 }
-func (this *ListAlert_HostEntity) EqualVT(that *ListAlert_HostEntity) bool {
+func (this *ListAlert_NodeEntity) EqualVT(that *ListAlert_NodeEntity) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1272,8 +1272,8 @@ func (this *ListAlert_HostEntity) EqualVT(that *ListAlert_HostEntity) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ListAlert_HostEntity) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ListAlert_HostEntity)
+func (this *ListAlert_NodeEntity) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ListAlert_NodeEntity)
 	if !ok {
 		return false
 	}
@@ -1379,8 +1379,8 @@ func (this *ListAlert_Resource) EqualVT(thatIface isListAlert_Entity) bool {
 	return true
 }
 
-func (this *ListAlert_Host) EqualVT(thatIface isListAlert_Entity) bool {
-	that, ok := thatIface.(*ListAlert_Host)
+func (this *ListAlert_Node) EqualVT(thatIface isListAlert_Entity) bool {
+	that, ok := thatIface.(*ListAlert_Node)
 	if !ok {
 		return false
 	}
@@ -1390,12 +1390,12 @@ func (this *ListAlert_Host) EqualVT(thatIface isListAlert_Entity) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.Host, that.Host; p != q {
+	if p, q := this.Node, that.Node; p != q {
 		if p == nil {
-			p = &ListAlert_HostEntity{}
+			p = &ListAlert_NodeEntity{}
 		}
 		if q == nil {
-			q = &ListAlert_HostEntity{}
+			q = &ListAlert_NodeEntity{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1770,7 +1770,7 @@ func (m *Alert_Resource) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Host) MarshalVT() (dAtA []byte, err error) {
+func (m *Alert_Node) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1783,12 +1783,12 @@ func (m *Alert_Host) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Host) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_Node) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_Host) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2193,7 +2193,7 @@ func (m *Alert_ProcessViolation) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_FileActivityViolation) MarshalVT() (dAtA []byte, err error) {
+func (m *Alert_FileAccessViolation) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2206,12 +2206,12 @@ func (m *Alert_FileActivityViolation) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_FileActivityViolation) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_FileAccessViolation) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_FileActivityViolation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_FileAccessViolation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2223,9 +2223,9 @@ func (m *Alert_FileActivityViolation) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Activity) > 0 {
-		for iNdEx := len(m.Activity) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Activity[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.Accesses) > 0 {
+		for iNdEx := len(m.Accesses) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Accesses[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2329,8 +2329,8 @@ func (m *Alert) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if m.FileActivityViolation != nil {
-		size, err := m.FileActivityViolation.MarshalToSizedBufferVT(dAtA[:i])
+	if m.FileAccessViolation != nil {
+		size, err := m.FileAccessViolation.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2563,15 +2563,15 @@ func (m *Alert_Resource_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Host_) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_Node_) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_Host_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_Node_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Host != nil {
-		size, err := m.Host.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Node != nil {
+		size, err := m.Node.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2696,7 +2696,7 @@ func (m *ListAlert_ResourceEntity) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ListAlert_HostEntity) MarshalVT() (dAtA []byte, err error) {
+func (m *ListAlert_NodeEntity) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2709,12 +2709,12 @@ func (m *ListAlert_HostEntity) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ListAlert_HostEntity) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ListAlert_NodeEntity) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ListAlert_HostEntity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ListAlert_NodeEntity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2881,15 +2881,15 @@ func (m *ListAlert_Resource) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *ListAlert_Host) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ListAlert_Node) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ListAlert_Host) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ListAlert_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Host != nil {
-		size, err := m.Host.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Node != nil {
+		size, err := m.Node.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3232,7 +3232,7 @@ func (m *Alert_Resource) SizeVT() (n int) {
 	return n
 }
 
-func (m *Alert_Host) SizeVT() (n int) {
+func (m *Alert_Node) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3405,7 +3405,7 @@ func (m *Alert_ProcessViolation) SizeVT() (n int) {
 	return n
 }
 
-func (m *Alert_FileActivityViolation) SizeVT() (n int) {
+func (m *Alert_FileAccessViolation) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3415,8 +3415,8 @@ func (m *Alert_FileActivityViolation) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if len(m.Activity) > 0 {
-		for _, e := range m.Activity {
+	if len(m.Accesses) > 0 {
+		for _, e := range m.Accesses {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -3513,8 +3513,8 @@ func (m *Alert) SizeVT() (n int) {
 	if m.EntityType != 0 {
 		n += 2 + protohelpers.SizeOfVarint(uint64(m.EntityType))
 	}
-	if m.FileActivityViolation != nil {
-		l = m.FileActivityViolation.SizeVT()
+	if m.FileAccessViolation != nil {
+		l = m.FileAccessViolation.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -3563,14 +3563,14 @@ func (m *Alert_Resource_) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *Alert_Host_) SizeVT() (n int) {
+func (m *Alert_Node_) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Host != nil {
-		l = m.Host.SizeVT()
+	if m.Node != nil {
+		l = m.Node.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -3620,7 +3620,7 @@ func (m *ListAlert_ResourceEntity) SizeVT() (n int) {
 	return n
 }
 
-func (m *ListAlert_HostEntity) SizeVT() (n int) {
+func (m *ListAlert_NodeEntity) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3703,14 +3703,14 @@ func (m *ListAlert_Resource) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *ListAlert_Host) SizeVT() (n int) {
+func (m *ListAlert_Node) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Host != nil {
-		l = m.Host.SizeVT()
+	if m.Node != nil {
+		l = m.Node.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -4739,7 +4739,7 @@ func (m *Alert_Resource) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_Host) UnmarshalVT(dAtA []byte) error {
+func (m *Alert_Node) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4762,10 +4762,10 @@ func (m *Alert_Host) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_Host: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_Node: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_Host: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_Node: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5718,7 +5718,7 @@ func (m *Alert_ProcessViolation) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_FileActivityViolation) UnmarshalVT(dAtA []byte) error {
+func (m *Alert_FileAccessViolation) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5741,10 +5741,10 @@ func (m *Alert_FileActivityViolation) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_FileActivityViolation: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_FileAccessViolation: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_FileActivityViolation: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_FileAccessViolation: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5781,7 +5781,7 @@ func (m *Alert_FileActivityViolation) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Activity", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Accesses", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5808,8 +5808,8 @@ func (m *Alert_FileActivityViolation) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Activity = append(m.Activity, &FileActivity{})
-			if err := m.Activity[len(m.Activity)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Accesses = append(m.Accesses, &FileAccess{})
+			if err := m.Accesses[len(m.Accesses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6578,7 +6578,7 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6605,21 +6605,21 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_Host_); ok {
-				if err := oneof.Host.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_Node_); ok {
+				if err := oneof.Node.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_Host{}
+				v := &Alert_Node{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_Host_{Host: v}
+				m.Entity = &Alert_Node_{Node: v}
 			}
 			iNdEx = postIndex
 		case 25:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FileActivityViolation", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FileAccessViolation", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6646,10 +6646,10 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FileActivityViolation == nil {
-				m.FileActivityViolation = &Alert_FileActivityViolation{}
+			if m.FileAccessViolation == nil {
+				m.FileAccessViolation = &Alert_FileAccessViolation{}
 			}
-			if err := m.FileActivityViolation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.FileAccessViolation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6956,7 +6956,7 @@ func (m *ListAlert_ResourceEntity) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlert_HostEntity) UnmarshalVT(dAtA []byte) error {
+func (m *ListAlert_NodeEntity) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6979,10 +6979,10 @@ func (m *ListAlert_HostEntity) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListAlert_HostEntity: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListAlert_NodeEntity: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListAlert_HostEntity: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListAlert_NodeEntity: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7368,7 +7368,7 @@ func (m *ListAlert) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7395,16 +7395,16 @@ func (m *ListAlert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*ListAlert_Host); ok {
-				if err := oneof.Host.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*ListAlert_Node); ok {
+				if err := oneof.Node.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &ListAlert_HostEntity{}
+				v := &ListAlert_NodeEntity{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &ListAlert_Host{Host: v}
+				m.Entity = &ListAlert_Node{Node: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -9041,7 +9041,7 @@ func (m *Alert_Resource) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_Host) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *Alert_Node) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -9064,10 +9064,10 @@ func (m *Alert_Host) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_Host: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_Node: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_Host: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_Node: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -10056,7 +10056,7 @@ func (m *Alert_ProcessViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_FileActivityViolation) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *Alert_FileAccessViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -10079,10 +10079,10 @@ func (m *Alert_FileActivityViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_FileActivityViolation: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_FileAccessViolation: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_FileActivityViolation: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_FileAccessViolation: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -10123,7 +10123,7 @@ func (m *Alert_FileActivityViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Activity", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Accesses", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -10150,8 +10150,8 @@ func (m *Alert_FileActivityViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Activity = append(m.Activity, &FileActivity{})
-			if err := m.Activity[len(m.Activity)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			m.Accesses = append(m.Accesses, &FileAccess{})
+			if err := m.Accesses[len(m.Accesses)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -10944,7 +10944,7 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -10971,21 +10971,21 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_Host_); ok {
-				if err := oneof.Host.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_Node_); ok {
+				if err := oneof.Node.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_Host{}
+				v := &Alert_Node{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_Host_{Host: v}
+				m.Entity = &Alert_Node_{Node: v}
 			}
 			iNdEx = postIndex
 		case 25:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FileActivityViolation", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FileAccessViolation", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11012,10 +11012,10 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.FileActivityViolation == nil {
-				m.FileActivityViolation = &Alert_FileActivityViolation{}
+			if m.FileAccessViolation == nil {
+				m.FileAccessViolation = &Alert_FileAccessViolation{}
 			}
-			if err := m.FileActivityViolation.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.FileAccessViolation.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11342,7 +11342,7 @@ func (m *ListAlert_ResourceEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ListAlert_HostEntity) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ListAlert_NodeEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11365,10 +11365,10 @@ func (m *ListAlert_HostEntity) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListAlert_HostEntity: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListAlert_NodeEntity: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListAlert_HostEntity: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListAlert_NodeEntity: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -11762,7 +11762,7 @@ func (m *ListAlert) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Host", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11789,16 +11789,16 @@ func (m *ListAlert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*ListAlert_Host); ok {
-				if err := oneof.Host.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*ListAlert_Node); ok {
+				if err := oneof.Node.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &ListAlert_HostEntity{}
+				v := &ListAlert_NodeEntity{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &ListAlert_Host{Host: v}
+				m.Entity = &ListAlert_Node{Node: v}
 			}
 			iNdEx = postIndex
 		default:
