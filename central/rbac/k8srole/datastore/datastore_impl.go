@@ -7,13 +7,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	k8sRolesSAC = sac.ForResource(resources.K8sRole)
 )
 
 type datastoreImpl struct {
@@ -26,9 +20,6 @@ func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRol
 		return nil, false, err
 	}
 
-	if !k8sRolesSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(role).IsAllowed() {
-		return nil, false, nil
-	}
 	return role, true, nil
 }
 
@@ -56,22 +47,10 @@ func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) (
 }
 
 func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole) error {
-	if ok, err := k8sRolesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
-	if ok, err := k8sRolesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, id)
 }
 
