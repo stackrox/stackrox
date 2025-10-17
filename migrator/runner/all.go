@@ -49,4 +49,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
 	_ "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators"
 	_ "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_populate_deployment_containers_imageidv2"
+	_ "github.com/stackrox/rox/migrator/migrations/m_214_to_m_215_populate_alert_deployment_containers_imageidv2"
 )
