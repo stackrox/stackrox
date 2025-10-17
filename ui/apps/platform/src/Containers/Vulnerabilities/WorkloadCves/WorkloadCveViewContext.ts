@@ -21,6 +21,7 @@ export type WorkloadCveView = {
             },
             vulnerabilityState: VulnerabilityState
         ) => string;
+        exceptionDetails?: (cve: string) => string;
     };
     baseSearchFilter: QuerySearchFilter;
     pageTitle: string;
