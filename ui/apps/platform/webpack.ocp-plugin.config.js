@@ -154,23 +154,27 @@ const config = {
                     },
                 },
                 // Workload Detail Page Security Tab
-                ...['Deployment', 'ReplicaSet', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob'].map(
-                    (kind) => ({
-                        type: 'console.tab/horizontalNav',
-                        properties: {
-                            model: {
-                                group: 'apps',
-                                kind,
-                                version: 'v1',
-                            },
-                            page: {
-                                name: 'Security',
-                                href: 'security',
-                            },
-                            component: { $codeRef: 'WorkloadSecurityTab.WorkloadSecurityTab' },
+                ...[
+                    { group: 'apps', version: 'v1', kind: 'DaemonSet' },
+                    { group: 'apps', version: 'v1', kind: 'Deployment' },
+                    { group: 'apps', version: 'v1', kind: 'StatefulSet' },
+                    { group: 'batch', version: 'v1', kind: 'CronJob' },
+                    { group: 'core', version: 'v1', kind: 'ReplicationController' },
+                ].map(({ group, version, kind }) => ({
+                    type: 'console.tab/horizontalNav',
+                    properties: {
+                        model: {
+                            group,
+                            kind,
+                            version,
                         },
-                    })
-                ),
+                        page: {
+                            name: 'Security',
+                            href: 'security',
+                        },
+                        component: { $codeRef: 'WorkloadSecurityTab.WorkloadSecurityTab' },
+                    },
+                })),
                 // Administration Namespace Security Tab
                 {
                     type: 'console.tab/horizontalNav',
