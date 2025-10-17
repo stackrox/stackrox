@@ -286,7 +286,6 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	for ep, p := range enrichedEndpointsProcesses {
 		currTS := p.LastSeen
 		epBinaryKey := ep.BinaryKey(h)
-		epHashKey := ep.BinaryKey(h) // Same as epBinaryKey since we only support binary now
 		// Check if this endpoint has a process.
 		var procBinaryKey indicator.BinaryHash
 		// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
@@ -303,11 +302,11 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		switch dAction {
 		case deduperActionAdd, deduperActionUpdateProcess:
 			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				c.endpointsDeduper[epHashKey] = procBinaryKey
+				c.endpointsDeduper[epBinaryKey] = procBinaryKey
 			})
 		case deduperActionRemove:
 			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				delete(c.endpointsDeduper, epHashKey)
+				delete(c.endpointsDeduper, epBinaryKey)
 			})
 		default: // noop
 		}
