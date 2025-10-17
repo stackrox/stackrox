@@ -1,5 +1,4 @@
 // this test file written in JS, because mock Provider difficult to type in test context
-import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { createBrowserHistory as createHistory } from 'history';

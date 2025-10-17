@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';

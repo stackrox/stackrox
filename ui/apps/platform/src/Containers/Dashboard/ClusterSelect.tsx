@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ChangeEvent } from 'react';
 import { Divider } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
