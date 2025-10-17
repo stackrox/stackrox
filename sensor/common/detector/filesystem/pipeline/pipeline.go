@@ -4,7 +4,6 @@ import (
 	"context"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -63,19 +62,20 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 	}
 
 	if psignal.GetContainerId() != "" {
+		// TODO(ROX-30798): Enrich file system events with deployment details
 		metadata, ok, _ := p.clusterEntities.LookupByContainerID(psignal.GetContainerId())
 		if !ok {
 			// unexpected - process should exist before file activity is
 			// reported
 			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
 		} else {
-		    pi.DeploymentId = metadata.DeploymentID
-		    pi.ContainerName = metadata.ContainerName
-		    pi.PodId = metadata.PodID
-		    pi.PodUid = metadata.PodUID
-		    pi.Namespace = metadata.Namespace
-		    pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
-		    pi.ImageId = metadata.ImageID
+			pi.DeploymentId = metadata.DeploymentID
+			pi.ContainerName = metadata.ContainerName
+			pi.PodId = metadata.PodID
+			pi.PodUid = metadata.PodUID
+			pi.Namespace = metadata.Namespace
+			pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
+			pi.ImageId = metadata.ImageID
 		}
 	}
 	// TODO: populate node info otherwise
@@ -84,26 +84,56 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 		Process: pi,
 	}
 
-	if fs.GetOpen() != nil {
+	switch fs.GetFile().(type) {
+	case *sensorAPI.FileActivity_Creation:
 		activity.File = &storage.FileActivity_File{
-			Path:     fs.GetOpen().GetActivity().GetPath(),
-			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
+			Path:     fs.GetCreation().GetActivity().GetPath(),
+			HostPath: fs.GetCreation().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_OPEN
-	} else if fs.GetWrite() != nil {
+		activity.Operation = storage.FileActivity_CREATE
+	case *sensorAPI.FileActivity_Unlink:
+		activity.File = &storage.FileActivity_File{
+			Path:     fs.GetUnlink().GetActivity().GetPath(),
+			HostPath: fs.GetUnlink().GetActivity().GetHostPath(),
+		}
+		activity.Operation = storage.FileActivity_UNLINK
+	case *sensorAPI.FileActivity_Rename:
+		activity.File = &storage.FileActivity_File{
+			// Not sure if GetNew or GetOld should be used here.
+			Path:     fs.GetRename().GetNew().GetPath(),
+			HostPath: fs.GetRename().GetNew().GetHostPath(),
+		}
+		activity.Operation = storage.FileActivity_RENAME
+	case *sensorAPI.FileActivity_Permission:
+		activity.File = &storage.FileActivity_File{
+			Path:     fs.GetPermission().GetActivity().GetPath(),
+			HostPath: fs.GetPermission().GetActivity().GetHostPath(),
+		}
+		activity.Operation = storage.FileActivity_PERMISSION_CHANGE
+	case *sensorAPI.FileActivity_Ownership:
+		activity.File = &storage.FileActivity_File{
+			Path:     fs.GetOwnership().GetActivity().GetPath(),
+			HostPath: fs.GetOwnership().GetActivity().GetHostPath(),
+		}
+		activity.Operation = storage.FileActivity_OWNERSHIP_CHANGE
+	case *sensorAPI.FileActivity_Write:
 		activity.File = &storage.FileActivity_File{
 			Path:     fs.GetWrite().GetActivity().GetPath(),
 			HostPath: fs.GetWrite().GetActivity().GetHostPath(),
 		}
 		activity.Operation = storage.FileActivity_WRITE
-	} else {
+	case *sensorAPI.FileActivity_Open:
+		activity.File = &storage.FileActivity_File{
+			Path:     fs.GetOpen().GetActivity().GetPath(),
+			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
+		}
+		activity.Operation = storage.FileActivity_OPEN
+	default:
 		log.Warn("Not implemented file activity type")
 		return
 	}
 
-	log.Info("sending")
 	p.activityChan <- activity
-	log.Info("sent")
 }
 
 func (p *Pipeline) run() {
