@@ -116,6 +116,10 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 			},
 		)
 	}
+	// The function below requires the caller to have read allowed the DeploymentExtension
+	// permission, and at least the same scope for it as for the Deployment permission.
+	// Otherwise, the endpoint will return an error for any deployment that is not in the
+	// intersection of scope for both permissions.
 	if err := s.fillBaselineResults(ctx, resp); err != nil {
 		return nil, err
 	}
