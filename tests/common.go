@@ -114,7 +114,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
-func waitForDeploymentCount(t testutils.T, query string, count int) {
+func waitForDeploymentCountInCentral(t testutils.T, query string, count int) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -146,7 +146,83 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 
 }
 
-func waitForDeployment(t testutils.T, deploymentName string) {
+func waitForDeploymentReadyInK8s(t *testing.T, deploymentName, namespace string) {
+	client := createK8sClient(t)
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	ctx := context.Background()
+	log.Infof("Waiting for deployment %q in namespace %q to be ready in Kubernetes", deploymentName, namespace)
+
+	for {
+		select {
+		case <-ticker.C:
+			deploy, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			if err != nil {
+				if apiErrors.IsNotFound(err) {
+					log.Infof("Deployment %q in namespace %q not found yet, waiting...", deploymentName, namespace)
+					continue
+				}
+				require.NoError(t, err, "getting deployment %q from namespace %q", deploymentName, namespace)
+			}
+
+			// Check if generation matches observed generation
+			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
+				log.Infof("Deployment %q in namespace %q NOT ready: generation %d != observed generation %d",
+					deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+				continue
+			}
+
+			// Check if all replicas are ready
+			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
+				log.Infof("Deployment %q in namespace %q NOT ready: %d/%d ready replicas",
+					deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+				continue
+			}
+
+			// Ensure all pods are from the current generation (no old pods during rollout)
+			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
+				log.Infof("Deployment %q in namespace %q NOT ready: rollout incomplete (%d/%d updated replicas)",
+					deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+				continue
+			}
+
+			// Check conditions for additional insights
+			for _, cond := range deploy.Status.Conditions {
+				if cond.Type == appsV1.DeploymentAvailable && cond.Status != coreV1.ConditionTrue {
+					log.Infof("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
+						deploymentName, namespace, cond.Status, cond.Message)
+				}
+				if cond.Type == appsV1.DeploymentProgressing && cond.Status != coreV1.ConditionTrue {
+					log.Infof("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
+						deploymentName, namespace, cond.Status, cond.Message)
+				}
+			}
+
+			log.Infof("Deployment %q in namespace %q READY in Kubernetes (%d/%d ready replicas)",
+				deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+			return
+		case <-timer.C:
+			// Get final status for error message
+			deploy, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			if err != nil {
+				require.NoError(t, err, "Timed out waiting for deployment %q in namespace %q. Failed to get final status: %v", deploymentName, namespace, err)
+			}
+			require.Failf(t, "Timed out waiting for deployment in Kubernetes",
+				"Deployment %q in namespace %q did not become ready within %v.\nStatus: Replicas=%d, ReadyReplicas=%d, UpdatedReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d\nGeneration=%d, ObservedGeneration=%d",
+				deploymentName, namespace, waitTimeout,
+				deploy.Status.Replicas, deploy.Status.ReadyReplicas, deploy.Status.UpdatedReplicas,
+				deploy.Status.AvailableReplicas, deploy.Status.UnavailableReplicas,
+				deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+		}
+	}
+}
+
+func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -238,38 +314,42 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	return &pod
 }
 
-func setupDeployment(t *testing.T, image, deploymentName string) {
-	setupDeploymentWithReplicas(t, image, deploymentName, 1)
+func setupDeploymentInNamespace(t *testing.T, image, deploymentName, namespace string) {
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace)
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentNoWait(t, image, deploymentName, replicas)
-	waitForDeployment(t, deploymentName)
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default")
+}
+
+func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace)
+	waitForDeploymentReadyInK8s(t, deploymentName, namespace)
+	waitForDeploymentInCentral(t, deploymentName)
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	createDeploymentViaAPI(t, image, deploymentName, replicas)
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default")
 }
 
-// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
-// Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
-// to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
-func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int) {
+func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	createDeploymentViaAPI(t, image, deploymentName, replicas, namespace)
+}
+
+// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client with extensive logging.
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) {
 	client := createK8sClient(t)
 
-	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
-	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
-	// as those are used to test mirroring functionality and should use their own pull behavior.
-	pullPolicy := coreV1.PullIfNotPresent
-	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
-		pullPolicy = coreV1.PullPolicy(policy)
-		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
-	}
+	log.Infof("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
 
+	// Build deployment object
 	deployment := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:   deploymentName,
-			Labels: map[string]string{"app": deploymentName},
+			Name:      deploymentName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": deploymentName,
+			},
 		},
 		Spec: appsV1.DeploymentSpec{
 			Replicas: pointers.Int32(int32(replicas)),
@@ -292,12 +372,57 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		},
 	}
 
+	log.Infof("Deployment object created: name=%s, namespace=%s, replicas=%d, image=%s, labels=%v",
+		deployment.Name, deployment.Namespace, *deployment.Spec.Replicas, image, deployment.Labels)
+
+	// Create the deployment with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	logf(t, "Creating deployment %q with image %q in namespace %q", deploymentName, image, "default")
-	_, err := client.AppsV1().Deployments("default").Create(ctx, deployment, metaV1.CreateOptions{})
-	require.NoError(t, err, "Failed to create deployment %q", deploymentName)
+	log.Infof("Calling K8s API to create deployment %q in namespace %q...", deploymentName, namespace)
+	createdDeployment, err := client.AppsV1().Deployments(namespace).Create(ctx, deployment, metaV1.CreateOptions{})
+
+	if err != nil {
+		// Detailed error logging
+		if apiErrors.IsAlreadyExists(err) {
+			log.Errorf("Deployment %q already exists in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsInvalid(err) {
+			log.Errorf("Deployment %q spec is invalid: %v", deploymentName, err)
+		} else if apiErrors.IsForbidden(err) {
+			log.Errorf("Permission denied creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsTimeout(err) {
+			log.Errorf("Timeout creating deployment %q in namespace %q after 30s: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsServerTimeout(err) {
+			log.Errorf("Server timeout creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsServiceUnavailable(err) {
+			log.Errorf("K8s API service unavailable when creating deployment %q: %v", deploymentName, err)
+		} else {
+			log.Errorf("Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
+		}
+		require.NoError(t, err, "Failed to create deployment %q: %v", deploymentName, err)
+		return
+	}
+
+	log.Infof("Deployment %q successfully created in namespace %q", deploymentName, namespace)
+	log.Infof("Deployment UID: %s, ResourceVersion: %s, Generation: %d",
+		createdDeployment.UID, createdDeployment.ResourceVersion, createdDeployment.Generation)
+	log.Infof("Deployment status: Replicas=%d, UpdatedReplicas=%d, ReadyReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d",
+		createdDeployment.Status.Replicas,
+		createdDeployment.Status.UpdatedReplicas,
+		createdDeployment.Status.ReadyReplicas,
+		createdDeployment.Status.AvailableReplicas,
+		createdDeployment.Status.UnavailableReplicas)
+
+	// Log all conditions if any
+	if len(createdDeployment.Status.Conditions) > 0 {
+		log.Infof("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
+		for i, cond := range createdDeployment.Status.Conditions {
+			log.Infof("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
+				i, cond.Type, cond.Status, cond.Reason, cond.Message, cond.LastUpdateTime)
+		}
+	}
+
+	log.Infof("Deployment %q creation completed successfully", deploymentName)
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
