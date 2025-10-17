@@ -1,7 +1,7 @@
 package tracker
 
 import (
-	"iter"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -17,9 +17,7 @@ type aggregatedRecord struct {
 // aggregator is a Finding processor, that counts the number of occurences of
 // every combination of label values in the findings.
 // The processing result is stored in the result field.
-// The labelOrder is used to compute the aggregationKey (i.e. pipe separated
-// label values).
-// MetricDescriptors provides the list of metrics with their sets of labels.
+// MetricDescriptors is a map of metric name to their sorted lists of labels.
 //
 // For example, for a metric M1 with labels L1 and L2, and metric M2 with a
 // single label L2, provided the following findings:
@@ -37,68 +35,53 @@ type aggregatedRecord struct {
 //			{"Z": {labels: {L2="Z"}, total: 2}}
 //	}
 type aggregator[F Finding] struct {
-	result     map[MetricName]map[aggregationKey]*aggregatedRecord
-	md         MetricDescriptors
-	labelOrder map[Label]int
-	getters    map[Label]func(F) string
+	result  map[MetricName]map[aggregationKey]*aggregatedRecord
+	md      MetricDescriptors
+	getters LazyLabelGetters[F]
 }
 
-func makeAggregator[F Finding](md MetricDescriptors, labelOrder map[Label]int, getters map[Label]func(F) string) *aggregator[F] {
+func makeAggregator[F Finding](md MetricDescriptors, getters LazyLabelGetters[F]) *aggregator[F] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, labelOrder, getters}
+	return &aggregator[F]{aggregated, md, getters}
 }
 
 // count the finding in the aggregation result.
-func (r *aggregator[F]) count(finding F) {
-	labelValue := func(label Label) string {
-		return r.getters[label](finding)
-	}
-	incrementFunc := func() int { return 1 }
+func (a *aggregator[F]) count(finding F) {
+	increment := 1
 	if f, ok := any(finding).(WithIncrement); ok {
-		incrementFunc = f.GetIncrement
+		increment = f.GetIncrement()
 	}
 
-	for metric, labels := range r.md {
-		if key, labels := makeAggregationKey(labels, labelValue, r.labelOrder); key != "" {
-			if rec, ok := r.result[metric][key]; ok {
-				rec.total += incrementFunc()
-			} else {
-				r.result[metric][key] = &aggregatedRecord{labels, incrementFunc()}
-			}
+	for metric, labels := range a.md {
+		key, labels := a.makeAggregationKey(labels, finding)
+		if rec, ok := a.result[metric][key]; ok {
+			rec.total += increment
+		} else {
+			a.result[metric][key] = &aggregatedRecord{labels, increment}
 		}
 	}
 }
 
-// makeAggregationKey computes an aggregation key according to the labels from
-// the provided expression, and the map of the requested labels to their values.
-// The values in the key are sorted according to the provided labelOrder map.
+// makeAggregationKey computes an aggregation key according to the provided
+// labels, and the map of the requested labels to their values.
+// The values in the key are ordered according to the labels order.
 //
 // Example:
 //
 //	"Cluster,Deployment" => "pre-prod|backend", {"Cluster": "pre-prod", "Deployment": "backend")}
-func makeAggregationKey(labelExpression []Label, getter func(Label) string, labelOrder map[Label]int) (aggregationKey, prometheus.Labels) {
-	labels := make(prometheus.Labels)
-	values := make(orderedValues, len(labelExpression))
-	for label, value := range collectMatchingLabels(labelExpression, getter) {
-		labels[string(label)] = value
-		values = append(values, valueOrder{labelOrder[label], value})
-	}
-	if len(labels) != len(labelExpression) {
-		return "", nil
-	}
-	return aggregationKey(values.join('|')), labels
-}
-
-// collectMatchingLabels returns an iterator over the labels and the values.
-func collectMatchingLabels(labels []Label, getter func(Label) string) iter.Seq2[Label, string] {
-	return func(yield func(Label, string) bool) {
-		for _, label := range labels {
-			if !yield(label, getter(label)) {
-				return
-			}
+func (a *aggregator[F]) makeAggregationKey(labels []Label, finding F) (aggregationKey, prometheus.Labels) {
+	vector := make(prometheus.Labels)
+	var key strings.Builder
+	for _, label := range labels {
+		value := a.getters[label](finding)
+		vector[string(label)] = value
+		if key.Len() > 0 {
+			key.WriteRune('|')
 		}
+		key.WriteString(value)
 	}
+	return aggregationKey(key.String()), vector
 }

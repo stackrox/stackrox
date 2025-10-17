@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"maps"
 	"regexp"
 	"slices"
 
@@ -17,11 +16,6 @@ var (
 	metricNamePattern = regexp.MustCompile("^[a-zA-Z_:][a-zA-Z0-9_:]*$")
 )
 
-func isKnownLabel(label string, labelOrder map[Label]int) bool {
-	_, ok := labelOrder[Label(label)]
-	return ok
-}
-
 // validateMetricName ensures the name is alnum_.
 func validateMetricName(name string) error {
 	if len(name) == 0 {
@@ -35,28 +29,27 @@ func validateMetricName(name string) error {
 
 // validateLabels checks if the labels exist in the labelOrder map and returns
 // a sorted label list.
-func validateLabels(labels []string, labelOrder map[Label]int, metricName string) ([]Label, error) {
+func (tracker *TrackerBase[F]) validateLabels(labels []string, metricName string) ([]Label, error) {
 	if len(labels) == 0 {
 		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
 	}
 	metricLabels := make([]Label, 0, len(labels))
 	for _, label := range labels {
-		if !isKnownLabel(label, labelOrder) {
+		if _, ok := tracker.getters[Label(label)]; !ok {
 			return nil, errInvalidConfiguration.CausedByf("label %q for metric %q is not in the list of known labels %v", label,
-				metricName, slices.Sorted(maps.Keys(labelOrder)))
+				metricName, tracker.getters.GetLabels())
 		}
 		metricLabels = append(metricLabels, Label(label))
 	}
-	slices.SortFunc(metricLabels, func(a, b Label) int {
-		return labelOrder[Label(a)] - labelOrder[Label(b)]
-	})
+	slices.Sort(metricLabels)
 	return metricLabels, nil
 }
 
 // translateStorageConfiguration converts the storage object to the usable map,
 // validating the values.
-func translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels, metricPrefix string, labelOrder map[Label]int) (MetricDescriptors, error) {
+func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels) (MetricDescriptors, error) {
 	result := make(MetricDescriptors, len(config))
+	metricPrefix := tracker.metricPrefix
 	if metricPrefix != "" {
 		metricPrefix += "_"
 	}
@@ -66,7 +59,7 @@ func translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_
 			return nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metricName, err)
 		}
-		metricLabels, err := validateLabels(labels.GetLabels(), labelOrder, metricName)
+		metricLabels, err := tracker.validateLabels(labels.GetLabels(), metricName)
 		if err != nil {
 			return nil, err
 		}

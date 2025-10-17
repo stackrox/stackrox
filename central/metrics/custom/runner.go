@@ -81,19 +81,19 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		clusters.New(ds.clusters),
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_health_cluster_info
-			"cluster_info": tracker.GetLabels(clusters.LazyLabels),
+			"cluster_info": clusters.LazyLabels.GetLabels(),
 		}),
 	}, {
 		policies.New(ds.policies),
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_cfg_total_policies
-			"total_policies": tracker.GetLabels(policies.LazyLabels),
+			"total_policies": policies.LazyLabels.GetLabels(),
 		}),
 	}, {
 		expiry.New(ds.expiry),
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_cert_exp_hours
-			"hours": tracker.GetLabels(expiry.LazyLabels),
+			"hours": expiry.LazyLabels.GetLabels(),
 		}),
 	},
 	}

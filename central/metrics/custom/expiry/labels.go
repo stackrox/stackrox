@@ -4,8 +4,8 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 )
 
-var LazyLabels = []tracker.LazyLabel[*finding]{
-	{Label: "Component", Getter: func(f *finding) string { return f.component }},
+var LazyLabels = tracker.LazyLabelGetters[*finding]{
+	"Component": func(f *finding) string { return f.component },
 }
 
 type finding struct {
