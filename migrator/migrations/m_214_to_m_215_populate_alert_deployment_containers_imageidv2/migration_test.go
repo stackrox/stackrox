@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -153,7 +154,7 @@ func (s *migrationTestSuite) TestMigration() {
 	_ = s.store.WalkByQuery(dbs.DBCtx, search.EmptyQuery(), func(alert *storage.Alert) error {
 		expectedAlert, found := alerts[alert.Id]
 		s.Require().True(found)
-		s.Require().Equal(expectedAlert, alert)
+		protoassert.Equal(s.T(), expectedAlert, alert)
 		return nil
 	})
 
