@@ -603,7 +603,7 @@ func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanCompo
 
 type mockImageComponentScorer struct{}
 
-func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string, _ int) *storage.Risk {
 	return getDummyRisk()
 }
 

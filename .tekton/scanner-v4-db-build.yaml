@@ -54,9 +54,24 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
+  - name: extra-labels
+    value:
+    # X.Y in the cpe label must be adjusted for every version stream.
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.8::el8"
 
   pipelineRef:
     name: basic-component-pipeline
+
+  taskRunSpecs:
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db-4-8

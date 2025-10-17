@@ -58,11 +58,24 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
+  - name: extra-labels
+    value:
+    # X.Y in the cpe label must be adjusted for every version stream.
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.8::el8"
 
   pipelineRef:
     name: main-pipeline
 
   taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          cpu: 2
+        requests:
+          cpu: 2
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
   # exits with 137 (OOMKilled):
@@ -71,13 +84,10 @@ spec:
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
       #
       # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
       # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
-      #
-      # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
-      # leads to failing builds.
       computeResources:
         limits:
           cpu: 4
@@ -86,7 +96,7 @@ spec:
           cpu: 4
           memory: 7Gi
     - name: sbom-syft-generate
-      computeResources:
+      computeResources: &sbom-syft-resources
         limits:
           memory: 3Gi
         requests:
@@ -94,22 +104,19 @@ spec:
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *sbom-syft-resources
   - pipelineTaskName: build-container-ppc64le
     stepSpecs:
     - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *sbom-syft-resources
   - pipelineTaskName: build-container-arm64
     stepSpecs:
     - name: sbom-syft-generate
+      computeResources: *sbom-syft-resources
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
       computeResources:
         limits:
           memory: 3Gi

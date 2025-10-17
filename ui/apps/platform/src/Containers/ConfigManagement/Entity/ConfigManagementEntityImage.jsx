@@ -68,11 +68,11 @@ const ConfigManagementEntityImage = ({
                     tag
                 }
                 scan {
-                    components {
+                    imageComponents {
                         name
                         layerIndex
                         version
-                        vulns {
+                        imageVulnerabilities {
                             cve
                             cvss
                             link
@@ -161,9 +161,14 @@ const ConfigManagementEntityImage = ({
                     layers.forEach((layer, i) => {
                         layers[i].components = [];
                     });
-                    scan.components.forEach((component) => {
+                    scan.imageComponents.forEach((component) => {
                         if (component.layerIndex !== undefined && layers[component.layerIndex]) {
-                            layers[component.layerIndex].components.push(component);
+                            // Transform imageVulnerabilities to vulns for CVETable compatibility
+                            const transformedComponent = {
+                                ...component,
+                                vulns: component.imageVulnerabilities || [],
+                            };
+                            layers[component.layerIndex].components.push(transformedComponent);
                         }
                     });
 

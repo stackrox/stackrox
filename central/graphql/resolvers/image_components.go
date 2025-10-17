@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -409,39 +408,6 @@ func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns 
 	return paginate(query.GetPagination(), resolverI, nil)
 }
 
-func getImageCVEV2Resolvers(ctx context.Context, root *Resolver, imageID string, component *storage.EmbeddedImageScanComponent, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
-	query, _ = search.FilterQueryWithMap(query, mappings.VulnerabilityOptionsMap)
-	predicate, err := vulnPredicateFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, err
-	}
-
-	componentID, err := scancomponent.ComponentIDV2(component, imageID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]ImageVulnerabilityResolver, 0, len(component.GetVulns()))
-	for _, vuln := range component.GetVulns() {
-		if !predicate.Matches(vuln) {
-			continue
-		}
-		converted, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(imageID, componentID, vuln)
-		if err != nil {
-			return nil, err
-		}
-
-		resolver, err := root.wrapImageCVEV2(converted, true, nil)
-		if err != nil {
-			return nil, err
-		}
-		resolver.ctx = embeddedobjs.VulnContext(ctx, vuln)
-
-		resolvers = append(resolvers, resolver)
-	}
-
-	return paginate(query.GetPagination(), resolvers, nil)
-}
-
 /*
 Sub Resolver Functions
 */
@@ -736,17 +702,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Conte
 		resolver.ctx = ctx
 	}
 
-	// Short path. Full image is embedded when image scan resolver is called.
-	embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx)
-	if embeddedComponent == nil {
-		return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
-	}
-
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	return getImageCVEV2Resolvers(resolver.ctx, resolver.root, resolver.ImageId(resolver.ctx), embeddedComponent, query)
+	return resolver.root.ImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
@@ -787,29 +743,6 @@ func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Cont
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
-	}
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedComponent := embeddedobjs.ComponentFromContext(resolver.ctx); embeddedComponent != nil {
-		var topVuln *storage.EmbeddedVulnerability
-		for _, vuln := range embeddedComponent.GetVulns() {
-			if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
-				topVuln = vuln
-			}
-		}
-		if topVuln == nil {
-			return nil, nil
-		}
-		componentID, err := scancomponent.ComponentIDV2(embeddedComponent, resolver.ImageId(resolver.ctx))
-		if err != nil {
-			return nil, err
-		}
-
-		convertedTopVuln, err := cveConverter.EmbeddedVulnerabilityToImageCVEV2(resolver.ImageId(resolver.ctx), componentID, topVuln)
-		if err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapImageCVEV2WithContext(resolver.ctx, convertedTopVuln, true, nil)
 	}
 
 	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(ctx), RawQuery{})

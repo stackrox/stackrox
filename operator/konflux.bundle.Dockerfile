@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:cc46d2979862d93e9da4d021e9100c7feb542dac3157acb2715b8baf54730c2b AS builder
+FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:dee7605bfc0cc89b83075937cd48ff7b61bf5e396f8bd2ae13e7f7299be53326 AS builder
 
 # Because 'default' user cannot create build/ directory and errrors like:
 # mkdir: cannot create directory ‘build/’: Permission denied
@@ -85,7 +85,7 @@ LABEL io.k8s.description="Operator Bundle Image for Red Hat Advanced Cluster Sec
 LABEL io.k8s.display-name="operator-bundle"
 LABEL io.openshift.tags="rhacs,operator-bundle,stackrox"
 LABEL maintainer="Red Hat, Inc."
-LABEL name="rhacs-operator-bundle"
+LABEL name="advanced-cluster-security/rhacs-operator-bundle"
 # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
 LABEL source-location="https://github.com/stackrox/stackrox"
 LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
