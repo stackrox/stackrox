@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/cmd"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/cmd"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
