@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';

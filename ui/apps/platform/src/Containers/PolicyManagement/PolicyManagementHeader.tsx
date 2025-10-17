@@ -1,5 +1,3 @@
-import React from 'react';
-
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import { policiesBasePath, policyCategoriesPath } from 'routePaths';
 

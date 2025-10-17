@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import uniqBy from 'lodash/uniqBy';
 import { Flex, FlexItem, Divider, Card } from '@patternfly/react-core';
