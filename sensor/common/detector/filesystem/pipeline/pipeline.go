@@ -68,15 +68,15 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 			// unexpected - process should exist before file activity is
 			// reported
 			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
+		} else {
+		    pi.DeploymentId = metadata.DeploymentID
+		    pi.ContainerName = metadata.ContainerName
+		    pi.PodId = metadata.PodID
+		    pi.PodUid = metadata.PodUID
+		    pi.Namespace = metadata.Namespace
+		    pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
+		    pi.ImageId = metadata.ImageID
 		}
-
-		pi.DeploymentId = metadata.DeploymentID
-		pi.ContainerName = metadata.ContainerName
-		pi.PodId = metadata.PodID
-		pi.PodUid = metadata.PodUID
-		pi.Namespace = metadata.Namespace
-		pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
-		pi.ImageId = metadata.ImageID
 	}
 	// TODO: populate node info otherwise
 
