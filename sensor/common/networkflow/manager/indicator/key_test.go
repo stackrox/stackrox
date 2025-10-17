@@ -3,10 +3,13 @@ package indicator
 import (
 	"testing"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stretchr/testify/assert"
 )
+
+var h = xxhash.New()
 
 func TestNetworkConn_KeyGeneration(t *testing.T) {
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
@@ -36,13 +39,13 @@ func TestNetworkConn_KeyGeneration(t *testing.T) {
 	for name, conn := range tests {
 		t.Run(name, func(t *testing.T) {
 			conn1, conn2 := conn, conn
-			key1Hash := conn1.Key()
-			key2Hash := conn2.Key()
+			key1Hash := conn1.Key(h)
+			key2Hash := conn2.Key(h)
 			assert.Equal(t, key1Hash, key2Hash)
 			assert.Len(t, key1Hash, 16)
 
 			// Additional validation using the hash method directly
-			assert.Equal(t, conn1.keyHash(), conn2.keyHash())
+			assert.Equal(t, conn1.keyHash(h), conn2.keyHash(h))
 		})
 	}
 }
@@ -71,13 +74,13 @@ func TestContainerEndpoint_KeyGeneration(t *testing.T) {
 	for name, endpoint := range tests {
 		t.Run(name, func(t *testing.T) {
 			ep1, ep2 := endpoint, endpoint
-			key1Hash := ep1.BinaryKey()
-			key2Hash := ep2.BinaryKey()
+			key1Hash := ep1.BinaryKey(h)
+			key2Hash := ep2.BinaryKey(h)
 			assert.Equal(t, key1Hash, key2Hash)
 			assert.NotZero(t, key1Hash)
 
 			// Additional validation using the hash method directly
-			assert.Equal(t, ep1.binaryKeyHash(), ep2.binaryKeyHash())
+			assert.Equal(t, ep1.binaryKeyHash(h), ep2.binaryKeyHash(h))
 		})
 	}
 }
@@ -117,13 +120,13 @@ func TestProcessListening_KeyGeneration(t *testing.T) {
 	for name, process := range tests {
 		t.Run(name, func(t *testing.T) {
 			proc1, proc2 := process, process
-			key1Hash := proc1.BinaryKey()
-			key2Hash := proc2.BinaryKey()
+			key1Hash := proc1.BinaryKey(h)
+			key2Hash := proc2.BinaryKey(h)
 			assert.Equal(t, key1Hash, key2Hash)
 			assert.NotZero(t, key1Hash)
 
 			// Additional validation using the hash method directly
-			assert.Equal(t, proc1.binaryKeyHash(), proc2.binaryKeyHash())
+			assert.Equal(t, proc1.binaryKeyHash(h), proc2.binaryKeyHash(h))
 		})
 	}
 }
@@ -146,7 +149,7 @@ func TestKey_UniquenessForDifferentObjects(t *testing.T) {
 			DstPort:   443, // Different port
 			Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
 		}
-		assert.NotEqual(t, conn1.Key(), conn2.Key(),
+		assert.NotEqual(t, conn1.Key(h), conn2.Key(h),
 			"Different NetworkConn objects should have different keys")
 	})
 
@@ -163,7 +166,7 @@ func TestKey_UniquenessForDifferentObjects(t *testing.T) {
 			Protocol: storage.L4Protocol_L4_PROTOCOL_UDP, // Different protocol
 		}
 
-		assert.NotEqual(t, ep1.BinaryKey(), ep2.BinaryKey(),
+		assert.NotEqual(t, ep1.BinaryKey(h), ep2.BinaryKey(h),
 			"Different ContainerEndpoint objects should have different binary hash keys")
 	})
 }
@@ -247,7 +250,7 @@ func TestKey_UniquenessForProcessListening(t *testing.T) {
 				assertFunc = assert.Equal
 				textNugget = "same"
 			}
-			assertFunc(t, tc.p1.BinaryKey(), tc.p2.BinaryKey(),
+			assertFunc(t, tc.p1.BinaryKey(h), tc.p2.BinaryKey(h),
 				"Different ProcessListening objects should have %s binary hash keys", textNugget)
 		})
 	}
@@ -273,9 +276,29 @@ func TestKeyUtilities_PortAndProtocolHandling(t *testing.T) {
 				Protocol: tc.protocol,
 			}
 
-			binaryHashKey := endpoint.BinaryKey()
+			binaryHashKey := endpoint.BinaryKey(h)
 
 			assert.NotZero(t, binaryHashKey)
 		})
+	}
+}
+
+func BenchmarkKey(b *testing.B) {
+	p := ProcessListening{
+		Process: ProcessInfo{
+			ProcessName: "nginx",
+			ProcessArgs: "--port 8080",
+			ProcessExec: "/usr/bin/nginx",
+		},
+		PodID:         "nginx-pod-123",
+		ContainerName: "nginx-container",
+		DeploymentID:  "abc",
+		PodUID:        "efg",
+		Namespace:     "default",
+		Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP,
+		Port:          8080,
+	}
+	for b.Loop() {
+		p.BinaryKey(xxhash.New())
 	}
 }

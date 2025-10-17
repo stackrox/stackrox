@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -16,7 +17,10 @@ const (
 	implTransitionBased = "TransitionBased"
 )
 
-var closedConnRememberDuration = 5 * time.Minute
+var (
+	closedConnRememberDuration = 5 * time.Minute
+	h                          = xxhash.New()
+)
 
 func TestComputeUpdatedConns(t *testing.T) {
 	// Test data setup
@@ -355,9 +359,9 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		Port:          0,
 	}
 	// Compute binary hashes for test assertions
-	ep1hash := ep1.BinaryKey()
-	p1hash := p1.BinaryKey()
-	p2hash := p2.BinaryKey()
+	ep1hash := ep1.BinaryKey(h)
+	p1hash := p1.BinaryKey(h)
+	p2hash := p2.BinaryKey(h)
 	emptyHash := indicator.BinaryHash(0)
 	emptyDeduper := map[indicator.BinaryHash]indicator.BinaryHash{}
 

@@ -4,7 +4,6 @@ import (
 	"hash"
 	"unsafe"
 
-	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -13,8 +12,8 @@ var hashDelimiter = []byte{0}
 // keyHash produces a string that uniquely identifies a given NetworConn indicator.
 // Assumption: Two NetworkConn's are identical (for the network-graph purposes) when their keys are identical.
 // This is memory-optimized implementation that is slower than `keyString`, but the resulting string takes less memory.
-func (i *NetworkConn) keyHash() string {
-	h := xxhash.New()
+func (i *NetworkConn) keyHash(h hash.Hash64) string {
+	h.Reset()
 	// Collision probability example: for 100M uniformly distributed items, the collision probability is 2.71x10^4 = 0.027.
 	// For lower collision probabilities, one needs to use a fast 128bit hash, for example: XXH3_128 (LLM recommendation).
 	hashStrings(h, i.SrcEntity.ID, i.DstEntity.ID)
@@ -71,8 +70,8 @@ func hashStrings(h hash.Hash64, strs ...string) {
 
 // binaryKeyHash produces a binary hash that uniquely identifies a given ContainerEndpoint indicator.
 // This is a memory-optimized implementation using direct hash generation without string conversion.
-func (i *ContainerEndpoint) binaryKeyHash() BinaryHash {
-	h := xxhash.New()
+func (i *ContainerEndpoint) binaryKeyHash(h hash.Hash64) BinaryHash {
+	h.Reset()
 	hashStrings(h, i.Entity.ID)
 	hashPortAndProtocol(h, i.Port, i.Protocol)
 	return BinaryHash(h.Sum64())
@@ -82,8 +81,8 @@ func (i *ContainerEndpoint) binaryKeyHash() BinaryHash {
 
 // binaryKeyHash produces a binary hash that uniquely identifies a given ProcessListening indicator.
 // This is a memory-optimized implementation using direct hash generation without string conversion.
-func (i *ProcessListening) binaryKeyHash() BinaryHash {
-	h := xxhash.New()
+func (i *ProcessListening) binaryKeyHash(h hash.Hash64) BinaryHash {
+	h.Reset()
 	// From `ProcessIndicatorUniqueKey` - identifies the process and the container
 	hashStrings(h, i.PodID, i.ContainerName, i.Process.ProcessName, i.Process.ProcessExec, i.Process.ProcessArgs)
 	// From: containerEndpoint - identifies the endpoint
