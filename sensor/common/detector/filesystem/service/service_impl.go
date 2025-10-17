@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/detector/filesystem/pipeline"
 	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
@@ -19,10 +20,11 @@ var (
 )
 
 // NewService creates a new streaming service with the fact agent. It should only be called once.
-func NewService() Service {
+func NewService(pipeline *pipeline.Pipeline) Service {
 	srv := &serviceImpl{
 		authFuncOverride: authFuncOverride,
 		writer:           nil,
+		pipeline:         *pipeline,
 	}
 
 	return srv
@@ -38,6 +40,7 @@ type serviceImpl struct {
 
 	authFuncOverride func(context.Context, string) (context.Context, error)
 	writer           io.Writer
+	pipeline         pipeline.Pipeline
 }
 
 func (s *serviceImpl) Name() string {
@@ -88,5 +91,6 @@ func (s *serviceImpl) receiveMessages(stream sensor.FileActivityService_Communic
 		}
 
 		log.Debug("Got file activity: ", msg)
+		s.pipeline.Process(msg)
 	}
 }
