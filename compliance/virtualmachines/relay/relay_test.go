@@ -3,11 +3,9 @@ package relay
 import (
 	"context"
 	"net"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/mdlayher/vsock"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
@@ -32,19 +30,43 @@ func (s *relayTestSuite) SetupTest() {
 }
 
 func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
-	conn := s.defaultVsockConn()
 
-	// Wrong remoteAddr type fails
-	conn.remoteAddr = &net.TCPAddr{}
-	_, err := extractVsockCIDFromConnection(conn)
-	s.Require().Error(err)
+	connWrongAddrType := s.defaultVsockConn()
+	connWrongAddrType.remoteAddr = &net.TCPAddr{}
 
-	// Right type succeeds
-	conn.remoteAddr = &vsock.Addr{ContextID: 42}
-	vsockCID, err := extractVsockCIDFromConnection(conn)
-	s.Require().NoError(err)
-	s.Require().Equal(uint32(42), vsockCID)
+	cases := map[string]struct {
+		conn             net.Conn
+		shouldError      bool
+		expectedVsockCID uint32
+	}{
+		"wrong type fails": {
+			conn:             connWrongAddrType,
+			shouldError:      true,
+			expectedVsockCID: 0,
+		},
+		"reserved vsock CID fails": {
+			conn:             s.defaultVsockConn().withVsockCID(2),
+			shouldError:      true,
+			expectedVsockCID: 0,
+		},
+		"valid vsock CID succeeds": {
+			conn:             s.defaultVsockConn().withVsockCID(42),
+			shouldError:      false,
+			expectedVsockCID: 42,
+		},
+	}
 
+	for name, c := range cases {
+		s.Run(name, func() {
+			vsockCID, err := extractVsockCIDFromConnection(c.conn)
+			if c.shouldError {
+				s.Require().Error(err)
+			} else {
+				s.Require().NoError(err)
+				s.Equal(c.expectedVsockCID, vsockCID)
+			}
+		})
+	}
 }
 
 func (s *relayTestSuite) TestParseIndexReport() {
@@ -193,39 +215,18 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 }
 
 func (s *relayTestSuite) TestValidateVsockCID() {
-	cases := map[string]struct {
-		indexReportVsockCID int
-		connVsockCID        int
-		shouldError         bool
-	}{
-		"mismatching vsock CID fails": {
-			indexReportVsockCID: 42,
-			connVsockCID:        99,
-			shouldError:         true,
-		},
-		"matching vsock CID succeeds": {
-			indexReportVsockCID: 42,
-			connVsockCID:        42,
-			shouldError:         false,
-		},
-		"invalid vsock CID fails": {
-			indexReportVsockCID: 1,
-			connVsockCID:        1,
-			shouldError:         true,
-		},
-	}
+	// Reported CID is 42
+	indexReport := v1.IndexReport{VsockCid: "42"}
 
-	for name, c := range cases {
-		s.Run(name, func() {
-			indexReport := v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
-			err := validateVsockCID(&indexReport, uint32(c.connVsockCID))
-			if c.shouldError {
-				s.Require().Error(err)
-			} else {
-				s.Require().NoError(err)
-			}
-		})
-	}
+	// Real (connection) CID is 99 - does not match, should return error
+	connVsockCID := uint32(99)
+	err := validateReportedVsockCID(&indexReport, connVsockCID)
+	s.Require().Error(err)
+
+	// Real (connection) CID is 42 - matches, should return nil
+	connVsockCID = uint32(42)
+	err = validateReportedVsockCID(&indexReport, connVsockCID)
+	s.Require().NoError(err)
 }
 
 func (s *relayTestSuite) defaultVsockConn() *mockVsockConn {
