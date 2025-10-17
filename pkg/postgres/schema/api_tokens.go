@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,8 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "api_tokens")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_API_TOKEN, "tokenmetadata", (*storage.TokenMetadata)(nil)))
+		schema = getTokenMetadataSchema()
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableAPITokensStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_API_TOKEN, schema)
@@ -48,4 +45,70 @@ type APITokens struct {
 	Expiration *time.Time `gorm:"column:expiration;type:timestamp"`
 	Revoked    bool       `gorm:"column:revoked;type:bool"`
 	Serialized []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	tokenMetadataSearchFields = map[search.FieldLabel]*search.Field{}
+
+	tokenMetadataSchema = &walker.Schema{
+		Table:    "api_tokens",
+		Type:     "*storage.TokenMetadata",
+		TypeName: "TokenMetadata",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Expiration",
+				ColumnName: "Expiration",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Revoked",
+				ColumnName: "Revoked",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTokenMetadataSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if tokenMetadataSchema.OptionsMap == nil {
+		tokenMetadataSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_API_TOKEN, tokenMetadataSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range tokenMetadataSchema.Fields {
+		tokenMetadataSchema.Fields[i].Schema = tokenMetadataSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(tokenMetadataSchema)
+	return tokenMetadataSchema
 }
