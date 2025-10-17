@@ -23,7 +23,7 @@ mkdir "${target_dir}/bin"
 for platform_upper in Linux Darwin Windows; do
   platform_lower="$(echo "$platform_upper" | tr '[:upper:]' '[:lower:]')"
 
-  for platform in platform_upper platform_lower; do
+  for platform in "${platform_upper}" "${platform_lower}"; do
     mkdir "${target_dir}/bin/${platform}"
 
     for app in roxagent roxctl; do
