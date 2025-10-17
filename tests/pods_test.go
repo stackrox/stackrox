@@ -64,6 +64,11 @@ func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func())
 	testutils.Retry(t, 5, 10*time.Second, func(deplRetryT testutils.T) {
 		deploymentID = getDeploymentID(deplRetryT, kPod.GetName())
 		deplRetryT.Logf("Central sees the deployment under ID %s", deploymentID)
+
+		// Verify Central sees exactly 1 pod for this deployment
+		podCount := getPodCountInCentral(deplRetryT, deploymentID)
+		require.Equal(deplRetryT, 1, podCount, "Central should see exactly 1 pod for deployment %s", deploymentID)
+
 		pods := getPods(deplRetryT, deploymentID)
 		require.Len(deplRetryT, pods, 1)
 		pod = pods[0]
@@ -195,7 +200,9 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 	return respData.Pods
 }
 
-func getPodCount(t testutils.T, deploymentID string) int {
+// getPodCountInCentral queries Central via GraphQL to get the number of pods for a deployment.
+// This ensures Central has properly ingested the pod from Sensor.
+func getPodCountInCentral(t testutils.T, deploymentID string) int {
 	var respData struct {
 		PodCount int32 `json:"podCount"`
 	}
@@ -207,7 +214,7 @@ func getPodCount(t testutils.T, deploymentID string) int {
 	`, map[string]interface{}{
 		"podsQuery": fmt.Sprintf("Deployment ID: %s", deploymentID),
 	}, &respData, timeout)
-	log.Infof("%+v", respData)
+	log.Infof("Pod count in Central for deployment %s: %d", deploymentID, respData.PodCount)
 
 	return int(respData.PodCount)
 }
