@@ -79,7 +79,7 @@ func TestActiveVulnerability(t *testing.T) {
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 	log.Infof("test case %v", testCase)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
-	setupDeployment(t, testCase.getImage(), deploymentName)
+	setupDeploymentInNamespace(t, testCase.getImage(), deploymentName, "default")
 	defer teardownDeployment(t, deploymentName)
 	fmt.Println(idx, testCase, deploymentName)
 	deploymentID := getDeploymentID(t, deploymentName)
