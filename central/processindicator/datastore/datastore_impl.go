@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -29,8 +29,6 @@ const (
 )
 
 var (
-	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
-
 	addBatchSize = env.ProcessAddBatchSize.IntegerSetting()
 )
 
@@ -47,10 +45,6 @@ type datastoreImpl struct {
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
 	stopper concurrency.Stopper
-}
-
-func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
-	return deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).IsAllowed(), nil
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -71,10 +65,6 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 		return nil, false, err
 	}
 
-	if ok, err := checkReadAccess(ctx, indicator); !ok || err != nil {
-		return nil, false, err
-	}
-
 	return indicator, true, nil
 }
 
@@ -84,30 +74,17 @@ func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string)
 		return nil, false, err
 	}
 
-	allowedIndicators := indicators[:0]
-
-	for _, indicator := range indicators {
-		if ok, err := checkReadAccess(ctx, indicator); !ok || err != nil {
-			continue
-		}
-
-		allowedIndicators = append(allowedIndicators, indicator)
-	}
-
-	return allowedIndicators, len(allowedIndicators) != 0, nil
+	return indicators, len(indicators) != 0, nil
 }
 
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
-	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	for identifierBatch := range slices.Chunk(indicators, addBatchSize) {
 		err := ds.storage.UpsertMany(ctx, identifierBatch)
 		if err != nil {
 			log.Warnf("error adding a batch of indicators: %v", err)
+			if errors.Is(err, sac.ErrResourceAccessDenied) {
+				return err
+			}
 		} else {
 			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
 		}
@@ -117,26 +94,10 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(pi *storage.ProcessIndicator) error) error {
-	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return ds.storage.WalkByQuery(ctx, q, fn)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
-	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.removeIndicators(ctx, ids)
-}
-
-func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -148,12 +109,6 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 }
 
 func (ds *datastoreImpl) PruneProcessIndicators(ctx context.Context, ids []string) (int, error) {
-	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return 0, err
-	} else if !ok {
-		return 0, sac.ErrResourceAccessDenied
-	}
-
 	return ds.pruneIndicators(ctx, ids), nil
 }
 
@@ -202,23 +157,12 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
-	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
-	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	cloned := q.CloneVT()
 	// Add the select fields of the view to the query.
 	cloned.Selects = []*v1.QuerySelect{
