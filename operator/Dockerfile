@@ -1,11 +1,9 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
-ARG TARGET_ARCH=amd64
 
-FROM registry.access.redhat.com/ubi9/go-toolset:1.24 AS builder
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} AS builder
 
 # Build the manager binary
-ARG TARGET_ARCH
 ARG roxpath
 
 WORKDIR ${roxpath}/
@@ -17,7 +15,7 @@ COPY go.sum go.sum
 
 # Cache deps before building and copying source so that we don't need to re-download as much and so that source changes
 # don't invalidate our downloaded layer.
-# We're not using `go mod tidy` here because go mod tidy needs to examine _source code_ in order to find unused modules.
+# We're not using `go mod tidy` here becuase go mod tidy needs to examine _source code_ in order to find unused modules.
 # There's no source code in this docker layer yet and so `go mod tidy` would empty go.mod and go.sum which is not what
 # we want. If we're to COPY source before running `go mod tidy`, local docker build times would go up because any code
 # change will invalidate docker layers and will cause modules redownload (during `tidy`). Therefore we use
@@ -49,14 +47,14 @@ COPY operator/build/status.sh status.sh
 # This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
 RUN git init && git add .
 
-# We've been historically building operator without CGO both upstream and downstream.
+# We've been historically building operator without CGO both upstream and downstream. The apollo-ci image has that
+# enabled by default, therefore we disable CGO here to keep doing the thing we used to.
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
+RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
-ARG TARGET_ARCH
-FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest
+FROM registry.access.redhat.com/ubi8-micro:latest
 
 ARG roxpath
 
