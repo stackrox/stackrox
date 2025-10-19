@@ -2,6 +2,7 @@ package baseline
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
@@ -23,6 +24,14 @@ type baselineEvaluator struct {
 	// deployment -> container name -> exec file paths within baseline
 	baselines    map[string]map[string]set.StringSet
 	baselineLock sync.RWMutex
+}
+
+// NewBaselineEvaluator creates a new baseline evaluator, using optimized implementation if feature flag is enabled
+func NewBaselineEvaluator() Evaluator {
+	if features.OptimizedBaselineMemory.Enabled() {
+		return newOptimizedBaselineEvaluator()
+	}
+	return newBaselineEvaluator()
 }
 
 // newBaselineEvaluator creates the original baseline evaluator implementation
