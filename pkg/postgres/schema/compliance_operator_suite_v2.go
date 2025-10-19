@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -29,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorSuiteV2)(nil)), "compliance_operator_suite_v2")
+		schema = getComplianceOperatorSuiteV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -37,7 +35,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SUITES, "complianceoperatorsuitev2", (*storage.ComplianceOperatorSuiteV2)(nil)))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorSuiteV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SUITES, schema)
@@ -56,4 +53,70 @@ type ComplianceOperatorSuiteV2 struct {
 	Name       string `gorm:"column:name;type:varchar"`
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:complianceoperatorsuitev2_sac_filter,type:hash"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceOperatorSuiteV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorSuiteV2Schema = &walker.Schema{
+		Table:    "compliance_operator_suite_v2",
+		Type:     "*storage.ComplianceOperatorSuiteV2",
+		TypeName: "ComplianceOperatorSuiteV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceOperatorSuiteV2Schema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceOperatorSuiteV2Schema.OptionsMap == nil {
+		complianceOperatorSuiteV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SUITES, complianceOperatorSuiteV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorSuiteV2Schema.Fields {
+		complianceOperatorSuiteV2Schema.Fields[i].Schema = complianceOperatorSuiteV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorSuiteV2Schema)
+	return complianceOperatorSuiteV2Schema
 }

@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,8 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NodeCVE)(nil)), "node_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "nodecve", (*storage.NodeCVE)(nil)))
+		schema = getNodeCVESchema()
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
@@ -66,4 +64,140 @@ type NodeCves struct {
 	Orphaned                       bool                          `gorm:"column:orphaned;type:bool"`
 	OrphanedTime                   *time.Time                    `gorm:"column:orphanedtime;type:timestamp"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	nodeCVESearchFields = map[search.FieldLabel]*search.Field{}
+
+	nodeCVESchema = &walker.Schema{
+		Table:    "node_cves",
+		Type:     "*storage.NodeCVE",
+		TypeName: "NodeCVE",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Cve",
+				ColumnName: "CveBaseInfo_Cve",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PublishedOn",
+				ColumnName: "CveBaseInfo_PublishedOn",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CreatedAt",
+				ColumnName: "CveBaseInfo_CreatedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "EpssProbability",
+				ColumnName: "CveBaseInfo_Epss_EpssProbability",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "OperatingSystem",
+				ColumnName: "OperatingSystem",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Cvss",
+				ColumnName: "Cvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.VulnerabilitySeverity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ImpactScore",
+				ColumnName: "ImpactScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Snoozed",
+				ColumnName: "Snoozed",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "SnoozeExpiry",
+				ColumnName: "SnoozeExpiry",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Orphaned",
+				ColumnName: "Orphaned",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "OrphanedTime",
+				ColumnName: "OrphanedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNodeCVESchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if nodeCVESchema.OptionsMap == nil {
+		nodeCVESchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_VULNERABILITIES, nodeCVESearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range nodeCVESchema.Fields {
+		nodeCVESchema.Fields[i].Schema = nodeCVESchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(nodeCVESchema)
+	return nodeCVESchema
 }
