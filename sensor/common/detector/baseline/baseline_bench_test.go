@@ -78,7 +78,7 @@ func BenchmarkAllMemory(b *testing.B) {
 	testMap["Mixed"] = k8sRealisticBaselines
 	testMap["Unique"] = uniqueBaselines
 
-	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby"}
+	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby", "OptimizedXXHash", "OptimizedNoIntermediateStrings"}
 
 	for baselineType, baselines := range testMap {
 		for _, evaluatorType := range evaluatorTypes {
@@ -213,7 +213,7 @@ func BenchmarkAddBaseline(b *testing.B) {
 	testMap["Mixed"] = k8sRealisticBaselines
 	testMap["Unique"] = uniqueBaselines
 
-	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby"}
+	evaluatorTypes := []string{"Original", "Optimized", "OptimizedRobby", "OptimizedXXHash", "OptimizedNoIntermediateStrings"}
 
 	for baselineType, baselines := range testMap {
 		for _, evaluatorType := range evaluatorTypes {

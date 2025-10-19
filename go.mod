@@ -37,6 +37,7 @@ require (
 	github.com/aws/smithy-go v1.22.5
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/cespare/xxhash v1.1.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble/v2 v2.0.6
 	github.com/containers/image/v5 v5.36.0

@@ -19,6 +19,10 @@ func NewBaselineEvaluator(evaluatorType string) Evaluator {
 		return newOptimizedBaselineEvaluator()
 	} else if evaluatorType == "OptimizedRobby" {
 		return newOptimizedBaselineEvaluatorRobby()
+	} else if evaluatorType == "OptimizedXXHash" {
+		return newOptimizedBaselineEvaluatorXXHash()
+	} else if evaluatorType == "OptimizedNoIntermediateStrings" {
+		return newOptimizedBaselineEvaluatorNoIntermediateStrings()
 	}
 
 	return newBaselineEvaluator()
