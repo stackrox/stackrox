@@ -23,6 +23,8 @@ func NewBaselineEvaluator(evaluatorType string) Evaluator {
 		return newOptimizedBaselineEvaluatorXXHash()
 	} else if evaluatorType == "OptimizedNoIntermediateStrings" {
 		return newOptimizedBaselineEvaluatorNoIntermediateStrings()
+	} else if evaluatorType == "OptimizedNoIntermediateStringsXXHash" {
+		return newOptimizedBaselineEvaluatorNoIntermediateStringsXXHash()
 	}
 
 	return newBaselineEvaluator()
