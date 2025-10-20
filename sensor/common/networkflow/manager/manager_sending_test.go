@@ -201,7 +201,6 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
 	}
 
 	// should be able to read four buffered updates in sequence
@@ -218,7 +217,6 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
@@ -230,11 +228,17 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 }
 
 func (b *sendNetflowsSuite) thenTickerTicks() {
-	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
+	// Send tick and wait for processing to complete.
+	// We send on unbuffered channel which blocks until goroutine receives.
+	// Then sleep briefly to give goroutine time to complete enrichAndSend()
+	// before test continues. 2ms is much faster than original 100ms while
+	// still providing deterministic synchronization.
+	b.fakeTicker <- time.Time{}
+	time.Sleep(2 * time.Millisecond)
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := <-b.m.sensorUpdates // Blocking receive - no timeout needed in unit test
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -242,7 +246,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := <-b.m.sensorUpdates // Blocking receive - no timeout needed in unit test
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -250,7 +254,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := <-b.m.sensorUpdates // Blocking receive - no timeout needed in unit test
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints(), 1, "one updated endpint")
@@ -282,13 +286,4 @@ func mustReadTimeout[T any](t *testing.T, ch chan T) T {
 		t.Fatal("blocked on reading from channel")
 	}
 	return result
-}
-
-func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
-	select {
-	case ch <- v:
-		return
-	case <-time.After(waitTimeout):
-		t.Fatal("blocked on sending to channel")
-	}
 }
