@@ -24,18 +24,23 @@ envsubst=$(command -v envsubst)
 # Detect stat variant (GNU vs BSD) and save the original stdin's device and inode
 # This is used by the kubectl wrapper function to detect stdin redirection
 _KUBECTL_WRAPPER_USE_GNU_STAT="true"
+_stdin_id=""
 if stat --version 2>&1 | grep "GNU coreutils" >/dev/null; then
-    _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+    _stdin_id=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
 else
     # BSD stat (macOS)
     _KUBECTL_WRAPPER_USE_GNU_STAT="false"
-    _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+    _stdin_id=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
 fi
 
 # Validate that we successfully captured the original stdin ID
-if [[ -z "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" ]]; then
+if [[ -z "$_stdin_id" ]]; then
     echo >&2 "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
 fi
+if [[ -n "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" && "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" != "$_stdin_id" ]]; then
+    echo >&2 "Warning: Overwriting already-initialized _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID with different value."
+fi
+_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID="$_stdin_id"
 
 # kubectl() - Wrapper function that calls retry-kubectl.sh with proper stdin handling
 # When kubectl is invoked with stdin being the same as the shell's original stdin,
