@@ -141,7 +141,9 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 				ctx, processBaseline.GetKey(), nil, nil, false)
 			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
 			} else {
 				s.NoError(err)
 			}
@@ -188,18 +190,26 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
 
 			ctx := s.testContexts[c.ScopeKey]
 			err = s.datastore.RemoveProcessBaseline(ctx, processBaseline.GetKey())
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processBaseline, fetched)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetched)
 			}
 		})
 	}
 }
 
 func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeployment() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -214,18 +224,26 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeployment() {
 
 			ctx := s.testContexts[c.ScopeKey]
 			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, deploymentID)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processBaseline, fetched)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetched)
 			}
 		})
 	}
 }
 
 func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeploymentOtherDeployment() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -242,12 +260,7 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeploymentOther
 
 			ctx := s.testContexts[c.ScopeKey]
 			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, otherDeploymentID)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
-			} else {
-				s.NoError(err)
-			}
+			s.NoError(err)
 
 			fetched, found, err := s.datastore.GetProcessBaseline(
 				s.testContexts[testutils.UnrestrictedReadWriteCtx],
@@ -287,7 +300,9 @@ func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineLock() {
 			s.True(found)
 			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
 
 				// Ensure the process baseline was not changed
 				protoassert.Equal(s.T(), expectedUnchanged, fetched)
@@ -341,7 +356,9 @@ func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineUnlock() {
 			s.True(found)
 			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
 
 				// Ensure the process baseline was not changed
 				protoassert.Equal(s.T(), expectedUnchanged, fetched)
@@ -430,20 +447,16 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaselinesByID() {
 			defer s.deleteProcessBaseline(processBaseline.GetId())
 
 			err = s.datastore.RemoveProcessBaselinesByIDs(ctx, []string{id})
+			s.NoError(err)
 			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
 				s.testContexts[testutils.UnrestrictedReadWriteCtx],
 				processBaseline.GetKey(),
 			)
 			s.NoError(fetchErr)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
-
+			if c.ExpectedFound {
 				s.True(found)
 				protoassert.Equal(s.T(), processBaseline, fetched)
 			} else {
-				s.NoError(err)
-
 				s.False(found)
 				s.Nil(fetched)
 			}
