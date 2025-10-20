@@ -1,4 +1,3 @@
-import React from 'react';
 import { FlexItem, Label } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';

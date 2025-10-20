@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Divider,
@@ -51,8 +51,8 @@ function GenericEntitiesSideBar({
     sidebarTitle,
     flowTableLabel,
 }: GenericEntitiesSideBarProps): ReactElement {
-    const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
-    const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
+    const [entityNameFilter, setEntityNameFilter] = useState<string>('');
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
     );
     const flows = getNetworkFlows(nodes, edges, id);
@@ -60,8 +60,8 @@ function GenericEntitiesSideBar({
     const initialExpandedRows = filteredFlows
         .filter((row) => row.children && !!row.children.length)
         .map((row) => row.id); // Default to all expanded
-    const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
-    const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
+    const [expandedRows, setExpandedRows] = useState<string[]>(initialExpandedRows);
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
     const entityNode = getNodeById(nodes, id);
     const numFlows = getNumFlows(filteredFlows);
