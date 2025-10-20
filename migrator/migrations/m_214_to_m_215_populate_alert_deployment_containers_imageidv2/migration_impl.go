@@ -32,12 +32,19 @@ func migrate(database *types.Databases) error {
 	for {
 		batch := make([]*storage.Alert, 0, pageSize)
 		pagination := search.NewPagination().Limit(int32(pageSize)).Offset(int32(page * pageSize))
-		query := search.NewQueryBuilder().WithPagination(pagination).ProtoQuery()
+		query := search.NewQueryBuilder().AddExactMatches(search.EntityType, storage.Alert_DEPLOYMENT.String()).WithPagination(pagination).ProtoQuery()
 		_ = store.WalkByQuery(database.DBCtx, query, func(alert *storage.Alert) error {
+			shouldAppend := false
 			for _, container := range alert.GetDeployment().GetContainers() {
-				container.GetImage().IdV2 = uuid.NewV5FromNonUUIDs(container.GetImage().GetName().GetFullName(), container.GetImage().GetId()).String()
+				newId := uuid.NewV5FromNonUUIDs(container.GetImage().GetName().GetFullName(), container.GetImage().GetId()).String()
+				if container.GetImage().GetIdV2() != newId {
+					container.GetImage().IdV2 = newId
+					shouldAppend = true
+				}
 			}
-			batch = append(batch, alert)
+			if shouldAppend {
+				batch = append(batch, alert)
+			}
 			return nil
 		})
 		err := store.UpsertMany(database.DBCtx, batch)
