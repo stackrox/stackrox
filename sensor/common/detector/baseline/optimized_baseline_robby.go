@@ -33,6 +33,26 @@ func newOptimizedBaselineEvaluatorRobby() Evaluator {
 	}
 }
 
+func (oe *optimizedBaselineEvaluatorRobby) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluatorRobby) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluatorRobby) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
+}
+
 // removeReference decrements reference count and cleans up if necessary
 func (oe *optimizedBaselineEvaluatorRobby) removeReference(contentHash string) {
 	entry, exists := oe.processSets[contentHash]

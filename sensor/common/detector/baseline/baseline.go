@@ -39,6 +39,9 @@ type Evaluator interface {
 	RemoveDeployment(id string)
 	AddBaseline(baseline *storage.ProcessBaseline)
 	IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool
+	GetLenDeploymentBaselines() int
+	GetLenProcessSets() int
+	GetRefCounts() []int
 }
 
 type baselineEvaluator struct {
@@ -52,6 +55,18 @@ func newBaselineEvaluator() Evaluator {
 	return &baselineEvaluator{
 		baselines: make(map[string]map[string]set.StringSet),
 	}
+}
+
+func (oe *baselineEvaluator) GetLenDeploymentBaselines() int {
+	return 0
+}
+
+func (oe *baselineEvaluator) GetLenProcessSets() int {
+	return 0
+}
+
+func (oe *baselineEvaluator) GetRefCounts() []int {
+	return make([]int, 0)
 }
 
 // RemoveDeployment removes the baselines for this specific deployment

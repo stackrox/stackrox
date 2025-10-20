@@ -7,20 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	//"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
-//// NewBaselineEvaluator creates a new baseline evaluator, using optimized implementation if feature flag is enabled
-//func NewBaselineEvaluator() Evaluator {
-//	if features.OptimizedBaselineMemory.Enabled() {
-//		return newOptimizedBaselineEvaluator()
-//	}
-//	return newBaselineEvaluator()
-//}
 
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
 type optimizedBaselineEvaluator struct {
@@ -43,6 +34,26 @@ func newOptimizedBaselineEvaluator() Evaluator {
 		deploymentBaselines: make(map[string]map[string]HashKey),
 		processSets:         make(map[HashKey]*processSetEntry),
 	}
+}
+
+func (oe *optimizedBaselineEvaluator) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluator) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluator) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
 }
 
 // removeReference decrements reference count and cleans up if necessary

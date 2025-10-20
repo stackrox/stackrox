@@ -12,27 +12,46 @@ import (
 
 func TestDeduplication(t *testing.T) {
 	// Test that optimized implementation actually deduplicates
-	optimized := newOptimizedBaselineEvaluator().(*optimizedBaselineEvaluator)
+	//optimized := newOptimizedBaselineEvaluator().(*optimizedBaselineEvaluator)
 
-	// Create two identical baselines
-	baseline1 := createTestBaseline("deployment-1", "container-1", 25)
-	baseline2 := createTestBaseline("deployment-2", "container-2", 25)
+	evaluatorTypes := []string{"Optimized", "OptimizedRobby", "OptimizedXXHash", "OptimizedNoIntermediateStrings", "OptimizedNoIntermediateStringsXXHash", "OptimizedPtr", "OptimizedMapSize"}
+	//evaluatorTypeMap := make(map[string]*Evaluator)
 
-	optimized.AddBaseline(baseline1)
-	optimized.AddBaseline(baseline2)
+	//evaluatorTypeMap["Optimized"] = optimizedBaselineEvaluator
+	//evaluatorTypeMap["OptimizedRobby"] = optimizedBaselineEvaluatorRobby
 
-	// Should have 2 deployment entries but only 1 process set
-	assert.Equal(t, 2, len(optimized.deploymentBaselines))
-	assert.Equal(t, 1, len(optimized.processSets))
 
-	// Both deployments should reference the same process set
-	key1 := optimized.deploymentBaselines["deployment-1"]["container-1"]
-	key2 := optimized.deploymentBaselines["deployment-2"]["container-2"]
-	assert.Equal(t, key1, key2)
+	//evaluatorFactory := func() Evaluator { return NewBaselineEvaluator(evaluatorType) }
+	for _, evaluatorType := range evaluatorTypes {
+		log.Infof("evaluator= %s", evaluatorType)
 
-	// Process set should have reference count of 2
-	entry := optimized.processSets[key1] // key1 is now the content hash directly
-	assert.Equal(t, 2, entry.refCount)
+		//evaluator := NewBaselineEvaluator(evaluatorTypeString).(*evaluatorType)
+
+		//evaluatorFactory := NewBaselineEvaluator(evaluatorType)
+		evaluatorFactory := func() Evaluator { return NewBaselineEvaluator(evaluatorType) }
+		evaluator := evaluatorFactory()
+		// Create two identical baselines
+		baseline1 := createTestBaseline("deployment-1", "container-1", 25)
+		baseline2 := createTestBaseline("deployment-2", "container-2", 25)
+
+		evaluator.AddBaseline(baseline1)
+		evaluator.AddBaseline(baseline2)
+
+		// Should have 2 deployment entries but only 1 process set
+		assert.Equal(t, 2, evaluator.GetLenDeploymentBaselines())
+		assert.Equal(t, 1, evaluator.GetLenProcessSets())
+
+		//// Both deployments should reference the same process set
+		//key1 := evaluator.deploymentBaselines["deployment-1"]["container-1"]
+		//key2 := evaluator.deploymentBaselines["deployment-2"]["container-2"]
+		//assert.Equal(t, key1, key2)
+
+		// Process set should have reference count of 2
+		//entry := evaluator.processSets[key1] // key1 is now the content hash directly
+		expectedRefCounts := []int{2}
+		actualRefCounts := evaluator.GetRefCounts()
+		assert.Equal(t, expectedRefCounts, actualRefCounts)
+	}
 }
 
 func TestDeduplicationModifyBaseline(t *testing.T) {

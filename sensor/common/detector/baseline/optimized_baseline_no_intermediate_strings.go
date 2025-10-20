@@ -4,11 +4,11 @@ import (
 	"crypto/sha256"
 	"slices"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -28,6 +28,26 @@ func newOptimizedBaselineEvaluatorNoIntermediateStrings() Evaluator {
 		deploymentBaselines: make(map[string]map[string]HashKey),
 		processSets:         make(map[HashKey]*processSetEntry),
 	}
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStrings) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStrings) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStrings) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
 }
 
 // removeReference decrements reference count and cleans up if necessary
@@ -91,11 +111,18 @@ func (oe *optimizedBaselineEvaluatorNoIntermediateStrings) AddBaseline(baseline 
 	// Compute hash and build deduplicated set in one pass
 	contentHash, baselineSet := computeHashAndBuildSet(processes)
 
-	if _, exists := oe.processSets[contentHash]; !exists {
+	if entry, exists := oe.processSets[contentHash]; !exists {
 		oe.processSets[contentHash] = &processSetEntry{
         	        refCount:  1,
         	        processes: baselineSet,
         	}
+	} else {
+		// Check for hash collision and verify content actually matches
+                if !entry.processes.Equal(baselineSet) {
+                        utils.Should(errors.Errorf("SHA256 hash collision detected for process set %v vs existing %v",
+                                baselineSet.AsSlice(), entry.processes.AsSlice()))
+                }
+                entry.refCount++
 	}
 
 	// ... rest of the function

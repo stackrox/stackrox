@@ -11,6 +11,9 @@ import (
 	//"github.com/stackrox/rox/pkg/utils"
 
 	"github.com/cespare/xxhash"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // optimizedBaselineEvaluatorNoIntermediateStringsXXHash implements memory-optimized baseline evaluation using process set deduplication
@@ -29,6 +32,26 @@ func newOptimizedBaselineEvaluatorNoIntermediateStringsXXHash() Evaluator {
 		deploymentBaselines: make(map[string]map[string]XXHashKey),
 		processSets:         make(map[XXHashKey]*processSetEntry),
 	}
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStringsXXHash) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStringsXXHash) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluatorNoIntermediateStringsXXHash) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
 }
 
 // removeReference decrements reference count and cleans up if necessary
@@ -92,11 +115,18 @@ func (oe *optimizedBaselineEvaluatorNoIntermediateStringsXXHash) AddBaseline(bas
 	// Compute hash and build deduplicated set in one pass
 	contentHash, baselineSet := computeHashAndBuildSetXXHash(processes)
 
-	if _, exists := oe.processSets[contentHash]; !exists {
+	if entry, exists := oe.processSets[contentHash]; !exists {
 		oe.processSets[contentHash] = &processSetEntry{
         	        refCount:  1,
         	        processes: baselineSet,
         	}
+	} else {
+		// Check for hash collision and verify content actually matches
+                if !entry.processes.Equal(baselineSet) {
+                        utils.Should(errors.Errorf("SHA256 hash collision detected for process set %v vs existing %v",
+                                baselineSet.AsSlice(), entry.processes.AsSlice()))
+                }
+                entry.refCount++
 	}
 
 	// ... rest of the function

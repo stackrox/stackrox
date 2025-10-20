@@ -3,12 +3,12 @@ package baseline
 import (
 	"slices"
 
-	//"github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	//"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils"
 
 	"github.com/cespare/xxhash"
 )
@@ -29,6 +29,26 @@ func newOptimizedBaselineEvaluatorMapSize() Evaluator {
 		deploymentBaselines: make(map[string]map[string]XXHashKey, 50),
 		processSets:         make(map[XXHashKey]*processSetEntry, 1000),
 	}
+}
+
+func (oe *optimizedBaselineEvaluatorMapSize) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluatorMapSize) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluatorMapSize) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
 }
 
 // removeReference decrements reference count and cleans up if necessary
@@ -92,11 +112,18 @@ func (oe *optimizedBaselineEvaluatorMapSize) AddBaseline(baseline *storage.Proce
 	// Compute hash and build deduplicated set in one pass
 	contentHash, baselineSet := computeHashAndBuildSetMapSize(processes)
 
-	if _, exists := oe.processSets[contentHash]; !exists {
+	if entry, exists := oe.processSets[contentHash]; !exists {
 		oe.processSets[contentHash] = &processSetEntry{
         	        refCount:  1,
         	        processes: baselineSet,
         	}
+	} else {
+		// Check for hash collision and verify content actually matches
+                if !entry.processes.Equal(baselineSet) {
+                        utils.Should(errors.Errorf("SHA256 hash collision detected for process set %v vs existing %v",
+                                baselineSet.AsSlice(), entry.processes.AsSlice()))
+                }
+                entry.refCount++
 	}
 
 	// ... rest of the function

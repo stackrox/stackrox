@@ -33,6 +33,26 @@ func newOptimizedBaselineEvaluatorXXHash() Evaluator {
 	}
 }
 
+func (oe *optimizedBaselineEvaluatorXXHash) GetLenDeploymentBaselines() int {
+	return len(oe.deploymentBaselines)
+}
+
+func (oe *optimizedBaselineEvaluatorXXHash) GetLenProcessSets() int {
+	return len(oe.processSets)
+}
+
+func (oe *optimizedBaselineEvaluatorXXHash) GetRefCounts() []int {
+	counts := make([]int, 0)
+
+	for _, processSet := range oe.processSets {
+		counts = append(counts, processSet.refCount)
+	}
+
+	slices.Sort(counts)
+
+	return counts
+}
+
 // removeReference decrements reference count and cleans up if necessary
 func (oe *optimizedBaselineEvaluatorXXHash) removeReference(contentHash XXHashKey) {
 	entry, exists := oe.processSets[contentHash]
