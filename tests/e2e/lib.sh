@@ -37,7 +37,7 @@ fi
 if [[ -z "$_stdin_id" ]]; then
     echo >&2 "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
 fi
-if [[ -n "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" && "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" != "$_stdin_id" ]]; then
+if [[ -n "${_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID:-}" && "${_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID:-}" != "$_stdin_id" ]]; then
     echo >&2 "Warning: Overwriting already-initialized _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID with different value."
 fi
 _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID="$_stdin_id"
