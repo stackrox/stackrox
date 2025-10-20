@@ -70,10 +70,12 @@ function RuleSelector({
     }
 
     const selection = scopedResourceSelector.type;
+    const selectorId = `rule-selector-${entityType.toLowerCase()}`;
+
     return (
         <div className="rule-selector">
             <SelectSingle
-                id={`rule-selector-${entityType.toLowerCase()}`}
+                id={selectorId}
                 toggleAriaLabel={`Select ${pluralEntity.toLowerCase()} by name or label`}
                 value={selection}
                 handleSelect={onRuleOptionSelect}
