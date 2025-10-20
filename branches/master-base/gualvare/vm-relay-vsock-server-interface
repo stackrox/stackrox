@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/relay-concurrency-control",
-    "hash": "60adac1290a841cc398d21e30043af916451fbbd"
+    "hash": "840210e0ad9cc407dfaa2496b94f265ab4b700aa"
   },
   "upstream": {
     "branch": "master-base/gualvare/vm-relay-vsock-server-interface"
