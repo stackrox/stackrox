@@ -2,28 +2,25 @@ import React, { useState } from 'react';
 import type { MouseEvent, Ref } from 'react';
 import {
     Badge,
-    Button,
     Divider,
     Flex,
     FlexItem,
     MenuToggle,
+    SearchInput,
     Select,
     SelectGroup,
     SelectList,
     SelectOption,
-    TextInputGroup,
-    TextInputGroupMain,
-    TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
-import { TimesIcon } from '@patternfly/react-icons';
 
 import { flattenFilterValue } from 'utils/searchUtils';
 import type { Cluster } from './types';
 
 import './NamespaceSelect.css';
 
-const SELECT_ALL = 'SELECT_ALL';
+// TODO: Refactor ClusterSelect and NamespaceSelect to use a shared reusable component
+const SELECT_ALL = '##SELECT_ALL##';
 
 type NamespaceSelectProps = {
     clusters: Cluster[];
@@ -122,28 +119,12 @@ function NamespaceSelect({
         >
             <SelectList style={{ maxHeight: '50vh', overflow: 'auto' }}>
                 <div className="pf-v5-u-p-md">
-                    <TextInputGroup>
-                        <TextInputGroupMain
-                            value={filterValue}
-                            onChange={(_event, value) => setFilterValue(value)}
-                            placeholder="Filter by namespace"
-                            aria-label="Filter namespaces"
-                        />
-                        {filterValue && (
-                            <TextInputGroupUtilities>
-                                <Button
-                                    variant="plain"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setFilterValue('');
-                                    }}
-                                    aria-label="Clear filter"
-                                >
-                                    <TimesIcon />
-                                </Button>
-                            </TextInputGroupUtilities>
-                        )}
-                    </TextInputGroup>
+                    <SearchInput
+                        value={filterValue}
+                        onChange={(_event, value) => setFilterValue(value)}
+                        placeholder="Filter by namespace"
+                        aria-label="Filter namespaces"
+                    />
                 </div>
                 <Divider />
                 <SelectOption
