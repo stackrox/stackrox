@@ -1152,9 +1152,6 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 
 // cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
 func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]map[string]*epss.EPSSItem, error) {
-	if !features.EPSSScore.Enabled() {
-		return nil, nil
-	}
 	enrichmentList := enrichments[epss.Type]
 	if len(enrichmentList) == 0 {
 		zlog.Warn(ctx).

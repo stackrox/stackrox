@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
@@ -138,20 +137,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	enrichers := []driver.Enricher{
 		&fixedby.Enricher{},
 		&nvd.Enricher{},
+		&epss.Enricher{},
 	}
-	var (
-		epssEnabled bool
-		csafEnabled bool
-	)
-	if features.EPSSScore.Enabled() {
-		epssEnabled = true
-		enrichers = append(enrichers, &epss.Enricher{})
-	}
+	var csafEnabled bool
 	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
 		csafEnabled = true
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
-	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
 	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,

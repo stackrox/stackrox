@@ -90,12 +90,6 @@ var (
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
-	// Display Exploit Prediction Scoring System (EPSS) score.
-	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE", enabled)
-
-	// Add the ability to generate an SBOM from an image
-	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
-
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
@@ -159,6 +153,5 @@ var (
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
-	// Both ScannerV4StoreExternalIndexReports and SBOMGeneration features must be enabled to store the index reports.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 )
