@@ -34,7 +34,7 @@ fi
 
 # Validate that we successfully captured the original stdin ID
 if [[ -z "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" ]]; then
-    echo "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
+    echo >&2 "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
 fi
 
 # kubectl() - Wrapper function that calls retry-kubectl.sh with proper stdin handling
