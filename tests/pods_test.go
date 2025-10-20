@@ -108,7 +108,6 @@ func verifyStartTimeBeforeEvents(t testutils.T, startTime graphql.Time, events [
 
 func TestPod(testT *testing.T) {
 	skipIfNoCollection(testT)
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 

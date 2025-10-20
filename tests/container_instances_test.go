@@ -21,7 +21,6 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	skipIfNoCollection(testT)
 
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
