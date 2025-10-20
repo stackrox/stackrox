@@ -107,6 +107,45 @@ func shouldRetryForTests(err error) bool {
 	return false
 }
 
+// testLogger is an interface for logging test output
+type testLogger interface {
+	Logf(format string, args ...interface{})
+}
+
+// loggingUnaryInterceptor logs gRPC requests and responses for debugging test failures.
+func loggingUnaryInterceptor(logger testLogger) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		start := time.Now()
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		duration := time.Since(start)
+
+		if err != nil {
+			logger.Logf("gRPC call %s failed after %v: %v", method, duration, err)
+		} else {
+			logger.Logf("gRPC call %s succeeded in %v", method, duration)
+		}
+
+		return err
+	}
+}
+
+// loggingStreamInterceptor logs gRPC stream requests for debugging test failures.
+func loggingStreamInterceptor(logger testLogger) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		start := time.Now()
+		stream, err := streamer(ctx, desc, cc, method, opts...)
+		duration := time.Since(start)
+
+		if err != nil {
+			logger.Logf("gRPC stream %s failed after %v: %v", method, duration, err)
+		} else {
+			logger.Logf("gRPC stream %s established in %v", method, duration)
+		}
+
+		return stream, err
+	}
+}
+
 func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
@@ -132,9 +171,27 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 		grpc_retry.WithRetriable(shouldRetryForTests),
 	}
 
-	grpcDialOpts := []grpc.DialOption{
-		grpc.WithChainUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
-		grpc.WithChainStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)),
+	grpcDialOpts := []grpc.DialOption{}
+
+	// Add logging interceptors if the test object supports logging (e.g., *testing.T)
+	if logger, ok := t.(testLogger); ok {
+		// Logging interceptor first, then retry - this ensures we log each retry attempt
+		grpcDialOpts = append(grpcDialOpts,
+			grpc.WithChainUnaryInterceptor(
+				loggingUnaryInterceptor(logger),
+				grpc_retry.UnaryClientInterceptor(retryOpts...),
+			),
+			grpc.WithChainStreamInterceptor(
+				loggingStreamInterceptor(logger),
+				grpc_retry.StreamClientInterceptor(retryOpts...),
+			),
+		)
+	} else {
+		// Just add retry interceptors without logging
+		grpcDialOpts = append(grpcDialOpts,
+			grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+			grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)),
+		)
 	}
 
 	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
