@@ -127,7 +127,10 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection")
+		tc.GetFakeCentral().ClearReceivedBuffer()
 		tc.RestartFakeCentralConnection(centralCaps...)
+		t.Log("Wait for Hello message")
+		tc.WaitForHello(t, 10*time.Second)
 
 		t.Log("Sending updated SyncScanConfigs message with multiple scan configs")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
@@ -147,7 +150,10 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig2, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection again")
+		tc.GetFakeCentral().ClearReceivedBuffer()
 		tc.RestartFakeCentralConnection(centralCaps...)
+		t.Log("Wait for Hello message")
+		tc.WaitForHello(t, 10*time.Second)
 
 		t.Log("Sending empty SyncScanConfigs message to delete all resources")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
