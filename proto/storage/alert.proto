@@ -223,10 +223,10 @@ message ListAlert {
     ResourceEntity resource = 11;
     // Represents an alert on a node
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-    NodeEntity node = 16;
+    NodeEntity node = 12;
   }
 
-  // Next available tag: 17
+  // Next available tag: 16
 }
 
 message ListAlertPolicy {
