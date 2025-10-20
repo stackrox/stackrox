@@ -1,7 +1,6 @@
 package baseline
 
 import (
-	//"crypto/sha256"
 	"slices"
 	"strings"
 
@@ -18,9 +17,9 @@ import (
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
 type optimizedBaselineEvaluator struct {
 	// deployment -> container name -> content hash (direct access)
-	deploymentBaselines map[string]map[string]XXHashKey
+	deploymentBaselines map[string]map[string]hashKey
 	// content hash -> reference count and StringSet for deduplication
-	processSets map[XXHashKey]*processSetEntry
+	processSets map[hashKey]*processSetEntry
 	// lock for thread safety
 	lock sync.RWMutex
 }
@@ -33,13 +32,13 @@ type processSetEntry struct {
 // newOptimizedBaselineEvaluator creates the optimized baseline evaluator implementation
 func newOptimizedBaselineEvaluator() Evaluator {
 	return &optimizedBaselineEvaluator{
-		deploymentBaselines: make(map[string]map[string]XXHashKey),
-		processSets:         make(map[XXHashKey]*processSetEntry),
+		deploymentBaselines: make(map[string]map[string]hashKey),
+		processSets:         make(map[hashKey]*processSetEntry),
 	}
 }
 
 // removeReference decrements reference count and cleans up if necessary
-func (oe *optimizedBaselineEvaluator) removeReference(contentHash XXHashKey) {
+func (oe *optimizedBaselineEvaluator) removeReference(contentHash hashKey) {
 	entry, exists := oe.processSets[contentHash]
 	if !exists {
 		return // Entry doesn't exist or is nil
@@ -56,13 +55,13 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash XXHashKey) {
 	}
 }
 
-type XXHashKey uint64
+type hashKey uint64
 
-func computeProcessSetXXHash(processes set.StringSet) XXHashKey {
+func computeProcessSetXXHash(processes set.StringSet) hashKey {
         processSlice := processes.AsSlice()
         slices.Sort(processSlice)
         content := strings.Join(processSlice, "\n")
-        return XXHashKey(xxhash.Sum64([]byte(content)))
+        return hashKey(xxhash.Sum64([]byte(content)))
 }
 
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
@@ -111,7 +110,7 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 
 	// Update deployment mapping
 	if oe.deploymentBaselines[deploymentID] == nil {
-		oe.deploymentBaselines[deploymentID] = make(map[string]XXHashKey)
+		oe.deploymentBaselines[deploymentID] = make(map[string]hashKey)
 	}
 
 	// If this deployment/container already has a process set, decrement its ref count
@@ -143,7 +142,7 @@ func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBa
 }
 
 // findOrCreateProcessSet finds an existing process set with the same content or creates a new one
-func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) XXHashKey {
+func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) hashKey {
 	contentHash := computeProcessSetXXHash(processes)
 
 	// Check if we already have this process set
