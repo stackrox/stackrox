@@ -35,6 +35,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.AlertsSchema
 	targetResource = resources.Alert
+	pool = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -177,6 +178,12 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"id",
 		"policy_id",
@@ -221,8 +228,12 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
+				pool.Put(pooledBuffers...)
 				return marshalErr
 			}
 
@@ -271,16 +282,24 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		// delete for the top level parent
 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
+			// Return all pooled buffers on error
+			pool.Put(pooledBuffers...)
 			return err
 		}
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
 		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			// Return all pooled buffers on error
+			pool.Put(pooledBuffers...)
 			return err
 		}
-		// clear the input rows for the next batch
+
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		// clear the input rows and pooled buffers for the next batch
 		inputRows = inputRows[:0]
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

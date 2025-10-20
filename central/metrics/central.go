@@ -186,6 +186,21 @@ var (
 		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
 	}, []string{"status", "type"})
 
+	storeSerializedBytesUpsertHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "store_serialized_bytes_upsert_histogram",
+		Help:      "Size of serialized column",
+		//TODO: adjust to the real usage after tests
+		Buckets: []float64{
+			256,
+			4 << 10,  // 4KB (go page size)
+			16 << 10, // 16KB (max HTTP/2 frame size used by gRPC)
+			32 << 10, // 32KB (default buffer size for io.Copy)
+			1 << 20,  // 1MB
+		},
+	})
+
 	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -306,6 +321,11 @@ func ObserveSentSize(messageType string, size float64) {
 	grpcSentSize.With(prometheus.Labels{
 		"Type": messageType,
 	}).Observe(size)
+}
+
+// ObserveSerializedSize registers store serialized payload size.
+func ObserveSerializedSize(size int) {
+	storeSerializedBytesUpsertHistogram.Observe(float64(size))
 }
 
 // SetGRPCMaxMessageSizeGauge sets the maximum message size observed for message with type.
