@@ -15,7 +15,7 @@ grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 grpc-auth = { module = "io.grpc:grpc-auth", version.ref = "grpc" }
 netty-tcnative-boringssl-static = { module = "io.netty:netty-tcnative-boringssl-static", version.ref = "netty-tcnative" }
-groovy-bom = { module = "org.apache.groovy:groovy-bom", version = "4.0.28" }
+groovy-bom = { module = "org.apache.groovy:groovy-bom", version = "5.0.2" }
 groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
 spock-bom = { module = "org.spockframework:spock-bom", version = "2.3-groovy-4.0" }
 spock-core = { module = "org.spockframework:spock-core" }
