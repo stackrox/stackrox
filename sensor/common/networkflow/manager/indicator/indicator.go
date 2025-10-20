@@ -57,8 +57,8 @@ func (i *NetworkConn) Key(h hash.Hash64) string {
 }
 
 // BinaryKey generates a binary hash for memory-efficient storage in dedupers
-func (i *NetworkConn) BinaryKey() BinaryHash {
-	return i.binaryKeyHash()
+func (i *NetworkConn) BinaryKey(h hash.Hash64) BinaryHash {
+	return i.binaryKeyHash(h)
 }
 
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.

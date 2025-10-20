@@ -23,8 +23,8 @@ func (i *NetworkConn) keyHash(h hash.Hash64) string {
 
 // binaryKeyHash produces a binary hash that uniquely identifies a given NetworkConn indicator.
 // This is a memory-optimized implementation using direct hash generation without string conversion.
-func (i *NetworkConn) binaryKeyHash() BinaryHash {
-	h := xxhash.New()
+func (i *NetworkConn) binaryKeyHash(h hash.Hash64) BinaryHash {
+	h.Reset()
 	hashStrings(h, i.SrcEntity.ID, i.DstEntity.ID)
 	hashPortAndProtocol(h, i.DstPort, i.Protocol)
 	return BinaryHash(h.Sum64())

@@ -156,7 +156,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
 	h := xxhash.New()
 	for conn, currTS := range current {
-		key := conn.BinaryKey()
+		key := conn.BinaryKey(h)
 
 		// Check if this connection has been closed recently.
 		prevTsFound, prevTS := c.lookupPrevTimestamp(key)

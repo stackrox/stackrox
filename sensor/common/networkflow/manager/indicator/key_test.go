@@ -151,7 +151,7 @@ func TestKey_UniquenessForDifferentObjects(t *testing.T) {
 		}
 		assert.NotEqual(t, conn1.Key(h), conn2.Key(h),
 			"Different NetworkConn objects should have different keys")
-		assert.NotEqual(t, conn1.BinaryKey(), conn2.BinaryKey(),
+		assert.NotEqual(t, conn1.BinaryKey(h), conn2.BinaryKey(h),
 			"Different NetworkConn objects should have different binary keys")
 	})
 
