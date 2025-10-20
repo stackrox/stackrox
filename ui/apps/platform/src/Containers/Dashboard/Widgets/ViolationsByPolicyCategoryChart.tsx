@@ -20,8 +20,8 @@ import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLa
 import type { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
 import {
-    defaultChartHeight as chartHeight,
     defaultChartBarWidth,
+    defaultChartHeight as chartHeight,
     navigateOnClickEvent,
     patternflySeverityTheme,
 } from 'utils/chartUtils';
