@@ -165,6 +165,7 @@ function VirtualMachinesCvesTable() {
                                                     unknownCount={
                                                         virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
                                                     }
+                                                    entity="virtual machine"
                                                 />
                                             </Td>
                                             <Td dataLabel="Cluster">
