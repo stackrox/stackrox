@@ -25,6 +25,9 @@ func migrate(database *types.Databases) error {
 	defer rows.Close()
 
 	containers, err := readRows(rows)
+	if err != nil {
+		return err
+	}
 	tx, err := db.Begin(database.DBCtx)
 	if err != nil {
 		return err
