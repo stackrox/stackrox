@@ -57,7 +57,7 @@ kubectl() {
     fi
 
     # If we couldn't get stdin ID, or if stdin has changed, pass through as-is.
-    # Otherwise (stdin unchanged), redirect to /dev/null.
+    # Otherwise (stdin unchanged), redirect from /dev/null.
     if [[ "$current_stdin_id" == "" || "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" == "$current_stdin_id" ]]; then
         "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@" < /dev/null
     else
