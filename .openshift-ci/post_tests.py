@@ -168,6 +168,7 @@ class PostClusterTest(StoreArtifacts):
             "squid",
             "kube-system",
             "prefetch-images",
+            "default",
         ]
         self.openshift_namespaces = [
             "openshift-dns",
