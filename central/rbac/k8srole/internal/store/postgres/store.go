@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.K8sRolesSchema
 	targetResource = resources.K8sRole
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
+func insertIntoK8sRoles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.K8SRole) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -138,10 +139,10 @@ func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
 	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRole) error {
+func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.K8SRole) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.PodsSchema
 	targetResource = resources.Deployment
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -124,11 +123,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoPods(batch *pgx.Batch, obj *storage.Pod) error {
+func insertIntoPods(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Pod) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -148,16 +149,16 @@ func insertIntoPods(batch *pgx.Batch, obj *storage.Pod) error {
 
 	for childIndex, child := range obj.GetLiveInstances() {
 		if err := insertIntoPodsLiveInstances(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from pods_live_instances where pods_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetLiveInstances()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
+func insertIntoPodsLiveInstances(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ContainerInstance, podID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -172,7 +173,7 @@ func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstanc
 	return nil
 }
 
-func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Pod) error {
+func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Pod) error {
 	if len(objs) == 0 {
 		return nil
 	}

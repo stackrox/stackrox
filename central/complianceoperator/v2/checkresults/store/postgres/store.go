@@ -35,7 +35,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorCheckResultV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -116,11 +115,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.ComplianceOperatorCheckResultV2) error {
+func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorCheckResultV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -143,10 +144,10 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanConfigName, Rationale, ScanRefId, RuleRefId, LastStartedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanConfigName = EXCLUDED.ScanConfigName, Rationale = EXCLUDED.Rationale, ScanRefId = EXCLUDED.ScanRefId, RuleRefId = EXCLUDED.RuleRefId, LastStartedTime = EXCLUDED.LastStartedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorCheckResultV2) error {
+func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorCheckResultV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

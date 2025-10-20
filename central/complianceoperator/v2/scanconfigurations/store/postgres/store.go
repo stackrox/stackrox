@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorScanConfigurationV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2) error {
+func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanConfigurationV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -116,7 +117,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 	for childIndex, child := range obj.GetProfiles() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
@@ -124,7 +125,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
 	for childIndex, child := range obj.GetClusters() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Clusters(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
@@ -132,16 +133,16 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetClusters()))
 	for childIndex, child := range obj.GetNotifiers() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from compliance_operator_scan_configuration_v2_notifiers where compliance_operator_scan_configuration_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetNotifiers()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -156,7 +157,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, o
 	return nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_Cluster, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanConfigurationV2_Cluster, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -171,7 +172,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, o
 	return nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NotifierConfiguration, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -186,7 +187,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, 
 	return nil
 }
 
-func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanConfigurationV2) error {
+func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorScanConfigurationV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

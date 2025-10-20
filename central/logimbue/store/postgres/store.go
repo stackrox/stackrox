@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.LogImbuesSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -91,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoLogImbues(batch *pgx.Batch, obj *storage.LogImbue) error {
+func insertIntoLogImbues(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.LogImbue) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -108,10 +109,10 @@ func insertIntoLogImbues(batch *pgx.Batch, obj *storage.LogImbue) error {
 	finalStr := "INSERT INTO log_imbues (Id, Timestamp, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.LogImbue) error {
+func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.LogImbue) error {
 	if len(objs) == 0 {
 		return nil
 	}

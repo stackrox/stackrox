@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorReportSnapshotV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2) error {
+func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorReportSnapshotV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -124,16 +125,16 @@ func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage
 
 	for childIndex, child := range obj.GetScans() {
 		if err := insertIntoComplianceOperatorReportSnapshotV2Scans(batch, child, obj.GetReportId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from compliance_operator_report_snapshot_v2_scans where compliance_operator_report_snapshot_v2_ReportId = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetReportId()), len(obj.GetScans()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
+func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -149,7 +150,7 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 	return nil
 }
 
-func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
+func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

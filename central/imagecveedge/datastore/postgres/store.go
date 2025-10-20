@@ -28,7 +28,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ImageCveEdgesSchema
 	targetResource = resources.Image
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (

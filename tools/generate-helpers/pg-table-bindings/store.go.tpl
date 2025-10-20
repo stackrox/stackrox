@@ -48,7 +48,6 @@ var (
     {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
         targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
-    pool = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -210,11 +209,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, pool pgSearch.BufferPool, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) ({{if not $schema.Parent }}*[]byte,{{end}} error) {
     {{if not $schema.Parent }}
-    serialized, marshalErr := obj.MarshalVT()
+    buf := pool.Get(obj.SizeVT())
+    n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+    serialized := (*buf)[:n]
     if marshalErr != nil {
-        return marshalErr
+        return buf, marshalErr
     }
     {{end}}
 
@@ -233,14 +234,14 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{range $index, $child := $schema.Children }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
-            return err
+            return {{if not $schema.Parent }}buf,{{end}} err
         }
     }
 
     query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- end}}
-    return nil
+    return {{if not $schema.Parent }}buf,{{end}} nil
 }
 
 {{range $index, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
@@ -255,7 +256,7 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
 {{- define "copyObject"}}
 {{- $schema := .schema }}
-func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{if not $schema.Parent }}pool pgSearch.BufferPool,{{end}} {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
     if len(objs) == 0 {
         return nil
     }

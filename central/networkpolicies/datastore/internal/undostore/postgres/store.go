@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkpolicyapplicationundorecordsSchema
 	targetResource = resources.NetworkPolicy
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -91,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoRecord) error {
+func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NetworkPolicyApplicationUndoRecord) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -107,10 +108,10 @@ func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, obj *storag
 	finalStr := "INSERT INTO networkpolicyapplicationundorecords (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
+func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
 	if len(objs) == 0 {
 		return nil
 	}

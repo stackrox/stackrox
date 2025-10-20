@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.TestParent2Schema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestParent2(batch *pgx.Batch, obj *storage.TestParent2) error {
+func insertIntoTestParent2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestParent2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -112,10 +113,10 @@ func insertIntoTestParent2(batch *pgx.Batch, obj *storage.TestParent2) error {
 	finalStr := "INSERT INTO test_parent2 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent2) error {
+func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestParent2) error {
 	if len(objs) == 0 {
 		return nil
 	}

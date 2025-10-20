@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ClusterHealthStatusesSchema
 	targetResource = resources.Cluster
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoClusterHealthStatuses(batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {
+func insertIntoClusterHealthStatuses(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ClusterHealthStatus) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -117,10 +118,10 @@ func insertIntoClusterHealthStatuses(batch *pgx.Batch, obj *storage.ClusterHealt
 	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ClusterHealthStatus) error {
+func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ClusterHealthStatus) error {
 	if len(objs) == 0 {
 		return nil
 	}

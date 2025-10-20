@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.PoliciesSchema
 	targetResource = resources.WorkflowAdministration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
+func insertIntoPolicies(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Policy) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -121,10 +122,10 @@ func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
 	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Policy) error {
+func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Policy) error {
 	if len(objs) == 0 {
 		return nil
 	}

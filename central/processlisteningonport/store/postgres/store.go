@@ -35,7 +35,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ListeningEndpointsSchema
 	targetResource = resources.DeploymentExtension
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -116,11 +115,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
+func insertIntoListeningEndpoints(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ProcessListeningOnPortStorage) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -141,10 +142,10 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, CloseTimestamp, ProcessIndicatorId, Closed, DeploymentId, PodUid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, CloseTimestamp = EXCLUDED.CloseTimestamp, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
+func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ProcessListeningOnPortStorage) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.PolicyCategoriesSchema
 	targetResource = resources.WorkflowAdministration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) error {
+func insertIntoPolicyCategories(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.PolicyCategory) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -110,10 +111,10 @@ func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) e
 	finalStr := "INSERT INTO policy_categories (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.PolicyCategory) error {
+func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.PolicyCategory) error {
 	if len(objs) == 0 {
 		return nil
 	}

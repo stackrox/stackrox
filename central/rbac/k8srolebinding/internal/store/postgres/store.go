@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.RoleBindingsSchema
 	targetResource = resources.K8sRoleBinding
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.K8SRoleBinding) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -143,16 +144,16 @@ func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error
 
 	for childIndex, child := range obj.GetSubjects() {
 		if err := insertIntoRoleBindingsSubjects(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetSubjects()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
+func insertIntoRoleBindingsSubjects(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Subject, roleBindingID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -168,7 +169,7 @@ func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, role
 	return nil
 }
 
-func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
+func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.K8SRoleBinding) error {
 	if len(objs) == 0 {
 		return nil
 	}

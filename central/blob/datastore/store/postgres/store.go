@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BlobsSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
+func insertIntoBlobs(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Blob) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -112,10 +113,10 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 	finalStr := "INSERT INTO blobs (Name, Length, ModifiedTime, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Length = EXCLUDED.Length, ModifiedTime = EXCLUDED.ModifiedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Blob) error {
+func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Blob) error {
 	if len(objs) == 0 {
 		return nil
 	}

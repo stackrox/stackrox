@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ReportSnapshotsSchema
 	targetResource = resources.WorkflowAdministration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) error {
+func insertIntoReportSnapshots(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ReportSnapshot) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -121,10 +122,10 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportSnapshot) error {
+func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ReportSnapshot) error {
 	if len(objs) == 0 {
 		return nil
 	}

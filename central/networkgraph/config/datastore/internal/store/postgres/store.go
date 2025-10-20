@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkGraphConfigsSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {
+func insertIntoNetworkGraphConfigs(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NetworkGraphConfig) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +107,10 @@ func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphCo
 	finalStr := "INSERT INTO network_graph_configs (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkGraphConfig) error {
+func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NetworkGraphConfig) error {
 	if len(objs) == 0 {
 		return nil
 	}

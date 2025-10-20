@@ -27,13 +27,6 @@ var defaultBufferPoolSizes = []int{
 
 var defaultBufferPool BufferPool = &poolWithMetric{mem.NewTieredBufferPool(defaultBufferPoolSizes...)}
 
-// DefaultBufferPool returns the current default buffer pool. It is a BufferPool
-// created with NewBufferPool that uses a set of default sizes optimized for
-// expected workflows.
-func DefaultBufferPool() BufferPool {
-	return defaultBufferPool
-}
-
 type poolWithMetric struct {
 	mem.BufferPool
 }

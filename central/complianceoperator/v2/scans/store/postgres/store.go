@@ -35,7 +35,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorScanV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -116,11 +115,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanV2) error {
+func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -140,10 +141,10 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, LastStartedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, LastStartedTime = EXCLUDED.LastStartedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanV2) error {
+func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorScanV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

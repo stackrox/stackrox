@@ -35,7 +35,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.SecretsSchema
 	targetResource = resources.Secret
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -116,11 +115,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
+func insertIntoSecrets(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Secret) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -141,16 +142,16 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 
 	for childIndex, child := range obj.GetFiles() {
 		if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
+func insertIntoSecretsFiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.SecretDataFile, secretID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -176,7 +177,7 @@ func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secre
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
+func insertIntoSecretsFilesRegistries(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -192,7 +193,7 @@ func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSe
 	return nil
 }
 
-func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Secret) error {
+func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Secret) error {
 	if len(objs) == 0 {
 		return nil
 	}

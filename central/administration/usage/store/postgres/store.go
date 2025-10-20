@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.SecuredUnitsSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
+func insertIntoSecuredUnits(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.SecuredUnits) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -114,10 +115,10 @@ func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
 	finalStr := "INSERT INTO secured_units (Id, Timestamp, NumNodes, NumCpuUnits, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, NumNodes = EXCLUDED.NumNodes, NumCpuUnits = EXCLUDED.NumCpuUnits, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SecuredUnits) error {
+func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.SecuredUnits) error {
 	if len(objs) == 0 {
 		return nil
 	}

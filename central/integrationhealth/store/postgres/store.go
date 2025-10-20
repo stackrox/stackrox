@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.IntegrationHealthsSchema
 	targetResource = resources.Integration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoIntegrationHealths(batch *pgx.Batch, obj *storage.IntegrationHealth) error {
+func insertIntoIntegrationHealths(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.IntegrationHealth) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +107,10 @@ func insertIntoIntegrationHealths(batch *pgx.Batch, obj *storage.IntegrationHeal
 	finalStr := "INSERT INTO integration_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.IntegrationHealth) error {
+func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.IntegrationHealth) error {
 	if len(objs) == 0 {
 		return nil
 	}

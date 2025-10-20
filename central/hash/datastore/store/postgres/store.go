@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.HashesSchema
 	targetResource = resources.Hash
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
+func insertIntoHashes(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Hash) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +107,10 @@ func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
 	finalStr := "INSERT INTO hashes (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Hash) error {
+func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Hash) error {
 	if len(objs) == 0 {
 		return nil
 	}

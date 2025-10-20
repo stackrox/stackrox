@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.TestStructsSchema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
+func insertIntoTestStructs(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestStruct) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -128,16 +129,16 @@ func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 
 	for childIndex, child := range obj.GetNested() {
 		if err := insertIntoTestStructsNesteds(batch, child, obj.GetKey1(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from test_structs_nesteds where test_structs_Key1 = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetKey1(), len(obj.GetNested()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
+func insertIntoTestStructsNesteds(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -157,7 +158,7 @@ func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nest
 	return nil
 }
 
-func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
+func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestStruct) error {
 	if len(objs) == 0 {
 		return nil
 	}

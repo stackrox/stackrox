@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.CollectionsSchema
 	targetResource = resources.WorkflowAdministration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) error {
+func insertIntoCollections(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ResourceCollection) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -116,16 +117,16 @@ func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) er
 
 	for childIndex, child := range obj.GetEmbeddedCollections() {
 		if err := insertIntoCollectionsEmbeddedCollections(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from collections_embedded_collections where collections_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetEmbeddedCollections()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -140,7 +141,7 @@ func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.Res
 	return nil
 }
 
-func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ResourceCollection) error {
+func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ResourceCollection) error {
 	if len(objs) == 0 {
 		return nil
 	}

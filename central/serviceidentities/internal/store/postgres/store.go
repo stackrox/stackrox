@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ServiceIdentitiesSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoServiceIdentities(batch *pgx.Batch, obj *storage.ServiceIdentity) error {
+func insertIntoServiceIdentities(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ServiceIdentity) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +107,10 @@ func insertIntoServiceIdentities(batch *pgx.Batch, obj *storage.ServiceIdentity)
 	finalStr := "INSERT INTO service_identities (SerialStr, serialized) VALUES($1, $2) ON CONFLICT(SerialStr) DO UPDATE SET SerialStr = EXCLUDED.SerialStr, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ServiceIdentity) error {
+func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ServiceIdentity) error {
 	if len(objs) == 0 {
 		return nil
 	}

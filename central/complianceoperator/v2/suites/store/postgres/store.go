@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorSuiteV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, obj *storage.ComplianceOperatorSuiteV2) error {
+func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorSuiteV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -133,10 +134,10 @@ func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, obj *storage.Complian
 	finalStr := "INSERT INTO compliance_operator_suite_v2 (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorSuiteV2) error {
+func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorSuiteV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.APITokensSchema
 	targetResource = resources.Integration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
+func insertIntoAPITokens(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TokenMetadata) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -112,10 +113,10 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
+func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TokenMetadata) error {
 	if len(objs) == 0 {
 		return nil
 	}

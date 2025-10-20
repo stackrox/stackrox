@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.WatchedImagesSchema
 	targetResource = resources.WatchedImage
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error {
+func insertIntoWatchedImages(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.WatchedImage) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +107,10 @@ func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error 
 	finalStr := "INSERT INTO watched_images (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.WatchedImage) error {
+func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.WatchedImage) error {
 	if len(objs) == 0 {
 		return nil
 	}

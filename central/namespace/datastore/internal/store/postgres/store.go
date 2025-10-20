@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NamespacesSchema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -124,11 +123,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) error {
+func insertIntoNamespaces(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NamespaceMetadata) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -145,10 +146,10 @@ func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) erro
 	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
+func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NamespaceMetadata) error {
 	if len(objs) == 0 {
 		return nil
 	}

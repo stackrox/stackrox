@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.SimpleAccessScopesSchema
 	targetResource = resources.Access
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -91,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoSimpleAccessScopes(batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
+func insertIntoSimpleAccessScopes(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.SimpleAccessScope) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -108,10 +109,10 @@ func insertIntoSimpleAccessScopes(batch *pgx.Batch, obj *storage.SimpleAccessSco
 	finalStr := "INSERT INTO simple_access_scopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SimpleAccessScope) error {
+func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.SimpleAccessScope) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ProcessBaselineResultsSchema
 	targetResource = resources.DeploymentExtension
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoProcessBaselineResults(batch *pgx.Batch, obj *storage.ProcessBaselineResults) error {
+func insertIntoProcessBaselineResults(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ProcessBaselineResults) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -133,10 +134,10 @@ func insertIntoProcessBaselineResults(batch *pgx.Batch, obj *storage.ProcessBase
 	finalStr := "INSERT INTO process_baseline_results (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessBaselineResults) error {
+func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ProcessBaselineResults) error {
 	if len(objs) == 0 {
 		return nil
 	}

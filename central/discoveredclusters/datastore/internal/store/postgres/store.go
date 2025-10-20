@@ -32,7 +32,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.DiscoveredClustersSchema
 	targetResource = resources.Administration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -95,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredCluster) error {
+func insertIntoDiscoveredClusters(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.DiscoveredCluster) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -117,10 +118,10 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 	finalStr := "INSERT INTO discovered_clusters (Id, Metadata_Name, Metadata_Type, Metadata_FirstDiscoveredAt, Status, SourceId, LastUpdatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Metadata_Name = EXCLUDED.Metadata_Name, Metadata_Type = EXCLUDED.Metadata_Type, Metadata_FirstDiscoveredAt = EXCLUDED.Metadata_FirstDiscoveredAt, Status = EXCLUDED.Status, SourceId = EXCLUDED.SourceId, LastUpdatedAt = EXCLUDED.LastUpdatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.DiscoveredCluster) error {
+func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.DiscoveredCluster) error {
 	if len(objs) == 0 {
 		return nil
 	}

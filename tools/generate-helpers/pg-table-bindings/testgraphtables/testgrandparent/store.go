@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.TestGrandparentsSchema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) error {
+func insertIntoTestGrandparents(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestGrandparent) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -116,16 +117,16 @@ func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) 
 
 	for childIndex, child := range obj.GetEmbedded() {
 		if err := insertIntoTestGrandparentsEmbeddeds(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from test_grandparents_embeddeds where test_grandparents_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetEmbedded()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -150,7 +151,7 @@ func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGran
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -166,7 +167,7 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage
 	return nil
 }
 
-func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
+func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestGrandparent) error {
 	if len(objs) == 0 {
 		return nil
 	}

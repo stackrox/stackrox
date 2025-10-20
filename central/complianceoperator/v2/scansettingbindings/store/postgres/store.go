@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorScanSettingBindingV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBindingV2) error {
+func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanSettingBindingV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -134,10 +135,10 @@ func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *sto
 	finalStr := "INSERT INTO compliance_operator_scan_setting_binding_v2 (Id, Name, ClusterId, ScanSettingName, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ScanSettingName = EXCLUDED.ScanSettingName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBindingV2) error {
+func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorScanSettingBindingV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ReportConfigurationsSchema
 	targetResource = resources.WorkflowAdministration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfiguration) error {
+func insertIntoReportConfigurations(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ReportConfiguration) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -118,16 +119,16 @@ func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfigu
 
 	for childIndex, child := range obj.GetNotifiers() {
 		if err := insertIntoReportConfigurationsNotifiers(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from report_configurations_notifiers where report_configurations_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetNotifiers()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
+func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -142,7 +143,7 @@ func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.Noti
 	return nil
 }
 
-func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportConfiguration) error {
+func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ReportConfiguration) error {
 	if len(objs) == 0 {
 		return nil
 	}

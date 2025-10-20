@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.DeclarativeConfigHealthsSchema
 	targetResource = resources.Integration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -91,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {
+func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.DeclarativeConfigHealth) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -107,10 +108,10 @@ func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, obj *storage.Declarati
 	finalStr := "INSERT INTO declarative_config_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.DeclarativeConfigHealth) error {
+func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.DeclarativeConfigHealth) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NetworkpoliciesundodeploymentsSchema
 	targetResource = resources.NetworkPolicy
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -91,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -107,10 +108,10 @@ func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.Net
 	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	if len(objs) == 0 {
 		return nil
 	}

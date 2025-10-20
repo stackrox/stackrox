@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NotifiersSchema
 	targetResource = resources.Integration
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -90,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
+func insertIntoNotifiers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Notifier) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -107,10 +108,10 @@ func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 	finalStr := "INSERT INTO notifiers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Notifier) error {
+func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Notifier) error {
 	if len(objs) == 0 {
 		return nil
 	}

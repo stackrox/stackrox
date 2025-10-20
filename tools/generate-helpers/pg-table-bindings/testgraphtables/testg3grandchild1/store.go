@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.TestG3GrandChild1Schema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestG3GrandChild1(batch *pgx.Batch, obj *storage.TestG3GrandChild1) error {
+func insertIntoTestG3GrandChild1(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestG3GrandChild1) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -110,10 +111,10 @@ func insertIntoTestG3GrandChild1(batch *pgx.Batch, obj *storage.TestG3GrandChild
 	finalStr := "INSERT INTO test_g3_grand_child1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromTestG3GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestG3GrandChild1) error {
+func copyFromTestG3GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestG3GrandChild1) error {
 	if len(objs) == 0 {
 		return nil
 	}

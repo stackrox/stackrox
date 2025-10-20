@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorProfileV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2) error {
+func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorProfileV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -142,16 +143,16 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 
 	for childIndex, child := range obj.GetRules() {
 		if err := insertIntoComplianceOperatorProfileV2Rules(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from compliance_operator_profile_v2_rules where compliance_operator_profile_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetRules()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2_Rule, complianceOperatorProfileV2ID string, idx int) error {
+func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorProfileV2_Rule, complianceOperatorProfileV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -166,7 +167,7 @@ func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.C
 	return nil
 }
 
-func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfileV2) error {
+func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorProfileV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

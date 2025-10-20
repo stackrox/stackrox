@@ -33,7 +33,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ClustersSchema
 	targetResource = resources.Cluster
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -123,11 +122,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
+func insertIntoClusters(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Cluster) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -144,7 +145,7 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 	finalStr := "INSERT INTO clusters (Id, Name, Type, Labels, Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, Status_OrchestratorMetadata_Version = EXCLUDED.Status_OrchestratorMetadata_Version, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
 // endregion Helper functions

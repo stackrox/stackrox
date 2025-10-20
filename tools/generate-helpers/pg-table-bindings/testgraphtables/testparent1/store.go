@@ -30,7 +30,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.TestParent1Schema
 	targetResource = resources.Namespace
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -93,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
+func insertIntoTestParent1(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestParent1) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -116,16 +117,16 @@ func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 
 	for childIndex, child := range obj.GetChildren() {
 		if err := insertIntoTestParent1Childrens(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from test_parent1_childrens where test_parent1_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetChildren()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
+func insertIntoTestParent1Childrens(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -140,7 +141,7 @@ func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_C
 	return nil
 }
 
-func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent1) error {
+func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestParent1) error {
 	if len(objs) == 0 {
 		return nil
 	}

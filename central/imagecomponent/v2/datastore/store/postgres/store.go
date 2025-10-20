@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ImageComponentV2Schema
 	targetResource = resources.Image
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2) error {
+func insertIntoImageComponentV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ImageComponentV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -120,10 +121,10 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 	finalStr := "INSERT INTO image_component_v2 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, ImageIdV2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, ImageIdV2 = EXCLUDED.ImageIdV2, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
+func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ImageComponentV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

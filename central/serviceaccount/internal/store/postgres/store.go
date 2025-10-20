@@ -34,7 +34,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ServiceAccountsSchema
 	targetResource = resources.ServiceAccount
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -115,11 +114,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ServiceAccount) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -137,10 +138,10 @@ func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) er
 	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ServiceAccount) error {
+func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ServiceAccount) error {
 	if len(objs) == 0 {
 		return nil
 	}

@@ -31,7 +31,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorBenchmarkV2Schema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -94,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, obj *storage.ComplianceOperatorBenchmarkV2) error {
+func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorBenchmarkV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -117,16 +118,16 @@ func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, obj *storage.Comp
 
 	for childIndex, child := range obj.GetProfiles() {
 		if err := insertIntoComplianceOperatorBenchmarkV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from compliance_operator_benchmark_v2_profiles where compliance_operator_benchmark_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
-	return nil
+	return buf, nil
 }
 
-func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorBenchmarkV2_Profile, complianceOperatorBenchmarkV2ID string, idx int) error {
+func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorBenchmarkV2_Profile, complianceOperatorBenchmarkV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -142,7 +143,7 @@ func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorBenchmarkV2) error {
+func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorBenchmarkV2) error {
 	if len(objs) == 0 {
 		return nil
 	}

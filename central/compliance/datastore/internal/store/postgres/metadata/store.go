@@ -35,7 +35,6 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceRunMetadataSchema
 	targetResource = resources.Compliance
-	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -116,11 +115,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceRunMetadata(batch *pgx.Batch, obj *storage.ComplianceRunMetadata) error {
+func insertIntoComplianceRunMetadata(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceRunMetadata) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -135,10 +136,10 @@ func insertIntoComplianceRunMetadata(batch *pgx.Batch, obj *storage.ComplianceRu
 	finalStr := "INSERT INTO compliance_run_metadata (RunId, StandardId, ClusterId, FinishTimestamp, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(RunId) DO UPDATE SET RunId = EXCLUDED.RunId, StandardId = EXCLUDED.StandardId, ClusterId = EXCLUDED.ClusterId, FinishTimestamp = EXCLUDED.FinishTimestamp, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromComplianceRunMetadata(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceRunMetadata) error {
+func copyFromComplianceRunMetadata(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceRunMetadata) error {
 	if len(objs) == 0 {
 		return nil
 	}
