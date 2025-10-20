@@ -23,7 +23,6 @@ import (
 
 const (
 	baseTable = "alerts"
-	storeName = "Alert"
 )
 
 var (
