@@ -1,6 +1,7 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+          <layout class="util.MaskingPatternLayout">
             <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %m%n%rEx{full,
                 com.sun,
                 com.jayway.restassured.internal,
@@ -19,6 +20,7 @@
                 worker.org.gradle,
             }
             </pattern>
+          </layout>
         </encoder>
     </appender>
 
@@ -33,7 +35,8 @@
             <appender name="FILE-${logFileName}" class="ch.qos.logback.core.FileAppender">
                 <file>build/spec-logs/${logFileName}.log</file>
 
-                <encoder>
+                <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                  <layout class="util.MaskingPatternLayout">
                     <pattern>%d{HH:mm:ss} | %-5level | %-25.-25logger{0} | %m%n%rEx{full,
                         com.sun,
                         com.jayway.restassured.internal,
@@ -52,6 +55,7 @@
                         worker.org.gradle,
                     }
                     </pattern>
+                  </layout>
                 </encoder>
             </appender>
         </sift>
