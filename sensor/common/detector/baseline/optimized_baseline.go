@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-
 	"github.com/cespare/xxhash"
 )
 
@@ -58,10 +57,10 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash hashKey) {
 type hashKey uint64
 
 func computeProcessSetXXHash(processes set.StringSet) hashKey {
-        processSlice := processes.AsSlice()
-        slices.Sort(processSlice)
-        content := strings.Join(processSlice, "\n")
-        return hashKey(xxhash.Sum64([]byte(content)))
+	processSlice := processes.AsSlice()
+	slices.Sort(processSlice)
+	content := strings.Join(processSlice, "\n")
+	return hashKey(xxhash.Sum64([]byte(content)))
 }
 
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
