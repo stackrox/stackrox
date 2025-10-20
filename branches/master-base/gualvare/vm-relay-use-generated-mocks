@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/vm-relay-extract-handle-vsock-connection",
     "hash": "0ea896f2e92db219ac5a4cf281acef1f9e66582c"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/vm-relay-use-generated-mocks"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17375,
+        "gqlID": "PR_kwDOGd6UEM6uoopv"
+      }
+    }
   }
 }
