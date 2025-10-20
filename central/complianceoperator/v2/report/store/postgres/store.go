@@ -134,7 +134,7 @@ func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, pool pgSearc
 	return buf, nil
 }
 
-func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
+func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

@@ -153,7 +153,7 @@ func insertIntoRoleBindings(batch *pgx.Batch, pool pgSearch.BufferPool, obj *sto
 	return buf, nil
 }
 
-func insertIntoRoleBindingsSubjects(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Subject, roleBindingID string, idx int) error {
+func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

@@ -142,7 +142,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, pool pgSe
 	return buf, nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -157,7 +157,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, p
 	return nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorScanConfigurationV2_Cluster, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_Cluster, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -172,7 +172,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, p
 	return nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NotifierConfiguration, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

@@ -151,7 +151,7 @@ func insertIntoSecrets(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.
 	return buf, nil
 }
 
-func insertIntoSecretsFiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.SecretDataFile, secretID string, idx int) error {
+func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -177,7 +177,7 @@ func insertIntoSecretsFiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *sto
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
+func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

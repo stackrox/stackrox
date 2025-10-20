@@ -126,7 +126,7 @@ func insertIntoActiveComponents(batch *pgx.Batch, pool pgSearch.BufferPool, obj 
 	return buf, nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
+func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

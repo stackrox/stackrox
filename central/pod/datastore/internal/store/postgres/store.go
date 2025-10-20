@@ -158,7 +158,7 @@ func insertIntoPods(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Pod
 	return buf, nil
 }
 
-func insertIntoPodsLiveInstances(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ContainerInstance, podID string, idx int) error {
+func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

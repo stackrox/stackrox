@@ -128,7 +128,7 @@ func insertIntoReportConfigurations(batch *pgx.Batch, pool pgSearch.BufferPool, 
 	return buf, nil
 }
 
-func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
+func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

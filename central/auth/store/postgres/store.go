@@ -122,7 +122,7 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, pool pgSearch.Buffe
 	return buf, nil
 }
 
-func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.AuthMachineToMachineConfig_Mapping, authMachineToMachineConfigID string, idx int) error {
+func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storage.AuthMachineToMachineConfig_Mapping, authMachineToMachineConfigID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

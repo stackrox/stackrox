@@ -126,7 +126,7 @@ func insertIntoCollections(batch *pgx.Batch, pool pgSearch.BufferPool, obj *stor
 	return buf, nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

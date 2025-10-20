@@ -150,7 +150,7 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, pool pgSearch.BufferPo
 	return buf, nil
 }
 
-func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.RuleControls, complianceOperatorRuleV2ID string, idx int) error {
+func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, obj *storage.RuleControls, complianceOperatorRuleV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

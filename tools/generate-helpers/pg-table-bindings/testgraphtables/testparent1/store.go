@@ -126,7 +126,7 @@ func insertIntoTestParent1(batch *pgx.Batch, pool pgSearch.BufferPool, obj *stor
 	return buf, nil
 }
 
-func insertIntoTestParent1Childrens(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
+func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

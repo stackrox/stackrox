@@ -180,7 +180,7 @@ func insertIntoDeployments(batch *pgx.Batch, pool pgSearch.BufferPool, obj *stor
 	return buf, nil
 }
 
-func insertIntoDeploymentsContainers(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Container, deploymentID string, idx int) error {
+func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -234,7 +234,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, pool pgSearch.BufferPool,
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -252,7 +252,7 @@ func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, pool pgSearch.BufferP
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -272,7 +272,7 @@ func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, pool pgSearch.Buff
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -289,7 +289,7 @@ func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, pool pgSearch.Buff
 	return nil
 }
 
-func insertIntoDeploymentsPorts(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.PortConfig, deploymentID string, idx int) error {
+func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deploymentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -316,7 +316,7 @@ func insertIntoDeploymentsPorts(batch *pgx.Batch, pool pgSearch.BufferPool, obj 
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

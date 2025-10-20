@@ -126,7 +126,7 @@ func insertIntoTestGrandparents(batch *pgx.Batch, pool pgSearch.BufferPool, obj 
 	return buf, nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -151,7 +151,7 @@ func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, pool pgSearch.BufferP
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

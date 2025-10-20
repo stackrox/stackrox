@@ -127,7 +127,7 @@ func insertIntoComplianceOperatorBenchmarkV2(batch *pgx.Batch, pool pgSearch.Buf
 	return buf, nil
 }
 
-func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorBenchmarkV2_Profile, complianceOperatorBenchmarkV2ID string, idx int) error {
+func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorBenchmarkV2_Profile, complianceOperatorBenchmarkV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

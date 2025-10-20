@@ -209,7 +209,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, pool pgSearch.BufferPool, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) ({{if not $schema.Parent }}*[]byte,{{end}} error) {
+func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, {{if not $schema.Parent }}pool pgSearch.BufferPool,{{end}} obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) ({{if not $schema.Parent }}*[]byte,{{end}} error) {
     {{if not $schema.Parent }}
     buf := pool.Get(obj.SizeVT())
     n, marshalErr := obj.MarshalToSizedBufferVT(*buf)

@@ -138,7 +138,7 @@ func insertIntoTestStructs(batch *pgx.Batch, pool pgSearch.BufferPool, obj *stor
 	return buf, nil
 }
 
-func insertIntoTestStructsNesteds(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
+func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
