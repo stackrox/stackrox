@@ -28,6 +28,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ImageComponentEdgesSchema
 	targetResource = resources.Image
+	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (

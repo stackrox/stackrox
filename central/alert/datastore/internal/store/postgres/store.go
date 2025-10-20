@@ -35,7 +35,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.AlertsSchema
 	targetResource = resources.Alert
-	pool = pgSearch.DefaultBufferPool()
+	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -233,7 +233,6 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
 			serialized := (*buf)[:n]
 			if marshalErr != nil {
-				pool.Put(pooledBuffers...)
 				return marshalErr
 			}
 
@@ -282,23 +281,18 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		// delete for the top level parent
 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
-			// Return all pooled buffers on error
-			pool.Put(pooledBuffers...)
 			return err
 		}
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
 		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			// Return all pooled buffers on error
-			pool.Put(pooledBuffers...)
 			return err
 		}
-
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 		// Return all pooled buffers after successful CopyFrom
 		pool.Put(pooledBuffers...)
-		// clear the input rows and pooled buffers for the next batch
-		inputRows = inputRows[:0]
 		pooledBuffers = pooledBuffers[:0]
 	}
 

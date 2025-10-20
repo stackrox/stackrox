@@ -48,6 +48,7 @@ var (
     {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
         targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
+    pool = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -264,6 +265,12 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     deletes := make([]string, 0, batchSize)
+
+    // Keep track of pooled buffers to return after batch processing
+    pooledBuffers := make([]*[]byte, 0, batchSize)
+    defer func() {
+        pool.Put(pooledBuffers...)
+    }()
     {{end}}
 
     copyCols := []string {
@@ -282,7 +289,10 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             "to simply use the object.  %s", obj)
             {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
-            serialized, marshalErr := obj.MarshalVT()
+            buf := pool.Get(obj.SizeVT())
+            pooledBuffers = append(pooledBuffers, buf)
+            n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+            serialized := (*buf)[:n]
             if marshalErr != nil {
                 return marshalErr
             }
@@ -313,6 +323,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         }
         // clear the input rows for the next batch
         inputRows = inputRows[:0]
+        {{if not $schema.Parent -}}
+        // Return all pooled buffers after successful CopyFrom
+        pool.Put(pooledBuffers...)
+        pooledBuffers = pooledBuffers[:0]
+        {{- end -}}
     }
 
     {{if $schema.Children }}

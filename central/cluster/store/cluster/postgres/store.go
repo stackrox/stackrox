@@ -33,6 +33,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ClustersSchema
 	targetResource = resources.Cluster
+	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (

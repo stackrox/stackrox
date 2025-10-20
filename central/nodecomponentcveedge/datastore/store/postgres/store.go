@@ -28,6 +28,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodeComponentsCvesEdgesSchema
 	targetResource = resources.Node
+	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (

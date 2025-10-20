@@ -31,6 +31,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.NodeCvesSchema
 	targetResource = resources.Node
+	pool           = pgSearch.DefaultBufferPool()
 )
 
 type (
@@ -135,6 +136,12 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"id",
 		"cvebaseinfo_cve",
@@ -159,7 +166,10 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -199,6 +209,9 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil
