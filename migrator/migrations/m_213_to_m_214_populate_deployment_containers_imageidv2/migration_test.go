@@ -13,14 +13,16 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
 type migrationTestSuite struct {
 	suite.Suite
 
-	db  *pghelper.TestPostgres
-	ctx context.Context
+	db         *pghelper.TestPostgres
+	ctx        context.Context
+	existingDB bool
 }
 
 func TestMigration(t *testing.T) {
@@ -30,86 +32,112 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTableDeploymentsStmt)
+	// Use the below lines to use a large existing database for testing.
+	// This is beneficial to test large batches at once.
+	// s.db = pghelper.ForTExistingDB(s.T(), false, "7593dc135f89446b_oIIuR")
+	// s.existingDB = true
+	if !s.existingDB {
+		pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTableDeploymentsStmt)
+	}
 }
 
 func (s *migrationTestSuite) TestMigration() {
-	deployments := map[string]*schema.DeploymentsContainers{
-		"08b69e6e-a96e-5b9a-b814-93d004d01cd8": {
-			ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/gke-metrics-collector:20250508_2300_RC0@sha256:d074c77bdc0ee1c4245113e62d93ef1ed6f1a51960ea854a972861a6a0c774ce",
-			ImageID:           "sha256:d074c77bdc0ee1c4245113e62d93ef1ed6f1a51960ea854a972861a6a0c774ce",
-			ImageIDV2:         "08b69e6e-a96e-5b9a-b814-93d004d01cd8",
-			DeploymentsID:     fixtures.GetDeployment().GetId(),
-			Idx:               0,
-		},
-		"f5e05ef2-f2a8-50b2-90ac-c1a445767e94": {
-			ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/gke-metrics-agent:1.15.6-gke.0@sha256:8d3f6c749a8589ac729c66564b41e8babb35c5f181e774cd586c9d2761beeb96",
-			ImageID:           "sha256:8d3f6c749a8589ac729c66564b41e8babb35c5f181e774cd586c9d2761beeb96",
-			ImageIDV2:         "f5e05ef2-f2a8-50b2-90ac-c1a445767e94",
-			DeploymentsID:     fixtures.GetDeployment().GetId(),
-			Idx:               1,
-		},
-		"e338a8ed-8b3e-5294-8b54-fb907774e2e8": {
-			ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/cpvpa:v0.8.9-gke.11@sha256:ac9bb16bbfeefd9947ceb049c30fe3e6f2c18cbafc2fb213ef3ef88f940d4a29",
-			ImageID:           "sha256:ac9bb16bbfeefd9947ceb049c30fe3e6f2c18cbafc2fb213ef3ef88f940d4a29",
-			ImageIDV2:         "e338a8ed-8b3e-5294-8b54-fb907774e2e8",
-			DeploymentsID:     fixtures.GetDeployment().GetId(),
-			Idx:               2,
-		},
-		"6933b4da-6607-517a-aa4d-9f2ac5caac78": {
-			ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/fluent-bit:v1.8.1200-gke.14@sha256:fe028dfcf00bdaded6770720de8df8f3d24e841f41a968138ae00d699003aa0f",
-			ImageID:           "sha256:fe028dfcf00bdaded6770720de8df8f3d24e841f41a968138ae00d699003aa0f",
-			ImageIDV2:         "6933b4da-6607-517a-aa4d-9f2ac5caac78",
-			DeploymentsID:     fixtures.GetDeployment().GetId(),
-			Idx:               3,
-		},
-	}
+	if !s.existingDB {
+		deployments := map[string]*schema.DeploymentsContainers{
+			"08b69e6e-a96e-5b9a-b814-93d004d01cd8": {
+				ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/gke-metrics-collector:20250508_2300_RC0@sha256:d074c77bdc0ee1c4245113e62d93ef1ed6f1a51960ea854a972861a6a0c774ce",
+				ImageID:           "sha256:d074c77bdc0ee1c4245113e62d93ef1ed6f1a51960ea854a972861a6a0c774ce",
+				ImageIDV2:         "08b69e6e-a96e-5b9a-b814-93d004d01cd8",
+				DeploymentsID:     fixtures.GetDeployment().GetId(),
+				Idx:               0,
+			},
+			"f5e05ef2-f2a8-50b2-90ac-c1a445767e94": {
+				ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/gke-metrics-agent:1.15.6-gke.0@sha256:8d3f6c749a8589ac729c66564b41e8babb35c5f181e774cd586c9d2761beeb96",
+				ImageID:           "sha256:8d3f6c749a8589ac729c66564b41e8babb35c5f181e774cd586c9d2761beeb96",
+				ImageIDV2:         "f5e05ef2-f2a8-50b2-90ac-c1a445767e94",
+				DeploymentsID:     fixtures.GetDeployment().GetId(),
+				Idx:               1,
+			},
+			"e338a8ed-8b3e-5294-8b54-fb907774e2e8": {
+				ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/cpvpa:v0.8.9-gke.11@sha256:ac9bb16bbfeefd9947ceb049c30fe3e6f2c18cbafc2fb213ef3ef88f940d4a29",
+				ImageID:           "sha256:ac9bb16bbfeefd9947ceb049c30fe3e6f2c18cbafc2fb213ef3ef88f940d4a29",
+				ImageIDV2:         "e338a8ed-8b3e-5294-8b54-fb907774e2e8",
+				DeploymentsID:     fixtures.GetDeployment().GetId(),
+				Idx:               2,
+			},
+			"6933b4da-6607-517a-aa4d-9f2ac5caac78": {
+				ImageNameFullName: "us-central1-artifactregistry.gcr.io/gke-release/gke-release/fluent-bit:v1.8.1200-gke.14@sha256:fe028dfcf00bdaded6770720de8df8f3d24e841f41a968138ae00d699003aa0f",
+				ImageID:           "sha256:fe028dfcf00bdaded6770720de8df8f3d24e841f41a968138ae00d699003aa0f",
+				ImageIDV2:         "6933b4da-6607-517a-aa4d-9f2ac5caac78",
+				DeploymentsID:     fixtures.GetDeployment().GetId(),
+				Idx:               3,
+			},
+		}
 
-	err := insertIntoDeployments(s.ctx, s.db, &schema.Deployments{
-		ID:                            fixtures.GetDeployment().GetId(),
-		Name:                          fixtures.GetDeployment().GetName(),
-		Type:                          fixtures.GetDeployment().GetType(),
-		Namespace:                     fixtures.GetDeployment().GetNamespace(),
-		NamespaceID:                   fixtures.GetDeployment().GetNamespaceId(),
-		OrchestratorComponent:         fixtures.GetDeployment().GetOrchestratorComponent(),
-		Labels:                        fixtures.GetDeployment().GetLabels(),
-		PodLabels:                     fixtures.GetDeployment().GetPodLabels(),
-		ClusterID:                     fixtures.GetDeployment().GetClusterId(),
-		ClusterName:                   fixtures.GetDeployment().GetClusterName(),
-		Annotations:                   fixtures.GetDeployment().GetAnnotations(),
-		Priority:                      fixtures.GetDeployment().GetPriority(),
-		ServiceAccount:                fixtures.GetDeployment().GetServiceAccount(),
-		ServiceAccountPermissionLevel: fixtures.GetDeployment().GetServiceAccountPermissionLevel(),
-		RiskScore:                     fixtures.GetDeployment().GetRiskScore(),
-		PlatformComponent:             fixtures.GetDeployment().GetPlatformComponent(),
-	})
-	s.Require().NoError(err)
-
-	for _, deployment := range deployments {
-		sql := "INSERT INTO deployments_containers (image_name_fullname, image_id, deployments_id, idx) VALUES ($1, $2, $3, $4)"
-		_, err := s.db.Exec(s.ctx, sql, deployment.ImageNameFullName, deployment.ImageID, deployment.DeploymentsID, deployment.Idx)
+		err := insertIntoDeployments(s.ctx, s.db, &schema.Deployments{
+			ID:                            fixtures.GetDeployment().GetId(),
+			Name:                          fixtures.GetDeployment().GetName(),
+			Type:                          fixtures.GetDeployment().GetType(),
+			Namespace:                     fixtures.GetDeployment().GetNamespace(),
+			NamespaceID:                   fixtures.GetDeployment().GetNamespaceId(),
+			OrchestratorComponent:         fixtures.GetDeployment().GetOrchestratorComponent(),
+			Labels:                        fixtures.GetDeployment().GetLabels(),
+			PodLabels:                     fixtures.GetDeployment().GetPodLabels(),
+			ClusterID:                     fixtures.GetDeployment().GetClusterId(),
+			ClusterName:                   fixtures.GetDeployment().GetClusterName(),
+			Annotations:                   fixtures.GetDeployment().GetAnnotations(),
+			Priority:                      fixtures.GetDeployment().GetPriority(),
+			ServiceAccount:                fixtures.GetDeployment().GetServiceAccount(),
+			ServiceAccountPermissionLevel: fixtures.GetDeployment().GetServiceAccountPermissionLevel(),
+			RiskScore:                     fixtures.GetDeployment().GetRiskScore(),
+			PlatformComponent:             fixtures.GetDeployment().GetPlatformComponent(),
+		})
 		s.Require().NoError(err)
-	}
 
-	dbs := &types.Databases{
-		GormDB:     s.db.GetGormDB(),
-		PostgresDB: s.db.DB,
-		DBCtx:      s.ctx,
-	}
+		for _, deployment := range deployments {
+			sql := "INSERT INTO deployments_containers (image_name_fullname, image_id, deployments_id, idx) VALUES ($1, $2, $3, $4)"
+			_, err := s.db.Exec(s.ctx, sql, deployment.ImageNameFullName, deployment.ImageID, deployment.DeploymentsID, deployment.Idx)
+			s.Require().NoError(err)
+		}
 
-	s.Require().NoError(migration.Run(dbs))
+		dbs := &types.Databases{
+			GormDB:     s.db.GetGormDB(),
+			PostgresDB: s.db.DB,
+			DBCtx:      s.ctx,
+		}
 
-	sql := "SELECT image_name_fullname, image_id, image_idv2, deployments_id, idx FROM deployments_containers"
-	rows, err := s.db.Query(s.ctx, sql)
-	s.Require().NoError(err)
-	defer rows.Close()
-	containers, err := readRowsWithIDV2(rows)
-	s.Require().NoError(err)
-	s.Require().Len(containers, 4)
-	for _, container := range containers {
-		expectedDeployment, found := deployments[container.ImageIDV2]
-		s.Require().True(found)
-		s.Equal(expectedDeployment, container)
+		s.Require().NoError(migration.Run(dbs))
+
+		sql := "SELECT image_name_fullname, image_id, image_idv2, deployments_id, idx FROM deployments_containers"
+		rows, err := s.db.Query(s.ctx, sql)
+		s.Require().NoError(err)
+		defer rows.Close()
+		containers, err := readRowsWithIDV2(rows)
+		s.Require().NoError(err)
+		s.Require().Len(containers, 4)
+		for _, container := range containers {
+			expectedDeployment, found := deployments[container.ImageIDV2]
+			s.Require().True(found)
+			s.Equal(expectedDeployment, container)
+		}
+	} else {
+		limit := 10000
+		page := 0
+		for {
+			sql := "SELECT image_name_fullname, image_id, image_idv2, deployments_id, idx FROM deployments_containers LIMIT $1 OFFSET $2"
+			rows, err := s.db.Query(s.ctx, sql, limit, page*limit)
+			s.Require().NoError(err)
+			containers, err := readRowsWithIDV2(rows)
+			s.Require().NoError(err)
+			for _, container := range containers {
+				s.Equal(uuid.NewV5FromNonUUIDs(container.ImageNameFullName, container.ImageID).String(), container.ImageIDV2)
+			}
+			rows.Close()
+			if len(containers) != limit {
+				break
+			}
+			page++
+		}
 	}
 }
 
