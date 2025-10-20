@@ -4,7 +4,7 @@ protobuf = "4.32.1" # If the proto versions are changed, be sure it is also chan
 netty-tcnative = "2.0.61.Final"
 fabric8 = "7.4.0"
 jackson = "2.14.2"
-groovy = "4.0.28"
+groovy = "5.0.2"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version = "2.13.2" }
