@@ -14,7 +14,6 @@
     "license": "UNLICENSED",
     "dependencies": {
         "@apollo/client": "^3.6.3",
-        "@babel/runtime": "^7.28.2",
         "@lifeomic/axios-fetch": "^3.1.0",
         "@openshift-console/dynamic-plugin-sdk": "4.19.0",
         "@patternfly/react-charts": "^7.2.2",
@@ -26,9 +25,8 @@
         "@patternfly/react-topology": "^5.2.1",
         "@patternfly/react-user-feedback": "^5.0.0",
         "axios": "^1.12.0",
-        "connected-react-router": "^6.9.3",
         "computed-style-to-inline-style": "^3.0.0",
-        "core-js": "^3.45.0",
+        "connected-react-router": "^6.9.3",
         "d3-axis": "^1.0.12",
         "d3-brush": "^3.0.0",
         "d3-polygon": "^3.0.1",
@@ -120,11 +118,6 @@
         "postinstall": "node scripts/check-optional-dependency-versions.js"
     },
     "devDependencies": {
-        "@babel/core": "^7.28.0",
-        "@babel/plugin-transform-runtime": "^7.28.0",
-        "@babel/preset-env": "^7.28.0",
-        "@babel/preset-react": "^7.27.1",
-        "@babel/preset-typescript": "^7.27.1",
         "@eslint/json": "^0.13.2",
         "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
         "@tailwindcss/forms": "^0.2.1",
