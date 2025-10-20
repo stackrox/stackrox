@@ -74,7 +74,7 @@ func (s *podDatastoreSACSuite) deletePod(id string) {
 }
 
 func (s *podDatastoreSACSuite) TestUpsertPod() {
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -118,7 +118,7 @@ func (s *podDatastoreSACSuite) TestGetPod() {
 }
 
 func (s *podDatastoreSACSuite) TestRemovePod() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -131,11 +131,18 @@ func (s *podDatastoreSACSuite) TestRemovePod() {
 			defer s.deletePod(pod.GetId())
 
 			err = s.datastore.RemovePod(ctx, pod.GetId())
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+			fetched, found, fetchErr := s.datastore.GetPod(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				pod.GetId(),
+			)
+			s.NoError(fetchErr)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), pod, fetched)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetched)
 			}
 		})
 	}
