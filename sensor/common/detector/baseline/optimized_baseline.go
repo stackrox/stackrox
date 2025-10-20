@@ -4,13 +4,13 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/cespare/xxhash"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/cespare/xxhash"
 )
 
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
