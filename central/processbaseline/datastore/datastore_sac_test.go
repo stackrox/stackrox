@@ -288,6 +288,7 @@ func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineLock() {
 				s.testContexts[testutils.UnrestrictedReadWriteCtx],
 				processBaseline,
 			)
+			s.Require().NoError(err)
 			defer s.deleteProcessBaseline(processBaseline.GetId())
 			expectedUnchanged := processBaseline.CloneVT()
 
@@ -344,6 +345,7 @@ func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineUnlock() {
 				s.testContexts[testutils.UnrestrictedReadWriteCtx],
 				processBaseline,
 			)
+			s.Require().NoError(err)
 			defer s.deleteProcessBaseline(processBaseline.GetId())
 			expectedUnchanged := processBaseline.CloneVT()
 
