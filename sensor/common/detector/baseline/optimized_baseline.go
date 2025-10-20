@@ -1,17 +1,17 @@
 package baseline
 
 import (
-	"crypto/sha256"
 	"slices"
-	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+
+	"github.com/cespare/xxhash"
 )
+
+type HashKey uint64
 
 // optimizedBaselineEvaluator implements memory-optimized baseline evaluation using process set deduplication
 type optimizedBaselineEvaluator struct {
@@ -54,19 +54,6 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash HashKey) {
 	}
 }
 
-type HashKey [32]byte
-
-// computeProcessSetHash creates a deterministic hash for a process set
-func computeProcessSetHash(processes set.StringSet) HashKey {
-	// Convert to sorted slice for deterministic hashing
-	processSlice := processes.AsSlice()
-	slices.Sort(processSlice)
-
-	// Create hash of concatenated processes
-	content := strings.Join(processSlice, "\n")
-	return sha256.Sum256([]byte(content))
-}
-
 // RemoveDeployment removes a deployment from the optimized baseline evaluator
 func (oe *optimizedBaselineEvaluator) RemoveDeployment(id string) {
 	oe.lock.Lock()
@@ -86,7 +73,6 @@ func (oe *optimizedBaselineEvaluator) RemoveDeployment(id string) {
 	log.Debugf("Successfully removed deployment %s from baseline", id)
 }
 
-// AddBaseline adds a process baseline to the optimized evaluator
 func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 	oe.lock.Lock()
 	defer oe.lock.Unlock()
@@ -94,35 +80,59 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 	deploymentID := baseline.GetKey().GetDeploymentId()
 	containerName := baseline.GetKey().GetContainerName()
 
-	// Check if baseline should be unlocked (has UserLockedTimestamp = nil)
 	if baseline.GetUserLockedTimestamp() == nil {
 		oe.removeBaseline(baseline)
 		return
 	}
 
-	// Locked baseline - process normally
-	baselineSet := set.NewStringSet()
+	// Build sorted slice directly from baseline elements
+	processes := make([]string, 0, len(baseline.GetElements()))
 	for _, elem := range baseline.GetElements() {
 		if process := elem.GetElement().GetProcessName(); process != "" {
-			baselineSet.Add(process)
+			processes = append(processes, process)
 		}
 	}
+	slices.Sort(processes)
 
-	// Find existing process set with same content or create new one
-	contentHash := oe.findOrCreateProcessSet(baselineSet)
+	// Compute hash and build deduplicated set in one pass
+	contentHash, baselineSet := computeHashAndBuildSetXXHash(processes)
 
-	// Update deployment mapping
+	if _, exists := oe.processSets[contentHash]; !exists {
+		oe.processSets[contentHash] = &processSetEntry{
+        	        refCount:  1,
+        	        processes: baselineSet,
+        	}
+	}
+
 	if oe.deploymentBaselines[deploymentID] == nil {
 		oe.deploymentBaselines[deploymentID] = make(map[string]HashKey)
 	}
-
-	// If this deployment/container already has a process set, decrement its ref count
 	if oldContentHash, exists := oe.deploymentBaselines[deploymentID][containerName]; exists {
 		oe.removeReference(oldContentHash)
 	}
-
 	oe.deploymentBaselines[deploymentID][containerName] = contentHash
-	log.Debugf("Successfully added locked process baseline %s", baseline.GetId())
+}
+
+func computeHashAndBuildSetXXHash(sortedProcesses []string) (HashKey, set.StringSet) {
+	h := xxhash.New()
+	baselineSet := set.NewStringSet()
+
+	var prev string
+	for i, process := range sortedProcesses {
+		// Skip duplicates (sorted, so they're adjacent)
+		if i > 0 && process == prev {
+			continue
+		}
+		prev = process
+
+		h.Write([]byte(process))
+		h.Write([]byte{'\n'})
+		baselineSet.Add(process)
+	}
+
+	hashValue := h.Sum64()
+
+	return HashKey(hashValue), baselineSet
 }
 
 func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBaseline) {
@@ -142,29 +152,6 @@ func (oe *optimizedBaselineEvaluator) removeBaseline(baseline *storage.ProcessBa
 	} else {
 		log.Debugf("Baseline for deployment ID %s does not exist", deploymentID)
 	}
-}
-
-// findOrCreateProcessSet finds an existing process set with the same content or creates a new one
-func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) HashKey {
-	contentHash := computeProcessSetHash(processes)
-
-	// Check if we already have this process set
-	if entry, exists := oe.processSets[contentHash]; exists {
-		// Check for hash collision and verify content actually matches
-		if !entry.processes.Equal(processes) {
-			utils.Should(errors.Errorf("SHA256 hash collision detected for process set %v vs existing %v",
-				processes.AsSlice(), entry.processes.AsSlice()))
-		}
-		entry.refCount++
-		return contentHash
-	}
-
-	// Create new process set
-	oe.processSets[contentHash] = &processSetEntry{
-		refCount:  1,
-		processes: processes,
-	}
-	return contentHash
 }
 
 // IsOutsideLockedBaseline checks if the process indicator is within a locked baseline using optimized lookup

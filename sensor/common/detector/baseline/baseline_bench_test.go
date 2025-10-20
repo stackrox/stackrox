@@ -78,7 +78,7 @@ func BenchmarkAllMemory(b *testing.B) {
 	testMap["Unique"] = uniqueBaselines
 
 	for baselineType, baselines := range testMap {
-		scenarioName = "Original" + baselineType + "_10k"
+		scenarioName := "Original" + baselineType + "_10k"
 		if *benchMax {
 			scenarioName = "Original" + baselineType + "_300k"
 		}
@@ -86,7 +86,7 @@ func BenchmarkAllMemory(b *testing.B) {
 			benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, true)
 		})
 
-		scenarioName := "Optimized" + baselineType + "_10k"
+		scenarioName = "Optimized" + baselineType + "_10k"
 		if *benchMax {
 			scenarioName = "Optimized" + baselineType + "_300k"
 		}
@@ -216,12 +216,12 @@ func BenchmarkAddBaseline(b *testing.B) {
 	testMap["Unique"] = uniqueBaselines
 
 	for baselineType, baselines := range testMap {
-		scenarioName = "Original" + baselineType
+		scenarioName := "Original" + baselineType
 		b.Run(scenarioName, func(b *testing.B) {
 			benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, scenarioName)
 		})
 
-		scenarioName := "Optimized" + baselineType
+		scenarioName = "Optimized" + baselineType
 		b.Run(scenarioName, func(b *testing.B) {
 			benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, scenarioName)
 		})
