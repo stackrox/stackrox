@@ -12,6 +12,26 @@ eecho() {
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl central whoami"
+
+  # Use isolated kubeconfig to avoid interference from background GKE token refresh.
+  # The refresh_gke_token() background process (scripts/ci/gke.sh:284-315) runs every
+  # 15 minutes and overwrites the kubeconfig file, which deletes custom contexts
+  # created by this test. Using a temporary kubeconfig prevents this race condition.
+  # See ROX-29633 for details.
+  local ORIGINAL_KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
+  local TEST_KUBECONFIG
+  TEST_KUBECONFIG=$(mktemp)
+
+  cleanup_kubeconfig() {
+    rm -f "$TEST_KUBECONFIG"
+    export KUBECONFIG="$ORIGINAL_KUBECONFIG"
+  }
+  trap cleanup_kubeconfig EXIT
+
+  # Copy current config to isolated file
+  cp "$ORIGINAL_KUBECONFIG" "$TEST_KUBECONFIG"
+  export KUBECONFIG="$TEST_KUBECONFIG"
+
   CURRENT_CONTEXT=$(kubectl config current-context)
   CURRENT_CLUSTER=$(kubectl config view -o jsonpath="{.contexts[?(@.name=='$CURRENT_CONTEXT')].context.cluster}")
 
