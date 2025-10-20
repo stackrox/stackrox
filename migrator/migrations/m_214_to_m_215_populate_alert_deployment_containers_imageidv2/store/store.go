@@ -4,15 +4,12 @@ import (
 	"context"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -73,8 +70,8 @@ func New(db postgres.DB) Store {
 		pkGetter,
 		insertIntoAlerts,
 		copyFromAlerts,
-		metricsSetAcquireDBConnDuration,
-		metricsSetPostgresOperationDurationTime,
+		nil,
+		nil,
 		isUpsertAllowed,
 		targetResource,
 		nil,
@@ -88,13 +85,6 @@ func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
-func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, storeName)
-}
-
-func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, storeName)
-}
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if scopeChecker.IsAllowed() {
