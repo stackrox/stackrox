@@ -24,7 +24,7 @@ envsubst=$(command -v envsubst)
 # Detect stat variant (GNU vs BSD) and save the original stdin's device and inode
 # This is used by the kubectl wrapper function to detect stdin redirection
 _KUBECTL_WRAPPER_USE_GNU_STAT="true"
-if stat --version >/dev/null 2>&1; then
+if stat --version 2>&1 | grep "GNU coreutils" >/dev/null; then
     _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
 else
     # BSD stat (macOS)
