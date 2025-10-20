@@ -26,13 +26,13 @@ const SecretDataMetadata = ({ metadata }) => {
     if (!metadata) {
         return null;
     }
-    const { startDate, endDate, issuer = {}, sans = [], subject = {} } = metadata;
+    const { startDate, endDate, issuer, sans, subject } = metadata;
     const {
         commonName: issuerCommonName = 'N/A',
         names: issuerNames,
         organizationUnit = 'N/A',
-    } = issuer;
-    const { commonName: subjectCommonName = 'N/A', names: subjectNames } = subject;
+    } = issuer ?? {};
+    const { commonName: subjectCommonName = 'N/A', names: subjectNames } = subject ?? {};
     return (
         <div className="flex flex-row">
             <Widget
@@ -81,7 +81,7 @@ const SecretDataMetadata = ({ metadata }) => {
                     <span>{subjectNames ? subjectNames.join(', ') : 'None'}</span>
                 </div>
             </Widget>
-            {!!sans.length && (
+            {!!(sans ?? []).length && (
                 <Widget
                     header="SANS"
                     className="m-4"
