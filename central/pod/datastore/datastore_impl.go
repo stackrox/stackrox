@@ -93,12 +93,6 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")
 
-	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
@@ -162,24 +156,18 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Delete")
 
-	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	pod, found, err := ds.podStore.Get(ctx, id)
 	if err != nil || !found {
 		return err
 	}
-	ds.processFilter.DeleteByPod(pod)
-
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
 		return ds.podStore.Delete(ctx, id)
 	})
 	if err != nil {
 		return err
 	}
+
+	ds.processFilter.DeleteByPod(pod)
 
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
