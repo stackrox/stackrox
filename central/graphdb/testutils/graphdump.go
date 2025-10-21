@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -218,36 +217,13 @@ func (g *DebugImageGraph) Log() {
 	for _, i := range g.Images {
 		i.log(1)
 	}
-	if features.FlattenCVEData.Enabled() {
-		log.Infof("- %d image components V2", len(g.ImageComponentsV2))
-		for _, ic := range g.ImageComponentsV2 {
-			ic.log(1)
-		}
-		log.Infof("- %d image CVEs V2", len(g.ImageCVEsV2))
-		for _, ic := range g.ImageCVEsV2 {
-			ic.log(1)
-		}
-	} else {
-		log.Infof("- %d image to component edges", len(g.ImageComponentEdges))
-		for _, ice := range g.ImageComponentEdges {
-			ice.log(1)
-		}
-		log.Infof("- %d image components", len(g.ImageComponents))
-		for _, ic := range g.ImageComponents {
-			ic.log(1)
-		}
-		log.Infof("- %d image component to CVE edges", len(g.ImageComponentCVEEdges))
-		for _, cce := range g.ImageComponentCVEEdges {
-			cce.log(1)
-		}
-		log.Infof("- %d image to CVE edges", len(g.ImageCVEEdges))
-		for _, ice := range g.ImageCVEEdges {
-			ice.log(1)
-		}
-		log.Infof("- %d image CVEs", len(g.ImageCVEs))
-		for _, ic := range g.ImageCVEs {
-			ic.log(1)
-		}
+	log.Infof("- %d image components V2", len(g.ImageComponentsV2))
+	for _, ic := range g.ImageComponentsV2 {
+		ic.log(1)
+	}
+	log.Infof("- %d image CVEs V2", len(g.ImageCVEsV2))
+	for _, ic := range g.ImageCVEsV2 {
+		ic.log(1)
 	}
 }
 

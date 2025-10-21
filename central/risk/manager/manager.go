@@ -357,14 +357,8 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		return
 	}
 
-	var oldScore float32
-	if features.FlattenCVEData.Enabled() {
-		oldScore = e.imageComponentRanker.GetScoreForID(
-			scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
-	} else {
-		oldScore = e.imageComponentRanker.GetScoreForID(
-			scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
-	}
+	oldScore := e.imageComponentRanker.GetScoreForID(
+		scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
 
 	// Image component risk results are currently unused so if the score is the same then no need to upsert
 	if risk.GetScore() == oldScore {

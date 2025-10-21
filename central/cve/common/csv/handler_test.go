@@ -13,7 +13,6 @@ import (
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -148,27 +147,12 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 }
 
 func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
-	if features.FlattenCVEData.Enabled() {
-		return NewCSVHandler(
-			resolver,
-			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
-			[]*SearchWrapper{
-				NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
-					resolver.ImageComponentV2DataStore),
-				NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
-				NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
-				NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
-				NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
-				NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
-			},
-		)
-	}
 	return NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*SearchWrapper{
-			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap,
-				resolver.ImageComponentDataStore),
+			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+				resolver.ImageComponentV2DataStore),
 			NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
 			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),

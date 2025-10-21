@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,9 +36,6 @@ import (
 )
 
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("CVE flattened data model is not enabled")
-	}
 	suite.Run(t, new(ImageFlatPostgresDataStoreTestSuite))
 }
 

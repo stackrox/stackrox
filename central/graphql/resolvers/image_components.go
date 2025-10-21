@@ -454,7 +454,7 @@ func (resolver *imageComponentV2Resolver) imageComponentScopeContext(ctx context
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	if features.FlattenCVEData.Enabled() && resolver.flatData != nil && len(resolver.flatData.GetComponentIDs()) > 0 {
+	if resolver.flatData != nil && len(resolver.flatData.GetComponentIDs()) > 0 {
 		return scoped.Context(resolver.ctx, scoped.Scope{
 			Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			IDs:   resolver.flatData.GetComponentIDs(),

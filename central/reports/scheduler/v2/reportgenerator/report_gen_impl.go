@@ -21,7 +21,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
@@ -502,10 +501,7 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 }
 
 func selectSchema() *walker.Schema {
-	if features.FlattenCVEData.Enabled() {
-		return pkgSchema.ImageCvesV2Schema
-	}
-	return pkgSchema.ImageCvesSchema
+	return pkgSchema.ImageCvesV2Schema
 }
 
 func getSelectsWatchedImages() []*v1.QuerySelect {
@@ -522,10 +518,8 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 	}
-	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
-	}
+	ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
+	ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
 	return ret
 }
 
@@ -546,9 +540,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.DeploymentName).Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 	}
-	if features.FlattenCVEData.Enabled() {
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
-		ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
-	}
+	ret = append(ret, search.NewQuerySelect(search.AdvisoryName).Proto())
+	ret = append(ret, search.NewQuerySelect(search.AdvisoryLink).Proto())
 	return ret
 }

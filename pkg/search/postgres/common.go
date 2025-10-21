@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -291,7 +290,7 @@ func (q *query) AsSQL() string {
 	querySB.WriteString(" from ")
 	querySB.WriteString(q.From)
 
-	for i, join := range q.Joins {
+	for _, join := range q.Joins {
 		if join.joinType == Inner {
 			querySB.WriteString(" inner join ")
 		} else {
@@ -299,25 +298,6 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
-
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
-				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
-				imageIDTable := findImageIDTableAndField(q.Joins)
-				imageCVEIDTable := findImageCVEIDTableAndField(q.Joins)
-				if imageIDTable != "" && imageCVEIDTable != "" {
-					imageIDField := tableWithImageIDToField[imageIDTable]
-					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
-					querySB.WriteString(fmt.Sprintf("(%s.%s = %s.%s and %s.%s = %s.%s)",
-						imageIDTable, imageIDField, pkgSchema.ImageCveEdgesTableName, "ImageId",
-						imageCVEIDTable, imageCVEIDField, pkgSchema.ImageCveEdgesTableName, "ImageCveId"))
-					continue
-				} else {
-					log.Error("Could not find tables to match both ImageId and ImageCveId columns on image_cve_edges table. " +
-						"Continuing with incomplete join")
-				}
-			}
-		}
 
 		for i, columnNamePair := range join.columnNamePairs {
 			if i > 0 {
@@ -530,13 +510,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 	standardizeFieldNamesInQuery(q)
 	joins, dbFields := getJoinsAndFields(schema, q)
-
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
 	if err != nil {

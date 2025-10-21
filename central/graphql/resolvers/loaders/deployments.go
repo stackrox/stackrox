@@ -10,8 +10,6 @@ import (
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -80,14 +78,6 @@ func (idl *deploymentLoaderImpl) FromID(ctx context.Context, id string) (*storag
 
 // FromQuery loads a set of deployments that match a query.
 func (idl *deploymentLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error) {
-	if !features.FlattenCVEData.Enabled() {
-		results, err := idl.ds.Search(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		return idl.FromIDs(ctx, search.ResultsToIDs(results))
-	}
-
 	responses, err := idl.deploymentView.Get(ctx, query)
 	if err != nil {
 		return nil, err
