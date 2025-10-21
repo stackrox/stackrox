@@ -102,23 +102,6 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) {
 	fieldName := field.GoName
 
-	// For non-primitive message types, use "GetImmutable" prefix
-	// For primitive types and external messages, use regular "Get" prefix
-	methodName := "Get" + fieldName
-	iterMethodName := ""
-	if isNonPrimitiveType(field, localMessages) {
-		methodName = "GetImmutable" + fieldName
-		// Add iterator method for slices and maps
-		if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
-			iterMethodName = fieldName + "Iter"
-		} else if field.Desc.IsMap() {
-			iterMethodName = fieldName + "Iter"
-		}
-	}
-
-	// Determine the return type
-	returnType := getFieldType(g, field, localMessages)
-
 	// Add comment if available
 	if field.Comments.Leading != "" {
 		lines := strings.Split(strings.TrimSpace(string(field.Comments.Leading)), "\n")
@@ -127,25 +110,37 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 		}
 	}
 
+	// For non-primitive local message types, use iterators for slices/maps
+	if isNonPrimitiveType(field, localMessages) {
+		if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+			// Slice of local messages - return iterator
+			messageIdent := field.Message.GoIdent
+			immutableType := "Immutable" + messageIdent.GoName
+			methodName := "GetImmutable" + fieldName
+			g.P("\t", methodName, "() iter.Seq[", immutableType, "]")
+			return
+		} else if field.Desc.IsMap() {
+			// Map with local message values - return iterator
+			keyField := field.Message.Fields[0]
+			valueField := field.Message.Fields[1]
+			keyType := goType(g, keyField, localMessages)
+			valueType := goType(g, valueField, localMessages)
+			methodName := "GetImmutable" + fieldName
+			g.P("\t", methodName, "() iter.Seq2[", keyType, ", ", valueType, "]")
+			return
+		} else {
+			// Singular local message - return interface
+			methodName := "GetImmutable" + fieldName
+			returnType := getFieldType(g, field, localMessages)
+			g.P("\t", methodName, "() ", returnType)
+			return
+		}
+	}
+
+	// For primitive types and external messages, use regular "Get" prefix
+	methodName := "Get" + fieldName
+	returnType := getFieldType(g, field, localMessages)
 	g.P("\t", methodName, "() ", returnType)
-
-	// Add iterator method for slices
-	if iterMethodName != "" && field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
-		messageIdent := field.Message.GoIdent
-		immutableType := "Immutable" + messageIdent.GoName
-		g.P("\t// ", iterMethodName, " returns an iterator over ", fieldName)
-		g.P("\t", iterMethodName, "() iter.Seq[", immutableType, "]")
-	}
-
-	// Add iterator method for maps
-	if iterMethodName != "" && field.Desc.IsMap() {
-		keyField := field.Message.Fields[0]
-		valueField := field.Message.Fields[1]
-		keyType := goType(g, keyField, localMessages)
-		valueType := goType(g, valueField, localMessages)
-		g.P("\t// ", iterMethodName, " returns an iterator over ", fieldName)
-		g.P("\t", iterMethodName, "() iter.Seq2[", keyType, ", ", valueType, "]")
-	}
 }
 
 func isNonPrimitiveType(field *protogen.Field, localMessages map[string]bool) bool {
@@ -273,34 +268,17 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		return
 	}
 
-	// Use "GetImmutable" prefix for non-primitive types
 	methodName := "GetImmutable" + fieldName
-	returnType := getFieldType(g, field, localMessages)
 
 	g.P()
 	g.P("// ", methodName, " implements Immutable", messageName)
-	g.P("func (m *", messageName, ") ", methodName, "() ", returnType, " {")
 
 	if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
-		// Convert slice
-		g.P("\tif m == nil || m.", fieldName, " == nil {")
-		g.P("\t\treturn nil")
-		g.P("\t}")
-		g.P("\tresult := make(", returnType, ", len(m.", fieldName, "))")
-		g.P("\tfor i, v := range m.", fieldName, " {")
-		g.P("\t\tresult[i] = v")
-		g.P("\t}")
-		g.P("\treturn result")
-		g.P("}")
-
 		// Generate iterator method for slice
-		iterMethodName := fieldName + "Iter"
 		messageIdent := field.Message.GoIdent
 		immutableType := "Immutable" + messageIdent.GoName
 
-		g.P()
-		g.P("// ", iterMethodName, " implements Immutable", messageName, " iterator")
-		g.P("func (m *", messageName, ") ", iterMethodName, "() iter.Seq[", immutableType, "] {")
+		g.P("func (m *", messageName, ") ", methodName, "() iter.Seq[", immutableType, "] {")
 		g.P("\treturn func(yield func(", immutableType, ") bool) {")
 		g.P("\t\tif m == nil || m.", fieldName, " == nil {")
 		g.P("\t\t\treturn")
@@ -318,14 +296,8 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		valueField := field.Message.Fields[1]
 		keyType := goType(g, keyField, localMessages)
 		valueType := goType(g, valueField, localMessages)
-		iterMethodName := fieldName + "Iter"
 
-		g.P("\treturn m.Get", fieldName, "()")
-		g.P("}")
-
-		g.P()
-		g.P("// ", iterMethodName, " implements Immutable", messageName, " iterator")
-		g.P("func (m *", messageName, ") ", iterMethodName, "() iter.Seq2[", keyType, ", ", valueType, "] {")
+		g.P("func (m *", messageName, ") ", methodName, "() iter.Seq2[", keyType, ", ", valueType, "] {")
 		g.P("\treturn func(yield func(", keyType, ", ", valueType, ") bool) {")
 		g.P("\t\tif m == nil || m.", fieldName, " == nil {")
 		g.P("\t\t\treturn")
@@ -338,7 +310,9 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P("\t}")
 		g.P("}")
 	} else {
-		// Return singular field
+		// Singular field - just delegate to Get method
+		returnType := getFieldType(g, field, localMessages)
+		g.P("func (m *", messageName, ") ", methodName, "() ", returnType, " {")
 		g.P("\treturn m.Get", fieldName, "()")
 		g.P("}")
 	}
