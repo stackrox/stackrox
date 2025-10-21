@@ -41,6 +41,10 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P()
 	g.P("package ", file.GoPackageName)
 	g.P()
+	g.P("import (")
+	g.P("\t\"iter\"")
+	g.P(")")
+	g.P()
 
 	// Build a set of messages defined in this file for lookup
 	localMessages := make(map[string]bool)
@@ -101,8 +105,15 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 	// For non-primitive message types, use "GetImmutable" prefix
 	// For primitive types and external messages, use regular "Get" prefix
 	methodName := "Get" + fieldName
+	iterMethodName := ""
 	if isNonPrimitiveType(field, localMessages) {
 		methodName = "GetImmutable" + fieldName
+		// Add iterator method for slices and maps
+		if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+			iterMethodName = fieldName + "Iter"
+		} else if field.Desc.IsMap() {
+			iterMethodName = fieldName + "Iter"
+		}
 	}
 
 	// Determine the return type
@@ -117,6 +128,24 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 	}
 
 	g.P("\t", methodName, "() ", returnType)
+
+	// Add iterator method for slices
+	if iterMethodName != "" && field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+		messageIdent := field.Message.GoIdent
+		immutableType := "Immutable" + messageIdent.GoName
+		g.P("\t// ", iterMethodName, " returns an iterator over ", fieldName)
+		g.P("\t", iterMethodName, "() iter.Seq[", immutableType, "]")
+	}
+
+	// Add iterator method for maps
+	if iterMethodName != "" && field.Desc.IsMap() {
+		keyField := field.Message.Fields[0]
+		valueField := field.Message.Fields[1]
+		keyType := goType(g, keyField, localMessages)
+		valueType := goType(g, valueField, localMessages)
+		g.P("\t// ", iterMethodName, " returns an iterator over ", fieldName)
+		g.P("\t", iterMethodName, "() iter.Seq2[", keyType, ", ", valueType, "]")
+	}
 }
 
 func isNonPrimitiveType(field *protogen.Field, localMessages map[string]bool) bool {
@@ -262,10 +291,55 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P("\t\tresult[i] = v")
 		g.P("\t}")
 		g.P("\treturn result")
+		g.P("}")
+
+		// Generate iterator method for slice
+		iterMethodName := fieldName + "Iter"
+		messageIdent := field.Message.GoIdent
+		immutableType := "Immutable" + messageIdent.GoName
+
+		g.P()
+		g.P("// ", iterMethodName, " implements Immutable", messageName, " iterator")
+		g.P("func (m *", messageName, ") ", iterMethodName, "() iter.Seq[", immutableType, "] {")
+		g.P("\treturn func(yield func(", immutableType, ") bool) {")
+		g.P("\t\tif m == nil || m.", fieldName, " == nil {")
+		g.P("\t\t\treturn")
+		g.P("\t\t}")
+		g.P("\t\tfor _, v := range m.", fieldName, " {")
+		g.P("\t\t\tif !yield(v) {")
+		g.P("\t\t\t\treturn")
+		g.P("\t\t\t}")
+		g.P("\t\t}")
+		g.P("\t}")
+		g.P("}")
+	} else if field.Desc.IsMap() {
+		// Map field - generate iterator
+		keyField := field.Message.Fields[0]
+		valueField := field.Message.Fields[1]
+		keyType := goType(g, keyField, localMessages)
+		valueType := goType(g, valueField, localMessages)
+		iterMethodName := fieldName + "Iter"
+
+		g.P("\treturn m.Get", fieldName, "()")
+		g.P("}")
+
+		g.P()
+		g.P("// ", iterMethodName, " implements Immutable", messageName, " iterator")
+		g.P("func (m *", messageName, ") ", iterMethodName, "() iter.Seq2[", keyType, ", ", valueType, "] {")
+		g.P("\treturn func(yield func(", keyType, ", ", valueType, ") bool) {")
+		g.P("\t\tif m == nil || m.", fieldName, " == nil {")
+		g.P("\t\t\treturn")
+		g.P("\t\t}")
+		g.P("\t\tfor k, v := range m.", fieldName, " {")
+		g.P("\t\t\tif !yield(k, v) {")
+		g.P("\t\t\t\treturn")
+		g.P("\t\t\t}")
+		g.P("\t\t}")
+		g.P("\t}")
+		g.P("}")
 	} else {
 		// Return singular field
 		g.P("\treturn m.Get", fieldName, "()")
+		g.P("}")
 	}
-
-	g.P("}")
 }

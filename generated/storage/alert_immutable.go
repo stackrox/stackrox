@@ -6,6 +6,10 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
+import (
+	"iter"
+)
+
 // ImmutableAlert is an immutable interface for Alert
 type ImmutableAlert interface {
 	GetId() string
@@ -26,6 +30,8 @@ type ImmutableAlert interface {
 	GetImmutableResource() ImmutableAlert_Resource
 	// For run-time phase alert, a maximum of 40 violations are retained.
 	GetImmutableViolations() []ImmutableAlert_Violation
+	// ViolationsIter returns an iterator over Violations
+	ViolationsIter() iter.Seq[ImmutableAlert_Violation]
 	GetImmutableProcessViolation() ImmutableAlert_ProcessViolation
 	GetImmutableEnforcement() ImmutableAlert_Enforcement
 	GetTime() *timestamppb.Timestamp
@@ -63,6 +69,20 @@ func (m *Alert) GetImmutableViolations() []ImmutableAlert_Violation {
 	return result
 }
 
+// ViolationsIter implements ImmutableAlert iterator
+func (m *Alert) ViolationsIter() iter.Seq[ImmutableAlert_Violation] {
+	return func(yield func(ImmutableAlert_Violation) bool) {
+		if m == nil || m.Violations == nil {
+			return
+		}
+		for _, v := range m.Violations {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 // GetImmutableProcessViolation implements ImmutableAlert
 func (m *Alert) GetImmutableProcessViolation() ImmutableAlert_ProcessViolation {
 	return m.GetProcessViolation()
@@ -84,10 +104,16 @@ type ImmutableAlert_Deployment interface {
 	GetNamespace() string
 	GetNamespaceId() string
 	GetImmutableLabels() map[string]string
+	// LabelsIter returns an iterator over Labels
+	LabelsIter() iter.Seq2[string, string]
 	GetClusterId() string
 	GetClusterName() string
 	GetImmutableContainers() []ImmutableAlert_Deployment_Container
+	// ContainersIter returns an iterator over Containers
+	ContainersIter() iter.Seq[ImmutableAlert_Deployment_Container]
 	GetImmutableAnnotations() map[string]string
+	// AnnotationsIter returns an iterator over Annotations
+	AnnotationsIter() iter.Seq2[string, string]
 	GetInactive() bool
 	// VT proto functions
 	SizeVT() int
@@ -98,6 +124,20 @@ type ImmutableAlert_Deployment interface {
 // GetImmutableLabels implements ImmutableAlert_Deployment
 func (m *Alert_Deployment) GetImmutableLabels() map[string]string {
 	return m.GetLabels()
+}
+
+// LabelsIter implements ImmutableAlert_Deployment iterator
+func (m *Alert_Deployment) LabelsIter() iter.Seq2[string, string] {
+	return func(yield func(string, string) bool) {
+		if m == nil || m.Labels == nil {
+			return
+		}
+		for k, v := range m.Labels {
+			if !yield(k, v) {
+				return
+			}
+		}
+	}
 }
 
 // GetImmutableContainers implements ImmutableAlert_Deployment
@@ -112,9 +152,37 @@ func (m *Alert_Deployment) GetImmutableContainers() []ImmutableAlert_Deployment_
 	return result
 }
 
+// ContainersIter implements ImmutableAlert_Deployment iterator
+func (m *Alert_Deployment) ContainersIter() iter.Seq[ImmutableAlert_Deployment_Container] {
+	return func(yield func(ImmutableAlert_Deployment_Container) bool) {
+		if m == nil || m.Containers == nil {
+			return
+		}
+		for _, v := range m.Containers {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 // GetImmutableAnnotations implements ImmutableAlert_Deployment
 func (m *Alert_Deployment) GetImmutableAnnotations() map[string]string {
 	return m.GetAnnotations()
+}
+
+// AnnotationsIter implements ImmutableAlert_Deployment iterator
+func (m *Alert_Deployment) AnnotationsIter() iter.Seq2[string, string] {
+	return func(yield func(string, string) bool) {
+		if m == nil || m.Annotations == nil {
+			return
+		}
+		for k, v := range m.Annotations {
+			if !yield(k, v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that Alert_Deployment implements ImmutableAlert_Deployment
@@ -183,6 +251,8 @@ var _ ImmutableAlert_Violation = (*Alert_Violation)(nil)
 // ImmutableAlert_Violation_KeyValueAttrs is an immutable interface for Alert_Violation_KeyValueAttrs
 type ImmutableAlert_Violation_KeyValueAttrs interface {
 	GetImmutableAttrs() []ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr
+	// AttrsIter returns an iterator over Attrs
+	AttrsIter() iter.Seq[ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
@@ -199,6 +269,20 @@ func (m *Alert_Violation_KeyValueAttrs) GetImmutableAttrs() []ImmutableAlert_Vio
 		result[i] = v
 	}
 	return result
+}
+
+// AttrsIter implements ImmutableAlert_Violation_KeyValueAttrs iterator
+func (m *Alert_Violation_KeyValueAttrs) AttrsIter() iter.Seq[ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr] {
+	return func(yield func(ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr) bool) {
+		if m == nil || m.Attrs == nil {
+			return
+		}
+		for _, v := range m.Attrs {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that Alert_Violation_KeyValueAttrs implements ImmutableAlert_Violation_KeyValueAttrs
