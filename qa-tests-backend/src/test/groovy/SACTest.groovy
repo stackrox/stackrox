@@ -260,7 +260,7 @@ class SACTest extends BaseSpecification {
                 .build())
     }
 
-    def containerExposesTCPPort22(Container container) boolean {
+    boolean containerExposesTCPPort22(Container container) {
         for (ContainerPort port: container.getPorts()) {
             if (port.getProtocol() == "TCP" && port.getContainerPort() == 22) {
                 return true
@@ -269,7 +269,7 @@ class SACTest extends BaseSpecification {
         return false
     }
 
-    def containerExposesNonTCP22Ports(Container container) boolean {
+    boolean containerExposesNonTCP22Ports(Container container) {
         for (ContainerPort port: container.getPorts()) {
             if (port.getProtocol() != "TCP" || port.getContainerPort() != 22) {
                 return true
@@ -278,7 +278,7 @@ class SACTest extends BaseSpecification {
         return false
     }
 
-    def podExposesTCPPort22(Pod pod) boolean {
+    boolean podExposesTCPPort22(Pod pod) {
         for (Container container : pod.getSpec().getContainers()) {
             if (containerExposesTCPPort22(container)) {
                 return true
@@ -287,7 +287,7 @@ class SACTest extends BaseSpecification {
         return false
     }
 
-    def podExposesNonTCP22Ports(Pod pod) boolean {
+    boolean podExposesNonTCP22Ports(Pod pod) {
         for (Container container : pod.getSpec().getContainers()) {
             if (containerExposesNonTCP22Ports(container)) {
                 return true
