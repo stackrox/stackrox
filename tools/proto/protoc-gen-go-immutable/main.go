@@ -76,6 +76,13 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 		generateFieldGetter(g, field, localMessages)
 	}
 
+	// Add VT proto functions
+	g.P("\t// VT proto functions")
+	g.P("\tSizeVT() int")
+	g.P("\tMarshalVT() ([]byte, error)")
+	// CloneVT returns the concrete type, not the interface
+	g.P("\tCloneVT() *", messageName)
+
 	g.P("}")
 
 	// Recursively generate interfaces for nested messages

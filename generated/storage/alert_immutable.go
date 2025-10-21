@@ -35,6 +35,10 @@ type ImmutableAlert interface {
 	GetState() ViolationState
 	GetPlatformComponent() bool
 	GetEntityType() Alert_EntityType
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert
 }
 
 // ImmutableAlert_Deployment is an immutable interface for Alert_Deployment
@@ -50,12 +54,20 @@ type ImmutableAlert_Deployment interface {
 	GetContainers() []ImmutableAlert_Deployment_Container
 	GetAnnotations() map[string]string
 	GetInactive() bool
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Deployment
 }
 
 // ImmutableAlert_Deployment_Container is an immutable interface for Alert_Deployment_Container
 type ImmutableAlert_Deployment_Container interface {
 	GetImage() *ContainerImage
 	GetName() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Deployment_Container
 }
 
 // ImmutableAlert_Resource is an immutable interface for Alert_Resource
@@ -66,6 +78,10 @@ type ImmutableAlert_Resource interface {
 	GetClusterName() string
 	GetNamespace() string
 	GetNamespaceId() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Resource
 }
 
 // ImmutableAlert_Violation is an immutable interface for Alert_Violation
@@ -79,17 +95,29 @@ type ImmutableAlert_Violation interface {
 	// occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
 	// event violations, but may not be limited to it in future.
 	GetTime() *timestamppb.Timestamp
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Violation
 }
 
 // ImmutableAlert_Violation_KeyValueAttrs is an immutable interface for Alert_Violation_KeyValueAttrs
 type ImmutableAlert_Violation_KeyValueAttrs interface {
 	GetAttrs() []ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Violation_KeyValueAttrs
 }
 
 // ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr is an immutable interface for Alert_Violation_KeyValueAttrs_KeyValueAttr
 type ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr interface {
 	GetKey() string
 	GetValue() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Violation_KeyValueAttrs_KeyValueAttr
 }
 
 // ImmutableAlert_Violation_NetworkFlowInfo is an immutable interface for Alert_Violation_NetworkFlowInfo
@@ -97,6 +125,10 @@ type ImmutableAlert_Violation_NetworkFlowInfo interface {
 	GetProtocol() L4Protocol
 	GetSource() ImmutableAlert_Violation_NetworkFlowInfo_Entity
 	GetDestination() ImmutableAlert_Violation_NetworkFlowInfo_Entity
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Violation_NetworkFlowInfo
 }
 
 // ImmutableAlert_Violation_NetworkFlowInfo_Entity is an immutable interface for Alert_Violation_NetworkFlowInfo_Entity
@@ -106,18 +138,30 @@ type ImmutableAlert_Violation_NetworkFlowInfo_Entity interface {
 	GetDeploymentNamespace() string
 	GetDeploymentType() string
 	GetPort() int32
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Violation_NetworkFlowInfo_Entity
 }
 
 // ImmutableAlert_ProcessViolation is an immutable interface for Alert_ProcessViolation
 type ImmutableAlert_ProcessViolation interface {
 	GetMessage() string
 	GetProcesses() []*ProcessIndicator
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_ProcessViolation
 }
 
 // ImmutableAlert_Enforcement is an immutable interface for Alert_Enforcement
 type ImmutableAlert_Enforcement interface {
 	GetAction() EnforcementAction
 	GetMessage() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *Alert_Enforcement
 }
 
 // ImmutableListAlert is an immutable interface for ListAlert
@@ -136,6 +180,10 @@ type ImmutableListAlert interface {
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	GetResource() ImmutableListAlert_ResourceEntity
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlert
 }
 
 // ImmutableListAlert_CommonEntityInfo is an immutable interface for ListAlert_CommonEntityInfo
@@ -145,11 +193,19 @@ type ImmutableListAlert_CommonEntityInfo interface {
 	GetClusterId() string
 	GetNamespaceId() string
 	GetResourceType() ListAlert_ResourceType
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlert_CommonEntityInfo
 }
 
 // ImmutableListAlert_ResourceEntity is an immutable interface for ListAlert_ResourceEntity
 type ImmutableListAlert_ResourceEntity interface {
 	GetName() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlert_ResourceEntity
 }
 
 // ImmutableListAlertPolicy is an immutable interface for ListAlertPolicy
@@ -161,11 +217,19 @@ type ImmutableListAlertPolicy interface {
 	GetCategories() []string
 	// For internal use only.
 	GetDeveloperInternalFields() ImmutableListAlertPolicy_DevFields
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlertPolicy
 }
 
 // ImmutableListAlertPolicy_DevFields is an immutable interface for ListAlertPolicy_DevFields
 type ImmutableListAlertPolicy_DevFields interface {
 	GetSORTName() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlertPolicy_DevFields
 }
 
 // ImmutableListAlertDeployment is an immutable interface for ListAlertDeployment
@@ -182,4 +246,8 @@ type ImmutableListAlertDeployment interface {
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
 	GetNamespaceId() string
 	GetDeploymentType() string
+	// VT proto functions
+	SizeVT() int
+	MarshalVT() ([]byte, error)
+	CloneVT() *ListAlertDeployment
 }
