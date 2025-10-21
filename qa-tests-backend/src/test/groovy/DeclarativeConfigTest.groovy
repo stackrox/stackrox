@@ -891,20 +891,23 @@ splunk:
     // - list of mounted files from ConfigMap in a container
     private void outputAdditionalDebugInfo() {
         try {
-            log.info("Get ConfigMap from cluster")
+            log.info("Get ConfigMap ${CONFIGMAP_NAME} from cluster")
             log.info(JsonOutput.toJson(orchestrator.getConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)))
         } catch (Exception e) {
-            log.warn("Failed to get ConfigMap from cluster", e)
+            log.warn("Failed to get ConfigMap ${CONFIGMAP_NAME} from cluster", e)
         }
 
         try {
-            log.info("Get mounted files from ConfigMap in central container")
+            log.info("Get mounted files from ConfigMap ${CONFIGMAP_NAME} in central container")
             def pods = orchestrator.getPods(DEFAULT_NAMESPACE, "central")
-            assert pods.size() > 0
+            if (pods.size() == 0) {
+                log.warn("No central pod found, can't get mounted files from ConfigMap")
+                return
+            }
             String[] cmd = ["ls", "-al", "/run/stackrox.io/declarative-configuration/declarative-configurations/"]
-            assert orchestrator.execInContainerByPodName(pods[0].getMetadata().getName(), DEFAULT_NAMESPACE, cmd, 10)
+            orchestrator.execInContainerByPodName(pods[0].getMetadata().getName(), DEFAULT_NAMESPACE, cmd, 10)
         } catch (Exception e) {
-            log.warn("Failed to get mounted files from ConfigMap in central container", e)
+            log.warn("Failed to get mounted files from ConfigMap ${CONFIGMAP_NAME} in central container", e)
         }
     }
 
