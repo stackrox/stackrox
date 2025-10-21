@@ -17,17 +17,17 @@ type ImmutableAlert interface {
 	GetNamespaceId() string
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	GetDeployment() ImmutableAlert_Deployment
+	GetImmutableDeployment() ImmutableAlert_Deployment
 	// Represents an alert on a container image.
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	GetImage() *ContainerImage
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	GetResource() ImmutableAlert_Resource
+	GetImmutableResource() ImmutableAlert_Resource
 	// For run-time phase alert, a maximum of 40 violations are retained.
-	GetViolations() []ImmutableAlert_Violation
-	GetProcessViolation() ImmutableAlert_ProcessViolation
-	GetEnforcement() ImmutableAlert_Enforcement
+	GetImmutableViolations() []ImmutableAlert_Violation
+	GetImmutableProcessViolation() ImmutableAlert_ProcessViolation
+	GetImmutableEnforcement() ImmutableAlert_Enforcement
 	GetTime() *timestamppb.Timestamp
 	GetFirstOccurred() *timestamppb.Timestamp
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
@@ -41,6 +41,41 @@ type ImmutableAlert interface {
 	CloneVT() *Alert
 }
 
+// GetImmutableDeployment implements ImmutableAlert
+func (m *Alert) GetImmutableDeployment() ImmutableAlert_Deployment {
+	return m.GetDeployment()
+}
+
+// GetImmutableResource implements ImmutableAlert
+func (m *Alert) GetImmutableResource() ImmutableAlert_Resource {
+	return m.GetResource()
+}
+
+// GetImmutableViolations implements ImmutableAlert
+func (m *Alert) GetImmutableViolations() []ImmutableAlert_Violation {
+	if m == nil || m.Violations == nil {
+		return nil
+	}
+	result := make([]ImmutableAlert_Violation, len(m.Violations))
+	for i, v := range m.Violations {
+		result[i] = v
+	}
+	return result
+}
+
+// GetImmutableProcessViolation implements ImmutableAlert
+func (m *Alert) GetImmutableProcessViolation() ImmutableAlert_ProcessViolation {
+	return m.GetProcessViolation()
+}
+
+// GetImmutableEnforcement implements ImmutableAlert
+func (m *Alert) GetImmutableEnforcement() ImmutableAlert_Enforcement {
+	return m.GetEnforcement()
+}
+
+// Verify that Alert implements ImmutableAlert
+var _ ImmutableAlert = (*Alert)(nil)
+
 // ImmutableAlert_Deployment is an immutable interface for Alert_Deployment
 type ImmutableAlert_Deployment interface {
 	GetId() string
@@ -48,17 +83,42 @@ type ImmutableAlert_Deployment interface {
 	GetType() string
 	GetNamespace() string
 	GetNamespaceId() string
-	GetLabels() map[string]string
+	GetImmutableLabels() map[string]string
 	GetClusterId() string
 	GetClusterName() string
-	GetContainers() []ImmutableAlert_Deployment_Container
-	GetAnnotations() map[string]string
+	GetImmutableContainers() []ImmutableAlert_Deployment_Container
+	GetImmutableAnnotations() map[string]string
 	GetInactive() bool
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_Deployment
 }
+
+// GetImmutableLabels implements ImmutableAlert_Deployment
+func (m *Alert_Deployment) GetImmutableLabels() map[string]string {
+	return m.GetLabels()
+}
+
+// GetImmutableContainers implements ImmutableAlert_Deployment
+func (m *Alert_Deployment) GetImmutableContainers() []ImmutableAlert_Deployment_Container {
+	if m == nil || m.Containers == nil {
+		return nil
+	}
+	result := make([]ImmutableAlert_Deployment_Container, len(m.Containers))
+	for i, v := range m.Containers {
+		result[i] = v
+	}
+	return result
+}
+
+// GetImmutableAnnotations implements ImmutableAlert_Deployment
+func (m *Alert_Deployment) GetImmutableAnnotations() map[string]string {
+	return m.GetAnnotations()
+}
+
+// Verify that Alert_Deployment implements ImmutableAlert_Deployment
+var _ ImmutableAlert_Deployment = (*Alert_Deployment)(nil)
 
 // ImmutableAlert_Deployment_Container is an immutable interface for Alert_Deployment_Container
 type ImmutableAlert_Deployment_Container interface {
@@ -69,6 +129,9 @@ type ImmutableAlert_Deployment_Container interface {
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_Deployment_Container
 }
+
+// Verify that Alert_Deployment_Container implements ImmutableAlert_Deployment_Container
+var _ ImmutableAlert_Deployment_Container = (*Alert_Deployment_Container)(nil)
 
 // ImmutableAlert_Resource is an immutable interface for Alert_Resource
 type ImmutableAlert_Resource interface {
@@ -84,11 +147,14 @@ type ImmutableAlert_Resource interface {
 	CloneVT() *Alert_Resource
 }
 
+// Verify that Alert_Resource implements ImmutableAlert_Resource
+var _ ImmutableAlert_Resource = (*Alert_Resource)(nil)
+
 // ImmutableAlert_Violation is an immutable interface for Alert_Violation
 type ImmutableAlert_Violation interface {
 	GetMessage() string
-	GetKeyValueAttrs() ImmutableAlert_Violation_KeyValueAttrs
-	GetNetworkFlowInfo() ImmutableAlert_Violation_NetworkFlowInfo
+	GetImmutableKeyValueAttrs() ImmutableAlert_Violation_KeyValueAttrs
+	GetImmutableNetworkFlowInfo() ImmutableAlert_Violation_NetworkFlowInfo
 	// 'type' is for internal use only.
 	GetType() Alert_Violation_Type
 	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
@@ -101,14 +167,42 @@ type ImmutableAlert_Violation interface {
 	CloneVT() *Alert_Violation
 }
 
+// GetImmutableKeyValueAttrs implements ImmutableAlert_Violation
+func (m *Alert_Violation) GetImmutableKeyValueAttrs() ImmutableAlert_Violation_KeyValueAttrs {
+	return m.GetKeyValueAttrs()
+}
+
+// GetImmutableNetworkFlowInfo implements ImmutableAlert_Violation
+func (m *Alert_Violation) GetImmutableNetworkFlowInfo() ImmutableAlert_Violation_NetworkFlowInfo {
+	return m.GetNetworkFlowInfo()
+}
+
+// Verify that Alert_Violation implements ImmutableAlert_Violation
+var _ ImmutableAlert_Violation = (*Alert_Violation)(nil)
+
 // ImmutableAlert_Violation_KeyValueAttrs is an immutable interface for Alert_Violation_KeyValueAttrs
 type ImmutableAlert_Violation_KeyValueAttrs interface {
-	GetAttrs() []ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr
+	GetImmutableAttrs() []ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_Violation_KeyValueAttrs
 }
+
+// GetImmutableAttrs implements ImmutableAlert_Violation_KeyValueAttrs
+func (m *Alert_Violation_KeyValueAttrs) GetImmutableAttrs() []ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr {
+	if m == nil || m.Attrs == nil {
+		return nil
+	}
+	result := make([]ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr, len(m.Attrs))
+	for i, v := range m.Attrs {
+		result[i] = v
+	}
+	return result
+}
+
+// Verify that Alert_Violation_KeyValueAttrs implements ImmutableAlert_Violation_KeyValueAttrs
+var _ ImmutableAlert_Violation_KeyValueAttrs = (*Alert_Violation_KeyValueAttrs)(nil)
 
 // ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr is an immutable interface for Alert_Violation_KeyValueAttrs_KeyValueAttr
 type ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr interface {
@@ -120,16 +214,32 @@ type ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr interface {
 	CloneVT() *Alert_Violation_KeyValueAttrs_KeyValueAttr
 }
 
+// Verify that Alert_Violation_KeyValueAttrs_KeyValueAttr implements ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr
+var _ ImmutableAlert_Violation_KeyValueAttrs_KeyValueAttr = (*Alert_Violation_KeyValueAttrs_KeyValueAttr)(nil)
+
 // ImmutableAlert_Violation_NetworkFlowInfo is an immutable interface for Alert_Violation_NetworkFlowInfo
 type ImmutableAlert_Violation_NetworkFlowInfo interface {
 	GetProtocol() L4Protocol
-	GetSource() ImmutableAlert_Violation_NetworkFlowInfo_Entity
-	GetDestination() ImmutableAlert_Violation_NetworkFlowInfo_Entity
+	GetImmutableSource() ImmutableAlert_Violation_NetworkFlowInfo_Entity
+	GetImmutableDestination() ImmutableAlert_Violation_NetworkFlowInfo_Entity
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_Violation_NetworkFlowInfo
 }
+
+// GetImmutableSource implements ImmutableAlert_Violation_NetworkFlowInfo
+func (m *Alert_Violation_NetworkFlowInfo) GetImmutableSource() ImmutableAlert_Violation_NetworkFlowInfo_Entity {
+	return m.GetSource()
+}
+
+// GetImmutableDestination implements ImmutableAlert_Violation_NetworkFlowInfo
+func (m *Alert_Violation_NetworkFlowInfo) GetImmutableDestination() ImmutableAlert_Violation_NetworkFlowInfo_Entity {
+	return m.GetDestination()
+}
+
+// Verify that Alert_Violation_NetworkFlowInfo implements ImmutableAlert_Violation_NetworkFlowInfo
+var _ ImmutableAlert_Violation_NetworkFlowInfo = (*Alert_Violation_NetworkFlowInfo)(nil)
 
 // ImmutableAlert_Violation_NetworkFlowInfo_Entity is an immutable interface for Alert_Violation_NetworkFlowInfo_Entity
 type ImmutableAlert_Violation_NetworkFlowInfo_Entity interface {
@@ -144,6 +254,9 @@ type ImmutableAlert_Violation_NetworkFlowInfo_Entity interface {
 	CloneVT() *Alert_Violation_NetworkFlowInfo_Entity
 }
 
+// Verify that Alert_Violation_NetworkFlowInfo_Entity implements ImmutableAlert_Violation_NetworkFlowInfo_Entity
+var _ ImmutableAlert_Violation_NetworkFlowInfo_Entity = (*Alert_Violation_NetworkFlowInfo_Entity)(nil)
+
 // ImmutableAlert_ProcessViolation is an immutable interface for Alert_ProcessViolation
 type ImmutableAlert_ProcessViolation interface {
 	GetMessage() string
@@ -153,6 +266,9 @@ type ImmutableAlert_ProcessViolation interface {
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_ProcessViolation
 }
+
+// Verify that Alert_ProcessViolation implements ImmutableAlert_ProcessViolation
+var _ ImmutableAlert_ProcessViolation = (*Alert_ProcessViolation)(nil)
 
 // ImmutableAlert_Enforcement is an immutable interface for Alert_Enforcement
 type ImmutableAlert_Enforcement interface {
@@ -164,27 +280,53 @@ type ImmutableAlert_Enforcement interface {
 	CloneVT() *Alert_Enforcement
 }
 
+// Verify that Alert_Enforcement implements ImmutableAlert_Enforcement
+var _ ImmutableAlert_Enforcement = (*Alert_Enforcement)(nil)
+
 // ImmutableListAlert is an immutable interface for ListAlert
 type ImmutableListAlert interface {
 	GetId() string
 	GetLifecycleStage() LifecycleStage
 	GetTime() *timestamppb.Timestamp
-	GetPolicy() ImmutableListAlertPolicy
+	GetImmutablePolicy() ImmutableListAlertPolicy
 	GetState() ViolationState
 	GetEnforcementCount() int32
 	GetEnforcementAction() EnforcementAction
-	GetCommonEntityInfo() ImmutableListAlert_CommonEntityInfo
+	GetImmutableCommonEntityInfo() ImmutableListAlert_CommonEntityInfo
 	// Represents an alert on a deployment
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	GetDeployment() ImmutableListAlertDeployment
+	GetImmutableDeployment() ImmutableListAlertDeployment
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	GetResource() ImmutableListAlert_ResourceEntity
+	GetImmutableResource() ImmutableListAlert_ResourceEntity
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlert
 }
+
+// GetImmutablePolicy implements ImmutableListAlert
+func (m *ListAlert) GetImmutablePolicy() ImmutableListAlertPolicy {
+	return m.GetPolicy()
+}
+
+// GetImmutableCommonEntityInfo implements ImmutableListAlert
+func (m *ListAlert) GetImmutableCommonEntityInfo() ImmutableListAlert_CommonEntityInfo {
+	return m.GetCommonEntityInfo()
+}
+
+// GetImmutableDeployment implements ImmutableListAlert
+func (m *ListAlert) GetImmutableDeployment() ImmutableListAlertDeployment {
+	return m.GetDeployment()
+}
+
+// GetImmutableResource implements ImmutableListAlert
+func (m *ListAlert) GetImmutableResource() ImmutableListAlert_ResourceEntity {
+	return m.GetResource()
+}
+
+// Verify that ListAlert implements ImmutableListAlert
+var _ ImmutableListAlert = (*ListAlert)(nil)
 
 // ImmutableListAlert_CommonEntityInfo is an immutable interface for ListAlert_CommonEntityInfo
 type ImmutableListAlert_CommonEntityInfo interface {
@@ -199,6 +341,9 @@ type ImmutableListAlert_CommonEntityInfo interface {
 	CloneVT() *ListAlert_CommonEntityInfo
 }
 
+// Verify that ListAlert_CommonEntityInfo implements ImmutableListAlert_CommonEntityInfo
+var _ ImmutableListAlert_CommonEntityInfo = (*ListAlert_CommonEntityInfo)(nil)
+
 // ImmutableListAlert_ResourceEntity is an immutable interface for ListAlert_ResourceEntity
 type ImmutableListAlert_ResourceEntity interface {
 	GetName() string
@@ -208,6 +353,9 @@ type ImmutableListAlert_ResourceEntity interface {
 	CloneVT() *ListAlert_ResourceEntity
 }
 
+// Verify that ListAlert_ResourceEntity implements ImmutableListAlert_ResourceEntity
+var _ ImmutableListAlert_ResourceEntity = (*ListAlert_ResourceEntity)(nil)
+
 // ImmutableListAlertPolicy is an immutable interface for ListAlertPolicy
 type ImmutableListAlertPolicy interface {
 	GetId() string
@@ -216,12 +364,20 @@ type ImmutableListAlertPolicy interface {
 	GetDescription() string
 	GetCategories() []string
 	// For internal use only.
-	GetDeveloperInternalFields() ImmutableListAlertPolicy_DevFields
+	GetImmutableDeveloperInternalFields() ImmutableListAlertPolicy_DevFields
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlertPolicy
 }
+
+// GetImmutableDeveloperInternalFields implements ImmutableListAlertPolicy
+func (m *ListAlertPolicy) GetImmutableDeveloperInternalFields() ImmutableListAlertPolicy_DevFields {
+	return m.GetDeveloperInternalFields()
+}
+
+// Verify that ListAlertPolicy implements ImmutableListAlertPolicy
+var _ ImmutableListAlertPolicy = (*ListAlertPolicy)(nil)
 
 // ImmutableListAlertPolicy_DevFields is an immutable interface for ListAlertPolicy_DevFields
 type ImmutableListAlertPolicy_DevFields interface {
@@ -231,6 +387,9 @@ type ImmutableListAlertPolicy_DevFields interface {
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlertPolicy_DevFields
 }
+
+// Verify that ListAlertPolicy_DevFields implements ImmutableListAlertPolicy_DevFields
+var _ ImmutableListAlertPolicy_DevFields = (*ListAlertPolicy_DevFields)(nil)
 
 // ImmutableListAlertDeployment is an immutable interface for ListAlertDeployment
 type ImmutableListAlertDeployment interface {
@@ -251,3 +410,6 @@ type ImmutableListAlertDeployment interface {
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlertDeployment
 }
+
+// Verify that ListAlertDeployment implements ImmutableListAlertDeployment
+var _ ImmutableListAlertDeployment = (*ListAlertDeployment)(nil)

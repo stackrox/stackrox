@@ -84,6 +84,10 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 	g.P("\tCloneVT() *", messageName)
 
 	g.P("}")
+	g.P()
+
+	// Generate wrapper methods for slice/map conversions
+	generateWrapperMethods(g, msg, localMessages)
 
 	// Recursively generate interfaces for nested messages
 	for _, nested := range msg.Messages {
@@ -93,7 +97,13 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 
 func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) {
 	fieldName := field.GoName
+
+	// For non-primitive message types, use "GetImmutable" prefix
+	// For primitive types and external messages, use regular "Get" prefix
 	methodName := "Get" + fieldName
+	if isNonPrimitiveType(field, localMessages) {
+		methodName = "GetImmutable" + fieldName
+	}
 
 	// Determine the return type
 	returnType := getFieldType(g, field, localMessages)
@@ -107,6 +117,14 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 	}
 
 	g.P("\t", methodName, "() ", returnType)
+}
+
+func isNonPrimitiveType(field *protogen.Field, localMessages map[string]bool) bool {
+	// Check if this is a message type that's defined locally
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		return localMessages[field.Message.GoIdent.GoName]
+	}
+	return false
 }
 
 func getFieldType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
@@ -200,4 +218,54 @@ func goType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[
 	default:
 		return "interface{}"
 	}
+}
+
+func generateWrapperMethods(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool) {
+	messageName := msg.GoIdent.GoName
+
+	// Generate implementation methods for all fields
+	for _, field := range msg.Fields {
+		generateImplementationMethod(g, msg, field, localMessages)
+	}
+
+	// Add type assertion to verify implementation
+	interfaceName := "Immutable" + messageName
+	g.P()
+	g.P("// Verify that ", messageName, " implements ", interfaceName)
+	g.P("var _ ", interfaceName, " = (*", messageName, ")(nil)")
+}
+
+func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Message, field *protogen.Field, localMessages map[string]bool) {
+	messageName := msg.GoIdent.GoName
+	fieldName := field.GoName
+
+	// Only generate implementation for non-primitive local message types
+	if !isNonPrimitiveType(field, localMessages) {
+		return
+	}
+
+	// Use "GetImmutable" prefix for non-primitive types
+	methodName := "GetImmutable" + fieldName
+	returnType := getFieldType(g, field, localMessages)
+
+	g.P()
+	g.P("// ", methodName, " implements Immutable", messageName)
+	g.P("func (m *", messageName, ") ", methodName, "() ", returnType, " {")
+
+	if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+		// Convert slice
+		g.P("\tif m == nil || m.", fieldName, " == nil {")
+		g.P("\t\treturn nil")
+		g.P("\t}")
+		g.P("\tresult := make(", returnType, ", len(m.", fieldName, "))")
+		g.P("\tfor i, v := range m.", fieldName, " {")
+		g.P("\t\tresult[i] = v")
+		g.P("\t}")
+		g.P("\treturn result")
+	} else {
+		// Return singular field
+		g.P("\treturn m.Get", fieldName, "()")
+	}
+
+	g.P("}")
 }
