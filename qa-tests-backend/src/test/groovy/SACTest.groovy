@@ -99,25 +99,30 @@ class SACTest extends BaseSpecification {
         def img = ImageService.scanImage(TEST_IMAGE, false)
         assert img.hasScan()
 
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
-            assert Services.waitForDeployment(deployment)
+        withRetry(30, 5) {
+            for (Deployment deployment : DEPLOYMENTS) {
+                orchestrator.deleteDeployment(deployment)
+            }
+            orchestrator.batchCreateDeployments(DEPLOYMENTS)
+            for (Deployment deployment : DEPLOYMENTS) {
+                assert Services.waitForDeployment(deployment)
+            }
+
+            // Ensure sensor is up and running (source of alerts)
+            orchestrator.waitForSensor()
+
+            // Check the "Secure Shell (ssh) Port Exposed" policy is active
+            def policyQuery = RawQuery.newBuilder().
+                setQuery("Policy ID:3bf3cec3-d3e8-4512-86ca-b306697d4b75").
+                build()
+            def policies = PolicyService.getPolicies(policyQuery)
+            assert policies.size() == 1
+            assert policies.first().disabled == false
+
+            // Check both pods are created and expose port 22
+            ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA1, "test")
+            ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA2, "test")
         }
-
-        // Ensure sensor is up and running (source of alerts)
-        orchestrator.waitForSensor()
-
-        // Check the "Secure Shell (ssh) Port Exposed" policy is active
-        def policyQuery = RawQuery.newBuilder().
-            setQuery("Policy ID:3bf3cec3-d3e8-4512-86ca-b306697d4b75").
-            build()
-        def policies = PolicyService.getPolicies(policyQuery)
-        assert policies.size() == 1
-        assert policies.first().disabled == false
-
-        // Check both pods are created and expose port 22
-        ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA1, "test")
-        ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA2, "test")
 
         // Make sure each deployment has caused at least one alert
         assert waitForViolation(DEPLOYMENT_QA1.name, "Secure Shell (ssh) Port Exposed",
