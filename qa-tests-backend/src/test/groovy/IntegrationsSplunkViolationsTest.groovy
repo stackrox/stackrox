@@ -24,7 +24,6 @@ import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import spock.lang.IgnoreIf
-import spock.lang.Ignore
 import spock.lang.Tag
 
 // ROX-14228 skipping tests for 1st release on power & z
