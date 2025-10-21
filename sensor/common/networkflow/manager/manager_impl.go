@@ -226,6 +226,11 @@ type networkFlowManager struct {
 	// Kept in production code to avoid build tag complexity and conditional compilation.
 	enrichmentDoneSignal concurrency.Signal
 
+	// sendCyclesCompleted counts the number of send() cycles that have completed.
+	// Incremented after both sendConnsEps and sendProcesses finish (after all channel operations attempted).
+	// Used for test synchronization to ensure send phase is complete, not just enrichment.
+	sendCyclesCompleted atomic.Uint64
+
 	enricherTicker  *time.Ticker
 	enricherTickerC <-chan time.Time
 
@@ -404,6 +409,9 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+
+	// Increment counter after all send operations complete (including channel operations)
+	m.sendCyclesCompleted.Add(1)
 }
 
 func (m *networkFlowManager) enrichAndSend() {

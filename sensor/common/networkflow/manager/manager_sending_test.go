@@ -207,12 +207,17 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 	b.expectLookups(4)
 	b.expectDetections(4)
 
+	startingSendCycles := b.m.sendCyclesCompleted.Load()
+
 	// four times without reading
 	for i := 4; i > 0; i-- {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 	}
+
+	// Wait for all 4 send cycles to complete before reading
+	b.waitForSendCycles(startingSendCycles + 4)
 
 	// should be able to read four buffered updates in sequence
 	for i := 0; i < 4; i++ {
@@ -224,11 +229,16 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 	b.expectLookups(6)
 	b.expectDetections(6)
 
+	startingSendCycles := b.m.sendCyclesCompleted.Load()
+
 	for i := 6; i > 0; i-- {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 	}
+
+	// Wait for all 6 send cycles to complete (ensures all channel operations attempted)
+	b.waitForSendCycles(startingSendCycles + 6)
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
 	for i := 0; i < 5; i++ {
@@ -257,6 +267,26 @@ func (b *sendNetflowsSuite) waitForEnrichmentDone() {
 		b.T().Logf("enrichment completed in %v", elapsed)
 	case <-time.After(enrichmentTimeout):
 		b.T().Fatal("enrichment did not complete within timeout")
+	}
+}
+
+func (b *sendNetflowsSuite) waitForSendCycles(expectedCycles uint64) {
+	start := time.Now()
+	deadline := time.Now().Add(sendToCentralTimeout)
+
+	for {
+		currentCycles := b.m.sendCyclesCompleted.Load()
+		if currentCycles >= expectedCycles {
+			elapsed := time.Since(start)
+			b.T().Logf("send cycles completed: %d/%d in %v", currentCycles, expectedCycles, elapsed)
+			return
+		}
+
+		if time.Now().After(deadline) {
+			b.T().Fatalf("send cycles did not complete within timeout: got %d, expected %d", currentCycles, expectedCycles)
+		}
+
+		time.Sleep(1 * time.Millisecond) // Poll every 1ms
 	}
 }
 
