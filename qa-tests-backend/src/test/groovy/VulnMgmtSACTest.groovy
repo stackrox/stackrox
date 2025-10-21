@@ -126,7 +126,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
         def cveQuery = getImageCVEQuery()
-        
+
         // Retry until CVEs are available via GraphQL.
         withRetry(30, 2) {
             def baseVulnCallResult = gqlService.Call(cveQuery, [query: "Image:*"])
@@ -135,7 +135,7 @@ class VulnMgmtSACTest extends BaseSpecification {
             }
             log.info "CVE data successfully indexed: ${baseVulnCallResult.value.count} CVEs found"
         }
-        
+
         // Create roles and api tokens for rbac based auth
         createReadRole(NODE_ROLE, ["Node", "CVE"])
         createReadRole(IMAGE_ROLE, ["Image", "CVE"])
