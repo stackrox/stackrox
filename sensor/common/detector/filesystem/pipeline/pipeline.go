@@ -99,7 +99,10 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 		activity.Operation = storage.FileActivity_UNLINK
 	case *sensorAPI.FileActivity_Rename:
 		activity.File = &storage.FileActivity_File{
-			// Not sure if GetNew or GetOld should be used here.
+			Path:     fs.GetRename().GetOld().GetPath(),
+			HostPath: fs.GetRename().GetOld().GetHostPath(),
+		}
+		activity.Moved = &storage.FileActivity_File{
 			Path:     fs.GetRename().GetNew().GetPath(),
 			HostPath: fs.GetRename().GetNew().GetHostPath(),
 		}
