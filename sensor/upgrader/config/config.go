@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/upgrader/flags"
 	"k8s.io/client-go/rest"
 )
 
@@ -57,7 +58,7 @@ func (c *UpgraderConfig) Validate() error {
 
 // Create instantiates a new upgrader config using environment variables and well-known config files.
 func Create() (*UpgraderConfig, error) {
-	restConfig, err := loadKubeConfig()
+	restConfig, err := loadKubeConfig(*flags.KubeTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining Kubernetes API config")
 	}
