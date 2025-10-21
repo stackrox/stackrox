@@ -27,7 +27,7 @@ type ActiveComponent struct {
 	// base 64 encoded Deployment:ActiveComponent ids.
 	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,hidden" sql:"pk"`                                         // @gotags: search:"Image Sha,hidden" sql:"pk"
 	DeploymentId string `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"
-	ComponentId  string `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"`    // @gotags: search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"
+	ComponentId  string `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden"`    // @gotags: search:"Component ID,hidden"
 	// Map from container name to the active context of an edge.
 	DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext `protobuf:"bytes,2,rep,name=DEPRECATED_active_contexts,json=DEPRECATEDActiveContexts,proto3" json:"DEPRECATED_active_contexts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"-"` // @gotags: search:"-"
 	ActiveContextsSlice      []*ActiveComponent_ActiveContext          `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice,proto3" json:"active_contexts_slice,omitempty"`

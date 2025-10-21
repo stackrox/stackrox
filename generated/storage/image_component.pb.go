@@ -21,148 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// This proto is deprecated and replaced by ImageComponentV2
-//
-// Deprecated: Marked as deprecated in storage/image_component.proto.
-type ImageComponent struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`           // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,hidden" sql:"pk,id"
-	Name      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component"`       // @gotags: search:"Component"
-	Version   string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"` // @gotags: search:"Component Version"
-	License   *License               `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
-	Priority  int64                  `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
-	RiskScore float32                `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
-	// Types that are valid to be assigned to SetTopCvss:
-	//
-	//	*ImageComponent_TopCvss
-	SetTopCvss isImageComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy         string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	OperatingSystem string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *ImageComponent) Reset() {
-	*x = ImageComponent{}
-	mi := &file_storage_image_component_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ImageComponent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageComponent) ProtoMessage() {}
-
-func (x *ImageComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_image_component_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageComponent.ProtoReflect.Descriptor instead.
-func (*ImageComponent) Descriptor() ([]byte, []int) {
-	return file_storage_image_component_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ImageComponent) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *ImageComponent) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ImageComponent) GetVersion() string {
-	if x != nil {
-		return x.Version
-	}
-	return ""
-}
-
-func (x *ImageComponent) GetLicense() *License {
-	if x != nil {
-		return x.License
-	}
-	return nil
-}
-
-func (x *ImageComponent) GetPriority() int64 {
-	if x != nil {
-		return x.Priority
-	}
-	return 0
-}
-
-func (x *ImageComponent) GetSource() SourceType {
-	if x != nil {
-		return x.Source
-	}
-	return SourceType_OS
-}
-
-func (x *ImageComponent) GetRiskScore() float32 {
-	if x != nil {
-		return x.RiskScore
-	}
-	return 0
-}
-
-func (x *ImageComponent) GetSetTopCvss() isImageComponent_SetTopCvss {
-	if x != nil {
-		return x.SetTopCvss
-	}
-	return nil
-}
-
-func (x *ImageComponent) GetTopCvss() float32 {
-	if x != nil {
-		if x, ok := x.SetTopCvss.(*ImageComponent_TopCvss); ok {
-			return x.TopCvss
-		}
-	}
-	return 0
-}
-
-func (x *ImageComponent) GetFixedBy() string {
-	if x != nil {
-		return x.FixedBy
-	}
-	return ""
-}
-
-func (x *ImageComponent) GetOperatingSystem() string {
-	if x != nil {
-		return x.OperatingSystem
-	}
-	return ""
-}
-
-type isImageComponent_SetTopCvss interface {
-	isImageComponent_SetTopCvss()
-}
-
-type ImageComponent_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS"` // @gotags: search:"Component Top CVSS"
-}
-
-func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
-
 type ImageComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID will be form of Name+version+arch+imageID
@@ -198,7 +56,7 @@ type ImageComponentV2 struct {
 
 func (x *ImageComponentV2) Reset() {
 	*x = ImageComponentV2{}
-	mi := &file_storage_image_component_proto_msgTypes[1]
+	mi := &file_storage_image_component_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +68,7 @@ func (x *ImageComponentV2) String() string {
 func (*ImageComponentV2) ProtoMessage() {}
 
 func (x *ImageComponentV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_image_component_proto_msgTypes[1]
+	mi := &file_storage_image_component_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +81,7 @@ func (x *ImageComponentV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageComponentV2.ProtoReflect.Descriptor instead.
 func (*ImageComponentV2) Descriptor() ([]byte, []int) {
-	return file_storage_image_component_proto_rawDescGZIP(), []int{1}
+	return file_storage_image_component_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ImageComponentV2) GetId() string {
@@ -367,21 +225,7 @@ var File_storage_image_component_proto protoreflect.FileDescriptor
 
 const file_storage_image_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/image_component.proto\x12\astorage\x1a\x13storage/image.proto\"\xd9\x02\n" +
-	"\x0eImageComponent\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
-	"\aversion\x18\x03 \x01(\tR\aversion\x12*\n" +
-	"\alicense\x18\x04 \x01(\v2\x10.storage.LicenseR\alicense\x12\x1a\n" +
-	"\bpriority\x18\x05 \x01(\x03R\bpriority\x12+\n" +
-	"\x06source\x18\x06 \x01(\x0e2\x13.storage.SourceTypeR\x06source\x12\x1d\n" +
-	"\n" +
-	"risk_score\x18\a \x01(\x02R\triskScore\x12\x1b\n" +
-	"\btop_cvss\x18\b \x01(\x02H\x00R\atopCvss\x12\x19\n" +
-	"\bfixed_by\x18\t \x01(\tR\afixedBy\x12)\n" +
-	"\x10operating_system\x18\n" +
-	" \x01(\tR\x0foperatingSystem:\x02\x18\x01B\x0e\n" +
-	"\fset_top_cvss\"\xe0\x03\n" +
+	"\x1dstorage/image_component.proto\x12\astorage\x1a\x13storage/image.proto\"\xe0\x03\n" +
 	"\x10ImageComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -416,22 +260,18 @@ func file_storage_image_component_proto_rawDescGZIP() []byte {
 	return file_storage_image_component_proto_rawDescData
 }
 
-var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_image_component_proto_goTypes = []any{
-	(*ImageComponent)(nil),   // 0: storage.ImageComponent
-	(*ImageComponentV2)(nil), // 1: storage.ImageComponentV2
-	(*License)(nil),          // 2: storage.License
-	(SourceType)(0),          // 3: storage.SourceType
+	(*ImageComponentV2)(nil), // 0: storage.ImageComponentV2
+	(SourceType)(0),          // 1: storage.SourceType
 }
 var file_storage_image_component_proto_depIdxs = []int32{
-	2, // 0: storage.ImageComponent.license:type_name -> storage.License
-	3, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
-	3, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 0: storage.ImageComponentV2.source:type_name -> storage.SourceType
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_component_proto_init() }
@@ -441,9 +281,6 @@ func file_storage_image_component_proto_init() {
 	}
 	file_storage_image_proto_init()
 	file_storage_image_component_proto_msgTypes[0].OneofWrappers = []any{
-		(*ImageComponent_TopCvss)(nil),
-	}
-	file_storage_image_component_proto_msgTypes[1].OneofWrappers = []any{
 		(*ImageComponentV2_TopCvss)(nil),
 		(*ImageComponentV2_LayerIndex)(nil),
 	}
@@ -453,7 +290,7 @@ func file_storage_image_component_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_component_proto_rawDesc), len(file_storage_image_component_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

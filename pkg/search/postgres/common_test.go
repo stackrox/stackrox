@@ -21,9 +21,7 @@ import (
 var (
 	deploymentBaseSchema   = schema.DeploymentsSchema
 	imagesSchema           = schema.ImagesSchema
-	imageCVEsSchema        = schema.ImageCvesSchema
 	alertSchema            = schema.AlertsSchema
-	_                      = schema.ImageCveEdgesSchema
 	imageComponentV2Schema = schema.ImageComponentV2Schema
 	imageCVEV2Schema       = schema.ImageCvesV2Schema
 )
@@ -746,7 +744,7 @@ func TestSelectQueries(t *testing.T) {
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
 				AddStrings(search.PlatformComponent, "true", "-").
 				ProtoQuery(),
-			schema:          imageCVEsSchema,
+			schema:          imageComponentV2Schema,
 			flattenedSchema: imageComponentV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve,
 				distinct(image_cves.Id) as cve_id, max(image_cves.Cvss) as cvss_max,
@@ -776,7 +774,7 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddRegexes(search.VulnerabilityState, ".+ED").
 				ProtoQuery(),
-			schema:          imageCVEsSchema,
+			schema:          imageCVEV2Schema,
 			flattenedSchema: imageCVEV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve
 				from image_cves

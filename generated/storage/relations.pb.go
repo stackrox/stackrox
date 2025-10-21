@@ -9,7 +9,6 @@ package storage
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -21,294 +20,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// This proto has been deprecated
-//
-// Deprecated: Marked as deprecated in storage/relations.proto.
-type ImageComponentEdge struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// id is base 64 encoded Image:Component ids.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"` // @gotags: sql:"pk,id"
-	// / Layer that contains this component
-	//
-	// Types that are valid to be assigned to HasLayerIndex:
-	//
-	//	*ImageComponentEdge_LayerIndex
-	HasLayerIndex    isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location         string                             `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"`                                           // @gotags: search:"Component Location,hidden"
-	ImageId          string                             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                              // @gotags: sql:"fk(Image:id),index=hash"
-	ImageComponentId string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ImageComponentEdge) Reset() {
-	*x = ImageComponentEdge{}
-	mi := &file_storage_relations_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ImageComponentEdge) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageComponentEdge) ProtoMessage() {}
-
-func (x *ImageComponentEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageComponentEdge.ProtoReflect.Descriptor instead.
-func (*ImageComponentEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ImageComponentEdge) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *ImageComponentEdge) GetHasLayerIndex() isImageComponentEdge_HasLayerIndex {
-	if x != nil {
-		return x.HasLayerIndex
-	}
-	return nil
-}
-
-func (x *ImageComponentEdge) GetLayerIndex() int32 {
-	if x != nil {
-		if x, ok := x.HasLayerIndex.(*ImageComponentEdge_LayerIndex); ok {
-			return x.LayerIndex
-		}
-	}
-	return 0
-}
-
-func (x *ImageComponentEdge) GetLocation() string {
-	if x != nil {
-		return x.Location
-	}
-	return ""
-}
-
-func (x *ImageComponentEdge) GetImageId() string {
-	if x != nil {
-		return x.ImageId
-	}
-	return ""
-}
-
-func (x *ImageComponentEdge) GetImageComponentId() string {
-	if x != nil {
-		return x.ImageComponentId
-	}
-	return ""
-}
-
-type isImageComponentEdge_HasLayerIndex interface {
-	isImageComponentEdge_HasLayerIndex()
-}
-
-type ImageComponentEdge_LayerIndex struct {
-	LayerIndex int32 `protobuf:"varint,2,opt,name=layer_index,json=layerIndex,proto3,oneof"`
-}
-
-func (*ImageComponentEdge_LayerIndex) isImageComponentEdge_HasLayerIndex() {}
-
-// This proto has been deprecated
-//
-// Deprecated: Marked as deprecated in storage/relations.proto.
-type ComponentCVEEdge struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// base 64 encoded Component:CVE ids.
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"` // @gotags: search:"Fixable"
-	// Whether there is a version the CVE is fixed in the component.
-	//
-	// Types that are valid to be assigned to HasFixedBy:
-	//
-	//	*ComponentCVEEdge_FixedBy
-	HasFixedBy       isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ImageComponentId string                        `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),index=hash"` // @gotags: sql:"fk(ImageComponent:id),index=hash"
-	ImageCveId       string                        `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ComponentCVEEdge) Reset() {
-	*x = ComponentCVEEdge{}
-	mi := &file_storage_relations_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ComponentCVEEdge) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ComponentCVEEdge) ProtoMessage() {}
-
-func (x *ComponentCVEEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ComponentCVEEdge.ProtoReflect.Descriptor instead.
-func (*ComponentCVEEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ComponentCVEEdge) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *ComponentCVEEdge) GetIsFixable() bool {
-	if x != nil {
-		return x.IsFixable
-	}
-	return false
-}
-
-func (x *ComponentCVEEdge) GetHasFixedBy() isComponentCVEEdge_HasFixedBy {
-	if x != nil {
-		return x.HasFixedBy
-	}
-	return nil
-}
-
-func (x *ComponentCVEEdge) GetFixedBy() string {
-	if x != nil {
-		if x, ok := x.HasFixedBy.(*ComponentCVEEdge_FixedBy); ok {
-			return x.FixedBy
-		}
-	}
-	return ""
-}
-
-func (x *ComponentCVEEdge) GetImageComponentId() string {
-	if x != nil {
-		return x.ImageComponentId
-	}
-	return ""
-}
-
-func (x *ComponentCVEEdge) GetImageCveId() string {
-	if x != nil {
-		return x.ImageCveId
-	}
-	return ""
-}
-
-type isComponentCVEEdge_HasFixedBy interface {
-	isComponentCVEEdge_HasFixedBy()
-}
-
-type ComponentCVEEdge_FixedBy struct {
-	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,hidden"` // @gotags: search:"Fixed By,hidden"
-}
-
-func (*ComponentCVEEdge_FixedBy) isComponentCVEEdge_HasFixedBy() {}
-
-// This proto has been deprecated
-//
-// Deprecated: Marked as deprecated in storage/relations.proto.
-type ImageCVEEdge struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// base 64 encoded Image:CVE ids.
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                   // @gotags: sql:"pk,id"
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`                            // @gotags: search:"Vulnerability State"
-	ImageId              string                 `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                          // @gotags: sql:"fk(Image:id),index=hash"
-	ImageCveId           string                 `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                               // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *ImageCVEEdge) Reset() {
-	*x = ImageCVEEdge{}
-	mi := &file_storage_relations_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ImageCVEEdge) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageCVEEdge) ProtoMessage() {}
-
-func (x *ImageCVEEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageCVEEdge.ProtoReflect.Descriptor instead.
-func (*ImageCVEEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ImageCVEEdge) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *ImageCVEEdge) GetFirstImageOccurrence() *timestamppb.Timestamp {
-	if x != nil {
-		return x.FirstImageOccurrence
-	}
-	return nil
-}
-
-func (x *ImageCVEEdge) GetState() VulnerabilityState {
-	if x != nil {
-		return x.State
-	}
-	return VulnerabilityState_OBSERVED
-}
-
-func (x *ImageCVEEdge) GetImageId() string {
-	if x != nil {
-		return x.ImageId
-	}
-	return ""
-}
-
-func (x *ImageCVEEdge) GetImageCveId() string {
-	if x != nil {
-		return x.ImageCveId
-	}
-	return ""
-}
 
 type NodeComponentEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -322,7 +33,7 @@ type NodeComponentEdge struct {
 
 func (x *NodeComponentEdge) Reset() {
 	*x = NodeComponentEdge{}
-	mi := &file_storage_relations_proto_msgTypes[3]
+	mi := &file_storage_relations_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -334,7 +45,7 @@ func (x *NodeComponentEdge) String() string {
 func (*NodeComponentEdge) ProtoMessage() {}
 
 func (x *NodeComponentEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[3]
+	mi := &file_storage_relations_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -347,7 +58,7 @@ func (x *NodeComponentEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeComponentEdge.ProtoReflect.Descriptor instead.
 func (*NodeComponentEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{3}
+	return file_storage_relations_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NodeComponentEdge) GetId() string {
@@ -389,7 +100,7 @@ type NodeComponentCVEEdge struct {
 
 func (x *NodeComponentCVEEdge) Reset() {
 	*x = NodeComponentCVEEdge{}
-	mi := &file_storage_relations_proto_msgTypes[4]
+	mi := &file_storage_relations_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +112,7 @@ func (x *NodeComponentCVEEdge) String() string {
 func (*NodeComponentCVEEdge) ProtoMessage() {}
 
 func (x *NodeComponentCVEEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[4]
+	mi := &file_storage_relations_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +125,7 @@ func (x *NodeComponentCVEEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeComponentCVEEdge.ProtoReflect.Descriptor instead.
 func (*NodeComponentCVEEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{4}
+	return file_storage_relations_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NodeComponentCVEEdge) GetId() string {
@@ -490,7 +201,7 @@ type ClusterCVEEdge struct {
 
 func (x *ClusterCVEEdge) Reset() {
 	*x = ClusterCVEEdge{}
-	mi := &file_storage_relations_proto_msgTypes[5]
+	mi := &file_storage_relations_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -502,7 +213,7 @@ func (x *ClusterCVEEdge) String() string {
 func (*ClusterCVEEdge) ProtoMessage() {}
 
 func (x *ClusterCVEEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[5]
+	mi := &file_storage_relations_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -515,7 +226,7 @@ func (x *ClusterCVEEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterCVEEdge.ProtoReflect.Descriptor instead.
 func (*ClusterCVEEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{5}
+	return file_storage_relations_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ClusterCVEEdge) GetId() string {
@@ -583,7 +294,7 @@ type PolicyCategoryEdge struct {
 
 func (x *PolicyCategoryEdge) Reset() {
 	*x = PolicyCategoryEdge{}
-	mi := &file_storage_relations_proto_msgTypes[6]
+	mi := &file_storage_relations_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -595,7 +306,7 @@ func (x *PolicyCategoryEdge) String() string {
 func (*PolicyCategoryEdge) ProtoMessage() {}
 
 func (x *PolicyCategoryEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_relations_proto_msgTypes[6]
+	mi := &file_storage_relations_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -608,7 +319,7 @@ func (x *PolicyCategoryEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PolicyCategoryEdge.ProtoReflect.Descriptor instead.
 func (*PolicyCategoryEdge) Descriptor() ([]byte, []int) {
-	return file_storage_relations_proto_rawDescGZIP(), []int{6}
+	return file_storage_relations_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PolicyCategoryEdge) GetId() string {
@@ -636,31 +347,7 @@ var File_storage_relations_proto protoreflect.FileDescriptor
 
 const file_storage_relations_proto_rawDesc = "" +
 	"\n" +
-	"\x17storage/relations.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"\xc3\x01\n" +
-	"\x12ImageComponentEdge\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
-	"\vlayer_index\x18\x02 \x01(\x05H\x00R\n" +
-	"layerIndex\x12\x1a\n" +
-	"\blocation\x18\x03 \x01(\tR\blocation\x12\x19\n" +
-	"\bimage_id\x18\x04 \x01(\tR\aimageId\x12,\n" +
-	"\x12image_component_id\x18\x05 \x01(\tR\x10imageComponentId:\x02\x18\x01B\x11\n" +
-	"\x0fhas_layer_index\"\xc2\x01\n" +
-	"\x10ComponentCVEEdge\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
-	"\n" +
-	"is_fixable\x18\x02 \x01(\bR\tisFixable\x12\x1b\n" +
-	"\bfixed_by\x18\x03 \x01(\tH\x00R\afixedBy\x12,\n" +
-	"\x12image_component_id\x18\x04 \x01(\tR\x10imageComponentId\x12 \n" +
-	"\fimage_cve_id\x18\x05 \x01(\tR\n" +
-	"imageCveId:\x02\x18\x01B\x0e\n" +
-	"\fhas_fixed_by\"\xe4\x01\n" +
-	"\fImageCVEEdge\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12P\n" +
-	"\x16first_image_occurrence\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x121\n" +
-	"\x05state\x18\x03 \x01(\x0e2\x1b.storage.VulnerabilityStateR\x05state\x12\x19\n" +
-	"\bimage_id\x18\x04 \x01(\tR\aimageId\x12 \n" +
-	"\fimage_cve_id\x18\x05 \x01(\tR\n" +
-	"imageCveId:\x02\x18\x01\"h\n" +
+	"\x17storage/relations.proto\x12\astorage\"h\n" +
 	"\x11NodeComponentEdge\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12*\n" +
@@ -701,26 +388,19 @@ func file_storage_relations_proto_rawDescGZIP() []byte {
 	return file_storage_relations_proto_rawDescData
 }
 
-var file_storage_relations_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_storage_relations_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_relations_proto_goTypes = []any{
-	(*ImageComponentEdge)(nil),    // 0: storage.ImageComponentEdge
-	(*ComponentCVEEdge)(nil),      // 1: storage.ComponentCVEEdge
-	(*ImageCVEEdge)(nil),          // 2: storage.ImageCVEEdge
-	(*NodeComponentEdge)(nil),     // 3: storage.NodeComponentEdge
-	(*NodeComponentCVEEdge)(nil),  // 4: storage.NodeComponentCVEEdge
-	(*ClusterCVEEdge)(nil),        // 5: storage.ClusterCVEEdge
-	(*PolicyCategoryEdge)(nil),    // 6: storage.PolicyCategoryEdge
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(VulnerabilityState)(0),       // 8: storage.VulnerabilityState
+	(*NodeComponentEdge)(nil),    // 0: storage.NodeComponentEdge
+	(*NodeComponentCVEEdge)(nil), // 1: storage.NodeComponentCVEEdge
+	(*ClusterCVEEdge)(nil),       // 2: storage.ClusterCVEEdge
+	(*PolicyCategoryEdge)(nil),   // 3: storage.PolicyCategoryEdge
 }
 var file_storage_relations_proto_depIdxs = []int32{
-	7, // 0: storage.ImageCVEEdge.first_image_occurrence:type_name -> google.protobuf.Timestamp
-	8, // 1: storage.ImageCVEEdge.state:type_name -> storage.VulnerabilityState
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_storage_relations_proto_init() }
@@ -728,17 +408,10 @@ func file_storage_relations_proto_init() {
 	if File_storage_relations_proto != nil {
 		return
 	}
-	file_storage_cve_proto_init()
-	file_storage_relations_proto_msgTypes[0].OneofWrappers = []any{
-		(*ImageComponentEdge_LayerIndex)(nil),
-	}
 	file_storage_relations_proto_msgTypes[1].OneofWrappers = []any{
-		(*ComponentCVEEdge_FixedBy)(nil),
-	}
-	file_storage_relations_proto_msgTypes[4].OneofWrappers = []any{
 		(*NodeComponentCVEEdge_FixedBy)(nil),
 	}
-	file_storage_relations_proto_msgTypes[5].OneofWrappers = []any{
+	file_storage_relations_proto_msgTypes[2].OneofWrappers = []any{
 		(*ClusterCVEEdge_FixedBy)(nil),
 	}
 	type x struct{}
@@ -747,7 +420,7 @@ func file_storage_relations_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_relations_proto_rawDesc), len(file_storage_relations_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
