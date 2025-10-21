@@ -23,10 +23,14 @@ export function getFutureDateByDays(days) {
 }
 
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    const routeMatcherMap = getRouteMatcherMapForGraphQL(['getImageCVEList']);
+    Object.keys(routeMatcherMap).forEach((key) => {
+        routeMatcherMap[key].times = 1;
+    });
     // With Workload CVEs split between User and Platform components, we can only reliably expect
     // CVEs to be present for the built-in (Platform) components during CI
     const basePath = '/main/vulnerabilities/platform/';
-    visit(basePath + urlSearch, getRouteMatcherMapForGraphQL(['getImageCVEList']));
+    visit(basePath + urlSearch, routeMatcherMap);
 
     cy.get(`h1:contains("Platform vulnerabilities")`);
     cy.location('pathname').should('eq', basePath);
@@ -35,9 +39,9 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
     if (clearFiltersOnVisit) {
-        cy.get(vulnSelectors.clearFiltersButton).click();
-        // Ensure the data in the table has settled before continuing with the test
-        cy.get(selectors.isUpdatingTable).should('not.exist');
+        interactAndWaitForResponses(() => {
+            cy.get(vulnSelectors.clearFiltersButton).click();
+        }, routeMatcherMap);
     }
 }
 
