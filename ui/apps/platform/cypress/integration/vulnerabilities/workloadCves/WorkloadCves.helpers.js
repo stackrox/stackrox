@@ -26,14 +26,10 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     // With Workload CVEs split between User and Platform components, we can only reliably expect
     // CVEs to be present for the built-in (Platform) components during CI
     const basePath = '/main/vulnerabilities/platform/';
-    visit(basePath + urlSearch);
+    visit(basePath + urlSearch, getRouteMatcherMapForGraphQL(['getImageCVEList']));
 
     cy.get(`h1:contains("Platform vulnerabilities")`);
     cy.location('pathname').should('eq', basePath);
-
-    // Wait for the initial table load to begin and complete
-    cy.get(selectors.loadingSpinner).should('exist');
-    cy.get(selectors.loadingSpinner).should('not.exist');
 
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
