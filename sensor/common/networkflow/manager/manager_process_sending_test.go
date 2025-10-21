@@ -210,7 +210,7 @@ func (b *sendNetflowsSuite) getUpdates(num int) ([]*storage.ProcessListeningOnPo
 	p := make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	e := make([]*storage.NetworkEndpoint, 0)
 	for range num {
-		msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+		msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 		switch msg.Msg.(type) {
 		case *central.MsgFromSensor_ProcessListeningOnPortUpdate:
 			update := msg.GetMsg().(*central.MsgFromSensor_ProcessListeningOnPortUpdate)

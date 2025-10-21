@@ -257,7 +257,7 @@ func (b *sendNetflowsSuite) waitForEnrichmentDone() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -265,7 +265,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -273,7 +273,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints(), 1, "one updated endpint")
@@ -293,7 +293,7 @@ func mustNotRead[T any](t *testing.T, ch chan T) {
 	}
 }
 
-func mustReadTimeout[T any](t *testing.T, ch chan T) T {
+func mustReadTimeout[T any](t *testing.T, ch chan T, timeout time.Duration) T {
 	var result T
 	select {
 	case v, more := <-ch:
@@ -301,17 +301,12 @@ func mustReadTimeout[T any](t *testing.T, ch chan T) T {
 			require.True(t, more, "channel should never close")
 		}
 		result = v
-	case <-time.After(sendToCentralTimeout):
+	case <-time.After(timeout):
 		t.Fatal("blocked on reading from channel")
 	}
 	return result
 }
 
-func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
-	select {
-	case ch <- v:
-		return
-	case <-time.After(sendToCentralTimeout):
-		t.Fatal("blocked on sending to channel")
-	}
+func mustSendToCentralWithoutBlock[T any](t *testing.T, ch chan T) T {
+	return mustReadTimeout(t, ch, sendToCentralTimeout)
 }
