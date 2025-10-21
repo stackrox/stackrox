@@ -93,6 +93,11 @@ func (s *LogImbuesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, logImbues))
 
+	foundLogImbues, missing, err := store.GetMany(ctx, logImbueIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), logImbues, foundLogImbues)
+
 	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, logImbueCount)

@@ -93,6 +93,11 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, imageComponents))
 
+	foundImageComponents, missing, err := store.GetMany(ctx, imageComponentIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), imageComponents, foundImageComponents)
+
 	imageComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageComponentCount)

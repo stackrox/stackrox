@@ -93,6 +93,11 @@ func (s *ReportConfigurationsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
 
+	foundReportConfigurations, missing, err := store.GetMany(ctx, reportConfigurationIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), reportConfigurations, foundReportConfigurations)
+
 	reportConfigurationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, reportConfigurationCount)

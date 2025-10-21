@@ -40,9 +40,11 @@ func BenchmarkMany(b *testing.B) {
 
 	for n := 1; n < alertsNum; n = n * 2 {
 		b.Run(fmt.Sprintf("upsert %d alerts", n), func(b *testing.B) {
-			err := store.UpsertMany(ctx, alerts[:n])
-			if err != nil {
-				b.Fatal(err)
+			for b.Loop() {
+				err := store.UpsertMany(ctx, alerts[:n])
+				if err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 		b.Run(fmt.Sprintf("get %d alerts", n), func(b *testing.B) {

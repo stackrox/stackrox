@@ -93,6 +93,11 @@ func (s *AuthMachineToMachineConfigsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, authMachineToMachineConfigs))
 
+	foundAuthMachineToMachineConfigs, missing, err := store.GetMany(ctx, authMachineToMachineConfigIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), authMachineToMachineConfigs, foundAuthMachineToMachineConfigs)
+
 	authMachineToMachineConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, authMachineToMachineConfigCount)

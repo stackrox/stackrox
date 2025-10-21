@@ -96,6 +96,11 @@ func (s *RoleBindingsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, k8SRoleBindings))
 
+	foundK8SRoleBindings, missing, err := store.GetMany(ctx, k8SRoleBindingIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), k8SRoleBindings, foundK8SRoleBindings)
+
 	k8SRoleBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, k8SRoleBindingCount)

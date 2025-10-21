@@ -96,6 +96,11 @@ func (s *DeploymentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, deployments))
 
+	foundDeployments, missing, err := store.GetMany(ctx, deploymentIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), deployments, foundDeployments)
+
 	deploymentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, deploymentCount)
