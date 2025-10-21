@@ -376,35 +376,6 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 	return m.pipelineCtx
 }
 
-func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
-	// Number of entities (connections, endpoints) waiting for enrichment
-	numConnections := 0
-	numEndpoints := 0
-	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
-		for _, hostConns := range m.connectionsByHost {
-			concurrency.WithLock(&hostConns.mutex, func() {
-				numConnections += len(hostConns.connections)
-				numEndpoints += len(hostConns.endpoints)
-			})
-		}
-	})
-	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
-	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
-
-	// Number of entities (connections, endpoints) stored in memory for the purposes of not losing data while offline.
-	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
-	})
-	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
-	})
-
-	// Length and byte sizes of collections used internally by updatecomputer
-	if m.updateComputer != nil {
-		m.updateComputer.RecordSizeMetrics(flowMetrics.EnrichmentCollectionsSize, flowMetrics.EnrichmentCollectionsSizeBytes)
-	}
-}
-
 func (m *networkFlowManager) enrichAndSend() {
 	m.updateEnrichmentCollectionsSize()
 	// currentEnrichedConnsAndEndpoints takes connections, endpoints, and processes (i.e., enriched-entities, short EE)
@@ -428,43 +399,20 @@ func (m *networkFlowManager) enrichAndSend() {
 	// Run periodic cleanup after all tasks here are done.
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
-	// BEGIN: Batching modification
-	// We need to track if all batches were successfully sent.
-	sentAllConnsEps := true
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		log.Infof("features.BatchSensorToCentralMessages.Enabled()= %+v", features.BatchSensorToCentralMessages.Enabled())
-		if features.BatchSensorToCentralMessages.Enabled() {
-			log.Info("Sending connections in batches")
-			if sent := m.sendConnsEpsInBatches(updatedConns, updatedEndpoints); !sent {
-				sentAllConnsEps = false
-			}
-		} else {
-			log.Info("Sending connections at once")
-			sentAllConnsEps = m.sendConnsEps(updatedConns, updatedEndpoints)
+		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSendConnections(currentConns)
+			m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
 		}
-
 	}
 
-	log.Infof("sentAllConnsEps= %+v", sentAllConnsEps)
-	if sentAllConnsEps {
-		// Inform the updateComputer that sending has succeeded, but only if ALL batches were sent successfully.
-		m.updateComputer.OnSuccessfulSendConnections(currentConns)
-		m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
-	}
-
-	sentAllProcesses := true
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		if sent := m.sendProcesses(updatedProcesses); !sent {
-			sentAllProcesses = false
+		if sent := m.sendProcesses(updatedProcesses); sent {
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
 		}
 	}
-
-	if sentAllProcesses {
-		// Inform the updateComputer that sending has succeeded, but only if ALL batches were sent successfully.
-		m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
-	}
-	// END: Batching modification
-
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
 
