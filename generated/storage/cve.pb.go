@@ -1416,25 +1416,26 @@ func (x *Advisory) GetLink() string {
 }
 
 // This proto is deprecated and replaced by ImageCVEV2.
+// Have to keep it here for migrations right now
 //
 // Deprecated: Marked as deprecated in storage/cve.proto.
 type ImageCVE struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	CveBaseInfo     *CVEInfo               `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
-	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	// cvss stores ACS preferred cvss score
-	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                           // @gotags: search:"CVSS"
-	Severity    VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"` // @gotags: search:"Severity"
-	ImpactScore float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
+	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty"`
+	Severity    VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
+	ImpactScore float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty"`
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	Snoozed bool `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"` // @gotags: search:"CVE Snoozed"
+	Snoozed bool `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty"`
 	// Deprecated: Marked as deprecated in storage/cve.proto.
 	SnoozeStart *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
+	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty"`
 	// nvdcvss stores cvss score for a cve from NVD
-	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS"` // @gotags: search:"NVD CVSS"
+	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty"`
 	// cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
 	CvssMetrics     []*CVSSScore     `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
 	NvdScoreVersion CvssScoreVersion `protobuf:"varint,12,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
