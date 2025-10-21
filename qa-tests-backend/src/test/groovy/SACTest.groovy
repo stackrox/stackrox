@@ -12,7 +12,6 @@ import orchestratormanager.OrchestratorTypes
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.api.model.PodSpec
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
