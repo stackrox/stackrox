@@ -105,9 +105,7 @@ class SACTest extends BaseSpecification {
         assert img.hasScan()
 
         withRetry(30, 5) {
-            for (Deployment deployment : DEPLOYMENTS) {
-                orchestrator.deleteDeployment(deployment)
-            }
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT_QA1, DEPLOYMENT_QA2)
             orchestrator.batchCreateDeployments(DEPLOYMENTS)
             for (Deployment deployment : DEPLOYMENTS) {
                 assert Services.waitForDeployment(deployment)
