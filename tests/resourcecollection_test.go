@@ -550,7 +550,7 @@ func getTestDeployment(name string, labels ...label) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
-							Image: "quay.io/rhacs-eng/qa:nginx-1-14-alpine",
+							Image: "quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1",
 						},
 					},
 				},

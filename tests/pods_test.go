@@ -41,6 +41,13 @@ func TestPod(testT *testing.T) {
 	// - the process events expected in this test are not reliably detected.
 
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	if os.Getenv("ARM64_NODESELECTORS") == "true" {
+		if kPod.Spec.NodeSelector == nil {
+			kPod.Spec.NodeSelector = make(map[string]string)
+		}
+		kPod.Spec.NodeSelector["kubernetes.io/arch"] = "arm64"
+	}
+
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		defer teardownPod(testT, client, kPod)
