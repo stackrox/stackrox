@@ -42,12 +42,24 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P("package ", file.GoPackageName)
 	g.P()
 
+	// Build a set of messages defined in this file for lookup
+	localMessages := make(map[string]bool)
+	var collectMessages func([]*protogen.Message)
+	collectMessages = func(messages []*protogen.Message) {
+		for _, m := range messages {
+			localMessages[m.GoIdent.GoName] = true
+			collectMessages(m.Messages) // Recursively collect nested messages
+		}
+	}
+	collectMessages(file.Messages)
+
+	// Store local messages in the file for access during generation
 	for _, m := range file.Messages {
-		generateMessageInterface(g, m)
+		generateMessageInterface(g, m, localMessages)
 	}
 }
 
-func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message) {
+func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool) {
 	if msg.Desc.IsMapEntry() {
 		return
 	}
@@ -61,28 +73,23 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message) 
 
 	// Generate getter methods for all fields
 	for _, field := range msg.Fields {
-		generateFieldGetter(g, field)
+		generateFieldGetter(g, field, localMessages)
 	}
 
 	g.P("}")
-	g.P()
-
-	// Add compile-time type assertion check
-	g.P("// Verify that ", messageName, " implements ", interfaceName)
-	g.P("var _ ", interfaceName, " = (*", messageName, ")(nil)")
 
 	// Recursively generate interfaces for nested messages
 	for _, nested := range msg.Messages {
-		generateMessageInterface(g, nested)
+		generateMessageInterface(g, nested, localMessages)
 	}
 }
 
-func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field) {
+func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) {
 	fieldName := field.GoName
 	methodName := "Get" + fieldName
 
 	// Determine the return type
-	returnType := getFieldType(g, field)
+	returnType := getFieldType(g, field, localMessages)
 
 	// Add comment if available
 	if field.Comments.Leading != "" {
@@ -95,40 +102,49 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field) {
 	g.P("\t", methodName, "() ", returnType)
 }
 
-func getFieldType(g *protogen.GeneratedFile, field *protogen.Field) string {
+func getFieldType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
 	// Handle maps first (before checking repeated, as maps are also repeated)
 	if field.Desc.IsMap() {
 		// Map fields have a message type with exactly 2 fields: key and value
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
-		keyType := goType(g, keyField)
-		valueType := goType(g, valueField)
+		keyType := goType(g, keyField, localMessages)
+		valueType := goType(g, valueField, localMessages)
 		return fmt.Sprintf("map[%s]%s", keyType, valueType)
 	}
 
 	// Handle repeated fields
 	if field.Desc.Cardinality() == protoreflect.Repeated {
-		elemType := getElementType(g, field)
+		elemType := getElementType(g, field, localMessages)
 		return "[]" + elemType
 	}
 
-	return getElementType(g, field)
+	return getElementType(g, field, localMessages)
 }
 
-func getElementType(g *protogen.GeneratedFile, field *protogen.Field) string {
+func getElementType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
 	switch field.Desc.Kind() {
 	case protoreflect.EnumKind:
 		// Enums are in the same package
 		return g.QualifiedGoIdent(field.Enum.GoIdent)
 	case protoreflect.MessageKind, protoreflect.GroupKind:
-		// Messages return pointer to the type
-		return "*" + g.QualifiedGoIdent(field.Message.GoIdent)
+		messageIdent := field.Message.GoIdent
+		// Only use Immutable interface if the message is defined in the current file
+		if localMessages[messageIdent.GoName] {
+			immutableIdent := protogen.GoIdent{
+				GoName:       "Immutable" + messageIdent.GoName,
+				GoImportPath: messageIdent.GoImportPath,
+			}
+			return g.QualifiedGoIdent(immutableIdent)
+		}
+		// For external messages, use pointer to concrete type
+		return "*" + g.QualifiedGoIdent(messageIdent)
 	default:
-		return goType(g, field)
+		return goType(g, field, localMessages)
 	}
 }
 
-func goType(g *protogen.GeneratedFile, field *protogen.Field) string {
+func goType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
 	switch field.Desc.Kind() {
 	case protoreflect.BoolKind:
 		return "bool"
@@ -151,9 +167,29 @@ func goType(g *protogen.GeneratedFile, field *protogen.Field) string {
 	case protoreflect.BytesKind:
 		return "[]byte"
 	case protoreflect.MessageKind:
-		return "*" + g.QualifiedGoIdent(field.Message.GoIdent)
+		messageIdent := field.Message.GoIdent
+		// Only use Immutable interface if the message is defined in the current file
+		if localMessages[messageIdent.GoName] {
+			immutableIdent := protogen.GoIdent{
+				GoName:       "Immutable" + messageIdent.GoName,
+				GoImportPath: messageIdent.GoImportPath,
+			}
+			return g.QualifiedGoIdent(immutableIdent)
+		}
+		// For external messages, use pointer to concrete type
+		return "*" + g.QualifiedGoIdent(messageIdent)
 	case protoreflect.GroupKind:
-		return "*" + g.QualifiedGoIdent(field.Message.GoIdent)
+		messageIdent := field.Message.GoIdent
+		// Only use Immutable interface if the message is defined in the current file
+		if localMessages[messageIdent.GoName] {
+			immutableIdent := protogen.GoIdent{
+				GoName:       "Immutable" + messageIdent.GoName,
+				GoImportPath: messageIdent.GoImportPath,
+			}
+			return g.QualifiedGoIdent(immutableIdent)
+		}
+		// For external messages, use pointer to concrete type
+		return "*" + g.QualifiedGoIdent(messageIdent)
 	default:
 		return "interface{}"
 	}
