@@ -532,7 +532,7 @@ const rules = {
                     const ancestors = context.sourceCode.getAncestors(node);
                     if (ancestors.length >= 1) {
                         const parent = ancestors[ancestors.length - 1];
-                        if (typeof parent?.source?.value === 'string') {
+                        if (typeof parent.source?.value === 'string') {
                             if (parent.source.value !== 'yup') {
                                 context.report({
                                     node,
