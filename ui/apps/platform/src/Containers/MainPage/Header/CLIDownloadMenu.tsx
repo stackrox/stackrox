@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { DownloadIcon } from '@patternfly/react-icons';

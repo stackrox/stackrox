@@ -30,7 +30,6 @@ var (
 
 func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")

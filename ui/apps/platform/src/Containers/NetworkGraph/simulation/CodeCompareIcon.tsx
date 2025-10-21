@@ -1,5 +1,3 @@
-import React from 'react';
-
 function CodeCompareIcon() {
     return (
         <svg

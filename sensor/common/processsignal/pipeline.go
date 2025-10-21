@@ -8,12 +8,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -23,8 +21,7 @@ import (
 )
 
 var (
-	log              = logging.LoggerForModule()
-	errSensorOffline = errors.New("sensor is offline")
+	log = logging.LoggerForModule()
 )
 
 // Pipeline is the struct that handles a process signal
@@ -39,16 +36,11 @@ type Pipeline struct {
 	stopper            concurrency.Stopper
 	// enricher context
 	cancelEnricherCtx context.CancelCauseFunc
-	// message context
-	msgCtxMux    *sync.Mutex
-	msgCtx       context.Context
-	msgCtxCancel context.CancelCauseFunc
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
-	msgCtx, cancelMsgCtx := context.WithCancelCause(context.Background())
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
 	en := newEnricher(enricherCtx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
@@ -66,9 +58,6 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		detector:           detector,
 		cm:                 cm,
 		cancelEnricherCtx:  cancelEnricherCtx,
-		msgCtxMux:          &sync.Mutex{},
-		msgCtx:             msgCtx,
-		msgCtxCancel:       cancelMsgCtx,
 		stopper:            concurrency.NewStopper(),
 	}
 	go p.sendIndicatorEvent()
@@ -98,41 +87,8 @@ func (p *Pipeline) Shutdown() {
 
 // Notify allows the component state to be propagated to the pipeline
 func (p *Pipeline) Notify(e common.SensorComponentEvent) {
-	// Do not cancel the context if we are in offline v3.
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		return
-	}
+	// With event buffering enabled, we use long-lived contexts and don't cancel on disconnect
 	log.Info(common.LogSensorComponentEvent(e))
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		p.createNewContext()
-	case common.SensorComponentEventOfflineMode:
-		p.cancelCurrentContext()
-	}
-}
-
-func (p *Pipeline) createNewContext() {
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	p.msgCtx, p.msgCtxCancel = context.WithCancelCause(context.Background())
-}
-
-func (p *Pipeline) getCurrentContext() context.Context {
-	// If we are in offline v3 the context won't be cancelled on disconnect, so we can just return Background here.
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		return context.Background()
-	}
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	return p.msgCtx
-}
-
-func (p *Pipeline) cancelCurrentContext() {
-	p.msgCtxMux.Lock()
-	defer p.msgCtxMux.Unlock()
-	if p.msgCtxCancel != nil {
-		p.msgCtxCancel(errSensorOffline)
-	}
 }
 
 // Process defines processes to process a ProcessIndicator
@@ -160,9 +116,9 @@ func (p *Pipeline) sendIndicatorEvent() {
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
-		p.detector.ProcessIndicator(p.getCurrentContext(), indicator)
+		p.detector.ProcessIndicator(context.Background(), indicator)
 		p.sendToCentral(
-			message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
+			message.NewExpiring(context.Background(), &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{
 					Event: &central.SensorEvent{
 						Id:     indicator.GetId(),
@@ -179,23 +135,15 @@ func (p *Pipeline) sendIndicatorEvent() {
 }
 
 func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		select {
-		case p.indicators <- msg:
-		case <-p.stopper.Flow().StopRequested():
-			return
-		default:
-			metrics.IncrementProcessSignalDroppedCount()
-			log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
-				msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
-				msg.GetEvent().GetProcessIndicator().GetId(),
-				msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
-		}
-	} else {
-		select {
-		case p.indicators <- msg:
-		case <-p.stopper.Flow().StopRequested():
-			return
-		}
+	select {
+	case p.indicators <- msg:
+	case <-p.stopper.Flow().StopRequested():
+		return
+	default:
+		metrics.IncrementProcessSignalDroppedCount()
+		log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
+			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
+			msg.GetEvent().GetProcessIndicator().GetId(),
+			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
 	}
 }

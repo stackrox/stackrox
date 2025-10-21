@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -132,9 +131,6 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	}
 
 	enrichedEndpointsProcesses[ind] = processIndicator
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpFeatureDisabled, reasonPLOP
-	}
 
 	m.activeEndpointsMutex.Lock()
 	defer m.activeEndpointsMutex.Unlock()
@@ -250,8 +246,6 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 			log.Debugf("Enrichment succeeded; marking endpoint as inactive")
 		case EnrichmentReasonEpDuplicate:
 			log.Debugf("Enrichment succeeded; skipping update as newer data is already available")
-		case EnrichmentReasonEpFeatureDisabled:
-			log.Debugf("Enrichment succeeded; skipping update as sensor is not configured to enrich events while in offline mode")
 		}
 		// The default action is the old behavior, in which only inactive connections are removed.
 		return PostEnrichmentActionCheckRemove

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bullseye, Icon, Text } from '@patternfly/react-core';
 import { ModuleIcon } from '@patternfly/react-icons';
 import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';

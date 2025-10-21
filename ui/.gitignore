@@ -1,25 +1,19 @@
 # dependencies
 node_modules/
-/monorepo.lock
-/monorepo.lock.sha256
 
 # build
 lint
 /build
-test-results
-.eslintcache
+/apps/platform/build
 
 # development
 .vscode
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log
 
 # test
-
-# certexpiration.test.js
-apps/platform/cypress/downloads/
+/apps/platform/cypress/downloads/
+/apps/platform/cypress/test-results
+/apps/platform/test-results
 
 # misc
 .DS_Store

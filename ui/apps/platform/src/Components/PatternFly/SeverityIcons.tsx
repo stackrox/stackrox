@@ -1,4 +1,5 @@
 import React from 'react';
+import type { FC, PropsWithChildren } from 'react';
 import {
     AngleDoubleDownIcon,
     AngleDoubleUpIcon,
@@ -6,7 +7,7 @@ import {
     EqualsIcon,
     UnknownIcon,
 } from '@patternfly/react-icons';
-import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 import { Icon } from '@patternfly/react-core';
 
 import {
@@ -16,8 +17,8 @@ import {
     MODERATE_MEDIUM_SEVERITY_COLOR,
     UNKNOWN_SEVERITY_COLOR,
 } from 'constants/severityColors';
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { PolicySeverity } from 'types/policy.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import type { PolicySeverity } from 'types/policy.proto';
 
 // Defines the default PF icons that represent a CVE severity, and sets the default colors for the icons.
 // Color can be overridden by passing the standard `color` prop to the icon component.
@@ -59,10 +60,7 @@ export const UnknownSeverityIcon = ({ color, ...props }: SVGIconProps) => (
     </Icon>
 );
 
-const SeverityIcons: Record<
-    VulnerabilitySeverity,
-    React.FC<React.PropsWithChildren<SVGIconProps>>
-> = {
+const SeverityIcons: Record<VulnerabilitySeverity, FC<PropsWithChildren<SVGIconProps>>> = {
     CRITICAL_VULNERABILITY_SEVERITY: CriticalSeverityIcon,
     IMPORTANT_VULNERABILITY_SEVERITY: ImportantSeverityIcon,
     MODERATE_VULNERABILITY_SEVERITY: ModerateSeverityIcon,
@@ -70,10 +68,7 @@ const SeverityIcons: Record<
     UNKNOWN_VULNERABILITY_SEVERITY: UnknownSeverityIcon,
 };
 
-export const policySeverityIconMap: Record<
-    PolicySeverity,
-    React.FC<React.PropsWithChildren<SVGIconProps>>
-> = {
+export const policySeverityIconMap: Record<PolicySeverity, FC<PropsWithChildren<SVGIconProps>>> = {
     CRITICAL_SEVERITY: CriticalSeverityIcon,
     HIGH_SEVERITY: HighSeverityIcon,
     MEDIUM_SEVERITY: MediumSeverityIcon,

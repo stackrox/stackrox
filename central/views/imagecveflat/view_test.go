@@ -525,7 +525,7 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 							Source:       storage.SourceType_OS,
 							Location:     "",
 							Architecture: "",
-						}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560"))},
+						}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560", 0), 0)},
 					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
 				},
 			}),
@@ -904,16 +904,12 @@ func standardizeImages(images ...*storage.Image) {
 	}
 }
 
-func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
-	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
-
-	return id
+func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {
+	return scancomponent.ComponentIDV2(testComponent, imageID, index)
 }
 
-func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) string {
-	id, _ := cve.IDV2(testCVE, componentID)
-
-	return id
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string, index int) string {
+	return cve.IDV2(testCVE, componentID, index)
 }
 
 func getTestCVE() *storage.EmbeddedVulnerability {

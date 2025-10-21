@@ -1,7 +1,7 @@
 /* eslint-disable no-void */
 /* eslint-disable no-cond-assign */
 /* eslint-disable no-return-assign */
-import * as React from 'react';
+import { Fragment, createElement } from 'react';
 import { observer } from 'mobx-react';
 import { css } from '@patternfly/react-styles';
 import styles from '@patternfly/react-topology/dist/js/css/topology-components';
@@ -63,40 +63,40 @@ const DefaultFakeGroup = ({
     );
     const ShapeComponent = getCollapsedShape ? getCollapsedShape(element) : Ellipse;
     const filter = isHover || dragging ? createSvgIdUrl('NodeShadowsFilterId--hover') : undefined;
-    return React.createElement(
+    return createElement(
         'g',
         { ref: labelHoverRef, onClick: onSelect, className: groupClassName },
         // eslint-disable-next-line react/no-children-prop
-        React.createElement(Layer, {
+        createElement(Layer, {
             id: 'groups',
-            children: React.createElement(
+            children: createElement(
                 'g',
                 { ref: refs, onClick: onSelect },
                 ShapeComponent &&
-                    React.createElement(
-                        React.Fragment,
+                    createElement(
+                        Fragment,
                         null,
-                        React.createElement(
+                        createElement(
                             'g',
                             { transform: `translate(${collapsedShadowOffset * 2}, 0)` },
-                            React.createElement(ShapeComponent, {
+                            createElement(ShapeComponent, {
                                 className: css(styles.topologyNodeBackground, 'pf-m-disabled'),
                                 element,
                                 width: collapsedWidth,
                                 height: collapsedHeight,
                             })
                         ),
-                        React.createElement(
+                        createElement(
                             'g',
                             { transform: `translate(${collapsedShadowOffset}, 0)` },
-                            React.createElement(ShapeComponent, {
+                            createElement(ShapeComponent, {
                                 className: css(styles.topologyNodeBackground, 'pf-m-disabled'),
                                 element,
                                 width: collapsedWidth,
                                 height: collapsedHeight,
                             })
                         ),
-                        React.createElement(ShapeComponent, {
+                        createElement(ShapeComponent, {
                             className: css(styles.topologyNodeBackground),
                             key:
                                 isHover || dragging ? 'shape-background-hover' : 'shape-background',
@@ -109,7 +109,7 @@ const DefaultFakeGroup = ({
             ),
         }),
         shapeSize &&
-            React.createElement(LabelBadge, {
+            createElement(LabelBadge, {
                 className: styles.topologyGroupCollapsedBadge,
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore TS2769: No overload matches this call.
@@ -130,7 +130,7 @@ const DefaultFakeGroup = ({
                 badgeBorderColor,
             }),
         showLabel &&
-            React.createElement(
+            createElement(
                 NodeLabel,
                 {
                     className: styles.topologyGroupLabel,
