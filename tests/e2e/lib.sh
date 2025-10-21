@@ -708,6 +708,10 @@ check_for_stackrox_OOMs() {
             # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
             if app_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.labels["app"] end' "$object"); then
                 info "Checking $object for OOMKilled"
+                jq "$object" | head
+                info "Last state terminated reason:"
+                info $(jq -e '{name: .metadata.name, reason: .status.containerStatuses[].lastState.terminated.reason}' "$object")
+                info "---"
                 if jq -e '. | select(.status.containerStatuses[].lastState.terminated.reason=="OOMKilled")' "$object" >/dev/null 2>&1; then
                     save_junit_failure "OOM Check" "Check for $app_name OOM kills" "A container of $app_name was OOM killed"
                 else
@@ -846,6 +850,7 @@ check_for_errors_in_stackrox_logs() {
     if [[ "${failure_found}" == "true" ]]; then
         die "ERROR: Found at least one suspicious log file entry."
     fi
+    info "Done checking pod logs for errors"
 }
 
 _get_pod_objects() {
