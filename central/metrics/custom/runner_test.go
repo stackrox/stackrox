@@ -169,7 +169,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
 			expectedBody("policy_violation_metric2", "policy violations",
-				"Cluster,Policy,Categories",
+				"Categories,Cluster,Policy",
 				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})
 }
