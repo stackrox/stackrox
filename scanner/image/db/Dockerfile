@@ -1,16 +1,79 @@
+# Migration to ubi8-micro base image
+# Scanner DB needs PostgreSQL server and many runtime dependencies
+
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
 ARG RPMS_BASE_TAG=latest
 
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi8-micro
 ARG BASE_TAG=latest
 
+# ============================================================================
+# Stage 1: postgres_rpms - Download PostgreSQL RPMs
+# ============================================================================
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
 COPY scripts/download.sh /download.sh
 RUN /download.sh
 
+# ============================================================================
+# Stage 2: dependency_builder - Install all runtime dependencies
+# PostgreSQL DB needs many packages for runtime operation
+# ============================================================================
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS dependency_builder
+
+# If this is updated, be sure to update postgres_major in download.sh and the signature file.
+ENV PG_MAJOR=15
+
+# Install all required runtime dependencies to /out/
+RUN dnf install \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    -y \
+    shadow-utils \
+    ca-certificates \
+    glibc-langpack-en \
+    glibc-locale-source \
+    libicu \
+    libxslt \
+    lz4 \
+    perl-libs \
+    python3 \
+    systemd-sysv \
+    zstd \
+    tzdata && \
+    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
+        dnf install --installroot=/out/ --releasever=8 --setopt=install_weak_deps=0 --nodocs -y uuid; \
+    fi && \
+    dnf --installroot=/out/ clean all && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+# Copy PostgreSQL RPMs from postgres_rpms stage
+COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
+
+# Import PostgreSQL GPG key and install RPMs to /out/
+COPY signatures/PGDG-RPM-GPG-KEY-RHEL /tmp/
+RUN rpm --root=/out/ --import /tmp/PGDG-RPM-GPG-KEY-RHEL && \
+    rpm --root=/out/ -ivh --nodeps /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
+    rm -rf /tmp/*.rpm /tmp/PGDG-RPM-GPG-KEY-RHEL
+
+# Create postgres user and group in /out/
+# Note: shadow-utils was installed to /out/, so use chroot to run groupadd/useradd
+RUN chroot /out /bin/sh -c "groupadd -g 70 postgres && adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh"
+
+# Setup locale in /out/
+RUN chroot /out /bin/sh -c "localedef -f UTF-8 -i en_US en_US.UTF-8"
+
+# Create required directories in /out/
+RUN mkdir -p /out/docker-entrypoint-initdb.d
+
+# ============================================================================
+# Stage 3: FINAL - ubi8-micro runtime image
+# NO package manager operations allowed in this stage!
+# ============================================================================
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG LABEL_VERSION
@@ -31,44 +94,13 @@ ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
+# Copy all dependencies and PostgreSQL from builder
+COPY --from=dependency_builder /out/ /
+
+# Copy application files
 # This will be ignored if empty in the init script.
 COPY init-bundles/db-init.dump.zst /db-init.dump.zst
-
-COPY signatures/PGDG-RPM-GPG-KEY-RHEL /
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
-COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
-
-RUN microdnf upgrade -y --nobest && \
-    # groupadd is in shadow-utils package that is not installed by default.
-    microdnf install -y shadow-utils && \
-    groupadd -g 70 postgres && \
-    adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    rpm --import PGDG-RPM-GPG-KEY-RHEL && \
-    microdnf install -y \
-        ca-certificates \
-        glibc-langpack-en \
-        glibc-locale-source \
-        libicu \
-        libxslt \
-        lz4 \
-        perl-libs \
-        python3 \
-        systemd-sysv \
-        zstd \
-        && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
-        microdnf install -y uuid; \
-    fi && \
-    rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
-    # https://access.redhat.com/solutions/5616681
-    microdnf reinstall -y tzdata && \
-    microdnf clean all && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa shadow-utils curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
-    mkdir /docker-entrypoint-initdb.d
 
 STOPSIGNAL SIGINT
 
