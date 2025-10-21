@@ -85,7 +85,7 @@ type ImageCVEInterface interface {
 // buildDeployedImagesQueryParts builds query parts with pagination
 func buildDeployedImagesQueryParts(limit int32, offset int32) *ReportQueryParts {
 	return &ReportQueryParts{
-		Schema:  selectDeployedImagesSchema(),
+		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
 			Limit(limit).
