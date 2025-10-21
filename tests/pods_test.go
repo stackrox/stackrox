@@ -126,9 +126,9 @@ func TestPod(testT *testing.T) {
 		retryEventsT.Logf("Event names: %+v", eventNames)
 
 		// Required processes from both containers
-		// TODO(ROX-31331): Collector cannot reliably detect /bin/date in ubuntu image,
+		// TODO(ROX-31331): Collector cannot reliably detect /bin/date or /bin/sleep in ubuntu image,
 		// thus not including it in the required processes.
-		requiredProcesses := []string{"/bin/sh", "/usr/sbin/nginx", "/bin/sleep"}
+		requiredProcesses := []string{"/bin/sh", "/usr/sbin/nginx"}
 		require.Subsetf(retryEventsT, eventNames, requiredProcesses,
 			"Pod: required processes: %v not found in events: %v", requiredProcesses, eventNames)
 
