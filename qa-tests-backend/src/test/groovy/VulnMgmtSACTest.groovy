@@ -112,6 +112,8 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
+        BaseService.useBasicAuth()
+
         // Clear any stale caches first.
         ImageService.clearImageCaches()
 
@@ -123,7 +125,6 @@ class VulnMgmtSACTest extends BaseSpecification {
             log.debug "Scanned Image ${imageToScan}"
         }
 
-        BaseService.useBasicAuth()
         def gqlService = new GraphQLService()
         def cveQuery = getImageCVEQuery()
 
