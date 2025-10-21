@@ -1,8 +1,0 @@
-# testing
-/coverage
-/cypress/test-results
-/.nyc_output
-
-# production
-/build
-/src/index.css
