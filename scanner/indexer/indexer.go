@@ -240,17 +240,6 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	var manifestManager *manifest.Manager
 	if features.ScannerV4ReIndex.Enabled() {
 		manifestManager = manifest.NewManager(ctx, metadataStore, locker)
-		// Set any manifests indexed prior to the existence of the manifest_metadata table
-		// to expire immediately.
-		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
-		// TODO(ROX-26995): Consider updating the immediate purge condition.
-		// It may be possible we want to purge all manifests upon startup for other reasons.
-		err = manifestManager.MigrateManifests(ctx, time.Now())
-		if err != nil {
-			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
-			// missing from the metadata table, too.
-			return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
-		}
 		// Start the manifest GC.
 		go func() {
 			if err := manifestManager.StartGC(); err != nil {
