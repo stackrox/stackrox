@@ -26,6 +26,10 @@ const (
 	// enrichmentTimeout is the maximum duration to wait for an enrichment cycle to complete.
 	// This includes goroutine scheduling, entity lookups, and enrichment processing.
 	enrichmentTimeout = 500 * time.Millisecond
+
+	// tickerSendTimeout is the maximum duration to wait for ticker send to enrichment goroutine.
+	// Short timeout provides fast failure detection if enrichment goroutine becomes unresponsive.
+	tickerSendTimeout = 50 * time.Millisecond
 )
 
 func TestSendNetworkFlows(t *testing.T) {
@@ -239,10 +243,9 @@ func (b *sendNetflowsSuite) thenTickerTicks() {
 	b.m.enrichmentDoneSignal.Reset()
 	select {
 	case b.fakeTicker <- time.Now():
-	case <-time.After(50 * time.Millisecond):
-		b.T().Fatal("ticker did not finish tick within 50ms")
+	case <-time.After(tickerSendTimeout):
+		b.T().Fatal("ticker send blocked - enrichment goroutine not responsive")
 	}
-
 	b.waitForEnrichmentDone()
 }
 

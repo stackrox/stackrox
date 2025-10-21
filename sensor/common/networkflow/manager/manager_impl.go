@@ -222,6 +222,8 @@ type networkFlowManager struct {
 
 	// enrichmentDoneSignal is emitted after each enrichment cycle completes (enrichAndSend + RecordTick).
 	// This signal is primarily used for test synchronization but is harmless in production.
+	// Overhead: ~8 bytes + O(1) signal emission with no blocking or performance impact.
+	// Kept in production code to avoid build tag complexity and conditional compilation.
 	enrichmentDoneSignal concurrency.Signal
 
 	enricherTicker  *time.Ticker
