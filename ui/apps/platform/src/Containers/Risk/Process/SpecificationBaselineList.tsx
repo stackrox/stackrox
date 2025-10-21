@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ProcessBaseline } from 'types/processBaseline.proto';
 
 import ProcessBaselineList from './ProcessBaselineList';
