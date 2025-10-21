@@ -147,6 +147,28 @@ message Advisory {
   string link = 2; // @gotags: search:"Advisory Link"
 }
 
+// This proto is deprecated and replaced by ImageCVEV2.
+// Have to keep it here for migrations right now
+message ImageCVE {
+  option deprecated = true;
+  string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  CVEInfo cve_base_info = 2;
+  string operating_system = 3;
+  // cvss stores ACS preferred cvss score
+  float cvss = 4;
+  VulnerabilitySeverity severity = 5;
+  float impact_score = 6;
+
+  bool snoozed = 7 [deprecated = true];
+  google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
+  google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true];
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 10;
+  // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
+  repeated CVSSScore cvss_metrics = 11;
+  CvssScoreVersion nvd_score_version = 12;
+}
+
 message ImageCVEV2 {
   // keeping id similar construction for now during investigation.  It will include component and index
   // within the component
