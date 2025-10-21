@@ -36,8 +36,8 @@ func (retryT) FailNow() {
 	panic(failure{})
 }
 
-func (retryT) Logf(format string, args ...interface{}) {
-	log.Infof(format, args...)
+func (r retryT) Logf(format string, args ...interface{}) {
+	r.t.Logf(format, args...)
 }
 
 func runRetry(testFn func(t T)) (success bool) {
