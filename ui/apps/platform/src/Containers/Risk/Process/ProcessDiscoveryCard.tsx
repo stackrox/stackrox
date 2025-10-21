@@ -1,5 +1,3 @@
-import React from 'react';
-
 import CollapsibleCard from 'Components/CollapsibleCard';
 import type { ProcessNameAndContainerNameGroup } from 'services/ProcessService';
 
