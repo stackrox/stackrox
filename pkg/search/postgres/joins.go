@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -17,11 +16,6 @@ type JoinType int
 const (
 	Inner JoinType = iota
 	Left
-)
-
-var (
-	schemasWithImageID    = []*walker.Schema{schema.ImagesSchema, schema.ImageComponentEdgesSchema}
-	schemasWithImageCVEID = []*walker.Schema{schema.ImageCvesSchema, schema.ImageComponentCveEdgesSchema}
 )
 
 type joinTreeNode struct {
@@ -236,6 +230,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			newElem := bfsQueueElem{
 				schema: rel.OtherSchema,
 			}
+			log.Infof("SHREWS -- %v+", newElem.schema)
 			newElem.pathFromRoot = make([]joinPathElem, len(currElem.pathFromRoot)+1)
 			copy(newElem.pathFromRoot, currElem.pathFromRoot)
 			newElem.pathFromRoot[len(newElem.pathFromRoot)-1] = joinPathElem{

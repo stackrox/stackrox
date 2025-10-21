@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -37,16 +36,6 @@ var (
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
 
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
-
-	tableWithImageIDToField = map[string]string{
-		pkgSchema.ImagesTableName:              "Id",
-		pkgSchema.ImageComponentEdgesTableName: "ImageId",
-	}
-
-	tableWithImageCVEIDToField = map[string]string{
-		pkgSchema.ImageCvesTableName:              "Id",
-		pkgSchema.ImageComponentCveEdgesTableName: "ImageCveId",
-	}
 )
 
 const cursorBatchSize = 1000
@@ -437,34 +426,6 @@ func (p *parsedPaginationQuery) hasAnyOrdering() bool {
 	return len(p.OrderBys) > 0
 }
 
-func findImageIDTableAndField(joins []Join) string {
-	for _, join := range joins {
-		_, found := tableWithImageIDToField[join.leftTable]
-		if found {
-			return join.leftTable
-		}
-		_, found = tableWithImageIDToField[join.rightTable]
-		if found {
-			return join.rightTable
-		}
-	}
-	return ""
-}
-
-func findImageCVEIDTableAndField(joins []Join) string {
-	for _, join := range joins {
-		_, found := tableWithImageCVEIDToField[join.leftTable]
-		if found {
-			return join.leftTable
-		}
-		_, found = tableWithImageCVEIDToField[join.rightTable]
-		if found {
-			return join.rightTable
-		}
-	}
-	return ""
-}
-
 type parsedPaginationQuery struct {
 	OrderBys []orderByEntry
 	Limit    int
@@ -557,48 +518,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 
 	return parsedQuery, nil
-}
-
-func handleImageCveEdgesTableInJoins(schema *walker.Schema, joins []Join) ([]Join, error) {
-	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
-	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
-	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
-	// image_cve_edges table is only there because of its required fields. In other words, it is not being used to join
-	// any two distant tables.
-	// But we validate the same just to be safe here
-	if schema != pkgSchema.ImageCveEdgesSchema {
-		idx, isLeftTable := findTableInJoins(joins, func(join Join) bool {
-			return join.leftTable == pkgSchema.ImageCveEdgesTableName
-		})
-
-		if isLeftTable {
-			return nil, errors.Wrapf(errox.InvariantViolation,
-				"Even though '%s' is not the root table in the query, it is the left table in inner join '%v'",
-				pkgSchema.ImageCveEdgesTableName, joins[idx])
-		}
-	}
-
-	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
-	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
-	// ImageId columns from image_cve_edges table.
-	idx, isRightTable := findTableInJoins(joins, func(join Join) bool {
-		return join.rightTable == pkgSchema.ImageCveEdgesTableName
-	})
-	if isRightTable {
-		elem := joins[idx]
-		joins = append(joins[:idx], joins[idx+1:]...)
-		joins = append(joins, elem)
-	}
-	return joins, nil
-}
-
-func findTableInJoins(innerJoins []Join, matchTables func(join Join) bool) (int, bool) {
-	for i, join := range innerJoins {
-		if matchTables(join) {
-			return i, true
-		}
-	}
-	return -1, false
 }
 
 // combineDisjunction tries to optimize disjunction queries with `IN` operator when possible.
