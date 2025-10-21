@@ -30,34 +30,37 @@ class TestSet:
         return self._always_run
 
     def run(self):
-        exception = None
         try:
             log_event("About to run pre test", self)
             self._pre_test.run()
             log_event("pre test completed", self)
         except Exception as err:
             log_event(f"ERROR: pre test failed [{err}]", self)
-            exception = err
-        if exception is None:
-            try:
-                log_event("About to run test", self)
-                self._actual_test.run()
-                log_event("test completed", self)
-            except Exception as err:
-                log_event(f"ERROR: test failed [{err}]", self)
-                exception = err
-            try:
-                log_event("About to run post test", self)
-                self._post_test.run(
-                    test_outputs=self._actual_test.test_outputs,
-                )
-                log_event("post test completed", self)
-            except Exception as err:
-                log_event(f"ERROR: post test failed [{err}]", self)
-                if exception is None:
-                    exception = err
+            raise
 
-        if exception is not None:
+        exception = None
+        try:
+            log_event("About to run test", self)
+            self._actual_test.run()
+            log_event("test completed", self)
+        except Exception as err:
+            log_event(f"ERROR: test failed [{err}]", self)
+            exception = err
+
+        try:
+            log_event("About to run post test", self)
+            self._post_test.run(
+                test_outputs=self._actual_test.test_outputs,
+            )
+            log_event("post test completed", self)
+        except Exception as err:
+            log_event(f"ERROR: post test failed [{err}]", self)
+            # It's important to surface the test exception,
+            # the post test failure is only interesting if the test itself passed.
+            if not exception:
+                exception = err
+
+        if exception:
             raise exception
 
 
