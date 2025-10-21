@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -177,20 +175,6 @@ type searchFieldMetadata struct {
 func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
 
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
-		//  ImageId and ImageCveId fields
-		if src != schema.ImageCveEdgesSchema &&
-			containsFieldsFromSchemas(unreachedFields, []*walker.Schema{schema.ImageCveEdgesSchema}) {
-			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageID) {
-				unreachedFields.Add(strings.ToLower(search.ImageSHA.String()))
-			}
-			if !containsFieldsFromSchemas(unreachedFields, schemasWithImageCVEID) {
-				unreachedFields.Add(strings.ToLower(search.CVEID.String()))
-			}
-		}
-	}
-
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
 	}
@@ -198,29 +182,9 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	queue := []bfsQueueElem{{schema: src}}
 	visited := set.NewStringSet()
 
-	imageCveEdgesSchemaInQueue := false
-	if src == schema.ImageCveEdgesSchema {
-		imageCveEdgesSchemaInQueue = true
-	}
-
 	for len(queue) > 0 && len(unreachedFields) > 0 {
 		currElem := queue[0]
 		queue = queue[1:]
-
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
-			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
-			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
-				// If there are more schemas to expand in queue, expand them first. Hopefully we will find all required fields
-				//   without having to use ImageCveEdgesSchema.
-				// But if there are no more schemas to expand, and we still have unreachable fields,
-				//   then they must be fields of ImageCveEdgesSchema. In that case ImageCveEdgesSchema is unavoidable.
-				if len(queue) > 0 {
-					queue = append(queue, currElem)
-					continue
-				}
-			}
-		}
 
 		if !visited.Add(currElem.schema.Table) {
 			continue
@@ -266,19 +230,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			for _, elemInPath := range currElem.pathFromRoot {
 				if elemInPath.table == rel.OtherSchema {
 					continue allRelationshipsLoop
-				}
-			}
-
-			if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
-				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
-				// to the end of queue.
-				if rel.OtherSchema == schema.ImageCveEdgesSchema {
-					if imageCveEdgesSchemaInQueue {
-						continue
-					} else {
-						imageCveEdgesSchemaInQueue = true
-					}
 				}
 			}
 

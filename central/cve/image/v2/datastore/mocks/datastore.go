@@ -45,10 +45,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // ApplyException mocks base method.
-func (m *MockDataStore) ApplyException(arg0 context.Context, arg1, arg2 *time.Time, _ ...string) error {
+func (m *MockDataStore) ApplyException(ctx context.Context, snoozed, expiry *time.Time, cves ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []any{arg0, arg1, arg2}
-	for _, a := range _ {
+	varargs := []any{ctx, snoozed, expiry}
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ApplyException", varargs...)
@@ -57,9 +57,9 @@ func (m *MockDataStore) ApplyException(arg0 context.Context, arg1, arg2 *time.Ti
 }
 
 // ApplyException indicates an expected call of ApplyException.
-func (mr *MockDataStoreMockRecorder) ApplyException(arg0, arg1, arg2 any, _ ...any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) ApplyException(ctx, snoozed, expiry any, cves ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0, arg1, arg2}, _...)
+	varargs := append([]any{ctx, snoozed, expiry}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyException", reflect.TypeOf((*MockDataStore)(nil).ApplyException), varargs...)
 }
 
@@ -149,10 +149,10 @@ func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 }
 
 // RevertException mocks base method.
-func (m *MockDataStore) RevertException(arg0 context.Context, _ ...string) error {
+func (m *MockDataStore) RevertException(ctx context.Context, cves ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []any{arg0}
-	for _, a := range _ {
+	varargs := []any{ctx}
+	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RevertException", varargs...)
@@ -161,9 +161,9 @@ func (m *MockDataStore) RevertException(arg0 context.Context, _ ...string) error
 }
 
 // RevertException indicates an expected call of RevertException.
-func (mr *MockDataStoreMockRecorder) RevertException(arg0 any, _ ...any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RevertException(ctx any, cves ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0}, _...)
+	varargs := append([]any{ctx}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevertException", reflect.TypeOf((*MockDataStore)(nil).RevertException), varargs...)
 }
 

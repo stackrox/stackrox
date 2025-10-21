@@ -19,7 +19,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,10 +60,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip()
-	}
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
