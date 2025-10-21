@@ -515,6 +515,45 @@ const rules = {
             };
         },
     },
+    'no-import-namespace': {
+        // Replace namespace with named import (except for yup package).
+        // In addition to consistency, minimize false negatives,
+        // because import/namespace is slow rule turned off for lint:fast-dev command.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace namespace with named import (except for yup package)',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportNamespaceSpecifier(node) {
+                    const ancestors = context.sourceCode.getAncestors(node);
+                    if (ancestors.length >= 1) {
+                        const parent = ancestors[ancestors.length - 1];
+                        if (typeof parent.source?.value === 'string') {
+                            if (parent.source.value !== 'yup') {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Replace namespace with named import (except for yup package)',
+                                });
+                            } else if (
+                                typeof node.local?.name === 'string' &&
+                                node.local.name !== parent.source.value
+                            ) {
+                                context.report({
+                                    node,
+                                    message: `Use namespace that is consistent with package name: ${parent.source.value}`,
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
 };
 
 const pluginKey = 'generic'; // key of pluginGeneric in eslint.config.js file
