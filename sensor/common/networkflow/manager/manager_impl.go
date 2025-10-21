@@ -314,7 +314,6 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
-			m.enrichmentDoneSignal.Signal()
 		}
 	}
 }
@@ -348,7 +347,15 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 	}
 }
 
-func (m *networkFlowManager) enrichAndSend() {
+type enrichmentResult struct {
+	currentConns              map[indicator.NetworkConn]timestamp.MicroTS
+	currentEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
+	updatedConns              []*storage.NetworkFlow
+	updatedEndpoints          []*storage.NetworkEndpoint
+	updatedProcesses          []*storage.ProcessListeningOnPortFromSensor
+}
+
+func (m *networkFlowManager) enrich() *enrichmentResult {
 	m.updateEnrichmentCollectionsSize()
 	// currentEnrichedConnsAndEndpoints takes connections, endpoints, and processes (i.e., enriched-entities, short EE)
 	// and updates them by adding data from different sources (enriching).
@@ -368,24 +375,39 @@ func (m *networkFlowManager) enrichAndSend() {
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
 
-	// Run periodic cleanup after all tasks here are done.
+	return &enrichmentResult{
+		currentConns:              currentConns,
+		currentEndpointsProcesses: currentEndpointsProcesses,
+		updatedConns:              updatedConns,
+		updatedEndpoints:          updatedEndpoints,
+		updatedProcesses:          updatedProcesses,
+	}
+}
+
+func (m *networkFlowManager) send(result *enrichmentResult) {
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
-	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
+	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
+		if sent := m.sendConnsEps(result.updatedConns, result.updatedEndpoints); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendConnections(currentConns)
-			m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
+			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
+			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
 		}
 	}
 
-	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		if sent := m.sendProcesses(updatedProcesses); sent {
+	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {
+		if sent := m.sendProcesses(result.updatedProcesses); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
+			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+}
+
+func (m *networkFlowManager) enrichAndSend() {
+	result := m.enrich()
+	m.enrichmentDoneSignal.Signal()
+	m.send(result)
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {

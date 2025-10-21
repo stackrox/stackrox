@@ -126,7 +126,7 @@ func (b *sendNetflowsSuite) TestCloseConnectionFailedLookup() {
 
 	b.updateConn(createConnectionPair().lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
@@ -155,7 +155,7 @@ func (b *sendNetflowsSuite) TestCloseEndpointFailedLookup() {
 
 	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour), timestamp.Now()).lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
@@ -180,7 +180,7 @@ func (b *sendNetflowsSuite) TestUnchangedConnection() {
 
 	// There should be no second update, the connection did not change
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestSendTwoUpdatesOnConnectionChanged() {
@@ -232,12 +232,18 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 		b.assertOneUpdatedCloseConnection()
 	}
 
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) thenTickerTicks() {
 	b.m.enrichmentDoneSignal.Reset()
-	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
+	select {
+	case b.fakeTicker <- time.Now():
+	case <-time.After(50 * time.Millisecond):
+		b.T().Fatal("ticker did not finish tick within 50ms")
+	}
+
+	b.waitForEnrichmentDone()
 }
 
 func (b *sendNetflowsSuite) waitForEnrichmentDone() {
@@ -251,7 +257,6 @@ func (b *sendNetflowsSuite) waitForEnrichmentDone() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
-	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
@@ -260,7 +265,6 @@ func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
-	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
@@ -269,7 +273,6 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
-	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")

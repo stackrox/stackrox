@@ -161,7 +161,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 				b.T().Logf("event[%d]: got updatesP: %v", i, updatesP)
 				b.T().Logf("event[%d]: got updatesE: %v", i, updatesE)
 				b.printDedupers()
-				b.assertNoOtherUpdates()
+				b.assertNoMoreUpdatesToCentral()
 
 				b.Require().Equal(e.expectedNumUpdatesProcess, len(updatesP), "Number of process updates should match")
 				b.Require().Equal(e.expectedNumUpdatesEndpoint, len(updatesE), "Number of endpoint updates should match")
@@ -182,8 +182,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	}
 }
 
-func (b *sendNetflowsSuite) assertNoOtherUpdates() {
-	// No other updates
+func (b *sendNetflowsSuite) assertNoMoreUpdatesToCentral() {
 	mustNotRead(b.T(), b.m.sensorUpdates)
 }
 
