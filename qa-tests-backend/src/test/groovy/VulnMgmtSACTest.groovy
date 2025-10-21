@@ -112,6 +112,9 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
+        // Clear any stale caches first.
+        ImageService.clearImageCaches()
+
         // Purposefully add an image (centos7-base) that is not running to check the case
         // where an image is orphaned. The image is actually part of the re-scanned image set.
         // Re-scan the images used in previous test cases to ensure pruning did not leave orphan CVEs.
@@ -120,6 +123,19 @@ class VulnMgmtSACTest extends BaseSpecification {
             log.debug "Scanned Image ${imageToScan}"
         }
 
+        BaseService.useBasicAuth()
+        def gqlService = new GraphQLService()
+        def cveQuery = getImageCVEQuery()
+        
+        // Retry until CVEs are available via GraphQL.
+        withRetry(30, 2) {
+            def baseVulnCallResult = gqlService.Call(cveQuery, [query: "Image:*"])
+            if (!baseVulnCallResult.hasNoErrors() || baseVulnCallResult.value.count == 0) {
+                throw new RuntimeException("CVE data not yet indexed for scanned images")
+            }
+            log.info "CVE data successfully indexed: ${baseVulnCallResult.value.count} CVEs found"
+        }
+        
         // Create roles and api tokens for rbac based auth
         createReadRole(NODE_ROLE, ["Node", "CVE"])
         createReadRole(IMAGE_ROLE, ["Image", "CVE"])
