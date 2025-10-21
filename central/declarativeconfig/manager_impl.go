@@ -304,7 +304,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 		// Otherwise, the reason why the deletion failed will not be visible to users while the resource may still
 		// exist.
 		if err != nil {
-			log.Debugf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
+			log.Warnf("The following IDs failed deletion: [%s]", strings.Join(failedDeletionIDs, ","))
 			allProtoIDsToSkip = append(allProtoIDsToSkip, failedDeletionIDs...)
 			failureInDeletion = true
 		}
