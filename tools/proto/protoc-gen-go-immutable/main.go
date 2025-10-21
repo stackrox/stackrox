@@ -10,6 +10,11 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const (
+	timestampProtoType = "google.golang.org/protobuf/types/known/timestamppb.Timestamp"
+	durationProtoType  = "google.golang.org/protobuf/types/known/durationpb.Duration"
+)
+
 func main() {
 	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
 		gen.SupportedEditionsMinimum = descriptorpb.Edition_EDITION_2023
@@ -41,8 +46,31 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P()
 	g.P("package ", file.GoPackageName)
 	g.P()
+
+	// Check if we need time import by scanning all fields
+	needsTime := false
+	var checkMessages func([]*protogen.Message)
+	checkMessages = func(messages []*protogen.Message) {
+		for _, m := range messages {
+			for _, field := range m.Fields {
+				if field.Desc.Kind() == protoreflect.MessageKind {
+					fullName := string(field.Message.Desc.FullName())
+					if fullName == "google.protobuf.Timestamp" || fullName == "google.protobuf.Duration" {
+						needsTime = true
+						return
+					}
+				}
+			}
+			checkMessages(m.Messages)
+		}
+	}
+	checkMessages(file.Messages)
+
 	g.P("import (")
 	g.P("\t\"iter\"")
+	if needsTime {
+		g.P("\t\"time\"")
+	}
 	g.P(")")
 	g.P()
 
@@ -59,11 +87,11 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 
 	// Store local messages in the file for access during generation
 	for _, m := range file.Messages {
-		generateMessageInterface(g, m, localMessages)
+		generateMessageInterface(g, m, localMessages, file.GoImportPath)
 	}
 }
 
-func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool) {
+func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool, currentPackage protogen.GoImportPath) {
 	if msg.Desc.IsMapEntry() {
 		return
 	}
@@ -77,7 +105,7 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 
 	// Generate getter methods for all fields
 	for _, field := range msg.Fields {
-		generateFieldGetter(g, field, localMessages)
+		generateFieldGetter(g, field, localMessages, currentPackage)
 	}
 
 	// Add VT proto functions
@@ -91,15 +119,15 @@ func generateMessageInterface(g *protogen.GeneratedFile, msg *protogen.Message, 
 	g.P()
 
 	// Generate wrapper methods for slice/map conversions
-	generateWrapperMethods(g, msg, localMessages)
+	generateWrapperMethods(g, msg, localMessages, currentPackage)
 
 	// Recursively generate interfaces for nested messages
 	for _, nested := range msg.Messages {
-		generateMessageInterface(g, nested, localMessages)
+		generateMessageInterface(g, nested, localMessages, currentPackage)
 	}
 }
 
-func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) {
+func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool, currentPackage protogen.GoImportPath) {
 	fieldName := field.GoName
 
 	// Add comment if available
@@ -108,6 +136,17 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 		for _, line := range lines {
 			g.P("\t// ", strings.TrimSpace(line))
 		}
+	}
+
+	// Check for well-known types first
+	if wktType, ok := isWellKnownType(field); ok {
+		methodName := "GetImmutable" + fieldName
+		if field.Desc.Cardinality() == protoreflect.Repeated {
+			g.P("\t", methodName, "() iter.Seq[", wktType, "]")
+		} else {
+			g.P("\t", methodName, "() ", wktType)
+		}
+		return
 	}
 
 	// For non-primitive local message types, use iterators for slices/maps
@@ -123,23 +162,42 @@ func generateFieldGetter(g *protogen.GeneratedFile, field *protogen.Field, local
 			// Map with local message values - return iterator
 			keyField := field.Message.Fields[0]
 			valueField := field.Message.Fields[1]
-			keyType := goType(g, keyField, localMessages)
-			valueType := goType(g, valueField, localMessages)
+			keyType := goType(g, keyField, localMessages, currentPackage)
+			valueType := goType(g, valueField, localMessages, currentPackage)
 			methodName := "GetImmutable" + fieldName
 			g.P("\t", methodName, "() iter.Seq2[", keyType, ", ", valueType, "]")
 			return
 		} else {
 			// Singular local message - return interface
 			methodName := "GetImmutable" + fieldName
-			returnType := getFieldType(g, field, localMessages)
+			returnType := getFieldType(g, field, localMessages, currentPackage)
 			g.P("\t", methodName, "() ", returnType)
 			return
 		}
 	}
 
-	// For primitive types and external messages, use regular "Get" prefix
+	// For same-package external messages, use Immutable interface
+	if isSamePackageMessage(field, currentPackage) {
+		methodName := "GetImmutable" + fieldName
+		messageIdent := field.Message.GoIdent
+		immutableType := "Immutable" + messageIdent.GoName
+		if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+			g.P("\t", methodName, "() iter.Seq[", immutableType, "]")
+		} else if field.Desc.IsMap() {
+			keyField := field.Message.Fields[0]
+			valueField := field.Message.Fields[1]
+			keyType := goType(g, keyField, localMessages, currentPackage)
+			valueType := goType(g, valueField, localMessages, currentPackage)
+			g.P("\t", methodName, "() iter.Seq2[", keyType, ", ", valueType, "]")
+		} else {
+			g.P("\t", methodName, "() ", immutableType)
+		}
+		return
+	}
+
+	// For primitive types and cross-package external messages, use regular "Get" prefix
 	methodName := "Get" + fieldName
-	returnType := getFieldType(g, field, localMessages)
+	returnType := getFieldType(g, field, localMessages, currentPackage)
 	g.P("\t", methodName, "() ", returnType)
 }
 
@@ -151,27 +209,48 @@ func isNonPrimitiveType(field *protogen.Field, localMessages map[string]bool) bo
 	return false
 }
 
-func getFieldType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
+func isSamePackageMessage(field *protogen.Field, currentPackage protogen.GoImportPath) bool {
+	if field.Desc.Kind() == protoreflect.MessageKind {
+		return field.Message.GoIdent.GoImportPath == currentPackage
+	}
+	return false
+}
+
+func isWellKnownType(field *protogen.Field) (string, bool) {
+	if field.Desc.Kind() != protoreflect.MessageKind {
+		return "", false
+	}
+	fullName := string(field.Message.Desc.FullName())
+	switch fullName {
+	case "google.protobuf.Timestamp":
+		return "time.Time", true
+	case "google.protobuf.Duration":
+		return "time.Duration", true
+	}
+	return "", false
+}
+
+func getFieldType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool, currentPackage protogen.GoImportPath) string {
 	// Handle maps first (before checking repeated, as maps are also repeated)
 	if field.Desc.IsMap() {
 		// Map fields have a message type with exactly 2 fields: key and value
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
-		keyType := goType(g, keyField, localMessages)
-		valueType := goType(g, valueField, localMessages)
+		keyType := goType(g, keyField, localMessages, currentPackage)
+		valueType := goType(g, valueField, localMessages, currentPackage)
 		return fmt.Sprintf("map[%s]%s", keyType, valueType)
 	}
 
 	// Handle repeated fields
 	if field.Desc.Cardinality() == protoreflect.Repeated {
-		elemType := getElementType(g, field, localMessages)
+		elemType := getElementType(g, field, localMessages, currentPackage)
 		return "[]" + elemType
 	}
 
-	return getElementType(g, field, localMessages)
+	return getElementType(g, field, localMessages, currentPackage)
 }
 
-func getElementType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
+func getElementType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool, currentPackage protogen.GoImportPath) string {
 	switch field.Desc.Kind() {
 	case protoreflect.EnumKind:
 		// Enums are in the same package
@@ -189,11 +268,11 @@ func getElementType(g *protogen.GeneratedFile, field *protogen.Field, localMessa
 		// For external messages, use pointer to concrete type
 		return "*" + g.QualifiedGoIdent(messageIdent)
 	default:
-		return goType(g, field, localMessages)
+		return goType(g, field, localMessages, currentPackage)
 	}
 }
 
-func goType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool) string {
+func goType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[string]bool, currentPackage protogen.GoImportPath) string {
 	switch field.Desc.Kind() {
 	case protoreflect.BoolKind:
 		return "bool"
@@ -244,12 +323,12 @@ func goType(g *protogen.GeneratedFile, field *protogen.Field, localMessages map[
 	}
 }
 
-func generateWrapperMethods(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool) {
+func generateWrapperMethods(g *protogen.GeneratedFile, msg *protogen.Message, localMessages map[string]bool, currentPackage protogen.GoImportPath) {
 	messageName := msg.GoIdent.GoName
 
 	// Generate implementation methods for all fields
 	for _, field := range msg.Fields {
-		generateImplementationMethod(g, msg, field, localMessages)
+		generateImplementationMethod(g, msg, field, localMessages, currentPackage)
 	}
 
 	// Add type assertion to verify implementation
@@ -259,9 +338,104 @@ func generateWrapperMethods(g *protogen.GeneratedFile, msg *protogen.Message, lo
 	g.P("var _ ", interfaceName, " = (*", messageName, ")(nil)")
 }
 
-func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Message, field *protogen.Field, localMessages map[string]bool) {
+func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Message, field *protogen.Field, localMessages map[string]bool, currentPackage protogen.GoImportPath) {
 	messageName := msg.GoIdent.GoName
 	fieldName := field.GoName
+
+	// Check for well-known types
+	if wktType, ok := isWellKnownType(field); ok {
+		methodName := "GetImmutable" + fieldName
+		g.P()
+		g.P("// ", methodName, " implements Immutable", messageName)
+
+		if field.Desc.Cardinality() == protoreflect.Repeated {
+			// Repeated well-known type - generate iterator
+			g.P("func (m *", messageName, ") ", methodName, "() iter.Seq[", wktType, "] {")
+			g.P("\treturn func(yield func(", wktType, ") bool) {")
+			g.P("\t\tif m == nil || m.", fieldName, " == nil {")
+			g.P("\t\t\treturn")
+			g.P("\t\t}")
+			g.P("\t\tfor _, v := range m.", fieldName, " {")
+			if wktType == "time.Time" {
+				g.P("\t\t\tif !yield(v.AsTime()) {")
+			} else if wktType == "time.Duration" {
+				g.P("\t\t\tif !yield(v.AsDuration()) {")
+			}
+			g.P("\t\t\t\treturn")
+			g.P("\t\t\t}")
+			g.P("\t\t}")
+			g.P("\t}")
+			g.P("}")
+		} else {
+			// Singular well-known type
+			g.P("func (m *", messageName, ") ", methodName, "() ", wktType, " {")
+			g.P("\tif m == nil || m.", fieldName, " == nil {")
+			if wktType == "time.Time" {
+				g.P("\t\treturn time.Time{}")
+			} else if wktType == "time.Duration" {
+				g.P("\t\treturn 0")
+			}
+			g.P("\t}")
+			if wktType == "time.Time" {
+				g.P("\treturn m.", fieldName, ".AsTime()")
+			} else if wktType == "time.Duration" {
+				g.P("\treturn m.", fieldName, ".AsDuration()")
+			}
+			g.P("}")
+		}
+		return
+	}
+
+	// Check for same-package messages
+	if isSamePackageMessage(field, currentPackage) {
+		methodName := "GetImmutable" + fieldName
+		messageIdent := field.Message.GoIdent
+		immutableType := "Immutable" + messageIdent.GoName
+
+		g.P()
+		g.P("// ", methodName, " implements Immutable", messageName)
+
+		if field.Desc.Cardinality() == protoreflect.Repeated && !field.Desc.IsMap() {
+			// Repeated same-package message - generate iterator
+			g.P("func (m *", messageName, ") ", methodName, "() iter.Seq[", immutableType, "] {")
+			g.P("\treturn func(yield func(", immutableType, ") bool) {")
+			g.P("\t\tif m == nil || m.", fieldName, " == nil {")
+			g.P("\t\t\treturn")
+			g.P("\t\t}")
+			g.P("\t\tfor _, v := range m.", fieldName, " {")
+			g.P("\t\t\tif !yield(v) {")
+			g.P("\t\t\t\treturn")
+			g.P("\t\t\t}")
+			g.P("\t\t}")
+			g.P("\t}")
+			g.P("}")
+		} else if field.Desc.IsMap() {
+			// Map with same-package value type - generate iterator
+			keyField := field.Message.Fields[0]
+			valueField := field.Message.Fields[1]
+			keyType := goType(g, keyField, localMessages, currentPackage)
+			valueType := goType(g, valueField, localMessages, currentPackage)
+
+			g.P("func (m *", messageName, ") ", methodName, "() iter.Seq2[", keyType, ", ", valueType, "] {")
+			g.P("\treturn func(yield func(", keyType, ", ", valueType, ") bool) {")
+			g.P("\t\tif m == nil || m.", fieldName, " == nil {")
+			g.P("\t\t\treturn")
+			g.P("\t\t}")
+			g.P("\t\tfor k, v := range m.", fieldName, " {")
+			g.P("\t\t\tif !yield(k, v) {")
+			g.P("\t\t\t\treturn")
+			g.P("\t\t\t}")
+			g.P("\t\t}")
+			g.P("\t}")
+			g.P("}")
+		} else {
+			// Singular same-package message
+			g.P("func (m *", messageName, ") ", methodName, "() ", immutableType, " {")
+			g.P("\treturn m.Get", fieldName, "()")
+			g.P("}")
+		}
+		return
+	}
 
 	// Only generate implementation for non-primitive local message types
 	if !isNonPrimitiveType(field, localMessages) {
@@ -294,8 +468,8 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		// Map field - generate iterator
 		keyField := field.Message.Fields[0]
 		valueField := field.Message.Fields[1]
-		keyType := goType(g, keyField, localMessages)
-		valueType := goType(g, valueField, localMessages)
+		keyType := goType(g, keyField, localMessages, currentPackage)
+		valueType := goType(g, valueField, localMessages, currentPackage)
 
 		g.P("func (m *", messageName, ") ", methodName, "() iter.Seq2[", keyType, ", ", valueType, "] {")
 		g.P("\treturn func(yield func(", keyType, ", ", valueType, ") bool) {")
@@ -311,7 +485,7 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P("}")
 	} else {
 		// Singular field - just delegate to Get method
-		returnType := getFieldType(g, field, localMessages)
+		returnType := getFieldType(g, field, localMessages, currentPackage)
 		g.P("func (m *", messageName, ") ", methodName, "() ", returnType, " {")
 		g.P("\treturn m.Get", fieldName, "()")
 		g.P("}")

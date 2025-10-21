@@ -3,17 +3,14 @@
 package storage
 
 import (
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-)
-
-import (
 	"iter"
+	"time"
 )
 
 // ImmutableAlert is an immutable interface for Alert
 type ImmutableAlert interface {
 	GetId() string
-	GetPolicy() *Policy
+	GetImmutablePolicy() ImmutablePolicy
 	GetLifecycleStage() LifecycleStage
 	GetClusterId() string
 	GetClusterName() string
@@ -24,7 +21,7 @@ type ImmutableAlert interface {
 	GetImmutableDeployment() ImmutableAlert_Deployment
 	// Represents an alert on a container image.
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	GetImage() *ContainerImage
+	GetImmutableImage() ImmutableContainerImage
 	// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
 	GetImmutableResource() ImmutableAlert_Resource
@@ -32,10 +29,10 @@ type ImmutableAlert interface {
 	GetImmutableViolations() iter.Seq[ImmutableAlert_Violation]
 	GetImmutableProcessViolation() ImmutableAlert_ProcessViolation
 	GetImmutableEnforcement() ImmutableAlert_Enforcement
-	GetTime() *timestamppb.Timestamp
-	GetFirstOccurred() *timestamppb.Timestamp
+	GetImmutableTime() time.Time
+	GetImmutableFirstOccurred() time.Time
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-	GetResolvedAt() *timestamppb.Timestamp
+	GetImmutableResolvedAt() time.Time
 	GetState() ViolationState
 	GetPlatformComponent() bool
 	GetEntityType() Alert_EntityType
@@ -45,9 +42,19 @@ type ImmutableAlert interface {
 	CloneVT() *Alert
 }
 
+// GetImmutablePolicy implements ImmutableAlert
+func (m *Alert) GetImmutablePolicy() ImmutablePolicy {
+	return m.GetPolicy()
+}
+
 // GetImmutableDeployment implements ImmutableAlert
 func (m *Alert) GetImmutableDeployment() ImmutableAlert_Deployment {
 	return m.GetDeployment()
+}
+
+// GetImmutableImage implements ImmutableAlert
+func (m *Alert) GetImmutableImage() ImmutableContainerImage {
+	return m.GetImage()
 }
 
 // GetImmutableResource implements ImmutableAlert
@@ -77,6 +84,30 @@ func (m *Alert) GetImmutableProcessViolation() ImmutableAlert_ProcessViolation {
 // GetImmutableEnforcement implements ImmutableAlert
 func (m *Alert) GetImmutableEnforcement() ImmutableAlert_Enforcement {
 	return m.GetEnforcement()
+}
+
+// GetImmutableTime implements ImmutableAlert
+func (m *Alert) GetImmutableTime() time.Time {
+	if m == nil || m.Time == nil {
+		return time.Time{}
+	}
+	return m.Time.AsTime()
+}
+
+// GetImmutableFirstOccurred implements ImmutableAlert
+func (m *Alert) GetImmutableFirstOccurred() time.Time {
+	if m == nil || m.FirstOccurred == nil {
+		return time.Time{}
+	}
+	return m.FirstOccurred.AsTime()
+}
+
+// GetImmutableResolvedAt implements ImmutableAlert
+func (m *Alert) GetImmutableResolvedAt() time.Time {
+	if m == nil || m.ResolvedAt == nil {
+		return time.Time{}
+	}
+	return m.ResolvedAt.AsTime()
 }
 
 // Verify that Alert implements ImmutableAlert
@@ -148,12 +179,17 @@ var _ ImmutableAlert_Deployment = (*Alert_Deployment)(nil)
 
 // ImmutableAlert_Deployment_Container is an immutable interface for Alert_Deployment_Container
 type ImmutableAlert_Deployment_Container interface {
-	GetImage() *ContainerImage
+	GetImmutableImage() ImmutableContainerImage
 	GetName() string
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_Deployment_Container
+}
+
+// GetImmutableImage implements ImmutableAlert_Deployment_Container
+func (m *Alert_Deployment_Container) GetImmutableImage() ImmutableContainerImage {
+	return m.GetImage()
 }
 
 // Verify that Alert_Deployment_Container implements ImmutableAlert_Deployment_Container
@@ -186,7 +222,7 @@ type ImmutableAlert_Violation interface {
 	// Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
 	// occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
 	// event violations, but may not be limited to it in future.
-	GetTime() *timestamppb.Timestamp
+	GetImmutableTime() time.Time
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
@@ -201,6 +237,14 @@ func (m *Alert_Violation) GetImmutableKeyValueAttrs() ImmutableAlert_Violation_K
 // GetImmutableNetworkFlowInfo implements ImmutableAlert_Violation
 func (m *Alert_Violation) GetImmutableNetworkFlowInfo() ImmutableAlert_Violation_NetworkFlowInfo {
 	return m.GetNetworkFlowInfo()
+}
+
+// GetImmutableTime implements ImmutableAlert_Violation
+func (m *Alert_Violation) GetImmutableTime() time.Time {
+	if m == nil || m.Time == nil {
+		return time.Time{}
+	}
+	return m.Time.AsTime()
 }
 
 // Verify that Alert_Violation implements ImmutableAlert_Violation
@@ -288,11 +332,25 @@ var _ ImmutableAlert_Violation_NetworkFlowInfo_Entity = (*Alert_Violation_Networ
 // ImmutableAlert_ProcessViolation is an immutable interface for Alert_ProcessViolation
 type ImmutableAlert_ProcessViolation interface {
 	GetMessage() string
-	GetProcesses() []*ProcessIndicator
+	GetImmutableProcesses() iter.Seq[ImmutableProcessIndicator]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Alert_ProcessViolation
+}
+
+// GetImmutableProcesses implements ImmutableAlert_ProcessViolation
+func (m *Alert_ProcessViolation) GetImmutableProcesses() iter.Seq[ImmutableProcessIndicator] {
+	return func(yield func(ImmutableProcessIndicator) bool) {
+		if m == nil || m.Processes == nil {
+			return
+		}
+		for _, v := range m.Processes {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that Alert_ProcessViolation implements ImmutableAlert_ProcessViolation
@@ -315,7 +373,7 @@ var _ ImmutableAlert_Enforcement = (*Alert_Enforcement)(nil)
 type ImmutableListAlert interface {
 	GetId() string
 	GetLifecycleStage() LifecycleStage
-	GetTime() *timestamppb.Timestamp
+	GetImmutableTime() time.Time
 	GetImmutablePolicy() ImmutableListAlertPolicy
 	GetState() ViolationState
 	GetEnforcementCount() int32
@@ -331,6 +389,14 @@ type ImmutableListAlert interface {
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlert
+}
+
+// GetImmutableTime implements ImmutableListAlert
+func (m *ListAlert) GetImmutableTime() time.Time {
+	if m == nil || m.Time == nil {
+		return time.Time{}
+	}
+	return m.Time.AsTime()
 }
 
 // GetImmutablePolicy implements ImmutableListAlert
