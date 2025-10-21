@@ -20,8 +20,9 @@ import (
 
 const (
 	// sendToCentralTimeout is the maximum duration to wait for channel operations (send/receive) with Central.
-	// After enrichment completes, message send should happen quickly within this timeout.
-	sendToCentralTimeout = 50 * time.Millisecond
+	// Includes time for enrichmentDoneSignal + goroutine scheduling + actual channel send operation.
+	// Set to 100ms to accommodate race detector overhead and scheduling delays.
+	sendToCentralTimeout = 100 * time.Millisecond
 
 	// enrichmentTimeout is the maximum duration to wait for an enrichment cycle to complete.
 	// This includes goroutine scheduling, entity lookups, and enrichment processing.
@@ -211,7 +212,6 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
 	}
 
 	// should be able to read four buffered updates in sequence
@@ -228,7 +228,6 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
@@ -250,10 +249,12 @@ func (b *sendNetflowsSuite) thenTickerTicks() {
 }
 
 func (b *sendNetflowsSuite) waitForEnrichmentDone() {
+	start := time.Now()
 	// Wait for enrichment cycle to complete (signal from manager) with timeout
 	select {
 	case <-b.m.enrichmentDoneSignal.Done():
-		// Enrichment completed successfully
+		elapsed := time.Since(start)
+		b.T().Logf("enrichment completed in %v", elapsed)
 	case <-time.After(enrichmentTimeout):
 		b.T().Fatal("enrichment did not complete within timeout")
 	}
