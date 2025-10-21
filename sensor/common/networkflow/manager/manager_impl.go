@@ -376,6 +376,35 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 	return m.pipelineCtx
 }
 
+func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
+	// Number of entities (connections, endpoints) waiting for enrichment
+	numConnections := 0
+	numEndpoints := 0
+	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
+		for _, hostConns := range m.connectionsByHost {
+			concurrency.WithLock(&hostConns.mutex, func() {
+				numConnections += len(hostConns.connections)
+				numEndpoints += len(hostConns.endpoints)
+			})
+		}
+	})
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
+
+	// Number of entities (connections, endpoints) stored in memory for the purposes of not losing data while offline.
+	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
+	})
+	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
+	})
+
+	// Length and byte sizes of collections used internally by updatecomputer
+	if m.updateComputer != nil {
+		m.updateComputer.RecordSizeMetrics(flowMetrics.EnrichmentCollectionsSize, flowMetrics.EnrichmentCollectionsSizeBytes)
+	}
+}
+
 func (m *networkFlowManager) enrichAndSend() {
 	m.updateEnrichmentCollectionsSize()
 	// currentEnrichedConnsAndEndpoints takes connections, endpoints, and processes (i.e., enriched-entities, short EE)
