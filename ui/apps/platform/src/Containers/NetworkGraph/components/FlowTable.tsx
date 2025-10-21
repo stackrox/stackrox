@@ -1,4 +1,3 @@
-import React from 'react';
 import { ToolbarContent, ToolbarItem, Pagination } from '@patternfly/react-core';
 import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';

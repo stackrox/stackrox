@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';

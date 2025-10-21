@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
     Badge,
