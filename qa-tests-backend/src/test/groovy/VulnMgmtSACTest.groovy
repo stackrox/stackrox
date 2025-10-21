@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
