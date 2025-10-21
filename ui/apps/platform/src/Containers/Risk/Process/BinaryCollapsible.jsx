@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { ChevronDown, ChevronUp } from 'react-feather';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 
@@ -24,11 +24,11 @@ function BinaryCollapsible({ commandLineArgs, children }) {
     }
 
     function renderWhenOpened() {
-        return renderHeader('bg-primary-100', <Icon.ChevronUp className="h-4 w-4" />);
+        return renderHeader('bg-primary-100', <ChevronUp className="h-4 w-4" />);
     }
 
     function renderWhenClosed() {
-        return renderHeader('bg-base-100', <Icon.ChevronDown className="h-4 w-4" />);
+        return renderHeader('bg-base-100', <ChevronDown className="h-4 w-4" />);
     }
 
     return (
