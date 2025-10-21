@@ -19,7 +19,13 @@ import (
 )
 
 const (
-	waitTimeout = 20 * time.Millisecond
+	// sendToCentralTimeout is the maximum duration to wait for channel operations (send/receive) with Central.
+	// After enrichment completes, message send should happen quickly within this timeout.
+	sendToCentralTimeout = 50 * time.Millisecond
+
+	// enrichmentTimeout is the maximum duration to wait for an enrichment cycle to complete.
+	// This includes goroutine scheduling, entity lookups, and enrichment processing.
+	enrichmentTimeout = 500 * time.Millisecond
 )
 
 func TestSendNetworkFlows(t *testing.T) {
@@ -52,6 +58,9 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 	b.m.updateComputer = b.uc
 
+	// Set up RecordTick mock expectation (called after each enrichment cycle)
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
+
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
 }
@@ -69,14 +78,12 @@ func (b *sendNetflowsSuite) updateEp(pair *endpointPair) {
 }
 
 func (b *sendNetflowsSuite) expectContainerLookups(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
 	}, true, false)()
 }
 
 func (b *sendNetflowsSuite) expectLookups(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
 	}, true, false)()
@@ -89,7 +96,6 @@ func (b *sendNetflowsSuite) expectLookups(n int) {
 }
 
 func (b *sendNetflowsSuite) expectFailedLookup(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{}, false, false)()
 }
 
@@ -230,10 +236,22 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 }
 
 func (b *sendNetflowsSuite) thenTickerTicks() {
+	b.m.enrichmentDoneSignal.Reset()
 	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
 }
 
+func (b *sendNetflowsSuite) waitForEnrichmentDone() {
+	// Wait for enrichment cycle to complete (signal from manager) with timeout
+	select {
+	case <-b.m.enrichmentDoneSignal.Done():
+		// Enrichment completed successfully
+	case <-time.After(enrichmentTimeout):
+		b.T().Fatal("enrichment did not complete within timeout")
+	}
+}
+
 func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
+	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
@@ -242,6 +260,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
+	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
@@ -250,6 +269,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
+	b.waitForEnrichmentDone()
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
@@ -266,7 +286,7 @@ func mustNotRead[T any](t *testing.T, ch chan T) {
 	select {
 	case <-ch:
 		t.Fatal("should not receive in channel")
-	case <-time.After(waitTimeout):
+	case <-time.After(sendToCentralTimeout):
 	}
 }
 
@@ -278,7 +298,7 @@ func mustReadTimeout[T any](t *testing.T, ch chan T) T {
 			require.True(t, more, "channel should never close")
 		}
 		result = v
-	case <-time.After(waitTimeout):
+	case <-time.After(sendToCentralTimeout):
 		t.Fatal("blocked on reading from channel")
 	}
 	return result
@@ -288,7 +308,7 @@ func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
 	select {
 	case ch <- v:
 		return
-	case <-time.After(waitTimeout):
+	case <-time.After(sendToCentralTimeout):
 		t.Fatal("blocked on sending to channel")
 	}
 }

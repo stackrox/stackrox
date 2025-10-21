@@ -147,19 +147,20 @@ func NewManager(
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
 	mgr := &networkFlowManager{
-		connectionsByHost: make(map[string]*hostConnections),
-		clusterEntities:   clusterEntities,
-		publicIPs:         newPublicIPsManager(),
-		externalSrcs:      externalSrcs,
-		policyDetector:    policyDetector,
-		enricherTicker:    enricherTicker,
-		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updateComputer,
-		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
-		pubSub:            pubSub,
+		connectionsByHost:    make(map[string]*hostConnections),
+		clusterEntities:      clusterEntities,
+		publicIPs:            newPublicIPsManager(),
+		externalSrcs:         externalSrcs,
+		policyDetector:       policyDetector,
+		enricherTicker:       enricherTicker,
+		enricherTickerC:      enricherTicker.C,
+		updateComputer:       updateComputer,
+		initialSync:          &atomic.Bool{},
+		enrichmentDoneSignal: concurrency.NewSignal(),
+		activeConnections:    make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:      make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		stopper:              concurrency.NewStopper(),
+		pubSub:               pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -218,6 +219,10 @@ type networkFlowManager struct {
 	sensorUpdates chan *message.ExpiringMessage
 
 	initialSync *atomic.Bool
+
+	// enrichmentDoneSignal is emitted after each enrichment cycle completes (enrichAndSend + RecordTick).
+	// This signal is primarily used for test synchronization but is harmless in production.
+	enrichmentDoneSignal concurrency.Signal
 
 	enricherTicker  *time.Ticker
 	enricherTickerC <-chan time.Time
@@ -309,6 +314,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
+			m.enrichmentDoneSignal.Signal()
 		}
 	}
 }
