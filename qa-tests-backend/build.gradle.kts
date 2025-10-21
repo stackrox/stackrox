@@ -1,3 +1,4 @@
+import com.google.protobuf.gradle.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.time.Duration
 
@@ -12,7 +13,32 @@ codenarc {
     reportFormat = "text"
 }
 
-apply(from = "protobuf.gradle")
+protobuf {
+    // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
+    // See https://github.com/grpc/grpc-java/issues/7690
+    var protocGenArch = ""
+    if (System.getProperty("os.arch") == "aarch64" && System.getProperty("os.name").lowercase().contains("mac")) {
+        protocGenArch = ":osx-x86_64"
+    }
+    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}${protocGenArch}"
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet("main").forEach {
+            it.plugins {
+                id("grpc") {
+                    outputSubDir = "java"
+                }
+            }
+            it.outputSourceDirectorySet.srcDirs.forEach { srcDir ->
+                sourceSets.getByName(it.sourceSet.name).java.srcDirs(srcDir)
+            }
+        }
+    }
+}
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
 project.sourceSets.forEach { sourceSet ->
