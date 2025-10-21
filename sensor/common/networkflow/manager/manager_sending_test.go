@@ -301,9 +301,7 @@ func mustReadTimeout[T any](t *testing.T, ch chan T, timeout time.Duration) T {
 	var result T
 	select {
 	case v, more := <-ch:
-		if !more {
-			require.True(t, more, "channel should never close")
-		}
+		require.True(t, more, "channel should never close")
 		result = v
 	case <-time.After(timeout):
 		t.Fatal("blocked on reading from channel")
