@@ -248,9 +248,52 @@ func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, rep
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+	createDeploymentViaAPI(t, image, deploymentName, replicas)
+}
+
+// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
+// Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
+// to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int) {
+	client := createK8sClient(t)
+
+	// Determine imagePullPolicy - allow override for quay.io images
+	pullPolicy := coreV1.PullIfNotPresent
+	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
+		pullPolicy = coreV1.PullPolicy(policy)
+		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+	}
+
+	deployment := &appsV1.Deployment{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:   deploymentName,
+			Labels: map[string]string{"app": deploymentName},
+		},
+		Spec: appsV1.DeploymentSpec{
+			Replicas: pointers.Int32(int32(replicas)),
+			Selector: &metaV1.LabelSelector{
+				MatchLabels: map[string]string{"app": deploymentName},
+			},
+			Template: coreV1.PodTemplateSpec{
+				ObjectMeta: metaV1.ObjectMeta{
+					Labels: map[string]string{"app": deploymentName},
+				},
+				Spec: coreV1.PodSpec{
+					Containers: []coreV1.Container{{
+						Name:            deploymentName,
+						Image:           image,
+						ImagePullPolicy: pullPolicy,
+					}},
+				},
+			},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := client.AppsV1().Deployments("default").Create(ctx, deployment, metaV1.CreateOptions{})
+	require.NoError(t, err, "Failed to create deployment %q", deploymentName)
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
