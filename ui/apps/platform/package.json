@@ -176,7 +176,7 @@
         "tailwindcss": "^2.0.3",
         "ts-loader": "^9.5.2",
         "typescript": "^5.9.2",
-        "vite": "^6.4.1",
+        "vite": "^7.1.11",
         "vite-plugin-svgr": "^4.3.0",
         "vitest": "^3.0.5",
         "webpack": "^5.99.9",
