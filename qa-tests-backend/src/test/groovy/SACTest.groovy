@@ -260,19 +260,52 @@ class SACTest extends BaseSpecification {
                 .build())
     }
 
+    def containerExposesTCPPort22(Container container) boolean {
+        for (ContainerPort port: container.getPorts()) {
+            if (port.getProtocol() == "TCP" && port.getContainerPort() == 22) {
+                return true
+            }
+        }
+        return false
+    }
+
+    def containerExposesNonTCP22Ports(Container container) boolean {
+        for (ContainerPort port: container.getPorts()) {
+            if (port.getProtocol() != "TCP" || port.getContainerPort() != 22) {
+                return true
+            }
+        }
+        return false
+    }
+
+    def podExposesTCPPort22(Pod pod) boolean {
+        for (Container container : pod.getSpec().getContainers()) {
+            if (containerExposesTCPPort22(container)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    def podExposesNonTCP22Ports(Pod pod) boolean {
+        for (Container container : pod.getSpec().getContainers()) {
+            if (containerExposesNonTCP22Ports(container)) {
+                return true
+            }
+        }
+        return false
+    }
+
     def ensurePodsExposeOnlyTCPPort22(String namespace, String app) {
         def exposesPortTCP22 = false
         def exposesOtherPorts = false
         def pods = orchestrator.getPods(namespace, app)
         for (Pod pod: pods) {
-            for (Container container : pod.getSpec().getContainers()) {
-                for (ContainerPort port: container.getPorts()) {
-                    if (port.getProtocol() == "TCP" && port.getContainerPort() == 22) {
-                        exposesPortTCP22 = true
-                    } else {
-                        exposesOtherPorts = true
-                    }
-                }
+            if (podExposesTCPPort22(pod)) {
+                exposesPortTCP22 = true
+            }
+            if (podExposesNonTCP22Ports(pod)) {
+                exposesOtherPorts = true
             }
         }
         assert exposesPortTCP22 == true
