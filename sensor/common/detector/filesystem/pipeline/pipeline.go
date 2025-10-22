@@ -42,48 +42,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	return p
 }
 
-func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
-	psignal := fs.GetProcess()
-
-	pi := &storage.ProcessIndicator{
-		Id: uuid.NewV4().String(),
-		Signal: &storage.ProcessSignal{
-			Id:           psignal.GetId(),
-			Uid:          psignal.GetUid(),
-			Gid:          psignal.GetGid(),
-			Time:         psignal.GetCreationTime(),
-			Name:         psignal.GetName(),
-			Args:         psignal.GetArgs(),
-			ExecFilePath: psignal.GetExecFilePath(),
-			Pid:          psignal.GetPid(),
-			Scraped:      psignal.GetScraped(),
-			ContainerId:  psignal.GetContainerId(),
-		},
-	}
-
-	if psignal.GetContainerId() != "" {
-		// TODO(ROX-30798): Enrich file system events with deployment details
-		metadata, ok, _ := p.clusterEntities.LookupByContainerID(psignal.GetContainerId())
-		if !ok {
-			// unexpected - process should exist before file activity is
-			// reported
-			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
-		} else {
-			pi.DeploymentId = metadata.DeploymentID
-			pi.ContainerName = metadata.ContainerName
-			pi.PodId = metadata.PodID
-			pi.PodUid = metadata.PodUID
-			pi.Namespace = metadata.Namespace
-			pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
-			pi.ImageId = metadata.ImageID
-		}
-	}
-	// TODO: populate node info otherwise
-
-	activity := &storage.FileActivity{
-		Process: pi,
-	}
-
+func translateFileInfo(fs *sensorAPI.FileActivity, activity *storage.FileActivity) {
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		activity.File = &storage.FileActivity_File{
@@ -144,6 +103,52 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 		log.Warn("Not implemented file activity type")
 		return
 	}
+
+}
+
+func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
+	psignal := fs.GetProcess()
+
+	pi := &storage.ProcessIndicator{
+		Id: uuid.NewV4().String(),
+		Signal: &storage.ProcessSignal{
+			Id:           psignal.GetId(),
+			Uid:          psignal.GetUid(),
+			Gid:          psignal.GetGid(),
+			Time:         psignal.GetCreationTime(),
+			Name:         psignal.GetName(),
+			Args:         psignal.GetArgs(),
+			ExecFilePath: psignal.GetExecFilePath(),
+			Pid:          psignal.GetPid(),
+			Scraped:      psignal.GetScraped(),
+			ContainerId:  psignal.GetContainerId(),
+		},
+	}
+
+	if psignal.GetContainerId() != "" {
+		// TODO(ROX-30798): Enrich file system events with deployment details
+		metadata, ok, _ := p.clusterEntities.LookupByContainerID(psignal.GetContainerId())
+		if !ok {
+			// unexpected - process should exist before file activity is
+			// reported
+			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
+		} else {
+			pi.DeploymentId = metadata.DeploymentID
+			pi.ContainerName = metadata.ContainerName
+			pi.PodId = metadata.PodID
+			pi.PodUid = metadata.PodUID
+			pi.Namespace = metadata.Namespace
+			pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
+			pi.ImageId = metadata.ImageID
+		}
+	}
+	// TODO: populate node info otherwise
+
+	activity := &storage.FileActivity{
+		Process: pi,
+	}
+
+	translateFileInfo(fs, activity)
 
 	p.activityChan <- activity
 }
