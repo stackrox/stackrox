@@ -23,11 +23,11 @@ repo_root = this_script_dir.parent
 
 HELM_REPO_NAME = "temp-stackrox-oss-repo-should-not-see-me"
 
-add_repo_cmd = f"""helm repo add {HELM_REPO_NAME} \
+ADD_REPO_CMD = f"""helm repo add {HELM_REPO_NAME} \
 https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"""
 UPDATE_REPO_CMD = "helm repo update"
-search_cmd = f"helm search repo {HELM_REPO_NAME} --versions --output json"
-remove_repo_cmd = f"helm repo remove {HELM_REPO_NAME}"
+SEARCH_CMD = f"helm search repo {HELM_REPO_NAME} --versions --output json"
+REMOVE_REPO_CMD = f"helm repo remove {HELM_REPO_NAME}"
 
 Version = namedtuple("Version", ["major", "minor", "patch"])
 
@@ -208,7 +208,7 @@ def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
 
 
 def read_charts():
-    json_str = run_command(search_cmd, log_stdout=False)
+    json_str = run_command(SEARCH_CMD, log_stdout=False)
     charts_from_json = json.loads(json_str)
 
     release_charts = [
@@ -274,7 +274,7 @@ def version_to_release(version):
 
 def add_helm_repo():
     logging.info("Adding temp helm repository...")
-    run_command(add_repo_cmd)
+    run_command(ADD_REPO_CMD)
 
 
 def update_helm_repo():
@@ -284,7 +284,7 @@ def update_helm_repo():
 
 def remove_helm_repo():
     logging.info("Removing temp helm repository...")
-    run_command(remove_repo_cmd)
+    run_command(REMOVE_REPO_CMD)
 
 
 def run_command(command, log_stdout=True):
