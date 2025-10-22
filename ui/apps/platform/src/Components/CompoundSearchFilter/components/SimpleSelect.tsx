@@ -1,11 +1,7 @@
-import React, { ReactElement } from 'react';
-import {
-    Select,
-    SelectOption,
-    SelectList,
-    MenuToggle,
-    MenuToggleElement,
-} from '@patternfly/react-core';
+import React, { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
+import { Select, SelectList, MenuToggle } from '@patternfly/react-core';
+import type { MenuToggleElement, SelectOption } from '@patternfly/react-core';
 
 export type SimpleSelectProps = {
     value: string | number | undefined;
@@ -26,21 +22,21 @@ function SimpleSelect({
     ariaLabelToggle,
     menuToggleClassName,
 }: SimpleSelectProps) {
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
         setIsOpen(!isOpen);
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         newValue: string | number | undefined
     ) => {
         onChange(newValue);
         setIsOpen(false);
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             className={menuToggleClassName}
             aria-label={ariaLabelToggle}

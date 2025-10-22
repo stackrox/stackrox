@@ -1,6 +1,6 @@
-import { SearchCategory } from 'services/SearchService';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import { ConditionTextInputProps } from './components/ConditionText';
+import type { SearchCategory } from 'services/SearchService';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { ConditionTextInputProps } from './components/ConditionText';
 
 // Compound search filter types
 

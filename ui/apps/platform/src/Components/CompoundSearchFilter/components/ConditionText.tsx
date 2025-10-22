@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
+import type { FormEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Button,
     MenuToggle,
-    MenuToggleElement,
     Select,
     SelectList,
     SelectOption,
     TextInput,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
-import { NonEmptyArray } from 'utils/type.utils';
+import type { NonEmptyArray } from 'utils/type.utils';
 
 import './ConditionText.css';
 
@@ -87,14 +88,14 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
     const [externalText, setExternalText] = useState(externalTextDefault);
 
     // Adapt SimpleSelect because its MenuToggle renders conditionKey instead of conditionText.
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
         setIsOpen(!isOpen);
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         setConditionKey(value as string);
@@ -106,7 +107,7 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
     const conditionSelected =
         conditionEntries.find((condition) => condition[0] === conditionKey) ?? conditionEntries[0];
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             className="pf-v5-u-flex-shrink-0"
             aria-label="Condition selector toggle"
@@ -139,7 +140,7 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
             <TextInput
                 aria-label="Condition value input"
                 className="ConditionTextInput"
-                onChange={(event: React.FormEvent<HTMLInputElement>) => {
+                onChange={(event: FormEvent<HTMLInputElement>) => {
                     const { value: changedText } = event.target as HTMLInputElement;
                     setExternalText(changedText);
                 }}
