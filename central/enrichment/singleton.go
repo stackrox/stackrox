@@ -35,7 +35,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// TODO(ROX-28123) -- See if this thing is alive.
 var (
 	once sync.Once
 

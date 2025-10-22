@@ -28,7 +28,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesV2StoreSuite struct {
@@ -65,9 +64,9 @@ func (s *ImagesV2StoreSuite) SetupTest() {
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesV2TableName+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
+	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+imageCVEsLegacyTable+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
+	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+imageCVEEdgesLegacyTable+" CASCADE")
 	s.Require().NoError(err)
 }
 

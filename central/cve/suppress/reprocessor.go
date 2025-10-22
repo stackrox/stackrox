@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// TODO(ROX-28123): Verify with Charmik this stuff is obsolete.
 var (
 	log = logging.LoggerForModule()
 

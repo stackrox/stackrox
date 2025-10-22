@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
@@ -122,56 +121,6 @@ func (ds *datastoreImpl) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 			}
 		}
 	}
-}
-
-func (ds *datastoreImpl) ApplyException(_ context.Context, _, _ *time.Time, _ ...string) error {
-	// TODO(ROX-28123): figure out if we need to add this function or not.
-	return nil
-	// if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
-	// 	return err
-	// } else if !ok {
-	// 	return sac.ErrResourceAccessDenied
-	// }
-	//
-	// vulns, err := ds.SearchRawImageCVEs(ctx,
-	// 	pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
-	// if err != nil {
-	// 	return err
-	// }
-	//
-	// return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
-	// 	for _, vuln := range vulns {
-	//		vuln.Snoozed = true
-	//		vuln.SnoozeStart = protocompat.ConvertTimeToTimestampOrNil(start)
-	//		vuln.SnoozeExpiry = protocompat.ConvertTimeToTimestampOrNil(expiry)
-	//	}
-	//	return ds.storage.UpsertMany(ctx, vulns)
-	// })
-}
-
-func (ds *datastoreImpl) RevertException(_ context.Context, _ ...string) error {
-	// TODO(ROX-28123): figure out if we need to add this function or not.
-	return nil
-	// if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
-	//	return err
-	// } else if !ok {
-	//	return sac.ErrResourceAccessDenied
-	// }
-	//
-	// vulns, err := ds.SearchRawImageCVEs(ctx,
-	//	pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
-	// if err != nil {
-	//	return err
-	// }
-	//
-	// return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
-	//	for _, vuln := range vulns {
-	//		vuln.Snoozed = false
-	//		vuln.SnoozeStart = nil
-	//		vuln.SnoozeExpiry = nil
-	//	}
-	//	return ds.storage.UpsertMany(ctx, vulns)
-	// })
 }
 
 func convertMany(cves []*storage.ImageCVEV2, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
