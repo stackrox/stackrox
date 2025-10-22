@@ -767,7 +767,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 			}
 		}
 
-		log.Infof("Pruned %d orphaned discovered entities", totalPruned)
+		log.Debugf("Pruned %d orphaned discovered entities", totalPruned)
 	}
 
 	return nil
