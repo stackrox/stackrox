@@ -1,8 +1,9 @@
 import React from 'react';
 import { Flex, FlexItem, Title, Divider, Form, FormGroup, Radio } from '@patternfly/react-core';
-import { FormikContextType, useFormikContext } from 'formik';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 
 import PolicyEnforcementForm from './PolicyEnforcementForm';
 import NotifiersForm from './NotifiersForm';

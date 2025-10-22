@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
@@ -17,7 +18,6 @@ import {
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -25,8 +25,9 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 
-import { ListPolicy } from 'types/policy.proto';
+import type { ListPolicy } from 'types/policy.proto';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
     makeFilterChipDescriptors,
@@ -39,25 +40,25 @@ import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverit
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 
-import EnableDisableNotificationModal, {
-    EnableDisableType,
-} from 'Containers/Policies/Modal/EnableDisableNotificationModal';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
-import { AlertVariantType } from 'hooks/patternfly/useToasts';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { AlertVariantType } from 'hooks/patternfly/useToasts';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import { policiesBasePath } from 'routePaths';
-import { NotifierIntegration } from 'types/notifier.proto';
-import { SearchFilter } from 'types/search';
-import { TableUIState } from 'utils/getTableUIState';
+import type { NotifierIntegration } from 'types/notifier.proto';
+import type { SearchFilter } from 'types/search';
+import type { TableUIState } from 'utils/getTableUIState';
+
+import EnableDisableNotificationModal from '../Modal/EnableDisableNotificationModal';
+import type { EnableDisableType } from '../Modal/EnableDisableNotificationModal';
 import {
-    LabelAndNotifierIdsForType,
     formatLifecycleStages,
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
     getPolicyOriginLabel,
     isExternalPolicy,
 } from '../policies.utils';
+import type { LabelAndNotifierIdsForType } from '../policies.utils';
 import { policySearchFilterConfig } from '../policiesSearchFilterConfig';
 
 import './PoliciesTable.css';
@@ -100,7 +101,7 @@ function PoliciesTable({
     onClickReassessPolicies,
     getSortParams,
     searchFilter,
-}: PoliciesTableProps): React.ReactElement {
+}: PoliciesTableProps): ReactElement {
     const expandedRowSet = useSet<string>();
     const navigate = useNavigate();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<

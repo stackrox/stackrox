@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { FormikProvider, useFormik } from 'formik';
 import {
@@ -10,16 +11,16 @@ import {
     PageSection,
     Wizard,
     WizardStep,
-    WizardStepType,
 } from '@patternfly/react-core';
+import type { WizardStepType } from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { fetchAlertCount } from 'services/AlertsService';
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { ExtendedPageAction } from 'utils/queryStringUtils';
+import type { ExtendedPageAction } from 'utils/queryStringUtils';
 
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,

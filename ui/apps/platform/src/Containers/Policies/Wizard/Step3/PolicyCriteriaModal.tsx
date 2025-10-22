@@ -10,13 +10,13 @@ import {
     ToolbarContent,
     ToolbarItem,
     TreeView,
-    TreeViewDataItem,
     TreeViewSearch,
 } from '@patternfly/react-core';
+import type { TreeViewDataItem } from '@patternfly/react-core';
 import { kebabCase } from 'lodash';
 
-import { PolicyGroup } from 'types/policy.proto';
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { PolicyGroup } from 'types/policy.proto';
+import type { Descriptor } from './policyCriteriaDescriptors';
 
 import './PolicyCriteriaModal.css';
 

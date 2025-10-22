@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -12,8 +13,8 @@ import {
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import { NotifierIntegration } from 'types/notifier.proto';
-import { BasePolicy } from 'types/policy.proto';
+import type { NotifierIntegration } from 'types/notifier.proto';
+import type { BasePolicy } from 'types/policy.proto';
 import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 import { formatCategories, getPolicyOriginLabel } from '../policies.utils';

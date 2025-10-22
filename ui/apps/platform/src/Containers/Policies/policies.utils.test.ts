@@ -1,4 +1,4 @@
-import { ClientPolicy, Policy } from 'types/policy.proto';
+import type { ClientPolicy, Policy } from 'types/policy.proto';
 import {
     getClientWizardPolicy,
     getLifeCyclesUpdates,
