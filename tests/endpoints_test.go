@@ -33,7 +33,7 @@ import (
 type authMode int
 
 const (
-	dialRetries = 3
+	dialRetries = 5
 
 	userPKIProviderName = "test-userpki"
 )
