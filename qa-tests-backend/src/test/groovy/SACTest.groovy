@@ -279,7 +279,7 @@ class SACTest extends BaseSpecification {
     }
 
     boolean podExposesTCPPort22(Pod pod) {
-        return pod.getSpec().getContainers().stream().any{
+        return pod.getSpec().getContainers().stream().any {
           containerExposesTCPPort22(it)
         }
     }
