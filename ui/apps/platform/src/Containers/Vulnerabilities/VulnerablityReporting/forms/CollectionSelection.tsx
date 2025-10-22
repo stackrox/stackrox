@@ -169,46 +169,42 @@ function CollectionSelection({
         ensureOpen();
     }
 
-    const handleOpenChange = useCallback((nextOpen: boolean) => {
+    function handleOpenChange(nextOpen: boolean) {
         setIsOpen(nextOpen);
         if (!nextOpen) {
             setSearch('');
         }
-    }, []);
+    }
 
-    const handleBlur = useCallback(
-        (event: React.FocusEvent<HTMLDivElement>) => {
-            setSearch('');
-            onBlur?.(event);
-        },
-        [onBlur]
-    );
+    // Clears the search text when the user clicks away from the dropdown
+    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+        setSearch('');
+        onBlur?.(event);
+    }
 
-    const handleFetchNextPage = useCallback(() => {
+    // Loads the next page of collections when the user clicks "View more"
+    function handleFetchNextPage() {
         fetchNextPage();
-    }, [fetchNextPage]);
+    }
 
-    const handleCloseModal = useCallback(() => {
+    function handleCloseModal() {
         setIsCollectionModalOpen(false);
-    }, []);
+    }
 
-    const handleCollectionSubmit = useCallback(
-        (collection: ClientCollection) => {
-            return onSubmit(collection).then((collectionResponse) => {
-                onChange(collectionResponse);
-                setIsCollectionModalOpen(false);
-                setCreatedCollections((oldCollections) => [...oldCollections, collectionResponse]);
+    // Handles collection submission, updates local state, and tracks analytics
+    function handleSubmitCollection(collection: ClientCollection) {
+        return onSubmit(collection).then((collectionResponse) => {
+            onChange(collectionResponse);
+            setIsCollectionModalOpen(false);
+            setCreatedCollections((oldCollections) => [...oldCollections, collectionResponse]);
 
-                analyticsTrack({
-                    event: COLLECTION_CREATED,
-                    properties: { source: 'Vulnerability Reporting' },
-                });
+            analyticsTrack({
+                event: COLLECTION_CREATED,
+                properties: { source: 'Vulnerability Reporting' },
             });
-        },
-        [onSubmit, onChange, analyticsTrack]
-    );
+        });
+    }
 
-    // Get display text for the selected collection
     const displayValue = useMemo(() => {
         if (!selectedScope?.id) {
             return '';
@@ -217,10 +213,6 @@ function CollectionSelection({
             sortedCollections.find((collection) => collection.id === selectedScope.id)?.name || ''
         );
     }, [selectedScope?.id, sortedCollections]);
-
-    const showLoadingSpinner = isFetchingNextPage;
-    const showViewMoreButton = !isFetchingNextPage && !isEndOfResults;
-    const showCreateCollectionFooter = hasWriteAccessForCollections && isRouteEnabledForCollections;
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
@@ -243,6 +235,10 @@ function CollectionSelection({
             </TextInputGroup>
         </MenuToggle>
     );
+
+    const showLoadingSpinner = isFetchingNextPage;
+    const showViewMoreButton = !isFetchingNextPage && !isEndOfResults;
+    const showCreateCollectionFooter = hasWriteAccessForCollections && isRouteEnabledForCollections;
 
     return (
         <>
@@ -334,7 +330,7 @@ function CollectionSelection({
                     onClose={handleCloseModal}
                     configError={configError}
                     setConfigError={setConfigError}
-                    onSubmit={handleCollectionSubmit}
+                    onSubmit={handleSubmitCollection}
                 />
             )}
         </>
