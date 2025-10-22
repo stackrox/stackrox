@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
