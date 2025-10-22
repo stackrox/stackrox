@@ -285,7 +285,7 @@ class SACTest extends BaseSpecification {
     }
 
     boolean podExposesNonTCP22Ports(Pod pod) {
-        return pod.getSpec().getContainers().stream().any{
+        return pod.getSpec().getContainers().stream().any {
             containerExposesNonTCP22Ports(it)
         }
     }
