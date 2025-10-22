@@ -1,4 +1,4 @@
-import { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
+import type { PlatformComponentRule, PlatformComponentsConfig } from 'types/config.proto';
 
 export type PlatformComponentsConfigRules = {
     coreSystemRule: PlatformComponentRule;
