@@ -8,7 +8,7 @@ import {
     getSearchFilterConfigWithFeatureFlagDependency,
     makeFilterChipDescriptors,
 } from './utils';
-import { CompoundSearchFilterEntity } from '../types';
+import type { CompoundSearchFilterEntity } from '../types';
 
 const imageSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image',

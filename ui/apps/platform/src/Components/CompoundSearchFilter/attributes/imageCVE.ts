@@ -1,6 +1,6 @@
 // If you're adding a new attribute, make sure to add it to "imageCVEAttributes" as well
 
-import { CompoundSearchFilterAttribute } from '../types';
+import type { CompoundSearchFilterAttribute } from '../types';
 import { EPSSProbability } from './epssProbability';
 
 export const Name: CompoundSearchFilterAttribute = {
