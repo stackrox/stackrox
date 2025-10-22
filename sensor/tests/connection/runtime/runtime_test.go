@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/debugger/collector"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
@@ -29,8 +28,6 @@ var (
 )
 
 func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
-	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
-
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 

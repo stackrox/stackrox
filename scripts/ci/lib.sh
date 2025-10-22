@@ -1037,9 +1037,9 @@ check_collector_version() {
     fi
 }
 
-publish_roxctl() {
+publish_cli() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: publish_roxctl <tag>"
+        die "missing arg. usage: publish_cli <tag>"
     fi
 
     local tag="$1"
@@ -1048,7 +1048,7 @@ publish_roxctl() {
 
     local temp_dir
     temp_dir="$(mktemp -d)"
-    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-roxctl.sh" . "${temp_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-cli.sh" . "${temp_dir}"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
 }
