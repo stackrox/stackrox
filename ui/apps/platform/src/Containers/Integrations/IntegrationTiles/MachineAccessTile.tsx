@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { selectors } from 'reducers';
 import { useSelector } from 'react-redux';

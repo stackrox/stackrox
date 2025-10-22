@@ -1,5 +1,3 @@
-import React from 'react';
-
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';

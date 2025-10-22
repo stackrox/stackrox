@@ -807,11 +807,9 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Dashboard/**',
             'src/Containers/Docs/**',
             'src/Containers/ExceptionConfiguration/**',
             'src/Containers/Images/**',
-            'src/Containers/Integrations/**',
             'src/Containers/Login/**',
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/Policies/**',
