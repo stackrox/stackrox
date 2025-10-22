@@ -18,7 +18,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 ### Technical Changes
-- ROX-30769: Update Node.js requirement for ui folder to 22.12.0
+- ROX-30769: Update Node.js requirement for ui folder to 22.13.0
 
 ## [4.9.0]
 
