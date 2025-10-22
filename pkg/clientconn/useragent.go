@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
-var userAgent string
+var (
+	userAgent      string
+	userAgentMutex sync.RWMutex
+)
 
 // The following is the list of component names that tune their User-Agent.
 const (
@@ -34,6 +38,8 @@ func SetUserAgent(agent string) {
 	if testutils.IsRunningInCI() {
 		ci = " CI"
 	}
+	userAgentMutex.Lock()
+	defer userAgentMutex.Unlock()
 	userAgent = fmt.Sprintf("%s/%s (%s; %s)%s", agent, version.GetMainVersion(), runtime.GOOS, runtime.GOARCH, ci)
 }
 
@@ -41,5 +47,7 @@ func SetUserAgent(agent string) {
 // by the process main function via a call to SetUserAgent().
 // Default value is the one produced by SetUserAgent("stackrox").
 func GetUserAgent() string {
+	userAgentMutex.RLock()
+	defer userAgentMutex.RUnlock()
 	return userAgent
 }

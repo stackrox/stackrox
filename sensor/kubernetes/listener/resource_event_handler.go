@@ -143,7 +143,7 @@ func (k *listenerImpl) handleAllEvents() {
 	syncingResources.Set(true)
 
 	// Compliance Operator Watcher and Informers
-	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
+	var complianceResultInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
 
 	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
@@ -165,14 +165,12 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
-		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
-		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
 
+		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Informer()
 		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.Rule.GroupVersionResource()).Informer()
 		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
-		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 		// Override the coCrdHandlerFn to only handle when the resources become unavailable
@@ -188,7 +186,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// VirtualMachine Watcher and Informers
-	var virtualMachineInformer, virtualMachineInstanceInformer cache.SharedIndexInformer
+	var virtualMachineInstanceInformer cache.SharedIndexInformer
 	vmWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
 	if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
@@ -206,7 +204,6 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	if virtualMachineIsAvailable {
 		log.Info("Initializing virtual machine informers")
-		virtualMachineInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
 		virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
 		// Override the vmCrdHandlerFn to only handle when the resources become unavailable
 		vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
@@ -332,6 +329,7 @@ func (k *listenerImpl) handleAllEvents() {
 	if virtualMachineIsAvailable {
 		// At this point the VirtualMachineInstances should be synced
 		log.Info("Syncing virtual machines")
+		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
 		vmWaitGroup := &concurrency.WaitGroup{}
 		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock)
 		if !startAndWait(stopSignal, vmWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
@@ -382,10 +380,10 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
-	if complianceProfileInformer != nil {
+	if coAvailable {
+		complianceProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
+		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		handle(k.context, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	}
-	if complianceTailoredProfileInformer != nil {
 		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 

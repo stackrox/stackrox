@@ -1,56 +1,26 @@
-import React from 'react';
-import type { ChangeEvent } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
-import type { SelectOptionObject } from '@patternfly/react-core/deprecated';
+import React, { useState } from 'react';
+import type { MouseEvent, Ref } from 'react';
+import {
+    Badge,
+    Divider,
+    Flex,
+    FlexItem,
+    MenuToggle,
+    SearchInput,
+    Select,
+    SelectGroup,
+    SelectList,
+    SelectOption,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
 import type { Cluster } from './types';
 
 import './NamespaceSelect.css';
 
-const selectAll: unique symbol = Symbol('Select-All-Namespaces');
-
-function createOptions(clusters: Cluster[], filterValue?: string) {
-    let clustersToShow: Pick<Cluster, 'name' | 'namespaces'>[] = [];
-
-    if (filterValue) {
-        clusters.forEach(({ name: clusterName, namespaces }) => {
-            // If the search filter matches the name of the cluster, include all that cluster's
-            // namespaces.
-            if (clusterName.toLowerCase().includes(filterValue)) {
-                clustersToShow.push({ name: clusterName, namespaces });
-            } else {
-                const namespacesToShow = namespaces.filter(({ metadata: { name } }) => {
-                    return name.toLowerCase().includes(filterValue);
-                });
-
-                if (namespacesToShow.length > 0) {
-                    clustersToShow.push({ name: clusterName, namespaces: namespacesToShow });
-                }
-            }
-        });
-    } else {
-        clustersToShow = clusters;
-    }
-
-    return [
-        <SelectOption key={selectAll.toString()} value={selectAll}>
-            <span>All namespaces</span>
-        </SelectOption>,
-        <Divider key="namespace-select-option-divider" className="pf-v5-u-mb-0" component="div" />,
-        ...clustersToShow.map(({ name: clusterName, namespaces }) => (
-            <SelectGroup key={clusterName} label={clusterName}>
-                {namespaces.map(({ metadata: { id, name } }) => (
-                    <SelectOption key={id} value={id}>
-                        <span>{name}</span>
-                    </SelectOption>
-                ))}
-            </SelectGroup>
-        )),
-    ];
-}
+// TODO: Refactor ClusterSelect and NamespaceSelect to use a shared reusable component
+const SELECT_ALL = '##SELECT_ALL##';
 
 type NamespaceSelectProps = {
     clusters: Cluster[];
@@ -67,46 +37,124 @@ function NamespaceSelect({
     onChange,
     onSelectAll,
 }: NamespaceSelectProps) {
-    const { isOpen, onToggle } = useSelectToggle();
-    const currentSelection = flattenFilterValue(namespaceSearch, selectAll);
-    const options = createOptions(clusters);
+    const [isOpen, setIsOpen] = useState(false);
+    const [filterValue, setFilterValue] = useState('');
+    const currentSelection = flattenFilterValue(namespaceSearch, SELECT_ALL);
 
-    function onSelect(e, selectedTarget: string | SelectOptionObject) {
-        if (typeof selectedTarget !== 'string') {
+    const onToggle = () => {
+        const willBeOpen = !isOpen;
+        setIsOpen(willBeOpen);
+        if (!willBeOpen) {
+            setFilterValue('');
+        }
+    };
+
+    function onSelect(_event: MouseEvent | undefined, selectedTarget: string | number | undefined) {
+        if (selectedTarget === SELECT_ALL) {
             onSelectAll();
-        } else if (currentSelection === selectAll) {
+        } else if (typeof selectedTarget !== 'string') {
+            // Do nothing for invalid types
+        } else if (currentSelection === SELECT_ALL) {
             onChange([selectedTarget]);
         } else {
-            const newSelection = currentSelection.find((ns) => ns === selectedTarget)
+            const newSelection = currentSelection.includes(selectedTarget)
                 ? currentSelection.filter((ns) => ns !== selectedTarget)
                 : currentSelection.concat(selectedTarget);
             onChange(newSelection);
         }
     }
 
-    function onFilter(e: ChangeEvent<HTMLInputElement> | null, filterValue: string) {
-        return createOptions(clusters, filterValue);
-    }
+    const filteredClusters = filterValue
+        ? clusters
+              .map(({ name: clusterName, namespaces }) => {
+                  const namespacesToShow = namespaces.filter(({ metadata: { name } }) => {
+                      return name.toLowerCase().includes(filterValue.toLowerCase());
+                  });
+
+                  if (namespacesToShow.length > 0) {
+                      return { name: clusterName, namespaces: namespacesToShow };
+                  }
+                  return null;
+              })
+              .filter(
+                  (cluster): cluster is Pick<Cluster, 'name' | 'namespaces'> => cluster !== null
+              )
+        : clusters;
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => {
+        const numSelected = currentSelection === SELECT_ALL ? 0 : currentSelection.length;
+        const placeholderText = currentSelection === SELECT_ALL ? 'All namespaces' : 'Namespaces';
+
+        return (
+            <MenuToggle
+                ref={toggleRef}
+                onClick={onToggle}
+                isExpanded={isOpen}
+                isDisabled={isDisabled}
+                style={{ width: '210px' }}
+                aria-label="Select namespaces"
+            >
+                <Flex
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                >
+                    <FlexItem>{placeholderText}</FlexItem>
+                    {numSelected > 0 && <Badge isRead>{numSelected}</Badge>}
+                </Flex>
+            </MenuToggle>
+        );
+    };
 
     return (
         <Select
-            toggleAriaLabel="Select namespaces"
             className="namespace-select"
-            variant="checkbox"
             isOpen={isOpen}
-            onToggle={(_e, v) => onToggle(v)}
+            selected={currentSelection}
             onSelect={onSelect}
-            onFilter={onFilter}
-            placeholderText={currentSelection === selectAll ? 'All namespaces' : 'Namespaces'}
-            selections={currentSelection}
-            isDisabled={isDisabled}
-            maxHeight="50vh"
-            position="right"
-            width={210}
-            isGrouped
-            hasInlineFilter
+            onOpenChange={setIsOpen}
+            toggle={toggle}
+            popperProps={{
+                position: 'right',
+            }}
         >
-            {options}
+            <SelectList style={{ maxHeight: '50vh', overflow: 'auto' }}>
+                <div className="pf-v5-u-p-md">
+                    <SearchInput
+                        value={filterValue}
+                        onChange={(_event, value) => setFilterValue(value)}
+                        placeholder="Filter by namespace"
+                        aria-label="Filter namespaces"
+                    />
+                </div>
+                <Divider />
+                <SelectOption
+                    key={SELECT_ALL}
+                    value={SELECT_ALL}
+                    hasCheckbox
+                    isSelected={currentSelection === SELECT_ALL}
+                >
+                    All namespaces
+                </SelectOption>
+                {filteredClusters.length > 0 && (
+                    <Divider className="pf-v5-u-mb-0" component="div" />
+                )}
+                {filteredClusters.map(({ name: clusterName, namespaces }) => (
+                    <SelectGroup key={clusterName} label={clusterName}>
+                        {namespaces.map(({ metadata: { id, name } }) => (
+                            <SelectOption
+                                key={id}
+                                value={id}
+                                hasCheckbox
+                                isSelected={
+                                    currentSelection !== SELECT_ALL && currentSelection.includes(id)
+                                }
+                            >
+                                {name}
+                            </SelectOption>
+                        ))}
+                    </SelectGroup>
+                ))}
+            </SelectList>
         </Select>
     );
 }

@@ -1,9 +1,7 @@
-import React from 'react';
-
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import usePermissions from 'hooks/usePermissions';
-import { Deployment } from 'types/deployment.proto';
+import type { Deployment } from 'types/deployment.proto';
 import type { Risk } from 'types/risk.proto';
 
 import DeploymentDetails from './DeploymentDetails';

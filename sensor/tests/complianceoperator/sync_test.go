@@ -28,7 +28,8 @@ const (
 )
 
 var (
-	coDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
+	helloMessageTimeout = 10 * time.Second
+	coDeployment        = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
 
 	testScanConfig = &central.ApplyComplianceScanConfigRequest{
 		ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
@@ -127,7 +128,7 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection")
-		tc.RestartFakeCentralConnection(centralCaps...)
+		restartAndWaitForHello(t, tc, centralCaps)
 
 		t.Log("Sending updated SyncScanConfigs message with multiple scan configs")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
@@ -147,7 +148,7 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		assertScanSettingBinding(t, testScanConfig2, scanSettingBinding)
 
 		t.Log("Restarting fake Central connection again")
-		tc.RestartFakeCentralConnection(centralCaps...)
+		restartAndWaitForHello(t, tc, centralCaps)
 
 		t.Log("Sending empty SyncScanConfigs message to delete all resources")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
@@ -158,6 +159,13 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 	}))
+}
+
+func restartAndWaitForHello(t *testing.T, tc *helper.TestContext, centralCaps []string) {
+	tc.GetFakeCentral().ClearReceivedBuffer()
+	tc.RestartFakeCentralConnection(centralCaps...)
+	t.Log("Wait for Hello message")
+	tc.WaitForHello(t, helloMessageTimeout)
 }
 
 func createSyncScanConfigsMessage(scanConfigs ...*central.ApplyComplianceScanConfigRequest) *central.MsgToSensor {

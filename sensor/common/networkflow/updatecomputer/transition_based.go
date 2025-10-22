@@ -101,7 +101,7 @@ type TransitionBased struct {
 
 	// State tracking for conditional updates - moved from networkFlowManager
 	connectionsDeduperMutex sync.RWMutex
-	connectionsDeduper      *set.StringSet
+	connectionsDeduper      *set.Set[indicator.BinaryHash]
 
 	endpointsDeduperMutex sync.RWMutex
 	endpointsDeduper      map[indicator.BinaryHash]indicator.BinaryHash
@@ -113,29 +113,29 @@ type TransitionBased struct {
 
 	// Closed connection timestamp tracking for handling late-arriving updates
 	closedConnMutex            sync.RWMutex
-	closedConnTimestamps       map[string]closedConnEntry
+	closedConnTimestamps       map[indicator.BinaryHash]closedConnEntry
 	closedConnRememberDuration time.Duration
 
 	lastCleanupMutex sync.RWMutex
 	lastCleanup      time.Time
 }
 
-// newStringSetPtr returns a pointer to a new string set, which is originally a value type.
+// newBinaryHashSetPtr returns a pointer to a new set of BinaryHash values, which is originally a value type.
 // This avoids copying the set when it is used in the deduper.
-func newStringSetPtr() *set.StringSet {
-	s := set.NewStringSet()
+func newBinaryHashSetPtr() *set.Set[indicator.BinaryHash] {
+	s := set.NewSet[indicator.BinaryHash]()
 	return &s
 }
 
 // NewTransitionBased creates a new instance of the transition-based update computer.
 func NewTransitionBased() *TransitionBased {
 	return &TransitionBased{
-		connectionsDeduper:         newStringSetPtr(),
+		connectionsDeduper:         newBinaryHashSetPtr(),
 		endpointsDeduper:           make(map[indicator.BinaryHash]indicator.BinaryHash),
 		cachedUpdatesConn:          make([]*storage.NetworkFlow, 0),
 		cachedUpdatesEp:            make([]*storage.NetworkEndpoint, 0),
 		cachedUpdatesProc:          make([]*storage.ProcessListeningOnPortFromSensor, 0),
-		closedConnTimestamps:       make(map[string]closedConnEntry),
+		closedConnTimestamps:       make(map[indicator.BinaryHash]closedConnEntry),
 		closedConnRememberDuration: env.NetworkFlowClosedConnRememberDuration.DurationSetting(),
 		lastCleanup:                time.Now(),
 	}
@@ -156,7 +156,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
 	h := xxhash.New()
 	for conn, currTS := range current {
-		key := conn.Key(h)
+		key := conn.BinaryKey(h)
 
 		// Check if this connection has been closed recently.
 		prevTsFound, prevTS := c.lookupPrevTimestamp(key)
@@ -190,8 +190,8 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 // Note that enriched entities for which enrichment should be retried never reach this function.
 func categorizeUpdate(
 	prevTS, currTS timestamp.MicroTS, prevTsFound bool,
-	connKey string,
-	deduper *set.StringSet, mutex *sync.RWMutex) (bool, TransitionType) {
+	connKey indicator.BinaryHash,
+	deduper *set.Set[indicator.BinaryHash], mutex *sync.RWMutex) (bool, TransitionType) {
 
 	// Variables for ease of reading
 	isClosed := currTS != timestamp.InfiniteFuture
@@ -407,7 +407,7 @@ func (c *TransitionBased) updateLastCleanup(now time.Time) {
 // ResetState clears the transition-based computer's firstTimeSeen tracking
 func (c *TransitionBased) ResetState() {
 	concurrency.WithLock(&c.connectionsDeduperMutex, func() {
-		c.connectionsDeduper = newStringSetPtr()
+		c.connectionsDeduper = newBinaryHashSetPtr()
 	})
 	concurrency.WithLock(&c.endpointsDeduperMutex, func() {
 		c.endpointsDeduper = make(map[indicator.BinaryHash]indicator.BinaryHash)
@@ -416,7 +416,7 @@ func (c *TransitionBased) ResetState() {
 	c.updateLastCleanup(time.Now())
 
 	concurrency.WithLock(&c.closedConnMutex, func() {
-		c.closedConnTimestamps = make(map[string]closedConnEntry)
+		c.closedConnTimestamps = make(map[indicator.BinaryHash]closedConnEntry)
 	})
 }
 
@@ -449,7 +449,7 @@ func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeV
 // lookupPrevTimestamp retrieves the previous close-timestamp for a connection.
 // For open connections, returns found==false.
 // For recently closed connections, returns the stored timestamp and found==true.
-func (c *TransitionBased) lookupPrevTimestamp(connKey string) (found bool, prevTS timestamp.MicroTS) {
+func (c *TransitionBased) lookupPrevTimestamp(connKey indicator.BinaryHash) (found bool, prevTS timestamp.MicroTS) {
 	// For closed connections, check if we have stored previous timestamp
 	c.closedConnMutex.RLock()
 	defer c.closedConnMutex.RUnlock()
@@ -459,7 +459,7 @@ func (c *TransitionBased) lookupPrevTimestamp(connKey string) (found bool, prevT
 
 // storeClosedConnectionTimestamp stores the timestamp of a closed connection for future reference
 func (c *TransitionBased) storeClosedConnectionTimestamp(
-	connKey string, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
+	connKey indicator.BinaryHash, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
 	// Do not store open connections.
 	if closedTS == timestamp.InfiniteFuture {
 		return
@@ -475,21 +475,15 @@ func (c *TransitionBased) storeClosedConnectionTimestamp(
 }
 
 // calculateConnectionsDeduperByteSize calculates the memory usage of the connections deduper.
-// The calculation includes: map reference (8 bytes) + string references (16 bytes per entry) + actual string content.
+// The calculation includes: map reference (8 bytes) + BinaryHash entries (8 bytes per uint64 entry).
 func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
 	baseSize := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() uintptr {
-		var totalStringBytes uintptr
-		for _, s := range c.connectionsDeduper.AsSlice() {
-			totalStringBytes += uintptr(len(s))
-		}
 		return uintptr(8) + // map reference
-			uintptr(c.connectionsDeduper.Cardinality())*16 + // string references (16 bytes each)
-			totalStringBytes // actual string content
+			uintptr(c.connectionsDeduper.Cardinality())*8 // 8 bytes per BinaryHash (uint64) entry
 	})
 
-	// Conservative 2x multiplier for set.StringSet overhead (buckets, hash table structure, etc.)
-	// The benchmarked overhead was 199/104 = 1.91x, but we use a slightly higher multiplier to be safe.
-	return baseSize * 2
+	// Conservative 1.8x multiplier for Go map overhead (same as endpoints deduper)
+	return baseSize * 18 / 10
 }
 
 // calculateEndpointsDeduperByteSize calculates the memory usage of the endpoints deduper.

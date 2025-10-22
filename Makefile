@@ -382,26 +382,14 @@ endif
 build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
-.PHONY: cli-build
-cli-build: cli-linux cli-darwin cli-windows
+.PHONY: roxctl-build
+roxctl-build: roxctl-linux roxctl-darwin roxctl-windows
 
-.PHONY: cli-install
-cli-install:
-	# Workaround a bug on MacOS
-	rm -f $(GOPATH)/bin/roxctl
-	# Copy the user's specific OS into gopath
-	mkdir -p $(GOPATH)/bin
-	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
-	chmod u+w $(GOPATH)/bin/roxctl
+roxctl-linux: roxctl_linux-amd64 roxctl_linux-arm64 roxctl_linux-ppc64le roxctl_linux-s390x
+roxctl-darwin: roxctl_darwin-amd64 roxctl_darwin-arm64
+roxctl-windows: roxctl_windows-amd64
 
-.PHONY: cli
-cli: cli-build cli-install
-
-cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
-cli-darwin: cli_darwin-amd64 cli_darwin-arm64
-cli-windows: cli_windows-amd64
-
-cli_%: build-prep
+roxctl_%: build-prep
 	$(eval    w := $(subst -, ,$*))
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
@@ -411,8 +399,46 @@ else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 endif
 
+roxctl-install:
+	# Workaround a bug on MacOS
+	rm -f $(GOPATH)/bin/roxctl
+	# Copy the user's specific OS into gopath
+	mkdir -p $(GOPATH)/bin
+	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
+	chmod u+w $(GOPATH)/bin/roxctl
+
+.PHONY: roxctl
+roxctl: roxctl-build roxctl-install
+
+.PHONY: roxagent-build
+roxagent-build: roxagent-linux
+
+roxagent-linux: roxagent_linux-amd64 roxagent_linux-arm64 roxagent_linux-ppc64le roxagent_linux-s390x
+
+roxagent_%: build-prep
+	$(eval    w := $(subst -, ,$*))
+	$(eval   os := $(firstword $(w)))
+	$(eval arch := $(lastword  $(w)))
+ifdef SKIP_CLI_BUILD
+	test -f bin/$(os)_$(arch)/roxagent || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+else
+	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./compliance/virtualmachines/roxagent
+endif
+
+.PHONY: roxagent
+roxagent: roxagent-build
+
+.PHONY: cli-build
+cli-build: roxctl-build roxagent-build
+
+.PHONY: cli-install
+cli-install: roxctl-install
+
+.PHONY: cli
+cli: cli-build cli-install
+
 .PHONY: cli_host-arch
-cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
+cli_host-arch: roxctl_$(HOST_OS)-$(GOARCH) roxagent_$(HOST_OS)-$(GOARCH)
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 

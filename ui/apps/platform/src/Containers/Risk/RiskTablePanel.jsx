@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import useDeepCompareEffect from 'use-deep-compare-effect';

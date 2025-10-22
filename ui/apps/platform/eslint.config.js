@@ -756,9 +756,16 @@ module.exports = [
             'src/Containers/Vulnerabilities/**',
         ],
 
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+
         // Separate from the following configuration to limit size of contributions.
         rules: {
-            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+            'limited/sort-named-imports': 'error',
         },
     },
     {
@@ -767,7 +774,6 @@ module.exports = [
             'src/Components/CompoundSearchFilter/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/Policies/**',
-            'src/Containers/Risk/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
@@ -811,7 +817,6 @@ module.exports = [
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/PolicyManagement/**',
-            'src/Containers/Risk/**',
             'src/Containers/Search/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
