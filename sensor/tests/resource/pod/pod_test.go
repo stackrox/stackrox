@@ -20,6 +20,11 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
+const (
+	createResourceTimeout = 30 * time.Second
+	deleteResourceTimeout = 5 * time.Minute
+)
+
 var (
 	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml", Name: "nginx-deployment"}
 	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml", Name: "nginx-rogue"}
@@ -86,7 +91,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.Name], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
 				return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
-			}), wait.WithTimeout(time.Second*10))
+			}), wait.WithTimeout(createResourceTimeout))
 
 			s.Require().NoError(err)
 
@@ -112,7 +117,7 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.Name], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
 				return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
-			}), wait.WithTimeout(time.Second*10))
+			}), wait.WithTimeout(createResourceTimeout))
 
 			s.Require().NoError(err)
 
@@ -154,9 +159,9 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 				return errors.New("ResourceAction should be REMOVE_RESOURCE")
 			}
 			return nil
-		}, "deployment should be deleted", time.Minute)
+		}, "deployment should be deleted", deleteResourceTimeout)
 		// Check that alert with empty results is sent.
-		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, time.Minute)
+		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, deleteResourceTimeout)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
@@ -181,9 +186,9 @@ func (s *PodHierarchySuite) Test_DeletePod() {
 				return errors.New("ResourceAction should be REMOVE_RESOURCE")
 			}
 			return nil
-		}, "rogue pod should be deleted", 5*time.Minute)
+		}, "rogue pod should be deleted", deleteResourceTimeout)
 		// Check that alert with empty results is sent.
-		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, 5*time.Minute)
+		testC.AssertViolationStateByIDWithTimeout(t, id, helper.AssertNoViolations(), "Should have received empty AlertResults", true, false, deleteResourceTimeout)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }

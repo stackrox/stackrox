@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -129,7 +128,7 @@ func (e *acscsEmail) logError(msg string, err error) {
 }
 
 func init() {
-	if !features.ACSCSEmailNotifier.Enabled() || !env.ManagedCentral.BooleanSetting() {
+	if !env.ManagedCentral.BooleanSetting() {
 		return
 	}
 

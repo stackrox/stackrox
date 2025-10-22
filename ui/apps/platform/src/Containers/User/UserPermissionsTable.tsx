@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { PermissionsMap } from 'services/RolesService';
+import type { PermissionsMap } from 'services/RolesService';
 
 import {
     ReadAccessIcon,
@@ -10,8 +11,8 @@ import {
 import {
     deprecatedResourceRowStyle,
     resourceRemovalReleaseVersions,
-} from '../../constants/accessControl';
-import { ResourceName } from '../../types/roleResources';
+} from 'constants/accessControl';
+import type { ResourceName } from 'types/roleResources';
 
 export type UserPermissionsTableProps = {
     permissions: PermissionsMap;

@@ -23,7 +23,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import { detailsTabValues } from '../../types';
 
-import ClusterPageHeader, { ClusterMetadata, clusterMetadataFragment } from './ClusterPageHeader';
+import ClusterPageHeader, { clusterMetadataFragment } from './ClusterPageHeader';
+import type { ClusterMetadata } from './ClusterPageHeader';
 import ClusterPageDetails from './ClusterPageDetails';
 import ClusterPageVulnerabilities from './ClusterPageVulnerabilities';
 

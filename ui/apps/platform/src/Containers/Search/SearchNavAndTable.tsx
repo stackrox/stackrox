@@ -1,13 +1,15 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem, Nav, NavItem, NavList, Split, SplitItem } from '@patternfly/react-core';
 
-import { SearchResponse } from 'services/SearchService';
-import { SearchFilter } from 'types/search';
+import type { SearchResponse } from 'services/SearchService';
+import type { SearchFilter } from 'types/search';
 import { searchPath } from 'routePaths';
 
 import SearchTable from './SearchTable';
-import { SearchNavCategory, searchNavMap } from './searchCategories';
+import { searchNavMap } from './searchCategories';
+import type { SearchNavCategory } from './searchCategories';
 import { stringifyQueryObject } from './searchQuery';
 
 type SearchNavAndTableProps = {

@@ -16,8 +16,8 @@ message ProcessBaselineKey {
   // Only certain combinations of these will be supported.
   string deployment_id = 1; // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
   string container_name = 2;
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-  string namespace = 4; // @gotags: search:"Namespace,hidden,store"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string namespace = 4; // @gotags: search:"Namespace,hidden"
 }
 
 message ProcessBaseline {
@@ -61,7 +61,7 @@ message ContainerNameAndBaselineStatus {
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 message ProcessBaselineResults {
   string deployment_id = 1; // @gotags: sql:"pk,type(uuid)"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-  string namespace = 4; // @gotags: search:"Namespace,hidden,store"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
+  string namespace = 4; // @gotags: search:"Namespace,hidden"
   repeated ContainerNameAndBaselineStatus baseline_statuses = 2;
 }

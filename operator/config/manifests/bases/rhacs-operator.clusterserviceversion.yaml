@@ -862,11 +862,11 @@ spec:
         version: v1
       specDescriptors:
       - description: |-
-          Set to false to disable policy enforcement for the admission controller. This is not recommended.
-          On new deployments starting with version 4.9, defaults to true.
-          On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
-        displayName: Enforce
-        path: admissionControl.enforce
+          Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
+          On new deployments starting with version 4.9, defaults to Enabled.
+          On old deployments, defaults to Enabled if at least one of listenOnCreates or listenOnUpdates is true.
+        displayName: Enforcement
+        path: admissionControl.enforcement
       - description: |-
           Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
           supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.

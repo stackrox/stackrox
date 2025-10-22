@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
 import { useNavigate } from 'react-router-dom-v5-compat';

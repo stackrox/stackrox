@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -41,21 +40,19 @@ var (
 )
 
 func init() {
-	if features.MicrosoftSentinelNotifier.Enabled() {
-		cryptoKey := ""
-		var err error
-		if env.EncNotifierCreds.BooleanSetting() {
-			cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
-			if err != nil {
-				utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
-			}
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
-
-		log.Debug("Microsoft Sentinel notifier enabled.")
-		notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-			return newSentinelNotifier(notifier, cryptocodec.Singleton(), cryptoKey)
-		})
 	}
+
+	log.Debug("Microsoft Sentinel notifier enabled.")
+	notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		return newSentinelNotifier(notifier, cryptocodec.Singleton(), cryptoKey)
+	})
 }
 
 type sentinel struct {
@@ -64,9 +61,6 @@ type sentinel struct {
 }
 
 func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
-	if !features.MicrosoftSentinelNotifier.Enabled() {
-		return nil
-	}
 
 	if !s.AuditLoggingEnabled() {
 		return nil
@@ -248,10 +242,6 @@ func (s sentinel) getTestAlert() *storage.Alert {
 }
 
 func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	if !features.MicrosoftSentinelNotifier.Enabled() {
-		return errors.New("Microsoft Sentinel notifier is disabled.")
-	}
-
 	if !s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
 		return nil
 	}
@@ -311,10 +301,6 @@ func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 
 // Validate validates a Microsoft Sentinel configuration.
 func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
-	if !features.MicrosoftSentinelNotifier.Enabled() {
-		return errors.New("Microsoft Sentinel notifier is disabled.")
-	}
-
 	errorList := errorhelpers.NewErrorList("Microsoft Sentinel validation")
 	if sentinel.GetLogIngestionEndpoint() == "" {
 		errorList.AddString("Log Ingestion Endpoint must be specified")

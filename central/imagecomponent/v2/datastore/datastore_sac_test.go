@@ -43,9 +43,8 @@ func (s *componentV2DataStoreSACTestSuite) SetupSuite() {
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 }
 
-func getImageComponentID(component *storage.EmbeddedImageScanComponent, imageID string) string {
-	componentID, _ := scancomponent.ComponentIDV2(component, imageID)
-	return componentID
+func getImageComponentID(component *storage.EmbeddedImageScanComponent, imageID string, index int) string {
+	return scancomponent.ComponentIDV2(component, imageID, index)
 }
 
 func (s *componentV2DataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
@@ -63,12 +62,12 @@ var (
 	imageComponent1s2x3     = fixtures.GetEmbeddedImageComponent1s2x3()
 	imageComponent2x4       = fixtures.GetEmbeddedImageComponent2x4()
 	imageComponent2x5       = fixtures.GetEmbeddedImageComponent2x5()
-	imageComponentID1x1     = getImageComponentID(imageComponent1x1, fixtures.GetImageSherlockHolmes1().GetId())
-	imageComponentID1x2     = getImageComponentID(imageComponent1x2, fixtures.GetImageSherlockHolmes1().GetId())
-	imageComponentID1s2x3i1 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageSherlockHolmes1().GetId())
-	imageComponentID1s2x3i2 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageDoctorJekyll2().GetId())
-	imageComponentID2x4     = getImageComponentID(imageComponent2x4, fixtures.GetImageDoctorJekyll2().GetId())
-	imageComponentID2x5     = getImageComponentID(imageComponent2x5, fixtures.GetImageDoctorJekyll2().GetId())
+	imageComponentID1x1     = getImageComponentID(imageComponent1x1, fixtures.GetImageSherlockHolmes1().GetId(), 0)
+	imageComponentID1x2     = getImageComponentID(imageComponent1x2, fixtures.GetImageSherlockHolmes1().GetId(), 1)
+	imageComponentID1s2x3i1 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageSherlockHolmes1().GetId(), 2)
+	imageComponentID1s2x3i2 = getImageComponentID(imageComponent1s2x3, fixtures.GetImageDoctorJekyll2().GetId(), 0)
+	imageComponentID2x4     = getImageComponentID(imageComponent2x4, fixtures.GetImageDoctorJekyll2().GetId(), 1)
+	imageComponentID2x5     = getImageComponentID(imageComponent2x5, fixtures.GetImageDoctorJekyll2().GetId(), 2)
 
 	imageComponentTestCases = []componentTestCase{
 		{
@@ -337,7 +336,7 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentCount() {
 }
 
 func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentSearch() {
-	s.runImageTest("", func(c componentTestCase) {
+	s.runImageTest("TestSACImageComponentSearch", func(c componentTestCase) {
 
 		testCtx := s.imageTestContexts[c.contextKey]
 		results, err := s.imageComponentStore.Search(testCtx, nil)

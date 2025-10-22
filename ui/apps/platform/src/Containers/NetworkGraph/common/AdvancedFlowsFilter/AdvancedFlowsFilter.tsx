@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import {
     Select,
@@ -32,7 +32,7 @@ function AdvancedFlowsFilter({
     const selections = filtersToSelections(filters);
 
     // component state
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = React.useState(false);
+    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const {
         isOpen: isPortsSelectOpen,
         onToggle: onTogglePortsSelect,

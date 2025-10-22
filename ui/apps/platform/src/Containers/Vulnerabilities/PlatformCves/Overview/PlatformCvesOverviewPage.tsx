@@ -13,6 +13,7 @@ import {
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -23,21 +24,17 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
-import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import useMap from 'hooks/useMap';
 import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
-import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
-import MenuDropdown from 'Components/PatternFly/MenuDropdown';
+import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
+import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 
-import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
-import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
-import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
-import {
-    clusterSearchFilterConfig,
-    platformCVESearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
+import { parseQuerySearchFilter } from '../../utils/searchUtils';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
+import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
+import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
 import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';

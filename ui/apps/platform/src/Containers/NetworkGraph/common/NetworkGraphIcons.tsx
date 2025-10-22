@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge } from '@patternfly/react-core';
 import type { BadgeProps } from '@patternfly/react-core';
 
