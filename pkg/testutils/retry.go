@@ -15,11 +15,14 @@ type T interface {
 	Errorf(format string, args ...interface{})
 	Fatalf(format string, args ...interface{})
 	FailNow()
+	Logf(format string, args ...interface{})
 }
 
 type failure struct{}
 
-type retryT struct{}
+type retryT struct {
+	t T
+}
 
 func (retryT) Errorf(string, ...interface{}) {
 	panic(failure{})
@@ -31,6 +34,10 @@ func (retryT) Fatalf(string, ...interface{}) {
 
 func (retryT) FailNow() {
 	panic(failure{})
+}
+
+func (r retryT) Logf(format string, args ...interface{}) {
+	r.t.Logf(format, args...)
 }
 
 func runRetry(testFn func(t T)) (success bool) {
