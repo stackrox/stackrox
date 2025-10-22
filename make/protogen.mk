@@ -29,7 +29,7 @@ MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_VT_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_vtproto.pb.go)
-GENERATED_IMMUTABLE_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_immutable.go)
+GENERATED_IMMUTABLE_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_immutable.pb.go)
 GENERATED_API_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%_grpc.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
@@ -230,7 +230,7 @@ endif
 		$(dir $<)/*.proto
 
 # Generate immutable interfaces
-$(GENERATED_BASE_PATH)/%_immutable.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(ALL_PROTOS) $(PROTOC) $(PROTOC_GEN_GO_IMMUTABLE_BIN)
+$(GENERATED_BASE_PATH)/%_immutable.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(ALL_PROTOS) $(PROTOC) $(PROTOC_GEN_GO_IMMUTABLE_BIN)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
