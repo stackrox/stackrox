@@ -10,11 +10,11 @@ from ci_tests import (
     QaE2eDBBackupRestoreTest,
     CustomSetTest,
 )
-from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
+from post_tests import NullPostTest, PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner
 
 
-def make_qa_e2e_test_runner(cluster):
+def make_qa_e2e_test_runner(cluster, post_collect=True):
     return ClusterTestSetsRunner(
         cluster=cluster,
         initial_pre_test=PreSystemTests(),
@@ -25,7 +25,7 @@ def make_qa_e2e_test_runner(cluster):
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-1",
-                ),
+                ) if post_collect else NullPostTest(),
             },
             {
                 "name": "QA tests part II",
@@ -33,7 +33,7 @@ def make_qa_e2e_test_runner(cluster):
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-2",
-                ),
+                ) if post_collect else NullPostTest(),
                 "always_run": False,
             },
             {
@@ -42,7 +42,7 @@ def make_qa_e2e_test_runner(cluster):
                 "post_test": CheckStackroxLogs(
                     check_for_errors_in_stackrox_logs=True,
                     artifact_destination_prefix="db-test",
-                ),
+                ) if post_collect else NullPostTest(),
                 "always_run": False,
             },
         ],
