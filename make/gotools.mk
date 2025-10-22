@@ -49,20 +49,19 @@ GOTOOLS_PROJECT_ROOT ?= $(CURDIR)
 GOTOOLS_ROOT ?= $(GOTOOLS_PROJECT_ROOT)/.gotools
 GOTOOLS_BIN ?= $(GOTOOLS_ROOT)/bin
 
-# GO_INSTALL_WITH_RETRY_FN provides a shell function wrapper for retrying `go install` commands.
-# This is needed because package downloads from the internet can fail due to transient network issues.
-# The function retries up to 5 times with a 2-second delay between attempts.
+# RUN_WITH_RETRY_FN provides a shell function wrapper for retrying commands.
+# The function retries up to 5 times with exponential backoff (1s, 4s, 9s, 16s).
 #
 # Note on escaping: $$$$ is used instead of $$ because this variable is expanded twice:
 # - First by Make when defining the recipe ($$$$i becomes $$i)
 # - Then by the shell when executing the recipe ($$i becomes $i)
 # Without the quadruple $, the shell would receive empty variables.
-GO_INSTALL_WITH_RETRY_FN = go_install_with_retry() { \
+RUN_WITH_RETRY_FN = run_with_retry() { \
 	for i in $$$$(seq 5); do \
 		"$$$$@" && return 0; \
 		[[ $$$$i -eq 5 ]] && return 1; \
-		echo "Retry $$$$i/5 failed, waiting 2s..."; \
-		sleep 2; \
+		echo "Retry $$$$i/5 failed. Retrying after $$$$((i**2)) seconds..."; \
+		sleep "$$$$((i**2))"; \
 	done \
 }
 
@@ -98,7 +97,7 @@ ifneq ($(filter ./%,$(2)),)
 .PHONY: $$(_gotools_canonical_bin_path)
 $$(_gotools_canonical_bin_path):
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)$(GO_INSTALL_WITH_RETRY_FN); go_install_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
 else
 # Tool is specified with version, so we don't take any info from the go.mod file.
 # We install the tool into a location that is version-dependent, and build it via this target. Since the name of
@@ -108,7 +107,7 @@ ifneq ($$(_gotools_version),)
 _gotools_versioned_bin_path := $(GOTOOLS_ROOT)/versioned/$$(_gotools_pkg)/$$(_gotools_version)/$$(_gotools_bin_name)
 $$(_gotools_versioned_bin_path):
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)$(GO_INSTALL_WITH_RETRY_FN); go_install_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
 
 # To make the tool accessible in the canonical location, we create a symlink. This only depends on the versioned path,
 # i.e., only needs to be recreated when the version is bumped.
@@ -121,7 +120,7 @@ else
 # Tool is specified with an absolute path without a version. Take info from go.mod file in the respective directory.
 $$(_gotools_canonical_bin_path): $$(_gotools_mod_root)/go.mod $$(_gotools_mod_root)/go.sum
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)cd "$$(dir $$<)" && $(GO_INSTALL_WITH_RETRY_FN); go_install_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)cd "$$(dir $$<)" && $(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
 
 endif
 endif
