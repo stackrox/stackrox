@@ -40,13 +40,6 @@ class PreSystemTests:
             check=True,
             timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
         )
-        subprocess.run(
-            [
-                "scripts/ci/lib.sh", "image_prefetcher_prebuilt_await"
-            ],
-            check=True,
-            timeout=PreSystemTests.POLL_TIMEOUT,
-        )
         if self.run_poll_for_system_test_images:
             subprocess.run(
                 [
