@@ -36,7 +36,7 @@ var clusters = []*storage.Cluster{
 	clusterArrakis,
 }
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []storage.ImmutableNamespaceMetadata{
 	nsErrored,
 	// Earth
 	nsSkunkWorks,
@@ -770,7 +770,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				clonedClusters = append(clonedClusters, c.CloneVT())
 			}
 
-			var clonedNamespaces []*storage.NamespaceMetadata
+			var clonedNamespaces []storage.ImmutableNamespaceMetadata
 			for _, ns := range namespaces {
 				clonedNamespaces = append(clonedNamespaces, ns.CloneVT())
 			}

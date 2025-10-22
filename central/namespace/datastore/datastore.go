@@ -3,6 +3,8 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"iter"
+	"slices"
 
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -22,19 +24,19 @@ import (
 
 // DataStore provides storage and indexing functionality for namespaces.
 type DataStore interface {
-	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
-	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
+	GetNamespace(ctx context.Context, id string) (storage.ImmutableNamespaceMetadata, bool, error)
+	GetAllNamespaces(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error)
+	GetNamespacesForSAC(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error)
+	GetManyNamespaces(ctx context.Context, id []string) ([]storage.ImmutableNamespaceMetadata, error)
 
-	AddNamespace(context.Context, *storage.NamespaceMetadata) error
-	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
+	AddNamespace(context.Context, storage.ImmutableNamespaceMetadata) error
+	UpdateNamespace(context.Context, storage.ImmutableNamespaceMetadata) error
 	RemoveNamespace(ctx context.Context, id string) error
 
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error)
+	SearchNamespaces(ctx context.Context, q *v1.Query) ([]storage.ImmutableNamespaceMetadata, error)
 }
 
 // New returns a new DataStore instance using the provided store.
@@ -58,7 +60,7 @@ type datastoreImpl struct {
 }
 
 // GetNamespace returns namespace with given id.
-func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
+func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace storage.ImmutableNamespaceMetadata, exists bool, err error) {
 	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -69,13 +71,12 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		IsAllowed() {
 		return nil, false, nil
 	}
-	b.updateNamespacePriority(namespace)
-	return namespace, true, err
+	return b.updateNamespacePriority(namespace.CloneVT()), true, err
 }
 
 // GetAllNamespaces retrieves namespaces matching the request
-func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	var allowedNamespaces []*storage.NamespaceMetadata
+func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error) {
+	var allowedNamespaces []storage.ImmutableNamespaceMetadata
 	walkFn := func() error {
 		allowedNamespaces = allowedNamespaces[:0]
 		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
@@ -91,19 +92,18 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
-	b.updateNamespacePriority(allowedNamespaces...)
-	return allowedNamespaces, nil
+	return b.updateNamespacesPriority(slices.Values(allowedNamespaces)), nil
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error) {
 	ok, err := namespaceSAC.ReadAllowed(ctx)
 	if err != nil {
 		return nil, err
 	} else if !ok {
 		return b.SearchNamespaces(ctx, search.EmptyQuery())
 	}
-	var allowedNamespaces []*storage.NamespaceMetadata
+	var allowedNamespaces []storage.ImmutableNamespaceMetadata
 	walkFn := func() error {
 		allowedNamespaces = allowedNamespaces[:0]
 		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
@@ -122,8 +122,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.Nam
 	return allowedNamespaces, nil
 }
 
-func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
-	var namespaces []*storage.NamespaceMetadata
+func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]storage.ImmutableNamespaceMetadata, error) {
 	var err error
 	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -131,34 +130,43 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
 		return b.SearchNamespaces(ctx, query)
 	}
-	namespaces, _, err = b.store.GetMany(ctx, ids)
-	b.updateNamespacePriority(namespaces...)
+	namespaces, _, err := b.store.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	return namespaces, nil
+	return b.updateNamespacesPriority(values(namespaces...)), nil
+}
+
+func values(nss ...*storage.NamespaceMetadata) iter.Seq[storage.ImmutableNamespaceMetadata] {
+	return func(yield func(metadata storage.ImmutableNamespaceMetadata) bool) {
+		for _, v := range nss {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // AddNamespace adds a namespace.
-func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
+func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace storage.ImmutableNamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.CloneVT())
 }
 
 // UpdateNamespace updates a namespace to the database
-func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
+func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace storage.ImmutableNamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.CloneVT())
 }
 
 // RemoveNamespace removes a namespace.
@@ -227,7 +235,7 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 	return searchResults, nil
 }
 
-func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
+func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]storage.ImmutableNamespaceMetadata, []search.Result, error) {
 	// TODO(ROX-29943): remove unnecessary calls to database
 	results, err := b.Search(ctx, q)
 	if err != nil {
@@ -236,7 +244,7 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 	if len(results) == 0 {
 		return nil, nil, nil
 	}
-	nsSlice := make([]*storage.NamespaceMetadata, 0, len(results))
+	nsSlice := make([]storage.ImmutableNamespaceMetadata, 0, len(results))
 	resultSlice := make([]search.Result, 0, len(results))
 	for _, res := range results {
 		ns, exists, err := b.GetNamespace(ctx, res.ID)
@@ -254,14 +262,20 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 	return nsSlice, resultSlice, nil
 }
 
-func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
+func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]storage.ImmutableNamespaceMetadata, error) {
 	namespaces, _, err := b.searchNamespaces(ctx, q)
-	b.updateNamespacePriority(namespaces...)
-	return namespaces, err
+	return b.updateNamespacesPriority(slices.Values(namespaces)), err
 }
 
-func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadata) {
-	for _, ns := range nss {
-		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
+func (b *datastoreImpl) updateNamespacesPriority(nss iter.Seq[storage.ImmutableNamespaceMetadata]) []storage.ImmutableNamespaceMetadata {
+	var results []storage.ImmutableNamespaceMetadata
+	for ns := range nss {
+		results = append(results, b.updateNamespacePriority(ns.CloneVT()))
 	}
+	return results
+}
+
+func (b *datastoreImpl) updateNamespacePriority(ns *storage.NamespaceMetadata) storage.ImmutableNamespaceMetadata {
+	ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
+	return ns
 }

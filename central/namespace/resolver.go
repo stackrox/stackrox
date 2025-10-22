@@ -24,7 +24,7 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
 
-func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
+func populateFromMetadataSlice(ctx context.Context, metadataSlice []storage.ImmutableNamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	if len(metadataSlice) == 0 {
 		return nil, nil
@@ -69,7 +69,7 @@ func ResolveMetadataOnlyByID(ctx context.Context, id string, dataStore datastore
 	}
 
 	return &v1.Namespace{
-		Metadata: ns,
+		Metadata: ns.CloneVT(),
 	}, true, nil
 }
 
@@ -88,7 +88,7 @@ func ResolveByID(ctx context.Context, id string, dataStore datastore.DataStore, 
 }
 
 // populate takes the namespace and fills in data by querying related stores.
-func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
+func populate(ctx context.Context, storageNamespace storage.ImmutableNamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
@@ -114,7 +114,7 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 	}
 
 	return &v1.Namespace{
-		Metadata:           storageNamespace,
+		Metadata:           storageNamespace.CloneVT(),
 		NumDeployments:     int32(deploymentCount),
 		NumSecrets:         int32(secretCount),
 		NumNetworkPolicies: int32(networkPolicyCount),

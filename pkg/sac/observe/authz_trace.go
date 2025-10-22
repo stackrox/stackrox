@@ -35,7 +35,7 @@ func (t *AuthzTrace) RecordScopeCheckerCoreType(sccType ScopeCheckerCoreType) {
 
 // RecordKnownClustersAndNamespaces writes the number of all known clusters and
 // namespaces iff the receiver is not nil.
-func (t *AuthzTrace) RecordKnownClustersAndNamespaces(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata) {
+func (t *AuthzTrace) RecordKnownClustersAndNamespaces(clusters []*storage.Cluster, namespaces []storage.ImmutableNamespaceMetadata) {
 	if t == nil {
 		return
 	}

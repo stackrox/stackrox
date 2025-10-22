@@ -1,6 +1,8 @@
 package effectiveaccessscope
 
 import (
+	"iter"
+	"maps"
 	"sort"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -77,7 +79,7 @@ func DenyAllEffectiveAccessScope() *ScopeTree {
 // ComputeEffectiveAccessScope applies a simple access scope to provided
 // clusters and namespaces and yields ScopeTree. Empty access scope rules
 // mean nothing is included.
-func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
+func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []storage.ImmutableNamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
 	root := newEffectiveAccessScopeTree(Excluded)
 
 	// Compile scope into cluster and namespace selectors.
@@ -238,7 +240,7 @@ func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, cluster
 	// no need to match if parent is included.
 
 	// Augment cluster labels with cluster's name.
-	clusterLabels := augmentLabels(cluster.GetLabels(), clusterNameLabel, clusterName)
+	clusterLabels := augmentLabels(maps.All(cluster.GetLabels()), clusterNameLabel, clusterName)
 
 	// Match and update the tree.
 	matched := matchLabels(clusterSelectors, clusterLabels)
@@ -351,7 +353,7 @@ func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
 // populateStateForNamespace adds given namespace as Included or Excluded to
 // parent cluster. Only the last observed namespace is considered if multiple
 // ones with the same <cluster name, namespace name> exist.
-func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storage.NamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace storage.ImmutableNamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := namespace.GetClusterName()
 	namespaceName := namespace.GetName()
 	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
@@ -364,7 +366,7 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storag
 	}
 
 	// Augment namespace labels with namespace's FQSN.
-	namespaceLabels := augmentLabels(namespace.GetLabels(), namespaceNameLabel, namespaceFQSN)
+	namespaceLabels := augmentLabels(namespace.GetImmutableLabels(), namespaceNameLabel, namespaceFQSN)
 
 	// Match and update the tree.
 	matched := matchLabels(namespaceSelectors, namespaceLabels)
@@ -398,7 +400,7 @@ func getNamespaceFQSN(cluster string, namespace string) string {
 	return cluster + scopeSeparator + namespace
 }
 
-func augmentLabels(labels map[string]string, key string, value string) map[string]string {
+func augmentLabels(labels iter.Seq2[string, string], key string, value string) map[string]string {
 	result := make(map[string]string)
 	for k, v := range labels {
 		result[k] = v

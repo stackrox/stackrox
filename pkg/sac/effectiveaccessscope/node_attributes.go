@@ -1,6 +1,8 @@
 package effectiveaccessscope
 
 import (
+	"maps"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -37,7 +39,7 @@ func nodeAttributesForCluster(cluster *storage.Cluster, detail v1.ComputeEffecti
 	return attributes
 }
 
-func nodeAttributesForNamespace(namespace *storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) treeNodeAttributes {
+func nodeAttributesForNamespace(namespace storage.ImmutableNamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) treeNodeAttributes {
 	attributes := treeNodeAttributes{
 		ID: namespace.GetId(),
 	}
@@ -45,7 +47,7 @@ func nodeAttributesForNamespace(namespace *storage.NamespaceMetadata, detail v1.
 		attributes.Name = namespace.GetName()
 	}
 	if detail == v1.ComputeEffectiveAccessScopeRequest_HIGH {
-		attributes.Labels = namespace.GetLabels()
+		attributes.Labels = maps.Collect(namespace.GetImmutableLabels())
 	}
 	return attributes
 }

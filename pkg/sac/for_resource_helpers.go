@@ -64,8 +64,8 @@ func (h ForResourceHelper) HasGlobalWrite(ctx context.Context) (bool, error) {
 func (h ForResourceHelper) FilterAccessibleNamespaces(
 	ctx context.Context,
 	accessMode storage.Access,
-	namespaces []*storage.NamespaceMetadata,
-) ([]*storage.NamespaceMetadata, error) {
+	namespaces []storage.ImmutableNamespaceMetadata,
+) ([]storage.ImmutableNamespaceMetadata, error) {
 	hasGlobalAccess, err := h.AccessAllowed(ctx, accessMode)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (h ForResourceHelper) FilterAccessibleNamespaces(
 	if accessScopeTree.State == effectiveaccessscope.Included {
 		return slices.Clone(namespaces), nil
 	}
-	filtered := make([]*storage.NamespaceMetadata, 0, len(namespaces))
+	filtered := make([]storage.ImmutableNamespaceMetadata, 0, len(namespaces))
 	for _, ns := range namespaces {
 		clusterSubTree := accessScopeTree.GetClusterByID(ns.GetClusterId())
 		if clusterSubTree == nil || clusterSubTree.State == effectiveaccessscope.Excluded {
