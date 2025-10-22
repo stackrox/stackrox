@@ -58,8 +58,8 @@ When creating pull requests, you must follow these requirements:
 - `make image` - Build the main StackRox container image with tag from `make tag`
 - `make main-build-dockerized` - Compile all Go binaries using Docker
 - `make main-build` - Build main binaries with dependency prep
-- `make cli` - Build and install roxctl CLI for all platforms
-- `make cli_host-arch` - Build roxctl CLI for current platform only
+- `make cli` - Build and install CLI tools for all platforms
+- `make cli_host-arch` - Build CLI tools for current platform only
 - `make all-builds` - Build all components (CLI, main, UI, docs)
 
 ### Testing Commands
