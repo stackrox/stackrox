@@ -257,11 +257,25 @@ func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas 
 func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int) {
 	client := createK8sClient(t)
 
-	// Determine imagePullPolicy - allow override for quay.io images
+	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
+	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
+	// as those are used to test mirroring functionality and should use their own pull behavior.
 	pullPolicy := coreV1.PullIfNotPresent
 	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
 		pullPolicy = coreV1.PullPolicy(policy)
 		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+	}
+
+	// Security context to satisfy PodSecurity policies and ensure graceful termination
+	securityContext := &coreV1.SecurityContext{
+		AllowPrivilegeEscalation: pointers.Bool(false),
+		RunAsNonRoot:             pointers.Bool(true),
+		Capabilities: &coreV1.Capabilities{
+			Drop: []coreV1.Capability{"ALL"},
+		},
+		SeccompProfile: &coreV1.SeccompProfile{
+			Type: coreV1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 
 	deployment := &appsV1.Deployment{
@@ -283,6 +297,8 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 						Name:            deploymentName,
 						Image:           image,
 						ImagePullPolicy: pullPolicy,
+						SecurityContext: securityContext,
+						Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
 					}},
 				},
 			},
@@ -292,6 +308,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	logf(t, "Creating deployment %q with image %q in namespace %q", deploymentName, image, "default")
 	_, err := client.AppsV1().Deployments("default").Create(ctx, deployment, metaV1.CreateOptions{})
 	require.NoError(t, err, "Failed to create deployment %q", deploymentName)
 }
