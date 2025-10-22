@@ -49,6 +49,14 @@ GOTOOLS_PROJECT_ROOT ?= $(CURDIR)
 GOTOOLS_ROOT ?= $(GOTOOLS_PROJECT_ROOT)/.gotools
 GOTOOLS_BIN ?= $(GOTOOLS_ROOT)/bin
 
+# GO_INSTALL_WITH_RETRY_FN provides a shell function wrapper for retrying `go install` commands.
+# This is needed because package downloads from the internet can fail due to transient network issues.
+# The function retries up to 5 times with a 2-second delay between attempts.
+#
+# Note on escaping: $$$$ is used instead of $$ because this variable is expanded twice:
+# - First by Make when defining the recipe ($$$$i becomes $$i)
+# - Then by the shell when executing the recipe ($$i becomes $i)
+# Without the quadruple $, the shell would receive empty variables.
 GO_INSTALL_WITH_RETRY_FN = go_install_with_retry() { \
 	for i in $$$$(seq 5); do \
 		"$$$$@" && return 0; \
