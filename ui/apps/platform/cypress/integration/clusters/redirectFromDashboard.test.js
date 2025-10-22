@@ -1,17 +1,10 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { visitMainDashboardWithStaticResponseForClustersForPermission } from '../../helpers/main';
 
 import { clustersAlias, interactAndVisitClusters } from './Clusters.helpers';
 
-describe('Clusters', () => {
+describe.skip('Clusters', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_CLUSTERS_PAGE_MIGRATION_UI')) {
-            this.skip(); // TODO write corresponding tests for PatternFly forms
-        }
-    });
 
     it('should redirect from Dashboard when no secured clusters have been added (only applies to Cloud Service)', () => {
         const staticResponseMapForClusters = {

@@ -30,11 +30,12 @@
     {{/* In this upgrade scenario we will defeault to enforce=false, but will upgrade to enforce=true if at least one of the old enforceOn* settings is enabled. */}}
     {{- $_ := set $admissionControl "enforce" false -}}
 
-    {{- if and $admissionControl.dynamic.enforceOnCreates (not $admissionControl.dynamic.enforceOnUpdates) -}}
+    {{- if $admissionControl.dynamic.enforceOnCreates -}}
       {{- $note := "Detected upgrade from pre-4.9: Admission Controller enforcement will be generally turned on, because enforceOnCreates is enabled." -}}
       {{- include "srox.warn" (list $ $note) -}}
       {{- $_ := set $admissionControl "enforce" true -}}
-    {{- else if and (not $admissionControl.dynamic.enforceOnCreates) $admissionControl.dynamic.enforceOnUpdates -}}
+    {{- end -}}
+    {{- if $admissionControl.dynamic.enforceOnUpdates -}}
       {{- $note := "Detected upgrade from pre-4.9: Admission Controller enforcement will be generally turned on, because enforceOnUpdates is enabled." -}}
       {{- include "srox.warn" (list $ $note) -}}
       {{- $_ := set $admissionControl "enforce" true -}}

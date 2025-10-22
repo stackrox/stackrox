@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -39,45 +40,49 @@ type certIssuerImpl struct {
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
-// It loads the CAs from disk and delegates to IssueSecuredClusterCertsWithCAs.
-func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupportsCARotation bool) (*storage.TypedServiceCertificateSet, error) {
+// It loads the CAs from disk and selects which CA to use for signing  based on Sensor capabilities
+// and the optional Sensor CA fingerprint.
+func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotation bool, sensorCAFingerprint string) (*storage.TypedServiceCertificateSet, error) {
 	primaryCA, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load CA for signing")
 	}
 
-	var secondaryCA mtls.CA
-	if sensorSupportsCARotation {
-		secondaryCA, err = mtls.SecondaryCAForSigning()
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
-			}
-			secondaryCA = nil
+	secondaryCA, err := mtls.SecondaryCAForSigning()
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
 		}
 	}
 
-	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA)
+	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA, sensorCAFingerprint)
 }
 
 // IssueSecuredClusterCertsWithCAs issues certificates for all the services of a secured cluster (including local scanner),
-// allowing injection of primary and secondary CAs.
+// allowing injection of a primary CA (mandatory) and secondary CA (optional). It selects which CA to use for signing
+// based on Sensor capabilities and the optional Sensor CA fingerprint.
 func IssueSecuredClusterCertsWithCAs(
 	namespace string,
 	clusterID string,
 	sensorSupportsCARotation bool,
 	primaryCA mtls.CA,
 	secondaryCA mtls.CA,
+	sensorCAFingerprint string,
 ) (*storage.TypedServiceCertificateSet, error) {
 	if primaryCA == nil {
 		return nil, errors.New("primary CA is required")
 	}
 
-	// If CA rotation is enabled and both CAs are present, ensure the primary CA is the one that expires later.
-	if sensorSupportsCARotation && secondaryCA != nil {
-		primaryCACert := primaryCA.Certificate()
-		secondaryCACert := secondaryCA.Certificate()
-		if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+	if secondaryCA != nil {
+		if sensorSupportsCARotation {
+			// If CA rotation is enabled, ensure the signing CA is the one that expires later.
+			primaryCACert := primaryCA.Certificate()
+			secondaryCACert := secondaryCA.Certificate()
+			if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+				primaryCA, secondaryCA = secondaryCA, primaryCA
+			}
+		} else if sensorCAFingerprint != "" && sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
+			// If a CA fingerprint is provided, prefer the matching CA. Otherwise just use the primary CA.
 			primaryCA, secondaryCA = secondaryCA, primaryCA
 		}
 	}

@@ -114,7 +114,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 			return valuesString
 		},
 	}
-	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(s.Notifier.GetUiEndpoint(), alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap, s.mitreStore)
 }
 
@@ -142,7 +142,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
-		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
+		return errors.Errorf("Could not marshal notification for alert %v", alert.GetId())
 	}
 
 	webhookURL := s.metadataGetter.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
@@ -263,7 +263,7 @@ func (s *slack) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}

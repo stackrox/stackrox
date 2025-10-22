@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -12,12 +13,12 @@ import {
 
 import useSet from 'hooks/useSet';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { Snapshot } from 'types/reportJob';
+import type { Snapshot } from 'types/reportJob';
 import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
-import { GetSortParams } from 'hooks/useURLSort';
-import { TableUIState } from 'utils/getTableUIState';
+import type { GetSortParams } from 'hooks/useURLSort';
+import type { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { sanitizeFilename } from 'utils/fileUtils';
 
@@ -28,7 +29,7 @@ export type ReportJobsTableProps<T> = {
     getConfigName: (data: T) => string;
     onClearFilters: () => void;
     onDeleteDownload: (reportJobId: string) => void;
-    renderExpandableRowContent: (snapshot: T) => React.ReactNode;
+    renderExpandableRowContent: (snapshot: T) => ReactNode;
 };
 
 const onDownload = (snapshot: Snapshot, jobId: string, configName: string) => () => {
@@ -52,7 +53,7 @@ function ReportJobsTable<T extends Snapshot>({
     onClearFilters,
     onDeleteDownload,
     renderExpandableRowContent,
-}: ReportJobsTableProps<T>) {
+}: ReportJobsTableProps<T>): ReactElement {
     const { currentUser } = useAuthStatus();
     const expandedRowSet = useSet<string>();
 

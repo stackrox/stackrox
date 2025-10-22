@@ -141,7 +141,7 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.OperatingSystem).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
-	cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).Selects...)
+	cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).GetSelects()...)
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
 import SearchInput, { createSearchModifiers } from 'Components/SearchInput';
-import { SearchCategory, fetchAutoCompleteResults } from 'services/SearchService';
-import { SearchEntry, SearchFilter } from 'types/search';
+import { fetchAutoCompleteResults } from 'services/SearchService';
+import type { SearchCategory } from 'services/SearchService';
+import type { SearchEntry, SearchFilter } from 'types/search';
 
 type SearchFilterInputProps = {
     className: string;

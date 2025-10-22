@@ -76,10 +76,10 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 			return nil, errox.InvalidArgs.New("empty contents is disabled")
 		}
 		zlog.Debug(ctx).Msg("no contents, retrieving")
-		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId())
+		ir, err = getClairIndexReport(ctx, s.indexer, req.GetHashId(), false)
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		ir, err = s.parseIndexReport(req.GetContents())
+		ir, err = parseIndexReport(req.GetContents())
 	}
 	if err != nil {
 		return nil, err
@@ -100,16 +100,6 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	return report, nil
 }
 
-// parseIndexReport will generate an index report from a Contents payload.
-func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
-	ir, err := mappers.ToClairCoreIndexReport(contents)
-	if err != nil {
-		// Validation should have captured all conversion errors.
-		return nil, fmt.Errorf("internal error: %w", err)
-	}
-	return ir, nil
-}
-
 func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) (*v4.Metadata, error) {
 	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
@@ -121,7 +111,6 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) 
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &v4.Metadata{
-		// TODO(ROX-21362): Set scanner version.
 		LastVulnerabilityUpdate: timestamp,
 	}, nil
 }
@@ -148,11 +137,23 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
 	dists := vr.GetContents().GetDistributions()
+	if len(dists) == 0 {
+		dists = make(map[string]*v4.Distribution, len(vr.GetContents().GetDistributionsDEPRECATED()))
+		// Fallback to the deprecated slice, if needed.
+		for _, dist := range vr.GetContents().GetDistributionsDEPRECATED() {
+			dists[dist.GetId()] = dist
+		}
+	}
 	if len(dists) != 1 {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}
 	}
 
-	dist := dists[0]
+	var dist *v4.Distribution
+	for _, d := range dists {
+		dist = d
+		break
+	}
+
 	distID := dist.GetDid()
 	versionID := dist.GetVersionId()
 	knownDists := s.matcher.GetKnownDistributions(ctx)
@@ -178,17 +179,21 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists, %d envs, %d pkgs, %d repos)",
+	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists (%d deprecated), %d envs (%d deprecated), %d pkgs (%d deprecated), %d repos (%d deprecated))",
 		len(req.GetContents().GetDistributions()),
+		len(req.GetContents().GetDistributionsDEPRECATED()),
 		len(req.GetContents().GetEnvironments()),
+		len(req.GetContents().GetEnvironmentsDEPRECATED()),
 		len(req.GetContents().GetPackages()),
+		len(req.GetContents().GetPackagesDEPRECATED()),
 		len(req.GetContents().GetRepositories()),
+		len(req.GetContents().GetRepositoriesDEPRECATED()),
 	)
 
 	// The remote indexer is not used. This creates flexibility and enables SBOMs to be generated
 	// from index reports not stored in the local indexer (such as from node scans and from things not
 	// indexed by indexer, such as Central scans from third party scanners).
-	ir, err := s.parseIndexReport(req.GetContents())
+	ir, err := parseIndexReport(req.GetContents())
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("parsing index report")
 		return nil, err
@@ -197,7 +202,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
 		Name:      req.GetId(),
 		Namespace: req.GetUri(),
-		Comment:   fmt.Sprintf("Tech Preview - generated for '%s'", req.GetName()),
+		Comment:   fmt.Sprintf("Generated for '%s'", req.GetName()),
 	})
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("generating SBOM")

@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Flex,
@@ -13,13 +14,10 @@ import {
     TextContent,
     TextInput,
 } from '@patternfly/react-core';
-import { FormikContextType } from 'formik';
+import type { FormikContextType } from 'formik';
 
-import {
-    EmailTemplateFormData,
-    maxCustomBodyLength,
-    maxCustomSubjectLength,
-} from './EmailTemplate.utils';
+import { maxCustomBodyLength, maxCustomSubjectLength } from './EmailTemplate.utils';
+import type { EmailTemplateFormData } from './EmailTemplate.utils';
 
 export type EmailTemplateFormProps = {
     customBodyDefault: string;

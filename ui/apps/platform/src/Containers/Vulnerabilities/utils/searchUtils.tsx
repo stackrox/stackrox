@@ -1,7 +1,10 @@
 import qs from 'qs';
-import { cloneDeep } from 'lodash';
 
-import { vulnerabilitiesNodeCvesPath, vulnerabilitiesPlatformCvesPath } from 'routePaths';
+import {
+    vulnerabilitiesNodeCvesPath,
+    vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
+} from 'routePaths';
 import {
     VulnerabilitySeverity,
     VulnerabilityState,
@@ -9,27 +12,21 @@ import {
 } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
-import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import {
+    searchValueAsArray,
+    getRequestQueryStringForSearchFilter,
+    applyRegexSearchModifiers,
+} from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { ensureStringArray } from 'utils/ensure';
-
-import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-} from '../searchFilterConfig';
 
 import {
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
     QuerySearchFilter,
+    VirtualMachineEntityTab,
     VulnerabilitySeverityLabel,
     WorkloadEntityTab,
     isFixableStatus,
@@ -42,12 +39,14 @@ export type OverviewPageSearch = {
     | { entityTab?: WorkloadEntityTab; vulnerabilityState: VulnerabilityState }
     | { entityTab?: NodeEntityTab }
     | { entityTab?: PlatformEntityTab }
+    | { entityTab?: VirtualMachineEntityTab }
 );
 
 const baseUrlForCveMap = {
     Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
     Platform: vulnerabilitiesPlatformCvesPath,
+    VirtualMachine: vulnerabilitiesVirtualMachineCvesPath,
 } as const;
 
 export function getNamespaceViewPagePath(): string {
@@ -55,7 +54,7 @@ export function getNamespaceViewPagePath(): string {
 }
 
 export function getOverviewPagePath(
-    cveBase: 'Workload' | 'Node' | 'Platform',
+    cveBase: 'Workload' | 'Node' | 'Platform' | 'VirtualMachine',
     pageSearch: OverviewPageSearch
 ): string {
     return `${baseUrlForCveMap[cveBase]}${getQueryString(pageSearch)}`;
@@ -110,6 +109,22 @@ export function getNodeEntityPagePath(
             return `${vulnerabilitiesNodeCvesPath}/nodes/${id}${queryString}`;
         default:
             return ensureExhaustive(nodeCveEntity);
+    }
+}
+
+export function getVirtualMachineEntityPagePath(
+    virtualMachineCveEntity: VirtualMachineEntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (virtualMachineCveEntity) {
+        case 'CVE':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/cves/${id}${queryString}`;
+        case 'VirtualMachine':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/virtualmachines/${id}${queryString}`;
+        default:
+            return ensureExhaustive(virtualMachineCveEntity);
     }
 }
 
@@ -240,38 +255,4 @@ export function getStatusesForExceptionCount(
     vulnerabilityState: VulnerabilityState | undefined
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
-}
-
-/*
- Search terms that will default to regex search.
-
- We only convert to regex search if the search field is of type 'text' or 'autocomplete'
-*/
-const regexSearchOptions = [
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-]
-    .flatMap((config) => config.attributes)
-    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
-    .map(({ searchTerm }) => searchTerm);
-
-/**
- * Adds the regex search modifier to the search filter for any search options that support it.
- */
-export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
-    const regexSearchFilter = cloneDeep(searchFilter);
-
-    Object.entries(regexSearchFilter).forEach(([key, value]) => {
-        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
-        }
-    });
-
-    return regexSearchFilter;
 }

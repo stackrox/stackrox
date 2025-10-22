@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -43,7 +44,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, reportID string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -147,10 +149,10 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 }
 
 func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -171,56 +173,53 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(obj.GetReportId()),
+				obj.GetScanConfigurationId(),
+				obj.GetName(),
+				obj.GetReportStatus().GetRunState(),
+				protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
+				protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+				obj.GetReportStatus().GetReportRequestType(),
+				obj.GetReportStatus().GetReportNotificationMethod(),
+				obj.GetUser().GetId(),
+				obj.GetUser().GetName(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetReportId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetReportId()),
-			obj.GetScanConfigurationId(),
-			obj.GetName(),
-			obj.GetReportStatus().GetRunState(),
-			protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
-			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-			obj.GetReportStatus().GetReportRequestType(),
-			obj.GetReportStatus().GetReportNotificationMethod(),
-			obj.GetUser().GetId(),
-			obj.GetUser().GetName(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetReportId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
+	for _, obj := range objs {
 		if err := copyFromComplianceOperatorReportSnapshotV2Scans(ctx, s, tx, obj.GetReportId(), obj.GetScans()...); err != nil {
 			return err
 		}
@@ -230,10 +229,10 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 }
 
 func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorReportSnapshotV2ReportId string, objs ...*storage.ComplianceOperatorReportSnapshotV2_Scan) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -243,30 +242,32 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 		"laststartedtime",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	idx := 0
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
-			idx,
-			obj.GetScanRefId(),
-			protocompat.NilOrTime(obj.GetLastStartedTime()),
-		})
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
+				idx,
+				obj.GetScanRefId(),
+				protocompat.NilOrTime(obj.GetLastStartedTime()),
+			})
 
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+			idx++
 		}
+
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
-import { AccessControlEntityType } from 'constants/entityTypes';
+import type { AccessControlEntityType } from 'constants/entityTypes';
 import AccessControlNav from './AccessControlNav';
 
 export type AccessControlHeadingProps = {

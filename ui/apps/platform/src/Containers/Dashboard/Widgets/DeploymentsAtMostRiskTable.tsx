@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Truncate } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ListDeployment } from 'types/deployment.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import { riskBasePath } from 'routePaths';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 

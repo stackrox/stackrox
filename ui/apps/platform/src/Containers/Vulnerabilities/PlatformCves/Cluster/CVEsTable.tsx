@@ -7,10 +7,10 @@ import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternf
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     CLUSTER_CVE_STATUS_SORT_FIELD,

@@ -28,6 +28,7 @@ const defaultResult = {
 function useSaveReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     const saveReport = useCallback((reportId: string, formValues: ReportFormValues) => {
         setResult({
             data: null,
@@ -58,6 +59,8 @@ function useSaveReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                 });
             });
     }, []);
+    // onCompleted
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     return {
         ...result,

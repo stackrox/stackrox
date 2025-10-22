@@ -89,18 +89,20 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
-		}
-	} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
-		sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
-		req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
+			req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
+		} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
+			sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
+			req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
 		}
 	}
 
@@ -128,13 +130,20 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
-	reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	var err error
+	var reportData *ReportData
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		reportData, err = rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	}
+	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		reportData, err = rg.getReportDataViewBased(req.ReportSnapshot)
+	}
 	if err != nil {
 		return err
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot.GetVulnReportFilters())
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
 	if err != nil {
 		return err
 	}
@@ -144,10 +153,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-
-	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
+	switch req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() {
 	case storage.ReportStatus_DOWNLOAD:
-		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
+		parentDir := req.ReportSnapshot.GetReportConfigurationId()
+		if req.ReportSnapshot.GetVulnReportFilters() == nil {
+			parentDir = "view-based-report"
+		}
+		if err = rg.saveReportData(parentDir,
 			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}
@@ -196,7 +208,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.Name
+			reportName := req.ReportSnapshot.GetName()
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 			if err != nil {
@@ -286,17 +298,86 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	}, nil
 }
 
+func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot) (*ReportData, error) {
+	watchedImages, err := rg.getWatchedImages()
+	if err != nil {
+		return nil, err
+	}
+	query, err := rg.buildReportQueryViewBased(snap, watchedImages)
+	if err != nil {
+		return nil, err
+	}
+
+	numDeployedImageResults := 0
+	var cveResponses []*ImageCVEQueryResponse
+	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
+	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+		deployedImagesQueryParts.Schema, query.DeployedImagesQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+	}
+	numDeployedImageResults = len(cveResponses)
+
+	numWatchedImageResults := 0
+
+	if len(watchedImages) != 0 {
+		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
+		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			watchedImagesQueryParts.Schema, query.WatchedImagesQuery)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
+		}
+		numWatchedImageResults = len(watchedImageCVEResponses)
+		cveResponses = append(cveResponses, watchedImageCVEResponses...)
+	}
+
+	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReportData{
+		CVEResponses:            cveResponses,
+		NumDeployedImageResults: numDeployedImageResults,
+		NumWatchedImageResults:  numWatchedImageResults,
+	}, nil
+
+}
+
+func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]*storage.Cluster, []*storage.NamespaceMetadata, error) {
+	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return allClusters, allNamespaces, nil
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
+	if err != nil {
+		return nil, err
+	}
+	rQuery, err := qb.BuildQueryViewBased(allClusters, allNamespaces, watchedImages)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
+}
+
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		dataStartTime)
-	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching clusters to build report query")
-	}
-	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+		return nil, err
 	}
 	rQuery, err := qb.BuildQuery(reportGenCtx, allClusters, allNamespaces)
 	if err != nil {
@@ -406,7 +487,7 @@ func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapsh
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
-	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}

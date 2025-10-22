@@ -14,6 +14,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import { toggleItemInArray } from 'utils/arrayUtils';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -26,11 +27,12 @@ import ReportJobStatusFilter, {
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import { ReportJobStatus } from 'Components/ReportJob/types';
+import useAnalytics, { VIEW_BASED_REPORT_FILTER_APPLIED } from 'hooks/useAnalytics';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 
 const sortOptions = {
-    sortFields: ['Report Completed Time'],
-    defaultSortOption: { field: 'Report Completed Time', direction: 'desc' } as const,
+    sortFields: ['Report Completion Time'],
+    defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
 };
 
 function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
@@ -62,6 +64,8 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
 }
 
 function ViewBasedReportsTab() {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -92,8 +96,6 @@ function ViewBasedReportsTab() {
         clearErrorBeforeRequest: false,
     });
 
-    // @TODO: Add polling
-
     const tableState = getTableUIState({
         isLoading,
         data,
@@ -102,7 +104,7 @@ function ViewBasedReportsTab() {
         isPolling: true,
     });
 
-    const onReportJobStatusFilterChange = (_checked: boolean, selectedStatus: ReportJobStatus) => {
+    const onReportJobStatusFilterChange = (checked: boolean, selectedStatus: ReportJobStatus) => {
         const newFilters = toggleItemInArray(
             reportJobStatusFilters,
             selectedStatus,
@@ -113,11 +115,29 @@ function ViewBasedReportsTab() {
             'Report Job Status': ensureReportJobStatuses(newFilters),
         });
         setPage(1);
+
+        // Track filter interaction for additions only
+        if (checked) {
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
+                action: 'ADD',
+                category: 'Report Job Status',
+                value: selectedStatus,
+            });
+        }
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
         setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
+
+        // Track filter interaction for enabling my jobs only
+        if (checked) {
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
+                action: 'ADD',
+                category: 'My Jobs',
+                value: 'true',
+            });
+        }
     };
 
     useInterval(refetch, 10000);

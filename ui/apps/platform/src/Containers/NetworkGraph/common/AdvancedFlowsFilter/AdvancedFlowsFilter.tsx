@@ -1,4 +1,5 @@
-import React from 'react';
+import { useState } from 'react';
+import type { Dispatch, ReactElement, SetStateAction } from 'react';
 import {
     Select,
     SelectGroup,
@@ -7,12 +8,12 @@ import {
 } from '@patternfly/react-core/deprecated';
 
 import useMultiSelect from 'hooks/useMultiSelect';
-import { AdvancedFlowsFilterType } from './types';
+import type { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
 
 export type AdvancedFlowsFilterProps = {
     filters: AdvancedFlowsFilterType;
-    setFilters: React.Dispatch<React.SetStateAction<AdvancedFlowsFilterType>>;
+    setFilters: Dispatch<SetStateAction<AdvancedFlowsFilterType>>;
     allUniquePorts: string[];
 };
 
@@ -26,12 +27,12 @@ function AdvancedFlowsFilter({
     filters,
     setFilters,
     allUniquePorts,
-}: AdvancedFlowsFilterProps): React.ReactElement {
+}: AdvancedFlowsFilterProps): ReactElement {
     // derived state
     const selections = filtersToSelections(filters);
 
     // component state
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = React.useState(false);
+    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const {
         isOpen: isPortsSelectOpen,
         onToggle: onTogglePortsSelect,

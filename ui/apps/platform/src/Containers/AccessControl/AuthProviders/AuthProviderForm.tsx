@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { FormEvent, ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -31,18 +32,17 @@ import {
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { Role } from 'services/RolesService';
-import {
-    AuthProvider,
-    AuthProviderInfo,
-    getIsAuthProviderImmutable,
-    Group,
-} from 'services/AuthService';
+import type { Role } from 'services/RolesService';
+import { getIsAuthProviderImmutable } from 'services/AuthService';
+import type { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
+import { isUserResource } from 'utils/traits.utils';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
-import RuleGroups, { RuleGroupErrors } from './RuleGroups';
+import RuleGroups from './RuleGroups';
+import type { RuleGroupErrors } from './RuleGroups';
 import {
     getInitialAuthProviderValues,
     transformInitialValues,
@@ -51,9 +51,7 @@ import {
     getDefaultRoleByAuthProviderId,
     isDefaultGroupModifiable,
 } from './authProviders.utils';
-import { AccessControlQueryAction } from '../accessControlPaths';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
-import { isUserResource } from '../traits';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -248,7 +246,7 @@ function AuthProviderForm({
     const { dirty, handleChange, isValid, setFieldValue, handleBlur, values, errors, touched } =
         formik;
 
-    function onChange(event: React.FormEvent) {
+    function onChange(event: FormEvent) {
         handleChange(event);
     }
 

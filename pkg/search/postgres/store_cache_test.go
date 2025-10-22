@@ -278,7 +278,7 @@ func TestCachedWalk(t *testing.T) {
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -323,7 +323,7 @@ func TestCachedGetByQueryDoesNotModifyTheObject(t *testing.T) {
 
 	walkedNames := make([]string, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		obj.Name = "changed"
 		return nil
 	}
@@ -358,7 +358,7 @@ func TestCachedWalkByQuery(t *testing.T) {
 	walkedNames := make([]string, 0, len(testObjects))
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -393,7 +393,7 @@ func TestCachedWalkByQueryScopedContext(t *testing.T) {
 	walkedNames := make([]string, 0, len(testObjects))
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -552,7 +552,7 @@ func TestCachedDeleteByQuery(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	_, deleteFromEmptyErr := store.DeleteByQuery(cachedStoreCtx, query)
+	deleteFromEmptyErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
 	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
@@ -563,7 +563,7 @@ func TestCachedDeleteByQuery(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	_, deleteFromPopulatedErr := store.DeleteByQuery(cachedStoreCtx, query)
+	deleteFromPopulatedErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 
 	for idx, obj := range testObjects {
@@ -592,7 +592,7 @@ func TestCachedDeleteByQueryReturningIDs(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(cachedStoreCtx, query)
+	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQueryWithIDs(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 	assert.Empty(t, deletedIDsFromEmpty)
 
@@ -604,7 +604,7 @@ func TestCachedDeleteByQueryReturningIDs(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(cachedStoreCtx, query)
+	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQueryWithIDs(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 	expectedIDs := []string{pkGetterForCache(testObjects[1]), pkGetterForCache(testObjects[3])}
 	assert.ElementsMatch(t, deletedIDsFromPopulated, expectedIDs)
@@ -689,7 +689,7 @@ func TestCachedGetByQueryFnWithInvalidScopedContext(t *testing.T) {
 	assert.NoError(t, err)
 	// Since scope is invalid and filtered out, should find the matching object
 	assert.Len(t, walkedObjects, 1)
-	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].Name)
+	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].GetName())
 
 	// Test 2: GetByQueryFn with nil query and invalid scope results in nil query after filtering
 	// Since scope is invalid and gets filtered out, and the original query was nil, the result is no results
@@ -703,7 +703,7 @@ func TestCachedGetByQueryFnWithInvalidScopedContext(t *testing.T) {
 	err = store.GetByQueryFn(cachedStoreCtx, query, walkFn)
 	assert.NoError(t, err)
 	assert.Len(t, walkedObjects, 1)
-	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].Name)
+	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].GetName())
 
 	// Test 4: GetByQueryFn with empty query and no scope should use cache
 	walkedObjects = nil
@@ -729,7 +729,7 @@ func TestCachedWalkByQueryWithInvalidScopedContext(t *testing.T) {
 
 	var walkedNames []string
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		return nil
 	}
 
@@ -764,11 +764,8 @@ func TestCachedDeleteByQueryWithInvalidScopedContext(t *testing.T) {
 	})
 
 	query := getCachedMatchFieldQuery("Test Name", "Test ScopedDeleteByQuery 1")
-	deletedIDs, err := store.DeleteByQuery(namespaceScopedCtx, query)
+	err := store.DeleteByQuery(namespaceScopedCtx, query)
 	assert.NoError(t, err)
-	// Since scope is invalid and filtered out, should delete the matching object normally
-	assert.Len(t, deletedIDs, 1)
-	assert.Contains(t, deletedIDs, "TestScopedDeleteByQuery1")
 
 	// Verify object was actually deleted (scope was ignored, normal deletion occurred)
 	obj, found, err := store.Get(cachedStoreCtx, "TestScopedDeleteByQuery1")
@@ -778,7 +775,7 @@ func TestCachedDeleteByQueryWithInvalidScopedContext(t *testing.T) {
 
 	// Test 2: DeleteByQuery without scope should work normally (baseline test with different object)
 	query2 := getCachedMatchFieldQuery("Test Name", "Test ScopedDeleteByQuery 2")
-	deletedIDs, err = store.DeleteByQuery(cachedStoreCtx, query2)
+	deletedIDs, err := store.DeleteByQueryWithIDs(cachedStoreCtx, query2)
 	assert.NoError(t, err)
 	assert.Len(t, deletedIDs, 1)
 	assert.Contains(t, deletedIDs, "TestScopedDeleteByQuery2")

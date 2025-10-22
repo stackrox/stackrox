@@ -58,6 +58,32 @@ func (c *imageAgeMultiplier) Score(_ context.Context, image *storage.Image) *sto
 	}
 }
 
+// ScoreV2 takes an image and evaluates its risk based on age (days since creation)
+func (c *imageAgeMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) *storage.Risk_Result {
+	imageCreated := image.GetMetadata().GetV1().GetCreated()
+	createdTime := protoconv.ConvertTimestampToTimeOrDefault(imageCreated, defaultTime)
+	if createdTime.IsZero() {
+		return nil
+	}
+
+	// Calculate days from creation time.
+	durationSinceImageCreated := time.Since(createdTime)
+	daysSinceCreated := int(durationSinceImageCreated.Hours() / 24)
+	score := GetImageAgeRiskScore(daysSinceCreated)
+	if score == 0.0 {
+		return nil
+	}
+	message := GetImageAgeRiskFactorMessage(image.GetName().GetFullName(), daysSinceCreated)
+
+	return &storage.Risk_Result{
+		Name: ImageAgeHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{Message: message},
+		},
+		Score: score,
+	}
+}
+
 // GetImageAgeRiskScore returns a risk score for given image age.
 func GetImageAgeRiskScore(imageAgeInDays int) (riskScore float32) {
 	// Creates a score that is:

@@ -13,6 +13,24 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.9.0]
+
+
+
+### Added Features
+
+- ROX-30645: Two new API endpoints are added for locking/unlocking process baselines given a cluster ID and an optional set of namespaces.
+- ROX-30279: The `admissionControl.enforcement` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
+- ROX-30279: The `admissionControl.enforcement` field defaults to Enabled for new installations.
+  [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
+- ROX-30279: The `admissionControl.failurePolicy` field has been added to the SecuredCluster CRD for controlling admission controller's
+  failure policy. It defaults to `Ignore`.
 - ROX-27238: Central API for generating CRSs now supports custom expiration times, specified using the new fields "valid_until" or "valid_for".
   roxctl's "central crs generate" now supports specifying custom expiration times using the new parameters "--valid-until" or "--valid-for".
 - ROX-30087: Implicit exchange of OIDC tokens, accessing the API, with a role mapping according to the M2M configuration that matches the token issuer.
@@ -20,7 +38,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 for policy evaluation and enforcement as well as image scanning, out of the box - without requiring a user to specify command line
 options to "roxctl sensor generate".
 - ROX-30034,ROX-29995,ROX-29996: Support for two new admission controller configuration related options in roxctl sensor generate
-  - `--admission-controller-enforcement` defaults to true. If set to false, admission controller webhook will be 
+  - `--admission-controller-enforcement` defaults to true. If set to false, admission controller webhook will be
   configured to not enforce policies on any admission review request.
   - `--admission-controller-fail-on-error` defaults to false, which means admission controller webhook will fail open.
   If set to true, the admission controller webhook will fail closed i.e. the review request will be blocked in case of timeouts or errors.
@@ -37,11 +55,18 @@ controller webhooks will now be configured to 1) always scan images inline 2) ei
   - `quay.io/openshift-release-dev/ocp-release`
   - `quay.io/openshift-release-dev/ocp-v4.0-art-dev`
 
+- ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
+  Disabled by default.
+- ROX-20262: Enable internal CA rotation for Operator-installed Centrals and Secured Clusters. Operator-installed Secured Clusters have full support, while Helm-installed Secured Clusters have partial support (can connect to Central with rotated CA but their certificates remain signed by the older CA).
+
 ### Removed Features
 
 - ROX-30278: The `admissionControl.dynamic.timeout` configuration parameter of the secured-cluster-services Helm chart is not user-configurable anymore.
   Its value is set to `10`.
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
+- ROX-30279: The `admissionControl.listenOn*` fields of the SecuredCluster CRD are deprecated.
+- ROX-30279: The `admissionControl.contactImageScanners` field of the SecuredCluster CRD is deprecated.
+- ROX-30279: The `admissionControl.timeoutSeconds` field of the SecuredCluster CRD is deprecated.
 - ROX-30278: The `admissionControl.dynamic.enforceOn*` configuration parameters of the secured-cluster-services Helm chart
   are deprecated and are now ignored. Please use the high-level parameter `admissionControl.enforce` instead.
   Enforce is now enabled by default.
@@ -65,13 +90,23 @@ since 4.7 and prior.
   - `--admission-controller-listen-on-updates`
   - `--admission-controller-listen-on-events`
   - `--admission-controller-timeout`
-
-
+  Using them has no effect.
+- The current hierarchical implementation for defining Collections is deprecated and will be replaced by a more comprehensive search-based definition in the future.
+- The manifest install method is now deprecated and will be removed in the future. Manifest install is currently done using the `roxctl {central,sensor,scanner} generate` command line utility, or by choosing the "Legacy installation method" in the UI. Users should switch to Operator or Helm installation.
+- All GraphQL endpoints are now deprecated and will be removed in the future.  The endpoints were created to support the ACS UI, all other uses are unsupported.
 
 ### Technical Changes
 - ROX-29793: Accessing the Compliance menus (OpenShift Coverage and OpenShift Schedules) and API endpoints (`/v2/compliance/*`) now additionally requires read permissions for the `Cluster` resource.
 - ROX-30136: Autogenerated image integration TLS check results will now be cached to speed up Central event processing. The env var `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` has been renamed to `ROX_REGISTRY_TLS_CHECK_CACHE_TTL` and can be applied to Central and/or Sensor to change the cache TTL. The 15 minute default remains the same.
 - ROX-30343: Update Node.js requirement for ui folder to 20.0.0
+- ROX-30602: Enhanced sensor component message processing with asynchronous queuing system to improve reliability and performance of
+  sensor-central communication. Each sensor component now processes messages from Central in dedicated queues with configurable buffer
+  sizes. New environment variable `ROX_REQUESTS_CHANNEL_BUFFER_SIZE` controls the buffer size for messages from Central
+  before dropping occurs. New metrics have been added for monitoring sensor components:
+    - `rox_sensor_component_process_message_duration_seconds`: Tracks processing time for messages from Central in each sensor component
+    - `rox_sensor_component_queue_operations_total`: Tracks operations on component buffer queues
+    - `rox_sensor_component_process_message_errors_total`: Tracks processing errors in each sensor component
+- ROX-30729: Allow to spin up a Sensitive File Activity monitoring agent via `ROX_SENSITIVE_FILE_ACTIVITY` env var. The agent itself is in dev preview and is not supposed to be used in production in this version.
 
 ## [4.8.0]
 

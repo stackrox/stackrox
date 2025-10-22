@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -28,10 +28,10 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
 		policyDetector:    mockDetector,
+		updateComputer:    updatecomputer.New(),
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
-		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    time.NewTicker(time.Hour),
 		enricherTickerC:   enrichTicker,
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
@@ -42,12 +42,6 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 }
 
 type expectFn func()
-
-func (f expectFn) runIfSet() {
-	if f != nil {
-		f()
-	}
-}
 
 func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, isKnownEndpoint, containerIDfound, historical bool) {
 	mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).AnyTimes().DoAndReturn(
@@ -135,11 +129,6 @@ func (c *connectionPair) lastSeen(lastSeen timestamp.MicroTS) *connectionPair {
 	return c
 }
 
-func (c *connectionPair) containerID(id string) *connectionPair {
-	c.conn.containerID = id
-	return c
-}
-
 func (c *connectionPair) incoming() *connectionPair {
 	c.conn.incoming = true
 	c.conn.local = net.NetworkPeerID{
@@ -193,9 +182,22 @@ func createEndpointPairWithProcess(firstSeen, tsAdded, lastSeen timestamp.MicroT
 	}
 }
 
-func (ep *endpointPair) containerID(id string) *endpointPair {
-	ep.endpoint.containerID = id
-	return ep
+func (ep *endpointPair) processListeningIndicator() *indicator.ProcessListening {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ProcessListening{
+		Process:  ep.endpoint.processKey,
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+}
+
+func (ep *endpointPair) endpointIndicator(deplID string) *indicator.ContainerEndpoint {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ContainerEndpoint{
+		Entity:   networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deplID},
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
 }
 
 func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
@@ -208,6 +210,14 @@ func defaultProcessKey() indicator.ProcessInfo {
 		ProcessName: "process-name",
 		ProcessArgs: "process-args",
 		ProcessExec: "process-exec",
+	}
+}
+
+func anotherProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "another-process-name",
+		ProcessArgs: "another-process-args",
+		ProcessExec: "another-process-exec",
 	}
 }
 
@@ -257,79 +267,6 @@ func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAnd
 		}
 		mgr.connectionsByHost[connectionsHostPair.hostname] = h
 	})
-}
-
-type expectedEntitiesPair struct {
-	srcID string
-	dstID string
-}
-
-func createExpectedSensorMessageWithConnections(pairs ...*expectedEntitiesPair) *central.MsgFromSensor {
-	var updates []*storage.NetworkFlow
-	for _, pair := range pairs {
-		updates = append(updates, &storage.NetworkFlow{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.EntityForDeployment(pair.srcID).ToProto(),
-				DstEntity:  networkgraph.EntityFromProto(&storage.NetworkEntityInfo{Id: pair.dstID}).ToProto(),
-				DstPort:    80,
-				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
-		})
-	}
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: &central.NetworkFlowUpdate{
-				Updated: updates,
-			},
-		},
-	}
-}
-
-func createExpectedSensorMessageWithEndpoints(ids ...string) *central.MsgFromSensor {
-	var updates []*storage.NetworkEndpoint
-	for _, id := range ids {
-		updates = append(updates, &storage.NetworkEndpoint{
-			Props: &storage.NetworkEndpointProperties{
-				Entity:     networkgraph.EntityForDeployment(id).ToProto(),
-				Port:       80,
-				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
-		})
-	}
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: &central.NetworkFlowUpdate{
-				UpdatedEndpoints: updates,
-			},
-		},
-	}
-}
-
-func (s *NetworkFlowManagerTestSuite) assertSensorMessageConnectionIDs(expectedUpdates []*storage.NetworkFlow, actualUpdates []*storage.NetworkFlow) {
-	for _, exp := range expectedUpdates {
-		found := false
-		for _, actual := range actualUpdates {
-			if exp.GetProps().GetSrcEntity().GetId() == actual.GetProps().GetSrcEntity().GetId() &&
-				exp.GetProps().GetDstEntity().GetId() == actual.GetProps().GetDstEntity().GetId() {
-				found = true
-				break
-			}
-		}
-		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.Props.SrcEntity.Id, exp.Props.DstEntity.Id)
-	}
-}
-
-func (s *NetworkFlowManagerTestSuite) assertSensorMessageEndpointIDs(expectedUpdates []*storage.NetworkEndpoint, actualUpdates []*storage.NetworkEndpoint) {
-	for _, exp := range expectedUpdates {
-		found := false
-		for _, actual := range actualUpdates {
-			if exp.GetProps().GetEntity().GetId() == actual.GetProps().GetEntity().GetId() {
-				found = true
-				break
-			}
-		}
-		s.Assert().True(found, "expected endpoint  with ID %s not found", exp.GetProps().GetEntity().GetId())
-	}
 }
 
 // mockExpectations encapsulates common mock expectation patterns
@@ -446,7 +383,7 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	actualResultNG, actualResultPLOP EnrichmentResult,
 	actualReasonNG, actualReasonPLOP EnrichmentReasonEp,
 	actualAction PostEnrichmentAction,
-	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	expected struct {
 		resultNG   EnrichmentResult
 		resultPLOP EnrichmentResult
@@ -464,7 +401,7 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	assert.Equal(ea.t, expected.action, actualAction, "Action mismatch")
 
 	if expected.endpoint != nil {
-		_, found := enrichedEndpoints[*expected.endpoint]
+		_, found := enrichedEndpointsProcesses[*expected.endpoint]
 		assert.True(ea.t, found, "Expected endpoint not found in enriched endpoints")
 	}
 }

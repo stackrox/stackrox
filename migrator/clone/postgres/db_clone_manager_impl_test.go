@@ -148,7 +148,7 @@ func (s *PostgresCloneManagerSuite) TestScanCurrentPrevious() {
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.MinSeqNum)
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.GetMinSeqNum())
 	s.Require().EqualError(dbm.Scan(), errorMessage)
 
 	// Create a previous and set its version to current one

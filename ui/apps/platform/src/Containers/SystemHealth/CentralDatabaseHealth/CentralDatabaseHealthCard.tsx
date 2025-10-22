@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -11,7 +12,7 @@ import {
 
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchDatabaseStatus } from 'services/DatabaseService';
-import { DatabaseStatus } from 'types/databaseService.proto';
+import type { DatabaseStatus } from 'types/databaseService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { ErrorIcon, SpinnerIcon, SuccessIcon, WarningIcon } from '../CardHeaderIcons';

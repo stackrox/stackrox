@@ -3,7 +3,6 @@ package queue
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/queue"
 )
 
@@ -11,6 +10,7 @@ import (
 type SimpleQueue[T comparable] interface {
 	Push(T)
 	PullBlocking(concurrency.Waitable) T
+	Seq(waitable concurrency.Waitable) func(yield func(T) bool)
 	Len() int
 }
 
@@ -47,10 +47,6 @@ func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, 
 
 // Start the queue.
 func (q *Queue[T]) Start() {
-	// If v3 is not enabled we need to trigger isRunning here.
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		q.isRunning.Signal()
-	}
 	go q.run()
 }
 

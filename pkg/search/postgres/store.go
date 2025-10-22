@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -72,7 +73,8 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
-	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
@@ -325,7 +327,14 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
+
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+}
+
+// DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
+func (s *genericStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
@@ -494,21 +503,14 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 
 func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []string, initialBatchSize int, continueOnError bool) error {
 	// Batch the deletes
-	localBatchSize := initialBatchSize
 	deletedCount := 0
 	numberToDelete := len(identifiers)
 
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
+	if initialBatchSize <= 0 {
+		return errors.New("batch size must be greater than 0")
+	}
 
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-
+	for identifierBatch := range slices.Chunk(identifiers, initialBatchSize) {
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
@@ -523,9 +525,6 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 		}
 		deletedCount = deletedCount + len(identifierBatch)
 		log.Debugf("deleted batch of %d records", len(identifierBatch))
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
 	}
 
 	log.Debugf("successfully deleted %d of %d records", deletedCount, numberToDelete)

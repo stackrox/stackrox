@@ -8,12 +8,13 @@ import (
 func init() {
 	prometheus.MustRegister(
 		EnrichmentCollectionsSize,
+		EnrichmentCollectionsSizeBytes,
 
 		// Host Connections
 		NetworkConnectionInfoMessagesRcvd,
-		NumUpdated,
+		IncomingConnectionsEndpointsGauge,
 		HostConnectionsOperations,
-		IncomingConnectionsEndpoints,
+		IncomingConnectionsEndpointsCounter,
 
 		// Network Flows Manager
 		FlowEnrichmentEventsEndpoint,
@@ -24,7 +25,8 @@ func init() {
 		activeEndpointsCurrent,
 		PurgerEvents,
 		PurgerRunDuration,
-		NumUpdatesSentToCentral,
+		NumUpdatesSentToCentralCounter,
+		NumUpdatesSentToCentralGauge,
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
@@ -44,9 +46,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "collections_size_current",
-		Help:      "Current size of given collection involved in enrichment",
+		Help:      "Current size (number of elements) of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
-
+	EnrichmentCollectionsSizeBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "collections_size_current_bytes",
+		Help:      "Current size in bytes of given collection involved in enrichment",
+	}, []string{"Name", "Type"})
 	// A networkConnectionInfo message arrives from collector
 
 	// NetworkConnectionInfoMessagesRcvd - 1. Collector sends NetworkConnection Info messages where each contains endpoints and connections
@@ -56,13 +63,13 @@ var (
 		Name:      hostConnectionsPrefix + "msgs_received_per_node_total",
 		Help:      "Total number of messages containing network flows received from Collector for a specific node",
 	}, []string{"Hostname"})
-	// NumUpdated - 2. Out of newly arrived endpoints and connections, only selected need an update
-	NumUpdated = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	// IncomingConnectionsEndpointsGauge - 2. Out of newly arrived endpoints and connections, only selected need an update
+	IncomingConnectionsEndpointsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      hostConnectionsPrefix + "num_updates",
+		Name:      hostConnectionsPrefix + "incoming_objects_current",
 		Help:      "Current number of network endpoints or connections being updated in the message from Collector received for a specific node",
-	}, []string{"Hostname", "Type"})
+	}, []string{"Hostname", "Type", "status"})
 	// HostConnectionsOperations - 3a. Out of the updates, only some result in adding the connection/endpoint to the map
 	HostConnectionsOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -70,14 +77,14 @@ var (
 		Name:      hostConnectionsPrefix + "operations_total",
 		Help:      "Total number of flows/endpoints added/removed in the host connections maps",
 	}, []string{"op", "object"})
-	// IncomingConnectionsEndpoints - 3b. how many Collector updates have the closeTS set and how many are unclosed
+	// IncomingConnectionsEndpointsCounter - 3b. how many Collector updates have the closeTS set and how many are unclosed
 	// This is useful to investigate the behavior of Sensor with fake workloads when manipulating the `generateUnclosedEndpoints` param.
-	IncomingConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+	IncomingConnectionsEndpointsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "incoming_objects_total",
-		Help:      "Total number of incoming connections/endpoints received from Collector with their close TS set or unset",
-	}, []string{"object", "closedTS"})
+		Help:      "Total number of incoming connections/endpoints received from Collector with their close status",
+	}, []string{"object", "status"})
 	// End of processing of the networkConnectionInfo message
 
 	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
@@ -109,13 +116,19 @@ var (
 		Help:      "Total number of internal flows observed by Sensor enrichment",
 	}, []string{"direction", "namespace"})
 
-	// NumUpdatesSentToCentral - 5. An update is calculated between the states in consecutive enrichment ticks and the
+	// NumUpdatesSentToCentralCounter - 5. An update is calculated between the states in consecutive enrichment ticks and the
 	// difference is treated as new updates. That updates are sent to central.
-	NumUpdatesSentToCentral = prometheus.NewCounterVec(prometheus.CounterOpts{
+	NumUpdatesSentToCentralCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "num_sent_to_central_total",
 		Help:      "A counter that tracks the total number of connections and endpoints being updated (i.e., sent to Central)",
+	}, []string{"object"})
+	NumUpdatesSentToCentralGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "num_sent_to_central_current",
+		Help:      "A gauge that tracks the current number of connections and endpoints being updated (i.e., sent to Central)",
 	}, []string{"object"})
 	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,

@@ -9,11 +9,10 @@ import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
     defaultColumns,
@@ -40,6 +39,8 @@ export type CVEsTableContainerProps = {
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
+    showDeferralUI: boolean;
+    cveTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function CVEsTableContainer({
@@ -53,6 +54,8 @@ function CVEsTableContainer({
     sort,
     workloadCvesScopedQueryString,
     isFiltered,
+    showDeferralUI,
+    cveTableColumnOverrides,
 }: CVEsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
@@ -67,11 +70,6 @@ function CVEsTableContainer({
 
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
-    const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
@@ -81,18 +79,13 @@ function CVEsTableContainer({
         closeModals,
         createExceptionModalActions,
     } = useExceptionRequestModal();
-    const showDeferralUI = hasRequestExceptionsAbility && vulnerabilityState === 'OBSERVED';
-    const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
-    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cveSelection: hideColumnIf(!canSelectRows),
-        topNvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
-        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
-        requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
-        rowActions: hideColumnIf(createTableActions === undefined),
-    });
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        cveTableColumnOverrides
+    );
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -135,7 +128,7 @@ function CVEsTableContainer({
                         onApplyColumns={managedColumnState.setVisibility}
                     />
                 </ToolbarItem>
-                {canSelectRows && (
+                {showDeferralUI && (
                     <ToolbarItem>
                         <MenuDropdown
                             toggleText="Bulk actions"
@@ -169,7 +162,7 @@ function CVEsTableContainer({
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >

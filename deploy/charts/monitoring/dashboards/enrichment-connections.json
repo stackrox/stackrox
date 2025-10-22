@@ -219,12 +219,12 @@
           "editorMode": "code",
           "expr": "increase(rox_sensor_total_network_flows_sensor_received_counter[1m])",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Updated connections",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Total number of network flows received from Collector (per minute)",
+      "title": "Number of updated connections received from Collector (per minute)",
       "type": "timeseries"
     },
     {
@@ -572,7 +572,7 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "{{object}} closedTS={{closedTS}}",
+          "legendFormat": "{{object}} {{status}}",
           "range": true,
           "refId": "A",
           "useBackend": false

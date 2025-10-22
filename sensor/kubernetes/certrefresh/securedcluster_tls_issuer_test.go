@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
@@ -128,8 +129,15 @@ func (f *securedClusterTLSIssuerFixture) respondRequest(
 	select {
 	case <-ctx.Done():
 	case request := <-f.tlsIssuer.msgToCentralC:
-		interceptedRequestID := request.GetIssueSecuredClusterCertsRequest().GetRequestId()
+		certRequest := request.GetIssueSecuredClusterCertsRequest()
+		interceptedRequestID := certRequest.GetRequestId()
 		assert.NotEmpty(t, interceptedRequestID)
+
+		cert, _, err := mtls.CACert()
+		assert.NoError(t, err)
+		assert.NotNil(t, cert)
+		assert.Equal(t, cryptoutils.CertFingerprint(cert), certRequest.GetCaFingerprint())
+
 		var response *central.IssueSecuredClusterCertsResponse
 		if responseOverwrite != nil {
 			response = responseOverwrite
@@ -727,7 +735,7 @@ func (m *certsRepoMock) GetServiceCertificates(ctx context.Context) (*storage.Ty
 
 func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return certificates.ServiceCerts, args.Error(0)
+	return certificates.GetServiceCerts(), args.Error(0)
 }
 
 func verifySecrets(ctx context.Context, t require.TestingT,

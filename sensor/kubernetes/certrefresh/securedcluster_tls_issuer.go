@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -76,10 +78,21 @@ func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
 			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
-				RequestId: requestID,
+				RequestId:     requestID,
+				CaFingerprint: currentSensorCAFingerprint(),
 			},
 		},
 	}
+}
+
+// currentSensorCAFingerprint returns the hex-encoded fingerprint of the Sensor's currently trusted CA.
+// Returns empty string if the CA cannot be determined.
+func currentSensorCAFingerprint() string {
+	cert, _, err := mtls.CACert()
+	if err != nil || cert == nil {
+		return ""
+	}
+	return cryptoutils.CertFingerprint(cert)
 }
 
 type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
@@ -209,7 +222,7 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	caps := []centralsensor.SensorCapability{i.sensorCapability}
-	if sensorCARotationEnabled.BooleanSetting() {
+	if SensorCARotationEnabled() {
 		caps = append(caps, centralsensor.SensorCARotationSupported)
 	}
 	return caps
@@ -219,6 +232,10 @@ func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 // initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
+}
+
+func (i *tlsIssuerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetIssueSecuredClusterCertsResponse() != nil
 }
 
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
@@ -274,15 +291,7 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 
 // receive handles the response to a specific certificate request
 func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
-	for {
-		response := i.responseQueue.PullBlocking(ctx)
-		if ctx.Err() != nil {
-			return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
-		}
-		if response == nil {
-			return nil, errors.New("received nil response")
-		}
-
+	for response := range i.responseQueue.Seq(ctx) {
 		if response.RequestId == requestID {
 			return response, nil
 		}
@@ -290,4 +299,5 @@ func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Respons
 		log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
 			response.RequestId, requestID)
 	}
+	return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
 }

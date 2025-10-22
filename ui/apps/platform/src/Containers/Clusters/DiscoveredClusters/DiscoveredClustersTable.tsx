@@ -1,16 +1,17 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import {
-    DiscoveredCluster,
     firstDiscoveredAtField,
     hasDiscoveredClustersFilter,
     nameField,
 } from 'services/DiscoveredClusterService';
-import { SearchFilter } from 'types/search';
+import type { DiscoveredCluster } from 'services/DiscoveredClusterService';
+import type { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import {

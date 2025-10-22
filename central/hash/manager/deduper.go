@@ -3,10 +3,12 @@ package manager
 import (
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/pkg/sync"
@@ -40,7 +42,7 @@ var (
 )
 
 // NewDeduper creates a new deduper from the passed existing hashes
-func NewDeduper(existingHashes map[string]uint64) Deduper {
+func NewDeduper(existingHashes map[string]uint64, clusterID string) Deduper {
 	existingEntries := make(map[string]*entry)
 
 	if len(existingHashes) < maxHashes {
@@ -55,6 +57,7 @@ func NewDeduper(existingHashes map[string]uint64) Deduper {
 		received:              make(map[string]*entry),
 		successfullyProcessed: existingEntries,
 		hasher:                hash.NewHasher(),
+		clusterID:             clusterID,
 	}
 }
 
@@ -70,12 +73,13 @@ type deduperImpl struct {
 	// successfully processed map contains hashes of objects that have been successfully processed
 	successfullyProcessed map[string]*entry
 
-	hasher *hash.Hasher
+	hasher    *hash.Hasher
+	clusterID string
 }
 
 // skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
 func skipDedupe(msg *central.MsgFromSensor) bool {
-	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	eventMsg, ok := msg.GetMsg().(*central.MsgFromSensor_Event)
 	if !ok {
 		return true
 	}
@@ -172,6 +176,10 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// evaluated as objects come into the queue and an object may have been successfully processed after
 	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.successfullyProcessed, key)
+		dedupingHashCounterVec.With(prometheus.Labels{
+			"cluster":      d.clusterID,
+			"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+			"Operation":    ops.Remove.String()}).Inc()
 		return
 	}
 
@@ -180,6 +188,11 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	if ok && val.val == msg.GetEvent().GetSensorHash() {
 		delete(d.received, key)
 	}
+
+	dedupingHashCounterVec.With(prometheus.Labels{
+		"cluster":      d.clusterID,
+		"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+		"Operation":    ops.Add.String()}).Inc()
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),
 		processed: true,

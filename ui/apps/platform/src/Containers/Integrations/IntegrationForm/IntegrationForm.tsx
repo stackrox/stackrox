@@ -1,10 +1,11 @@
-import React, { FunctionComponent, ReactElement, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import type { FunctionComponent, PropsWithChildren, ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { integrationsPath } from 'routePaths';
-import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // image integrations
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
@@ -115,7 +116,7 @@ const ComponentFormMap = {
     },
 } as Record<
     IntegrationSource,
-    Record<IntegrationType, FunctionComponent<React.PropsWithChildren<FormProps>>>
+    Record<IntegrationType, FunctionComponent<PropsWithChildren<FormProps>>>
 >;
 
 function IntegrationForm({
@@ -136,7 +137,7 @@ function IntegrationForm({
         }
     }, [canUseCloudBackupIntegrations, source, navigate]);
 
-    const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
+    const Form: FunctionComponent<PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(

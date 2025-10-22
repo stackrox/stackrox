@@ -1,6 +1,6 @@
-import { Button, DropEvent, FileUpload } from '@patternfly/react-core';
+import { Button, FileUpload } from '@patternfly/react-core';
+import type { DropEvent } from '@patternfly/react-core';
 import { FileUploadIcon } from '@patternfly/react-icons';
-import React from 'react';
 
 type UploadYAMLButtonProps = {
     onFileInputChange: (_event: DropEvent, file: File) => void;

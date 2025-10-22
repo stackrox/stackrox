@@ -345,6 +345,50 @@ const rules = {
             };
         },
     },
+    'import-type-order': {
+        // Require import type to follow corresponding import statement (if it exists).
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require import type to follow corresponding import statement (if it exists).',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.importKind === 'type' && typeof node.source?.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].body)
+                        ) {
+                            const hasImportKindTypeAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'type' &&
+                                child.source?.value === node.source.value;
+                            const hasImportKindValueAndSourceValue = (child) =>
+                                child.type === 'ImportDeclaration' &&
+                                child.importKind === 'value' &&
+                                child.source?.value === node.source.value;
+
+                            const { body } = ancestors[ancestors.length - 1];
+                            const indexType = body.findIndex(hasImportKindTypeAndSourceValue);
+                            const indexValue = body.findIndex(hasImportKindValueAndSourceValue);
+                            if (indexType >= 0 && indexValue >= 0 && indexType !== indexValue + 1) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Move import type to follow corresponding import statement',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'pagination-function-call': {
         // Require that pagination property has function call like getPaginationParams.
         // Some classic pages have queryService.getPagination function call instead.
@@ -465,6 +509,45 @@ const rules = {
                                 message:
                                     'Replace full path string with getVersionedDocs function call in href prop of anchor element for product docs',
                             });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-import-namespace': {
+        // Replace namespace with named import (except for yup package).
+        // In addition to consistency, minimize false negatives,
+        // because import/namespace is slow rule turned off for lint:fast-dev command.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace namespace with named import (except for yup package)',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportNamespaceSpecifier(node) {
+                    const ancestors = context.sourceCode.getAncestors(node);
+                    if (ancestors.length >= 1) {
+                        const parent = ancestors[ancestors.length - 1];
+                        if (typeof parent.source?.value === 'string') {
+                            if (parent.source.value !== 'yup') {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Replace namespace with named import (except for yup package)',
+                                });
+                            } else if (
+                                typeof node.local?.name === 'string' &&
+                                node.local.name !== parent.source.value
+                            ) {
+                                context.report({
+                                    node,
+                                    message: `Use namespace that is consistent with package name: ${parent.source.value}`,
+                                });
+                            }
                         }
                     }
                 },

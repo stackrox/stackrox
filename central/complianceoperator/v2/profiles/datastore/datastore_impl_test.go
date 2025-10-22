@@ -161,7 +161,7 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	profiles, err = s.dataStore.GetProfilesByClusters(s.hasReadCtx, []string{testconsts.Cluster2})
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(profiles))
-	s.Require().Equal(profileUID2, profiles[0].Id)
+	s.Require().Equal(profileUID2, profiles[0].GetId())
 
 	// Without write access
 	s.Require().Error(s.dataStore.DeleteProfileForCluster(s.noAccessCtx, profileUID1, testconsts.Cluster1))

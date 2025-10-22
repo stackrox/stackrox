@@ -27,7 +27,7 @@ func TestDefaultTransport(t *testing.T) {
 	assert.ErrorAs(t, err, &x509.UnknownAuthorityError{})
 
 	// Insecure transport.
-	req, err := http.NewRequest("GET", testServer.URL, nil)
+	req, err := http.NewRequest(http.MethodGet, testServer.URL, nil)
 	require.NoError(t, err)
 	req.Header.Set(InsecureSkipTLSVerifyHeader, "true")
 	resp, err := client.Do(req)

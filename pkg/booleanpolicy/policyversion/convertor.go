@@ -45,8 +45,8 @@ func EnsureConvertedTo(p *storage.Policy, toVersion PolicyVersion) error {
 	default:
 	}
 
-	if p.PolicyVersion != toVersion.String() {
-		return errors.Errorf("converted from version %q to version %q", p.PolicyVersion, toVersion.String())
+	if p.GetPolicyVersion() != toVersion.String() {
+		return errors.Errorf("converted from version %q to version %q", p.GetPolicyVersion(), toVersion.String())
 	}
 	return nil
 }

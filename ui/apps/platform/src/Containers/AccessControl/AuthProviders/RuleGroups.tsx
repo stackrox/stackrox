@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import { FieldArray } from 'formik';
 import {
     Button,
@@ -15,11 +16,11 @@ import {
 } from '@patternfly/react-core';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
-import { Group } from 'services/AuthService';
-import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
 import TypeaheadSelect from 'Components/TypeaheadSelect';
-import { getOriginLabel, isUserResource } from '../traits';
+import type { Group } from 'services/AuthService';
+import type { Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 export type RuleGroupErrors = {
     roleName?: string;
@@ -33,7 +34,7 @@ export type RuleGroupErrors = {
 export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+        event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
         _value: unknown
     ) => void;
     roles: Role[];

@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { MouseEvent, ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -21,7 +22,7 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import {
+import type {
     CertificateTransparencyLogVerification,
     CosignCertificateVerification,
     CosignPublicKey,
@@ -33,7 +34,7 @@ import { getVersionedDocs } from 'utils/versioning';
 import IntegrationFormActions from '../IntegrationFormActions';
 import IntegrationHelpIcon from './Components/IntegrationHelpIcon';
 import FormLabelGroup from '../FormLabelGroup';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
 
 const validationSchema = yup.object().shape({
@@ -175,19 +176,19 @@ function SignatureIntegrationForm({
         useState(false);
     const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(true);
 
-    function onTogglePublicKeys(_: React.MouseEvent, isExpanded: boolean) {
+    function onTogglePublicKeys(_: MouseEvent, isExpanded: boolean) {
         setIsExpandedPublicKeys(isExpanded);
         if (isExpanded) {
             setHasBeenExpandedPublicKeys(isExpanded);
         }
     }
-    function onToggleCosignCertificates(_: React.MouseEvent, isExpanded: boolean) {
+    function onToggleCosignCertificates(_: MouseEvent, isExpanded: boolean) {
         setIsExpandedCosignCertificates(isExpanded);
         if (isExpanded) {
             setHasBeenExpandedCosignCertificates(isExpanded);
         }
     }
-    function onToggleTransparencyLog(_: React.MouseEvent, isExpanded: boolean) {
+    function onToggleTransparencyLog(_: MouseEvent, isExpanded: boolean) {
         setIsExpandedTransparencyLog(isExpanded);
     }
 

@@ -5,6 +5,7 @@ on:
   - cron: 0 0 * * 1-5
 jobs:
   create-nightly-tag:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -15,3 +16,22 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       run: .openshift-ci/nightlies.sh
+
+  slack-on-failure:
+    needs: create-nightly-tag
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Slack on failure
+      uses: slackapi/slack-github-action@v2.1.1
+      with:
+        method: chat.postMessage
+        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        payload: |
+          channel: "C010PEADMFA" # acs-nightly-ci-runs
+          text: "Updating nightly tag has failed. Please check the workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}."
+          blocks:
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "<!subteam^S04SU9AHJ4C|acs-triage-support-oncall> Updating nightly tag has failed. Please check the <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow run>."

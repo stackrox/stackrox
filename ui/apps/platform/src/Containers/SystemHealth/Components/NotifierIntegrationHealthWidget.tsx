@@ -1,11 +1,13 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 
 import { fetchNotifierIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
-import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
-import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
+import { mergeIntegrationResponses } from '../utils/integrations';
+import type { IntegrationMergedItem } from '../utils/integrations';
 
 type WidgetProps = {
     pollingCount: number;

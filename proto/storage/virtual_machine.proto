@@ -3,20 +3,19 @@ syntax = "proto3";
 package storage;
 
 import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
 import "storage/image.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
-  string id = 1; // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
-  string namespace = 2; // @gotags: search:"Namespace,store"
-  string name = 3; // @gotags: search:"Name,store"
-  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-  string cluster_name = 5;
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
+  string namespace = 2; // @gotags: search:"Namespace"
+  string name = 3; // @gotags: search:"Virtual Machine Name"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7; // @gotags: policy:"Virtual Machine Scan"
-
-  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 7;
 
   enum Note {
     MISSING_METADATA = 0;
@@ -24,26 +23,86 @@ message VirtualMachine {
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
-  repeated Note notes = 9;
+  repeated Note notes = 8;
+
+  int32 vsock_cid = 9;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 10;
+
+  VirtualMachineScan scan = 11;
 }
 
-// TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
 message VirtualMachineScan {
-  string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2; // @gotags: search:"Virtual Machine Scan Time,store"
-  // TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
-  repeated EmbeddedImageScanComponent components = 3; // @gotags: sql:"-"
-  string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
-  // DataSource contains information about which integration was used to scan the image
-  DataSource data_source = 5;
+  google.protobuf.Timestamp scan_time = 1;
+  string operating_system = 2;
   enum Note {
     UNSET = 0;
-    OS_UNAVAILABLE = 1;
-    PARTIAL_SCAN_DATA = 2;
-    OS_CVES_UNAVAILABLE = 3;
-    OS_CVES_STALE = 4;
-    LANGUAGE_CVES_UNAVAILABLE = 5;
-    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+    OS_UNKNOWN = 1;
+    OS_UNSUPPORTED = 2;
   }
-  repeated Note notes = 6;
+  repeated Note notes = 3;
+  repeated EmbeddedVirtualMachineScanComponent components = 4;
+}
+
+message EmbeddedVirtualMachineScanComponent {
+  string name = 1;
+  string version = 2;
+  oneof set_top_cvss {
+    float top_cvss = 3;
+  }
+  float risk_score = 4;
+  repeated VirtualMachineVulnerability vulnerabilities = 5;
+  SourceType source = 6;
+  enum Note {
+    UNSPECIFIED = 0;
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 7;
+}
+
+message VirtualMachineVulnerability {
+  VirtualMachineCVEInfo cve_base_info = 1;
+  VulnerabilitySeverity severity = 2;
+  oneof set_fixed_by {
+    string fixed_by = 3;
+  }
+  float cvss = 4;
+}
+
+// VirtualMachineCVEInfo is a clone of the CVEInfo message from cve.proto, stripped from its search tags
+message VirtualMachineCVEInfo {
+  message Reference {
+    string URI = 1;
+    repeated string tags = 2;
+  }
+  string cve = 1;
+  string summary = 2;
+  string link = 3;
+  // This indicates the timestamp when the cve was first published in the cve feeds.
+  google.protobuf.Timestamp published_on = 4;
+  // Time when the CVE was first seen in the system.
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp last_modified = 6;
+  repeated Reference references = 7;
+
+  // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
+  repeated CVSSScore cvss_metrics = 8;
+  VirtualMachineEPSS epss = 9;
+  VirtualMachineAdvisory advisory = 10;
+}
+
+// VirtualMachineEPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
+// This structure is a clone of the EPSS message from cve.proto, stripped from its search tags.
+message VirtualMachineEPSS {
+  float epss_probability = 1;
+  float epss_percentile = 2;
+}
+
+message VirtualMachineAdvisory {
+  string name = 1;
+  string link = 2;
 }

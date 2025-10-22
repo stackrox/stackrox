@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     DatePicker,
     DescriptionList,
@@ -14,18 +15,21 @@ import {
 
 import * as yup from 'yup';
 
-import { ApiToken } from 'types/apiToken.proto';
+import type { ApiToken } from 'types/apiToken.proto';
 
 import SelectSingle from 'Components/SelectSingle';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../../hooks/usePageState';
 import useIntegrationForm from '../../useIntegrationForm';
-import IntegrationFormActions from '../../IntegrationFormActions';
-import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
+import IntegrationFormActions from '../../IntegrationFormActions';
+
+import ApiTokenFormMessageAlert from './ApiTokenFormMessageAlert';
+import type { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import useAllowedRoles from './useAllowedRoles';
 
 export type ApiTokenIntegrationFormValues = {

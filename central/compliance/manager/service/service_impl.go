@@ -61,7 +61,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 		return nil, err
 	}
 	sort.Slice(runs, func(i, j int) bool {
-		return protocompat.CompareTimestamps(runs[i].StartTime, runs[j].StartTime) < 0
+		return protocompat.CompareTimestamps(runs[i].GetStartTime(), runs[j].GetStartTime()) < 0
 	})
 
 	return &v1.GetRecentComplianceRunsResponse{

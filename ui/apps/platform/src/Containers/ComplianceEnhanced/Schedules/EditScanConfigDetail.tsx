@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -15,7 +16,7 @@ import {
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigWizardForm from './Wizard/ScanConfigWizardForm';
 import { defaultScanConfigFormValues } from './Wizard/useFormikScanConfig';
@@ -31,7 +32,7 @@ function EditScanConfigDetail({
     scanConfig,
     isLoading,
     error = null,
-}: EditScanConfigDetailProps): React.ReactElement {
+}: EditScanConfigDetailProps): ReactElement {
     const parsedScanConfig = scanConfig
         ? convertScanConfigToFormik(scanConfig)
         : defaultScanConfigFormValues;

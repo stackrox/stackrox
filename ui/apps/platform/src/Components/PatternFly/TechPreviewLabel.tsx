@@ -1,16 +1,12 @@
 import React from 'react';
-import { Label, LabelProps } from '@patternfly/react-core';
+import { Label } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 
 export type TechPreviewLabelProps = LabelProps;
 
 function TechPreviewLabel({ className, ...props }: TechPreviewLabelProps) {
     return (
-        <Label
-            isCompact
-            color="orange"
-            className={`pf-v5-u-font-weight-light pf-v5-u-font-family-sans-serif ${className ?? ''}`}
-            {...props}
-        >
+        <Label isCompact color="orange" className={className} {...props}>
             Tech preview
         </Label>
     );

@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
@@ -13,7 +14,7 @@ import usePageState from '../../hooks/usePageState';
 import { clearStoredCredentials } from '../../utils/integrationUtils';
 
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';

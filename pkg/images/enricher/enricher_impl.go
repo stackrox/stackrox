@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -31,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -40,7 +37,11 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
-var _ ImageEnricher = (*enricherImpl)(nil)
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
+
+	noImageScannersErr = errox.NotFound.CausedBy("no image scanners are integrated")
+)
 
 type enricherImpl struct {
 	cvesSuppressor   CVESuppressor
@@ -76,7 +77,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
 			ScanResult: ScanNotDone,
-		}, errors.New("no image scanners are integrated")
+		}, noImageScannersErr
 	}
 
 	for _, imageScanner := range scanners.GetAll() {
@@ -243,8 +244,8 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
-	for _, note := range image.Notes {
+	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.GetNotes()))
+	for _, note := range image.GetNotes() {
 		imageNoteSet[note] = struct{}{}
 	}
 
@@ -317,7 +318,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 }
 
 func setImageNotes(image *storage.Image, imageNoteSet map[storage.Image_Note]struct{}) {
-	image.Notes = image.Notes[:0]
+	image.Notes = image.GetNotes()[:0]
 	notes := make([]storage.Image_Note, 0, len(imageNoteSet))
 	for note := range imageNoteSet {
 		notes = append(notes, note)
@@ -465,13 +466,6 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
-func imageIntegrationToDataSource(i *storage.ImageIntegration) *storage.DataSource {
-	return &storage.DataSource{
-		Id:   i.GetId(),
-		Name: i.GetName(),
-	}
-}
-
 func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Match(image.GetName()) {
 		return false, nil
@@ -496,10 +490,10 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *stora
 	cachedMetadata := metadata.CloneVT()
 	e.metadataCache.Add(getRef(image), cachedMetadata)
 	if image.GetId() == "" {
-		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
+		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
 			e.metadataCache.Add(digest, cachedMetadata)
 		}
-		if digest := image.Metadata.GetV1().GetDigest(); digest != "" {
+		if digest := image.GetMetadata().GetV1().GetDigest(); digest != "" {
 			e.metadataCache.Add(digest, cachedMetadata)
 		}
 	}
@@ -588,7 +582,7 @@ func (e *enricherImpl) useExistingSignatureVerificationData(img *storage.Image, 
 func (e *enricherImpl) useExistingImageName(img *storage.Image, existingImg *storage.Image, option FetchOption) {
 	// We only want to overwrite the top-level image name if we are ignoring cached values.
 	if !option.forceRefetchCachedValues() {
-		img.Name = existingImg.Name
+		img.Name = existingImg.GetName()
 	}
 }
 
@@ -615,7 +609,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
-		errorList.AddError(errors.New("no image scanners are integrated"))
+		errorList.AddError(noImageScannersErr)
 		return ScanNotDone, errorList.ToError()
 	}
 
@@ -650,8 +644,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			})
 			if currentScannerErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-					Id:            scanner.DataSource().Id,
-					Name:          scanner.DataSource().Name,
+					Id:            scanner.DataSource().GetId(),
+					Name:          scanner.DataSource().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
 					LastTimestamp: protocompat.TimestampNow(),
@@ -682,8 +676,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				})
 			}
 			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-				Id:            scanner.DataSource().Id,
-				Name:          scanner.DataSource().Name,
+				Id:            scanner.DataSource().GetId(),
+				Name:          scanner.DataSource().GetName(),
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
 				LastTimestamp: protocompat.TimestampNow(),
@@ -794,7 +788,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
 
 	// Short-circuit if
 	//	- no integrations are available, or
@@ -928,49 +922,6 @@ func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registr
 	return registries, nil
 }
 
-func registryNames(registries []registryTypes.ImageRegistry) []string {
-	names := make([]string, 0, len(registries))
-	for _, reg := range registries {
-		names = append(names, reg.Name())
-	}
-	return names
-}
-
-// filterRegistriesBySource will filter the registries based on the following conditions:
-// 1. If the registry is autogenerated
-// 2. If the integration's source matches with the EnrichmentContext.Source
-// Note that this function WILL modify the input array.
-func filterRegistriesBySource(requestSource *RequestSource, registries []registryTypes.ImageRegistry) {
-	if !features.SourcedAutogeneratedIntegrations.Enabled() {
-		return
-	}
-
-	filteredRegistries := registries[:0]
-	for _, registry := range registries {
-		integration := registry.Source()
-		if !integration.GetAutogenerated() {
-			filteredRegistries = append(filteredRegistries, registry)
-			continue
-		}
-		source := integration.GetSource()
-		if source.GetClusterId() != requestSource.ClusterID {
-			continue
-		}
-		// Check if the integration source is the global OpenShift registry
-		if openshift.GlobalPullSecretIntegration(integration) {
-			filteredRegistries = append(filteredRegistries, registry)
-			continue
-		}
-		if source.GetNamespace() != requestSource.Namespace {
-			continue
-		}
-		if !requestSource.ImagePullSecrets.Contains(source.GetImagePullSecretName()) {
-			continue
-		}
-		filteredRegistries = append(filteredRegistries, registry)
-	}
-}
-
 func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry, image *storage.Image) error {
 	for _, name := range image.GetNames() {
 		for _, registry := range registries {
@@ -981,25 +932,6 @@ func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry,
 	}
 	return errox.NotFound.CausedByf("no matching image integrations found: please add "+
 		"an image integration for %q", image.GetName().GetFullName())
-}
-
-func normalizeVulnerabilities(scan *storage.ImageScan) {
-	for _, c := range scan.GetComponents() {
-		for _, v := range c.GetVulns() {
-			v.Severity = cvss.VulnToSeverity(cvss.NewFromEmbeddedVulnerability(v))
-		}
-	}
-}
-
-func acquireSemaphoreWithMetrics(semaphore *semaphore.Weighted, ctx context.Context) error {
-	images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
-	defer images.ScanSemaphoreQueueSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
-	err := semaphore.Acquire(ctx, 1)
-	if err != nil {
-		return err
-	}
-	images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Inc()
-	return nil
 }
 
 func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
@@ -1115,97 +1047,6 @@ func FillScanStats(i *storage.Image) {
 		}
 		i.SetFixable = &storage.Image_FixableCves{
 			FixableCves: numFixableVulns,
-		}
-	}
-}
-
-type cveStats struct {
-	fixable  bool
-	severity storage.VulnerabilitySeverity
-}
-
-// FillScanStatsV2 fills in the higher level stats from the scan data.
-func FillScanStatsV2(i *storage.ImageV2) {
-	if i.GetScan() == nil {
-		return
-	}
-	i.ComponentCount = int32(len(i.GetScan().GetComponents()))
-
-	var imageTopCVSS float32
-	vulns := make(map[string]*cveStats)
-
-	// This enriches the incoming component.  When enriching any additional component fields,
-	// be sure to update `ComponentIDV2` to ensure enriched fields like `TopCVSS` are not
-	// included in the hash calculation
-	for _, c := range i.GetScan().GetComponents() {
-		var componentTopCVSS float32
-		var hasVulns bool
-		for _, v := range c.GetVulns() {
-			hasVulns = true
-			if _, ok := vulns[v.GetCve()]; !ok {
-				vulns[v.GetCve()] = &cveStats{
-					fixable:  false,
-					severity: v.GetSeverity(),
-				}
-			}
-
-			if v.GetCvss() > componentTopCVSS {
-				componentTopCVSS = v.GetCvss()
-			}
-
-			if v.GetSetFixedBy() == nil {
-				continue
-			}
-
-			if v.GetFixedBy() != "" {
-				vulns[v.GetCve()].fixable = true
-			}
-		}
-
-		if hasVulns {
-			c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
-				TopCvss: componentTopCVSS,
-			}
-		}
-
-		if componentTopCVSS > imageTopCVSS {
-			imageTopCVSS = componentTopCVSS
-		}
-	}
-
-	i.CveCount = int32(len(vulns))
-	i.TopCvss = imageTopCVSS
-
-	for _, vuln := range vulns {
-		if vuln.fixable {
-			i.FixableCveCount++
-		}
-		switch vuln.severity {
-		case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:
-			i.UnknownCveCount++
-			if vuln.fixable {
-				i.FixableUnknownCveCount++
-			}
-		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			i.CriticalCveCount++
-			if vuln.fixable {
-				i.FixableCriticalCveCount++
-			}
-		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			i.ImportantCveCount++
-			if vuln.fixable {
-				i.FixableImportantCveCount++
-			}
-		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			i.ModerateCveCount++
-			if vuln.fixable {
-				i.FixableModerateCveCount++
-			}
-		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			i.LowCveCount++
-			if vuln.fixable {
-				i.FixableLowCveCount++
-			}
 		}
 	}
 }

@@ -50,6 +50,11 @@ var (
 		},
 	})
 
+	// Primary leaf certificate caching
+	primaryLeafCertOnce sync.Once
+	primaryLeafCert     tls.Certificate
+	primaryLeafCertErr  error
+
 	// Secondary CA leaf certificate caching
 	secondaryCALeafCertOnce sync.Once
 	secondaryCALeafCert     tls.Certificate
@@ -80,7 +85,16 @@ func (p *defaultCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []by
 }
 
 func (p *defaultCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
-	return mtls.LeafCertificateFromFile()
+	primaryLeafCertOnce.Do(func() {
+		cert, err := mtls.LeafCertificateFromFile()
+		if err != nil {
+			primaryLeafCertErr = err
+			return
+		}
+		primaryLeafCert = cert
+	})
+
+	return primaryLeafCert, primaryLeafCertErr
 }
 
 func (p *defaultCertificateProvider) GetSecondaryCAForSigning() (mtls.CA, error) {

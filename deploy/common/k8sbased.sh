@@ -624,6 +624,7 @@ function launch_sensor {
     local extra_config=()
     local scanner_extra_config=()
     local extra_json_config=''
+    local extra_json_dynamic_config=''
     local extra_helm_config=()
 
     local collector_priority_class_name="stackrox-collector-dev"
@@ -649,6 +650,12 @@ function launch_sensor {
       extra_config+=("--admission-controller-listen-on-events=${bool_val}")
     	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
+    fi
+
+    if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
+        extra_config+=("--auto-lock-process-baselines=true")
+        extra_json_dynamic_config+='"autoLockProcessBaselinesConfig": {"enabled": true}'
+        extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
     fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
@@ -891,6 +898,7 @@ function launch_sensor {
             echo >&2 "Please make sure to have a roxctl version ${MAIN_IMAGE_TAG} in PATH."
             exit 1
         fi
+        extra_json_config="${extra_json_config}, "'"dynamicConfig"'": {${extra_json_dynamic_config}}"
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"

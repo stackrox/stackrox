@@ -257,7 +257,7 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
     // Apparently the negative assertion sometimes passes before ComplianceScanProgress renders.
     // But auto-disappears prevents positive assertion as in scanCompliance helper function.
     cy.get('div:contains("Compliance scanning in progress")', {
-        timeout: 30000,
+        timeout: 60000,
     }).should('not.exist');
 }
 

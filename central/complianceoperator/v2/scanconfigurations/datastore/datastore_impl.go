@@ -175,7 +175,7 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 	defer ds.keyedMutex.Unlock(id)
 
 	// remove scan data from scan status table first
-	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, id).ProtoQuery())
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", id)
@@ -227,12 +227,10 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 
 // RemoveClusterStatus removes the scan configuration status for the given cluster
 func (ds *datastoreImpl) RemoveClusterStatus(ctx context.Context, scanConfigID string, clusterID string) error {
-	_, err := ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	return ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
 		ProtoQuery())
-
-	return err
 }
 
 // GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id

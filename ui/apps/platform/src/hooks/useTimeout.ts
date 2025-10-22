@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 export type UseTimeoutReturn<Args extends unknown[]> = [
     (delay: number, ...args: Args) => void,

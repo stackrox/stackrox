@@ -1,15 +1,11 @@
 import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import pluralize from 'pluralize';
-import { FormikErrors } from 'formik';
+import type { FormikErrors } from 'formik';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import {
-    RuleSelectorOption,
-    ScopedResourceSelector,
-    SelectorEntityType,
-    selectorOptions,
-} from '../types';
+import { selectorOptions } from '../types';
+import type { RuleSelectorOption, ScopedResourceSelector, SelectorEntityType } from '../types';
 import ByNameSelector from './ByNameSelector';
 import ByLabelSelector from './ByLabelSelector';
 

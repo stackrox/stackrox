@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -10,15 +11,18 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import usePermissions from 'hooks/usePermissions';
 import {
-    AccessScope,
     accessScopeNew,
     createAccessScope,
     deleteAccessScope,
     fetchAccessScopes,
     updateAccessScope,
 } from 'services/AccessScopesService';
-import { Role, fetchRolesAsArray } from 'services/RolesService';
+import type { AccessScope } from 'services/AccessScopesService';
+import { fetchRolesAsArray } from 'services/RolesService';
+import type { Role } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -31,8 +35,6 @@ import './AccessScopes.css';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
-import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 

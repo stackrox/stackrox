@@ -1,13 +1,7 @@
-import React, { ReactElement } from 'react';
-import {
-    Select,
-    SelectOption,
-    MenuToggle,
-    MenuToggleElement,
-    Badge,
-    Flex,
-    FlexItem,
-} from '@patternfly/react-core';
+import React from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
+import { Select, MenuToggle, Badge, Flex, FlexItem } from '@patternfly/react-core';
+import type { MenuToggleElement, SelectOption } from '@patternfly/react-core';
 
 import { ensureString } from 'utils/ensure';
 
@@ -18,7 +12,7 @@ type CheckboxSelectProps = {
     isDisabled?: boolean;
     ariaLabelMenu?: string;
     toggleLabel?: string;
-    toggleIcon?: React.ReactNode;
+    toggleIcon?: ReactNode;
 };
 
 function CheckboxSelect({
@@ -37,7 +31,7 @@ function CheckboxSelect({
     };
 
     const onSelect = (
-        event: React.MouseEvent<Element, MouseEvent> | undefined,
+        event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (event) {
@@ -46,7 +40,7 @@ function CheckboxSelect({
         }
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             aria-label={toggleLabel}
             ref={toggleRef}

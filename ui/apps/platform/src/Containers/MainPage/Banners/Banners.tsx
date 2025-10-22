@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';

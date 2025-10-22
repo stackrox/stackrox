@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormikProvider, useFormik } from 'formik';
 import { Alert, Bullseye, Spinner, Modal, Button, Flex } from '@patternfly/react-core';
-import * as Yup from 'yup';
+import * as yup from 'yup';
 
 import { isValidCidrBlock } from 'utils/urlUtils';
 import {
@@ -13,14 +13,16 @@ import {
 import useTimeout from 'hooks/useTimeout';
 import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
-import CIDRForm, { emptyCIDRBlockRow, CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
+import CIDRForm, { emptyCIDRBlockRow } from './CIDRForm';
+import type { CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
 
-const validationSchema = Yup.object().shape({
-    entities: Yup.array().of(
-        Yup.object().shape({
-            entity: Yup.object().shape({
-                name: Yup.string().trim().required('CIDR name is required.'),
-                cidr: Yup.string()
+const validationSchema = yup.object().shape({
+    entities: yup.array().of(
+        yup.object().shape({
+            entity: yup.object().shape({
+                name: yup.string().trim().required('CIDR name is required.'),
+                cidr: yup
+                    .string()
                     .trim()
                     .test('valid-cidr-format', 'CIDR address format is invalid.', (value) => {
                         return isValidCidrBlock(value);

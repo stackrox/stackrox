@@ -10,7 +10,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 EARLIER_TAG="4.6.2"
 EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
-PREVIOUS_RELEASES=("4.6.9" "4.7.6" "4.8.2")
+PREVIOUS_RELEASES=("4.6.10" "4.7.7" "4.8.4")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"

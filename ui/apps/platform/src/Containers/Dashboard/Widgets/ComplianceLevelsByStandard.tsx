@@ -3,17 +3,17 @@ import { useLocation } from 'react-router-dom-v5-compat';
 import {
     Button,
     EmptyState,
-    EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateHeader,
     EmptyStateFooter,
+    EmptyStateHeader,
+    EmptyStateIcon,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    Title,
     ToggleGroup,
     ToggleGroupItem,
-    Title,
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
@@ -24,19 +24,19 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 import {
     getRequestQueryStringForSearchFilter,
     getUrlQueryStringForSearchFilter,
 } from 'utils/searchUtils';
-import entityTypes, { StandardEntityType, standardTypes } from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
+import type { StandardEntityType, standardTypes } from 'constants/entityTypes';
 import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import { complianceBasePath } from 'routePaths';
 import { standardLabels } from 'messages/standards';
-import ComplianceLevelsByStandardChart, {
-    ComplianceLevelByStandard,
-} from './ComplianceLevelsByStandardChart';
+import ComplianceLevelsByStandardChart from './ComplianceLevelsByStandardChart';
+import type { ComplianceLevelByStandard } from './ComplianceLevelsByStandardChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 

@@ -1,19 +1,17 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Card, CardBody, CardTitle, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
-import { FormikErrors } from 'formik';
+import type { FormikErrors } from 'formik';
 
 import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
-import EmailTemplateModal, {
-    TemplatePreviewArgs,
-} from 'Components/EmailTemplate/EmailTemplateModal';
+import EmailTemplateModal from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
-import {
-    NotifierIntegrationBase,
-    fetchNotifierIntegrations,
-} from 'services/NotifierIntegrationsService';
-import { NotifierConfiguration } from 'services/ReportsService.types';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierConfiguration } from 'services/ReportsService.types';
 
 import NotifierMailingLists from './NotifierMailingLists';
 

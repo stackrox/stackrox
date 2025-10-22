@@ -1,6 +1,17 @@
-/* globals module require */
+/* globals __dirname module require */
 
+const fs = require('node:fs');
 const path = require('node:path');
+
+// Adapted from getSrcAliases in vite.config.js file.
+const srcPath = path.resolve(__dirname, '..', 'src'); // src is sibling of eslint-plugins folder
+const srcSubfolders = fs
+    .readdirSync(srcPath, { withFileTypes: true })
+    .filter((dirent) => {
+        // Avoid hidden directories, like `.DS_Store`
+        return dirent.isDirectory() && !dirent.name.startsWith('.');
+    })
+    .map(({ name }) => name);
 
 // Limited rules have exceptions via ignores property.
 // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
@@ -54,33 +65,66 @@ const rules = {
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     // TODO move rule to pluginGeneric after all errors have been fixed.
-    'no-inline-type-imports': {
-        // Although @typescript-eslint/consistent-type-imports has options:
-        // fixStyle: 'separate-type-imports'
-        // fixStyle: 'inline-type-imports'
-        // it not (at the moment) have a similar option to enforce only separate type imports.
+    'no-default-import-react': {
+        // Omit default import of React because it is not needed for JSX tranform.
         meta: {
             type: 'problem',
             docs: {
-                description: 'Replace inline type import with separate type import statement',
+                description:
+                    'Omit default import of React because it is not needed for JSX tranform',
             },
+            fixable: 'code',
             schema: [],
         },
         create(context) {
             return {
-                ImportSpecifier(node) {
-                    if (node.importKind === 'type') {
-                        context.report({
-                            node,
-                            message:
-                                'Replace inline type import with separate type import statement',
-                        });
+                ImportDefaultSpecifier(node) {
+                    if (node.local?.name === 'React') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].source?.value === 'react'
+                        ) {
+                            const parent = ancestors[ancestors.length - 1];
+                            context.report({
+                                node,
+                                message:
+                                    'Omit default import of React because it is not needed for JSX tranform',
+                                fix(fixer) {
+                                    const { specifiers } = parent;
+                                    if (Array.isArray(specifiers) && specifiers.length !== 0) {
+                                        // If default import only, remove import declaration.
+                                        if (specifiers.length === 1) {
+                                            // Remove node does not remove following newline.
+                                            // Command line autofixes secondary errors after primary fixes.
+                                            // Integrated development environment requires a second interaction to fix.
+                                            return fixer.remove(parent);
+                                        }
+
+                                        // Because default import precedes named imports,
+                                        // remove from beginning of default import to opening brace.
+
+                                        // Range array consists of [start, end] similar to arguments of slice method.
+                                        const startDefaultSpecifier = node.range[0];
+                                        const endDefaultSpecifier = node.range[1];
+                                        const startNextSpecifier = specifiers[1].range[0];
+                                        const end = context.sourceCode
+                                            .getText()
+                                            .indexOf('{', endDefaultSpecifier);
+                                        if (end !== -1 && end < startNextSpecifier) {
+                                            return fixer.removeRange([startDefaultSpecifier, end]);
+                                        }
+                                    }
+
+                                    return null;
+                                },
+                            });
+                        }
                     }
                 },
             };
         },
     },
-    // TODO move rule to pluginGeneric after all errors have been fixed.
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
@@ -100,6 +144,99 @@ const rules = {
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,
                         });
+                    }
+                },
+            };
+        },
+    },
+    'no-absolute-path-within-container-in-import': {
+        // Prerequisite so import statements within same Containers subfolder can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace absolute path to same Containers subfolder with relative path',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string' && !node.value.startsWith('.')) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/src/Containers/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const indexOfSlash = filenameAfterBase.indexOf('/');
+                                if (
+                                    indexOfSlash >= 0 &&
+                                    node.value.startsWith(
+                                        `Containers/${filenameAfterBase.slice(0, indexOfSlash)}/`
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace absolute path to same Containers subfolder with relative path',
+                                    });
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-relative-path-to-src-in-import': {
+        // Prerequisite so import statements from other containers can have consistent order.
+        // By the way, absence of src in path is magic in project configuration.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace relative path to subfolder of src with path from subfolder',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].type === 'ImportDeclaration'
+                        ) {
+                            // Calculate slashes in filename after base to prevent false positive
+                            // for relative path to subfolder like Containers or hooks within a container folder.
+                            const baseSuffix = 'ui/apps/platform/';
+                            const indexAtStartOfSuffix = context.filename.indexOf(baseSuffix);
+                            if (indexAtStartOfSuffix >= 0) {
+                                const indexAfterBase = indexAtStartOfSuffix + baseSuffix.length;
+                                const filenameAfterBase = context.filename.slice(indexAfterBase);
+                                const depth = [...filenameAfterBase.matchAll(/\//g)].length;
+                                const relativePrefix = depth === 0 ? './' : '../'.repeat(depth - 1);
+                                if (
+                                    srcSubfolders.some((srcSubfolder) =>
+                                        node.value.startsWith(`${relativePrefix}${srcSubfolder}/`)
+                                    )
+                                ) {
+                                    context.report({
+                                        node,
+                                        message:
+                                            'Replace relative path to subfolder of src with path from subfolder',
+                                    });
+                                }
+                            }
+                        }
                     }
                 },
             };

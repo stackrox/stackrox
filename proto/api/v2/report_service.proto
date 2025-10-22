@@ -63,13 +63,6 @@ message VulnerabilityReportFilters {
 
 //filter for ondemand view based reports
 message ViewBasedVulnerabilityReportFilters {
-  enum ImageType {
-    DEPLOYED = 0;
-    WATCHED = 1;
-  }
-  repeated ImageType image_types = 2;
-  bool include_nvd_cvss = 3;
-  bool include_epss_probability = 4;
   string query = 5;
 }
 
@@ -137,6 +130,10 @@ message GetReportHistoryRequest {
   RawQuery report_param_query = 2;
 }
 
+message GetViewBasedReportHistoryRequest {
+  RawQuery report_param_query = 1;
+}
+
 message ReportHistoryResponse {
   repeated ReportSnapshot report_snapshots = 1;
 }
@@ -165,6 +162,7 @@ message ReportSnapshot {
   repeated NotifierConfiguration notifiers = 9;
   SlimUser user = 10;
   bool is_download_available = 11;
+  string area_of_concern = 13;
 }
 
 message ReportStatus {
@@ -303,11 +301,11 @@ service ReportService {
     };
   }
 
-  rpc GetViewBasedReportMyHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedMyReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
-  rpc GetViewBasedReportHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedReportHistory(GetViewBasedReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
 }

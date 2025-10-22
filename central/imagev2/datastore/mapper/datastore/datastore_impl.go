@@ -5,11 +5,11 @@ import (
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -46,7 +46,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	listImages := make([]*storage.ListImage, 0, len(images))
 	for _, image := range images {
 		// Convert v2 to v1
-		v1Image := mapper.ConvertToV1(image)
+		v1Image := imageUtils.ConvertToV1(image)
 		// Convert v1 to ListImage
 		listImage := types.ConvertImageToListImage(v1Image)
 		listImages = append(listImages, listImage)
@@ -101,7 +101,7 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	}
 	results := make([]*storage.Image, 0, len(images))
 	for _, image := range images {
-		results = append(results, mapper.ConvertToV1(image))
+		results = append(results, imageUtils.ConvertToV1(image))
 	}
 	return results, nil
 }
@@ -120,7 +120,7 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	// If the string passed in was a uuid, we can just use the V2 datastore function directly
 	if _, err := uuid.FromString(sha); err == nil {
 		image, found, err := ds.imageV2DataStore.GetImage(ctx, sha)
-		return mapper.ConvertToV1(image), found, err
+		return imageUtils.ConvertToV1(image), found, err
 	}
 	// Otherwise, we need to find the image we're looking for with a query
 	images, err := ds.imageV2DataStore.SearchRawImages(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.ImageSHA, sha).ProtoQuery())
@@ -130,7 +130,7 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	if len(images) == 0 {
 		return nil, false, nil
 	}
-	return mapper.ConvertToV1(images[0]), true, nil
+	return imageUtils.ConvertToV1(images[0]), true, nil
 }
 
 func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
@@ -154,7 +154,7 @@ func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*stor
 	if !found {
 		return nil, false, nil
 	}
-	return mapper.ConvertToV1(image), true, nil
+	return imageUtils.ConvertToV1(image), true, nil
 }
 
 func (ds *datastoreImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
@@ -167,7 +167,7 @@ func (ds *datastoreImpl) GetManyImageMetadata(ctx context.Context, ids []string)
 	}
 	v1Images := make([]*storage.Image, 0, len(images))
 	for _, image := range images {
-		v1Images = append(v1Images, mapper.ConvertToV1(image))
+		v1Images = append(v1Images, imageUtils.ConvertToV1(image))
 	}
 	return v1Images, nil
 }
@@ -182,7 +182,7 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 	}
 	v1Images := make([]*storage.Image, 0, len(images))
 	for _, image := range images {
-		v1Images = append(v1Images, mapper.ConvertToV1(image))
+		v1Images = append(v1Images, imageUtils.ConvertToV1(image))
 	}
 	return v1Images, nil
 }
@@ -192,7 +192,7 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(i
 		return ds.imageDataStore.WalkByQuery(ctx, q, fn)
 	}
 	return ds.imageV2DataStore.WalkByQuery(ctx, q, func(image *storage.ImageV2) error {
-		return fn(mapper.ConvertToV1(image))
+		return fn(imageUtils.ConvertToV1(image))
 	})
 }
 
@@ -200,7 +200,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if !ds.flattenImageData {
 		return ds.imageDataStore.UpsertImage(ctx, image)
 	}
-	return ds.imageV2DataStore.UpsertImage(ctx, mapper.ConvertToV2(image))
+	return ds.imageV2DataStore.UpsertImage(ctx, imageUtils.ConvertToV2(image))
 }
 
 func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {

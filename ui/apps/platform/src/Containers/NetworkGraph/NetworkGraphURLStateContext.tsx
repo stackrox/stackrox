@@ -1,12 +1,16 @@
-import React, { createContext, ReactNode, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
+import type { ReactNode } from 'react';
 
-import { timeWindows, TimeWindow } from 'constants/timeWindows';
+import { timeWindows } from 'constants/timeWindows';
+import type { TimeWindow } from 'constants/timeWindows';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLParameter, { HistoryAction, QueryValue } from 'hooks/useURLParameter';
+import useURLParameter from 'hooks/useURLParameter';
+import type { HistoryAction, QueryValue } from 'hooks/useURLParameter';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 
-import { edgeStates, EdgeState } from './components/EdgeStateSelect';
+import { edgeStates } from './components/EdgeStateSelect';
+import type { EdgeState } from './components/EdgeStateSelect';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE, EDGE_STATE, TIME_WINDOW } from './NetworkGraph.constants';
 
 export const SIDE_PANEL_SEARCH_PREFIX = 's2';

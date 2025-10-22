@@ -15,10 +15,10 @@ import upperFirst from 'lodash/upperFirst';
 
 import { findUpgradeState } from '../cluster.helpers';
 import SensorUpgrade from './SensorUpgrade';
-import { SensorUpgradeStatus } from '../clusterTypes';
+import type { SensorUpgradeStatus } from '../clusterTypes';
 
 export type SensorUpgradePanelProps = {
-    actionProps: {
+    actionProps?: {
         clusterId: string;
         upgradeSingleCluster: (clusterId: string) => void;
     };
@@ -55,30 +55,36 @@ function SensorUpgradePanel({
                                 <SensorUpgrade upgradeStatus={upgradeStatus} />
                             </DescriptionListDescription>
                         </DescriptionListGroup>
-                        <DescriptionListGroup>
-                            <DescriptionListTerm>Status reasoning</DescriptionListTerm>
-                            <DescriptionListDescription>
-                                {statusReason || 'Unknown'}
-                            </DescriptionListDescription>
-                        </DescriptionListGroup>
-                        <DescriptionListGroup>
-                            <DescriptionListTerm>Available action</DescriptionListTerm>
-                            <DescriptionListDescription>
-                                {upgradeState?.actionText ? (
-                                    <Button
-                                        isInline
-                                        onClick={() => {
-                                            actionProps.upgradeSingleCluster(actionProps.clusterId);
-                                        }}
-                                        variant="secondary"
-                                    >
-                                        {upgradeState.actionText}
-                                    </Button>
-                                ) : (
-                                    'None'
-                                )}
-                            </DescriptionListDescription>
-                        </DescriptionListGroup>
+                        {statusReason && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Sensor information</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {statusReason}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
+                        {actionProps && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Available action</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {upgradeState?.actionText ? (
+                                        <Button
+                                            isInline
+                                            onClick={() => {
+                                                actionProps.upgradeSingleCluster(
+                                                    actionProps.clusterId
+                                                );
+                                            }}
+                                            variant="secondary"
+                                        >
+                                            {upgradeState.actionText}
+                                        </Button>
+                                    ) : (
+                                        'None'
+                                    )}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
                         <DescriptionListGroup>
                             <DescriptionListTerm>Sensor version</DescriptionListTerm>
                             <DescriptionListDescription>{sensorVersion}</DescriptionListDescription>

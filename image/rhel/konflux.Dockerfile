@@ -14,15 +14,20 @@ RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is
 ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
-ENV CGO_ENABLED=1
 # TODO(ROX-20240): enable non-release development builds.
+ENV GOTAGS="release"
+ENV CI=1
+
+# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
+# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
+RUN make cli-build
+
+ENV CGO_ENABLED=1
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS="release,strictfipsruntime"
 ENV GOEXPERIMENT=strictfipsruntime
-ENV CI=1
 
-RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build
+RUN make main-build-nodeps
 
 RUN mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
@@ -32,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:79c31cabc1e76d95cef83100d1be5c55851d504bef4bd7fa610e0bacb5a565d7 AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:7cb51b71a6ef9004a86fbccbe55297bb365afd56c3be192bd97f2f8ffed426a1 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -54,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:395dec18e7ba913157b1ecf2fd696d701ef834fd77054fffdb7eb678f864eb9e
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:43dde01be4e94afd22d8d95ee8abcc9f610b4e50aff5bcc141b558c74d4c68b5
 
 ARG PG_VERSION
 
@@ -93,7 +98,7 @@ LABEL \
     io.k8s.display-name="main" \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-main-rhel8" \
+    name="advanced-cluster-security/rhacs-main-rhel8" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \

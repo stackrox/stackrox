@@ -11,7 +11,6 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 import searchContext from 'Containers/searchContext';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';
@@ -19,8 +18,10 @@ import { sortVersion } from 'sorters/sorters';
 import { getDateTime } from 'utils/dateUtils';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
-import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
+
 import EntityList from '../List/EntityList';
+import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
+import TableWidget from './widgets/TableWidget';
 
 const ConfigManagementEntityNode = ({
     id,

@@ -3,6 +3,7 @@ syntax = "proto3";
 package v2;
 
 import "api/v2/scan_component.proto";
+import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -17,32 +18,29 @@ message VirtualMachine {
   string cluster_name = 5;
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7;
+  google.protobuf.Timestamp last_updated = 7;
 
-  google.protobuf.Timestamp last_updated = 8;
+  int32 vsock_cid = 8;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 9;
+
+  VirtualMachineScan scan = 10;
 }
 
 message VirtualMachineScan {
-  string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2;
-  repeated ScanComponent components = 3;
-  DataSource data_source = 4;
+  google.protobuf.Timestamp scan_time = 1;
+  string operating_system = 2;
   enum Note {
     UNSET = 0;
-    OS_UNAVAILABLE = 1;
-    PARTIAL_SCAN_DATA = 2;
-    OS_CVES_UNAVAILABLE = 3;
-    OS_CVES_STALE = 4;
-    LANGUAGE_CVES_UNAVAILABLE = 5;
-    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+    OS_UNKNOWN = 1;
+    OS_UNSUPPORTED = 2;
   }
-  repeated Note notes = 5;
-}
-
-message DataSource {
-  string id = 1;
-  string name = 2;
-  string mirror = 3;
+  repeated Note notes = 3;
+  repeated ScanComponent components = 4;
 }
 
 message GetVirtualMachineRequest {
@@ -50,42 +48,21 @@ message GetVirtualMachineRequest {
   bool strip_description = 2;
 }
 
-message CreateVirtualMachineRequest {
-  VirtualMachine virtual_machine = 1;
-}
-
 message ListVirtualMachinesResponse {
   repeated VirtualMachine virtual_machines = 1;
+  int32 total_count = 2;
 }
 
-// TODO: Add filters/search capabilities to list endpoint
-message ListVirtualMachinesRequest {}
-
-message DeleteVirtualMachineRequest {
-  string id = 1;
-}
-
-message DeleteVirtualMachineResponse {
-  bool success = 1;
+message ListVirtualMachinesRequest {
+  RawQuery query = 1;
 }
 
 service VirtualMachineService {
-  rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (VirtualMachine) {
-    option (google.api.http) = {
-      post: "/v2/virtualmachines"
-      body: "*"
-    };
-  }
-
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
     option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
   }
 
   rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
     option (google.api.http) = {get: "/v2/virtualmachines"};
-  }
-
-  rpc DeleteVirtualMachine(DeleteVirtualMachineRequest) returns (DeleteVirtualMachineResponse) {
-    option (google.api.http) = {delete: "/v2/virtualmachines/{id}"};
   }
 }

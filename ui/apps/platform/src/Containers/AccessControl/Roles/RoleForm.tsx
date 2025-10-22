@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -18,17 +19,17 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope } from 'services/AccessScopesService';
-import { PermissionSet, Role } from 'services/RolesService';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
+import usePermissions from 'hooks/usePermissions';
+import type { AccessScope } from 'services/AccessScopesService';
+import type { PermissionSet, Role } from 'services/RolesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
-import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type RoleFormProps = {
     isActionable: boolean;

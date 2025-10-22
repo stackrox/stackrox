@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { NavLink } from 'react-router-dom-v5-compat';
 import { NavItem } from '@patternfly/react-core';
 

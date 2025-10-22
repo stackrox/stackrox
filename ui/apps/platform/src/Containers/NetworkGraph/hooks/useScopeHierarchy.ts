@@ -1,8 +1,8 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import { ClusterScopeObject } from 'services/RolesService';
-import { SearchFilter } from 'types/search';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { SearchFilter } from 'types/search';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
 

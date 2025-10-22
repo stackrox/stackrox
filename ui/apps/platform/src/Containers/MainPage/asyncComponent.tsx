@@ -1,4 +1,5 @@
-import React, { Component, ComponentProps, ComponentType, ElementType } from 'react';
+import { Component } from 'react';
+import type { ComponentProps, ComponentType, ElementType } from 'react';
 import Loader from 'Components/Loader';
 
 type State = {

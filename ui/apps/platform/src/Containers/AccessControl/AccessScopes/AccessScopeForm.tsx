@@ -1,5 +1,6 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { FormikContextType } from 'formik';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import type { FormikContextType } from 'formik';
 import {
     Alert,
     Flex,
@@ -15,19 +16,18 @@ import {
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import {
+    computeEffectiveAccessScopeClusters,
+    getIsUnrestrictedAccessScopeId,
+} from 'services/AccessScopesService';
+import type {
     AccessScope,
     EffectiveAccessScopeCluster,
     LabelSelector,
     LabelSelectorsKey,
-    computeEffectiveAccessScopeClusters,
-    getIsUnrestrictedAccessScopeId,
 } from 'services/AccessScopesService';
 
-import {
-    LabelSelectorsEditingState,
-    getIsValidRules,
-    getTemporarilyValidRules,
-} from './accessScopes.utils';
+import { getIsValidRules, getTemporarilyValidRules } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
 
@@ -86,6 +86,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      */
     const isValidRules =
         !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (getIsUnrestrictedAccessScopeId(values.id)) {
             return;
@@ -114,6 +115,8 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 setCounterComputing((counterPrev) => counterPrev - 1);
             });
     }, [isValidRules, values.rules]);
+    // values.id
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     function onChange(_value, event) {
         handleChange(event);

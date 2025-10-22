@@ -10,10 +10,10 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
+import { SearchFilter } from 'types/search';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
@@ -40,7 +40,7 @@ import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
     ResourceCountByCveSeverityAndStatus,
-} from '../SummaryCards/CvesByStatusSummaryCard';
+} from '../../components/CvesByStatusSummaryCard';
 import {
     parseQuerySearchFilter,
     getHiddenSeverities,
@@ -98,6 +98,9 @@ export type DeploymentPageVulnerabilitiesProps = {
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
+    additionalToolbarItems?: React.ReactNode;
+    searchFilter: SearchFilter;
+    setSearchFilter: (filter: SearchFilter) => void;
 };
 
 function DeploymentPageVulnerabilities({
@@ -105,6 +108,9 @@ function DeploymentPageVulnerabilities({
     pagination,
     vulnerabilityState,
     showVulnerabilityStateTabs,
+    additionalToolbarItems,
+    searchFilter,
+    setSearchFilter,
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -113,7 +119,6 @@ function DeploymentPageVulnerabilities({
 
     const { baseSearchFilter } = useWorkloadCveViewContext();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     const { page, setPage, perPage, setPerPage } = pagination;
@@ -263,7 +268,9 @@ function DeploymentPageVulnerabilities({
                             'Deployment ID': deploymentId,
                             ...baseSearchFilter,
                         }}
-                    />
+                    >
+                        {additionalToolbarItems}
+                    </AdvancedFiltersToolbar>
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
@@ -319,7 +326,7 @@ function DeploymentPageVulnerabilities({
                                 />
                             </SplitItem>
                         </Split>
-                        <div className="workload-cves-table-container">
+                        <div style={{ overflowX: 'auto' }}>
                             <DeploymentVulnerabilitiesTable
                                 tableState={tableState}
                                 getSortParams={getSortParams}

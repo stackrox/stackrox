@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 
 function useSelectToggleState(onSelectionChange: (value: string) => void) {
     const [isOpen, setIsOpen] = useState(false);
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (typeof value === 'string') {

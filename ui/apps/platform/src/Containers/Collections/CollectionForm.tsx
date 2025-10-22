@@ -1,9 +1,12 @@
-import React, { CSSProperties, ReactElement, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
     Badge,
     Button,
     EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     ExpandableSection,
     ExpandableSectionToggle,
@@ -11,38 +14,35 @@ import {
     FlexItem,
     Form,
     FormGroup,
-    Label,
-    TextInput,
-    Title,
-    EmptyStateHeader,
-    EmptyStateFooter,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Label,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Collection } from 'services/CollectionsService';
+import type { Collection } from 'services/CollectionsService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 import { ensureExhaustive } from 'utils/type.utils';
-import { CollectionPageAction } from './collections.utils';
+import type { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
-import CollectionAttacher, { CollectionAttacherProps } from './CollectionAttacher';
-import {
-    byLabelMatchTypes,
+import CollectionAttacher from './CollectionAttacher';
+import type { CollectionAttacherProps } from './CollectionAttacher';
+import { byLabelMatchTypes, byNameMatchType, selectorEntityTypes } from './types';
+import type {
     ByLabelResourceSelector,
-    byNameMatchType,
     ByNameResourceSelector,
     ClientCollection,
     ScopedResourceSelector,
     SelectorEntityType,
-    selectorEntityTypes,
 } from './types';
-import { CollectionConfigError } from './errorUtils';
+import type { CollectionConfigError } from './errorUtils';
 
 import './CollectionForm.css';
 

@@ -61,7 +61,7 @@ func (suite *PLOPServiceTestSuite) SetupTest() {
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
 
-	suite.indicatorDataStore = processIndicatorDataStore.New(
+	suite.indicatorDataStore = processIndicatorDataStore.New(suite.postgres.DB,
 		indicatorStorage, suite.store, nil)
 	suite.datastore = plopDataStore.New(suite.store, suite.indicatorDataStore, suite.postgres)
 	suite.service = &serviceImpl{
@@ -266,9 +266,9 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			response, err := suite.service.GetListeningEndpoints(suite.hasReadCtx, c.request)
 			suite.NoError(err)
 
-			actualPlops := response.ListeningEndpoints
+			actualPlops := response.GetListeningEndpoints()
 
-			suite.Equal(c.expectedTotalListeningEndpoints, response.TotalListeningEndpoints)
+			suite.Equal(c.expectedTotalListeningEndpoints, response.GetTotalListeningEndpoints())
 
 			protoassert.SlicesEqual(suite.T(), c.expectedPlops, actualPlops)
 		})

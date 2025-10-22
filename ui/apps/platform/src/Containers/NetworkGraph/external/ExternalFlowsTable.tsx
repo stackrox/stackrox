@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Divider,
     Flex,
@@ -13,11 +14,11 @@ import {
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 import {
     filterNetworkFlows,
     getAllUniquePorts,

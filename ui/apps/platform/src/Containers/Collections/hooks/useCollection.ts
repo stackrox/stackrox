@@ -1,12 +1,8 @@
 import { useCallback } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
-import {
-    Collection,
-    getCollection,
-    listCollections,
-    CollectionResponseWithMatches,
-} from 'services/CollectionsService';
+import { getCollection, listCollections } from 'services/CollectionsService';
+import type { Collection, CollectionResponseWithMatches } from 'services/CollectionsService';
 
 const defaultCollectionData: Omit<Collection, 'id'> = {
     name: '',

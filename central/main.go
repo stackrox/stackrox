@@ -109,6 +109,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -164,7 +165,7 @@ import (
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	"github.com/stackrox/rox/central/systeminfo/listener"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehomeClient "github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/trace"
@@ -173,6 +174,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
@@ -636,33 +638,48 @@ func startGRPCServer() {
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
-		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
-			if cfg := centralclient.Enable(); cfg.Enabled() {
-				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-				centralclient.StartPeriodicReload(1 * time.Hour)
-				gs := cfg.Gatherer()
-				gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
-				gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
-				gs.AddGatherer(authDS.Gather)
-				gs.AddGatherer(authProviderTelemetry.Gather)
-				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-				gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
-				gs.AddGatherer(externalbackupsDS.Gather)
-				gs.AddGatherer(featuresTelemetry.Gather)
-				gs.AddGatherer(globaldb.Gather)
-				gs.AddGatherer(imageintegrationsDS.Gather)
-				gs.AddGatherer(notifierDS.Gather)
-				gs.AddGatherer(roleDataStore.Gather)
-				gs.AddGatherer(signatureIntegrationDS.Gather)
-				gs.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
-			}
-		}
-	}
+	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
 
 	go startServices()
+}
+
+func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProviderID string) {
+	pubcfg, err := configDS.Singleton().GetPublicConfig()
+	if err != nil {
+		log.Warnw("Failed to read telemetry configuration", logging.Err(err))
+		return
+	}
+	telemetryCfg := pubcfg.GetTelemetry()
+	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+		c := phonehomeClient.Singleton()
+		c.GrantConsent()
+		c.RegisterCentralClient(config, basicAuthProviderID)
+		addCentralIdentityGatherers(c)
+		c.Enable()
+		log.Infof("Telemetry Client Configuration: %s", c)
+	}
+}
+
+func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
+	add := c.Gatherer().AddGatherer
+
+	add(administrationEventDS.Gather(administrationEventDS.Singleton()))
+	add(apitokenDS.Gather(apitokenDS.Singleton()))
+	add(authDS.Gather)
+	add(authProviderTelemetry.Gather)
+	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+	add(clusterDataStore.Gather)
+	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(declarativeconfig.ManagerSingleton().Gather())
+	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
+	add(externalbackupsDS.Gather)
+	add(featuresTelemetry.Gather)
+	add(globaldb.Gather)
+	add(imageintegrationsDS.Gather)
+	add(notifierDS.Gather)
+	add(roleDataStore.Gather)
+	add(signatureIntegrationDS.Gather)
+	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -875,6 +892,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
+		{
+			// User configured Prometheus metrics will be exposed on this path.
+			// The access is behind authorization because the metric label
+			// values may include sensitive data, such as deployment names and
+			// CVEs.
+			Route:         "GET /metrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: customMetrics.Singleton(),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -964,8 +991,8 @@ func waitForTerminationSignal() {
 		{pruning.Singleton(), "garbage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
-		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
+		{phonehomeClient.Singleton().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 		{gcp.Singleton(), "GCP cloud credentials manager"},

@@ -9,6 +9,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -43,7 +44,9 @@ var (
 //go:generate mockgen-wrapper
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
+	// TODO(ROX-30117): Remove CalculateRiskAndUpsertImage after ImageV2 model is fully rolled out
 	CalculateRiskAndUpsertImage(image *storage.Image) error
+	CalculateRiskAndUpsertImageV2(image *storage.ImageV2) error
 	CalculateRiskAndUpsertNode(node *storage.Node) error
 }
 
@@ -51,6 +54,7 @@ type managerImpl struct {
 	deploymentStorage deploymentDS.DataStore
 	nodeStorage       nodeDS.DataStore
 	imageStorage      imageDS.DataStore
+	imageV2Storage    imageV2DS.DataStore
 	riskStorage       riskDS.DataStore
 
 	deploymentScorer     deploymentScorer.Scorer
@@ -73,6 +77,7 @@ type managerImpl struct {
 func New(nodeStorage nodeDS.DataStore,
 	deploymentStorage deploymentDS.DataStore,
 	imageStorage imageDS.DataStore,
+	imageV2Storage imageV2DS.DataStore,
 	riskStorage riskDS.DataStore,
 	nodeScorer nodeScorer.Scorer,
 	nodeComponentScorer componentScorer.Scorer,
@@ -90,6 +95,7 @@ func New(nodeStorage nodeDS.DataStore,
 		nodeStorage:       nodeStorage,
 		deploymentStorage: deploymentStorage,
 		imageStorage:      imageStorage,
+		imageV2Storage:    imageV2Storage,
 		riskStorage:       riskStorage,
 
 		nodeScorer:           nodeScorer,
@@ -160,7 +166,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
 	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
 
-	deployment.RiskScore = risk.Score
+	deployment.RiskScore = risk.GetScore()
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}
@@ -181,7 +187,7 @@ func (e *managerImpl) calculateAndUpsertNodeRisk(node *storage.Node) error {
 		e.reprocessNodeComponentRisk(c, node.GetScan().GetOperatingSystem())
 	}
 
-	node.RiskScore = risk.Score
+	node.RiskScore = risk.GetScore()
 	return nil
 }
 
@@ -211,11 +217,11 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 	}
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
-	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
+	for index, component := range image.GetScan().GetComponents() {
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId(), index)
 	}
 
-	image.RiskScore = risk.Score
+	image.RiskScore = risk.GetScore()
 	return nil
 }
 
@@ -243,14 +249,14 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 
 // skipImageUpsert will return true if an image should not be upserted into the store.
 func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
-	if features.ScannerV4.Enabled() && !scannedByScannerV4(img) && e.scannedByClairify(img) {
+	if features.ScannerV4.Enabled() && !scannedByScannerV4(img.GetScan().GetDataSource()) && e.scannedByClairify(img.GetScan().GetDataSource()) {
 		// This image was scanned by the old Clairify scanner, we do not want to
 		// overwrite an existing Scanner V4 scan in the database (if it exists).
 		existingImg, exists, err := e.imageStorage.GetImage(riskReprocessorCtx, img.GetId())
 		if err != nil {
 			return false, err
 		}
-		if exists && scannedByScannerV4(existingImg) {
+		if exists && scannedByScannerV4(existingImg.GetScan().GetDataSource()) {
 			// Note: This image will not have `RiskScore` fields populated because
 			// risk scores are heavily tied to upserting into Central DB and
 			// this image is not being upserted.
@@ -263,13 +269,13 @@ func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
 }
 
 // scannedByClairify returns true if an image was scanned by the Clairify scanner, false otherwise.
-func (e *managerImpl) scannedByClairify(img *storage.Image) bool {
-	if img.GetScan().GetDataSource() == nil {
+func (e *managerImpl) scannedByClairify(dataSrc *storage.DataSource) bool {
+	if dataSrc == nil {
 		return false
 	}
 
 	for _, scanner := range e.iiSet.ScannerSet().GetAll() {
-		if scanner.GetScanner().Type() == scannerTypes.Clairify && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
+		if scanner.GetScanner().Type() == scannerTypes.Clairify && scanner.DataSource().GetId() == dataSrc.GetId() {
 			return true
 		}
 	}
@@ -278,22 +284,87 @@ func (e *managerImpl) scannedByClairify(img *storage.Image) bool {
 }
 
 // scannedByScannerV4 returns true if an image was scanned by the Scanner V4 scanner, false otherwise.
-func scannedByScannerV4(img *storage.Image) bool {
-	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
+func scannedByScannerV4(dataSrc *storage.DataSource) bool {
+	return dataSrc.GetId() == iiStore.DefaultScannerV4Integration.GetId()
+}
+
+func (e *managerImpl) calculateAndUpsertImageV2Risk(image *storage.ImageV2) error {
+	risk := e.imageScorer.ScoreV2(allAccessCtx, image)
+	if risk == nil {
+		return nil
+	}
+
+	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
+		return errors.Wrapf(err, "upserting risk for image %s", image.GetName().GetFullName())
+	}
+
+	// We want to compute and store risk for image components when image risk is reprocessed.
+	for index, component := range image.GetScan().GetComponents() {
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId(), index)
+	}
+
+	image.RiskScore = risk.GetScore()
+	return nil
+}
+
+// CalculateRiskAndUpsertImageV2 will reprocess risk of the passed image and save the results.
+func (e *managerImpl) CalculateRiskAndUpsertImageV2(image *storage.ImageV2) error {
+	if skip, err := e.skipImageV2Upsert(image); err != nil {
+		return err
+	} else if skip {
+		return nil
+	}
+
+	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
+
+	if err := e.calculateAndUpsertImageV2Risk(image); err != nil {
+		return errors.Wrapf(err, "calculating risk for image %s", image.GetName().GetFullName())
+	}
+
+	if err := e.imageV2Storage.UpsertImage(riskReprocessorCtx, image); err != nil {
+		return errors.Wrapf(err, "upserting image %s", image.GetName().GetFullName())
+	}
+	return nil
+}
+
+func (e *managerImpl) skipImageV2Upsert(img *storage.ImageV2) (bool, error) {
+	if features.ScannerV4.Enabled() && !scannedByScannerV4(img.GetScan().GetDataSource()) && e.scannedByClairify(img.GetScan().GetDataSource()) {
+		// This image was scanned by the old Clairify scanner, we do not want to
+		// overwrite an existing Scanner V4 scan in the database (if it exists).
+		existingImg, exists, err := e.imageV2Storage.GetImage(riskReprocessorCtx, img.GetId())
+		if err != nil {
+			return false, err
+		}
+		if exists && scannedByScannerV4(existingImg.GetScan().GetDataSource()) {
+			// Note: This image will not have `RiskScore` fields populated because
+			// risk scores are heavily tied to upserting into Central DB and
+			// this image is not being upserted.
+			log.Warnw("Cannot overwrite Scanner V4 scan already in DB with Clairify scan and cannot calculate risk scores", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()))
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string) {
+func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string, componentIndex int) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID, componentIndex)
 	if risk == nil {
 		return
 	}
 
-	oldScore := e.imageComponentRanker.GetScoreForID(
-		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	var oldScore float32
+	if features.FlattenCVEData.Enabled() {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
+	} else {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	}
 
 	// Image component risk results are currently unused so if the score is the same then no need to upsert
 	if risk.GetScore() == oldScore {
@@ -304,7 +375,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		log.Errorf("Error reprocessing risk for image component %s %s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
 
-	imageComponent.RiskScore = risk.Score
+	imageComponent.RiskScore = risk.GetScore()
 	// skip direct upsert here since it is handled during image upsert
 }
 
@@ -330,7 +401,7 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 		log.Errorf("Error reprocessing risk for node component %s %s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
 	}
 
-	nodeComponent.RiskScore = risk.Score
+	nodeComponent.RiskScore = risk.GetScore()
 	// skip direct upsert here since it is handled during node upsert
 }
 

@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -112,6 +113,8 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		return nil, err
@@ -184,13 +187,30 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	q.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
+		search.NewQuerySelect(searchField).Distinct().Proto(),
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	if features.FlattenImageData.Enabled() {
+		var results []*imageV2Response
+		results, err = pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
+		if err != nil || len(results) == 0 {
+			return nil, err
+		}
+
+		ret := make([]string, 0, len(results))
+		for _, r := range results {
+			ret = append(ret, r.ImageID)
+		}
+		return ret, nil
+	}
 	var results []*imageResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
@@ -205,6 +225,10 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -222,7 +246,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	// list of CVEs ordered appropriately.
 	if common.IsSortBySeverityCounts(cloned) {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
 	}
 
@@ -235,20 +259,24 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()
 	}
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
 	}
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
 	if !options.SkipGetAffectedImages {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Distinct().Proto())
+		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto())
 	}
 	if !options.SkipGetFirstDiscoveredInSystem {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())
@@ -262,6 +290,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
+
 	return cloned
 }
 

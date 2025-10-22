@@ -1,9 +1,8 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
-    SelectionEventListener,
     useEventListener,
     TopologySideBar,
     TopologyView,
@@ -13,13 +12,14 @@ import {
     useVisualizationController,
     VisualizationSurface,
 } from '@patternfly/react-topology';
+import type { SelectionEventListener } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import { getQueryString } from 'utils/queryStringUtils';
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
@@ -29,17 +29,18 @@ import NetworkPolicySimulatorSidePanel, {
     clearSidePanelQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
 import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
-import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
-import { Simulation } from './utils/getSimulation';
+import { isNodeOfType } from './types/topology.type';
+import type { CustomModel, CustomNodeModel } from './types/topology.type';
+import type { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
-import { EdgeState } from './components/EdgeStateSelect';
+import type { EdgeState } from './components/EdgeStateSelect';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
-import {
+import type {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
-import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import {
     CidrBlockIcon,
@@ -195,8 +196,12 @@ const TopologyComponent = ({
     }
 
     const resetViewCallback = useCallback(() => {
-        controller.getGraph().reset();
-        controller.getGraph().layout();
+        const graph = controller.getGraph();
+        graph.reset();
+        // only layout if there are nodes to layout, otherwise it will throw an error
+        if (graph.getNodes().length > 0) {
+            graph.layout();
+        }
     }, [controller]);
 
     const panNodeIntoView = useCallback(

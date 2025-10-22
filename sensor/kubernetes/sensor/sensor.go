@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
@@ -84,8 +85,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.introspectionK8sClient = cfg.k8sClient
 	}
 
-	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	var deploymentIdentification *storage.SensorDeploymentIdentification
+	if cfg.deploymentIdentification != nil {
+		// Use explicitly provided deployment identification (e.g., from local-sensor)
+		deploymentIdentification = cfg.deploymentIdentification
+		log.Infof("Using provided deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	} else {
+		// Fetch deployment identification from service account files and Kubernetes API
+		deploymentIdentification = FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
+		log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
@@ -127,8 +136,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
+
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, manager.WithEnrichTicker(cfg.networkFlowTicker))
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
@@ -153,7 +163,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler()
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 	}
 

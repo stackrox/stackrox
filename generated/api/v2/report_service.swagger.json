@@ -605,39 +605,39 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "reportParamQuery.query",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -650,7 +650,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -663,7 +663,7 @@
     },
     "/v2/reports/view-based/my-history": {
       "get": {
-        "operationId": "ReportService_GetViewBasedReportMyHistory",
+        "operationId": "ReportService_GetViewBasedMyReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -680,39 +680,39 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "reportParamQuery.query",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -725,7 +725,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -808,6 +808,14 @@
         "NOT_FIXABLE"
       ],
       "default": "BOTH"
+    },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
     },
     "protobufAny": {
       "type": "object",
@@ -1151,6 +1159,9 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
         }
       }
     },
@@ -1272,31 +1283,11 @@
     "v2ViewBasedVulnerabilityReportFilters": {
       "type": "object",
       "properties": {
-        "imageTypes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFiltersImageType"
-          }
-        },
-        "includeNvdCvss": {
-          "type": "boolean"
-        },
-        "includeEpssProbability": {
-          "type": "boolean"
-        },
         "query": {
           "type": "string"
         }
       },
       "title": "filter for ondemand view based reports"
-    },
-    "v2ViewBasedVulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
     },
     "v2VulnerabilityReportFilters": {
       "type": "object",
@@ -1313,7 +1304,7 @@
         "imageTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v2VulnerabilityReportFiltersImageType"
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
           }
         },
         "allVuln": {
@@ -1336,14 +1327,6 @@
           "type": "boolean"
         }
       }
-    },
-    "v2VulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
     },
     "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
       "type": "string",

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -74,13 +73,9 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
-	netFlowQueueSize := 0
-	piQueueSize := 0
+	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
+	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
 	deploymentQueueSize := 0
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		netFlowQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
-		piQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
-	}
 	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
 		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
 	}
@@ -274,9 +269,6 @@ func (d *detectorImpl) Stop() {
 }
 
 func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
-	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		return
-	}
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
@@ -358,6 +350,10 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	d.admissionCacheNeedsFlush = false
 	d.deduper.reset()
 	return nil
+}
+
+func (d *detectorImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetBaselineSync() != nil || msg.GetNetworkBaselineSync() != nil
 }
 
 func (d *detectorImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
@@ -492,19 +488,11 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 }
 
 func (d *detectorImpl) processDeployment() {
-	for {
-		select {
-		case <-d.detectorStopper.Flow().StopRequested():
-			return
-		default:
-			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
-			if item == nil {
-				continue
-			}
-			concurrency.WithLock(&d.deploymentDetectionLock, func() {
-				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
-			})
-		}
+	ctx := d.detectorStopper.LowLevel().GetStopRequestSignal()
+	for item := range d.deploymentsQueue.Seq(ctx) {
+		concurrency.WithLock(&d.deploymentDetectionLock, func() {
+			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+		})
 	}
 }
 
@@ -616,8 +604,7 @@ func (d *detectorImpl) processIndicator() {
 			if item == nil {
 				continue
 			}
-			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
-			// the context will not be canceled with sensor disconnects
+			// The context persists across disconnects with event buffering enabled
 			images := d.enricher.getImages(item.Ctx, item.Deployment)
 
 			// Run detection now
@@ -741,8 +728,7 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 			}
 			log.Debugf("processing network flow for deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
 
-			// If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
-			// the context will not be canceled with sensor disconnects
+			// The context persists across disconnects with event buffering enabled
 			images := d.enricher.getImages(item.Ctx, item.Deployment)
 			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
 				Deployment:             item.Deployment,

@@ -38,7 +38,7 @@ enum CvssScoreVersion {
 
 // EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
 message EPSS {
-  float epss_probability = 1; // @gotags: search:"EPSS Probability,store"
+  float epss_probability = 1; // @gotags: search:"EPSS Probability"
   float epss_percentile = 2;
 }
 
@@ -72,12 +72,12 @@ message CVE {
     repeated string tags = 2;
   }
 
-  string id = 1; // @gotags: search:"CVE,store"
+  string id = 1; // @gotags: search:"CVE"
   // This was CVE which was added as a part of postgres migration.
   reserved 22;
   // This was operating system which was added as a part of postgres migration.
   reserved 21;
-  float cvss = 2; // @gotags: search:"CVSS,store"
+  float cvss = 2; // @gotags: search:"CVSS"
   float impact_score = 14; // @gotags: search:"Impact Score"
 
   // For internal purposes only. This will only be populated prior to upsert into datastore.
@@ -123,7 +123,7 @@ message CVEInfo {
     V3 = 1;
     UNKNOWN = 2;
   }
-  string cve = 1; // @gotags: search:"CVE,store" sql:"index=btree"
+  string cve = 1; // @gotags: search:"CVE" sql:"index=btree"
   string summary = 2;
   string link = 3;
   // This indicates the timestamp when the cve was first published in the cve feeds.
@@ -143,8 +143,8 @@ message CVEInfo {
 }
 
 message Advisory {
-  string name = 1; // @gotags: search:"Advisory Name,store"
-  string link = 2; // @gotags: search:"Advisory Link,store"
+  string name = 1; // @gotags: search:"Advisory Name"
+  string link = 2; // @gotags: search:"Advisory Link"
 }
 
 // This proto is deprecated and replaced by ImageCVEV2.
@@ -154,7 +154,7 @@ message ImageCVE {
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
   // cvss stores ACS preferred cvss score
-  float cvss = 4; // @gotags: search:"CVSS,store"
+  float cvss = 4; // @gotags: search:"CVSS"
   VulnerabilitySeverity severity = 5; // @gotags: search:"Severity"
   float impact_score = 6; // @gotags: search:"Impact Score"
 
@@ -162,7 +162,7 @@ message ImageCVE {
   google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
   google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true]; // @gotags: search:"CVE Snooze Expiry,hidden"
   // nvdcvss stores cvss score for a cve from NVD
-  float nvdcvss = 10; // @gotags: search:"NVD CVSS,store"
+  float nvdcvss = 10; // @gotags: search:"NVD CVSS"
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
   CvssScoreVersion nvd_score_version = 12;
@@ -176,26 +176,26 @@ message ImageCVEV2 {
   string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
   CVEInfo cve_base_info = 3;
   // cvss stores ACS preferred cvss score
-  float cvss = 4; // @gotags: search:"CVSS,store"
+  float cvss = 4; // @gotags: search:"CVSS"
   VulnerabilitySeverity severity = 5; // @gotags: search:"Severity" sql:"index=btree"
   float impact_score = 6; // @gotags: search:"Impact Score"
 
   // nvdcvss stores cvss score for a cve from NVD
-  float nvdcvss = 7; // @gotags: search:"NVD CVSS,store"
+  float nvdcvss = 7; // @gotags: search:"NVD CVSS"
   CvssScoreVersion nvd_score_version = 8;
   google.protobuf.Timestamp first_image_occurrence = 9; // @gotags: search:"First Image Occurrence Timestamp,hidden"
   VulnerabilityState state = 10; // @gotags: search:"Vulnerability State" sql:"index=btree"
 
-  bool is_fixable = 11; // @gotags: search:"Fixable,store"
+  bool is_fixable = 11; // @gotags: search:"Fixable"
   // Whether there is a version the CVE is fixed in the component.
   oneof has_fixed_by {
-    string fixed_by = 12; // @gotags: search:"Fixed By,store,hidden"
+    string fixed_by = 12; // @gotags: search:"Fixed By,hidden"
   }
 
   string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
   storage.Advisory advisory = 14;
 
-  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree"
+  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 }
 
 message NodeCVE {
@@ -203,7 +203,7 @@ message NodeCVE {
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
 
-  float cvss = 4; // @gotags: search:"CVSS,store"
+  float cvss = 4; // @gotags: search:"CVSS"
   VulnerabilitySeverity severity = 5; // @gotags: search:"Severity"
   float impact_score = 6; // @gotags: search:"Impact Score"
 
@@ -219,7 +219,7 @@ message ClusterCVE {
   string id = 1; // This field is composite of cve and type. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
 
-  float cvss = 3; // @gotags: search:"CVSS,store"
+  float cvss = 3; // @gotags: search:"CVSS"
   VulnerabilitySeverity severity = 4; // @gotags: search:"Severity"
   float impact_score = 5; // @gotags: search:"Impact Score"
 

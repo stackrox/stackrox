@@ -104,6 +104,10 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetComplianceRequest() != nil
+}
+
 func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {

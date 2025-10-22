@@ -38,7 +38,7 @@ func (ds *sacFilterImpl) FilterRunResults(ctx context.Context, runResults *stora
 	if runResults == nil {
 		return nil, nil
 	}
-	filteredDomain, filtered, err := ds.filterDomain(ctx, runResults.Domain)
+	filteredDomain, filtered, err := ds.filterDomain(ctx, runResults.GetDomain())
 	if err != nil {
 		return nil, err
 	}
@@ -119,32 +119,32 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	var filtered bool
 	newDomain := &storage.ComplianceDomain{}
 
-	ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.Cluster.Id))
+	ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.GetCluster().GetId()))
 	if err != nil {
 		return nil, false, err
 	} else if ok {
-		newDomain.Cluster = domain.Cluster
+		newDomain.Cluster = domain.GetCluster()
 	} else {
 		filtered = true
 	}
 
-	ok, err = nodeSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.Cluster.Id))
+	ok, err = nodeSAC.ReadAllowed(ctx, sac.ClusterScopeKey(domain.GetCluster().GetId()))
 	if err != nil {
 		return nil, false, err
 	} else if ok {
-		newDomain.Nodes = domain.Nodes
+		newDomain.Nodes = domain.GetNodes()
 	} else {
 		filtered = true
 	}
 
-	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.Cluster.Id))
+	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.GetCluster().GetId()))
 	if deploymentsInClusterChecker.IsAllowed() {
-		newDomain.Deployments = domain.Deployments
+		newDomain.Deployments = domain.GetDeployments()
 	} else {
-		newDomain.Deployments = sac.FilterMap(deploymentsInClusterChecker, domain.Deployments, func(_ string, deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
+		newDomain.Deployments = sac.FilterMap(deploymentsInClusterChecker, domain.GetDeployments(), func(_ string, deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
 			return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 		})
-		if len(newDomain.Deployments) < len(domain.Deployments) {
+		if len(newDomain.GetDeployments()) < len(domain.GetDeployments()) {
 			filtered = true
 		}
 	}

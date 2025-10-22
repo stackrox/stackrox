@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { fetchBaselineGeneratedNetworkPolicy } from 'services/NetworkService';
-import { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type FetchBaselineNetworkPolicyParams = {

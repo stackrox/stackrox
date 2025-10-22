@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+// import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -34,6 +35,14 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
+/*
+// Ross CISA KEV
+import {
+    getIsSomeVulnerabilityFixable,
+    hasKnownExploit,
+    hasKnownRansomwareCampaignUse,
+} from '../../utils/vulnerabilityUtils';
+*/
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -49,8 +58,6 @@ import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
-// totalAdvisories out of scope for MVP
-// import { formatEpssProbabilityAsPercent, formatTotalAdvisories } from './table.utils';
 import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
@@ -90,13 +97,6 @@ export const defaultColumns = {
         title: 'EPSS probability',
         isShownByDefault: true,
     },
-    // totalAdvisories out of scope for MVP
-    /*
-    totalAdvisories: {
-        title: 'Advisories',
-        isShownByDefault: true,
-    },
-    */
     affectedComponents: {
         title: 'Affected components',
         isShownByDefault: true,
@@ -187,6 +187,7 @@ function ImageVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
+    // const { isFeatureFlagEnabled } = useFeatureFlags(); // Ross CISA KEV
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -227,9 +228,6 @@ function ImageVulnerabilitiesTable({
                     >
                         EPSS probability
                     </Th>
-                    {/* isAdvisoryColumnEnabled && (
-                        <Th className={getVisibilityClass('totalAdvisories')}>Advisories</Th>
-                    ) */}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -278,19 +276,32 @@ function ImageVulnerabilitiesTable({
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
-                        // totalAdvisories out of scope for MVP
-                        // const totalAdvisories = undefined;
 
                         const labels: ReactNode[] = [];
                         /*
                         // Ross CISA KEV
-                        if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                            labels.push(<KnownExploitLabel isCompact />);
+                        if (
+                            isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                            isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+                            hasKnownExploit(cveBaseInfo?.exploit)
+                        ) {
+                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
+                            // Future code if design decision is separate labels.
+                            // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit) {
+                            //     labels.push(
+                            //         <KnownExploitLabel
+                            //             key="knownRansomwareCampaignUse"
+                            //             isCompact
+                            //             isKnownToBeUsedInRansomwareCampaigns
+                            //         />
+                            //     );
+                            // }
                         }
                         */
                         if (pendingExceptionCount > 0) {
                             labels.push(
                                 <PendingExceptionLabel
+                                    key="pendingExceptionCount"
                                     cve={cve}
                                     isCompact
                                     vulnerabilityState={vulnerabilityState}
@@ -379,15 +390,6 @@ function ImageVulnerabilitiesTable({
                                     >
                                         {formatEpssProbabilityAsPercent(epssProbability)}
                                     </Td>
-                                    {/* isAdvisoryColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('totalAdvisories')}
-                                            modifier="nowrap"
-                                            dataLabel="Advisories"
-                                        >
-                                            {formatTotalAdvisories(totalAdvisories)}
-                                        </Td>
-                                    ) */}
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}
                                         dataLabel="Affected components"

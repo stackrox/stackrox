@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:854710b428c4c1132c448cbe9ad30087a8a4b3c33ae9c0c3a4de21a15c0ae642 AS final
+FROM registry.redhat.io/rhel8/postgresql-${PG_VERSION}:latest@sha256:b70af4767a5b34c4a67761aa28bee72b4f9cd1ce31245596640371f670d0dbba AS final
 
 USER root
 
@@ -14,7 +14,7 @@ LABEL \
     io.k8s.display-name="central-db" \
     io.openshift.tags="rhacs,central-db,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-central-db-rhel8" \
+    name="advanced-cluster-security/rhacs-central-db-rhel8" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Central DB for Red Hat Advanced Cluster Security for Kubernetes" \

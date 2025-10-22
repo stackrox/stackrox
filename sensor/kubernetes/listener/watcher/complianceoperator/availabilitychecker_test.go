@@ -21,7 +21,7 @@ func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
 	file, err := parser.ParseFile(fset, path.Join(pwd, "../../../../../pkg/complianceoperator/api.go"), nil, 0)
 	require.NoError(t, err)
 
-	whileList := []string{
+	allowList := []string{
 		"groupVersion",
 		"requiredAPIResources",
 	}
@@ -33,12 +33,12 @@ func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
 	var notFound []string
 finderLoop:
 	for _, resource := range resFinder.resources {
-		for _, acResource := range ac.resources {
+		for _, acResource := range ac.GetResources() {
 			if acResource.Kind == resource {
 				continue finderLoop
 			}
 		}
-		for _, whileListed := range whileList {
+		for _, whileListed := range allowList {
 			if whileListed == resource {
 				continue finderLoop
 			}
@@ -46,7 +46,7 @@ finderLoop:
 		notFound = append(notFound, resource)
 	}
 
-	assert.Empty(t, notFound, "Please add the missing types to the resources field in the availability checker to the whilelist in this test if they should not be used in the availability checker")
+	assert.Empty(t, notFound, "Please add the missing types to the resources field in the availability checker to the allowList in this test if they should not be used in the availability checker")
 }
 
 type resourcesFinder struct {

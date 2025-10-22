@@ -66,14 +66,14 @@ class GKECluster:
 
         with subprocess.Popen(
             [
-                GKECluster.PROVISION_PATH,
+                self.PROVISION_PATH,
                 "provision_gke_cluster",
                 self.cluster_id,
             ]
         ) as cmd:
 
             try:
-                exitstatus = cmd.wait(GKECluster.PROVISION_TIMEOUT)
+                exitstatus = cmd.wait(self.PROVISION_TIMEOUT)
                 if exitstatus != 0:
                     raise RuntimeError(
                         f"Cluster provision failed: exit {exitstatus}")
@@ -85,14 +85,14 @@ class GKECluster:
         signal.signal(signal.SIGINT, self.sigint_handler)
 
         subprocess.run(
-            [GKECluster.WAIT_PATH, "wait_for_cluster"],
+            [self.WAIT_PATH, "wait_for_cluster"],
             check=True,
-            timeout=GKECluster.WAIT_TIMEOUT,
+            timeout=self.WAIT_TIMEOUT,
         )
 
         # pylint: disable=consider-using-with
         self.refresh_token_cmd = subprocess.Popen(
-            [GKECluster.REFRESH_PATH, "refresh_gke_token"]
+            [self.REFRESH_PATH, "refresh_gke_token"]
         )
 
         return self
@@ -120,13 +120,13 @@ class GKECluster:
             except Exception as err:
                 print(f"Could not terminate the token refresh: {err}")
 
-        args = [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"]
+        args = [self.TEARDOWN_PATH, "teardown_gke_cluster"]
         if canceled:
             args.append("true")
         subprocess.run(
             args,
             check=True,
-            timeout=GKECluster.TEARDOWN_TIMEOUT,
+            timeout=self.TEARDOWN_TIMEOUT,
         )
 
         return self
@@ -148,7 +148,7 @@ class AutomationFlavorsCluster:
         subprocess.run(
             ["kubectl", "get", "nodes", "-o", "wide"],
             check=True,
-            timeout=AutomationFlavorsCluster.KUBECTL_TIMEOUT,
+            timeout=self.KUBECTL_TIMEOUT,
         )
 
         return self

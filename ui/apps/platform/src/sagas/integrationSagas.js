@@ -1,4 +1,4 @@
-import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
+import { all, call, fork, put, take, takeLatest } from 'redux-saga/effects';
 import Raven from 'raven-js';
 
 import { integrationsPath } from 'routePaths';
@@ -6,7 +6,7 @@ import {
     deleteIntegrations as serviceDeleteIntegrations,
     fetchIntegration as serviceFetchIntegration,
 } from 'services/IntegrationsService';
-import * as AuthService from 'services/AuthService';
+import { deleteAuthProviders } from 'services/AuthService';
 import { triggerBackup as serviceTriggerBackup } from 'services/BackupIntegrationsService';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -91,7 +91,7 @@ function* watchFetchRequest() {
 function* deleteIntegrations({ source, sourceType, ids }) {
     try {
         if (source === 'authProviders') {
-            yield call(AuthService.deleteAuthProviders, ids);
+            yield call(deleteAuthProviders, ids);
             if (sourceType === 'apitoken') {
                 yield put(fetchIntegrationsActionMap[sourceType]);
             } else {

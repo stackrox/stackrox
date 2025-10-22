@@ -186,10 +186,16 @@ include $(PROJECT_DIR)/../make/gotools.mk
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
-$(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools/operator-sdk)
 $(call go-tool, OLM, github.com/operator-framework/operator-lifecycle-manager/cmd/olm, tools/operator-sdk)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kuttl)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
+
+# Build operator-sdk with containers_image_openpgp tag to avoid gpgme dependency
+# See: https://github.com/containers/image/blob/df7e80d2d19872b61f352a8a182ec934dc0c2346/README.md#buildtag-containers_image_openpgp
+OPERATOR_SDK := $(GOTOOLS_BIN)/operator-sdk
+$(OPERATOR_SDK): tools/operator-sdk/go.mod tools/operator-sdk/go.sum
+	@echo "+ $(notdir $@)"
+	$(SILENT)cd tools/operator-sdk && GOBIN="$(dir $@)" go install -tags=containers_image_openpgp github.com/operator-framework/operator-sdk/cmd/operator-sdk
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
 OLM_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-lifecycle-manager)
@@ -331,9 +337,10 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
+		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
 		..
 
@@ -445,12 +452,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Copy the original bundle to build/ directory.
-	mkdir -p build/
-	rm -rf build/bundle
-	cp -a bundle build/
-	cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/
-# Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
@@ -468,18 +469,12 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 	else \
 		echo "Operator index image for this version exists"; \
 	fi; \
-	./bundle_helpers/patch-csv.py \
-		--use-version $(VERSION) \
-		--first-version $${first_version} \
-		--operator-image $(IMG) \
-		$${unreleased_opt:-} \
+	./bundle_helpers/prepare-bundle-manifests.sh \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
 		--related-images-mode=omit \
-		--add-supported-arch amd64 \
-		--add-supported-arch arm64 \
-		--add-supported-arch ppc64le \
-		--add-supported-arch s390x \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

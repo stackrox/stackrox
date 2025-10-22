@@ -2,6 +2,13 @@ name: "Release: Notify when PR is added or removed from milestone"
 on:
   pull_request:
     types: [milestoned, demilestoned]
+  workflow_dispatch:
+    inputs:
+      test-pr-title:
+        description: 'Test PR title with quotes (for testing only)'
+        required: false
+        default: 'ROX-12345: Fix the "authentication" bug in login system'
+        type: string
 
 env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
@@ -30,9 +37,10 @@ jobs:
       - name: Determine Jira context for PR
         id: context
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_TITLE: ${{ github.event_name == 'workflow_dispatch' && inputs.test-pr-title || github.event.pull_request.title }}
         run: |
-            if [ "${{ github.event.action}}" = "milestoned" ]; then
+            # For manual testing, simulate a milestoned event
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.action}}" = "milestoned" ]; then
               EVENT_ACTION="added to"
               EVENT_ICON=":white_check_mark:"
               echo "call-to-action=:arrow_right: Release Engineers <!subteam^S051ZQXP97X|acs-release-eng> and <!subteam^S04TXGK6B32|acs-eng-staff>: Review whether this PR meets the criteria for being included in the release." >> "${GITHUB_OUTPUT}"
@@ -42,12 +50,34 @@ jobs:
               echo "call-to-action=:arrow_right: FYI, No action required" >> "${GITHUB_OUTPUT}"
             fi
 
-            echo "pr-info=${EVENT_ICON} <${{ github.event.pull_request.html_url }}|${PR_TITLE}> (Author: ${{ github.event.pull_request.user.login }}) was ${EVENT_ACTION} milestone <${{ github.event.milestone.html_url }}|${{ github.event.milestone.title }}>." >> "${GITHUB_OUTPUT}"
+            # Escape quotes in PR_TITLE for YAML compatibility
+            ESCAPED_TITLE="${PR_TITLE//\"/\\\"}"
+
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              # Manual testing mode
+              printf 'pr-info=%s <https://github.com/%s/pull/1|%s> (Author: test-user) was %s milestone <https://github.com/%s/milestone/1|test-milestone>.\n' \
+                "${EVENT_ICON}" \
+                "${{ github.repository }}" \
+                "${ESCAPED_TITLE}" \
+                "${EVENT_ACTION}" \
+                "${{ github.repository }}" >> "${GITHUB_OUTPUT}"
+            else
+              # Real PR event
+              printf 'pr-info=%s <%s|%s> (Author: %s) was %s milestone <%s|%s>.\n' \
+                "${EVENT_ICON}" \
+                "${{ github.event.pull_request.html_url }}" \
+                "${ESCAPED_TITLE}" \
+                "${{ github.event.pull_request.user.login }}" \
+                "${EVENT_ACTION}" \
+                "${{ github.event.milestone.html_url }}" \
+                "${{ github.event.milestone.title }}" >> "${GITHUB_OUTPUT}"
+            fi
 
             ISSUE_ID="$(echo "${PR_TITLE}" | grep --only-matching 'ROX-[0-9]\+' || true)"
             if [ -n "${ISSUE_ID}" ]; then
               JIRA_INFO="$(curl \
                 -sSL \
+                --retry 5 --retry-all-errors \
                 --location "https://issues.redhat.com/rest/api/2/issue/${ISSUE_ID}" \
                 --header "Authorization: Bearer ${{ secrets.JIRA_TOKEN }}" \
               | jq -r '{ key: .key, summary: .fields.summary, priority: .fields.priority.name, assignee: .fields.assignee.displayName, status: .fields.status.name, type: .fields.issuetype.name }')"
@@ -59,8 +89,12 @@ jobs:
               STATUS="$(echo "${JIRA_INFO}" | jq -r .status)"
               TYPE="$(echo "${JIRA_INFO}" | jq -r .type)"
 
+              # Escape quotes in SUMMARY for YAML compatibility
+              ESCAPED_SUMMARY="${SUMMARY//\"/\\\"}"
+
+              # Need to use echo to preserve newlines in the output (GH action limitation)
               # shellcheck disable=SC2028
-              echo "jira-info=<https://issues.redhat.com/browse/${KEY}|${KEY}: ${SUMMARY}>\n>Type: \`${TYPE}\`\n>Assignee: \`${ASSIGNEE}\`\n>Status: \`${STATUS}\`\n>Priority: \`${PRIORITY}\`" >> "${GITHUB_OUTPUT}"
+              echo "jira-info=<https://issues.redhat.com/browse/${KEY}|${KEY}: ${ESCAPED_SUMMARY}>\n> Type: \`${TYPE}\`\n> Assignee: \`${ASSIGNEE}\`\n> Status: \`${STATUS}\`\n> Priority: \`${PRIORITY}\`" >> "${GITHUB_OUTPUT}"
             else
               echo "jira-info=:exclamation: We could not find a Jira issue for this PR." >> "${GITHUB_OUTPUT}"
             fi

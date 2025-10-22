@@ -300,7 +300,7 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 					}
 				}
 				for _, d := range expectedDeployments {
-					expectedDeploymentIDs = append(expectedDeploymentIDs, graphql.ID(d.Id))
+					expectedDeploymentIDs = append(expectedDeploymentIDs, graphql.ID(d.GetId()))
 				}
 				assert.ElementsMatch(t, expectedDeploymentIDs, retrievedDeploymentIDs)
 

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 type imageCVEFlatResponse struct {
@@ -19,6 +20,7 @@ type imageCVEFlatResponse struct {
 	ImpactScore             *float32                       `db:"impact_score_max"`
 	FirstImageOccurrence    *time.Time                     `db:"first_image_occurrence_timestamp_min"`
 	State                   *storage.VulnerabilityState    `db:"vulnerability_state_max"`
+	AffectedImageCountV2    int                            `db:"image_id_count"`
 }
 
 func (c *imageCVEFlatResponse) GetCVE() string {
@@ -55,6 +57,9 @@ func (c *imageCVEFlatResponse) GetEPSSProbability() float32 {
 }
 
 func (c *imageCVEFlatResponse) GetAffectedImageCount() int {
+	if features.FlattenImageData.Enabled() {
+		return c.AffectedImageCountV2
+	}
 	return c.AffectedImageCount
 }
 

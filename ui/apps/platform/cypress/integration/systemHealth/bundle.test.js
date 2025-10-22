@@ -1,9 +1,8 @@
-import path from 'path';
-
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
+import { readFileFromDownloads } from '../../helpers/file';
 
 const routeMatcherMapForClusters = {
     clusters: '/v1/clusters',
@@ -55,7 +54,7 @@ function downloadDiagnosticBundle(query) {
         staticResponseMapForDiagnosticBundle
     );
 
-    cy.readFile(path.join(Cypress.config('downloadsFolder'), mockResponseFilename)).should('exist');
+    readFileFromDownloads(mockResponseFilename).then((file) => cy.wrap(file).should('exist'));
 }
 
 describe('Download Diagnostic Data', () => {

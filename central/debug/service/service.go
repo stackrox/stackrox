@@ -51,6 +51,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -523,7 +524,7 @@ func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) err
 	}
 
 	err = s.store.Walk(ctx, func(log *storage.LogImbue) error {
-		return jsonWriter.WriteObject(safeRawMessage(log.Log))
+		return jsonWriter.WriteObject(safeRawMessage(log.GetLog()))
 	})
 	if err != nil {
 		return errors.Wrap(err, "writing logs to zip")
@@ -594,7 +595,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 		}
 
 		if resolvedRole, err := s.roleDataStore.GetAndResolveRole(accessRolesCtx,
-			role.Name); err == nil && resolvedRole != nil {
+			role.GetName()); err == nil && resolvedRole != nil {
 			// Get better formatting of permission sets.
 			diagRole.PermissionSet = map[string]string{}
 			for permName, accessRight := range resolvedRole.GetPermissions() {
@@ -765,8 +766,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
 		diagBundleTasks.Go(func(ctx context.Context) error {
-			telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= telemetryCentralAndSensors,
-				opts.withCentral)
+			telemetryData := s.telemetryGatherer.Gather(
+				ctx,
+				opts.telemetryMode >= telemetryCentralAndSensors,
+				opts.withCentral,
+				set.NewStringSet(opts.clusters...))
 			return writeTelemetryData(zipWriter, telemetryData)
 		})
 	}

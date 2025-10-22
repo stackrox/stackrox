@@ -39,4 +39,7 @@ var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
 		ValidateOffline: false,
 		PublicKeyPemEnc: "",
 	},
+	Traits: &storage.Traits{
+		Origin: storage.Traits_DEFAULT,
+	},
 }

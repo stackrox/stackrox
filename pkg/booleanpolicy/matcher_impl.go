@@ -88,7 +88,7 @@ type auditLogEventMatcherImpl struct {
 
 func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, event *storage.KubernetesEvent) (Violations, error) {
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructAuditEvent(event, event.ImpersonatedUser != nil)
+		return augmentedobjs.ConstructAuditEvent(event, event.GetImpersonatedUser() != nil)
 	}, nil, event, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

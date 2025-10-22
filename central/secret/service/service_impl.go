@@ -81,8 +81,8 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &storage.SecretDeploymentRelationship{
-			Id:   r.Id,
-			Name: r.Name,
+			Id:   r.GetId(),
+			Name: r.GetName(),
 		})
 	}
 	secret.Relationship = &storage.SecretRelationship{

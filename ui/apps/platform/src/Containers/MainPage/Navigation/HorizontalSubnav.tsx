@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Nav,
@@ -6,11 +7,11 @@ import {
     DropdownItem,
     DropdownList,
     MenuToggle,
-    MenuToggleElement,
     NavItemSeparator,
     NavItem,
     NavList,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import {
     vulnerabilitiesNodeCvesPath,
@@ -25,12 +26,13 @@ import {
     vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
 import { hasSearchKeyValue } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 import NavigationItem from './NavigationItem';
-import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
+import type { NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
 
@@ -192,7 +194,10 @@ export type HorizontalSubnavProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSubnavProps) {
+function HorizontalSubnav({
+    hasReadAccess,
+    isFeatureFlagEnabled,
+}: HorizontalSubnavProps): ReactElement | null {
     const navigate = useNavigate();
     const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
@@ -214,7 +219,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (value !== undefined) {
@@ -262,7 +267,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                     onOpenChange={(isOpen: boolean) =>
                                         setOpenDropdownKey(isOpen ? key : null)
                                     }
-                                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                                    toggle={(toggleRef: Ref<MenuToggleElement>) => (
                                         <NavItem
                                             isActive={Boolean(activeChildLink)}
                                             onClick={() => onToggleClick(key)}

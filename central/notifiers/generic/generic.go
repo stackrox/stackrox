@@ -101,7 +101,7 @@ func Validate(generic *storage.Generic, validateSecret bool) error {
 func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 	fieldMap := make(map[string]string)
 	for _, f := range fields {
-		fieldMap[f.Key] = f.Value
+		fieldMap[f.GetKey()] = f.GetValue()
 	}
 	data, err := json.Marshal(fieldMap)
 	if err != nil {
@@ -133,7 +133,7 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 	if serviceCA, err := os.ReadFile(serviceOperatorCAPath); err == nil {
 		rootCAs.AppendCertsFromPEM(serviceCA)
 	}
-	extraFieldsJSON, err := getExtraFieldJSON(conf.ExtraFields)
+	extraFieldsJSON, err := getExtraFieldJSON(conf.GetExtraFields())
 	if err != nil {
 		return nil, err
 	}

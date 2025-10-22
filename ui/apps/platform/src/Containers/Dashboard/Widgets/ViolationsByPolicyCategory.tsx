@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import {
     Flex,
@@ -14,13 +14,14 @@ import xor from 'lodash/xor';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { PolicySeverity } from 'types/policy.proto';
+import type { PolicySeverity } from 'types/policy.proto';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import useAlertGroups from '../hooks/useAlertGroups';
 import NoDataEmptyState from './NoDataEmptyState';
-import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
+import ViolationsByPolicyCategoryChart from './ViolationsByPolicyCategoryChart';
+import type { Config } from './ViolationsByPolicyCategoryChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 

@@ -1,12 +1,12 @@
-import React from 'react';
 import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
 import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
 
-import { SearchFilter } from 'types/search';
-import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
+import type { SearchFilter } from 'types/search';
+import ClusterSelector from './ClusterSelector';
+import type { ClusterSelectorProps } from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
 import DeploymentSelector from './DeploymentSelector';
 

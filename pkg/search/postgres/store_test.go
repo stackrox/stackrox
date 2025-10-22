@@ -253,7 +253,7 @@ func TestWalk(t *testing.T) {
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -426,7 +426,7 @@ func TestDeleteByQuery(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	_, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
@@ -437,7 +437,7 @@ func TestDeleteByQuery(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	_, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 
 	for idx, obj := range testObjects {
@@ -466,7 +466,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQueryWithIDs(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 	assert.Empty(t, deletedIDsFromEmpty)
 
@@ -478,7 +478,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQueryWithIDs(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 	expectedIDs := []string{pkGetter(testObjects[1]), pkGetter(testObjects[3])}
 	assert.ElementsMatch(t, deletedIDsFromPopulated, expectedIDs)

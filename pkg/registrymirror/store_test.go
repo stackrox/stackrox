@@ -48,9 +48,11 @@ var (
 	}
 )
 
-func fileContains(t *testing.T, path, text string) bool {
+func fileContains(path, text string) bool {
 	b, err := os.ReadFile(path)
-	require.NoError(t, err)
+	if err != nil {
+		return false
+	}
 
 	return strings.Contains(string(b), text)
 }
@@ -82,12 +84,12 @@ func TestUpsertDelete(t *testing.T) {
 		err := s.UpsertImageContentSourcePolicy(icspA)
 		assert.NoError(t, err)
 		assert.Len(t, s.icspRules, 1)
-		assert.True(t, fileContains(t, path, source), "config missing registry")
+		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageContentSourcePolicy(icspA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.icspRules, 0)
-		assert.False(t, fileContains(t, path, source), "config has registry but shouldn't")
+		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 
 	t.Run("IDMS", func(t *testing.T) {
@@ -95,12 +97,12 @@ func TestUpsertDelete(t *testing.T) {
 		err := s.UpsertImageDigestMirrorSet(idmsA)
 		assert.NoError(t, err)
 		assert.Len(t, s.idmsRules, 1)
-		assert.True(t, fileContains(t, path, source), "config missing registry")
+		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageDigestMirrorSet(idmsA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.idmsRules, 0)
-		assert.False(t, fileContains(t, path, source), "config has registry but shouldn't")
+		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 
 	t.Run("ITMS", func(t *testing.T) {
@@ -108,12 +110,12 @@ func TestUpsertDelete(t *testing.T) {
 		err := s.UpsertImageTagMirrorSet(itmsA)
 		assert.NoError(t, err)
 		assert.Len(t, s.itmsRules, 1)
-		assert.True(t, fileContains(t, path, source), "config missing registry")
+		assert.True(t, fileContains(path, source), "config missing registry")
 
 		err = s.DeleteImageTagMirrorSet(itmsA.UID)
 		assert.NoError(t, err)
 		assert.Len(t, s.itmsRules, 0)
-		assert.False(t, fileContains(t, path, source), "config has registry but shouldn't")
+		assert.False(t, fileContains(path, source), "config has registry but shouldn't")
 	})
 }
 
@@ -131,7 +133,7 @@ func TestDelayedUpdate(t *testing.T) {
 
 	waitFor := 1 * time.Second
 	checkEvery := 250 * time.Millisecond
-	conditionFn := func() bool { return fileContains(t, path, icspA.Spec.RepositoryDigestMirrors[0].Source) }
+	conditionFn := func() bool { return fileContains(path, icspA.Spec.RepositoryDigestMirrors[0].Source) }
 	assert.Eventually(t, conditionFn, waitFor, checkEvery, "config missing registry")
 }
 

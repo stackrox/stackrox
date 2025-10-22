@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { Banner, Button } from '@patternfly/react-core';
 

@@ -7,8 +7,17 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	testScanOS = "rhel/9"
+)
+
+var (
+	testScanTime = time.Date(2025, time.September, 15, 16, 17, 18, 912345678, time.UTC)
 )
 
 func TestVirtualMachine(t *testing.T) {
@@ -32,32 +41,10 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
-				Scan: &storage.VirtualMachineScan{
-					ScannerVersion: "1.0.0",
-					ScanTime:       timestamp,
-					Components: []*storage.EmbeddedImageScanComponent{
-						{
-							Name:    "test-component",
-							Version: "1.0.0",
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve:      "CVE-2023-1234",
-									Summary:  "Test vulnerability",
-									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-					},
-					DataSource: &storage.DataSource{
-						Id:     "ds-1",
-						Name:   "test-datasource",
-						Mirror: "mirror.example.com",
-					},
-					Notes: []storage.VirtualMachineScan_Note{
-						storage.VirtualMachineScan_OS_UNAVAILABLE,
-					},
-				},
+				VsockCid:    int32(42),
+				State:       storage.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
+				Scan:        &storage.VirtualMachineScan{},
 			},
 			expected: &v2.VirtualMachine{
 				Id:          "vm-123",
@@ -65,32 +52,25 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
-				Scan: &v2.VirtualMachineScan{
-					ScannerVersion: "1.0.0",
-					ScanTime:       timestamp,
-					Components: []*v2.ScanComponent{
-						{
-							Name:    "test-component",
-							Version: "1.0.0",
-							Vulns: []*v2.EmbeddedVulnerability{
-								{
-									Cve:      "CVE-2023-1234",
-									Summary:  "Test vulnerability",
-									Severity: v2.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
-							},
-						},
-					},
-					DataSource: &v2.DataSource{
-						Id:     "ds-1",
-						Name:   "test-datasource",
-						Mirror: "mirror.example.com",
-					},
-					Notes: []v2.VirtualMachineScan_Note{
-						v2.VirtualMachineScan_OS_UNAVAILABLE,
-					},
-				},
+				VsockCid:    int32(42),
+				State:       v2.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
+				Scan:        &v2.VirtualMachineScan{},
+			},
+		},
+		{
+			name: "stopped virtual machine",
+			input: &storage.VirtualMachine{
+				Id:        "vm-stopped",
+				Namespace: "test",
+				Name:      "stopped-vm",
+				State:     storage.VirtualMachine_STOPPED,
+			},
+			expected: &v2.VirtualMachine{
+				Id:        "vm-stopped",
+				Namespace: "test",
+				Name:      "stopped-vm",
+				State:     v2.VirtualMachine_STOPPED,
 			},
 		},
 		{
@@ -116,9 +96,43 @@ func TestVirtualMachine(t *testing.T) {
 	}
 }
 
-func TestVirtualMachineScan(t *testing.T) {
-	timestamp := timestamppb.New(time.Now())
+func TestConvertVirtualMachineState(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    storage.VirtualMachine_State
+		expected v2.VirtualMachine_State
+	}{
+		{
+			name:     "UNKNOWN",
+			input:    storage.VirtualMachine_UNKNOWN,
+			expected: v2.VirtualMachine_UNKNOWN,
+		},
+		{
+			name:     "STOPPED",
+			input:    storage.VirtualMachine_STOPPED,
+			expected: v2.VirtualMachine_STOPPED,
+		},
+		{
+			name:     "RUNNING",
+			input:    storage.VirtualMachine_RUNNING,
+			expected: v2.VirtualMachine_RUNNING,
+		},
+		{
+			name:     "Other",
+			input:    storage.VirtualMachine_State(-1),
+			expected: v2.VirtualMachine_UNKNOWN,
+		},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := convertVirtualMachineState(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestVirtualMachineScan(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    *storage.VirtualMachineScan
@@ -130,61 +144,53 @@ func TestVirtualMachineScan(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "complete scan",
+			name: "scan without component",
 			input: &storage.VirtualMachineScan{
-				ScannerVersion: "2.0.0",
-				ScanTime:       timestamp,
-				Components: []*storage.EmbeddedImageScanComponent{
-					{
-						Name:     "component1",
-						Version:  "1.0.0",
-						Location: "/usr/bin/component1",
-						Source:   storage.SourceType_OS,
-					},
-				},
-				DataSource: &storage.DataSource{
-					Id:     "ds-test",
-					Name:   "test-source",
-					Mirror: "mirror.test.com",
-				},
+				ScanTime:        protocompat.ConvertTimeToTimestampOrNil(&testScanTime),
+				OperatingSystem: testScanOS,
 				Notes: []storage.VirtualMachineScan_Note{
-					storage.VirtualMachineScan_PARTIAL_SCAN_DATA,
-					storage.VirtualMachineScan_OS_CVES_STALE,
+					storage.VirtualMachineScan_UNSET,
+				},
+				Components: []*storage.EmbeddedVirtualMachineScanComponent{
+					{
+						Name:      testComponentName,
+						Version:   testComponentVersion,
+						RiskScore: testComponentRiskScore,
+						Vulnerabilities: []*storage.VirtualMachineVulnerability{
+							storageVirtualMachineTestVuln,
+						},
+					},
 				},
 			},
 			expected: &v2.VirtualMachineScan{
-				ScannerVersion: "2.0.0",
-				ScanTime:       timestamp,
+				ScanTime:        protocompat.ConvertTimeToTimestampOrNil(&testScanTime),
+				OperatingSystem: testScanOS,
+				Notes: []v2.VirtualMachineScan_Note{
+					v2.VirtualMachineScan_UNSET,
+				},
 				Components: []*v2.ScanComponent{
 					{
-						Name:     "component1",
-						Version:  "1.0.0",
-						Location: "/usr/bin/component1",
-						Source:   v2.SourceType_OS,
+						Name:      testComponentName,
+						Version:   testComponentVersion,
+						RiskScore: testComponentRiskScore,
+						Vulns: []*v2.EmbeddedVulnerability{
+							v2VirtualMachineTestVuln,
+						},
 					},
-				},
-				DataSource: &v2.DataSource{
-					Id:     "ds-test",
-					Name:   "test-source",
-					Mirror: "mirror.test.com",
-				},
-				Notes: []v2.VirtualMachineScan_Note{
-					v2.VirtualMachineScan_PARTIAL_SCAN_DATA,
-					v2.VirtualMachineScan_OS_CVES_STALE,
 				},
 			},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(it *testing.T) {
 			result := VirtualMachineScan(tt.input)
-			protoassert.Equal(t, tt.expected, result)
+			protoassert.Equal(it, tt.expected, result)
 		})
 	}
 }
 
-func TestConvertVirtualMachineScanNotes(t *testing.T) {
+func TestVirtualMachineScanNotes(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []storage.VirtualMachineScan_Note
@@ -196,29 +202,58 @@ func TestConvertVirtualMachineScanNotes(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name:     "empty input",
-			input:    []storage.VirtualMachineScan_Note{},
-			expected: nil,
-		},
-		{
-			name: "multiple notes",
+			name: "value mix",
 			input: []storage.VirtualMachineScan_Note{
-				storage.VirtualMachineScan_OS_UNAVAILABLE,
-				storage.VirtualMachineScan_PARTIAL_SCAN_DATA,
-				storage.VirtualMachineScan_OS_CVES_STALE,
+				storage.VirtualMachineScan_UNSET,
+				storage.VirtualMachineScan_Note(-1),
 			},
 			expected: []v2.VirtualMachineScan_Note{
-				v2.VirtualMachineScan_OS_UNAVAILABLE,
-				v2.VirtualMachineScan_PARTIAL_SCAN_DATA,
-				v2.VirtualMachineScan_OS_CVES_STALE,
+				v2.VirtualMachineScan_UNSET,
+				v2.VirtualMachineScan_UNSET,
 			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := convertVirtualMachineScanNotes(tt.input)
-			assert.Equal(t, tt.expected, result)
+	for _, tc := range tests {
+		t.Run(tc.name, func(it *testing.T) {
+			result := VirtualMachineScanNotes(tc.input)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestConvertVirtualMachineScanNote(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    storage.VirtualMachineScan_Note
+		expected v2.VirtualMachineScan_Note
+	}{
+		{
+			name:     "UNSET",
+			input:    storage.VirtualMachineScan_UNSET,
+			expected: v2.VirtualMachineScan_UNSET,
+		},
+		{
+			name:     "OS_UNKNOWN",
+			input:    storage.VirtualMachineScan_OS_UNKNOWN,
+			expected: v2.VirtualMachineScan_OS_UNKNOWN,
+		},
+		{
+			name:     "OS_UNSUPPORTED",
+			input:    storage.VirtualMachineScan_OS_UNSUPPORTED,
+			expected: v2.VirtualMachineScan_OS_UNSUPPORTED,
+		},
+		{
+			name:     "default",
+			input:    storage.VirtualMachineScan_Note(-1),
+			expected: v2.VirtualMachineScan_UNSET,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(it *testing.T) {
+			result := convertVirtualMachineScanNote(tc.input)
+			assert.Equal(it, tc.expected, result)
 		})
 	}
 }

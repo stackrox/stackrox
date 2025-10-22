@@ -14,7 +14,7 @@ func CommandLineFileOwnership(processName, flag, user, group string) *standards.
 			if !exists {
 				return NoteListf("Process %q was not running on the host", processName)
 			}
-			arg := GetArgForFlag(process.Args, flag)
+			arg := GetArgForFlag(process.GetArgs(), flag)
 			if arg == nil {
 				return PassListf("Could not find flag %q in process %q and thus file ownership does not need to be checked", flag, processName)
 			} else if arg.GetFile() == nil {
@@ -33,7 +33,7 @@ func CommandLineFilePermissions(processName, flag string, perms uint32) *standar
 			if !exists {
 				return PassListf("Process %q was not running on the host", processName)
 			}
-			arg := GetArgForFlag(process.Args, flag)
+			arg := GetArgForFlag(process.GetArgs(), flag)
 			if arg == nil {
 				return PassListf("Flag %q was not found in process %q and thus file permissions do not need to be checked", flag, processName)
 			} else if arg.GetFile() == nil {

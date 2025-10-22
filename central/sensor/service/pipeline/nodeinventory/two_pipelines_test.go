@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageStoreMock "github.com/stackrox/rox/central/image/datastore/mocks"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2StoreMock "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskStoreMock "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -84,6 +86,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		cveDatastore      *nodeCVEDataStoreMocks.MockDataStore
 		deploymentStorage datastore.DataStore
 		imageStorage      imageDS.DataStore
+		imageV2Storage    imageV2DS.DataStore
 		riskStorage       *riskStoreMock.MockDataStore
 		updater           updater.Updater
 	}
@@ -182,6 +185,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				cveDatastore:      nodeCVEDataStoreMocks.NewMockDataStore(ctrl),
 				deploymentStorage: mocks.NewMockDataStore(ctrl),
 				imageStorage:      imageStoreMock.NewMockDataStore(ctrl),
+				imageV2Storage:    imageV2StoreMock.NewMockDataStore(ctrl),
 				riskStorage:       riskStoreMock.NewMockDataStore(ctrl),
 				updater:           updaterMocks.NewMockUpdater(ctrl),
 			}
@@ -189,6 +193,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				tt.mocks.nodeDatastore,
 				tt.mocks.deploymentStorage,
 				tt.mocks.imageStorage,
+				tt.mocks.imageV2Storage,
 				tt.mocks.riskStorage,
 				&mockNodeScorer{},
 				&mockComponentScorer{},
@@ -385,7 +390,7 @@ func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanCompo
 
 type mockImageComponentScorer struct{}
 
-func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string, _ int) *storage.Risk {
 	return getDummyRisk()
 }
 
@@ -398,5 +403,9 @@ func (m *mockDeploymentScorer) Score(_ context.Context, _ *storage.Deployment, _
 type mockImageScorer struct{}
 
 func (m *mockImageScorer) Score(_ context.Context, _ *storage.Image) *storage.Risk {
+	return getDummyRisk()
+}
+
+func (m *mockImageScorer) ScoreV2(_ context.Context, _ *storage.ImageV2) *storage.Risk {
 	return getDummyRisk()
 }

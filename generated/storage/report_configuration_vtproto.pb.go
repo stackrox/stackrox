@@ -208,13 +208,13 @@ func (m *ViewBasedVulnerabilityReportFilters) CloneVT() *ViewBasedVulnerabilityR
 		return (*ViewBasedVulnerabilityReportFilters)(nil)
 	}
 	r := new(ViewBasedVulnerabilityReportFilters)
-	r.IncludeNvdCvss = m.IncludeNvdCvss
-	r.IncludeEpssProbability = m.IncludeEpssProbability
 	r.Query = m.Query
-	if rhs := m.ImageTypes; rhs != nil {
-		tmpContainer := make([]ViewBasedVulnerabilityReportFilters_ImageType, len(rhs))
-		copy(tmpContainer, rhs)
-		r.ImageTypes = tmpContainer
+	if rhs := m.AccessScopeRules; rhs != nil {
+		tmpContainer := make([]*SimpleAccessScope_Rules, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.AccessScopeRules = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -580,23 +580,25 @@ func (this *ViewBasedVulnerabilityReportFilters) EqualVT(that *ViewBasedVulnerab
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.ImageTypes) != len(that.ImageTypes) {
-		return false
-	}
-	for i, vx := range this.ImageTypes {
-		vy := that.ImageTypes[i]
-		if vx != vy {
-			return false
-		}
-	}
-	if this.IncludeNvdCvss != that.IncludeNvdCvss {
-		return false
-	}
-	if this.IncludeEpssProbability != that.IncludeEpssProbability {
-		return false
-	}
 	if this.Query != that.Query {
 		return false
+	}
+	if len(this.AccessScopeRules) != len(that.AccessScopeRules) {
+		return false
+	}
+	for i, vx := range this.AccessScopeRules {
+		vy := that.AccessScopeRules[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &SimpleAccessScope_Rules{}
+			}
+			if q == nil {
+				q = &SimpleAccessScope_Rules{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1144,53 +1146,24 @@ func (m *ViewBasedVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.AccessScopeRules) > 0 {
+		for iNdEx := len(m.AccessScopeRules) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.AccessScopeRules[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
 		i--
-		dAtA[i] = 0x2a
-	}
-	if m.IncludeEpssProbability {
-		i--
-		if m.IncludeEpssProbability {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.IncludeNvdCvss {
-		i--
-		if m.IncludeNvdCvss {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.ImageTypes) > 0 {
-		var pksize2 int
-		for _, num := range m.ImageTypes {
-			pksize2 += protohelpers.SizeOfVarint(uint64(num))
-		}
-		i -= pksize2
-		j1 := i
-		for _, num1 := range m.ImageTypes {
-			num := uint64(num1)
-			for num >= 1<<7 {
-				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j1++
-			}
-			dAtA[j1] = uint8(num)
-			j1++
-		}
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
-		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1417,22 +1390,15 @@ func (m *ViewBasedVulnerabilityReportFilters) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.ImageTypes) > 0 {
-		l = 0
-		for _, e := range m.ImageTypes {
-			l += protohelpers.SizeOfVarint(uint64(e))
-		}
-		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
-	}
-	if m.IncludeNvdCvss {
-		n += 2
-	}
-	if m.IncludeEpssProbability {
-		n += 2
-	}
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.AccessScopeRules) > 0 {
+		for _, e := range m.AccessScopeRules {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2606,116 +2572,7 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
-			if wireType == 0 {
-				var v ViewBasedVulnerabilityReportFilters_ImageType
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				m.ImageTypes = append(m.ImageTypes, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				if postIndex > l {
-					return io.ErrUnexpectedEOF
-				}
-				var elementCount int
-				if elementCount != 0 && len(m.ImageTypes) == 0 {
-					m.ImageTypes = make([]ViewBasedVulnerabilityReportFilters_ImageType, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v ViewBasedVulnerabilityReportFilters_ImageType
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return protohelpers.ErrIntOverflow
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.ImageTypes = append(m.ImageTypes, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageTypes", wireType)
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeNvdCvss", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeNvdCvss = bool(v != 0)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeEpssProbability", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeEpssProbability = bool(v != 0)
-		case 5:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
 			}
@@ -2746,6 +2603,40 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Query = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3961,116 +3852,7 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) err
 			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
-			if wireType == 0 {
-				var v ViewBasedVulnerabilityReportFilters_ImageType
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				m.ImageTypes = append(m.ImageTypes, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protohelpers.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return protohelpers.ErrInvalidLength
-				}
-				if postIndex > l {
-					return io.ErrUnexpectedEOF
-				}
-				var elementCount int
-				if elementCount != 0 && len(m.ImageTypes) == 0 {
-					m.ImageTypes = make([]ViewBasedVulnerabilityReportFilters_ImageType, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v ViewBasedVulnerabilityReportFilters_ImageType
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return protohelpers.ErrIntOverflow
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.ImageTypes = append(m.ImageTypes, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageTypes", wireType)
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeNvdCvss", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeNvdCvss = bool(v != 0)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IncludeEpssProbability", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IncludeEpssProbability = bool(v != 0)
-		case 5:
+		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
 			}
@@ -4105,6 +3887,40 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) err
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Query = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

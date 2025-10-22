@@ -4,11 +4,11 @@ import { Divider, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patt
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
-import { TableUIState } from 'utils/getTableUIState';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
+import type { TableUIState } from 'utils/getTableUIState';
 import { getPercentage } from 'utils/mathUtils';
 
 import { CHECK_STATUS_QUERY } from './compliance.coverage.constants';

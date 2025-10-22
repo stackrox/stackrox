@@ -1,5 +1,7 @@
-import React, { ReactElement, CSSProperties } from 'react';
-import { DescriptionList, DescriptionListProps } from '@patternfly/react-core';
+import React from 'react';
+import type { CSSProperties, ReactElement } from 'react';
+import { DescriptionList } from '@patternfly/react-core';
+import type { DescriptionListProps } from '@patternfly/react-core';
 
 // Specify top and bottom padding equivalent to variant="compact" of PatternFly tables.
 const styleDescriptionListCompact = {

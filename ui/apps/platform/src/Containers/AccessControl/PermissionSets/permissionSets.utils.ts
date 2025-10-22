@@ -1,5 +1,5 @@
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
-import { AccessLevel, PermissionsMap, PermissionSet } from 'services/RolesService';
+import type { AccessLevel, PermissionsMap, PermissionSet } from 'services/RolesService';
 
 /*
  * Return a new permission set with default minimal read access.

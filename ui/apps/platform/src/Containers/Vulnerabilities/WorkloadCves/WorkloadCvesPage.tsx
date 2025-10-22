@@ -25,7 +25,6 @@ import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
 
-import './WorkloadCvesPage.css';
 import { QuerySearchFilter, WorkloadEntityTab } from '../types';
 import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
 

@@ -87,7 +87,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	if err != nil {
 		return "", err
 	}
-	return integration.Id, nil
+	return integration.GetId(), nil
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
+	"github.com/stackrox/hashstructure"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	"github.com/stackrox/rox/central/declarativeconfig/updater"
@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -236,7 +235,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	log.Debugf("Run reconciliation for the next handlers: %v", maps.Keys(transformedMessagesByHandler))
+	log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 
@@ -397,8 +396,7 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 	// Create a hash from the transformed messages by handler map.
 	// Setting the option ZeroNil will ensure empty byte arrays will be treated as a zero value instead of using
 	// the pointer's value.
-	hash, err := hashstructure.Hash(transformedMessagesByHandler, hashstructure.FormatV2,
-		&hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(transformedMessagesByHandler, &hashstructure.HashOptions{ZeroNil: true})
 
 	// If we received an error for hash generation, log it and _always_ run the deletion. This way we ensure
 	// we don't mistakenly skip reconciliation runs where we shouldn't (e.g. consecutive errors).

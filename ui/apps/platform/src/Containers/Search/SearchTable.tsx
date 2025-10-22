@@ -1,18 +1,16 @@
-import React, { ReactElement } from 'react';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { SearchResult, SearchResultCategory } from 'services/SearchService';
-import { SearchFilter } from 'types/search';
+import type { SearchResult, SearchResultCategory } from 'services/SearchService';
+import type { SearchFilter } from 'types/search';
 
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
-import {
-    SearchNavCategory,
-    searchNavMap,
-    searchResultCategoryMapFilteredIsRouteEnabled,
-} from './searchCategories';
+import { searchNavMap, searchResultCategoryMapFilteredIsRouteEnabled } from './searchCategories';
+import type { SearchNavCategory } from './searchCategories';
 
 function getLocationTextForCategory(location: string, category: SearchResultCategory) {
     return category === 'DEPLOYMENTS' ? location.replace(/^\//, '') : location.replace(/\/.+/, '');

@@ -1144,16 +1144,18 @@ class ComplianceTest extends BaseSpecification {
 
             // Kill the sensor and wait for the compliance run to complete
             orchestrator.deleteContainer(sensorPod, "stackrox")
-            Timer t = new Timer(30, 1)
+            Timer t = new Timer(60, 2)
             while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
                     t.IsValid()) {
                 def recentRuns = ComplianceManagementService.getRecentRuns(NIST_800_190_ID)
                 complianceRun = recentRuns.find { it.id == complianceRun.id }
             }
 
+            assert complianceRun.state == ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED
+
             // Check whether there were errors
             ComplianceRunResults results =
-                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId).results
+                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId, complianceRun.id).results
             assert results != null
             Compliance.ComplianceRunMetadata metadata = results.runMetadata
             assert metadata.clusterId == clusterId

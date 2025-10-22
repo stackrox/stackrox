@@ -3,7 +3,7 @@ import { Spinner } from '@patternfly/react-core';
 
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import { onDownloadReport } from 'Components/ReportJob/utils';
-import { Snapshot } from 'types/reportJob';
+import type { Snapshot } from 'types/reportJob';
 
 type MyLastJobStatusProps = {
     snapshot: Snapshot | null | undefined;

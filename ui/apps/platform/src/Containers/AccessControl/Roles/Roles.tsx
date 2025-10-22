@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -11,22 +12,21 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import {
-    AccessScope,
-    fetchAccessScopes,
-    defaultAccessScopeIds,
-} from 'services/AccessScopesService';
-import { Group, fetchAuthProviders } from 'services/AuthService';
+import usePermissions from 'hooks/usePermissions';
+import { fetchAccessScopes, defaultAccessScopeIds } from 'services/AccessScopesService';
+import type { AccessScope } from 'services/AccessScopesService';
+import { fetchAuthProviders } from 'services/AuthService';
+import type { Group } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
-    PermissionSet,
-    Role,
     createRole,
     deleteRole,
     fetchPermissionSets,
     fetchRolesAsArray,
     updateRole,
 } from 'services/RolesService';
+import type { PermissionSet, Role } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -37,8 +37,6 @@ import RolesList from './RolesList';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
-import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
 
 const entityType = 'ROLE';
 

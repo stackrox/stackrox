@@ -5,7 +5,8 @@ import entityTypes from 'constants/entityTypes';
 import { entityViolationsColumns } from 'constants/listColumns';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
+
+import TableWidget from '../widgets/TableWidget';
 
 const DeploymentViolations = ({ className, alerts, entityContext }) => {
     if (!alerts || !alerts.length) {

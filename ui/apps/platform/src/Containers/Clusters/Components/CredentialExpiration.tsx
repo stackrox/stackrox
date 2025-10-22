@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 
@@ -9,7 +10,7 @@ import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { getCredentialExpirationStatus, healthStatusStylesLegacy } from '../cluster.helpers';
-import { CertExpiryStatus } from '../clusterTypes';
+import type { CertExpiryStatus } from '../clusterTypes';
 
 const testId = 'credentialExpiration';
 

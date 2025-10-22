@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Bullseye,
     EmptyState,
     Stack,
     StackItem,
     EmptyStateHeader,
-    DropEvent,
     SelectOption,
 } from '@patternfly/react-core';
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import type { DropEvent } from '@patternfly/react-core';
+import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
@@ -26,9 +26,9 @@ function ViewActiveYAMLs({
     undoNetworkPolicies,
     onFileInputChange,
 }: ViewActiveYAMLsProps) {
-    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
-        NetworkPolicy | undefined
-    >(networkPolicies?.[0]);
+    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<NetworkPolicy | undefined>(
+        networkPolicies?.[0]
+    );
 
     useEffect(() => {
         if (networkPolicies?.length && !selectedNetworkPolicy) {

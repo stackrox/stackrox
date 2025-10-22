@@ -32,7 +32,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { fetchDeploymentsCount } from 'services/DeploymentsService';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 

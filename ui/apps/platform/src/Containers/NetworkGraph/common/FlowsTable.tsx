@@ -1,9 +1,8 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import type { CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -11,6 +10,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 import {
     Button,
     Flex,
@@ -29,7 +29,7 @@ import {
 } from '@patternfly/react-icons';
 
 import { ensureExhaustive } from 'utils/type.utils';
-import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
+import type { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
 
 type FlowsTableProps = {
@@ -37,9 +37,9 @@ type FlowsTableProps = {
     flows: Flow[];
     numFlows: number;
     expandedRows: string[];
-    setExpandedRows: React.Dispatch<React.SetStateAction<string[]>>;
+    setExpandedRows: Dispatch<SetStateAction<string[]>>;
     selectedRows: string[];
-    setSelectedRows: React.Dispatch<React.SetStateAction<string[]>>;
+    setSelectedRows: Dispatch<SetStateAction<string[]>>;
     isEditable?: boolean;
     addToBaseline?: (flow: Flow) => void;
     markAsAnomalous?: (flow: Flow) => void;
@@ -72,8 +72,8 @@ function getFlowSubtext(flow: Flow): string {
 
 function getBaselineSimulatedRowStyle(
     baselineSimulationDiffState: BaselineSimulationDiffState | undefined
-): React.CSSProperties {
-    let customStyle: React.CSSProperties;
+): CSSProperties {
+    let customStyle: CSSProperties;
     if (baselineSimulationDiffState === 'ADDED') {
         customStyle = { backgroundColor: 'var(--pf-v5-global--palette--green-50)' };
     } else if (baselineSimulationDiffState === 'REMOVED') {

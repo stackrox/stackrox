@@ -21,6 +21,55 @@ export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
 
+# Detect stat variant (GNU vs BSD) and save the original stdin's device and inode
+# This is used by the kubectl wrapper function to detect stdin redirection
+_KUBECTL_WRAPPER_USE_GNU_STAT="true"
+_stdin_id=""
+if stat --version 2>&1 | grep "GNU coreutils" >/dev/null; then
+    _stdin_id=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+else
+    # BSD stat (macOS)
+    _KUBECTL_WRAPPER_USE_GNU_STAT="false"
+    _stdin_id=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+fi
+
+# Validate that we successfully captured the original stdin ID
+if [[ -z "$_stdin_id" ]]; then
+    echo >&2 "Warning: Failed to capture original stdin ID. This is required for retrying kubectl wrapper."
+fi
+if [[ -n "${_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID:-}" && "${_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID:-}" != "$_stdin_id" ]]; then
+    echo >&2 "Warning: Overwriting already-initialized _KUBECTL_WRAPPER_ORIGINAL_STDIN_ID with different value."
+fi
+_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID="$_stdin_id"
+
+# retry-kubectl() - Wrapper function that calls retry-kubectl.sh with proper stdin handling
+# When kubectl is invoked with stdin being the same as the shell's original stdin,
+# we redirect it to /dev/null because retry-kubectl.sh needs to buffer stdin.
+# When stdin is redirected (from a file or pipe), we pass it through directly.
+retry-kubectl() {
+    local current_stdin_id=""
+
+    if [[ -z "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" ]]; then
+        die "kubectl wrapper: original stdin ID not captured, cannot proceed"
+    fi
+
+    if [[ -e /dev/fd/0 ]]; then
+        if [[ "$_KUBECTL_WRAPPER_USE_GNU_STAT" == "true" ]]; then
+            current_stdin_id=$(stat -c '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+        else
+            current_stdin_id=$(stat -f '%d:%i' /dev/fd/0 2>/dev/null || echo "")
+        fi
+    fi
+
+    # If we couldn't get stdin ID, or if stdin has changed, pass through as-is.
+    # Otherwise (stdin unchanged), redirect from /dev/null.
+    if [[ "$current_stdin_id" == "" || "$_KUBECTL_WRAPPER_ORIGINAL_STDIN_ID" == "$current_stdin_id" ]]; then
+        "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@" < /dev/null
+    else
+        "${TEST_ROOT}/scripts/retry-kubectl.sh" "$@"
+    fi
+}
+
 CHECK_POD_RESTARTS_TEST_NAME="Check unexpected pod restarts"
 # Define map of all stackrox pod->containers and their log dump files.
 declare -A POD_CONTAINERS_MAP
@@ -66,7 +115,7 @@ deploy_stackrox() {
     sensor_wait "${sensor_namespace}"
 
     # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
+    retry-kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
 
     sensor_wait "${sensor_namespace}"
 
@@ -74,7 +123,7 @@ deploy_stackrox() {
 
     pause_stackrox_operator_reconcile "${central_namespace}" "${sensor_namespace}"
 
-    if kubectl -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+    if retry-kubectl -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
         wait_for_scanner_V4 "${central_namespace}"
     fi
 
@@ -175,7 +224,6 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_AUTH_MACHINE_TO_MACHINE "${ROX_AUTH_MACHINE_TO_MACHINE:-true}"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
@@ -183,7 +231,6 @@ export_test_environment() {
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
-    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
@@ -192,7 +239,6 @@ export_test_environment() {
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
-    ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -215,10 +261,10 @@ deploy_stackrox_operator() {
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         info "Deploying ACS operator via midstream images"
         # Retrieving values from json map for operator and iib
-        ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
+        ocp_version=$(retry-kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
 
         make -C operator kuttl deploy-via-olm \
-          INDEX_IMG_BASE="brew.registry.redhat.io/rh-osbs/iib" \
+          INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index" \
           INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
           INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
           INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
@@ -263,8 +309,8 @@ deploy_central() {
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
     info "Deploying central via operator into namespace ${central_namespace}"
-    if ! kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
-        kubectl create ns "${central_namespace}"
+    if ! retry-kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
+        retry-kubectl create ns "${central_namespace}"
     fi
 
     NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
@@ -308,8 +354,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_AUTH_MACHINE_TO_MACHINE'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_REGISTRY_RESPONSE_TIMEOUT'
@@ -324,8 +368,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
-    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
@@ -343,8 +385,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_LLM_RISK_RECOMMENDATION'
     customize_envVars+=$'\n        value: "true"'
 
     local scannerV4ScannerComponent="Default"
@@ -369,7 +409,7 @@ deploy_central_via_operator() {
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
     "${envsubst}" \
-      < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
+      < "${CENTRAL_YAML_PATH}" | retry-kubectl apply -n "${central_namespace}" -f -
 
     wait_for_object_to_appear "${central_namespace}" deploy/central 300
 }
@@ -410,7 +450,7 @@ deploy_sensor() {
         # https://stack-rox.atlassian.net/browse/ROX-5334
         # https://stack-rox.atlassian.net/browse/ROX-6891
         # et al.
-        kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+        retry-kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
     fi
 }
 
@@ -422,19 +462,19 @@ deploy_sensor_via_operator() {
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
-    if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
-        kubectl create ns "${sensor_namespace}"
+    if ! retry-kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
+        retry-kubectl create ns "${sensor_namespace}"
     fi
 
     NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
     # shellcheck disable=SC2016
     echo "${ROX_ADMIN_PASSWORD}" | \
-    kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
+    retry-kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
     'ROX_ADMIN_PASSWORD=$(cat) roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
         --output-secrets -' \
-    | kubectl -n "${sensor_namespace}" apply -f -
+    | retry-kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
        echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
@@ -464,7 +504,7 @@ deploy_sensor_via_operator() {
       scanner_component_setting="$scanner_component_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
+      < "${secured_cluster_yaml_path}" | retry-kubectl apply -n "${sensor_namespace}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
@@ -480,12 +520,12 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
-       kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       retry-kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        collector_envs+=("ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT}")
     fi
 
     if [[ ${#collector_envs[@]} -gt 0 ]]; then
-        kubectl -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
+        retry-kubectl -n "${sensor_namespace}" set env ds/collector "${collector_envs[@]}"
     fi
 }
 
@@ -496,12 +536,12 @@ pause_stackrox_operator_reconcile() {
     local central_namespace=${1:-stackrox}
     local sensor_namespace=${2:-stackrox}
 
-    kubectl annotate -n "${central_namespace}" \
+    retry-kubectl annotate -n "${central_namespace}" \
         centrals.platform.stackrox.io \
         stackrox-central-services \
         stackrox.io/pause-reconcile=true
 
-    kubectl annotate -n "${sensor_namespace}" \
+    retry-kubectl annotate -n "${sensor_namespace}" \
         securedclusters.platform.stackrox.io \
         stackrox-secured-cluster-services \
         stackrox.io/pause-reconcile=true
@@ -581,7 +621,7 @@ setup_generated_certs_for_test() {
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
     # This will ensure that the certs are valid.
-    sensor_tls_cert="$(kubectl create --dry-run=client -o json -f "$dir"/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
+    sensor_tls_cert="$(retry-kubectl create --dry-run=client -o json -f "$dir"/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
     for file in ca.pem sensor-cert.pem sensor-key.pem; do
         echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "$dir/${file}"
     done
@@ -590,7 +630,7 @@ setup_generated_certs_for_test() {
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
 
-    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    SUPPORTS_PSP=$(retry-kubectl api-resources | grep "podsecuritypolicies" -c || true)
     if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         ci_export "POD_SECURITY_POLICIES" "false"
         info "POD_SECURITY_POLICIES set to false"
@@ -618,7 +658,7 @@ wait_for_collectors_to_be_operational() {
     fi
 
     # Ensure collector DaemonSet state is stable
-    kubectl rollout status daemonset collector --namespace "${sensor_namespace}" --timeout=5m --watch=true
+    retry-kubectl rollout status daemonset collector --namespace "${sensor_namespace}" --timeout=5m --watch=true
 
     # Check each collector pod readiness.
     local start_time
@@ -626,13 +666,13 @@ wait_for_collectors_to_be_operational() {
     local all_ready="false"
     while [[ "$all_ready" == "false" ]]; do
         all_ready="true"
-        for pod in $(kubectl -n "${sensor_namespace}" get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
+        for pod in $(retry-kubectl -n "${sensor_namespace}" get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
             echo "Checking readiness of $pod"
-            if kubectl -n "${sensor_namespace}" logs -c collector "${pod}" | grep "${readiness_indicator}" > /dev/null 2>&1; then
+            if retry-kubectl -n "${sensor_namespace}" logs -c collector "${pod}" | grep "${readiness_indicator}" > /dev/null 2>&1; then
                 echo "$pod is deemed ready"
             else
                 info "$pod is not ready"
-                kubectl -n "${sensor_namespace}" logs -c collector "$pod" || true
+                retry-kubectl -n "${sensor_namespace}" logs -c collector "$pod" || true
                 all_ready="false"
                 break
             fi
@@ -657,8 +697,8 @@ patch_resources_for_test() {
     require_environment "TEST_ROOT"
     require_environment "API_HOSTNAME"
 
-    kubectl -n "${central_namespace}" patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
-    kubectl -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
+    retry-kubectl -n "${central_namespace}" patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
+    retry-kubectl -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
 
     info "Checking port availability..."
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
@@ -690,7 +730,7 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     check_for_stackrox_OOMs "$dir"
@@ -706,7 +746,7 @@ check_for_stackrox_OOMs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local objects
@@ -793,7 +833,7 @@ check_for_stackrox_restarts() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local previous_logs
@@ -825,7 +865,7 @@ check_for_errors_in_stackrox_logs() {
     local dir="$1/stackrox/pods"
 
     if [[ ! -d "${dir}" ]]; then
-        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox $dir)"
     fi
 
     local pod_objects=()
@@ -884,7 +924,7 @@ _verify_item_count() {
     # used by ./scripts/ci/collect-service-logs.sh
 
     if [[ ! -f "${dir}/ITEM_COUNT.txt" ]]; then
-        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh"
+        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh)"
     fi
 
     local item_count
@@ -999,7 +1039,7 @@ remove_existing_stackrox_resources() {
 
     # Check API Server Capabilities.
     local k8s_api_resources
-    k8s_api_resources=$(kubectl api-resources -o name)
+    k8s_api_resources=$(retry-kubectl api-resources -o name)
     if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
@@ -1019,43 +1059,43 @@ remove_existing_stackrox_resources() {
         if [[ "${securedclusters_supported}" == "true" ]]; then
             # Remove stackrox.io/pause-reconcile annotation since it prevents
             # deletion of secured cluster in static clusters
-            kubectl annotate -n stackrox \
+            retry-kubectl annotate -n stackrox \
             securedclusters.platform.stackrox.io \
             stackrox-secured-cluster-services \
             stackrox.io/pause-reconcile-
 
-            kubectl get securedclusters -o name | while read -r securedcluster; do
-                kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
+            retry-kubectl get securedclusters -o name | while read -r securedcluster; do
+                retry-kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
                 # Wait until resources are actually deleted.
-                kubectl wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
+                retry-kubectl wait -n "${namespace}"  --for=delete deployment/sensor --timeout=60s
             done
         fi
         if [[ "${centrals_supported}" == "true" ]]; then
             # Remove stackrox.io/pause-reconcile annotation since it prevents
             # deletion of central in static clusters
-               kubectl annotate -n stackrox \
+               retry-kubectl annotate -n stackrox \
                 centrals.platform.stackrox.io \
                 stackrox-central-services \
                 stackrox.io/pause-reconcile-
 
-            kubectl get centrals -o name | while read -r central; do
-                kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
-                kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
+            retry-kubectl get centrals -o name | while read -r central; do
+                retry-kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
+                retry-kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
             done
         fi
         if [[ "$psps_supported" = "true" ]]; then
-            kubectl delete -R -f scripts/ci/psp --wait
+            retry-kubectl delete -R -f scripts/ci/psp --wait
         fi
 
         for namespace in "${namespaces[@]}"; do
-            if kubectl get ns "$namespace" >/dev/null 2>&1; then
-                kubectl -n "$namespace" delete "$resource_types" -l "app.kubernetes.io/name=stackrox" --wait
+            if retry-kubectl get ns "$namespace" >/dev/null 2>&1; then
+                retry-kubectl -n "$namespace" delete "$resource_types" -l "app.kubernetes.io/name=stackrox" --wait
             fi
-            kubectl delete --ignore-not-found ns "$namespace" --wait
+            retry-kubectl delete --ignore-not-found ns "$namespace" --wait
         done
 
-        kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
-        kubectl delete crd securitypolicies.config.stackrox.io --wait
+        retry-kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
+        retry-kubectl delete crd securitypolicies.config.stackrox.io --wait
 
         helm list -o json | jq -r '.[] | .name' | while read -r name; do
             case "$name" in
@@ -1065,32 +1105,39 @@ remove_existing_stackrox_resources() {
             esac
         done
 
-        kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
-            kubectl delete --wait "$namespace"
+        retry-kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
+            retry-kubectl delete --wait "$namespace"
         done
 
-        # midstream ocp specific
-        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
-            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+        if retry-kubectl get ns stackrox-operator >/dev/null 2>&1; then
+            # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
+            # See https://issues.redhat.com/browse/ROX-30450
+            retry-kubectl -n stackrox-operator delete --ignore-not-found --wait subscription.operators.coreos.com --all
+            # Then delete remaining OLM resources.
+            # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
+            # We only care about apiVersion, kind and metadata, which do not contain any templating.
+            awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
+              retry-kubectl -n stackrox-operator delete --ignore-not-found --wait -f -
         fi
-        kubectl delete --ignore-not-found ns stackrox-operator --wait
+        retry-kubectl delete --ignore-not-found ns stackrox-operator --wait
+        retry-kubectl delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
 }
 
 remove_compliance_operator_resources() {
     info "Will remove any existing compliance operator resources"
-    if kubectl get crd compliancecheckresults.compliance.openshift.io; then
+    if retry-kubectl get crd compliancecheckresults.compliance.openshift.io; then
         (
-            kubectl -n openshift-compliance delete ssb --all --wait --ignore-not-found=true
+            retry-kubectl -n openshift-compliance delete ssb --all --wait --ignore-not-found=true
             # The profilebundles must be deleted before the csv. If not, the finalizers
             # will prevent the profilebundles from deleting because the CRDs are gone.
-            kubectl -n openshift-compliance delete pb --all --wait --ignore-not-found=true
-            kubectl -n openshift-compliance delete sub --all  --ignore-not-found=true
-            kubectl -n openshift-compliance delete csv --all  --ignore-not-found=true
-            kubectl -n openshift-compliance delete operatorgroup --all  --ignore-not-found=true
-            kubectl -n openshift-marketplace delete catalogsource compliance-operator  --ignore-not-found=true
-            kubectl delete namespace openshift-compliance --wait --ignore-not-found=true
+            retry-kubectl -n openshift-compliance delete pb --all --wait --ignore-not-found=true
+            retry-kubectl -n openshift-compliance delete sub --all  --ignore-not-found=true
+            retry-kubectl -n openshift-compliance delete csv --all  --ignore-not-found=true
+            retry-kubectl -n openshift-compliance delete operatorgroup --all  --ignore-not-found=true
+            retry-kubectl -n openshift-marketplace delete catalogsource compliance-operator  --ignore-not-found=true
+            retry-kubectl delete namespace openshift-compliance --wait --ignore-not-found=true
         # (prefix output to avoid triggering prow log focus)
         ) 2>&1 | sed -e 's/^/out: /' || true
     fi
@@ -1106,7 +1153,7 @@ wait_for_ready_deployment() {
 
     start_time="$(date '+%s')"
     while true; do
-        deployment_json="$(kubectl -n "${namespace}" get "deploy/${deployment_name}" -o json)"
+        deployment_json="$(retry-kubectl -n "${namespace}" get "deploy/${deployment_name}" -o json)"
         replicas="$(jq '.status.replicas' <<<"$deployment_json")"
         ready_replicas="$(jq '.status.readyReplicas' <<<"$deployment_json")"
         curr_time="$(date '+%s')"
@@ -1122,8 +1169,8 @@ wait_for_ready_deployment() {
 
         # Timeout case
         if (( elapsed_seconds > max_seconds )); then
-            kubectl -n "${namespace}" get pod -o wide
-            kubectl -n "${namespace}" get deploy -o wide
+            retry-kubectl -n "${namespace}" get pod -o wide
+            retry-kubectl -n "${namespace}" get deploy -o wide
             die "wait_for_ready_deployment() timeout after $max_seconds seconds."
         fi
 
@@ -1220,7 +1267,7 @@ wait_for_api() {
         info "port-forwards:"
         pgrep port-forward
         info "pods:"
-        kubectl -n "${central_namespace}" get pod
+        retry-kubectl -n "${central_namespace}" get pod
         exit 1
     fi
     set -e
@@ -1296,7 +1343,7 @@ _record_build_info() {
     # -race debug builds - use the image tag as the most reliable way to
     # determine the build under test.
     local central_image
-    central_image="$(kubectl -n "${central_namespace}" get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
+    central_image="$(retry-kubectl -n "${central_namespace}" get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
     if [[ "${central_image}" =~ -rcd$ ]]; then
         build_info="${build_info},-race"
     fi
@@ -1506,7 +1553,7 @@ wait_for_central_db() {
     max_seconds=300
 
     while true; do
-        central_db_json="$(kubectl -n "${central_namespace}" get deploy/central-db -o json)"
+        central_db_json="$(retry-kubectl -n "${central_namespace}" get deploy/central-db -o json)"
         replicas="$(jq '.status.replicas' <<<"$central_db_json")"
         ready_replicas="$(jq '.status.readyReplicas' <<<"$central_db_json")"
         curr_time="$(date '+%s')"
@@ -1520,8 +1567,8 @@ wait_for_central_db() {
 
         # Timeout case
         if (( elapsed_seconds > max_seconds )); then
-            kubectl -n "${central_namespace}" get pod -o wide
-            kubectl -n "${central_namespace}" get deploy -o wide
+            retry-kubectl -n "${central_namespace}" get pod -o wide
+            retry-kubectl -n "${central_namespace}" get deploy -o wide
             echo >&2 "wait_for_central_db() timeout after $max_seconds seconds."
             exit 1
         fi
@@ -1545,12 +1592,12 @@ wait_for_object_to_appear() {
     local waitInterval=20
     local tries=$(( delay / waitInterval ))
     local count=0
-    until kubectl -n "$namespace" get "$object" > /dev/null 2>&1; do
+    until retry-kubectl -n "$namespace" get "$object" > /dev/null 2>&1; do
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not appear after $count tries"
             echo "Waiting for $object in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
-            kubectl -n "$namespace" get "$object"
+            retry-kubectl -n "$namespace" get "$object"
             return 1
         fi
         info "Waiting for $namespace $object to appear"
@@ -1573,12 +1620,12 @@ wait_for_log_line() {
     local waitInterval=20
     local tries=$(( delay / waitInterval ))
     local count=0
-    until kubectl logs -n "$namespace" "$object" -c "${container}" | grep "${log_line}"; do
+    until retry-kubectl logs -n "$namespace" "$object" -c "${container}" | grep "${log_line}"; do
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not log ${log_line} after $count tries"
             echo "Waiting for $object log in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
-            kubectl -n "$namespace" get "$object"
+            retry-kubectl -n "$namespace" get "$object"
             return 1
         fi
         info "Waiting for $namespace $object to log ${log_line}"
