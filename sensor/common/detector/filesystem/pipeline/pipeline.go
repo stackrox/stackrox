@@ -111,12 +111,21 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 		activity.File = &storage.FileActivity_File{
 			Path:     fs.GetPermission().GetActivity().GetPath(),
 			HostPath: fs.GetPermission().GetActivity().GetHostPath(),
+			Meta: &storage.FileActivity_FileMetadata{
+				Mode: fs.GetPermission().GetMode(),
+			},
 		}
 		activity.Operation = storage.FileActivity_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
 		activity.File = &storage.FileActivity_File{
 			Path:     fs.GetOwnership().GetActivity().GetPath(),
 			HostPath: fs.GetOwnership().GetActivity().GetHostPath(),
+			Meta: &storage.FileActivity_FileMetadata{
+				Uid:      fs.GetOwnership().GetUid(),
+				Gid:      fs.GetOwnership().GetGid(),
+				Username: fs.GetOwnership().GetUsername(),
+				Group:    fs.GetOwnership().GetGroup(),
+			},
 		}
 		activity.Operation = storage.FileActivity_OWNERSHIP_CHANGE
 	case *sensorAPI.FileActivity_Write:
