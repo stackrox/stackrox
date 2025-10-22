@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
@@ -30,8 +29,6 @@ type DataStore interface {
 	// TODO(ROX-28123): figure out if we need to add these functions or not.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
-	ApplyException(ctx context.Context, snoozed, expiry *time.Time, cves ...string) error
-	RevertException(ctx context.Context, cves ...string) error
 }
 
 // New returns a new instance of a DataStore.

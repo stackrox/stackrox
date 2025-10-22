@@ -56,7 +56,7 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 // Deprecated: replaced with equivalent functions using storage.ImageCVEV2
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
 // It converts all the fields except Fixed By which gets set depending on the CVE
-// TODO(ROX-28123): Remove
+// TODO(ROX-29911): really need cache table for the dates to eliminate this need.
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   vuln.GetCveBaseInfo().GetCve(),
@@ -263,59 +263,6 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 	}
 
 	ret.Severity = from.GetSeverity()
-	return ret
-}
-
-// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
-// EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
-// TODO(ROX-28123): Remove
-func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
-	var nvdCvss float32
-	nvdCvss = 0
-	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
-	for _, score := range from.GetCvssMetrics() {
-		if score.GetSource() == storage.Source_SOURCE_NVD {
-			if score.GetCvssv3() != nil {
-				nvdCvss = score.GetCvssv3().GetScore()
-				nvdVersion = storage.CvssScoreVersion_V3
-
-			} else if score.GetCvssv2() != nil {
-				nvdCvss = score.GetCvssv2().GetScore()
-				nvdVersion = storage.CvssScoreVersion_V2
-			}
-		}
-	}
-
-	ret := &storage.ImageCVE{
-		Id:              cve.ID(from.GetCve(), os),
-		OperatingSystem: os,
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          from.GetCve(),
-			Summary:      from.GetSummary(),
-			Link:         from.GetLink(),
-			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
-			LastModified: from.GetLastModified(),
-			CvssV2:       from.GetCvssV2(),
-			CvssV3:       from.GetCvssV3(),
-			Epss:         from.GetEpss(),
-		},
-		Cvss:            from.GetCvss(),
-		Nvdcvss:         nvdCvss,
-		NvdScoreVersion: nvdVersion,
-		Severity:        from.GetSeverity(),
-		Snoozed:         from.GetSuppressed(),
-		SnoozeStart:     from.GetSuppressActivation(),
-		SnoozeExpiry:    from.GetSuppressExpiry(),
-		CvssMetrics:     from.GetCvssMetrics(),
-	}
-	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
-		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
-	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
-		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
-	}
 	return ret
 }
 
