@@ -2896,15 +2896,11 @@ func (m *ListAlert_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
+		dAtA[i] = 0x62
 	} else {
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x82
+		dAtA[i] = 0x62
 	}
 	return len(dAtA) - i, nil
 }
@@ -3711,9 +3707,9 @@ func (m *ListAlert_Node) SizeVT() (n int) {
 	_ = l
 	if m.Node != nil {
 		l = m.Node.SizeVT()
-		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
-		n += 3
+		n += 2
 	}
 	return n
 }
@@ -7366,7 +7362,7 @@ func (m *ListAlert) UnmarshalVT(dAtA []byte) error {
 				m.Entity = &ListAlert_Resource{Resource: v}
 			}
 			iNdEx = postIndex
-		case 16:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
@@ -11760,7 +11756,7 @@ func (m *ListAlert) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Entity = &ListAlert_Resource{Resource: v}
 			}
 			iNdEx = postIndex
-		case 16:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
 			}
