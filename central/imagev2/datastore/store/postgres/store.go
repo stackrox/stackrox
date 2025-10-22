@@ -33,8 +33,9 @@ const (
 	imagesV2Table              = pkgSchema.ImagesV2TableName
 	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable       = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable   = pkgSchema.ImageCveEdgesTableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 )
 
 var (

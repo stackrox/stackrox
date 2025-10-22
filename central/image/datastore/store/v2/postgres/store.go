@@ -30,13 +30,12 @@ import (
 )
 
 const (
-	imagesTable                      = pkgSchema.ImagesTableName
-	imageComponentsV2Table           = pkgSchema.ImageComponentV2TableName
-	imageComponentsV2CVEsTable       = pkgSchema.ImageCvesV2TableName
-	imageCVEsLegacyTable             = pkgSchema.ImageCvesTableName
-	imageCVEEdgesLegacyTable         = pkgSchema.ImageCveEdgesTableName
-	cveCreatedAtFieldName            = "cveBaseInfo_CVE"
-	cveFirstImageOccurrenceFieldName = "FirstImageOccurrence"
+	imagesTable                = pkgSchema.ImagesTableName
+	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
+	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
+	// TODO(ROX-29911): really need cache table for the dates.
+	imageCVEsLegacyTable     = "image_cves"
+	imageCVEEdgesLegacyTable = "image_cve_edges"
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 )
