@@ -1,4 +1,4 @@
-import React, { useMemo, useState, ReactElement, useCallback, useRef } from 'react';
+import React, { useMemo, useState, ReactElement, useCallback } from 'react';
 import {
     Button,
     Flex,
@@ -67,7 +67,6 @@ function CollectionSelection({
 
     const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(modalAction);
     const [search, setSearch] = useState('');
-    const textInputRef = useRef<HTMLInputElement>(null);
 
     const requestFn = useCallback(
         (page: number) => {
@@ -228,7 +227,6 @@ function CollectionSelection({
                     placeholder="Select a collection"
                     onChange={onSearchChange}
                     onFocus={ensureOpen}
-                    ref={textInputRef}
                     autoComplete="off"
                     id={id}
                 />
@@ -268,34 +266,46 @@ function CollectionSelection({
                                 overflowY: 'auto',
                             }}
                         >
-                            {sortedCollections.map((collection) => (
-                                <SelectOption
-                                    key={collection.id}
-                                    value={collection.id}
-                                    description={collection.description}
-                                >
-                                    {collection.name}
-                                </SelectOption>
-                            ))}
+                            {sortedCollections.length === 0 && !showLoadingSpinner ? (
+                                <SelectOption isDisabled>No results found</SelectOption>
+                            ) : (
+                                sortedCollections.map((collection) => (
+                                    <SelectOption
+                                        key={collection.id}
+                                        value={collection.id}
+                                        description={collection.description}
+                                    >
+                                        {collection.name}
+                                    </SelectOption>
+                                ))
+                            )}
                             {showLoadingSpinner && (
-                                <li role="presentation">
+                                <SelectOption isDisabled isAriaDisabled>
                                     <div className="pf-v5-u-text-align-center pf-v5-u-p-sm">
                                         <Spinner size="md" />
                                     </div>
-                                </li>
+                                </SelectOption>
                             )}
                             {showViewMoreButton && (
-                                <li role="presentation">
-                                    <div className="pf-v5-u-py-sm pf-v5-u-px-md pf-v5-u-background-color-200">
+                                <SelectOption
+                                    onClick={(e) => {
+                                        e?.stopPropagation();
+                                        handleFetchNextPage();
+                                    }}
+                                >
+                                    <div className="pf-v5-u-text-align-center">
                                         <Button
                                             variant="link"
                                             isInline
-                                            onClick={handleFetchNextPage}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleFetchNextPage();
+                                            }}
                                         >
                                             View more
                                         </Button>
                                     </div>
-                                </li>
+                                </SelectOption>
                             )}
                         </SelectList>
                         {showCreateCollectionFooter && (
