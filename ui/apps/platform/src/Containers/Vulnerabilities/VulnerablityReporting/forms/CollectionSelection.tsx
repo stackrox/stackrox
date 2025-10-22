@@ -31,6 +31,7 @@ import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/fo
 import CollectionsFormModal, {
     CollectionFormModalAction,
 } from 'Containers/Collections/CollectionsFormModal';
+import type { ClientCollection } from 'Containers/Collections/types';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 
@@ -168,10 +169,54 @@ function CollectionSelection({
         ensureOpen();
     }
 
+    const handleOpenChange = useCallback((nextOpen: boolean) => {
+        setIsOpen(nextOpen);
+        if (!nextOpen) {
+            setSearch('');
+        }
+    }, []);
+
+    const handleBlur = useCallback(
+        (event: React.FocusEvent<HTMLDivElement>) => {
+            setSearch('');
+            onBlur?.(event);
+        },
+        [onBlur]
+    );
+
+    const handleFetchNextPage = useCallback(() => {
+        fetchNextPage();
+    }, [fetchNextPage]);
+
+    const handleCloseModal = useCallback(() => {
+        setIsCollectionModalOpen(false);
+    }, []);
+
+    const handleCollectionSubmit = useCallback(
+        (collection: ClientCollection) => {
+            return onSubmit(collection).then((collectionResponse) => {
+                onChange(collectionResponse);
+                setIsCollectionModalOpen(false);
+                setCreatedCollections((oldCollections) => [...oldCollections, collectionResponse]);
+
+                analyticsTrack({
+                    event: COLLECTION_CREATED,
+                    properties: { source: 'Vulnerability Reporting' },
+                });
+            });
+        },
+        [onSubmit, onChange, analyticsTrack]
+    );
+
     // Get display text for the selected collection
-    const displayValue = selectedScope?.id
-        ? sortedCollections.find((collection) => collection.id === selectedScope.id)?.name || ''
-        : '';
+    const displayValue = useMemo(() => {
+        if (!selectedScope?.id) {
+            return '';
+        }
+        return (
+            sortedCollections.find((collection) => collection.id === selectedScope.id)?.name || ''
+        );
+    }, [selectedScope?.id, sortedCollections]);
 
     const showLoadingSpinner = isFetchingNextPage;
     const showViewMoreButton = !isFetchingNextPage && !isEndOfResults;
@@ -212,24 +257,21 @@ function CollectionSelection({
                         isOpen={isOpen}
                         selected={selectedScope?.id}
                         onSelect={onScopeChange}
-                        onOpenChange={(nextOpen: boolean) => {
-                            setIsOpen(nextOpen);
-                            if (!nextOpen) {
-                                setSearch('');
-                            }
-                        }}
+                        onOpenChange={handleOpenChange}
                         toggle={toggle}
                         shouldFocusToggleOnSelect
                         popperProps={{
                             appendTo: () => document.body,
                             direction: 'up',
                         }}
-                        onBlur={(event) => {
-                            setSearch('');
-                            onBlur?.(event);
-                        }}
+                        onBlur={handleBlur}
                     >
-                        <SelectList style={{ maxHeight: '275px', overflowY: 'auto' }}>
+                        <SelectList
+                            style={{
+                                maxHeight: '275px',
+                                overflowY: 'auto',
+                            }}
+                        >
                             {sortedCollections.map((collection) => (
                                 <SelectOption
                                     key={collection.id}
@@ -247,18 +289,16 @@ function CollectionSelection({
                                 </li>
                             )}
                             {showViewMoreButton && (
-                                <li
-                                    role="presentation"
-                                    style={{
-                                        padding:
-                                            'var(--pf-v5-global--spacer--sm) var(--pf-v5-global--spacer--md)',
-                                        backgroundColor:
-                                            'var(--pf-v5-global--BackgroundColor--200)',
-                                    }}
-                                >
-                                    <Button variant="link" isInline onClick={() => fetchNextPage()}>
-                                        View more
-                                    </Button>
+                                <li role="presentation">
+                                    <div className="pf-v5-u-py-sm pf-v5-u-px-md pf-v5-u-background-color-200">
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={handleFetchNextPage}
+                                        >
+                                            View more
+                                        </Button>
+                                    </div>
                                 </li>
                             )}
                         </SelectList>
@@ -291,24 +331,10 @@ function CollectionSelection({
                 <CollectionsFormModal
                     hasWriteAccessForCollections={hasWriteAccessForCollections}
                     modalAction={modalAction}
-                    onClose={() => setIsCollectionModalOpen(false)}
+                    onClose={handleCloseModal}
                     configError={configError}
                     setConfigError={setConfigError}
-                    onSubmit={(collection) =>
-                        onSubmit(collection).then((collectionResponse) => {
-                            onChange(collectionResponse);
-                            setIsCollectionModalOpen(false);
-                            setCreatedCollections((oldCollections) => [
-                                ...oldCollections,
-                                collectionResponse,
-                            ]);
-
-                            analyticsTrack({
-                                event: COLLECTION_CREATED,
-                                properties: { source: 'Vulnerability Reporting' },
-                            });
-                        })
-                    }
+                    onSubmit={handleCollectionSubmit}
                 />
             )}
         </>
