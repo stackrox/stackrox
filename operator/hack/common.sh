@@ -90,14 +90,7 @@ function approve_install_plan() {
   log "Waiting for an install plan to be created"
   if ! retry 15 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
     log "Install plan failed to materialize."
-    log "Dumping install plans..."
-    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "installplan.operators.coreos.com" || true
-    log "Dumping pod descriptions..."
-    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
-    log "Dumping catalog sources and subscriptions..."
-    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
-    log "Dumping jobs..."
-    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "job.batch" || true
+    gather_olm_resources "${operator_ns}"
     return 1
   fi
 
@@ -106,9 +99,10 @@ function approve_install_plan() {
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
   current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
-  local -r expected_csv="rhacs-operator.${csv_version}"
+  local -r expected_csv="rhacs-operator.${csv_version}x"
   if [[ $current_csv != "$expected_csv" ]]; then
     log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
+    gather_olm_resources "${operator_ns}"
     return 1
   fi
 
@@ -125,6 +119,25 @@ function nurse_deployment_until_available() {
   local -r operator_ns="$1"
   local -r csv_version="$2"
 
+  if ! wait_for_csv_success "${operator_ns}" "${csv_version}"; then
+    log "CSV failed to enter Succeeded phase in time."
+    gather_olm_resources "${operator_ns}"
+    return 1
+  fi
+
+  # Double-check that the deployment itself is healthy.
+  log "Making sure the ${csv_version} operator deployment is available..."
+  if ! retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.${csv_version}" --for condition=available --timeout 5s; then
+    log "ACS Operator failed to become healthy in time after CSV finished installing."
+    gather_olm_resources "${operator_ns}"
+    return 1
+  fi
+}
+
+function wait_for_csv_success() {
+  local -r operator_ns="$1"
+  local -r csv_version="$2"
+
   # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
   # the deployment .status is set separately from the .spec, so the .status reflects the status of
   # the _old_ .spec until the deployment controller runs the first reconciliation.
@@ -138,8 +151,32 @@ metadata:
 status:
   phase: Succeeded
 END
+}
 
-  # Double-check that the deployment itself is healthy.
-  log "Making sure the ${csv_version} operator deployment is available..."
-  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.${csv_version}" --for condition=available --timeout 5s
+function gather_olm_resources() {
+  local -r operator_ns="$1"
+  local -r msg="Gathering OLM resources for troubleshooting..."
+
+  log "${msg}"
+  log "Dumping install plans..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "installplan.operators.coreos.com" || true
+  log "Dumping pod descriptions..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
+  log "Dumping catalog sources and subscriptions..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
+  log "Dumping jobs..."
+  "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "job.batch" || true
+  if [[ -n ${CI:-} ]]; then
+    local -r path="${ROX_CI_OUTPUT_DIR:-/tmp/k8s-service-logs}/olm-must-gather"
+    log "Running oc adm must-gather in ${path} (which will be collected along with other CI artifacts)..."
+    mkdir -p "${path}"
+    ( cd "${path}" && run_oc_adm_must_gather >> "oc-adm-must-gather-output.txt"; )
+  fi
+  log "Resource collection completed, look before '${msg}' above for the cause of the failure."
+}
+
+function run_oc_adm_must_gather() {
+  if ! oc adm must-gather 2>&1; then
+    log "Running oc adm must-gather failed, perhaps this is not an OpenShift cluster?"
+  fi
 }
