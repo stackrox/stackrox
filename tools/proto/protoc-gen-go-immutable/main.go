@@ -12,9 +12,10 @@ import (
 
 func main() {
 	protogen.Options{}.Run(func(gen *protogen.Plugin) error {
-		gen.SupportedEditionsMinimum = descriptorpb.Edition_EDITION_2023
-		gen.SupportedEditionsMaximum = descriptorpb.Edition_EDITION_2023
+		gen.SupportedEditionsMinimum = descriptorpb.Edition_EDITION_PROTO3
+		gen.SupportedEditionsMaximum = descriptorpb.Edition_EDITION_PROTO3
 		gen.SupportedFeatures |= uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS)
+		gen.SupportedFeatures |= uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
 		for _, f := range gen.Files {
 			if !f.Generate {
 				continue
@@ -42,18 +43,23 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	g.P("package ", file.GoPackageName)
 	g.P()
 
-	// Check if we need time import by scanning all fields
+	// Check if we need time and iter imports by scanning all fields
 	needsTime := false
+	needsIter := false
 	var checkMessages func([]*protogen.Message)
 	checkMessages = func(messages []*protogen.Message) {
 		for _, m := range messages {
 			for _, field := range m.Fields {
+				// Check for well-known types that need time package
 				if field.Desc.Kind() == protoreflect.MessageKind {
 					fullName := string(field.Message.Desc.FullName())
 					if fullName == "google.protobuf.Timestamp" || fullName == "google.protobuf.Duration" {
 						needsTime = true
-						return
 					}
+				}
+				// Check if we need iter package (for slices and maps)
+				if field.Desc.Cardinality() == protoreflect.Repeated || field.Desc.IsMap() {
+					needsIter = true
 				}
 			}
 			checkMessages(m.Messages)
@@ -61,13 +67,18 @@ func generateFile(gen *protogen.Plugin, file *protogen.File) {
 	}
 	checkMessages(file.Messages)
 
-	g.P("import (")
-	g.P("\t\"iter\"")
-	if needsTime {
-		g.P("\t\"time\"")
+	// Only add imports block if we need any imports
+	if needsIter || needsTime {
+		g.P("import (")
+		if needsIter {
+			g.P("\t\"iter\"")
+		}
+		if needsTime {
+			g.P("\t\"time\"")
+		}
+		g.P(")")
+		g.P()
 	}
-	g.P(")")
-	g.P()
 
 	// Build a set of messages defined in this file for lookup
 	localMessages := make(map[string]bool)
