@@ -121,6 +121,10 @@ tasks.withType<Test>().configureEach {
 
     timeout = Duration.ofMinutes(630)
 
+    // Pass all environment variables from parent process to test JVM.
+    // This is required for tests that depend on environment variables like UPGRADE_CLUSTER_ID.
+    environment(System.getenv())
+
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn"t actually run the tests,
     // which is not the behaviour we expect of E2Es.
