@@ -1,3 +1,4 @@
+import com.google.protobuf.gradle.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.time.Duration
 
@@ -12,7 +13,32 @@ codenarc {
     reportFormat = "text"
 }
 
-apply(from = "protobuf.gradle")
+protobuf {
+    // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
+    // See https://github.com/grpc/grpc-java/issues/7690
+    var protocGenArch = ""
+    if (System.getProperty("os.arch") == "aarch64" && System.getProperty("os.name").lowercase().contains("mac")) {
+        protocGenArch = ":osx-x86_64"
+    }
+    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}${protocGenArch}"
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet("main").forEach {
+            it.plugins {
+                id("grpc") {
+                    outputSubDir = "java"
+                }
+            }
+            it.outputSourceDirectorySet.srcDirs.forEach { srcDir ->
+                sourceSets.getByName(it.sourceSet.name).java.srcDirs(srcDir)
+            }
+        }
+    }
+}
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
 project.sourceSets.forEach { sourceSet ->
@@ -92,6 +118,7 @@ tasks.withType<Test>().configureEach {
         exceptionFormat = TestExceptionFormat.FULL
         events("passed", "skipped", "failed")
     }
+
     timeout = Duration.ofMinutes(630)
 
     // This ensures that repeated invocations of tests actually run the tests.
@@ -105,106 +132,53 @@ tasks.withType<Test>().configureEach {
         junitXml.mergeReruns = true
     }
 
-    useJUnitPlatform();
+    useJUnitPlatform()
 }
 
-tasks.register<Test>("testBegin") {
-    useJUnitPlatform {
-        includeTags("Begin")
-    }
-}
+data class TestTask(
+    var includeTags: Set<String> = setOf(),
+    var excludeTags: Set<String> = setOf(),
+    var spockConfiguration: File? = null,
+)
 
-tasks.register<Test>("testParallel") {
-    systemProperty("spock.configuration", rootProject.file("src/test/resources/ParallelSpockConfig.groovy"))
-    useJUnitPlatform {
-        includeTags("Parallel")
-    }
-}
-
-tasks.register<Test>("testRest") {
-    useJUnitPlatform {
-        excludeTags("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
-    }
-}
-
-tasks.register<Test>("testParallelBAT") {
-    systemProperty("spock.configuration", rootProject.file("src/test/resources/ParallelSpockConfig.groovy"))
-    useJUnitPlatform {
-        includeTags("Parallel & BAT")
-    }
-}
-
-tasks.register<Test>("testBAT") {
-    useJUnitPlatform {
-        includeTags("BAT")
-        excludeTags("Parallel")
-    }
-}
-
-tasks.register<Test>("testSMOKE") {
-    useJUnitPlatform {
-        includeTags("SMOKE")
-    }
-}
-
-tasks.register<Test>("testCOMPATIBILITY") {
-    useJUnitPlatform {
-        includeTags("COMPATIBILITY")
-        excludeTags("SensorBounce")
-    }
-}
-
-tasks.register<Test>("testCOMPATIBILITYSensorBounce") {
-    useJUnitPlatform {
-        includeTags("COMPATIBILITY & SensorBounce")
-    }
-}
-
-tasks.register<Test>("testRUNTIME") {
-    useJUnitPlatform {
-        includeTags("RUNTIME")
-    }
-}
-
-tasks.register<Test>("testPolicyEnforcement") {
-    useJUnitPlatform {
-        includeTags("PolicyEnforcement")
-    }
-}
-
-tasks.register<Test>("testIntegration") {
-    useJUnitPlatform {
-        includeTags("Integration")
-    }
-}
-
-tasks.register<Test>("testNetworkPolicySimulation") {
-    useJUnitPlatform {
-        includeTags("NetworkPolicySimulation")
-    }
-}
-
-tasks.register<Test>("testUpgrade") {
-    useJUnitPlatform {
-        includeTags("Upgrade")
-    }
-}
-
-tasks.register<Test>("testGraphQL") {
-    useJUnitPlatform {
-        includeTags("GraphQL")
-    }
-}
-
-tasks.register<Test>("testSensorBounce") {
-    useJUnitPlatform {
-        includeTags("SensorBounce")
-    }
-}
-
-tasks.register<Test>("testSensorBounceNext") {
-    useJUnitPlatform {
-        includeTags("SensorBounceNext")
+val tests = mapOf(
+    "testBegin" to TestTask(includeTags = setOf("Begin")),
+    "testRest" to TestTask(includeTags = setOf("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")),
+    "testBAT" to TestTask(includeTags = setOf("BAT"), excludeTags = setOf("Parallel")),
+    "testSMOKE" to TestTask(includeTags = setOf("SMOKE")),
+    "testCOMPATIBILITY" to TestTask(includeTags = setOf("COMPATIBILITY"), excludeTags = setOf("SensorBounce")),
+    "testCOMPATIBILITYSensorBounce" to TestTask(includeTags = setOf("COMPATIBILITY & SensorBounce")),
+    "testRUNTIME" to TestTask(includeTags = setOf("RUNTIME")),
+    "testPolicyEnforcement" to TestTask(includeTags = setOf("PolicyEnforcement")),
+    "testIntegration" to TestTask(includeTags = setOf("Integration")),
+    "testNetworkPolicySimulation" to TestTask(includeTags = setOf("NetworkPolicySimulation")),
+    "testUpgrade" to TestTask(includeTags = setOf("Upgrade")),
+    "testGraphQL" to TestTask(includeTags = setOf("GraphQL")),
+    "testSensorBounce" to TestTask(includeTags = setOf("SensorBounce")),
+    "testSensorBounceNext" to TestTask(includeTags = setOf("SensorBounceNext")),
+    "testPZ" to TestTask(includeTags = setOf("PZ")),
+    "testPZDebug" to TestTask(includeTags = setOf("PZDebug")),
+    "testDeploymentCheck" to TestTask(includeTags = setOf("DeploymentCheck")),
+    "testParallel" to TestTask(
+        includeTags = setOf("Parallel"),
+        spockConfiguration = rootProject.file("src/test/resources/ParallelSpockConfig.groovy")
+    ),
+    "testParallelBAT" to TestTask(
+        includeTags = setOf("Parallel & BAT"),
+        spockConfiguration = rootProject.file("src/test/resources/ParallelSpockConfig.groovy")
+    ),
+).forEach { (name, testTask) ->
+    tasks.register<Test>(name) {
+        useJUnitPlatform {
+            includeTags(*testTask.includeTags.toTypedArray<String>())
+            excludeTags(*testTask.excludeTags.toTypedArray<String>())
+            testTask.spockConfiguration?.let {
+                systemProperty(
+                    "spock.configuration",
+                    testTask.spockConfiguration as Any
+                )
+            }
+        }
     }
 }
 
@@ -216,28 +190,11 @@ tasks.register<JavaExec>("runSampleScript") {
     }
 }
 
-tasks.register<Test>("testPZ") {
-    useJUnitPlatform {
-        includeTags("PZ")
-    }
-}
-
-tasks.register<Test>("testPZDebug") {
-    useJUnitPlatform {
-        includeTags("PZDebug")
-    }
-}
-
-tasks.register<Test>("testDeploymentCheck") {
-    useJUnitPlatform {
-        includeTags("DeploymentCheck")
-    }
-}
-
 allprojects {
     apply(plugin = "java")
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
     }
 }
