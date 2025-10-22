@@ -398,7 +398,7 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj.CloneVT())
+		err := fn(obj)
 		if err != nil {
 			return err
 		}

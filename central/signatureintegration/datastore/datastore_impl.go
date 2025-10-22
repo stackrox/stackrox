@@ -53,7 +53,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 	walkFn := func() error {
 		integrations = integrations[:0]
 		return d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
-			integrations = append(integrations, integration)
+			integrations = append(integrations, integration.CloneVT())
 			return nil
 		})
 	}
