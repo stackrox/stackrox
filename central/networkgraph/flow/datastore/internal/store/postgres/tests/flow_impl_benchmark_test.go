@@ -332,8 +332,6 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		err = flowStore.RemoveFlowsForDeployment(allAccessCtx, deploymentId)
 		require.NoError(b, err)
 		duration := time.Since(start)
-
-		log.Infof("Pruning %d flows and entities took %s", numEntities, duration)
 	}
 }
 
@@ -369,7 +367,6 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
 		duration := time.Since(start)
-		log.Infof("Pruning %d flows and %d entities took %s", totalFlows, numEntities, duration)
 	}
 }
 
