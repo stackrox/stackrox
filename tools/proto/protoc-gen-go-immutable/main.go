@@ -470,17 +470,35 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P()
 		g.P("// ", methodName, " implements Immutable", messageName)
 		g.P("func (m *", messageName, ") ", methodName, "() ", wktType, " {")
-		g.P("\tif m == nil || m.", fieldName, " == nil {")
-		if wktType == "time.Time" {
-			g.P("\t\treturn time.Time{}")
-		} else if wktType == "time.Duration" {
-			g.P("\t\treturn 0")
-		}
-		g.P("\t}")
-		if wktType == "time.Time" {
-			g.P("\treturn m.", fieldName, ".AsTime()")
-		} else if wktType == "time.Duration" {
-			g.P("\treturn m.", fieldName, ".AsDuration()")
+
+		// For oneof fields, use the getter method instead of direct field access
+		if field.Oneof != nil {
+			g.P("\tif m == nil || m.Get", fieldName, "() == nil {")
+			if wktType == "time.Time" {
+				g.P("\t\treturn time.Time{}")
+			} else if wktType == "time.Duration" {
+				g.P("\t\treturn 0")
+			}
+			g.P("\t}")
+			if wktType == "time.Time" {
+				g.P("\treturn m.Get", fieldName, "().AsTime()")
+			} else if wktType == "time.Duration" {
+				g.P("\treturn m.Get", fieldName, "().AsDuration()")
+			}
+		} else {
+			// For regular fields, use direct field access
+			g.P("\tif m == nil || m.", fieldName, " == nil {")
+			if wktType == "time.Time" {
+				g.P("\t\treturn time.Time{}")
+			} else if wktType == "time.Duration" {
+				g.P("\t\treturn 0")
+			}
+			g.P("\t}")
+			if wktType == "time.Time" {
+				g.P("\treturn m.", fieldName, ".AsTime()")
+			} else if wktType == "time.Duration" {
+				g.P("\treturn m.", fieldName, ".AsDuration()")
+			}
 		}
 		g.P("}")
 		return
@@ -493,6 +511,7 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P()
 		g.P("// ", methodName, " implements Immutable", messageName)
 		g.P("func (m *", messageName, ") ", methodName, "() ", returnType, " {")
+		// Both oneof and regular fields use the getter method for message types
 		g.P("\treturn m.Get", fieldName, "()")
 		g.P("}")
 		return
@@ -506,6 +525,7 @@ func generateImplementationMethod(g *protogen.GeneratedFile, msg *protogen.Messa
 		g.P()
 		g.P("// ", methodName, " implements Immutable", messageName)
 		g.P("func (m *", messageName, ") ", methodName, "() ", immutableType, " {")
+		// Both oneof and regular fields use the getter method for message types
 		g.P("\treturn m.Get", fieldName, "()")
 		g.P("}")
 		return

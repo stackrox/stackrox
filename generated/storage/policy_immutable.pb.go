@@ -20,9 +20,9 @@ type ImmutablePolicy interface {
 	// Toggles whether or not this policy will be executing and actively firing alerts.
 	GetDisabled() bool
 	// List of categories that this policy falls under.  Category names must already exist in Central.
-	GetCategories() []string
+	GetImmutableCategories() iter.Seq[string]
 	// Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
-	GetLifecycleStages() []LifecycleStage
+	GetImmutableLifecycleStages() iter.Seq[LifecycleStage]
 	// Describes which events should trigger execution of this policy
 	GetEventSource() EventSource
 	// Define deployments or images that should be excluded from this policy.
@@ -35,9 +35,9 @@ type ImmutablePolicy interface {
 	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
 	// Lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
-	GetEnforcementActions() []EnforcementAction
+	GetImmutableEnforcementActions() iter.Seq[EnforcementAction]
 	// List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
-	GetNotifiers() []string
+	GetImmutableNotifiers() iter.Seq[string]
 	GetImmutableLastUpdated() time.Time
 	// For internal use only.
 	GetSORTName() string
@@ -62,6 +62,34 @@ type ImmutablePolicy interface {
 	CloneVT() *Policy
 }
 
+// GetImmutableCategories implements ImmutablePolicy
+func (m *Policy) GetImmutableCategories() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Categories == nil {
+			return
+		}
+		for _, v := range m.Categories {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableLifecycleStages implements ImmutablePolicy
+func (m *Policy) GetImmutableLifecycleStages() iter.Seq[LifecycleStage] {
+	return func(yield func(LifecycleStage) bool) {
+		if m == nil || m.LifecycleStages == nil {
+			return
+		}
+		for _, v := range m.LifecycleStages {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 // GetImmutableExclusions implements ImmutablePolicy
 func (m *Policy) GetImmutableExclusions() iter.Seq[ImmutableExclusion] {
 	return func(yield func(ImmutableExclusion) bool) {
@@ -83,6 +111,34 @@ func (m *Policy) GetImmutableScope() iter.Seq[ImmutableScope] {
 			return
 		}
 		for _, v := range m.Scope {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableEnforcementActions implements ImmutablePolicy
+func (m *Policy) GetImmutableEnforcementActions() iter.Seq[EnforcementAction] {
+	return func(yield func(EnforcementAction) bool) {
+		if m == nil || m.EnforcementActions == nil {
+			return
+		}
+		for _, v := range m.EnforcementActions {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableNotifiers implements ImmutablePolicy
+func (m *Policy) GetImmutableNotifiers() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Notifiers == nil {
+			return
+		}
+		for _, v := range m.Notifiers {
 			if !yield(v) {
 				return
 			}
@@ -132,11 +188,25 @@ var _ ImmutablePolicy = (*Policy)(nil)
 // ImmutablePolicy_MitreAttackVectors is an immutable interface for Policy_MitreAttackVectors
 type ImmutablePolicy_MitreAttackVectors interface {
 	GetTactic() string
-	GetTechniques() []string
+	GetImmutableTechniques() iter.Seq[string]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *Policy_MitreAttackVectors
+}
+
+// GetImmutableTechniques implements ImmutablePolicy_MitreAttackVectors
+func (m *Policy_MitreAttackVectors) GetImmutableTechniques() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Techniques == nil {
+			return
+		}
+		for _, v := range m.Techniques {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that Policy_MitreAttackVectors implements ImmutablePolicy_MitreAttackVectors
@@ -248,8 +318,8 @@ type ImmutableListPolicy interface {
 	GetDescription() string
 	GetSeverity() Severity
 	GetDisabled() bool
-	GetLifecycleStages() []LifecycleStage
-	GetNotifiers() []string
+	GetImmutableLifecycleStages() iter.Seq[LifecycleStage]
+	GetImmutableNotifiers() iter.Seq[string]
 	GetImmutableLastUpdated() time.Time
 	GetEventSource() EventSource
 	GetIsDefault() bool
@@ -258,6 +328,34 @@ type ImmutableListPolicy interface {
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListPolicy
+}
+
+// GetImmutableLifecycleStages implements ImmutableListPolicy
+func (m *ListPolicy) GetImmutableLifecycleStages() iter.Seq[LifecycleStage] {
+	return func(yield func(LifecycleStage) bool) {
+		if m == nil || m.LifecycleStages == nil {
+			return
+		}
+		for _, v := range m.LifecycleStages {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableNotifiers implements ImmutableListPolicy
+func (m *ListPolicy) GetImmutableNotifiers() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Notifiers == nil {
+			return
+		}
+		for _, v := range m.Notifiers {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // GetImmutableLastUpdated implements ImmutableListPolicy

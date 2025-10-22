@@ -28,7 +28,7 @@ type ImmutableImage interface {
 	GetPriority() int64
 	GetRiskScore() float32
 	GetTopCvss() float32
-	GetNotes() []Image_Note
+	GetImmutableNotes() iter.Seq[Image_Note]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
@@ -82,6 +82,20 @@ func (m *Image) GetImmutableLastUpdated() time.Time {
 	return m.LastUpdated.AsTime()
 }
 
+// GetImmutableNotes implements ImmutableImage
+func (m *Image) GetImmutableNotes() iter.Seq[Image_Note] {
+	return func(yield func(Image_Note) bool) {
+		if m == nil || m.Notes == nil {
+			return
+		}
+		for _, v := range m.Notes {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 // Verify that Image implements ImmutableImage
 var _ ImmutableImage = (*Image)(nil)
 
@@ -107,7 +121,7 @@ type ImmutableImageScan interface {
 	GetOperatingSystem() string
 	// DataSource contains information about which integration was used to scan the image
 	GetImmutableDataSource() ImmutableDataSource
-	GetNotes() []ImageScan_Note
+	GetImmutableNotes() iter.Seq[ImageScan_Note]
 	GetHash() uint64
 	// VT proto functions
 	SizeVT() int
@@ -140,6 +154,20 @@ func (m *ImageScan) GetImmutableComponents() iter.Seq[ImmutableEmbeddedImageScan
 // GetImmutableDataSource implements ImmutableImageScan
 func (m *ImageScan) GetImmutableDataSource() ImmutableDataSource {
 	return m.GetDataSource()
+}
+
+// GetImmutableNotes implements ImmutableImageScan
+func (m *ImageScan) GetImmutableNotes() iter.Seq[ImageScan_Note] {
+	return func(yield func(ImageScan_Note) bool) {
+		if m == nil || m.Notes == nil {
+			return
+		}
+		for _, v := range m.Notes {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that ImageScan implements ImmutableImageScan
@@ -180,7 +208,7 @@ type ImmutableImageSignatureVerificationResult interface {
 	// description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
 	GetDescription() string
 	// The full image names that are verified by this specific signature integration ID.
-	GetVerifiedImageReferences() []string
+	GetImmutableVerifiedImageReferences() iter.Seq[string]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
@@ -193,6 +221,20 @@ func (m *ImageSignatureVerificationResult) GetImmutableVerificationTime() time.T
 		return time.Time{}
 	}
 	return m.VerificationTime.AsTime()
+}
+
+// GetImmutableVerifiedImageReferences implements ImmutableImageSignatureVerificationResult
+func (m *ImageSignatureVerificationResult) GetImmutableVerifiedImageReferences() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.VerifiedImageReferences == nil {
+			return
+		}
+		for _, v := range m.VerifiedImageReferences {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that ImageSignatureVerificationResult implements ImmutableImageSignatureVerificationResult
@@ -260,11 +302,25 @@ var _ ImmutableEmbeddedImageScanComponent = (*EmbeddedImageScanComponent)(nil)
 // ImmutableEmbeddedImageScanComponent_Executable is an immutable interface for EmbeddedImageScanComponent_Executable
 type ImmutableEmbeddedImageScanComponent_Executable interface {
 	GetPath() string
-	GetDependencies() []string
+	GetImmutableDependencies() iter.Seq[string]
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *EmbeddedImageScanComponent_Executable
+}
+
+// GetImmutableDependencies implements ImmutableEmbeddedImageScanComponent_Executable
+func (m *EmbeddedImageScanComponent_Executable) GetImmutableDependencies() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Dependencies == nil {
+			return
+		}
+		for _, v := range m.Dependencies {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // Verify that EmbeddedImageScanComponent_Executable implements ImmutableEmbeddedImageScanComponent_Executable
@@ -294,7 +350,7 @@ type ImmutableImageMetadata interface {
 	// We should always get V2 metadata unless the registry is old or the image is strictly V1
 	GetImmutableV2() ImmutableV2Metadata
 	// We never need both sets of layers so consolidate them. They will be ordered by oldest->newest
-	GetLayerShas() []string
+	GetImmutableLayerShas() iter.Seq[string]
 	// DataSource contains information about which integration was used to pull the metadata
 	GetImmutableDataSource() ImmutableDataSource
 	// Version is used to determine if the metadata needs to be re-pulled
@@ -313,6 +369,20 @@ func (m *ImageMetadata) GetImmutableV1() ImmutableV1Metadata {
 // GetImmutableV2 implements ImmutableImageMetadata
 func (m *ImageMetadata) GetImmutableV2() ImmutableV2Metadata {
 	return m.GetV2()
+}
+
+// GetImmutableLayerShas implements ImmutableImageMetadata
+func (m *ImageMetadata) GetImmutableLayerShas() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.LayerShas == nil {
+			return
+		}
+		for _, v := range m.LayerShas {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // GetImmutableDataSource implements ImmutableImageMetadata
@@ -410,9 +480,9 @@ type ImmutableV1Metadata interface {
 	GetAuthor() string
 	GetImmutableLayers() iter.Seq[ImmutableImageLayer]
 	GetUser() string
-	GetCommand() []string
-	GetEntrypoint() []string
-	GetVolumes() []string
+	GetImmutableCommand() iter.Seq[string]
+	GetImmutableEntrypoint() iter.Seq[string]
+	GetImmutableVolumes() iter.Seq[string]
 	GetImmutableLabels() iter.Seq2[string, string]
 	// VT proto functions
 	SizeVT() int
@@ -435,6 +505,48 @@ func (m *V1Metadata) GetImmutableLayers() iter.Seq[ImmutableImageLayer] {
 			return
 		}
 		for _, v := range m.Layers {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableCommand implements ImmutableV1Metadata
+func (m *V1Metadata) GetImmutableCommand() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Command == nil {
+			return
+		}
+		for _, v := range m.Command {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableEntrypoint implements ImmutableV1Metadata
+func (m *V1Metadata) GetImmutableEntrypoint() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Entrypoint == nil {
+			return
+		}
+		for _, v := range m.Entrypoint {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// GetImmutableVolumes implements ImmutableV1Metadata
+func (m *V1Metadata) GetImmutableVolumes() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Volumes == nil {
+			return
+		}
+		for _, v := range m.Volumes {
 			if !yield(v) {
 				return
 			}

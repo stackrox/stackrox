@@ -98,7 +98,7 @@ type ImmutableProcessSignal interface {
 	// Real group ID
 	GetGid() uint32
 	// Process Lineage
-	GetLineage() []string
+	GetImmutableLineage() iter.Seq[string]
 	// Signal origin
 	GetScraped() bool
 	// Process LineageInfo
@@ -115,6 +115,20 @@ func (m *ProcessSignal) GetImmutableTime() time.Time {
 		return time.Time{}
 	}
 	return m.Time.AsTime()
+}
+
+// GetImmutableLineage implements ImmutableProcessSignal
+func (m *ProcessSignal) GetImmutableLineage() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Lineage == nil {
+			return
+		}
+		for _, v := range m.Lineage {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // GetImmutableLineageInfo implements ImmutableProcessSignal
