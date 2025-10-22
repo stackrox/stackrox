@@ -456,13 +456,27 @@ type ImmutableListAlertPolicy interface {
 	GetName() string
 	GetSeverity() Severity
 	GetDescription() string
-	GetCategories() []string
+	GetImmutableCategories() iter.Seq[string]
 	// For internal use only.
 	GetImmutableDeveloperInternalFields() ImmutableListAlertPolicy_DevFields
 	// VT proto functions
 	SizeVT() int
 	MarshalVT() ([]byte, error)
 	CloneVT() *ListAlertPolicy
+}
+
+// GetImmutableCategories implements ImmutableListAlertPolicy
+func (m *ListAlertPolicy) GetImmutableCategories() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		if m == nil || m.Categories == nil {
+			return
+		}
+		for _, v := range m.Categories {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
 
 // GetImmutableDeveloperInternalFields implements ImmutableListAlertPolicy
