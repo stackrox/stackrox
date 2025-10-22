@@ -60,9 +60,27 @@ RUN rpm --root=/out/ --import /tmp/PGDG-RPM-GPG-KEY-RHEL && \
     rpm --root=/out/ -ivh --nodeps /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     rm -rf /tmp/*.rpm /tmp/PGDG-RPM-GPG-KEY-RHEL
 
-# Create postgres user and group in /out/
-# Note: shadow-utils was installed to /out/, so use chroot to run groupadd/useradd
-RUN chroot /out /bin/sh -c "groupadd -g 70 postgres && adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh"
+# Create postgres user and group in /out/ with UID/GID 70
+# Note: PostgreSQL RPMs may create these during installation, but we need specific UID/GID
+# If they exist with wrong IDs, modify them; otherwise create them
+RUN chroot /out /bin/sh -c " \
+    if getent group postgres >/dev/null; then \
+        current_gid=\$(getent group postgres | cut -d: -f3); \
+        if [ \$current_gid -ne 70 ]; then \
+            groupmod -g 70 postgres; \
+        fi; \
+    else \
+        groupadd -g 70 postgres; \
+    fi && \
+    if id -u postgres &>/dev/null; then \
+        current_uid=\$(id -u postgres); \
+        if [ \$current_uid -ne 70 ]; then \
+            usermod -u 70 -g 70 postgres; \
+        fi; \
+    else \
+        useradd postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh; \
+    fi \
+    "
 
 # Setup locale in /out/
 RUN chroot /out /bin/sh -c "localedef -f UTF-8 -i en_US en_US.UTF-8"
