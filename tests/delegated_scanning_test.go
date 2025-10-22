@@ -256,6 +256,7 @@ func (ts *DelegatedScanningSuite) AfterTest(suiteName string, testName string) {
 		dir := filepath.Join(deleScanArtifactsDir, testName)
 		logf(t, "Test failed, collecting artifacts into %q", dir)
 		collectLogs(t, ts.namespace, dir)
+		collectLogs(t, "default", dir) // Collect logs from default namespace where test deployments are created
 	}
 }
 
@@ -274,6 +275,7 @@ func (ts *DelegatedScanningSuite) handleFailure() {
 		dir := filepath.Join(deleScanArtifactsDir, "Final")
 		ts.logf("Test(s) failed, collecting artifacts before final cleanup into %q", dir)
 		collectLogs(t, ts.namespace, dir)
+		collectLogs(t, "default", dir) // Collect logs from default namespace where test deployments are created
 	}
 }
 
