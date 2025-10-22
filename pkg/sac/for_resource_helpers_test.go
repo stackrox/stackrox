@@ -13,6 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Helper to convert immutable interfaces to concrete types for protoassert
+func toConcreteNamespaces(namespaces []storage.ImmutableNamespaceMetadata) []*storage.NamespaceMetadata {
+	result := make([]*storage.NamespaceMetadata, len(namespaces))
+	for i, ns := range namespaces {
+		result[i] = ns.CloneVT()
+	}
+	return result
+}
+
 var (
 	targetResource = resources.Deployment
 	otherResource  = resources.Namespace
@@ -442,7 +451,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 			helper := ForResource(tc.targetResource)
 			filteredNamespaces, err := helper.FilterAccessibleNamespaces(tc.ctx, storage.Access_READ_ACCESS, allNamespaces)
 			assert.NoError(it, err)
-			protoassert.ElementsMatch(it, filteredNamespaces, tc.expectedFilteredNamespaces)
+			protoassert.ElementsMatch(it, toConcreteNamespaces(filteredNamespaces), toConcreteNamespaces(tc.expectedFilteredNamespaces))
 		})
 	}
 }
@@ -672,7 +681,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 			helper := ForResource(tc.targetResource)
 			filteredNamespaces, err := helper.FilterAccessibleNamespaces(tc.ctx, storage.Access_READ_WRITE_ACCESS, allNamespaces)
 			assert.NoError(it, err)
-			protoassert.ElementsMatch(it, filteredNamespaces, tc.expectedFilteredNamespaces)
+			protoassert.ElementsMatch(it, toConcreteNamespaces(filteredNamespaces), toConcreteNamespaces(tc.expectedFilteredNamespaces))
 		})
 	}
 }

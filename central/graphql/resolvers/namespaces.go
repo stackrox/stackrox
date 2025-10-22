@@ -124,7 +124,7 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 	}
 	namespaces := make([]*v1.Namespace, 0, len(metadataSlice))
 	for _, metadata := range metadataSlice {
-		namespaces = append(namespaces, &v1.Namespace{Metadata: metadata})
+		namespaces = append(namespaces, &v1.Namespace{Metadata: metadata.CloneVT()})
 	}
 	return resolver.wrapNamespacesWithContext(ctx, namespaces, nil)
 }

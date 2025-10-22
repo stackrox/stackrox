@@ -111,7 +111,7 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 		return nil
 	}
 
-	return namespaces[0]
+	return namespaces[0].CloneVT()
 }
 
 func (m datastoreMetadataGetter) GetNamespaceLabels(ctx context.Context, alert *storage.Alert) map[string]string {

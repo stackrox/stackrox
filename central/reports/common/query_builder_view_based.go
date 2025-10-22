@@ -25,7 +25,7 @@ func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabil
 
 // BuildQueryViewBased builds scope and cve filtering queries for view-based vuln reporting
 func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata, watchedImages []string) (*ReportQueryViewBased, error) {
+	namespaces []storage.ImmutableNamespaceMetadata, watchedImages []string) (*ReportQueryViewBased, error) {
 	deploymentsScopedQuery, err := BuildAccessScopeQuery(q.vulnFilters.GetAccessScopeRules(), clusters, namespaces)
 	if err != nil {
 		return nil, err

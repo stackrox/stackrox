@@ -92,7 +92,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]storage.Immutab
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
-	return b.updateNamespacesPriority(slices.Values(allowedNamespaces)), nil
+	return b.updateNamespacesPriority(allowedNamespaces), nil
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
@@ -134,7 +134,7 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 	if err != nil {
 		return nil, err
 	}
-	return b.updateNamespacesPriority(values(namespaces...)), nil
+	return b.updateNamespacesPriority(slices.Collect(values(namespaces...))), nil
 }
 
 func values(nss ...*storage.NamespaceMetadata) iter.Seq[storage.ImmutableNamespaceMetadata] {
@@ -264,12 +264,12 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]st
 
 func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]storage.ImmutableNamespaceMetadata, error) {
 	namespaces, _, err := b.searchNamespaces(ctx, q)
-	return b.updateNamespacesPriority(slices.Values(namespaces)), err
+	return b.updateNamespacesPriority(namespaces), err
 }
 
-func (b *datastoreImpl) updateNamespacesPriority(nss iter.Seq[storage.ImmutableNamespaceMetadata]) []storage.ImmutableNamespaceMetadata {
-	var results []storage.ImmutableNamespaceMetadata
-	for ns := range nss {
+func (b *datastoreImpl) updateNamespacesPriority(namespaces []storage.ImmutableNamespaceMetadata) []storage.ImmutableNamespaceMetadata {
+	results := make([]storage.ImmutableNamespaceMetadata, 0, len(namespaces))
+	for _, ns := range namespaces {
 		results = append(results, b.updateNamespacePriority(ns.CloneVT()))
 	}
 	return results

@@ -7,6 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Helper to convert test fixtures to immutable interface
+func toImmutableNamespaces(namespaces []*storage.NamespaceMetadata) []storage.ImmutableNamespaceMetadata {
+	result := make([]storage.ImmutableNamespaceMetadata, len(namespaces))
+	for i, ns := range namespaces {
+		result[i] = ns
+	}
+	return result
+}
+
 func TestClusterMatcher(t *testing.T) {
 	cases := []struct {
 		policy     *storage.Policy
@@ -108,7 +117,7 @@ func TestClusterMatcher(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
+		actual := NewClusterMatcher(c.cluster, toImmutableNamespaces(c.namespaces)).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -231,7 +240,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
+		actual := NewClusterMatcher(c.cluster, toImmutableNamespaces(c.namespaces)).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }

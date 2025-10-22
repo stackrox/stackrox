@@ -189,7 +189,7 @@ func (g *generator) populateNode(elevatedCtx context.Context, id string, entityT
 	return n
 }
 
-func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, _ map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
+func generatePolicy(node *node, namespacesByName map[string]storage.ImmutableNamespaceMetadata, ingressPolicies, _ map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
 	if hasMatchingPolicy(node.deployment, ingressPolicies[node.deployment.GetNamespace()]) {
 		return nil
 	}
@@ -218,7 +218,7 @@ func (g *generator) getBaselineGeneratedPolicyName(deploymentName string) string
 	return fmt.Sprintf("stackrox-baseline-generated-%s", deploymentName)
 }
 
-func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicy {
+func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[string]storage.ImmutableNamespaceMetadata) *storage.NetworkPolicy {
 
 	policy := &storage.NetworkPolicy{
 		Name:        g.getBaselineGeneratedPolicyName(node.deployment.GetName()),
@@ -240,7 +240,7 @@ func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namespacesByName map[string]storage.ImmutableNamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy
@@ -261,7 +261,7 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namesp
 	return generatedPolicies
 }
 
-func (g *generator) getNamespacesByName(ctx context.Context, clusterID string) (map[string]*storage.NamespaceMetadata, error) {
+func (g *generator) getNamespacesByName(ctx context.Context, clusterID string) (map[string]storage.ImmutableNamespaceMetadata, error) {
 	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, clusterIDQuery)
 	if err != nil {
