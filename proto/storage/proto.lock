@@ -346,7 +346,7 @@
                 "integer": 3
               },
               {
-                "name": "HOST",
+                "name": "NODE",
                 "integer": 4
               }
             ]
@@ -386,7 +386,7 @@
                 "integer": 7
               },
               {
-                "name": "HOST",
+                "name": "NODE",
                 "integer": 8
               }
             ]
@@ -473,8 +473,8 @@
               },
               {
                 "id": 24,
-                "name": "host",
-                "type": "Host",
+                "name": "node",
+                "type": "Node",
                 "oneof_parent": "Entity"
               },
               {
@@ -490,8 +490,8 @@
               },
               {
                 "id": 25,
-                "name": "file_activity_violation",
-                "type": "FileActivityViolation"
+                "name": "file_access_violation",
+                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -659,7 +659,7 @@
                 ]
               },
               {
-                "name": "Host",
+                "name": "Node",
                 "fields": [
                   {
                     "id": 1,
@@ -808,7 +808,7 @@
                 ]
               },
               {
-                "name": "FileActivityViolation",
+                "name": "FileAccessViolation",
                 "fields": [
                   {
                     "id": 1,
@@ -817,8 +817,8 @@
                   },
                   {
                     "id": 2,
-                    "name": "activity",
-                    "type": "FileActivity",
+                    "name": "accesses",
+                    "type": "FileAccess",
                     "is_repeated": true
                   }
                 ]
@@ -896,9 +896,9 @@
                 "oneof_parent": "Entity"
               },
               {
-                "id": 16,
-                "name": "host",
-                "type": "HostEntity",
+                "id": 12,
+                "name": "node",
+                "type": "NodeEntity",
                 "oneof_parent": "Entity"
               }
             ],
@@ -947,7 +947,7 @@
                 ]
               },
               {
-                "name": "HostEntity",
+                "name": "NodeEntity",
                 "fields": [
                   {
                     "id": 1,
@@ -1087,7 +1087,7 @@
             "path": "storage/deployment.proto"
           },
           {
-            "path": "storage/file_activity.proto"
+            "path": "storage/file_access.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -8170,11 +8170,11 @@
       }
     },
     {
-      "protopath": "file_activity.proto",
+      "protopath": "file_access.proto",
       "def": {
         "enums": [
           {
-            "name": "FileActivity.Operation",
+            "name": "FileAccess.Operation",
             "enum_fields": [
               {
                 "name": "CREATE"
@@ -8208,7 +8208,7 @@
         ],
         "messages": [
           {
-            "name": "FileActivity",
+            "name": "FileAccess",
             "fields": [
               {
                 "id": 1,
@@ -13174,7 +13174,7 @@
                 "integer": 2
               },
               {
-                "name": "HOST_EVENT",
+                "name": "NODE_EVENT",
                 "integer": 3
               }
             ]
