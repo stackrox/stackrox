@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 

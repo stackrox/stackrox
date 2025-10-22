@@ -767,7 +767,6 @@ module.exports = [
             'src/Components/CompoundSearchFilter/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/Policies/**',
-            'src/Containers/Risk/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
@@ -811,7 +810,6 @@ module.exports = [
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/PolicyManagement/**',
-            'src/Containers/Risk/**',
             'src/Containers/Search/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',

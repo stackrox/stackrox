@@ -191,53 +191,53 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 	past := nowTS - 1000
 
 	testCases := map[string]struct {
-		connKey        string
-		setupStore     func(name string)
+		connKey        indicator.BinaryHash
+		setupStore     func(key indicator.BinaryHash)
 		expectedFound  bool
 		expectedPrevTS timestamp.MicroTS
 	}{
 		"Unknown connections should not be found and return 0": {
-			connKey: "unknown-connection",
-			setupStore: func(name string) {
-				transitionBased.storeClosedConnectionTimestamp("foo-bar", past, closedConnRememberDuration)
+			connKey: indicator.BinaryHash(0x1234567890ABCDEF),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
 			},
 			expectedFound:  false,
 			expectedPrevTS: 0,
 		},
 		"Open connections should not be found in closed connection tracking": {
-			connKey:        "open-connection",
-			setupStore:     func(_ string) {},
+			connKey:        indicator.BinaryHash(0x1111111111111111),
+			setupStore:     func(_ indicator.BinaryHash) {},
 			expectedFound:  false,
 			expectedPrevTS: 0,
 		},
 		"Stored closed connection should be found with correct timestamp": {
-			connKey: "closed-connection-1",
-			setupStore: func(name string) {
-				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+			connKey: indicator.BinaryHash(0x2222222222222222),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
 		},
 		"Stored closed connection should be found regardless of current timestamp": {
-			connKey: "closed-connection-2",
-			setupStore: func(name string) {
-				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+			connKey: indicator.BinaryHash(0x3333333333333333),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
 		},
 		"Stored closed connection should be found even with same timestamp": {
-			connKey: "closed-connection-3",
-			setupStore: func(name string) {
-				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+			connKey: indicator.BinaryHash(0x4444444444444444),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
 		},
 		"Stored closed connection should still be found after cleanup": {
-			connKey: "closed-connection-4",
-			setupStore: func(name string) {
-				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+			connKey: indicator.BinaryHash(0x5555555555555555),
+			setupStore: func(key indicator.BinaryHash) {
+				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,

@@ -731,6 +731,11 @@ image_prefetcher_system_await() {
 
 _image_prefetcher_prebuilt_await() {
     case "$CI_JOB_NAME" in
+
+    # Note: when adding a case for a new test job below, add a image_prefetcher_prebuilt_await call
+    # at the last moment before any of the prebuilt images is used. (See other existing examples.)
+    # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
+
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
         ;;

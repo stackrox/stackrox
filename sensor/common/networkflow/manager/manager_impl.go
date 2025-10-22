@@ -147,19 +147,20 @@ func NewManager(
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
 	mgr := &networkFlowManager{
-		connectionsByHost: make(map[string]*hostConnections),
-		clusterEntities:   clusterEntities,
-		publicIPs:         newPublicIPsManager(),
-		externalSrcs:      externalSrcs,
-		policyDetector:    policyDetector,
-		enricherTicker:    enricherTicker,
-		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updateComputer,
-		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
-		pubSub:            pubSub,
+		connectionsByHost:    make(map[string]*hostConnections),
+		clusterEntities:      clusterEntities,
+		publicIPs:            newPublicIPsManager(),
+		externalSrcs:         externalSrcs,
+		policyDetector:       policyDetector,
+		enricherTicker:       enricherTicker,
+		enricherTickerC:      enricherTicker.C,
+		updateComputer:       updateComputer,
+		initialSync:          &atomic.Bool{},
+		enrichmentDoneSignal: concurrency.NewSignal(),
+		activeConnections:    make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:      make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		stopper:              concurrency.NewStopper(),
+		pubSub:               pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -218,6 +219,17 @@ type networkFlowManager struct {
 	sensorUpdates chan *message.ExpiringMessage
 
 	initialSync *atomic.Bool
+
+	// enrichmentDoneSignal is emitted after each enrichment cycle completes (enrichAndSend + RecordTick).
+	// This signal is primarily used for test synchronization but is harmless in production.
+	// Overhead: ~8 bytes + O(1) signal emission with no blocking or performance impact.
+	// Kept in production code to avoid build tag complexity and conditional compilation.
+	enrichmentDoneSignal concurrency.Signal
+
+	// sendCyclesCompleted counts the number of send() cycles that have completed.
+	// Incremented after both sendConnsEps and sendProcesses finish (after all channel operations attempted).
+	// Used for test synchronization to ensure send phase is complete, not just enrichment.
+	sendCyclesCompleted atomic.Uint64
 
 	enricherTicker  *time.Ticker
 	enricherTickerC <-chan time.Time
@@ -342,7 +354,15 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 	}
 }
 
-func (m *networkFlowManager) enrichAndSend() {
+type enrichmentResult struct {
+	currentConns              map[indicator.NetworkConn]timestamp.MicroTS
+	currentEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
+	updatedConns              []*storage.NetworkFlow
+	updatedEndpoints          []*storage.NetworkEndpoint
+	updatedProcesses          []*storage.ProcessListeningOnPortFromSensor
+}
+
+func (m *networkFlowManager) enrich() *enrichmentResult {
 	m.updateEnrichmentCollectionsSize()
 	// currentEnrichedConnsAndEndpoints takes connections, endpoints, and processes (i.e., enriched-entities, short EE)
 	// and updates them by adding data from different sources (enriching).
@@ -362,24 +382,42 @@ func (m *networkFlowManager) enrichAndSend() {
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
 
-	// Run periodic cleanup after all tasks here are done.
+	return &enrichmentResult{
+		currentConns:              currentConns,
+		currentEndpointsProcesses: currentEndpointsProcesses,
+		updatedConns:              updatedConns,
+		updatedEndpoints:          updatedEndpoints,
+		updatedProcesses:          updatedProcesses,
+	}
+}
+
+func (m *networkFlowManager) send(result *enrichmentResult) {
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
-	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
+	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
+		if sent := m.sendConnsEps(result.updatedConns, result.updatedEndpoints); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendConnections(currentConns)
-			m.updateComputer.OnSuccessfulSendEndpoints(currentEndpointsProcesses)
+			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
+			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
 		}
 	}
 
-	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		if sent := m.sendProcesses(updatedProcesses); sent {
+	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {
+		if sent := m.sendProcesses(result.updatedProcesses); sent {
 			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendProcesses(currentEndpointsProcesses)
+			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+
+	// Increment counter after all send operations complete (including channel operations)
+	m.sendCyclesCompleted.Add(1)
+}
+
+func (m *networkFlowManager) enrichAndSend() {
+	result := m.enrich()
+	m.enrichmentDoneSignal.Signal()
+	m.send(result)
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {

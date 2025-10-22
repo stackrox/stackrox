@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem, Switch, Tooltip } from '@patternfly/react-core';
 import { LockIcon, LockOpenIcon } from '@patternfly/react-icons';
 
