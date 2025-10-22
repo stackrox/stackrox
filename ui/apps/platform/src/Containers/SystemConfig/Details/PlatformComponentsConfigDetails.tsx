@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -11,7 +12,7 @@ import {
     Text,
 } from '@patternfly/react-core';
 
-import { PlatformComponentsConfig } from 'types/config.proto';
+import type { PlatformComponentsConfig } from 'types/config.proto';
 
 import './PlatformComponentsConfigDetails.css';
 import RedHatLayeredProductsCard from './components/RedHatLayeredProductsCard';

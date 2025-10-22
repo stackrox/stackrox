@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
-
-import { PublicConfig } from 'types/config.proto';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Divider, Label } from '@patternfly/react-core';
+
+import type { PublicConfig } from 'types/config.proto';
 
 export type PublicConfigTelemetryDetailsProps = {
     publicConfig: PublicConfig | null;

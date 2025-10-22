@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Flex,
@@ -11,10 +12,10 @@ import {
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
-import { SystemConfig } from 'types/config.proto';
-
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useTelemetryConfig from 'hooks/useTelemetryConfig';
+import type { SystemConfig } from 'types/config.proto';
+
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
 import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';

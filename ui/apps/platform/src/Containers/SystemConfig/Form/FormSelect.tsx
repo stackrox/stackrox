@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { SelectOptionProps } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import type { SelectOptionProps } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 

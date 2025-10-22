@@ -774,7 +774,6 @@ module.exports = [
             'src/Components/CompoundSearchFilter/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/Policies/**',
-            'src/Containers/SystemConfig/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated

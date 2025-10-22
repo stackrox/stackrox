@@ -14,7 +14,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { PlatformComponentRule } from 'types/config.proto';
+import type { PlatformComponentRule } from 'types/config.proto';
 
 export type CustomPlatformComponentsCardProps = {
     customRules: PlatformComponentRule[];
