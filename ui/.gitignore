@@ -17,6 +17,7 @@ npm-debug.log*
 
 # misc
 .DS_Store
+/apps/platform/.eslintcache
 
 # AI rules
 # we want to ignore all AI rules while we are experimenting with them
