@@ -1,6 +1,6 @@
 [versions]
 grpc = "1.69.0"
-protobuf = "4.32.1" # If the proto versions are changed, be sure it is also changed in make/protogen.mk.
+protobuf = "4.33.0" # If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 netty-tcnative = "2.0.61.Final"
 fabric8 = "7.4.0"
 jackson = "2.14.2"
