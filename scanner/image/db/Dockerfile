@@ -39,6 +39,7 @@ RUN dnf install \
     util-linux \
     shadow-utils \
     ca-certificates \
+    openldap \
     glibc-langpack-en \
     glibc-locale-source \
     libicu \
