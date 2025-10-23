@@ -62,6 +62,25 @@ var (
 	sensorPodLabels = map[string]string{"app": "sensor"}
 )
 
+// testutilsLogger adapts testutils.T to retryablehttp.Logger interface.
+//
+// WHY THIS EXISTS (and why it's unfortunate):
+// The retryablehttp library requires a logger implementing its Logger interface with Printf method.
+// Go's *testing.T has Logf but NOT Printf (different method names, same functionality).
+// We cannot add Printf to testutils.T because that would break compatibility with *testing.T,
+// which is used throughout the codebase (e.g., centralgrpc.GRPCConnectionToCentral(t testutils.T)).
+//
+// CLEANER ALTERNATIVE:
+// Accept *testing.T directly in helper functions and create testutils.T wrappers locally where needed
+// (specifically for the retry mechanism). This would avoid the interface constraint propagating everywhere.
+// However, this would be a larger refactor affecting many test helper functions.
+//
+// CURRENT COMPROMISE:
+// Use this tiny adapter ONLY where retryablehttp requires it. Everywhere else uses testutils.T naturally.
+type testutilsLogger struct{ testutils.T }
+
+func (l testutilsLogger) Printf(format string, v ...interface{}) { l.Logf(format, v...) }
+
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
 // Using testing.T.Logf means that the output is hidden unless the test fails or verbose logging is enabled with -v.
 func logf(t *testing.T, format string, args ...any) {
@@ -626,7 +645,7 @@ func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.I
 	retryClient.RetryMax = 3
 	retryClient.RetryWaitMin = 500 * time.Millisecond
 	retryClient.RetryWaitMax = 2 * time.Second
-	retryClient.Logger = t
+	retryClient.Logger = testutilsLogger{t}
 	if restCfg.Timeout == 0 {
 		restCfg.Timeout = 30 * time.Second
 	}
