@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-risk-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+data:
+  feature_config.yaml: |
+    # ML Risk Service Configuration
+    features:
+      deployment:
+        policy_violations:
+          enabled: true
+          weight: 1.0
+          normalize_saturation: 50
+          max_value: 4.0
+        process_baseline_violations:
+          enabled: true
+          weight: 0.8
+        host_network:
+          enabled: true
+          weight: 0.7
+        host_pid:
+          enabled: true
+          weight: 0.6
+        host_ipc:
+          enabled: true
+          weight: 0.6
+        privileged_containers:
+          enabled: true
+          weight: 0.9
+        port_exposure:
+          enabled: true
+          weight: 0.5
+        service_account_permissions:
+          enabled: true
+          weight: 0.6
+        replicas:
+          enabled: true
+          weight: 0.3
+
+      image:
+        vulnerabilities:
+          enabled: true
+          weight: 1.0
+          severity_weights:
+            critical: 10.0
+            high: 4.0
+            medium: 1.0
+            low: 0.25
+        risky_components:
+          enabled: true
+          weight: 0.7
+        component_count:
+          enabled: true
+          weight: 0.4
+        image_age:
+          enabled: true
+          weight: 0.5
+          age_threshold_days: 365
+
+    model:
+      algorithm: "lightgbm_ranker"
+      validation_split: 0.2
+      random_state: 42
+      lightgbm_params:
+        objective: "lambdarank"
+        metric: "ndcg"
+        num_leaves: 31
+        learning_rate: 0.1
+        feature_fraction: 0.9
+        bagging_fraction: 0.8
+        bagging_freq: 5
+        verbose: 0
+      explainability:
+        shap_enabled: true
+        top_features: 10
+
+    training:
+      batch_size: 1000
+      max_iterations: 100
+      early_stopping_rounds: 10
+
+    api:
+      grpc_port: 8080
+      health_port: 8081
+      health_enabled: true
+      max_workers: 10

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-risk-service
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - name: grpc
+    port: 8080
+    targetPort: grpc
+    protocol: TCP
+  - name: health
+    port: 8081
+    targetPort: health
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: ml-risk-service
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-risk-service-headless
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: grpc
+    port: 8080
+    targetPort: grpc
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: ml-risk-service

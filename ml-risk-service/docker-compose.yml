@@ -1,0 +1,87 @@
+# Docker Compose for local development and testing
+version: '3.8'
+
+services:
+  ml-risk-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: stackrox/ml-risk-service:latest
+    container_name: ml-risk-service
+    ports:
+      - "8080:8080"  # gRPC port
+      - "8081:8081"  # Health/metrics port
+    environment:
+      - GRPC_PORT=8080
+      - HEALTH_PORT=8081
+      - LOG_LEVEL=INFO
+      - CONFIG_FILE=/app/config/feature_config.yaml
+    volumes:
+      - ./models:/app/models
+      - ./training_data:/app/training_data
+      - ./logs:/app/logs
+    networks:
+      - stackrox-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Mock Central service for testing
+  mock-central:
+    image: nginx:alpine
+    container_name: mock-central
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./test/mock-central:/usr/share/nginx/html
+    networks:
+      - stackrox-net
+    restart: unless-stopped
+
+  # Prometheus for monitoring (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ml-risk-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - stackrox-net
+    restart: unless-stopped
+    depends_on:
+      - ml-risk-service
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ml-risk-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - stackrox-net
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  stackrox-net:
+    driver: bridge
+
+volumes:
+  grafana-storage:
