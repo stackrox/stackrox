@@ -1429,11 +1429,10 @@
         "CLUSTER_ROLE_BINDINGS",
         "NETWORK_POLICIES",
         "SECURITY_CONTEXT_CONSTRAINTS",
-        "EGRESS_FIREWALLS",
-        "NODE"
+        "EGRESS_FIREWALLS"
       ],
       "default": "DEPLOYMENT",
-      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)"
+      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"
     },
     "storageNetworkEntityInfoType": {
       "type": "string",

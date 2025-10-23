@@ -243,7 +243,7 @@ func (Alert_Violation_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
-// This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and node values)
+// This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)
 type ListAlert_ResourceType int32
 
 const (
@@ -255,7 +255,6 @@ const (
 	ListAlert_NETWORK_POLICIES             ListAlert_ResourceType = 5
 	ListAlert_SECURITY_CONTEXT_CONSTRAINTS ListAlert_ResourceType = 6
 	ListAlert_EGRESS_FIREWALLS             ListAlert_ResourceType = 7
-	ListAlert_NODE                         ListAlert_ResourceType = 8
 )
 
 // Enum value maps for ListAlert_ResourceType.
@@ -269,7 +268,6 @@ var (
 		5: "NETWORK_POLICIES",
 		6: "SECURITY_CONTEXT_CONSTRAINTS",
 		7: "EGRESS_FIREWALLS",
-		8: "NODE",
 	}
 	ListAlert_ResourceType_value = map[string]int32{
 		"DEPLOYMENT":                   0,
@@ -280,7 +278,6 @@ var (
 		"NETWORK_POLICIES":             5,
 		"SECURITY_CONTEXT_CONSTRAINTS": 6,
 		"EGRESS_FIREWALLS":             7,
-		"NODE":                         8,
 	}
 )
 
@@ -2091,7 +2088,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x0fCONTAINER_IMAGE\x10\x02\x12\f\n" +
 	"\bRESOURCE\x10\x03\x12\b\n" +
 	"\x04NODE\x10\x04B\b\n" +
-	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xe9\b\n" +
+	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xdf\b\n" +
 	"\tListAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12.\n" +
@@ -2118,7 +2115,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x1a \n" +
 	"\n" +
 	"NodeEntity\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xc1\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xb7\x01\n" +
 	"\fResourceType\x12\x0e\n" +
 	"\n" +
 	"DEPLOYMENT\x10\x00\x12\v\n" +
@@ -2129,8 +2126,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x04\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\a\x12\b\n" +
-	"\x04NODE\x10\bB\b\n" +
+	"\x10EGRESS_FIREWALLS\x10\aB\b\n" +
 	"\x06EntityJ\x04\b\b\x10\t\"\xb0\x02\n" +
 	"\x0fListAlertPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
