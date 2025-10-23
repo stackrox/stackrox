@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/client"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -200,17 +199,16 @@ func NewMLRiskClient(config *Config) (MLRiskClient, error) {
 
 // GetDeploymentRisk gets risk score for a single deployment
 func (c *mlRiskClientImpl) GetDeploymentRisk(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) (*MLRiskResponse, error) {
-	// Extract features from StackRox objects
-	deploymentFeatures := c.extractDeploymentFeatures(deployment)
-	imageFeatures := c.extractImageFeatures(images)
-
-	request := &DeploymentRiskRequest{
-		DeploymentID:       deployment.GetId(),
-		DeploymentFeatures: deploymentFeatures,
-		ImageFeatures:      imageFeatures,
-	}
+	// Extract features from StackRox objects (for future gRPC implementation)
+	// deploymentFeatures := c.extractDeploymentFeatures(deployment)
+	// imageFeatures := c.extractImageFeatures(images)
 
 	// In practice, this would call the gRPC method:
+	// request := &DeploymentRiskRequest{
+	//     DeploymentID:       deployment.GetId(),
+	//     DeploymentFeatures: deploymentFeatures,
+	//     ImageFeatures:      imageFeatures,
+	// }
 	// resp, err := c.client.GetDeploymentRisk(ctx, convertToProtoRequest(request))
 
 	// For now, return a mock response
@@ -297,7 +295,7 @@ func (c *mlRiskClientImpl) Close() error {
 // extractDeploymentFeatures converts StackRox Deployment to DeploymentFeatures
 func (c *mlRiskClientImpl) extractDeploymentFeatures(deployment *storage.Deployment) *DeploymentFeatures {
 	features := &DeploymentFeatures{
-		ReplicaCount:            deployment.GetReplicas(),
+		ReplicaCount:            int32(deployment.GetReplicas()),
 		HostNetwork:             deployment.GetHostNetwork(),
 		HostPID:                 deployment.GetHostPid(),
 		HostIPC:                 deployment.GetHostIpc(),
@@ -348,7 +346,7 @@ func (c *mlRiskClientImpl) extractImageFeatures(images []*storage.Image) []*Imag
 		imageFeatures := &ImageFeatures{
 			ImageID:        image.GetId(),
 			ImageName:      image.GetName().GetFullName(),
-			IsClusterLocal: image.GetClusterLocal(),
+			IsClusterLocal: image.GetIsClusterLocal(),
 		}
 
 		// Extract creation timestamp
@@ -376,15 +374,15 @@ func (c *mlRiskClientImpl) extractImageFeatures(images []*storage.Image) []*Imag
 				for _, vuln := range component.GetVulns() {
 					// Count vulnerabilities by severity
 					switch vuln.GetSeverity() {
-					case storage.VulnerabilityState_CRITICAL:
+					case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
 						imageFeatures.CriticalVulnCount++
 						hasHighRiskVuln = true
-					case storage.VulnerabilityState_IMPORTANT:
+					case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
 						imageFeatures.HighVulnCount++
 						hasHighRiskVuln = true
-					case storage.VulnerabilityState_MODERATE:
+					case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
 						imageFeatures.MediumVulnCount++
-					case storage.VulnerabilityState_LOW:
+					case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
 						imageFeatures.LowVulnCount++
 					}
 
