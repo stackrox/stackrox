@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import capitalize from 'lodash/capitalize';
 import {
