@@ -74,7 +74,7 @@ func (s *k8sRoleBindingSACSuite) deleteK8sRoleBinding(id string) {
 }
 
 func (s *k8sRoleBindingSACSuite) TestUpsertRoleBinding() {
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -120,7 +120,7 @@ func (s *k8sRoleBindingSACSuite) TestGetRoleBinding() {
 }
 
 func (s *k8sRoleBindingSACSuite) TestRemoveRoleBinding() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -134,11 +134,19 @@ func (s *k8sRoleBindingSACSuite) TestRemoveRoleBinding() {
 			defer s.deleteK8sRoleBinding(roleBinding.GetId())
 
 			err = s.datastore.RemoveRoleBinding(ctx, roleBinding.GetId())
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetchedRoleBinding, found, err := s.datastore.GetRoleBinding(
+				s.testContexts[testutils.UnrestrictedReadCtx],
+				roleBinding.GetId(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), roleBinding, fetchedRoleBinding)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetchedRoleBinding)
 			}
 		})
 	}
