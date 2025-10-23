@@ -9,6 +9,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.6]
+
+### Technical Changes
+
+- ROX-31365: Fixed an issue that could cause DB connection exhaustion when many sensor try to reconnect at the same time
+
 ## [4.8.5]
 
 ### Technical Changes
