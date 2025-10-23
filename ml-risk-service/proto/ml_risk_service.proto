@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package ml_risk;
+
+option go_package = "./ml_risk;ml_risk";
+
+// ML Risk Service for deployment risk ranking
+service MLRiskService {
+  // Get risk score for a single deployment
+  rpc GetDeploymentRisk(DeploymentRiskRequest) returns (DeploymentRiskResponse);
+
+  // Get risk scores for multiple deployments (batch)
+  rpc GetBatchDeploymentRisk(BatchDeploymentRiskRequest) returns (BatchDeploymentRiskResponse);
+
+  // Train the model with new data
+  rpc TrainModel(TrainModelRequest) returns (TrainModelResponse);
+
+  // Get model health and metrics
+  rpc GetModelHealth(ModelHealthRequest) returns (ModelHealthResponse);
+}
+
+// Request for single deployment risk scoring
+message DeploymentRiskRequest {
+  string deployment_id = 1;
+  DeploymentFeatures deployment_features = 2;
+  repeated ImageFeatures image_features = 3;
+}
+
+// Response with risk score and explanations
+message DeploymentRiskResponse {
+  string deployment_id = 1;
+  float risk_score = 2;
+  repeated FeatureImportance feature_importances = 3;
+  string model_version = 4;
+  int64 timestamp = 5;
+}
+
+// Batch request for multiple deployments
+message BatchDeploymentRiskRequest {
+  repeated DeploymentRiskRequest requests = 1;
+}
+
+// Batch response
+message BatchDeploymentRiskResponse {
+  repeated DeploymentRiskResponse responses = 1;
+}
+
+// Training request
+message TrainModelRequest {
+  repeated TrainingExample training_data = 1;
+  string config_override = 2; // YAML config override
+}
+
+// Training response
+message TrainModelResponse {
+  bool success = 1;
+  string model_version = 2;
+  TrainingMetrics metrics = 3;
+  string error_message = 4;
+}
+
+// Model health request
+message ModelHealthRequest {}
+
+// Model health response
+message ModelHealthResponse {
+  bool healthy = 1;
+  string model_version = 2;
+  int64 last_training_time = 3;
+  int32 training_examples_count = 4;
+  ModelMetrics current_metrics = 5;
+}
+
+// Deployment feature vector
+message DeploymentFeatures {
+  // Policy violations
+  int32 policy_violation_count = 1;
+  float policy_violation_severity_score = 2;
+
+  // Process baseline violations
+  int32 process_baseline_violations = 3;
+
+  // Host access features
+  bool host_network = 4;
+  bool host_pid = 5;
+  bool host_ipc = 6;
+
+  // Container security
+  int32 privileged_container_count = 7;
+  bool automount_service_account_token = 8;
+
+  // Port exposure
+  int32 exposed_port_count = 9;
+  bool has_external_exposure = 10;
+
+  // Service account permissions
+  float service_account_permission_level = 11;
+
+  // Deployment configuration
+  int32 replica_count = 12;
+  bool is_orchestrator_component = 13;
+  bool is_platform_component = 14;
+
+  // Cluster context
+  string cluster_id = 15;
+  string namespace = 16;
+
+  // Age and activity
+  int64 creation_timestamp = 17;
+  bool is_inactive = 18;
+}
+
+// Image feature vector
+message ImageFeatures {
+  string image_id = 1;
+  string image_name = 2;
+
+  // Vulnerability metrics
+  int32 critical_vuln_count = 3;
+  int32 high_vuln_count = 4;
+  int32 medium_vuln_count = 5;
+  int32 low_vuln_count = 6;
+  float avg_cvss_score = 7;
+  float max_cvss_score = 8;
+
+  // Component metrics
+  int32 total_component_count = 9;
+  int32 risky_component_count = 10;
+
+  // Image metadata
+  int64 image_creation_timestamp = 11;
+  int32 image_age_days = 12;
+  bool is_cluster_local = 13;
+
+  // Base image info
+  string base_image = 14;
+  int32 layer_count = 15;
+}
+
+// Feature importance for explainability
+message FeatureImportance {
+  string feature_name = 1;
+  float importance_score = 2;
+  string feature_category = 3; // "deployment", "image", "vulnerability"
+  string description = 4;
+}
+
+// Training example
+message TrainingExample {
+  DeploymentFeatures deployment_features = 1;
+  repeated ImageFeatures image_features = 2;
+  float current_risk_score = 3; // Ground truth from existing system
+  string deployment_id = 4;
+}
+
+// Training metrics
+message TrainingMetrics {
+  float validation_ndcg = 1;
+  float validation_auc = 2;
+  float training_loss = 3;
+  int32 epochs_completed = 4;
+  repeated FeatureImportance global_feature_importance = 5;
+}
+
+// Current model metrics
+message ModelMetrics {
+  float current_ndcg = 1;
+  float current_auc = 2;
+  int32 predictions_served = 3;
+  float avg_prediction_time_ms = 4;
+}
