@@ -18,19 +18,27 @@ test_roxctl_cmd() {
   # 15 minutes and overwrites the kubeconfig file, which deletes custom contexts
   # created by this test. Using a temporary kubeconfig prevents this race condition.
   # See ROX-29633 for details.
+  #
+  # IMPORTANT: We use 'local' to scope KUBECONFIG to this function, preventing it
+  # from leaking to the parent shell. The 'export' makes it visible to child processes
+  # (kubectl, roxctl). When the function exits, the local variable is destroyed and
+  # the parent's KUBECONFIG remains unchanged.
   local ORIGINAL_KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
   local TEST_KUBECONFIG
   TEST_KUBECONFIG=$(mktemp)
 
-  cleanup_kubeconfig() {
-    rm -f "$TEST_KUBECONFIG"
-    export KUBECONFIG="$ORIGINAL_KUBECONFIG"
-  }
-  trap cleanup_kubeconfig EXIT
-
   # Copy current config to isolated file
   cp "$ORIGINAL_KUBECONFIG" "$TEST_KUBECONFIG"
-  export KUBECONFIG="$TEST_KUBECONFIG"
+
+  # Set KUBECONFIG locally and export for child processes
+  local KUBECONFIG="$TEST_KUBECONFIG"
+  export KUBECONFIG
+
+  # Cleanup function only needs to remove the temp file
+  cleanup_kubeconfig() {
+    rm -f "$TEST_KUBECONFIG"
+  }
+  trap cleanup_kubeconfig EXIT
 
   CURRENT_CONTEXT=$(kubectl config current-context)
   CURRENT_CLUSTER=$(kubectl config view -o jsonpath="{.contexts[?(@.name=='$CURRENT_CONTEXT')].context.cluster}")
