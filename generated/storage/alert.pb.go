@@ -733,7 +733,7 @@ type ListAlert_Resource struct {
 type ListAlert_Node struct {
 	// Represents an alert on a node
 	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-	Node *ListAlert_NodeEntity `protobuf:"bytes,16,opt,name=node,proto3,oneof"`
+	Node *ListAlert_NodeEntity `protobuf:"bytes,12,opt,name=node,proto3,oneof"`
 }
 
 func (*ListAlert_Deployment) isListAlert_Entity() {}
@@ -2106,7 +2106,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"deployment\x18\x05 \x01(\v2\x1c.storage.ListAlertDeploymentH\x00R\n" +
 	"deployment\x12?\n" +
 	"\bresource\x18\v \x01(\v2!.storage.ListAlert.ResourceEntityH\x00R\bresource\x123\n" +
-	"\x04node\x18\x10 \x01(\v2\x1d.storage.ListAlert.NodeEntityH\x00R\x04node\x1a\xdb\x01\n" +
+	"\x04node\x18\f \x01(\v2\x1d.storage.ListAlert.NodeEntityH\x00R\x04node\x1a\xdb\x01\n" +
 	"\x10CommonEntityInfo\x12!\n" +
 	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1d\n" +
