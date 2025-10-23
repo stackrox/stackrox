@@ -708,7 +708,7 @@ check_for_stackrox_OOMs() {
             # This wack jq slurp flag with the if statement is due to https://github.com/stedolan/jq/issues/1142
             if app_name=$(jq -ser 'if . == [] then null else .[] | select(.kind=="Pod") | .metadata.labels["app"] end' "$object"); then
                 info "Checking $object for OOMKilled"
-                jq "$object" | head
+                (set -o pipefail; jq "." "$object" | head) || head "$object"
                 info "Last state terminated reason:"
                 info $(jq -e '{name: .metadata.name, reason: .status.containerStatuses[].lastState.terminated.reason}' "$object")
                 info "---"
