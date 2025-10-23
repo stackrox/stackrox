@@ -6,6 +6,7 @@ import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
 import {
+    exceptionManagementPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
@@ -15,6 +16,7 @@ import {
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
 
@@ -96,6 +98,10 @@ function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
             getAbsoluteUrl(
                 getWorkloadEntityPagePath('Deployment', workload.id, vulnerabilityState)
             ),
+        exceptionDetails: (cve: string) => {
+            const query = getUrlQueryStringForSearchFilter({ CVE: [cve] });
+            return `${exceptionManagementPath}/pending-requests?${query}`;
+        },
     };
 }
 
