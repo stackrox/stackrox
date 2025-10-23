@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -6,9 +5,9 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import DateDistance from 'Components/DateDistance';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import { getTableUIState } from 'utils/getTableUIState';
-import useURLPagination from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ApiSortOption } from 'types/search';
+import type useURLPagination from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ApiSortOption } from 'types/search';
 
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -21,7 +20,8 @@ import {
 } from '../../utils/sortFields';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import { QuerySearchFilter, isVulnerabilitySeverityLabel } from '../../types';
+import { isVulnerabilitySeverityLabel } from '../../types';
+import type { QuerySearchFilter } from '../../types';
 import useNodes from './useNodes';
 
 export const sortFields = [

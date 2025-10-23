@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
 
-import { CveMetadata } from '../../components/CvePageHeader';
+import type { CveMetadata } from '../../components/CvePageHeader';
 
 const metadataQuery = gql`
     query getNodeCVEMetadata($cve: String!) {

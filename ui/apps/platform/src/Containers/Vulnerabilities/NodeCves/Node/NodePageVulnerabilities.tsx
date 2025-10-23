@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Divider,
     Flex,
@@ -18,14 +17,14 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
-
-import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
+} from '../../searchFilterConfig';
 
 import {
     getHiddenSeverities,
