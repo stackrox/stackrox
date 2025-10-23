@@ -2,10 +2,6 @@
 # Contains a Pod with multiple containers.
 # Note: pods_test and container_instances_test depend on this.
 #
-# IMPORTANT: The busybox container runs a loop with 'date' and 'sleep'.
-# Collector behavior: /bin/sleep is reliably captured, but there are some CI runs where /bin/date is NOT (reason unknown).
-# Tests are designed to handle this - see comments in pods_test.go and container_instances_test.go.
-# Images are from quay.io/rhacs-eng to avoid Docker Hub rate limits (see qa-tests-backend/scripts/images-to-prefetch.txt)
 apiVersion: v1
 kind: Pod
 metadata:

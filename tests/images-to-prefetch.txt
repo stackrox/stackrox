@@ -14,12 +14,3 @@ quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e886
 
 # Used by tests/tls_challenge_test.go
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
-
-# NOTE: The following images are used by other e2e tests but are NOT in the main
-# prefetch list and may require special credentials or will be pulled on-demand:
-#
-# - quay.io/rhacs-eng/qa:nginx-1-14-alpine (resourcecollection_test.go)
-# - registry.access.redhat.com/ubi9/ubi-minimal:* (delegated_scanning_test.go, requires QUAY_RHACS_ENG_RO_* credentials)
-# - quay.io/rhacs-eng/qa:dele-scan-* (delegated_scanning_test.go, requires QUAY_RHACS_ENG_RO_* credentials)
-#
-# These tests may fail in CI environments without proper credentials configured.
