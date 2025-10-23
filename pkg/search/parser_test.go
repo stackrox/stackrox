@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -229,8 +230,16 @@ func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
 		excessiveValues[i] = fmt.Sprintf("value%d", i)
 	}
 
-	// Verify that queryFromFieldValues panics when given too many parameters
-	require.Panics(t, func() {
-		queryFromFieldValues("test-field", excessiveValues, false)
-	}, "Expected queryFromFieldValues to panic when exceeding MaxQueryParameters")
+	// On dev builds, utils.Should panics; on release builds, it logs and returns.
+	if !buildinfo.ReleaseBuild {
+		// Verify that queryFromFieldValues panics when given too many parameters on dev builds
+		require.Panics(t, func() {
+			queryFromFieldValues("test-field", excessiveValues, false)
+		}, "Expected queryFromFieldValues to panic when exceeding MaxQueryParameters on dev builds")
+	} else {
+		// On release builds, queryFromFieldValues should not panic
+		require.NotPanics(t, func() {
+			queryFromFieldValues("test-field", excessiveValues, false)
+		}, "Expected queryFromFieldValues to not panic on release builds")
+	}
 }
