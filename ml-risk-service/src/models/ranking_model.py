@@ -8,9 +8,10 @@ import json
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Tuple, Optional, Union
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
 import joblib
+import io
 
 # ML libraries
 from sklearn.model_selection import train_test_split
@@ -454,3 +455,105 @@ class RiskRankingModel:
             'shap_available': self.shap_explainer is not None,
             'trained': self.model is not None
         }
+
+    def save_model_to_storage(self, storage_manager, model_id: str, description: str = "", tags: Dict[str, str] = None) -> bool:
+        """Save model using storage manager with metadata tracking."""
+        if self.model is None:
+            raise ValueError("No model to save. Train the model first.")
+
+        from ..storage.model_storage import ModelMetadata
+
+        # Serialize model data to bytes
+        model_data = {
+            'model': self.model,
+            'scaler': self.scaler,
+            'feature_names': self.feature_names,
+            'model_version': self.model_version,
+            'algorithm': self.algorithm,
+            'config': self.config,
+            'training_metrics': self.training_metrics
+        }
+
+        # Convert to bytes using joblib
+        buffer = io.BytesIO()
+        joblib.dump(model_data, buffer)
+        model_bytes = buffer.getvalue()
+
+        # Create metadata
+        version = self.model_version.split('_')[-1] if '_' in self.model_version else "1"
+        performance_metrics = {}
+        if self.training_metrics:
+            performance_metrics = {
+                'train_ndcg': getattr(self.training_metrics, 'train_ndcg', 0.0),
+                'val_ndcg': getattr(self.training_metrics, 'val_ndcg', 0.0),
+                'train_auc': getattr(self.training_metrics, 'train_auc', 0.0),
+                'val_auc': getattr(self.training_metrics, 'val_auc', 0.0),
+                'training_loss': getattr(self.training_metrics, 'training_loss', 0.0),
+                'epochs_completed': getattr(self.training_metrics, 'epochs_completed', 0)
+            }
+
+        metadata = ModelMetadata(
+            model_id=model_id,
+            version=version,
+            algorithm=self.algorithm,
+            feature_count=len(self.feature_names) if self.feature_names else 0,
+            training_timestamp=datetime.now(timezone.utc).isoformat(),
+            model_size_bytes=len(model_bytes),
+            checksum="",  # Will be calculated by storage manager
+            performance_metrics=performance_metrics,
+            config=self.config,
+            tags=tags or {},
+            description=description
+        )
+
+        success = storage_manager.save_model(model_bytes, metadata)
+        if success:
+            logger.info(f"Model {model_id} v{version} saved to storage successfully")
+        else:
+            logger.error(f"Failed to save model {model_id} to storage")
+
+        return success
+
+    def load_model_from_storage(self, storage_manager, model_id: str, version: Optional[str] = None) -> bool:
+        """Load model from storage manager."""
+        try:
+            model_bytes, metadata = storage_manager.load_model(model_id, version)
+
+            # Deserialize model data
+            buffer = io.BytesIO(model_bytes)
+            model_data = joblib.load(buffer)
+
+            # Restore model state
+            self.model = model_data['model']
+            self.scaler = model_data['scaler']
+            self.feature_names = model_data['feature_names']
+            self.model_version = model_data['model_version']
+            self.algorithm = model_data['algorithm']
+            self.config = model_data.get('config', self._default_config())
+            self.training_metrics = model_data.get('training_metrics')
+
+            # Reinitialize SHAP explainer if available
+            if SHAP_AVAILABLE and self.scaler is not None:
+                try:
+                    # Create sample data for explainer initialization
+                    sample_data = np.random.randn(10, len(self.feature_names))
+                    sample_scaled = self.scaler.transform(sample_data)
+                    self._initialize_shap_explainer(sample_scaled)
+                except Exception as e:
+                    logger.warning(f"Failed to reinitialize SHAP explainer: {e}")
+
+            logger.info(f"Model {model_id} v{metadata.version} loaded from storage successfully")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to load model {model_id} from storage: {e}")
+            return False
+
+    @classmethod
+    def create_from_storage(cls, storage_manager, model_id: str, version: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+        """Create a new RiskRankingModel instance by loading from storage."""
+        model = cls(config)
+        if model.load_model_from_storage(storage_manager, model_id, version):
+            return model
+        else:
+            raise ValueError(f"Failed to load model {model_id} from storage")

@@ -22,6 +22,9 @@ type MLRiskClient interface {
 	GetBatchDeploymentRisk(ctx context.Context, requests []*DeploymentRiskRequest) ([]*MLRiskResponse, error)
 	TrainModel(ctx context.Context, trainingData []*TrainingExample) (*TrainingResponse, error)
 	GetModelHealth(ctx context.Context) (*ModelHealthResponse, error)
+	GetDetailedHealth(ctx context.Context, includeTrends bool, trendHours int) (*DetailedHealthResponse, error)
+	ReloadModel(ctx context.Context, modelID, version string, forceReload bool) (*ReloadModelResponse, error)
+	ListModels(ctx context.Context, modelID string) (*ListModelsResponse, error)
 	Close() error
 }
 
@@ -147,6 +150,53 @@ type ModelMetrics struct {
 	CurrentAUC          float32 `json:"current_auc"`
 	PredictionsServed   int32   `json:"predictions_served"`
 	AvgPredictionTimeMs float32 `json:"avg_prediction_time_ms"`
+}
+
+// ReloadModelResponse represents model reload response
+type ReloadModelResponse struct {
+	Success              bool    `json:"success"`
+	Message              string  `json:"message"`
+	PreviousModelVersion string  `json:"previous_model_version"`
+	NewModelVersion      string  `json:"new_model_version"`
+	ReloadTimeMs         float32 `json:"reload_time_ms"`
+}
+
+// ListModelsResponse represents list models response
+type ListModelsResponse struct {
+	Models     []*ModelInfo `json:"models"`
+	TotalCount int32        `json:"total_count"`
+}
+
+// ModelInfo represents information about a model
+type ModelInfo struct {
+	ModelID              string             `json:"model_id"`
+	Version              string             `json:"version"`
+	Algorithm            string             `json:"algorithm"`
+	TrainingTimestamp    int64              `json:"training_timestamp"`
+	ModelSizeBytes       int64              `json:"model_size_bytes"`
+	PerformanceMetrics   map[string]float32 `json:"performance_metrics"`
+	Status               string             `json:"status"`
+}
+
+// DetailedHealthResponse represents detailed health report
+type DetailedHealthResponse struct {
+	ModelID       string                    `json:"model_id"`
+	Version       string                    `json:"version"`
+	OverallStatus string                    `json:"overall_status"`
+	OverallScore  float32                   `json:"overall_score"`
+	HealthChecks  []*HealthCheckDetail      `json:"health_checks"`
+	Recommendations []string                `json:"recommendations"`
+	Trends        map[string]interface{}    `json:"trends"`
+	Timestamp     int64                     `json:"timestamp"`
+}
+
+// HealthCheckDetail represents a single health check result
+type HealthCheckDetail struct {
+	CheckName string                 `json:"check_name"`
+	Status    string                 `json:"status"`
+	Score     float32                `json:"score"`
+	Message   string                 `json:"message"`
+	Details   map[string]interface{} `json:"details"`
 }
 
 // mlRiskClientImpl implements MLRiskClient
@@ -279,6 +329,184 @@ func (c *mlRiskClientImpl) GetModelHealth(ctx context.Context) (*ModelHealthResp
 			PredictionsServed:   1523,
 			AvgPredictionTimeMs: 45.2,
 		},
+	}, nil
+}
+
+// ReloadModel triggers hot reload of a model
+func (c *mlRiskClientImpl) ReloadModel(ctx context.Context, modelID, version string, forceReload bool) (*ReloadModelResponse, error) {
+	// In practice, this would call the gRPC reload method:
+	// request := &ml_risk_pb.ReloadModelRequest{
+	//     ModelId:     modelID,
+	//     Version:     version,
+	//     ForceReload: forceReload,
+	// }
+	// resp, err := c.client.ReloadModel(ctx, request)
+
+	log.Infof("Triggering model reload: %s v%s (force: %t)", modelID, version, forceReload)
+
+	// Mock implementation
+	return &ReloadModelResponse{
+		Success:              true,
+		Message:              fmt.Sprintf("Successfully reloaded model %s v%s", modelID, version),
+		PreviousModelVersion: "v1.0",
+		NewModelVersion:      version,
+		ReloadTimeMs:         150.5,
+	}, nil
+}
+
+// ListModels lists available models in storage
+func (c *mlRiskClientImpl) ListModels(ctx context.Context, modelID string) (*ListModelsResponse, error) {
+	// In practice, this would call the gRPC list method:
+	// request := &ml_risk_pb.ListModelsRequest{
+	//     ModelId: modelID,
+	// }
+	// resp, err := c.client.ListModels(ctx, request)
+
+	log.Infof("Listing models for model ID: %s", modelID)
+
+	// Mock implementation
+	mockModels := []*ModelInfo{
+		{
+			ModelID:           "stackrox-risk-model",
+			Version:           "v1.0",
+			Algorithm:         "lightgbm_ranker",
+			TrainingTimestamp: time.Now().Add(-48 * time.Hour).Unix(),
+			ModelSizeBytes:    1024 * 1024 * 15, // 15MB
+			PerformanceMetrics: map[string]float32{
+				"validation_ndcg": 0.85,
+				"validation_auc":  0.78,
+				"training_loss":   0.32,
+			},
+			Status: "ready",
+		},
+		{
+			ModelID:           "stackrox-risk-model",
+			Version:           "v1.1",
+			Algorithm:         "lightgbm_ranker",
+			TrainingTimestamp: time.Now().Add(-24 * time.Hour).Unix(),
+			ModelSizeBytes:    1024 * 1024 * 16, // 16MB
+			PerformanceMetrics: map[string]float32{
+				"validation_ndcg": 0.87,
+				"validation_auc":  0.81,
+				"training_loss":   0.28,
+			},
+			Status: "ready",
+		},
+	}
+
+	// Filter by model ID if specified
+	var filteredModels []*ModelInfo
+	if modelID != "" {
+		for _, model := range mockModels {
+			if model.ModelID == modelID {
+				filteredModels = append(filteredModels, model)
+			}
+		}
+	} else {
+		filteredModels = mockModels
+	}
+
+	return &ListModelsResponse{
+		Models:     filteredModels,
+		TotalCount: int32(len(filteredModels)),
+	}, nil
+}
+
+// GetDetailedHealth gets detailed health report with trends
+func (c *mlRiskClientImpl) GetDetailedHealth(ctx context.Context, includeTrends bool, trendHours int) (*DetailedHealthResponse, error) {
+	// In practice, this would call the gRPC detailed health method:
+	// request := &ml_risk_pb.DetailedHealthRequest{
+	//     IncludeTrends: includeTrends,
+	//     TrendHours:    int32(trendHours),
+	// }
+	// resp, err := c.client.GetDetailedHealth(ctx, request)
+
+	log.Infof("Getting detailed health report (trends: %t, hours: %d)", includeTrends, trendHours)
+
+	// Mock implementation with comprehensive health data
+	healthChecks := []*HealthCheckDetail{
+		{
+			CheckName: "Performance Regression",
+			Status:    "healthy",
+			Score:     0.95,
+			Message:   "No significant performance regression detected",
+			Details: map[string]interface{}{
+				"baseline_ndcg": 0.85,
+				"current_ndcg":  0.87,
+				"improvement":   "2.35%",
+			},
+		},
+		{
+			CheckName: "Prediction Quality",
+			Status:    "healthy",
+			Score:     0.92,
+			Message:   "Prediction quality good (CV: 0.089)",
+			Details: map[string]interface{}{
+				"prediction_count": 1523,
+				"mean_score":      4.2,
+				"std_dev":         0.37,
+				"score_range":     []float32{0.1, 9.8},
+			},
+		},
+		{
+			CheckName: "Response Latency",
+			Status:    "warning",
+			Score:     0.75,
+			Message:   "Elevated average latency (125.3ms)",
+			Details: map[string]interface{}{
+				"mean_latency_ms": 125.3,
+				"p95_latency_ms":  180.2,
+				"max_latency_ms":  245.1,
+				"sample_count":    1523,
+			},
+		},
+		{
+			CheckName: "Model Stability",
+			Status:    "healthy",
+			Score:     0.88,
+			Message:   "Model predictions stable (variance: 0.045)",
+			Details: map[string]interface{}{
+				"overall_variance": 0.045,
+				"avg_variance":     0.032,
+				"max_variance":     0.067,
+				"prediction_count": 1000,
+			},
+		},
+	}
+
+	recommendations := []string{
+		"Consider optimizing prediction pipeline to reduce latency",
+		"Monitor response times closely during peak hours",
+	}
+
+	trends := map[string]interface{}{}
+	if includeTrends {
+		trends = map[string]interface{}{
+			"period_hours":   trendHours,
+			"report_count":   24,
+			"trend":          "stable",
+			"avg_score":      0.87,
+			"min_score":      0.82,
+			"max_score":      0.94,
+			"latest_status":  "warning",
+			"status_distribution": map[string]int{
+				"healthy":  18,
+				"warning":  6,
+				"critical": 0,
+				"error":    0,
+			},
+		}
+	}
+
+	return &DetailedHealthResponse{
+		ModelID:         "stackrox-risk-model",
+		Version:         "v1.2.3",
+		OverallStatus:   "warning",
+		OverallScore:    0.87,
+		HealthChecks:    healthChecks,
+		Recommendations: recommendations,
+		Trends:          trends,
+		Timestamp:       time.Now().Unix(),
 	}, nil
 }
 
