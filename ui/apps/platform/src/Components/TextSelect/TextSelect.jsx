@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronDown } from 'react-feather';
 
 import Select from 'Components/ReactSelect';

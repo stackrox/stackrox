@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { Tooltip } from '@patternfly/react-core';

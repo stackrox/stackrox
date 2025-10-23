@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';

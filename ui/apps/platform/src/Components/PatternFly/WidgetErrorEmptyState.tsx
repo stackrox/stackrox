@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Flex } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';

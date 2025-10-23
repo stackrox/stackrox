@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { MouseEventHandler, ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { ChevronDown, ChevronUp } from 'react-feather';
@@ -107,10 +107,10 @@ const Menu = ({
     function renderGroupedOptions(formattedOptions: GroupedMenuOptions) {
         return Object.keys(formattedOptions).map((group) => {
             return options ? (
-                <React.Fragment key={group}>
+                <Fragment key={group}>
                     <div className="p-3 border-b border-primary-300">{group}</div>
                     <div className="px-2">{renderOptions(options[group])}</div>
-                </React.Fragment>
+                </Fragment>
             ) : (
                 []
             );

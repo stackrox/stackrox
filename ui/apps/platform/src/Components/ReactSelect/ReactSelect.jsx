@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactSelect, { components as selectComponents } from 'react-select';
 import ReactSelectCreatable from 'react-select/lib/Creatable';

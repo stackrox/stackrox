@@ -1,4 +1,3 @@
-import React from 'react';
 import { Spinner } from '@patternfly/react-core';
 
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';

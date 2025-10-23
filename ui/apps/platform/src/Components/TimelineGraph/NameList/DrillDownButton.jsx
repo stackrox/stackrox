@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { ChevronRight } from 'react-feather';
 import { Tooltip } from '@patternfly/react-core';

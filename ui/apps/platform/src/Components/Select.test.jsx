@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, getNodeText, render, screen } from '@testing-library/react';
 
 import Select from 'Components/Select';

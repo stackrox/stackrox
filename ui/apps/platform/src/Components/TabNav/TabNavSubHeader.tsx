@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { PageSection, Flex, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 

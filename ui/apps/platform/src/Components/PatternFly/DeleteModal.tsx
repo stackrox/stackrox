@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Button,
     Flex,
@@ -57,7 +57,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
         : [];
 
     return (
-        <React.Fragment>
+        <>
             <Button
                 variant="link"
                 isInline
@@ -116,7 +116,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                     </Table>
                 </Flex>
             </Modal>
-        </React.Fragment>
+        </>
     );
 }
 

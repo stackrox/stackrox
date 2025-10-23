@@ -1,5 +1,3 @@
-import React from 'react';
-
 import './ResourceIcon.css';
 
 type K8sResourceKind =

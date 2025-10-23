@@ -1,4 +1,4 @@
-import React, { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
+import { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
 import type {
     FocusEvent,
     FocusEventHandler,

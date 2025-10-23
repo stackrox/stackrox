@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 import type { DescriptionListProps } from '@patternfly/react-core';

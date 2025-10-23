@@ -1,4 +1,3 @@
-import React from 'react';
 import { Banner } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';

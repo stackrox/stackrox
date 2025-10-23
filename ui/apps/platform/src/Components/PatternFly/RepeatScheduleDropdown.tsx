@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FocusEventHandler, ReactElement } from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
