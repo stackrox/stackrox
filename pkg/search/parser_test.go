@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSplitQuery(t *testing.T) {
@@ -218,4 +219,18 @@ func TestValueAndModifierFromString(t *testing.T) {
 			assert.Equal(t, c.expectedModifier, modifier)
 		})
 	}
+}
+
+func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
+	// Create a slice of values that exceeds MaxQueryParameters
+	// MaxQueryParameters is math.MaxUint16 (65535), so we create 65536 values
+	excessiveValues := make([]string, MaxQueryParameters+1)
+	for i := 0; i < len(excessiveValues); i++ {
+		excessiveValues[i] = fmt.Sprintf("value%d", i)
+	}
+
+	// Verify that queryFromFieldValues panics when given too many parameters
+	require.Panics(t, func() {
+		queryFromFieldValues("test-field", excessiveValues, false)
+	}, "Expected queryFromFieldValues to panic when exceeding MaxQueryParameters")
 }
