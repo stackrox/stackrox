@@ -1,6 +1,6 @@
 import { Children } from 'react';
 import type { ReactElement } from 'react';
-import { Divider, FlexItem, Flex } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem } from '@patternfly/react-core';
 
 export type IntegrationFormActionsProps = {
     children: ReactElement | (ReactElement | null)[];

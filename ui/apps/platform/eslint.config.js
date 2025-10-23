@@ -779,7 +779,6 @@ module.exports = [
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',

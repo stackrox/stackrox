@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import {
-    ocmDescriptor as descriptor,
     cloudSourcesSource as source,
     getIntegrationsListPath,
+    ocmDescriptor as descriptor,
 } from '../utils/integrationsList';
 import { selectors } from '../../../reducers';
 import IntegrationTile from './IntegrationTile';

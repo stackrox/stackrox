@@ -6,9 +6,9 @@ import {
     Checkbox,
     Form,
     PageSection,
-    TextInput,
     Popover,
     SelectOption,
+    TextInput,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
