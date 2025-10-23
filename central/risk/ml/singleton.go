@@ -2,20 +2,17 @@ package ml
 
 import (
 	"sync"
+	"time"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	// Environment variables for ML service configuration
 	mlServiceEndpoint = env.RegisterSetting("ROX_ML_RISK_SERVICE_ENDPOINT", env.WithDefault("ml-risk-service:8080"))
 	mlServiceEnabled  = env.RegisterBooleanSetting("ROX_ML_RISK_SERVICE_ENABLED", false)
 	mlServiceTLS      = env.RegisterBooleanSetting("ROX_ML_RISK_SERVICE_TLS", false)
-	mlServiceTimeout  = env.RegisterDurationSetting("ROX_ML_RISK_SERVICE_TIMEOUT", env.WithDefault("30s"))
+	mlServiceTimeout  = env.RegisterSetting("ROX_ML_RISK_SERVICE_TIMEOUT", env.WithDefault("30s"))
 )
 
 var (
@@ -33,10 +30,16 @@ func Singleton() MLRiskClient {
 			return
 		}
 
+		timeout, timeoutErr := time.ParseDuration(mlServiceTimeout.Setting())
+		if timeoutErr != nil {
+			log.Errorf("Invalid timeout duration '%s', using default 30s: %v", mlServiceTimeout.Setting(), timeoutErr)
+			timeout = 30 * time.Second
+		}
+
 		config := &Config{
 			Endpoint:   mlServiceEndpoint.Setting(),
 			TLSEnabled: mlServiceTLS.BooleanSetting(),
-			Timeout:    mlServiceTimeout.DurationSetting(),
+			Timeout:    timeout,
 		}
 
 		log.Infof("Initializing ML Risk Service client with endpoint: %s", config.Endpoint)

@@ -2,17 +2,13 @@ package deployment
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/ml"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
 
 // MLScorer uses machine learning to score deployment risk
 type MLScorer struct {

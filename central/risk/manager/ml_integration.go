@@ -2,17 +2,15 @@ package manager
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stackrox/rox/central/risk/ml"
 	"github.com/stackrox/rox/central/risk/scorer/deployment"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	// Environment variable to enable ML risk mode
 	mlRiskModeEnabled = env.RegisterBooleanSetting("ROX_ML_RISK_MODE_ENABLED", false)
 )

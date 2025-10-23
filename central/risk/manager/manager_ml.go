@@ -4,14 +4,11 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/central/risk/ml"
 	"github.com/stackrox/rox/central/risk/scorer/deployment"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
 
 // managerWithML extends the risk manager with ML capabilities
 type managerWithML struct {
@@ -20,9 +17,9 @@ type managerWithML struct {
 }
 
 // NewManagerWithML creates a risk manager with ML integration
-func NewManagerWithML(riskDataStore datastore.DataStore, deploymentScorer deployment.Scorer) Manager {
+func NewManagerWithML(riskStorage datastore.DataStore, deploymentScorer deployment.Scorer) Manager {
 	baseManager := &managerImpl{
-		riskDataStore:    riskDataStore,
+		riskStorage:      riskStorage,
 		deploymentScorer: deploymentScorer,
 	}
 
@@ -39,11 +36,19 @@ func (m *managerWithML) CalculateRiskAndUpsertAsync(deployment *storage.Deployme
 	go func() {
 		ctx := context.Background()
 
-		// Get image risks first (needed for both traditional and ML scoring)
-		imageRisks := make([]*storage.Risk, 0, len(images))
-		for _, image := range images {
-			if imageRisk := m.CalculateImageRisk(image); imageRisk != nil {
-				imageRisks = append(imageRisks, imageRisk)
+		// Get image risks from storage (similar to ReprocessDeploymentRisk pattern)
+		imageRisks := make([]*storage.Risk, 0, len(deployment.GetContainers()))
+		for _, container := range deployment.GetContainers() {
+			if imgID := container.GetImage().GetId(); imgID != "" {
+				risk, exists, err := m.riskStorage.GetRisk(ctx, imgID, storage.RiskSubjectType_IMAGE)
+				if err != nil {
+					log.Errorf("error getting risk for image %s: %v", imgID, err)
+					continue
+				}
+				if !exists {
+					continue
+				}
+				imageRisks = append(imageRisks, risk)
 			}
 		}
 
@@ -55,7 +60,7 @@ func (m *managerWithML) CalculateRiskAndUpsertAsync(deployment *storage.Deployme
 		}
 
 		// Upsert the risk
-		if err := m.riskDataStore.UpsertRisk(ctx, deploymentRisk); err != nil {
+		if err := m.riskStorage.UpsertRisk(ctx, deploymentRisk); err != nil {
 			log.Errorf("Failed to upsert risk for deployment %s: %v", deployment.GetId(), err)
 		} else {
 			log.Debugf("Risk calculated and stored for deployment %s: score=%.2f",
@@ -66,11 +71,19 @@ func (m *managerWithML) CalculateRiskAndUpsertAsync(deployment *storage.Deployme
 
 // CalculateRiskAndUpsert calculates risk using ML integration and upserts synchronously
 func (m *managerWithML) CalculateRiskAndUpsert(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) error {
-	// Get image risks first
-	imageRisks := make([]*storage.Risk, 0, len(images))
-	for _, image := range images {
-		if imageRisk := m.CalculateImageRisk(image); imageRisk != nil {
-			imageRisks = append(imageRisks, imageRisk)
+	// Get image risks from storage (similar to ReprocessDeploymentRisk pattern)
+	imageRisks := make([]*storage.Risk, 0, len(deployment.GetContainers()))
+	for _, container := range deployment.GetContainers() {
+		if imgID := container.GetImage().GetId(); imgID != "" {
+			risk, exists, err := m.riskStorage.GetRisk(ctx, imgID, storage.RiskSubjectType_IMAGE)
+			if err != nil {
+				log.Errorf("error getting risk for image %s: %v", imgID, err)
+				continue
+			}
+			if !exists {
+				continue
+			}
+			imageRisks = append(imageRisks, risk)
 		}
 	}
 
@@ -82,7 +95,7 @@ func (m *managerWithML) CalculateRiskAndUpsert(ctx context.Context, deployment *
 	}
 
 	// Upsert the risk
-	if err := m.riskDataStore.UpsertRisk(ctx, deploymentRisk); err != nil {
+	if err := m.riskStorage.UpsertRisk(ctx, deploymentRisk); err != nil {
 		log.Errorf("Failed to upsert risk for deployment %s: %v", deployment.GetId(), err)
 		return err
 	}
@@ -108,16 +121,16 @@ func (m *managerWithML) GetMLHealthStatus(ctx context.Context) (*ml.ModelHealthR
 }
 
 // CreateManagerBasedOnConfig creates appropriate manager based on ML configuration
-func CreateManagerBasedOnConfig(riskDataStore datastore.DataStore, deploymentScorer deployment.Scorer) Manager {
+func CreateManagerBasedOnConfig(riskStorage datastore.DataStore, deploymentScorer deployment.Scorer) Manager {
 	// Check if ML is enabled via environment variables
 	if ml.IsEnabled() {
 		log.Info("Creating risk manager with ML integration")
-		return NewManagerWithML(riskDataStore, deploymentScorer)
+		return NewManagerWithML(riskStorage, deploymentScorer)
 	}
 
 	log.Info("Creating traditional risk manager (ML disabled)")
 	return &managerImpl{
-		riskDataStore:    riskDataStore,
+		riskStorage:      riskStorage,
 		deploymentScorer: deploymentScorer,
 	}
 }
