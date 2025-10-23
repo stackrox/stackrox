@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-
 // MLScorer uses machine learning to score deployment risk
 type MLScorer struct {
 	mlClient ml.MLRiskClient

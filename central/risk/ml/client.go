@@ -14,9 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // MLRiskClient provides interface to ML Risk Service
 type MLRiskClient interface {
@@ -46,11 +44,11 @@ func DefaultConfig() *Config {
 
 // MLRiskResponse represents the response from ML service
 type MLRiskResponse struct {
-	DeploymentID        string                   `json:"deployment_id"`
-	RiskScore          float32                  `json:"risk_score"`
-	FeatureImportances []*FeatureImportance     `json:"feature_importances"`
-	ModelVersion       string                   `json:"model_version"`
-	Timestamp          int64                    `json:"timestamp"`
+	DeploymentID       string               `json:"deployment_id"`
+	RiskScore          float32              `json:"risk_score"`
+	FeatureImportances []*FeatureImportance `json:"feature_importances"`
+	ModelVersion       string               `json:"model_version"`
+	Timestamp          int64                `json:"timestamp"`
 }
 
 // FeatureImportance represents importance of a single feature
@@ -63,31 +61,31 @@ type FeatureImportance struct {
 
 // DeploymentRiskRequest represents a request for deployment risk assessment
 type DeploymentRiskRequest struct {
-	DeploymentID        string             `json:"deployment_id"`
-	DeploymentFeatures  *DeploymentFeatures `json:"deployment_features"`
-	ImageFeatures       []*ImageFeatures    `json:"image_features"`
+	DeploymentID       string              `json:"deployment_id"`
+	DeploymentFeatures *DeploymentFeatures `json:"deployment_features"`
+	ImageFeatures      []*ImageFeatures    `json:"image_features"`
 }
 
 // DeploymentFeatures represents deployment-level features
 type DeploymentFeatures struct {
-	PolicyViolationCount       int32   `json:"policy_violation_count"`
-	PolicyViolationSeverityScore float32 `json:"policy_violation_severity_score"`
-	ProcessBaselineViolations  int32   `json:"process_baseline_violations"`
-	HostNetwork               bool    `json:"host_network"`
-	HostPID                   bool    `json:"host_pid"`
-	HostIPC                   bool    `json:"host_ipc"`
-	PrivilegedContainerCount  int32   `json:"privileged_container_count"`
-	AutomountServiceAccountToken bool  `json:"automount_service_account_token"`
-	ExposedPortCount          int32   `json:"exposed_port_count"`
-	HasExternalExposure       bool    `json:"has_external_exposure"`
+	PolicyViolationCount          int32   `json:"policy_violation_count"`
+	PolicyViolationSeverityScore  float32 `json:"policy_violation_severity_score"`
+	ProcessBaselineViolations     int32   `json:"process_baseline_violations"`
+	HostNetwork                   bool    `json:"host_network"`
+	HostPID                       bool    `json:"host_pid"`
+	HostIPC                       bool    `json:"host_ipc"`
+	PrivilegedContainerCount      int32   `json:"privileged_container_count"`
+	AutomountServiceAccountToken  bool    `json:"automount_service_account_token"`
+	ExposedPortCount              int32   `json:"exposed_port_count"`
+	HasExternalExposure           bool    `json:"has_external_exposure"`
 	ServiceAccountPermissionLevel float32 `json:"service_account_permission_level"`
-	ReplicaCount              int32   `json:"replica_count"`
-	IsOrchestratorComponent   bool    `json:"is_orchestrator_component"`
-	IsPlatformComponent       bool    `json:"is_platform_component"`
-	ClusterID                 string  `json:"cluster_id"`
-	Namespace                 string  `json:"namespace"`
-	CreationTimestamp         int64   `json:"creation_timestamp"`
-	IsInactive                bool    `json:"is_inactive"`
+	ReplicaCount                  int32   `json:"replica_count"`
+	IsOrchestratorComponent       bool    `json:"is_orchestrator_component"`
+	IsPlatformComponent           bool    `json:"is_platform_component"`
+	ClusterID                     string  `json:"cluster_id"`
+	Namespace                     string  `json:"namespace"`
+	CreationTimestamp             int64   `json:"creation_timestamp"`
+	IsInactive                    bool    `json:"is_inactive"`
 }
 
 // ImageFeatures represents image-level features
@@ -127,28 +125,28 @@ type TrainingResponse struct {
 
 // TrainingMetrics represents training metrics
 type TrainingMetrics struct {
-	ValidationNDCG            float32              `json:"validation_ndcg"`
-	ValidationAUC             float32              `json:"validation_auc"`
-	TrainingLoss              float32              `json:"training_loss"`
-	EpochsCompleted           int32                `json:"epochs_completed"`
-	GlobalFeatureImportance   []*FeatureImportance `json:"global_feature_importance"`
+	ValidationNDCG          float32              `json:"validation_ndcg"`
+	ValidationAUC           float32              `json:"validation_auc"`
+	TrainingLoss            float32              `json:"training_loss"`
+	EpochsCompleted         int32                `json:"epochs_completed"`
+	GlobalFeatureImportance []*FeatureImportance `json:"global_feature_importance"`
 }
 
 // ModelHealthResponse represents model health response
 type ModelHealthResponse struct {
-	Healthy              bool           `json:"healthy"`
-	ModelVersion         string         `json:"model_version"`
-	LastTrainingTime     int64          `json:"last_training_time"`
+	Healthy               bool          `json:"healthy"`
+	ModelVersion          string        `json:"model_version"`
+	LastTrainingTime      int64         `json:"last_training_time"`
 	TrainingExamplesCount int32         `json:"training_examples_count"`
-	CurrentMetrics       *ModelMetrics  `json:"current_metrics"`
+	CurrentMetrics        *ModelMetrics `json:"current_metrics"`
 }
 
 // ModelMetrics represents current model metrics
 type ModelMetrics struct {
-	CurrentNDCG           float32 `json:"current_ndcg"`
-	CurrentAUC            float32 `json:"current_auc"`
-	PredictionsServed     int32   `json:"predictions_served"`
-	AvgPredictionTimeMs   float32 `json:"avg_prediction_time_ms"`
+	CurrentNDCG         float32 `json:"current_ndcg"`
+	CurrentAUC          float32 `json:"current_auc"`
+	PredictionsServed   int32   `json:"predictions_served"`
+	AvgPredictionTimeMs float32 `json:"avg_prediction_time_ms"`
 }
 
 // mlRiskClientImpl implements MLRiskClient
@@ -213,10 +211,10 @@ func (c *mlRiskClientImpl) GetDeploymentRisk(ctx context.Context, deployment *st
 
 	// For now, return a mock response
 	return &MLRiskResponse{
-		DeploymentID:  deployment.GetId(),
-		RiskScore:     2.5, // Mock risk score
-		ModelVersion:  "mock-v1.0",
-		Timestamp:     time.Now().Unix(),
+		DeploymentID: deployment.GetId(),
+		RiskScore:    2.5, // Mock risk score
+		ModelVersion: "mock-v1.0",
+		Timestamp:    time.Now().Unix(),
 		FeatureImportances: []*FeatureImportance{
 			{
 				FeatureName:     "policy_violations",
@@ -242,10 +240,10 @@ func (c *mlRiskClientImpl) GetBatchDeploymentRisk(ctx context.Context, requests 
 	// For now, simulate batch processing
 	for i, req := range requests {
 		responses[i] = &MLRiskResponse{
-			DeploymentID:  req.DeploymentID,
-			RiskScore:     2.0 + float32(i%5)*0.5, // Mock varying scores
-			ModelVersion:  "mock-v1.0",
-			Timestamp:     time.Now().Unix(),
+			DeploymentID: req.DeploymentID,
+			RiskScore:    2.0 + float32(i%5)*0.5, // Mock varying scores
+			ModelVersion: "mock-v1.0",
+			Timestamp:    time.Now().Unix(),
 		}
 	}
 
@@ -271,9 +269,9 @@ func (c *mlRiskClientImpl) TrainModel(ctx context.Context, trainingData []*Train
 func (c *mlRiskClientImpl) GetModelHealth(ctx context.Context) (*ModelHealthResponse, error) {
 	// In practice, this would call the gRPC health method
 	return &ModelHealthResponse{
-		Healthy:              true,
-		ModelVersion:         "v1.0",
-		LastTrainingTime:     time.Now().Add(-24 * time.Hour).Unix(),
+		Healthy:               true,
+		ModelVersion:          "v1.0",
+		LastTrainingTime:      time.Now().Add(-24 * time.Hour).Unix(),
 		TrainingExamplesCount: 5000,
 		CurrentMetrics: &ModelMetrics{
 			CurrentNDCG:         0.83,
@@ -295,16 +293,16 @@ func (c *mlRiskClientImpl) Close() error {
 // extractDeploymentFeatures converts StackRox Deployment to DeploymentFeatures
 func (c *mlRiskClientImpl) extractDeploymentFeatures(deployment *storage.Deployment) *DeploymentFeatures {
 	features := &DeploymentFeatures{
-		ReplicaCount:            int32(deployment.GetReplicas()),
-		HostNetwork:             deployment.GetHostNetwork(),
-		HostPID:                 deployment.GetHostPid(),
-		HostIPC:                 deployment.GetHostIpc(),
+		ReplicaCount:                 int32(deployment.GetReplicas()),
+		HostNetwork:                  deployment.GetHostNetwork(),
+		HostPID:                      deployment.GetHostPid(),
+		HostIPC:                      deployment.GetHostIpc(),
 		AutomountServiceAccountToken: deployment.GetAutomountServiceAccountToken(),
-		IsOrchestratorComponent: deployment.GetOrchestratorComponent(),
-		IsPlatformComponent:     deployment.GetPlatformComponent(),
-		ClusterID:               deployment.GetClusterId(),
-		Namespace:               deployment.GetNamespace(),
-		IsInactive:              deployment.GetInactive(),
+		IsOrchestratorComponent:      deployment.GetOrchestratorComponent(),
+		IsPlatformComponent:          deployment.GetPlatformComponent(),
+		ClusterID:                    deployment.GetClusterId(),
+		Namespace:                    deployment.GetNamespace(),
+		IsInactive:                   deployment.GetInactive(),
 	}
 
 	// Extract creation timestamp

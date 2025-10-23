@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-
 // managerWithML extends the risk manager with ML capabilities
 type managerWithML struct {
 	*managerImpl
