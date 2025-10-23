@@ -6,9 +6,9 @@ import {
     List,
     ListItem,
     PageSection,
+    SelectOption,
     Text,
     TextInput,
-    SelectOption,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
