@@ -146,17 +146,3 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, secret any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, secret)
 }
-
-// Walk mocks base method.
-func (m *MockStore) Walk(arg0 context.Context, arg1 func(*storage.Secret) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Walk indicates an expected call of Walk.
-func (mr *MockStoreMockRecorder) Walk(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0, arg1)
-}

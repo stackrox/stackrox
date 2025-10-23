@@ -117,17 +117,17 @@ func (mr *MockVirtualMachineStoreMockRecorder) UpsertMany(ctx, objs any) *gomock
 }
 
 // Walk mocks base method.
-func (m *MockVirtualMachineStore) Walk(ctx context.Context, fn func(*storage.VirtualMachine) error) error {
+func (m *MockVirtualMachineStore) Walk(ctx context.Context, fn func(*storage.VirtualMachine) error, useClones bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn, useClones)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockVirtualMachineStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+func (mr *MockVirtualMachineStoreMockRecorder) Walk(ctx, fn, useClones any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockVirtualMachineStore)(nil).Walk), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockVirtualMachineStore)(nil).Walk), ctx, fn, useClones)
 }
 
 // WalkByQuery mocks base method.

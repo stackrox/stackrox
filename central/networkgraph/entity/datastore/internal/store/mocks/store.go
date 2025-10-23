@@ -174,17 +174,17 @@ func (mr *MockEntityStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockEntityStore) Walk(ctx context.Context, fn func(*storage.NetworkEntity) error) error {
+func (m *MockEntityStore) Walk(ctx context.Context, fn func(*storage.NetworkEntity) error, useClones bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn, useClones)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockEntityStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+func (mr *MockEntityStoreMockRecorder) Walk(ctx, fn, useClones any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockEntityStore)(nil).Walk), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockEntityStore)(nil).Walk), ctx, fn, useClones)
 }
 
 // WalkByQuery mocks base method.

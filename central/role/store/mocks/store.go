@@ -132,17 +132,17 @@ func (mr *MockPermissionSetStoreMockRecorder) UpsertMany(ctx, obj any) *gomock.C
 }
 
 // Walk mocks base method.
-func (m *MockPermissionSetStore) Walk(ctx context.Context, fn func(*storage.PermissionSet) error) error {
+func (m *MockPermissionSetStore) Walk(ctx context.Context, fn func(*storage.PermissionSet) error, useClones bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn, useClones)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockPermissionSetStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+func (mr *MockPermissionSetStoreMockRecorder) Walk(ctx, fn, useClones any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockPermissionSetStore)(nil).Walk), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockPermissionSetStore)(nil).Walk), ctx, fn, useClones)
 }
 
 // MockSimpleAccessScopeStore is a mock of SimpleAccessScopeStore interface.
@@ -273,17 +273,17 @@ func (mr *MockSimpleAccessScopeStoreMockRecorder) UpsertMany(ctx, obj any) *gomo
 }
 
 // Walk mocks base method.
-func (m *MockSimpleAccessScopeStore) Walk(ctx context.Context, fn func(*storage.SimpleAccessScope) error) error {
+func (m *MockSimpleAccessScopeStore) Walk(ctx context.Context, fn func(*storage.SimpleAccessScope) error, useClones bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn, useClones)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockSimpleAccessScopeStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+func (mr *MockSimpleAccessScopeStoreMockRecorder) Walk(ctx, fn, useClones any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Walk), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockSimpleAccessScopeStore)(nil).Walk), ctx, fn, useClones)
 }
 
 // MockRoleStore is a mock of RoleStore interface.
@@ -415,15 +415,15 @@ func (mr *MockRoleStoreMockRecorder) UpsertMany(ctx, obj any) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockRoleStore) Walk(ctx context.Context, fn func(*storage.Role) error) error {
+func (m *MockRoleStore) Walk(ctx context.Context, fn func(*storage.Role) error, useClones bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret := m.ctrl.Call(m, "Walk", ctx, fn, useClones)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockRoleStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+func (mr *MockRoleStoreMockRecorder) Walk(ctx, fn, useClones any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockRoleStore)(nil).Walk), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockRoleStore)(nil).Walk), ctx, fn, useClones)
 }
