@@ -143,7 +143,7 @@ data class TestTask(
 
 val tests = mapOf(
     "testBegin" to TestTask(includeTags = setOf("Begin")),
-    "testRest" to TestTask(includeTags = setOf("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")),
+    "testRest" to TestTask(excludeTags = setOf("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")),
     "testBAT" to TestTask(includeTags = setOf("BAT"), excludeTags = setOf("Parallel")),
     "testSMOKE" to TestTask(includeTags = setOf("SMOKE")),
     "testCOMPATIBILITY" to TestTask(includeTags = setOf("COMPATIBILITY"), excludeTags = setOf("SensorBounce")),
