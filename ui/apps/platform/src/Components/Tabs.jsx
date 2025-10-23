@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Children, Component } from 'react';
 import PropTypes from 'prop-types';
 
 import Tab from 'Components/Tab';
@@ -28,7 +28,7 @@ class Tabs extends Component {
         children: (props, propName, componentName) => {
             const prop = props[propName];
             let error = null;
-            React.Children.forEach(prop, (child) => {
+            Children.forEach(prop, (child) => {
                 if (child.type !== Tab) {
                     error = new Error(
                         `'${componentName}' children should be of type ${Tab.name}, but got '${child.type}'.`
@@ -105,7 +105,7 @@ class Tabs extends Component {
     };
 
     renderChildren() {
-        const children = React.Children.toArray(this.props.children);
+        const children = Children.toArray(this.props.children);
         return children[this.state.activeIndex];
     }
 

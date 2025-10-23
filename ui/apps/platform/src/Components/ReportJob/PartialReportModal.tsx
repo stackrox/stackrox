@@ -20,7 +20,7 @@ export type PartialReportModalProps = {
 };
 
 function PartialReportModal({ failedClusters = [], onDownload }: PartialReportModalProps) {
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
 
