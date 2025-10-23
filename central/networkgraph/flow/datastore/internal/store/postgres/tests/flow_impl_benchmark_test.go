@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,7 +28,6 @@ import (
 )
 
 var (
-	log          = logging.LoggerForModule()
 	ctx          = context.Background()
 	allAccessCtx = sac.WithAllAccess(ctx)
 )
@@ -325,18 +323,15 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		startingIPIndex = uint32(numEntities)
 		deploymentId = addToUUID(deploymentId, 1)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
-		start := time.Now()
 		b.ResetTimer()
 
 		b.Setenv(features.ExternalIPs.EnvVar(), "true")
 		err = flowStore.RemoveFlowsForDeployment(allAccessCtx, deploymentId)
 		require.NoError(b, err)
-		duration := time.Since(start)
 	}
 }
 
 func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.EntityDataStore, deploymentId string, numDeployments int, numEntities uint32) func(*testing.B) {
-	totalFlows := uint32(numDeployments) * numEntities
 	return func(b *testing.B) {
 		// Initialize networktree
 		entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
@@ -359,14 +354,12 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		startingIPIndex = uint32(numEntities)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
-		start := time.Now()
 		b.ResetTimer()
 
 		b.Setenv(features.ExternalIPs.EnvVar(), "true")
 		orphanWindow = time.Now().UTC()
 		err = flowStore.RemoveOrphanedFlows(allAccessCtx, &orphanWindow)
 		require.NoError(b, err)
-		duration := time.Since(start)
 	}
 }
 
