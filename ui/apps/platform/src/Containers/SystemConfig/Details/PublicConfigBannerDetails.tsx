@@ -2,15 +2,15 @@ import type { ReactElement } from 'react';
 import capitalize from 'lodash/capitalize';
 import {
     Card,
-    CardTitle,
     CardBody,
     CardHeader,
-    Label,
+    CardTitle,
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     Divider,
+    Label,
 } from '@patternfly/react-core';
 
 import ColorPicker from 'Components/ColorPicker';

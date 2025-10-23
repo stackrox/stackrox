@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     Split,
     SplitItem,
     Switch,
@@ -25,7 +26,6 @@ import {
     TextArea,
     TextInput,
     Title,
-    SelectOption,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';

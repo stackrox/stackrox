@@ -7,11 +7,11 @@ import {
     CodeBlock,
     Divider,
     Modal,
-    pluralize,
     Stack,
     StackItem,
     Text,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 
 import type { PlatformComponentRule } from 'types/config.proto';
