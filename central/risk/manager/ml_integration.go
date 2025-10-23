@@ -10,10 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-var (
-	// Environment variable to enable ML risk mode
-	mlRiskModeEnabled = env.RegisterBooleanSetting("ROX_ML_RISK_MODE_ENABLED", false)
-)
+// Environment variable to enable ML risk mode
+var mlRiskModeEnabled = env.RegisterBooleanSetting("ROX_ML_RISK_MODE_ENABLED", false)
 
 // MLRiskMode represents the mode of ML risk assessment
 type MLRiskMode int
