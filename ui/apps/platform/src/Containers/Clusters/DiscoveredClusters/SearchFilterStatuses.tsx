@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { SelectOption, Select } from '@patternfly/react-core/deprecated';
+import React from 'react';
+import { Divider, SelectOption } from '@patternfly/react-core';
 
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import { isStatus, statuses } from 'services/DiscoveredClusterService';
 import type { DiscoveredClusterStatus } from 'services/DiscoveredClusterService';
 
 import { getStatusText } from './DiscoveredCluster';
 
-const optionAll = 'All_statuses';
+const optionAll = '##All Statuses##';
 
 type SearchFilterStatusesProps = {
     statusesSelected: DiscoveredClusterStatus[] | undefined;
@@ -20,19 +20,17 @@ function SearchFilterStatuses({
     isDisabled,
     setStatusesSelected,
 }: SearchFilterStatusesProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    function onSelect(selections: string[]) {
+        const hadAllOption = (statusesSelected ?? []).length === 0;
+        const isSelectAll = selections.includes(optionAll) && !hadAllOption;
+        const validStatuses = selections.filter((s) => s !== optionAll && isStatus(s));
 
-    function onSelect(_event, selection) {
-        const previousStatuses = statusesSelected ?? [];
-        if (isStatus(selection)) {
-            setStatusesSelected(
-                previousStatuses.includes(selection)
-                    ? previousStatuses.filter((status) => status !== selection)
-                    : [...previousStatuses, selection]
-            );
-        } else {
+        if (isSelectAll || validStatuses.length === 0) {
             setStatusesSelected(undefined);
+            return;
         }
+
+        setStatusesSelected(validStatuses);
     }
 
     const options = statuses.map((status) => (
@@ -48,19 +46,16 @@ function SearchFilterStatuses({
     );
 
     return (
-        <Select
-            variant="checkbox"
+        <CheckboxSelect
+            id="status-filter"
+            selections={statusesSelected ?? [optionAll]}
+            onChange={onSelect}
+            ariaLabel="Status filter menu items"
             placeholderText="Filter by status"
-            aria-label="Status filter menu items"
-            toggleAriaLabel="Status filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={statusesSelected ?? optionAll}
             isDisabled={isDisabled}
-            isOpen={isOpen}
         >
             {options}
-        </Select>
+        </CheckboxSelect>
     );
 }
 
