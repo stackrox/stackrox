@@ -50,17 +50,18 @@ GOTOOLS_ROOT ?= $(GOTOOLS_PROJECT_ROOT)/.gotools
 GOTOOLS_BIN ?= $(GOTOOLS_ROOT)/bin
 
 # RUN_WITH_RETRY_FN provides a shell function wrapper for retrying commands.
-# The function retries up to 5 times with exponential backoff (1s, 4s, 9s, 16s).
+# The function retries up to 8 times with exponential backoff.
 #
 # Note on escaping: $$$$ is used instead of $$ because this variable is expanded twice:
 # - First by Make when defining the recipe ($$$$i becomes $$i)
 # - Then by the shell when executing the recipe ($$i becomes $i)
 # Without the quadruple $, the shell would receive empty variables.
 RUN_WITH_RETRY_FN = run_with_retry() { \
-	for i in $$$$(seq 5); do \
+	attempts=8; \
+	for i in $$$$(seq $$$$attempts); do \
 		"$$$$@" && return 0; \
-		[[ $$$$i -eq 5 ]] && return 1; \
-		echo "Retry $$$$i/5 failed. Retrying after $$$$((i**2)) seconds..."; \
+		[[ $$$$i -eq $$$$attempts ]] && return 1; \
+		echo "Retry $$$$i/$$$$attempts failed. Retrying after $$$$((i**2)) seconds..."; \
 		sleep "$$$$((i**2))"; \
 	done \
 }
