@@ -283,7 +283,7 @@ func TestCachedWalk(t *testing.T) {
 		return nil
 	}
 
-	assert.NoError(t, store.Walk(cachedStoreCtx, walkFn))
+	assert.NoError(t, store.Walk(cachedStoreCtx, walkFn, true))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
 	protoassert.ElementsMatch(t, testObjects, walkedObjects)
@@ -303,7 +303,7 @@ func TestCachedWalkContextCancelation(t *testing.T) {
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
 		return nil
 	}
-	err = store.Walk(ctx, walkFn)
+	err = store.Walk(ctx, walkFn, true)
 
 	assert.ErrorIs(t, err, context.Canceled)
 }

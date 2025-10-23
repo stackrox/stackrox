@@ -10,5 +10,5 @@ import (
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.ComplianceOperatorCheckResult) error
 	Delete(ctx context.Context, id string) error
-	Walk(ctx context.Context, fn func(obj *storage.ComplianceOperatorCheckResult) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ComplianceOperatorCheckResult) error, useClones bool) error
 }

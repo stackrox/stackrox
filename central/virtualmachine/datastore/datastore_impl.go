@@ -155,5 +155,5 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 // This method is optimized for processing VMs without loading them all into memory.
 func (ds *datastoreImpl) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Walk")
-	return ds.store.Walk(ctx, fn)
+	return ds.store.Walk(ctx, fn, true)
 }

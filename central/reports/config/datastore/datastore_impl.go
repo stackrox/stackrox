@@ -93,5 +93,5 @@ func (d *dataStoreImpl) Walk(ctx context.Context, fn func(reportConfig *storage.
 	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
 		return err
 	}
-	return d.reportConfigStore.Walk(ctx, fn)
+	return d.reportConfigStore.Walk(ctx, fn, true)
 }

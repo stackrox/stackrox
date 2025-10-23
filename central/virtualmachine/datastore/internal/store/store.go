@@ -14,7 +14,7 @@ type VirtualMachineStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.VirtualMachine, bool, error)
-	Walk(ctx context.Context, fn func(machine *storage.VirtualMachine) error) error
+	Walk(ctx context.Context, fn func(machine *storage.VirtualMachine) error, useClones bool) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(machine *storage.VirtualMachine) error) error
 
 	DeleteMany(ctx context.Context, identifiers []string) error

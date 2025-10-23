@@ -258,7 +258,7 @@ func TestWalk(t *testing.T) {
 		return nil
 	}
 
-	assert.NoError(t, store.Walk(ctx, walkFn))
+	assert.NoError(t, store.Walk(ctx, walkFn, true))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
 	protoassert.ElementsMatch(t, testObjects, walkedObjects)

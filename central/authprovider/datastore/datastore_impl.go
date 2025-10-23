@@ -25,13 +25,13 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
-// GetAllAuthProviders retrieves authProviders and process each one with provided function.
+// ForEachAuthProvider retrieves authProviders and process each one with provided function.
 func (b *datastoreImpl) ForEachAuthProvider(ctx context.Context, fn func(obj *storage.AuthProvider) error) error {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return err
 	}
 
-	return b.storage.Walk(ctx, fn)
+	return b.storage.Walk(ctx, fn, true)
 }
 
 func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
@@ -67,7 +67,7 @@ func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 			filteredAuthProviders = append(filteredAuthProviders, authProvider)
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "retrieving auth providers")
 	}

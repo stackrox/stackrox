@@ -99,7 +99,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	err := ds.storage.Walk(readCtx, func(component *storage.ImageComponentV2) error {
 		ds.imageComponentRanker.Add(component.GetId(), component.GetRiskScore())
 		return nil
-	})
+	}, true)
 	if err != nil {
 		log.Errorf("unable to initialize image component ranking: %v", err)
 		return

@@ -56,7 +56,7 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 		}
 		fn(np)
 		return nil
-	})
+	}, true)
 }
 
 func getQuery(clusterID, namespace string) *v1.Query {

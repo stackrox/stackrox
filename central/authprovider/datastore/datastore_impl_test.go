@@ -75,7 +75,7 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesProcessAuthProviders
 	err := s.dataStore.ForEachAuthProvider(s.hasNoneCtx, nil)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any).Return(nil).Times(2)
 
 	err = s.dataStore.ForEachAuthProvider(s.hasReadCtx, nil)
 	s.NoError(err)
@@ -208,7 +208,7 @@ func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
 			Name: "some-name-2",
 		},
 	}
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(p *storage.AuthProvider) error) error {
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(p *storage.AuthProvider) error) error {
 		for _, p := range authProviders {
 			if err := fn(p); err != nil {
 				return err

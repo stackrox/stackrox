@@ -270,7 +270,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACWalk() {
 				identifiers = append(identifiers, obj.GetRunMetadata().GetRunId())
 				return nil
 			}
-			err := s.store.Walk(testCase.context, getIDs)
+			err := s.store.Walk(testCase.context, getIDs, true)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})

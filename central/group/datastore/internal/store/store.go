@@ -11,7 +11,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, propsID string) (*storage.Group, bool, error)
-	Walk(ctx context.Context, fn func(group *storage.Group) error) error
+	Walk(ctx context.Context, fn func(group *storage.Group) error, useClones bool) error
 	Upsert(ctx context.Context, group *storage.Group) error
 	UpsertMany(ctx context.Context, groups []*storage.Group) error
 	Delete(ctx context.Context, propsID string) error

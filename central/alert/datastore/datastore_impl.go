@@ -347,7 +347,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
 			listAlert := convert.AlertToListAlert(alert)
 			return fn(listAlert)
-		})
+		}, true)
 	}
 	return pgutils.RetryIfPostgres(ctx, walkFn)
 }

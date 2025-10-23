@@ -35,7 +35,7 @@ func TestContexCancellationInWalk(t *testing.T) {
 		cancel(fmt.Errorf("cancelling context on the first read"))
 		count++
 		return nil
-	})
+	}, true)
 	assert.Equal(t, 1, count)
 	assert.ErrorIs(t, err, context.Canceled)
 }

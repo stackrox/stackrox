@@ -14,5 +14,5 @@ type Store interface {
 
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error
+	Walk(ctx context.Context, fn func(obj *storage.LogImbue) error, useClones bool) error
 }

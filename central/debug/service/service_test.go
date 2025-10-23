@@ -256,7 +256,7 @@ func (s *debugServiceTestSuite) TestGetLogs() {
 	}
 
 	logStore := logMocks.NewMockStore(s.mockCtrl)
-	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Do(
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Do(
 		func(_ context.Context, fn func(*storage.LogImbue) error) {
 			for _, l := range logs {
 				err := fn(l)
@@ -303,7 +303,7 @@ func (s *debugServiceTestSuite) TestGetLogs() {
 
 func (s *debugServiceTestSuite) TestGetLogsWhenThereAreNoLogs() {
 	logStore := logMocks.NewMockStore(s.mockCtrl)
-	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil)
 	s.service.store = logStore
 
 	buf := &bytes.Buffer{}
@@ -327,7 +327,7 @@ func (s *debugServiceTestSuite) TestGetLogsWhenThereAreNoLogs() {
 
 func (s *debugServiceTestSuite) TestGetLogsWhenThereAreWriteErrors() {
 	logStore := logMocks.NewMockStore(s.mockCtrl)
-	logStore.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
+	logStore.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(errors.New("some error"))
 	s.service.store = logStore
 
 	buf := &bytes.Buffer{}

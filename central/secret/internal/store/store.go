@@ -17,7 +17,6 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.Secret, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Secret, []int, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.Secret) error) error
-	Walk(context.Context, func(secret *storage.Secret) error) error
 
 	Upsert(ctx context.Context, secret *storage.Secret) error
 	Delete(ctx context.Context, id string) error

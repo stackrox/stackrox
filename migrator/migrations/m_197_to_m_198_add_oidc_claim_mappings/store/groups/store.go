@@ -28,7 +28,7 @@ type storeType = storage.Group
 
 // Store is the interface to interact with the storage for storage.Group
 type Store interface {
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error, useClones bool) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 }
 

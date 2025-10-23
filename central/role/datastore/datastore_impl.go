@@ -179,7 +179,7 @@ func (ds *dataStoreImpl) GetRolesFiltered(ctx context.Context, filter func(role 
 				filteredRoles = append(filteredRoles, role)
 			}
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (ds *dataStoreImpl) getAllRolesNoScopeCheck(ctx context.Context) ([]*storag
 		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
 			roles = append(roles, role)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -314,7 +314,7 @@ func (ds *dataStoreImpl) GetAllPermissionSets(ctx context.Context) ([]*storage.P
 		return ds.permissionSetStorage.Walk(ctx, func(permissionSet *storage.PermissionSet) error {
 			permissionSets = append(permissionSets, permissionSet)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -336,7 +336,7 @@ func (ds *dataStoreImpl) GetPermissionSetsFiltered(ctx context.Context,
 				filteredPermissionSets = append(filteredPermissionSets, permissionSet)
 			}
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -489,7 +489,7 @@ func (ds *dataStoreImpl) GetAllAccessScopes(ctx context.Context) ([]*storage.Sim
 		return ds.accessScopeStorage.Walk(ctx, func(scope *storage.SimpleAccessScope) error {
 			scopes = append(scopes, scope)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -511,7 +511,7 @@ func (ds *dataStoreImpl) GetAccessScopesFiltered(ctx context.Context,
 				filteredScopes = append(filteredScopes, scope)
 			}
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

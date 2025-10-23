@@ -27,7 +27,7 @@ type storeType = storage.ComplianceOperatorRuleV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error, useClones bool) error
 }
 
 // New returns a new Store instance using the provided sql instance.

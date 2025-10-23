@@ -24,7 +24,7 @@ func (ds *dataStoreImpl) ForEachServiceIdentity(ctx context.Context, fn func(obj
 		return nil
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, fn, true)
 }
 
 func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *storage.ServiceIdentity) error {

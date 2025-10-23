@@ -55,7 +55,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 		return d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
 			integrations = append(integrations, integration)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

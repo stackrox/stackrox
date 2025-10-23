@@ -34,7 +34,7 @@ type UnderlyingStore interface {
 	Get(ctx context.Context, id string) (*storage.InitBundleMeta, bool, error)
 	Upsert(ctx context.Context, obj *storage.InitBundleMeta) error
 	Delete(ctx context.Context, id string) error
-	Walk(ctx context.Context, fn func(obj *storage.InitBundleMeta) error) error
+	Walk(ctx context.Context, fn func(obj *storage.InitBundleMeta) error, useClones bool) error
 }
 
 type storeImpl struct {
@@ -59,7 +59,7 @@ func (w *storeImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, erro
 		}
 		result = append(result, obj)
 		return nil
-	}); err != nil {
+	}, true); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -76,7 +76,7 @@ func (w *storeImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, e
 		}
 		result = append(result, obj)
 		return nil
-	}); err != nil {
+	}, true); err != nil {
 		return nil, err
 	}
 	return result, nil

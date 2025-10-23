@@ -325,10 +325,16 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
-func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error, useClones bool) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	return c.walkCacheNoLock(ctx, fn)
+	wrappedFn := fn
+	if useClones {
+		wrappedFn = func(obj PT) error {
+			return fn(obj.CloneVT())
+		}
+	}
+	return c.walkCacheNoLock(ctx, wrappedFn)
 }
 
 // GetByQueryFn iterates over the objects from the store matching the query.
@@ -376,7 +382,7 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer c.cacheLock.RUnlock()
 	result := make([]string, 0, len(c.cache))
 	err := c.walkCacheNoLock(ctx, func(obj PT) error {
-		result = append(result, c.pkGetter(obj))
+		result = append(result, c.pkGetter(obj.CloneVT()))
 		return nil
 	})
 	if err != nil {
@@ -398,7 +404,7 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj.CloneVT())
+		err := fn(obj)
 		if err != nil {
 			return err
 		}
@@ -442,10 +448,11 @@ func (c *cachedStore[T, PT]) populateCache() error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	c.cache = make(map[string]PT)
+	const noClone = false
 	return c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
 		c.addToCacheNoLock(obj)
 		return nil
-	})
+	}, noClone)
 }
 
 func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {

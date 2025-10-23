@@ -21,5 +21,5 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.NetworkPolicy) error
 	Delete(ctx context.Context, id string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy) error, useClones bool) error
 }

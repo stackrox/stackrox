@@ -60,7 +60,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 			integrationSlice = append(integrationSlice, integration)
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}

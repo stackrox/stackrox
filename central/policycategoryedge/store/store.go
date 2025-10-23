@@ -25,5 +25,5 @@ type Store interface {
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.PolicyCategoryEdge) error) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 
-	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error, useClones bool) error
 }

@@ -39,7 +39,7 @@ func NewDatastore(store store.Store) (DataStore, error) {
 	err := store.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
 		ds.addToRulesByNameNoLock(rule)
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
 	// Postgres retry in caller.
-	return d.store.Walk(ctx, fn)
+	return d.store.Walk(ctx, fn, true)
 }
 
 func (d *datastoreImpl) addToRulesByNameNoLock(rule *storage.ComplianceOperatorRule) {

@@ -90,7 +90,7 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 			}
 			tokens = append(tokens, token)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

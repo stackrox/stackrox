@@ -140,21 +140,21 @@ func (s *groupDataStoreTestSuite) TestGetWithoutID() {
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesGetAll() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.ForEach(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil)
 
 	err := s.dataStore.ForEach(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	groups, err := s.dataStore.GetFiltered(s.hasNoneCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error, should return nil without access")
@@ -162,12 +162,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesGetFiltered() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsGetFiltered() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil)
 
 	_, err := s.dataStore.GetFiltered(s.hasReadCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil).Times(1)
 
 	_, err = s.dataStore.GetFiltered(s.hasWriteCtx, func(_ *storage.Group) bool { return true })
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -175,7 +175,7 @@ func (s *groupDataStoreTestSuite) TestAllowsGetFiltered() {
 
 func (s *groupDataStoreTestSuite) TestGetFiltered() {
 	groups := fixtures.GetGroups()
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(walkMockFunc(groups))
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Times(2).DoAndReturn(walkMockFunc(groups))
 
 	actualGroups, err := s.dataStore.GetFiltered(s.hasWriteCtx, func(*storage.Group) bool { return false })
 	s.NoError(err)
@@ -193,7 +193,7 @@ func (s *groupDataStoreTestSuite) TestGetFiltered() {
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	groups, err := s.dataStore.Walk(s.hasNoneCtx, "provider", nil)
 	s.NoError(err, "expected no error, should return nil without access")
@@ -201,12 +201,12 @@ func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsWalk() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil)
 
 	_, err := s.dataStore.Walk(s.hasReadCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil).Times(1)
 
 	_, err = s.dataStore.Walk(s.hasWriteCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -229,7 +229,7 @@ func (s *groupDataStoreTestSuite) TestWalk() {
 		},
 	}
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groups))
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc(groups))
 
 	actualGroups, err := s.dataStore.Walk(s.hasWriteCtx, "authProvider1", attributes)
 	s.NoError(err)
@@ -424,10 +424,10 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 
 			// If default group, then expect call to Walk (to find if there are other default groups)
 			if c.groupToAdd.GetProps().GetKey() == "" && c.groupToAdd.GetProps().GetValue() == "" {
-				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(c.existingGroups)).Times(2)
+				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc(c.existingGroups)).Times(2)
 			} else {
 				// Otherwise, no call to Walk will be made
-				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+				s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			}
 
 			if c.shouldError {
@@ -474,7 +474,7 @@ func (s *groupDataStoreTestSuite) TestUpdateToDefaultGroupIfOneAlreadyExists() {
 		},
 	}
 	s.expectGet(2, fixtures.GetGroupWithMutability(storage.Traits_ALLOW_MUTATE))
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).Times(2)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).Times(2)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)     // No update should happen
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0) // No updates should happen
 
@@ -514,7 +514,7 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 	s.validRoleAndAuthProvider("admin", "defaultGroup1", storage.Traits_IMPERATIVE, 2)
 	s.validRoleAndAuthProvider("non-admin", "defaultGroup1", storage.Traits_IMPERATIVE, 4)
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).AnyTimes()
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc([]*storage.Group{initialGroup, defaultGroup})).AnyTimes()
 
 	// 1. Updating the default group's role should work.
 	defaultGroup.RoleName = "non-admin" // Using the same defaultGroup object so that the Walk closure is also updated correctly
@@ -786,7 +786,7 @@ func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
 		},
 	}
 	gomock.InOrder(
-		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[1].GetProps().GetId()).Return(nil),
 	)
@@ -814,7 +814,7 @@ func (s *groupDataStoreTestSuite) TestRemoveAllWithEmptyProperties() {
 		},
 	}
 	gomock.InOrder(
-		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
+		s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(walkMockFunc(groupsWithoutProperties)),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[0].GetProps().GetId()).Return(nil),
 		s.storage.EXPECT().Delete(gomock.Any(), groupsWithoutProperties[2].GetProps().GetId()).Return(nil),
 	)

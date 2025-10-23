@@ -44,7 +44,7 @@ func New(store store.Store, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore)
 	err := store.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
 		categories = append(categories, category)
 		return nil
-	})
+	}, true)
 	if err != nil {
 		utils.CrashOnError(err)
 	}

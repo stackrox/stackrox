@@ -54,7 +54,7 @@ func (d *dataStore) GetAllWatchedImages(ctx context.Context) ([]*storage.Watched
 		return d.storage.Walk(ctx, func(obj *storage.WatchedImage) error {
 			watchedImages = append(watchedImages, obj)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

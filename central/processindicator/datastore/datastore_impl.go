@@ -273,7 +273,7 @@ func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processi
 			Args: pi.GetSignal().GetArgs(),
 		})
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}

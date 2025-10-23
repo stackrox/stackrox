@@ -327,7 +327,7 @@ func (s *ImagesStoreSuite) TestUpdateVulnState() {
 		return nil
 	}
 
-	s.NoError(s.cvePgStore.Walk(s.ctx, walkFn))
+	s.NoError(s.cvePgStore.Walk(s.ctx, walkFn, true))
 }
 
 func (s *ImagesStoreSuite) TestGetManyImageMetadata() {

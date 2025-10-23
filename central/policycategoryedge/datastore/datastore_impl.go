@@ -77,7 +77,7 @@ func (ds *datastoreImpl) GetAll(ctx context.Context) ([]*storage.PolicyCategoryE
 	err := ds.storage.Walk(ctx, func(edge *storage.PolicyCategoryEdge) error {
 		edges = append(edges, edge)
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}

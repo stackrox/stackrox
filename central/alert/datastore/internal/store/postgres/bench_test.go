@@ -59,7 +59,7 @@ func BenchmarkMany(b *testing.B) {
 				err := store.Walk(ctx, func(obj *storeType) error {
 					count++
 					return nil
-				})
+				}, true)
 				assert.NoError(b, err)
 				assert.Equal(b, alertsNum, count)
 			}

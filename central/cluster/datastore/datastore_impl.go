@@ -166,7 +166,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 		return ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
 			clusterHealthStatuses[healthInfo.GetId()] = healthInfo
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
@@ -320,7 +320,7 @@ func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Clus
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clusters = append(clusters, cluster)
 			return nil
-		})
+		}, false)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -355,7 +355,7 @@ func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.
 			ds.populateHealthInfos(ctx, clonedCluster)
 			ds.updateClusterPriority(clonedCluster)
 			return fn(clonedCluster)
-		})
+		}, false)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
@@ -1124,7 +1124,7 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clusters = append(clusters, cluster.CloneVT())
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

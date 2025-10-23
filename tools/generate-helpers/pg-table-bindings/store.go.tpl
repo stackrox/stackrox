@@ -80,7 +80,7 @@ type Store interface {
     GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 
-    Walk(ctx context.Context, fn callback) error
+    Walk(ctx context.Context, fn callback, useClones bool) error
     WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 

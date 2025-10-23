@@ -39,7 +39,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(binding *storage.Compl
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings read")
 	}
 	// Postgres retry in caller.
-	return d.store.Walk(ctx, fn)
+	return d.store.Walk(ctx, fn, true)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, binding *storage.ComplianceOperatorScanSettingBinding) error {

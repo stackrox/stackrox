@@ -525,7 +525,7 @@ func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) err
 
 	err = s.store.Walk(ctx, func(log *storage.LogImbue) error {
 		return jsonWriter.WriteObject(safeRawMessage(log.GetLog()))
-	})
+	}, true)
 	if err != nil {
 		return errors.Wrap(err, "writing logs to zip")
 	}

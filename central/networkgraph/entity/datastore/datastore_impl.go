@@ -96,7 +96,7 @@ func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 		return ds.storage.Walk(storeCtx, func(obj *storage.NetworkEntity) error {
 			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		log.Errorf("Failed to initialize network tree: %v", err)
@@ -227,7 +227,7 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 
 			entities = append(entities, entity)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, errors.Wrap(err, "fetching network entities from storage")

@@ -92,7 +92,7 @@ func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(no
 			result = append(result, n)
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting notifiers from storage")
 	}
@@ -127,7 +127,7 @@ func (b *datastoreImpl) ForEachNotifier(ctx context.Context, fn func(obj *storag
 		return nil
 	}
 
-	return b.storage.Walk(ctx, fn)
+	return b.storage.Walk(ctx, fn, true)
 }
 
 func (b *datastoreImpl) GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error) {

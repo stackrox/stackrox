@@ -14,7 +14,6 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.ServiceAccount, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ServiceAccount, []int, error)
-	Walk(context.Context, func(sa *storage.ServiceAccount) error) error
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ServiceAccount) error) error
 
 	Upsert(ctx context.Context, serviceaccount *storage.ServiceAccount) error

@@ -64,7 +64,7 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	Walk(ctx context.Context, fn func(obj PT) error) error
+	Walk(ctx context.Context, fn func(obj PT) error, useClones bool) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
 	Get(ctx context.Context, id string) (PT, bool, error)
 	// Deprecated: use GetByQueryFn instead
@@ -210,9 +210,11 @@ func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, 
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
-func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error, useClones bool) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
 
+	// The data passed to the Walk callback comes from the database and is already a newly allocated object.
+	_ = useClones
 	return s.walkByQuery(ctx, search.EmptyQuery(), fn)
 }
 

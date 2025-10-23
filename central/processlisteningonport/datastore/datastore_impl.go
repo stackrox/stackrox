@@ -293,7 +293,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn WalkFn) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, fn, true)
 }
 
 func (ds *datastoreImpl) RemoveProcessListeningOnPort(ctx context.Context, ids []string) error {

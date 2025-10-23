@@ -100,7 +100,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	err := ds.storage.Walk(readCtx, func(component *storage.NodeComponent) error {
 		ds.nodeComponentRanker.Add(component.GetId(), component.GetRiskScore())
 		return nil
-	})
+	}, true)
 	if err != nil {
 		log.Errorf("unable to initialize node component ranking: %v", err)
 		return

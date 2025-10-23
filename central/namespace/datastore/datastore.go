@@ -84,9 +84,9 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 				IsAllowed() {
 				return nil
 			}
-			allowedNamespaces = append(allowedNamespaces, namespace.CloneVT())
+			allowedNamespaces = append(allowedNamespaces)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.Nam
 			}
 			allowedNamespaces = append(allowedNamespaces, namespace)
 			return nil
-		})
+		}, false)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

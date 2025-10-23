@@ -18,7 +18,7 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ImageComponent) error) error
 
-	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error, useClones bool) error
 
 	Exists(ctx context.Context, id string) (bool, error)
 }

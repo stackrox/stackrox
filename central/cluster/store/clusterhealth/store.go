@@ -23,5 +23,5 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error, useClones bool) error
 }

@@ -11,7 +11,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.Notifier, bool, error)
-	Walk(ctx context.Context, fn func(obj *storage.Notifier) error) error
+	Walk(ctx context.Context, fn func(obj *storage.Notifier) error, useClones bool) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.Notifier, []int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.Notifier) error

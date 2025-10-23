@@ -22,7 +22,7 @@ type Store interface {
 	UpsertMany(context.Context, []*storage.ProcessIndicator) error
 	DeleteMany(ctx context.Context, id []string) error
 
-	Walk(context.Context, func(pi *storage.ProcessIndicator) error) error
+	Walk(context.Context, func(pi *storage.ProcessIndicator) error, bool) error
 	WalkByQuery(context.Context, *v1.Query, func(pi *storage.ProcessIndicator) error) error
 	DeleteByQuery(ctx context.Context, query *v1.Query) error
 }

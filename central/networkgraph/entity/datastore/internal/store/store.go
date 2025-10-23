@@ -21,7 +21,7 @@ type EntityStore interface {
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error, useClones bool) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.NetworkEntity) error) error
 
 	// Deprecated: use GetByQueryFn instead

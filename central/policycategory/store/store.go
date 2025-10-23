@@ -23,5 +23,5 @@ type Store interface {
 	UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
-	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error) error
+	Walk(ctx context.Context, fn func(obj *storage.PolicyCategory) error, useClones bool) error
 }

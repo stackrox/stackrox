@@ -60,14 +60,14 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.ForEachServiceIdentity(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil).Times(1)
 
 	err := s.dataStore.ForEachServiceIdentity(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")

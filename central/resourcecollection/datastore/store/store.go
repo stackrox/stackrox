@@ -22,6 +22,4 @@ type Store interface {
 
 	Upsert(context.Context, *storage.ResourceCollection) error
 	Delete(ctx context.Context, id string) error
-
-	Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error
 }

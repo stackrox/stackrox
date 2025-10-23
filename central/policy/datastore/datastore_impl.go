@@ -204,7 +204,7 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return nil, err
 	}

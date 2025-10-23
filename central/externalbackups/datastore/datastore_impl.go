@@ -24,7 +24,7 @@ func (ds *datastoreImpl) ForEachBackup(ctx context.Context, fn func(obj *storage
 		return nil
 	}
 
-	return ds.store.Walk(ctx, fn)
+	return ds.store.Walk(ctx, fn, true)
 }
 
 func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {

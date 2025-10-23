@@ -220,7 +220,7 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 		return ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
 			categories = append(categories, category)
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

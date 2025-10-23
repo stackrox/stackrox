@@ -24,7 +24,7 @@ func (ds *datastoreImpl) GetDeclarativeConfigs(ctx context.Context) ([]*storage.
 			declarativeConfigHealths = append(declarativeConfigHealths, obj)
 
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

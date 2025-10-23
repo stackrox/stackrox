@@ -124,7 +124,7 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 	err = suite.storage.Walk(suite.hasReadCtx, func(pi *storage.ProcessIndicator) error {
 		foundIndicators = append(foundIndicators, pi)
 		return nil
-	})
+	}, true)
 	suite.NoError(err)
 	protoassert.ElementsMatch(suite.T(), foundIndicators, indicators)
 }

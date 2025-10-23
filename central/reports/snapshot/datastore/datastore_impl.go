@@ -174,7 +174,7 @@ func (ds *datastoreImpl) Walk(ctx context.Context, fn func(report *storage.Repor
 	if ok, err := workflowSAC.ReadAllowed(ctx); !ok || err != nil {
 		return err
 	}
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, fn, true)
 }
 
 func convertOne(report *storage.ReportSnapshot, result pkgSearch.Result) *v1.SearchResult {

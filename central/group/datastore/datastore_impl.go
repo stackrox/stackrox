@@ -80,7 +80,7 @@ func (ds *dataStoreImpl) ForEach(ctx context.Context, fn func(group *storage.Gro
 		return nil
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, fn, true)
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
@@ -113,7 +113,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attrib
 				}
 			}
 			return nil
-		})
+		}, true)
 	}
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err

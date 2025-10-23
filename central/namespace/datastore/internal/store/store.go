@@ -15,7 +15,7 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
-	Walk(context.Context, func(namespace *storage.NamespaceMetadata) error) error
+	Walk(context.Context, func(namespace *storage.NamespaceMetadata) error, bool) error
 	Upsert(context.Context, *storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
 	GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error)

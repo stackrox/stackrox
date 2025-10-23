@@ -40,7 +40,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(scan *storage.Complian
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan read")
 	}
-	return d.store.Walk(ctx, fn)
+	return d.store.Walk(ctx, fn, true)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, scan *storage.ComplianceOperatorScan) error {

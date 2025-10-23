@@ -56,7 +56,7 @@ func (d *datastoreImpl) ForEachAuthM2MConfig(ctx context.Context, fn func(obj *s
 }
 
 func (d *datastoreImpl) forEachAuthM2MConfigNoLock(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error {
-	return d.store.Walk(ctx, fn)
+	return d.store.Walk(ctx, fn, true)
 }
 
 func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,

@@ -44,7 +44,7 @@ func addDefaults(s policyCategoryStore.Store) {
 	err = s.Walk(sac.WithAllAccess(context.Background()), func(category *storage.PolicyCategory) error {
 		existingCategoriesSet.Add(category.GetName())
 		return nil
-	})
+	}, true)
 	utils.CrashOnError(err)
 
 	for _, dc := range defaultCategories {

@@ -111,14 +111,14 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesForEach() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.ForEachNotifier(s.hasNoneCtx, nil)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsForEach() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).Return(nil).Times(1)
 
 	err := s.dataStore.ForEachNotifier(s.hasReadCtx, nil)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -133,7 +133,7 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
 		},
 	}
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), true).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
 			return fn(testNotifier)
 		}).Times(1)
@@ -146,7 +146,7 @@ func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(0)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 	_, err := s.dataStore.AddNotifier(s.hasNoneCtx, &storage.Notifier{})
 	s.Error(err, "expected an error trying to write without permissions")

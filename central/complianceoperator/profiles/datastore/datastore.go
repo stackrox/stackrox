@@ -39,7 +39,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles read")
 	}
 	// Postgres retry in caller.
-	return d.store.Walk(ctx, fn)
+	return d.store.Walk(ctx, fn, true)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error {

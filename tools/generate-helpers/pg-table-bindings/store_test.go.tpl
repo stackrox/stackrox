@@ -316,7 +316,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 				identifiers = append(identifiers, {{ (index .Schema.PrimaryKeys 0).Getter "obj" }} )
 				return nil
 			}
-			err := s.store.Walk(testCase.context, getIDs)
+			err := s.store.Walk(testCase.context, getIDs, true)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})

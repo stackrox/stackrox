@@ -53,7 +53,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		panic(err)
 	}

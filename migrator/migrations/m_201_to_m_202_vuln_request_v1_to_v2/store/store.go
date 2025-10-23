@@ -29,7 +29,7 @@ type Store interface {
 
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error, useClones bool) error
 }
 
 // New returns a new Store instance using the provided sql instance.

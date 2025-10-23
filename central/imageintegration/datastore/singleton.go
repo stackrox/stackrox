@@ -29,7 +29,7 @@ func initializeIntegrations(iiStore store.Store) {
 	err := iiStore.Walk(ctx, func(ii *storage.ImageIntegration) error {
 		iis = append(iis, ii)
 		return nil
-	})
+	}, true)
 	utils.CrashOnError(err)
 	// If we are starting from scratch in online-mode, add the default image integrations.
 	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
