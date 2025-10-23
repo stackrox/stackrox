@@ -1,9 +1,12 @@
 # Migration to ubi8-micro base image
-# Scanner is simpler than main image - it only needs CA trust setup, no package installations
+# Scanner needs bash and utilities for entrypoint scripts
 
 ARG MAPPINGS_REGISTRY=registry.access.redhat.com
 ARG MAPPINGS_BASE_IMAGE=ubi8
 ARG MAPPINGS_BASE_TAG=latest
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-micro
 ARG BASE_TAG=latest
@@ -17,19 +20,23 @@ COPY download-mappings.sh /download-mappings.sh
 RUN /download-mappings.sh /mappings
 
 # ============================================================================
-# Stage 2: dependency_builder - Setup CA trust and directory structure
-# Scanner doesn't need package installations, just CA trust setup
+# Stage 2: dependency_builder - Install runtime dependencies for ubi8-micro
 # ============================================================================
-FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS dependency_builder
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS dependency_builder
 
-# Install ca-certificates to /out/ for update-ca-trust command
+# Install minimal required runtime dependencies to /out/
+# These are needed for the shell scripts (entrypoint.sh, restore-all-dir-contents, etc.)
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
     --setopt=install_weak_deps=0 \
     --nodocs \
     -y \
-    ca-certificates bash && \
+    bash \
+    coreutils \
+    findutils \
+    util-linux \
+    ca-certificates && \
     dnf --installroot=/out/ clean all && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
@@ -59,10 +66,10 @@ LABEL name="scanner-v4" \
       release="${LABEL_RELEASE}" \
       quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
-SHELL ["/bin/sh", "-o", "pipefail", "-c"]
-
-# Copy CA trust and system files from builder
+# Copy all dependencies from builder (bash, coreutils, ca-certificates, etc.)
 COPY --from=dependency_builder /out/ /
+
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 # Copy application scripts and binaries
 COPY scripts/entrypoint.sh \
