@@ -21,6 +21,7 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -49,6 +50,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(0)).
+			Offset(int32(env.ReportMaxRows.IntegerSetting())).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
 	}
@@ -57,6 +60,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(0)).
+			Offset(int32(env.ReportMaxRows.IntegerSetting())).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 )
@@ -80,30 +85,6 @@ type reportGeneratorImpl struct {
 type ImageCVEInterface interface {
 	GetId() string
 	GetCveBaseInfo() *storage.CVEInfo
-}
-
-// buildDeployedImagesQueryParts builds query parts with pagination
-func buildDeployedImagesQueryParts(limit int32, offset int32) *ReportQueryParts {
-	return &ReportQueryParts{
-		Schema:  selectSchema(),
-		Selects: getSelectsDeployedImages(),
-		Pagination: search.NewPagination().
-			Limit(limit).
-			Offset(offset).
-			AddSortOption(search.NewSortOption(search.Cluster)).
-			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
-	}
-}
-
-func buildWatchedImagesQueryParts(limit int32, offset int32) *ReportQueryParts {
-	return &ReportQueryParts{
-		Schema:  selectSchema(),
-		Selects: getSelectsWatchedImages(),
-		Pagination: search.NewPagination().
-			Limit(limit).
-			Offset(offset).
-			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
-	}
 }
 
 func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
@@ -291,7 +272,7 @@ func (rg *reportGeneratorImpl) getReportDataSQFPaginated(
 
 		deployedCVEs, err := rg.fetchPaginatedCVEData(
 			baseQuery,
-			buildDeployedImagesQueryParts,
+			deployedImagesQueryParts,
 			"deployed images",
 		)
 		if err != nil {
@@ -316,7 +297,7 @@ func (rg *reportGeneratorImpl) getReportDataSQFPaginated(
 			)
 			watchedCVEs, err := rg.fetchPaginatedCVEData(
 				baseQuery,
-				buildWatchedImagesQueryParts,
+				watchedImagesQueryParts,
 				"watched images",
 			)
 			if err != nil {
@@ -341,13 +322,9 @@ func (rg *reportGeneratorImpl) getReportDataSQFPaginated(
 
 func (rg *reportGeneratorImpl) fetchPaginatedCVEData(
 	baseQuery *v1.Query,
-	queryPartsBuilder func(int32, int32) *ReportQueryParts,
+	queryParts *ReportQueryParts,
 	dataType string,
 ) ([]*ImageCVEQueryResponse, error) {
-	offset := int32(0)
-	pageSize := int32(DefaultCVEPageSize)
-
-	queryParts := queryPartsBuilder(pageSize, offset)
 	query := proto.Clone(baseQuery).(*v1.Query)
 	query.Pagination = queryParts.Pagination
 	query.Selects = queryParts.Selects
@@ -359,7 +336,7 @@ func (rg *reportGeneratorImpl) fetchPaginatedCVEData(
 		query,
 	)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fetch page at offset %d for %s", offset, dataType)
+		return nil, errors.Wrapf(err, "Failed to fetch page at offset %d for %s", 0, dataType)
 	}
 
 	return pageResults, nil
