@@ -266,18 +266,6 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
 	}
 
-	// Security context to help ensure graceful termination.
-	// NOTE: Not setting RunAsNonRoot as test images may run as root.
-	securityContext := &coreV1.SecurityContext{
-		AllowPrivilegeEscalation: pointers.Bool(false),
-		Capabilities: &coreV1.Capabilities{
-			Drop: []coreV1.Capability{"ALL"},
-		},
-		SeccompProfile: &coreV1.SeccompProfile{
-			Type: coreV1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
-
 	deployment := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   deploymentName,
@@ -297,7 +285,6 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 						Name:            deploymentName,
 						Image:           image,
 						ImagePullPolicy: pullPolicy,
-						SecurityContext: securityContext,
 						Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
 					}},
 				},
