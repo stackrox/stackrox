@@ -1,5 +1,5 @@
 """
-gRPC server for ML risk ranking service.
+gRPC server for ML risk ranking service with hot model reloading support.
 """
 
 import logging
@@ -12,6 +12,7 @@ import threading
 import time
 from typing import Dict, Any, List, Optional
 import numpy as np
+from contextlib import asynccontextmanager
 
 # Import generated protobuf classes (would be generated from .proto files)
 # For now, we'll create mock classes that match the protobuf definitions
@@ -20,6 +21,10 @@ from typing import List as TypingList
 
 from ..models.ranking_model import RiskRankingModel
 from ..models.feature_importance import FeatureImportanceAnalyzer
+from ..storage.model_storage import ModelStorageManager, StorageConfig
+from ..monitoring.health_checker import ModelHealthChecker
+from ..monitoring.drift_detector import ModelDriftMonitor, DriftReport
+from ..monitoring.alerting import AlertManager
 from ...training.train_pipeline import TrainingPipeline
 
 logger = logging.getLogger(__name__)
@@ -154,8 +159,70 @@ class ModelHealthResponse:
     current_metrics: ModelMetrics
 
 
+@dataclass
+class ReloadModelRequest:
+    model_id: str
+    version: str = ""  # Empty for latest version
+    force_reload: bool = False
+
+
+@dataclass
+class ReloadModelResponse:
+    success: bool
+    message: str
+    previous_model_version: str
+    new_model_version: str
+    reload_time_ms: float
+
+
+@dataclass
+class ListModelsRequest:
+    model_id: str = ""  # Empty for all models
+
+
+@dataclass
+class ModelInfo:
+    model_id: str
+    version: str
+    algorithm: str
+    training_timestamp: int
+    model_size_bytes: int
+    performance_metrics: Dict[str, float]
+    status: str
+
+
+@dataclass
+class ListModelsResponse:
+    models: TypingList[ModelInfo]
+    total_count: int
+
+@dataclass
+class DetailedHealthRequest:
+    include_trends: bool = True
+    trend_hours: int = 24
+
+@dataclass
+class HealthCheckDetail:
+    check_name: str
+    status: str
+    score: float
+    message: str
+    details: dict
+
+@dataclass
+class DetailedHealthResponse:
+    model_id: str
+    version: str
+    overall_status: str
+    overall_score: float
+    health_checks: TypingList[HealthCheckDetail]
+    recommendations: TypingList[str]
+    trends: dict
+    timestamp: int
+
+
 class MLRiskServiceImpl:
-    """Implementation of ML Risk Service gRPC methods."""
+    """Implementation of ML Risk Service gRPC methods with hot reloading support."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
@@ -163,12 +230,30 @@ class MLRiskServiceImpl:
         self.feature_analyzer = FeatureImportanceAnalyzer()
         self.training_pipeline = TrainingPipeline()
 
+        # Initialize storage manager
+        storage_config = self._create_storage_config()
+        self.storage_manager = ModelStorageManager(storage_config)
+
+        # Initialize health checker
+        self.health_checker = ModelHealthChecker()
+        self._setup_health_checks()
+
+        # Initialize drift monitoring
+        drift_config = self.config.get('drift_monitoring', {})
+        self.drift_monitor = ModelDriftMonitor(drift_config)
+
+        # Initialize alerting system
+        alert_config = self.config.get('alerting', {})
+        self.alert_manager = AlertManager(alert_config)
+
         # Service metrics
         self.predictions_served = 0
         self.total_prediction_time = 0.0
         self.last_training_time = 0
         self.training_examples_count = 0
         self.model_loaded = False
+        self.current_model_id = None
+        self.current_model_version = None
 
         # Thread safety
         self._model_lock = threading.RLock()
@@ -176,7 +261,79 @@ class MLRiskServiceImpl:
         # Try to load existing model if configured
         model_file = self.config.get('model_file')
         if model_file and os.path.exists(model_file):
-            self._load_model(model_file)
+            self._load_model_from_file(model_file)
+        else:
+            # Try to load the default or latest model from storage
+            self._load_default_model()
+
+    def _create_storage_config(self) -> StorageConfig:
+        """Create storage configuration from service config."""
+        # Use environment variables to create storage config
+        return StorageConfig.from_env()
+
+    def _setup_health_checks(self):
+        """Setup default health checks."""
+        try:
+            # Setup baseline metrics if available
+            baseline_metrics = self.config.get('health_baseline_metrics', {
+                'validation_ndcg': 0.75,
+                'validation_auc': 0.70,
+                'training_loss': 0.4
+            })
+
+            self.health_checker.setup_default_checks(baseline_metrics)
+            logger.info("Health checks configured successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to setup health checks: {e}")
+
+    def _load_default_model(self):
+        """Load the default model from storage."""
+        try:
+            # Try to find the default model ID from config or environment
+            default_model_id = (
+                self.config.get('default_model_id') or
+                os.environ.get('ROX_ML_DEFAULT_MODEL_ID', 'stackrox-risk-model')
+            )
+
+            # Try to load the latest version of the default model
+            models = self.storage_manager.list_models(default_model_id)
+            if models:
+                latest_model = models[0]  # list_models returns sorted by timestamp desc
+                if self._load_model_from_storage(latest_model.model_id, latest_model.version):
+                    logger.info(f"Loaded default model {latest_model.model_id} v{latest_model.version}")
+                    return
+
+            logger.warning(f"No default model found for {default_model_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to load default model: {e}")
+
+    def _load_model_from_file(self, model_file: str):
+        """Load model from a file (legacy method)."""
+        try:
+            with self._model_lock:
+                self.model.load_model(model_file)
+                self.model_loaded = True
+                self.current_model_version = getattr(self.model, 'model_version', 'file-loaded')
+                logger.info(f"Model loaded from file: {model_file}")
+        except Exception as e:
+            logger.error(f"Failed to load model from file {model_file}: {e}")
+
+    def _load_model_from_storage(self, model_id: str, version: Optional[str] = None) -> bool:
+        """Load model from storage manager."""
+        try:
+            with self._model_lock:
+                success = self.model.load_model_from_storage(self.storage_manager, model_id, version)
+                if success:
+                    self.model_loaded = True
+                    self.current_model_id = model_id
+                    self.current_model_version = version or "latest"
+                    logger.info(f"Model loaded from storage: {model_id} v{self.current_model_version}")
+                return success
+        except Exception as e:
+            logger.error(f"Failed to load model from storage {model_id} v{version}: {e}")
+            return False
 
     def GetDeploymentRisk(self, request: DeploymentRiskRequest, context) -> DeploymentRiskResponse:
         """Get risk score for a single deployment."""
@@ -217,6 +374,27 @@ class MLRiskServiceImpl:
                 prediction_time = (time.time() - start_time) * 1000  # ms
                 self.predictions_served += 1
                 self.total_prediction_time += prediction_time
+
+                # Record prediction for health monitoring
+                prediction_data = {
+                    'deployment_id': request.deployment_id,
+                    'risk_score': prediction.risk_score,
+                    'model_version': prediction.model_version,
+                    'latency_ms': prediction_time,
+                    'feature_count': len(features),
+                    'prediction_timestamp': time.time()
+                }
+                self.health_checker.record_prediction(prediction_data)
+
+                # Record prediction for drift monitoring
+                feature_dict = self._convert_features_to_dict(features, request)
+                self.drift_monitor.record_prediction(
+                    self.current_model_id or "unknown",
+                    self.current_model_version or "unknown",
+                    feature_dict,
+                    prediction.risk_score,
+                    time.time()
+                )
 
                 return DeploymentRiskResponse(
                     deployment_id=request.deployment_id,
@@ -325,15 +503,42 @@ class MLRiskServiceImpl:
                     if self.predictions_served > 0 else 0.0
                 )
 
+                # Run comprehensive health checks
+                current_performance_metrics = {
+                    'avg_prediction_time_ms': avg_prediction_time,
+                    'predictions_served': self.predictions_served,
+                    'model_loaded': 1.0 if self.model_loaded else 0.0
+                }
+
+                # Add model-specific metrics if available
+                if hasattr(self.model, 'get_current_metrics'):
+                    try:
+                        model_metrics = self.model.get_current_metrics()
+                        current_performance_metrics.update(model_metrics)
+                    except Exception as e:
+                        logger.warning(f"Failed to get model metrics: {e}")
+
+                # Run health checks
+                health_report = self.health_checker.run_health_checks(
+                    model=self.model,
+                    model_id=self.current_model_id or "unknown",
+                    version=self.current_model_version or "unknown",
+                    current_metrics=current_performance_metrics
+                )
+
+                # Determine overall health based on the report
+                is_healthy = (self.model_loaded and
+                            health_report.overall_status in ["healthy", "warning"])
+
                 current_metrics = ModelMetrics(
-                    current_ndcg=0.0,  # Would calculate from recent predictions
-                    current_auc=0.0,   # Would calculate from recent predictions
+                    current_ndcg=current_performance_metrics.get('validation_ndcg', 0.0),
+                    current_auc=current_performance_metrics.get('validation_auc', 0.0),
                     predictions_served=self.predictions_served,
                     avg_prediction_time_ms=avg_prediction_time
                 )
 
                 return ModelHealthResponse(
-                    healthy=self.model_loaded,
+                    healthy=is_healthy,
                     model_version=self.model.model_version or "none",
                     last_training_time=self.last_training_time,
                     training_examples_count=self.training_examples_count,
@@ -474,6 +679,25 @@ class MLRiskServiceImpl:
 
         return dict(zip(feature_names[:len(feature_vector)], feature_vector))
 
+    def _convert_features_to_dict(self, feature_vector: np.ndarray, request: DeploymentRiskRequest) -> Dict[str, float]:
+        """Convert feature vector to named dictionary for drift monitoring."""
+        feature_names = [
+            'policy_violation_score', 'host_network', 'host_pid', 'host_ipc',
+            'has_external_exposure', 'is_orchestrator_component',
+            'automount_service_account_token', 'log_replica_count',
+            'log_exposed_port_count', 'privileged_container_ratio', 'age_days',
+            'avg_vulnerability_score', 'max_vulnerability_score',
+            'sum_vulnerability_score', 'avg_component_count_score',
+            'avg_age_score', 'max_age_score', 'avg_risky_component_ratio',
+            'max_risky_component_ratio'
+        ]
+
+        # Use model's feature names if available, otherwise use default
+        if hasattr(self.model, 'feature_names') and self.model.feature_names:
+            feature_names = self.model.feature_names
+
+        return dict(zip(feature_names[:len(feature_vector)], feature_vector.tolist()))
+
     def _normalize_score(self, score: float, saturation: float, max_value: float) -> float:
         """Normalize score using StackRox normalization."""
         if score > saturation:
@@ -496,6 +720,332 @@ class MLRiskServiceImpl:
         except Exception as e:
             logger.error(f"Failed to load model from {model_file}: {e}")
             return False
+
+    def ReloadModel(self, request: ReloadModelRequest, context) -> ReloadModelResponse:
+        """Hot reload a model from storage."""
+        start_time = time.time()
+        previous_version = self.current_model_version or "none"
+
+        try:
+            if not request.model_id:
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                context.set_details("Model ID is required")
+                return ReloadModelResponse(
+                    success=False,
+                    message="Model ID is required",
+                    previous_model_version=previous_version,
+                    new_model_version="",
+                    reload_time_ms=0.0
+                )
+
+            # Check if the model is already loaded (unless force reload)
+            if (not request.force_reload and
+                self.current_model_id == request.model_id and
+                (not request.version or self.current_model_version == request.version)):
+                reload_time = (time.time() - start_time) * 1000
+                return ReloadModelResponse(
+                    success=True,
+                    message=f"Model {request.model_id} v{self.current_model_version} already loaded",
+                    previous_model_version=previous_version,
+                    new_model_version=self.current_model_version,
+                    reload_time_ms=reload_time
+                )
+
+            # Attempt to load the model from storage
+            success = self._load_model_from_storage(request.model_id, request.version)
+            reload_time = (time.time() - start_time) * 1000
+
+            if success:
+                new_version = self.current_model_version
+                message = f"Successfully reloaded model {request.model_id} v{new_version}"
+                logger.info(f"Hot reload successful: {request.model_id} v{new_version} (took {reload_time:.1f}ms)")
+
+                return ReloadModelResponse(
+                    success=True,
+                    message=message,
+                    previous_model_version=previous_version,
+                    new_model_version=new_version,
+                    reload_time_ms=reload_time
+                )
+            else:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details(f"Failed to load model {request.model_id} v{request.version}")
+                return ReloadModelResponse(
+                    success=False,
+                    message=f"Failed to load model {request.model_id} v{request.version}",
+                    previous_model_version=previous_version,
+                    new_model_version="",
+                    reload_time_ms=reload_time
+                )
+
+        except Exception as e:
+            reload_time = (time.time() - start_time) * 1000
+            logger.error(f"Model reload failed: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Model reload failed: {str(e)}")
+            return ReloadModelResponse(
+                success=False,
+                message=f"Model reload failed: {str(e)}",
+                previous_model_version=previous_version,
+                new_model_version="",
+                reload_time_ms=reload_time
+            )
+
+    def ListModels(self, request: ListModelsRequest, context) -> ListModelsResponse:
+        """List available models in storage."""
+        try:
+            if request.model_id:
+                # List versions for specific model
+                models = self.storage_manager.list_models(request.model_id)
+            else:
+                # List all models
+                models = self.storage_manager.list_models()
+
+            model_infos = []
+            for model in models:
+                # Convert performance metrics to simple dict
+                metrics = {}
+                if hasattr(model, 'performance_metrics') and model.performance_metrics:
+                    metrics = {k: float(v) for k, v in model.performance_metrics.items()
+                              if isinstance(v, (int, float))}
+
+                model_info = ModelInfo(
+                    model_id=model.model_id,
+                    version=model.version,
+                    algorithm=model.algorithm,
+                    training_timestamp=int(model.training_timestamp.timestamp()),
+                    model_size_bytes=model.model_size_bytes,
+                    performance_metrics=metrics,
+                    status="ready"  # Default status, could be enhanced
+                )
+                model_infos.append(model_info)
+
+            return ListModelsResponse(
+                models=model_infos,
+                total_count=len(model_infos)
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to list models: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to list models: {str(e)}")
+            return ListModelsResponse(models=[], total_count=0)
+
+    def GetDetailedHealth(self, request: DetailedHealthRequest, context) -> DetailedHealthResponse:
+        """Get detailed health report with trends and recommendations."""
+        try:
+            with self._model_lock:
+                if not self.model_loaded:
+                    return DetailedHealthResponse(
+                        model_id="none",
+                        version="none",
+                        overall_status="error",
+                        overall_score=0.0,
+                        health_checks=[],
+                        recommendations=["No model loaded"],
+                        trends={},
+                        timestamp=int(time.time())
+                    )
+
+                # Calculate current metrics
+                avg_prediction_time = (
+                    self.total_prediction_time / max(self.predictions_served, 1)
+                    if self.predictions_served > 0 else 0.0
+                )
+
+                current_performance_metrics = {
+                    'avg_prediction_time_ms': avg_prediction_time,
+                    'predictions_served': self.predictions_served,
+                    'model_loaded': 1.0 if self.model_loaded else 0.0
+                }
+
+                # Add model-specific metrics if available
+                if hasattr(self.model, 'get_current_metrics'):
+                    try:
+                        model_metrics = self.model.get_current_metrics()
+                        current_performance_metrics.update(model_metrics)
+                    except Exception as e:
+                        logger.warning(f"Failed to get model metrics: {e}")
+
+                # Run health checks
+                health_report = self.health_checker.run_health_checks(
+                    model=self.model,
+                    model_id=self.current_model_id or "unknown",
+                    version=self.current_model_version or "unknown",
+                    current_metrics=current_performance_metrics
+                )
+
+                # Convert health checks to response format
+                health_check_details = []
+                for check in health_report.health_checks:
+                    health_check_details.append(HealthCheckDetail(
+                        check_name=check.check_name,
+                        status=check.status,
+                        score=check.score,
+                        message=check.message,
+                        details=check.details or {}
+                    ))
+
+                # Get trends if requested
+                trends = {}
+                if request.include_trends:
+                    trends = self.health_checker.get_health_trends(request.trend_hours)
+
+                return DetailedHealthResponse(
+                    model_id=self.current_model_id or "unknown",
+                    version=self.current_model_version or "unknown",
+                    overall_status=health_report.overall_status,
+                    overall_score=health_report.overall_score,
+                    health_checks=health_check_details,
+                    recommendations=health_report.recommendations,
+                    trends=trends,
+                    timestamp=int(time.time())
+                )
+
+        except Exception as e:
+            logger.error(f"Detailed health check failed: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Detailed health check failed: {str(e)}")
+            return DetailedHealthResponse(
+                model_id="error",
+                version="error",
+                overall_status="error",
+                overall_score=0.0,
+                health_checks=[],
+                recommendations=[f"Health check error: {str(e)}"],
+                trends={},
+                timestamp=int(time.time())
+            )
+
+    def SetBaselineData(self, request, context):
+        """Set baseline data for drift monitoring."""
+        try:
+            # This would be called after training or when setting up monitoring
+            # For now, we'll use current prediction history as baseline
+            model_id = self.current_model_id or "unknown"
+            version = self.current_model_version or "unknown"
+
+            # Extract baseline feature data from recent predictions
+            recent_predictions = list(self.drift_monitor.prediction_history)[-1000:]  # Last 1000 predictions
+            if len(recent_predictions) < 100:
+                context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+                context.set_details("Insufficient prediction history for baseline (need at least 100)")
+                return
+
+            # Group features by name
+            baseline_features = {}
+            for pred in recent_predictions:
+                if pred['model_id'] == model_id:
+                    for feature_name, value in pred['features'].items():
+                        if feature_name not in baseline_features:
+                            baseline_features[feature_name] = []
+                        baseline_features[feature_name].append(value)
+
+            # Convert to numpy arrays
+            baseline_arrays = {
+                name: np.array(values) for name, values in baseline_features.items()
+                if len(values) >= 50  # Minimum samples per feature
+            }
+
+            if not baseline_arrays:
+                context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+                context.set_details("No sufficient feature data for baseline")
+                return
+
+            # Set baseline data
+            self.drift_monitor.set_baseline_data(model_id, version, baseline_arrays)
+
+            return {"success": True, "message": f"Baseline set for {model_id} v{version} with {len(baseline_arrays)} features"}
+
+        except Exception as e:
+            logger.error(f"Failed to set baseline data: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to set baseline data: {str(e)}")
+            return {"success": False, "message": str(e)}
+
+    def GetDriftReport(self, request, context):
+        """Get comprehensive drift report for a model."""
+        try:
+            model_id = getattr(request, 'model_id', self.current_model_id or "unknown")
+            version = getattr(request, 'version', self.current_model_version or "unknown")
+            period_hours = getattr(request, 'period_hours', 24)
+
+            # Generate drift report
+            drift_report = self.drift_monitor.generate_drift_report(model_id, version, period_hours)
+
+            # Send alerts if necessary
+            if drift_report.active_alerts:
+                asyncio.create_task(self._send_drift_alerts(drift_report.active_alerts))
+
+            # Convert to response format
+            return {
+                "model_id": drift_report.model_id,
+                "version": drift_report.version,
+                "overall_drift_status": drift_report.overall_drift_status,
+                "overall_drift_score": drift_report.overall_drift_score,
+                "data_drift_score": drift_report.data_drift_score,
+                "prediction_drift_score": drift_report.prediction_drift_score,
+                "performance_drift_score": drift_report.performance_drift_score,
+                "active_alerts_count": len(drift_report.active_alerts),
+                "recommendations": drift_report.recommendations,
+                "timestamp": drift_report.timestamp
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to generate drift report: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to generate drift report: {str(e)}")
+            return {
+                "model_id": "error",
+                "version": "error",
+                "overall_drift_status": "error",
+                "overall_drift_score": 0.0,
+                "data_drift_score": 0.0,
+                "prediction_drift_score": 0.0,
+                "performance_drift_score": 0.0,
+                "active_alerts_count": 0,
+                "recommendations": [f"Error generating report: {str(e)}"],
+                "timestamp": int(time.time())
+            }
+
+    def GetActiveAlerts(self, request, context):
+        """Get active drift alerts."""
+        try:
+            model_id = getattr(request, 'model_id', None)
+            severity = getattr(request, 'severity', None)
+
+            alerts = self.drift_monitor.get_active_alerts(model_id, severity)
+
+            return {
+                "alerts": [
+                    {
+                        "alert_id": alert.alert_id,
+                        "drift_type": alert.drift_type,
+                        "severity": alert.severity,
+                        "metric_name": alert.metric_name,
+                        "drift_score": alert.drift_score,
+                        "threshold": alert.threshold,
+                        "message": alert.message,
+                        "timestamp": alert.timestamp
+                    }
+                    for alert in alerts
+                ],
+                "total_count": len(alerts)
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get active alerts: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to get active alerts: {str(e)}")
+            return {"alerts": [], "total_count": 0}
+
+    async def _send_drift_alerts(self, alerts):
+        """Send drift alerts through alert manager."""
+        try:
+            for alert in alerts:
+                await self.alert_manager.send_alert(alert)
+        except Exception as e:
+            logger.error(f"Failed to send drift alerts: {e}")
 
 
 class MLRiskServer:
