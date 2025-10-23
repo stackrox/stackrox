@@ -848,7 +848,6 @@ module.exports = [
             'src/Containers/MitreAttackVectors/**',
             'src/Containers/Policies/**',
             'src/Containers/Search/**',
-            'src/Containers/SystemConfig/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated

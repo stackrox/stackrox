@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 
 import type { PrivateConfig, PrometheusMetricsCategory } from 'types/config.proto';
