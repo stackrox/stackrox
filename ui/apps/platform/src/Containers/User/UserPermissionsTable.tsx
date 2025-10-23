@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
