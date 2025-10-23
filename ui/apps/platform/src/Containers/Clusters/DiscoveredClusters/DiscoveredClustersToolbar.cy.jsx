@@ -35,9 +35,9 @@ const setup = () => {
 };
 
 const openDropdownAnd = (label, action) => {
-    cy.findByLabelText(label).click();
-    cy.findByLabelText(label).parent().within(action);
-    cy.findByLabelText(label).click();
+    cy.findByRole('button', { name: label }).click();
+    cy.findByRole('button', { name: label }).parent().within(action);
+    cy.findByRole('button', { name: label }).click();
 };
 
 const filterGroup = (name) => cy.findByRole('group', { name });
@@ -75,13 +75,13 @@ describe(Cypress.spec.relative, () => {
         const dropdowns = [
             {
                 name: 'Status',
-                label: 'Status filter menu toggle',
+                label: 'Status filter menu items',
                 allOption: 'All statuses',
                 options: ['Unsecured', 'Undetermined'],
             },
             {
                 name: 'Type',
-                label: 'Type filter menu toggle',
+                label: 'Type filter menu items',
                 allOption: 'All types',
                 options: ['AKS', 'EKS'],
             },
@@ -90,16 +90,16 @@ describe(Cypress.spec.relative, () => {
         dropdowns.forEach(({ label, name, allOption, options: [optionA, optionB] }) => {
             // Select all in the dropdown is the default
             openDropdownAnd(label, () => {
-                cy.findByLabelText(allOption).should('be.checked');
+                cy.findByRole('checkbox', { name: allOption }).should('be.checked');
             });
 
             filterGroup(name).should('not.exist');
 
             // Select a single option and verify that the "all" checkbox is deselected and the chip appears
             openDropdownAnd(label, () => {
-                cy.findByLabelText(optionA).click();
-                cy.findByLabelText(optionA).should('be.checked');
-                cy.findByLabelText(allOption).should('not.be.checked');
+                cy.findByRole('checkbox', { name: optionA }).click();
+                cy.findByRole('checkbox', { name: optionA }).should('be.checked');
+                cy.findByRole('checkbox', { name: allOption }).should('not.be.checked');
             });
 
             filterGroup(name).within(() => {
@@ -108,17 +108,17 @@ describe(Cypress.spec.relative, () => {
 
             // Clicking "all" should remove all other applied filters
             openDropdownAnd(label, () => {
-                cy.findByLabelText(allOption).click();
-                cy.findByLabelText(allOption).should('be.checked');
-                cy.findByLabelText(optionA).should('not.be.checked');
+                cy.findByRole('checkbox', { name: allOption }).click();
+                cy.findByRole('checkbox', { name: allOption }).should('be.checked');
+                cy.findByRole('checkbox', { name: optionA }).should('not.be.checked');
             });
 
             filterGroup(name).should('not.exist');
 
             // Deselecting all filters manually should re-select the "all" checkbox
             openDropdownAnd(label, () => {
-                cy.findByLabelText(optionA).click();
-                cy.findByLabelText(optionB).click();
+                cy.findByRole('checkbox', { name: optionA }).click();
+                cy.findByRole('checkbox', { name: optionB }).click();
             });
 
             filterGroup(name).within(() => {
@@ -127,11 +127,11 @@ describe(Cypress.spec.relative, () => {
             });
 
             openDropdownAnd(label, () => {
-                cy.findByLabelText(optionA).click();
-                cy.findByLabelText(optionB).click();
-                cy.findByLabelText(allOption).should('be.checked');
-                cy.findByLabelText(optionA).should('not.be.checked');
-                cy.findByLabelText(optionB).should('not.be.checked');
+                cy.findByRole('checkbox', { name: optionA }).click();
+                cy.findByRole('checkbox', { name: optionB }).click();
+                cy.findByRole('checkbox', { name: allOption }).should('be.checked');
+                cy.findByRole('checkbox', { name: optionA }).should('not.be.checked');
+                cy.findByRole('checkbox', { name: optionB }).should('not.be.checked');
             });
 
             filterGroup(name).should('not.exist');
@@ -147,18 +147,18 @@ describe(Cypress.spec.relative, () => {
         // Comment out for 4.4 MVP because testers expected partial match instead of exact match.
         /*
         // Add filters of each type
-        cy.findByLabelText('Filter by name').type('cluster-a{enter}');
-        cy.findByLabelText('Filter by name').type('cluster-b{enter}');
+        cy.findByText('Filter by name').type('cluster-a{enter}');
+        cy.findByText('Filter by name').type('cluster-b{enter}');
         */
 
-        openDropdownAnd('Status filter menu toggle', () => {
-            cy.findByLabelText('Unsecured').click();
-            cy.findByLabelText('Undetermined').click();
+        openDropdownAnd('Status filter menu items', () => {
+            cy.findByRole('checkbox', { name: 'Unsecured' }).click();
+            cy.findByRole('checkbox', { name: 'Undetermined' }).click();
         });
 
-        openDropdownAnd('Type filter menu toggle', () => {
-            cy.findByLabelText('AKS').click();
-            cy.findByLabelText('EKS').click();
+        openDropdownAnd('Type filter menu items', () => {
+            cy.findByRole('checkbox', { name: 'AKS' }).click();
+            cy.findByRole('checkbox', { name: 'EKS' }).click();
         });
 
         // Verify that all filters are applied and visible as chips
