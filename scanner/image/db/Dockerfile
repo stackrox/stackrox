@@ -33,6 +33,10 @@ RUN dnf install \
     --setopt=install_weak_deps=0 \
     --nodocs \
     -y \
+    bash \
+    coreutils \
+    findutils \
+    util-linux \
     shadow-utils \
     ca-certificates \
     glibc-langpack-en \
