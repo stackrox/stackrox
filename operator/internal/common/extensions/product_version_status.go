@@ -16,7 +16,10 @@ func ReconcileProductVersionStatusExtension(version string) extensions.Reconcile
 		}
 
 		statusUpdater(func(uSt *unstructured.Unstructured) bool {
-			return updateProductVersion(uSt, version)
+			productVersionChanged := updateProductVersion(uSt, version)
+			reconciledVersionChanged := updateReconciledVersion(uSt)
+			observedGenChanged := updateObservedGeneration(uSt, obj.GetGeneration())
+			return productVersionChanged || reconciledVersionChanged || observedGenChanged
 		})
 		return nil
 	}
@@ -31,6 +34,49 @@ func updateProductVersion(uSt *unstructured.Unstructured, version string) bool {
 		uSt.Object = make(map[string]interface{})
 	}
 	if err := unstructured.SetNestedField(uSt.Object, version, "productVersion"); err != nil {
+		return false
+	}
+	return true
+}
+
+func updateReconciledVersion(uSt *unstructured.Unstructured) bool {
+	// Get the deployed release version from status.deployedRelease.version
+	deployedVersion, _, _ := unstructured.NestedString(uSt.Object, "deployedRelease", "version")
+
+	// Get the current reconciledVersion
+	currentReconciledVersion, _, _ := unstructured.NestedString(uSt.Object, "reconciledVersion")
+
+	// Only update if the deployed version differs from the current reconciled version
+	if deployedVersion == currentReconciledVersion {
+		return false
+	}
+
+	if uSt.Object == nil {
+		uSt.Object = make(map[string]interface{})
+	}
+
+	// Set reconciledVersion to the deployed release version
+	if err := unstructured.SetNestedField(uSt.Object, deployedVersion, "reconciledVersion"); err != nil {
+		return false
+	}
+	return true
+}
+
+func updateObservedGeneration(uSt *unstructured.Unstructured, generation int64) bool {
+	// Get the current observedGeneration
+	currentObservedGen, _, _ := unstructured.NestedInt64(uSt.Object, "observedGeneration")
+
+	// Only update if generation changed
+	if currentObservedGen == generation {
+		return false
+	}
+
+	if uSt.Object == nil {
+		uSt.Object = make(map[string]interface{})
+	}
+
+	// Set observedGeneration to the current generation
+	if err := unstructured.SetNestedField(uSt.Object, generation, "observedGeneration"); err != nil {
 		return false
 	}
 	return true

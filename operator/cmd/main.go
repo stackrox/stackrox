@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
+	centralStatus "github.com/stackrox/rox/operator/internal/central/status"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -211,6 +212,13 @@ func run() error {
 	if centralReconcilerEnabled.BooleanSetting() {
 		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
+		}
+
+		// Register the Central status controller for real-time status updates.
+		statusClient := mgr.GetClient()
+		statusReconciler := centralStatus.New(statusClient)
+		if err = statusReconciler.SetupWithManager(mgr); err != nil {
+			return errors.Wrap(err, "unable to set up Central status controller")
 		}
 	} else {
 		setupLog.Info("skip registering central reconciler because " + envCentralReconcilerEnabled + "==false")

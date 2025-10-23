@@ -40,13 +40,19 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
-		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+8)
+	postExtensions := []pkgReconciler.Option{
+		// ReconcileProductVersionStatusExtension must run as a POST extension to read the
+		// deployedRelease.version that was just set by the helm reconciler.
+		// If it runs as a pre-extension, it reads stale data from the previous reconcile.
+		pkgReconciler.WithPostExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
+	}
+
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+8)
 	opts = append(opts, extraEventWatcher)
 	// Watch the CABundle ConfigMap that Sensor creates
 	opts = append(opts, pkgReconciler.WithExtraWatch(
@@ -73,6 +79,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, postExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {

@@ -46,14 +46,20 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDBBackup, common.DefaultCentralDBBackupPVCName, extensions.WithDefaultClaimSize(extensions.DefaultBackupPVCSize))),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
-		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
+	postExtensions := []pkgReconciler.Option{
+		// ReconcileProductVersionStatusExtension must run as a POST extension to read
+		// post-reconciliation state and propagate it to dedicated CR status fields.
+		pkgReconciler.WithPostExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
+	}
+
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+7)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, postExtensions...)
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

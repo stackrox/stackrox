@@ -14,7 +14,14 @@ spec:
     singular: central
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Progressing")].reason
+      name: Progressing
+      type: string
+    - jsonPath: .status.reconciledVersion
+      name: Version
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
@@ -1854,8 +1861,16 @@ spec:
                   version:
                     type: string
                 type: object
+              observedGeneration:
+                description: ObservedGeneration is the generation most recently observed
+                  by the controller.
+                format: int64
+                type: integer
               productVersion:
                 description: The deployed version of the product.
+                type: string
+              reconciledVersion:
+                description: The version of the reconciled release.
                 type: string
             required:
             - conditions
