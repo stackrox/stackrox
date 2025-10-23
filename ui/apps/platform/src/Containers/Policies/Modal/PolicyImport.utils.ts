@@ -1,5 +1,5 @@
-import { Policy } from 'types/policy.proto';
-import { ImportPolicyResponse } from 'services/PoliciesService';
+import type { Policy } from 'types/policy.proto';
+import type { ImportPolicyResponse } from 'services/PoliciesService';
 
 export const MIN_POLICY_NAME_LENGTH = 5;
 

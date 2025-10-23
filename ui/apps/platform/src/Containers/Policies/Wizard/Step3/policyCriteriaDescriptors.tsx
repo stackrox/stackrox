@@ -7,9 +7,10 @@ import {
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import ImageSigningTableModal from 'Containers/Policies/Wizard/Step3/ImageSigningTableModal';
-import { LifecycleStage } from 'types/policy.proto';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { LifecycleStage } from 'types/policy.proto';
+
+import ImageSigningTableModal from './ImageSigningTableModal';
 
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },

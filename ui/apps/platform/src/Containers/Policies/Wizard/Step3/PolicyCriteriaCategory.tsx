@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ExpandableSection } from '@patternfly/react-core';
 
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaKey from './PolicyCriteriaKey';
 
 type PolicyCriteriaCategoryProps = {
@@ -15,7 +15,7 @@ function PolicyCriteriaCategory({
     keys,
     isOpenDefault = false,
 }: PolicyCriteriaCategoryProps) {
-    const [isExpanded, setIsExpanded] = React.useState(isOpenDefault);
+    const [isExpanded, setIsExpanded] = useState(isOpenDefault);
 
     function onToggle(expanded: boolean) {
         setIsExpanded(expanded);

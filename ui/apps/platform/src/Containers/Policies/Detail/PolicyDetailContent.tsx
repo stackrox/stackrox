@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { Formik } from 'formik';
 import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { NotifierIntegration } from 'types/notifier.proto';
-import { BasePolicy } from 'types/policy.proto';
+import type { NotifierIntegration } from 'types/notifier.proto';
+import type { BasePolicy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
@@ -15,10 +16,7 @@ type PolicyDetailContentProps = {
     isReview?: boolean;
 };
 
-function PolicyDetailContent({
-    policy,
-    isReview = false,
-}: PolicyDetailContentProps): React.ReactElement {
+function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentProps): ReactElement {
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
 
     useEffect(() => {

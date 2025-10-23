@@ -1,17 +1,17 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, ModalBoxBody, ModalBoxFooter, Alert } from '@patternfly/react-core';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 
-import { Policy } from 'types/policy.proto';
+import type { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
     hasDuplicateIdOnly,
     policyOverwriteAllowed,
     checkForBlockedSubmit,
-    PolicyImportError,
-    PolicyResolution,
 } from './PolicyImport.utils';
+import type { PolicyImportError, PolicyResolution } from './PolicyImport.utils';
 import DuplicatePolicyForm from './DuplicatePolicyForm';
 
 const RESOLUTION = { resolution: '', newName: '' };

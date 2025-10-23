@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import {
     Button,
@@ -10,7 +11,7 @@ import {
     ModalBoxBody,
 } from '@patternfly/react-core';
 
-import { ListPolicy } from 'types/policy.proto';
+import type { ListPolicy } from 'types/policy.proto';
 
 type ImportPolicyJSONUploadProps = {
     cancelModal: () => void;

@@ -808,7 +808,6 @@ module.exports = [
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/Policies/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated

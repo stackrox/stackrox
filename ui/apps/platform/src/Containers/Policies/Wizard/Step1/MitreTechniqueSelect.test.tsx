@@ -1,4 +1,4 @@
-import { MitreTechnique } from 'types/mitre.proto';
+import type { MitreTechnique } from 'types/mitre.proto';
 
 import { formatTechniqueDisplayName, groupAndSortTechniques } from './MitreTechniqueSelect';
 

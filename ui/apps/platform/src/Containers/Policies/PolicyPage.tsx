@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Bullseye, Spinner } from '@patternfly/react-core';
@@ -8,9 +9,9 @@ import { policiesBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import { ClientPolicy, Policy } from 'types/policy.proto';
+import type { ClientPolicy, Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ExtendedPageAction } from 'utils/queryStringUtils';
+import type { ExtendedPageAction } from 'utils/queryStringUtils';
 
 import { getClientWizardPolicy, initialPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';

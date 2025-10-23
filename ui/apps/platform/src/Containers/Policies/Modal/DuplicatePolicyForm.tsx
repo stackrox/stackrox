@@ -1,4 +1,5 @@
-import React, { useCallback, ReactElement, BaseSyntheticEvent } from 'react';
+import React, { useCallback } from 'react';
+import type { BaseSyntheticEvent, ReactElement } from 'react';
 import { Form, Radio } from '@patternfly/react-core';
 import { Field } from 'formik';
 
