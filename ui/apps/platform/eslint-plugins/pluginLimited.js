@@ -216,8 +216,18 @@ const rules = {
         },
         create(context) {
             return {
+                MemberExpression(node) {
+                    // For example, React.Fragment or React.useState
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
                 TSQualifiedName(node) {
-                    if (node?.left?.name === 'React' && typeof node?.right?.name === 'string') {
+                    // For example, React.ReactElement
+                    if (node.left?.name === 'React' && typeof node.right?.name === 'string') {
                         context.report({
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,

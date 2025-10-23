@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
 import type {
     FocusEvent,
     FocusEventHandler,
@@ -25,12 +25,12 @@ import type {
 
 // Enhance children to automatically inject hasCheckbox and isSelected props
 function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): ReactNode {
-    return React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
+    return Children.map(children, (child) => {
+        if (isValidElement(child)) {
             if (child.type === SelectOption) {
                 const { value } = child.props;
                 if (value !== null && value !== undefined) {
-                    return React.cloneElement(child, {
+                    return cloneElement(child, {
                         hasCheckbox: true,
                         isSelected: selectionsSet.has(value as string),
                         ...child.props, // Allow explicit overrides if needed
@@ -42,7 +42,7 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
                     child.props.children,
                     selectionsSet
                 );
-                return React.cloneElement(child, {
+                return cloneElement(child, {
                     ...child.props,
                     children: enhancedGroupChildren,
                 });

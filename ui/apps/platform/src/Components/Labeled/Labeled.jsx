@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Children } from 'react';
 import PropTypes from 'prop-types';
 
 /*
@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
  * Not recommeded for input element as children because component does not render label with htmlFor prop.
  */
 function Labeled({ label, children }) {
-    if (!React.Children.count(children)) {
+    if (!Children.count(children)) {
         return null;
     } // don't render w/o children
     return (
