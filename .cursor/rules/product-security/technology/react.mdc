@@ -1,0 +1,12 @@
+---
+description: Secure coding rules for React projects ⚛️
+globs:
+  - "**/*.jsx"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+- Use default React data binding to prevent XSS.
+- Sanitize HTML before using dangerouslySetInnerHTML.
+- Validate URLs before using them in the DOM.
+- Secure server-side rendering and avoid JSON injection.
