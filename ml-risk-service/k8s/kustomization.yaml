@@ -19,7 +19,7 @@ resources:
 # - scc.yaml
 
 images:
-  - name: stackrox/ml-risk-service
+  - name: quay.io/stehessel/ml-risk-service
     newTag: latest
 
 labels:
@@ -49,4 +49,4 @@ patches:
     patch: |-
       - op: replace
         path: /spec/replicas
-        value: 2
+        value: 1

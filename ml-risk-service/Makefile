@@ -1,7 +1,7 @@
 # Makefile for ML Risk Service
 
 # Variables
-DOCKER_IMAGE ?= stackrox/ml-risk-service
+DOCKER_IMAGE ?= quay.io/stehessel/ml-risk-service
 DOCKER_TAG ?= latest
 NAMESPACE ?= stackrox
 K8S_CONTEXT ?= $(shell kubectl config current-context)
