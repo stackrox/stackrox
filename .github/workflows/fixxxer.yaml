@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.12-1-g8b5a189911
     steps:
 
     - name: Fetch PR metadata

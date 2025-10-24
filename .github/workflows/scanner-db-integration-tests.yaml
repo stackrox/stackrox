@@ -17,7 +17,7 @@ jobs:
   db-integration-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.12-1-g8b5a189911
     steps:
     - name: Checkout
       uses: actions/checkout@v5
