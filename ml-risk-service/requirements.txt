@@ -11,6 +11,9 @@ lightgbm==4.0.0
 # Explainability
 shap==0.42.1
 
+# Visualization
+matplotlib==3.7.2
+
 # gRPC and API
 grpcio==1.57.0
 grpcio-tools==1.57.0
@@ -24,6 +27,7 @@ jsonschema==4.19.0
 # Monitoring and logging
 prometheus-client==0.17.1
 structlog==23.1.0
+requests==2.31.0
 
 # Testing
 pytest==7.4.0

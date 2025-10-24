@@ -461,7 +461,7 @@ class RiskRankingModel:
         if self.model is None:
             raise ValueError("No model to save. Train the model first.")
 
-        from ..storage.model_storage import ModelMetadata
+        from src.storage.model_storage import ModelMetadata
 
         # Serialize model data to bytes
         model_data = {
