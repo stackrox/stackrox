@@ -176,6 +176,7 @@ function InitBundleForm(): ReactElement {
                                 isDisabled={values.platform !== 'OpenShift'}
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
+                                maxWidth="100%"
                             >
                                 {Object.entries(installationOptions)
                                     .filter(
