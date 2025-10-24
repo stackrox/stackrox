@@ -113,7 +113,7 @@ func TestMkdirAllInRoot_PathTraversalProtection(t *testing.T) {
 
 			if tc.expectError {
 				// os.Root should return an error for path traversal attempts
-				assert.Error(t, err, "Expected error for malicious path %q", tc.maliciousPath)
+				assert.Errorf(t, err, "Expected error for malicious path %q", tc.maliciousPath)
 				if tc.errorContains != "" {
 					assert.Contains(t, err.Error(), tc.errorContains,
 						"Error should indicate path traversal was blocked")
