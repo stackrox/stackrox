@@ -1,6 +1,6 @@
 # ML Risk Service for StackRox
 
-A machine learning service for ranking deployment risk using configurable features extracted from deployment and image information. The system runs as a separate pod alongside Central and provides explainable risk rankings.
+A machine learning service for ranking deployment risk using configurable features extracted from deployment and image information. The system runs as a separate pod alongside Central and provides explainable risk rankings with comprehensive model management capabilities.
 
 ## Overview
 
@@ -12,20 +12,33 @@ This service implements a machine learning-based approach to risk assessment tha
 - **Learns from data** to improve risk assessment over time
 - **Reproduces existing risk scores** initially for seamless migration
 - **Runs as separate pod** for independent scaling and updates
+- **Manages model lifecycle** with versioning, deployment, and drift monitoring
+- **Integrates seamlessly** with StackRox Central via gRPC and REST APIs
 
 ## Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   StackRox      │    │   ML Risk        │    │   Training      │
-│   Central       │◄──►│   Service        │◄──►│   Pipeline      │
-│                 │    │                  │    │                 │
-│ - Deployments   │    │ - Feature        │    │ - Data Loader   │
-│ - Images        │    │   Extraction     │    │ - Model Trainer │
-│ - Policies      │    │ - ML Model       │    │ - Validation    │
-│ - Risk Manager  │    │ - gRPC API       │    │                 │
-└─────────────────┘    │ - Explanations   │    └─────────────────┘
-                       └──────────────────┘
+│   StackRox      │    │   ML Risk        │    │   Model Storage │
+│   Central       │◄──►│   Service        │◄──►│                 │
+│                 │    │                  │    │ - Local FS      │
+│ - Deployments   │    │ - Feature        │    │ - Google Cloud  │
+│ - Images        │    │   Extraction     │    │ - Versioning    │
+│ - Policies      │    │ - ML Model       │    │ - Metadata      │
+│ - Risk Manager  │    │ - gRPC API       │    └─────────────────┘
+│ - ML Scorer     │    │ - REST API       │              │
+└─────────────────┘    │ - Explanations   │    ┌─────────────────┐
+         │              │ - Model Registry │    │   Training      │
+         │              │ - Drift Monitor  │◄──►│   Pipeline      │
+         │              └──────────────────┘    │                 │
+         │                        │             │ - Data Loader   │
+         │              ┌──────────────────┐    │ - Model Trainer │
+         └─────────────►│   Management     │    │ - Validation    │
+                        │   API            │    │ - Auto Deploy   │
+                        │ - Model Deploy   │    └─────────────────┘
+                        │ - Health Check   │
+                        │ - Drift Reports  │
+                        └──────────────────┘
 ```
 
 ## Features
@@ -64,12 +77,30 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 - **Category Analysis**: Risk by feature category
 - **Human Explanations**: Natural language summaries
 
-### 4. Training Pipeline
+### 4. Model Management & Lifecycle
+
+- **Model Registry**: Centralized model versioning and metadata
+- **Automated Deployment**: Deploy models with validation and rollback
+- **Health Monitoring**: Continuous model performance tracking
+- **Drift Detection**: Monitor model performance degradation
+- **A/B Testing**: Compare model versions in production
+- **Model Lineage**: Track model evolution and relationships
+
+### 5. Storage Backends
+
+- **Local Filesystem**: Default storage for development and small deployments
+- **Google Cloud Storage**: Scalable cloud storage with encryption support
+- **Model Compression**: Automatic compression to reduce storage costs
+- **Backup & Recovery**: Automated backup with configurable retention
+- **Encryption**: At-rest encryption for sensitive models
+
+### 6. Training Pipeline
 
 - **Baseline Reproduction**: Recreates existing StackRox scores
 - **JSON Data Input**: Flexible training data format
 - **Validation Framework**: Ensures model quality
 - **Incremental Learning**: Updates with new data
+- **Auto-Deployment**: Automatic model deployment based on quality metrics
 
 ## Quick Start
 
@@ -119,6 +150,7 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 
 ### Environment Variables
 
+#### Core Service Configuration
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GRPC_PORT` | 8080 | gRPC service port |
@@ -126,6 +158,36 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 | `LOG_LEVEL` | INFO | Logging level |
 | `CONFIG_FILE` | `/app/config/feature_config.yaml` | Feature configuration |
 | `MODEL_FILE` | - | Pre-trained model file |
+
+#### Model Storage Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROX_ML_MODEL_STORAGE_BACKEND` | `local` | Storage backend (`local`, `gcs`) |
+| `ROX_ML_MODEL_STORAGE_BASE_PATH` | `/app/models` | Base path for model storage |
+| `ROX_ML_MODEL_BACKUP_ENABLED` | `false` | Enable automatic model backup |
+| `ROX_ML_MODEL_BACKUP_FREQUENCY` | `daily` | Backup frequency (`hourly`, `daily`, `weekly`) |
+| `ROX_ML_MODEL_ENCRYPTION_ENABLED` | `false` | Enable encryption at rest |
+| `ROX_ML_MODEL_COMPRESSION_ENABLED` | `true` | Enable model compression |
+| `ROX_ML_MODEL_RETENTION_DAYS` | `0` | Model retention in days (0 = forever) |
+| `ROX_ML_MODEL_VERSIONING_ENABLED` | `true` | Enable model versioning |
+| `ROX_ML_MAX_MODEL_VERSIONS` | `10` | Maximum versions per model |
+
+#### Google Cloud Storage Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROX_ML_GCS_PROJECT_ID` | - | GCS project ID |
+| `ROX_ML_GCS_CREDENTIALS_PATH` | - | Path to GCS service account credentials |
+| `ROX_ML_GCS_BUCKET_NAME` | - | GCS bucket name for model storage |
+
+#### Model Deployment Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROX_ML_MODEL_AUTO_DEPLOY_ENABLED` | `false` | Enable automatic model deployment |
+| `ROX_ML_MODEL_DEPLOYMENT_THRESHOLD` | `0.85` | Quality threshold for auto-deployment |
+| `ROX_ML_MODEL_HEALTH_CHECK_ENABLED` | `true` | Enable model health monitoring |
+| `ROX_ML_MODEL_HEALTH_CHECK_INTERVAL` | `5m` | Health check interval |
+| `ROX_ML_MODEL_DRIFT_DETECTION_ENABLED` | `false` | Enable drift detection |
+| `ROX_ML_MODEL_DRIFT_THRESHOLD` | `0.1` | Drift alert threshold |
 
 ### Feature Configuration
 
@@ -167,6 +229,53 @@ Train the model with new data.
 
 #### GetModelHealth
 Get model health and performance metrics.
+
+#### GetDetailedHealth
+Get comprehensive health information with trends and recommendations.
+
+#### ReloadModel
+Hot-reload a specific model version.
+
+#### ListModels
+List available models in storage.
+
+### REST API Endpoints
+
+#### Model Registry
+- `GET /api/v1/ml/models` - List all models
+- `GET /api/v1/ml/models/{modelId}` - List versions for a model
+- `GET /api/v1/ml/models/{modelId}/versions/{version}` - Get specific model
+- `DELETE /api/v1/ml/models/{modelId}/versions/{version}` - Delete model version
+
+#### Model Deployment
+- `GET /api/v1/ml/deployment/current` - Get currently deployed model
+- `POST /api/v1/ml/deployment` - Deploy a model version
+- `POST /api/v1/ml/deployment/rollback` - Rollback to previous version
+
+#### Model Management
+- `POST /api/v1/ml/models/{modelId}/versions/{version}/promote` - Promote to ready status
+- `POST /api/v1/ml/models/{modelId}/versions/{version}/deprecate` - Mark as deprecated
+- `POST /api/v1/ml/models/{modelId}/versions/{version}/reload` - Hot reload model
+- `GET /api/v1/ml/models/list` - List models from ML service storage
+- `GET /api/v1/ml/models/status/{status}` - Filter models by status
+
+#### Model Analytics
+- `GET /api/v1/ml/models/{modelId}/versions/{version}/lineage` - Get model lineage
+- `GET /api/v1/ml/models/{modelId}/versions/compare?version1=v1&version2=v2` - Compare versions
+- `GET /api/v1/ml/models/{modelId}/metrics/{metric}/history` - Get metric history
+- `GET /api/v1/ml/models/{modelId}/versions/{version}/validate` - Validate for production
+
+#### Training & Health
+- `POST /api/v1/ml/training/trigger` - Trigger model training
+- `GET /api/v1/ml/training/status` - Get training status
+- `GET /api/v1/ml/health` - Basic model health
+- `GET /api/v1/ml/health/detailed?include_trends=true&trend_hours=24` - Detailed health
+- `GET /api/v1/ml/stats` - Registry statistics
+
+#### Drift Monitoring
+- `GET /api/v1/ml/drift/report?model_id=X&version=Y&period_hours=24` - Get drift report
+- `GET /api/v1/ml/drift/alerts?severity=medium` - Get active drift alerts
+- `POST /api/v1/ml/drift/baseline` - Set drift baseline
 
 ### Health Endpoints
 
@@ -272,9 +381,23 @@ make docker-stop
 Configure Central to use the ML service:
 
 ```bash
+# Core ML Service Configuration
 export ROX_ML_RISK_SERVICE_ENABLED=true
 export ROX_ML_RISK_SERVICE_ENDPOINT=ml-risk-service:8080
-export ROX_ML_RISK_MODE_ENABLED=true
+export ROX_ML_RISK_SERVICE_TLS=false
+export ROX_ML_RISK_SERVICE_TIMEOUT=30s
+
+# Model Storage Configuration
+export ROX_ML_MODEL_STORAGE_BACKEND=gcs
+export ROX_ML_GCS_PROJECT_ID=your-project-id
+export ROX_ML_GCS_BUCKET_NAME=stackrox-ml-models
+export ROX_ML_MODEL_VERSIONING_ENABLED=true
+
+# Model Deployment Configuration
+export ROX_ML_MODEL_AUTO_DEPLOY_ENABLED=true
+export ROX_ML_MODEL_DEPLOYMENT_THRESHOLD=0.85
+export ROX_ML_MODEL_HEALTH_CHECK_ENABLED=true
+export ROX_ML_MODEL_DRIFT_DETECTION_ENABLED=true
 ```
 
 ### Integration Modes
@@ -282,6 +405,24 @@ export ROX_ML_RISK_MODE_ENABLED=true
 1. **Disabled** (default): Use traditional risk scoring only
 2. **Augmented**: Combine traditional and ML scores
 3. **Replacement**: Use ML scores exclusively (with fallback)
+
+### ML Scorer Integration
+
+The ML scorer integrates seamlessly with StackRox's deployment risk assessment:
+
+```go
+// Create ML scorer
+mlScorer := deployment.NewMLScorer()
+
+// Score a deployment using ML
+risk := mlScorer.Score(ctx, deployment, imageRisks)
+
+// Check ML status
+if deployment.IsMLEnabled() {
+    health, err := deployment.GetMLHealthStatus(ctx)
+    // Handle health status
+}
+```
 
 ### Risk Manager Integration
 
@@ -298,17 +439,56 @@ if mlManager, ok := manager.(*risk.ManagerWithML); ok {
 }
 ```
 
+### Model Management Integration
+
+Central provides REST API endpoints for model management:
+
+```bash
+# List models
+curl -X GET "https://central.stackrox.io/api/v1/ml/models"
+
+# Deploy a model
+curl -X POST "https://central.stackrox.io/api/v1/ml/deployment" \
+  -H "Content-Type: application/json" \
+  -d '{"model_id": "stackrox-risk-model", "version": "v1.2.3"}'
+
+# Get drift report
+curl -X GET "https://central.stackrox.io/api/v1/ml/drift/report?period_hours=24"
+```
+
 ## Monitoring
 
 ### Metrics
 
 The service exposes Prometheus metrics:
 
+#### Core Performance Metrics
 - `ml_risk_predictions_total` - Total predictions made
 - `ml_risk_prediction_duration_seconds` - Prediction latency
+- `ml_risk_batch_predictions_total` - Batch predictions made
+- `ml_risk_feature_extraction_duration_seconds` - Feature extraction time
+
+#### Model Management Metrics
 - `ml_risk_model_loaded` - Model loaded status
+- `ml_risk_model_deployments_total` - Model deployment count
+- `ml_risk_model_rollbacks_total` - Model rollback count
+- `ml_risk_model_validation_duration_seconds` - Model validation time
+- `ml_risk_model_size_bytes` - Current model size
+- `ml_risk_model_age_seconds` - Age of current model
+
+#### Health & Performance Metrics
+- `ml_risk_health_checks_total` - Health check count
+- `ml_risk_health_check_duration_seconds` - Health check latency
 - `ml_risk_memory_usage_bytes` - Memory usage
 - `ml_risk_cpu_usage_percent` - CPU usage
+- `ml_risk_storage_operations_total` - Storage operation count
+- `ml_risk_storage_errors_total` - Storage error count
+
+#### Drift Monitoring Metrics
+- `ml_risk_drift_score` - Current drift score
+- `ml_risk_drift_alerts_total` - Total drift alerts
+- `ml_risk_drift_checks_total` - Drift check count
+- `ml_risk_drift_baseline_updates_total` - Baseline update count
 
 ### Grafana Dashboard
 
@@ -330,21 +510,53 @@ The service provides comprehensive health checks:
    - Check `MODEL_FILE` environment variable
    - Verify model file exists and is readable
    - Check logs for training errors
+   - Validate storage backend configuration
+   - Ensure GCS credentials are correctly configured
 
-2. **High memory usage**
+2. **Storage backend issues**
+   - For GCS: Verify `ROX_ML_GCS_PROJECT_ID` and credentials
+   - Check bucket permissions and existence
+   - Validate network connectivity to cloud storage
+   - Review storage backend logs
+
+3. **Model deployment failures**
+   - Check model validation status before deployment
+   - Verify model meets deployment threshold requirements
+   - Review model registry health status
+   - Check for sufficient resources
+
+4. **High memory usage**
    - Reduce model complexity in config
    - Limit training data size
    - Adjust container memory limits
+   - Enable model compression
+   - Review model versioning retention settings
 
-3. **Poor prediction accuracy**
+5. **Poor prediction accuracy**
    - Validate training data quality
    - Check feature normalization
    - Review baseline reproduction metrics
+   - Monitor drift detection alerts
+   - Compare with previous model versions
 
-4. **gRPC connection failures**
+6. **gRPC connection failures**
    - Verify network policies allow traffic
    - Check service discovery configuration
    - Validate TLS settings
+   - Review timeout configurations
+   - Check Central to ML service connectivity
+
+7. **Drift detection issues**
+   - Ensure drift baseline is properly set
+   - Check drift threshold configuration
+   - Validate incoming data quality
+   - Review drift alert frequency settings
+
+8. **Performance issues**
+   - Monitor prediction latency metrics
+   - Check feature extraction performance
+   - Review batch processing efficiency
+   - Validate storage I/O performance
 
 ### Debugging
 
@@ -366,29 +578,112 @@ make test-prediction
 
 ### Resource Requirements
 
+#### ML Risk Service Pod
 - **CPU**: 500m request, 2000m limit
 - **Memory**: 1Gi request, 4Gi limit
-- **Storage**: 10Gi for models and data
+- **Storage**: 10Gi for local models and cache
+
+#### Model Storage (GCS Recommended)
+- **Storage**: Unlimited cloud storage
+- **IOPS**: High-performance storage for model loading
+- **Bandwidth**: Sufficient for model downloads and uploads
+- **Backup**: Automatic versioning and retention
 
 ### Security Considerations
 
-- Runs as non-root user
+#### Container Security
+- Runs as non-root user (UID 1001)
 - Read-only root filesystem
 - Network policies restrict traffic
 - No privilege escalation
 - Drops all capabilities
+- Uses distroless base image
+
+#### Data Security
+- Model encryption at rest (configurable)
+- TLS for all gRPC and HTTP communications
+- Service account authentication for GCS
+- Secrets management for credentials
+- Audit logging for model access
+
+#### Network Security
+- mTLS between Central and ML service
+- Network policies restrict pod-to-pod communication
+- Ingress/egress rules for cloud storage access
+- VPC peering for cloud deployments
 
 ### Scaling
 
-- Horizontal: Multiple replicas with shared model storage
-- Vertical: Increase CPU/memory for larger models
-- Model storage: Use ReadWriteMany PVC for model sharing
+#### Horizontal Scaling
+- Multiple ML service replicas
+- Shared model storage (GCS/ReadWriteMany PVC)
+- Load balancing via Kubernetes service
+- Auto-scaling based on CPU/memory usage
+
+#### Vertical Scaling
+- Increase CPU/memory for larger models
+- Optimize JVM heap size for model loading
+- Adjust batch sizes for processing
+
+#### Storage Scaling
+- Use cloud storage (GCS) for unlimited capacity
+- Implement model compression to reduce storage costs
+- Configure retention policies for automatic cleanup
+- Monitor storage costs and usage
+
+### High Availability
+
+#### Service Availability
+- Deploy multiple replicas across availability zones
+- Use pod disruption budgets
+- Health checks and readiness probes
+- Graceful shutdown handling
+
+#### Data Availability
+- Cloud storage with multi-region replication
+- Model backup and versioning
+- Disaster recovery procedures
+- Monitoring and alerting
 
 ### Backup and Recovery
 
-- Model files stored in persistent volumes
-- Training data backed up separately
-- Configuration in ConfigMaps and version control
+#### Model Backup
+- Automatic backup to cloud storage
+- Configurable retention policies
+- Point-in-time recovery capabilities
+- Cross-region replication for disaster recovery
+
+#### Configuration Backup
+- ConfigMaps and Secrets in version control
+- Helm charts for reproducible deployments
+- Infrastructure as Code (Terraform/Pulumi)
+- Environment-specific configurations
+
+#### Monitoring and Alerting
+- Prometheus metrics collection
+- Grafana dashboards for visualization
+- Alertmanager for critical alerts
+- Log aggregation and analysis
+
+### Performance Optimization
+
+#### Model Performance
+- Model quantization and compression
+- Batch prediction optimization
+- Feature caching strategies
+- Warm-up procedures for new models
+
+#### Storage Performance
+- Use SSD storage for local caching
+- Optimize cloud storage configuration
+- Implement model pre-loading
+- Monitor storage I/O patterns
+
+#### Network Performance
+- Optimize gRPC connection pooling
+- Use efficient serialization formats
+- Implement request caching where appropriate
+- Monitor network latency and throughput
 
 ## Contributing
 
