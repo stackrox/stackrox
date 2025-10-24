@@ -64,6 +64,7 @@ type Store interface {
 
 	Walk(ctx context.Context, fn callback) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
+	GetAllFromCache() []*storeType
 }
 
 // New returns a new Store instance using the provided sql instance.

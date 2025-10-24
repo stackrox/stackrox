@@ -837,6 +837,17 @@ func TestCachedStoreMultipleInvalidScopedLevels(t *testing.T) {
 	assert.Len(t, results, 1)
 }
 
+func TestCachedGetAllFromCache(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newCachedStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleCachedTestSingleKeyStructArray("GetAllFromCache")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
+
+	protoassert.ElementsMatch(t, testObjects, store.GetAllFromCache())
+}
+
 // region Helper Functions
 
 func newCachedStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {

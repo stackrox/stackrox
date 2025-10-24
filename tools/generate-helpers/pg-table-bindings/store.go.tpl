@@ -82,6 +82,10 @@ type Store interface {
 
     Walk(ctx context.Context, fn callback) error
     WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
+
+{{- if and .CachedStore .ForSAC }}
+    GetAllFromCache() []*storeType
+{{- end }}
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}

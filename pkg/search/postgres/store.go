@@ -80,6 +80,8 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	PruneMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
+	// Deprecated: Use with caution it's unsafe but fast 🐉
+	GetAllFromCache() []PT
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
@@ -424,6 +426,12 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 		return s.copyFrom(ctx, objs...)
 	})
+}
+
+// GetAllFromCache panics as generic store has no cache.
+func (s *genericStore[T, PT]) GetAllFromCache() []PT {
+	utils.Must(errors.New("generic store has no cache"))
+	return nil
 }
 
 func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {

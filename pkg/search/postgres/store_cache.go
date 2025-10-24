@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -328,7 +330,16 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	return c.walkCacheNoLock(ctx, fn)
+	return c.walkCacheNoLock(ctx, func(obj PT) error {
+		return fn(obj.CloneVT())
+	})
+}
+
+// GetAllFromCache iterates over all the objects in the store and applies the closure.
+func (c *cachedStore[T, PT]) GetAllFromCache() []PT {
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache))
 }
 
 // GetByQueryFn iterates over the objects from the store matching the query.
@@ -398,7 +409,7 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj.CloneVT())
+		err := fn(obj)
 		if err != nil {
 			return err
 		}
