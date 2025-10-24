@@ -7,7 +7,7 @@ from .model_storage import (
     StorageConfig,
     ModelStorage,
     LocalModelStorage,
-    S3ModelStorage,
+    GCSModelStorage,
     ModelStorageManager
 )
 
@@ -16,6 +16,6 @@ __all__ = [
     'StorageConfig',
     'ModelStorage',
     'LocalModelStorage',
-    'S3ModelStorage',
+    'GCSModelStorage',
     'ModelStorageManager'
 ]
