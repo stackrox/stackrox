@@ -36,7 +36,7 @@ var clusters = []*storage.Cluster{
 	clusterArrakis,
 }
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []storage.ImmutableNamespaceMetadata{
 	nsErrored,
 	// Earth
 	nsSkunkWorks,
@@ -779,7 +779,12 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			assert.Truef(t, tc.hasError == (err != nil), "error: %v", err)
 			assert.Equal(t, tc.expected, result, tc.scopeDesc)
 			protoassert.SlicesEqual(t, clusters, clonedClusters, "clusters have been modified")
-			protoassert.SlicesEqual(t, namespaces, clonedNamespaces, "namespaces have been modified")
+			// Convert namespaces to concrete type for comparison
+			var namespacesConc []*storage.NamespaceMetadata
+			for _, ns := range namespaces {
+				namespacesConc = append(namespacesConc, ns.CloneVT())
+			}
+			protoassert.SlicesEqual(t, namespacesConc, clonedNamespaces, "namespaces have been modified")
 			if tc.expected != nil {
 				assert.Equal(t, tc.scopeStr, result.String())
 

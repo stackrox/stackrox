@@ -137,10 +137,10 @@ func (m *MocknamespaceProvider) EXPECT() *MocknamespaceProviderMockRecorder {
 }
 
 // GetAllNamespaces mocks base method.
-func (m *MocknamespaceProvider) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (m *MocknamespaceProvider) GetAllNamespaces(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllNamespaces", ctx)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

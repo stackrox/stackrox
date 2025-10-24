@@ -9,11 +9,11 @@ import (
 
 type clusterMatcher struct {
 	cluster    *storage.Cluster
-	namespaces []*storage.NamespaceMetadata
+	namespaces []storage.ImmutableNamespaceMetadata
 }
 
 // NewClusterMatcher creates a new policy matcher for cluster data.
-func NewClusterMatcher(cluster *storage.Cluster, namespaces []*storage.NamespaceMetadata) Matcher {
+func NewClusterMatcher(cluster *storage.Cluster, namespaces []storage.ImmutableNamespaceMetadata) Matcher {
 	return &clusterMatcher{
 		cluster:    cluster,
 		namespaces: namespaces,

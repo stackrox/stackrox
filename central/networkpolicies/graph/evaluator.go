@@ -37,7 +37,7 @@ type Evaluator interface {
 }
 
 type namespaceProvider interface {
-	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetAllNamespaces(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
@@ -102,14 +102,14 @@ func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, ne
 	return newGraphBuilder(nil, deployments, networkTree, g.getNamespacesByID()).GetApplyingPolicies(networkPolicies)
 }
 
-func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {
+func (g *evaluatorImpl) getNamespacesByID() map[string]storage.ImmutableNamespaceMetadata {
 	namespaces, err := g.namespaceStore.GetAllNamespaces(allNamespaceReadAccess)
 	if err != nil {
 		log.Errorf("unable to read namespaces: %v", err)
 		return nil
 	}
 
-	namespacesByID := make(map[string]*storage.NamespaceMetadata)
+	namespacesByID := make(map[string]storage.ImmutableNamespaceMetadata)
 	for _, namespace := range namespaces {
 		namespacesByID[namespace.GetId()] = namespace
 	}

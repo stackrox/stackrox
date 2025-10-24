@@ -44,7 +44,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddNamespace mocks base method.
-func (m *MockDataStore) AddNamespace(arg0 context.Context, arg1 *storage.NamespaceMetadata) error {
+func (m *MockDataStore) AddNamespace(arg0 context.Context, arg1 storage.ImmutableNamespaceMetadata) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNamespace", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -73,10 +73,10 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // GetAllNamespaces mocks base method.
-func (m *MockDataStore) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (m *MockDataStore) GetAllNamespaces(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllNamespaces", ctx)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -88,10 +88,10 @@ func (mr *MockDataStoreMockRecorder) GetAllNamespaces(ctx any) *gomock.Call {
 }
 
 // GetManyNamespaces mocks base method.
-func (m *MockDataStore) GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error) {
+func (m *MockDataStore) GetManyNamespaces(ctx context.Context, id []string) ([]storage.ImmutableNamespaceMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetManyNamespaces", ctx, id)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -103,10 +103,10 @@ func (mr *MockDataStoreMockRecorder) GetManyNamespaces(ctx, id any) *gomock.Call
 }
 
 // GetNamespace mocks base method.
-func (m *MockDataStore) GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error) {
+func (m *MockDataStore) GetNamespace(ctx context.Context, id string) (storage.ImmutableNamespaceMetadata, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNamespace", ctx, id)
-	ret0, _ := ret[0].(*storage.NamespaceMetadata)
+	ret0, _ := ret[0].(storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -119,10 +119,10 @@ func (mr *MockDataStoreMockRecorder) GetNamespace(ctx, id any) *gomock.Call {
 }
 
 // GetNamespacesForSAC mocks base method.
-func (m *MockDataStore) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (m *MockDataStore) GetNamespacesForSAC(ctx context.Context) ([]storage.ImmutableNamespaceMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNamespacesForSAC", ctx)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,10 +163,10 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 }
 
 // SearchNamespaces mocks base method.
-func (m *MockDataStore) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
+func (m *MockDataStore) SearchNamespaces(ctx context.Context, q *v1.Query) ([]storage.ImmutableNamespaceMetadata, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchNamespaces", ctx, q)
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]storage.ImmutableNamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -193,7 +193,7 @@ func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q any) *gomock.Call {
 }
 
 // UpdateNamespace mocks base method.
-func (m *MockDataStore) UpdateNamespace(arg0 context.Context, arg1 *storage.NamespaceMetadata) error {
+func (m *MockDataStore) UpdateNamespace(arg0 context.Context, arg1 storage.ImmutableNamespaceMetadata) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateNamespace", arg0, arg1)
 	ret0, _ := ret[0].(error)

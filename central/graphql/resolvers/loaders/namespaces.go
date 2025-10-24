@@ -24,7 +24,7 @@ func init() {
 // NewNamespaceLoader creates a new loader for NamespaceMetaData.
 func NewNamespaceLoader(ds datastore.DataStore) NamespaceLoader {
 	return &namespaceLoaderImpl{
-		loaded: make(map[string]*storage.NamespaceMetadata),
+		loaded: make(map[string]storage.ImmutableNamespaceMetadata),
 		ds:     ds,
 	}
 }
@@ -40,9 +40,9 @@ func GetNamespaceLoader(ctx context.Context) (NamespaceLoader, error) {
 
 // NamespaceLoader loads namespace metadata, and stores already loaded metadata for other ops in the same context to use.
 type NamespaceLoader interface {
-	FromIDs(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error)
-	FromID(ctx context.Context, id string) (*storage.NamespaceMetadata, error)
-	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NamespaceMetadata, error)
+	FromIDs(ctx context.Context, ids []string) ([]storage.ImmutableNamespaceMetadata, error)
+	FromID(ctx context.Context, id string) (storage.ImmutableNamespaceMetadata, error)
+	FromQuery(ctx context.Context, query *v1.Query) ([]storage.ImmutableNamespaceMetadata, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
@@ -51,13 +51,13 @@ type NamespaceLoader interface {
 // namespaceLoaderImpl implements the NamespaceLoader interface.
 type namespaceLoaderImpl struct {
 	lock   sync.RWMutex
-	loaded map[string]*storage.NamespaceMetadata
+	loaded map[string]storage.ImmutableNamespaceMetadata
 
 	ds datastore.DataStore
 }
 
 // FromIDs loads a set of namespaces from a set of ids.
-func (nsldr *namespaceLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
+func (nsldr *namespaceLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]storage.ImmutableNamespaceMetadata, error) {
 	namespaces, err := nsldr.load(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (nsldr *namespaceLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]
 }
 
 // FromID loads a namespace from an ID.
-func (nsldr *namespaceLoaderImpl) FromID(ctx context.Context, id string) (*storage.NamespaceMetadata, error) {
+func (nsldr *namespaceLoaderImpl) FromID(ctx context.Context, id string) (storage.ImmutableNamespaceMetadata, error) {
 	namespaces, err := nsldr.load(ctx, []string{id})
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (nsldr *namespaceLoaderImpl) FromID(ctx context.Context, id string) (*stora
 }
 
 // FromQuery loads a set of namespaces that match a query.
-func (nsldr *namespaceLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NamespaceMetadata, error) {
+func (nsldr *namespaceLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]storage.ImmutableNamespaceMetadata, error) {
 	results, err := nsldr.ds.Search(ctx, query)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (nsldr *namespaceLoaderImpl) CountAll(ctx context.Context) (int32, error) {
 	return int32(count), err
 }
 
-func (nsldr *namespaceLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
+func (nsldr *namespaceLoaderImpl) load(ctx context.Context, ids []string) ([]storage.ImmutableNamespaceMetadata, error) {
 	namespaces, missing := nsldr.readAll(ids)
 	if len(missing) > 0 {
 		var err error
@@ -119,7 +119,7 @@ func (nsldr *namespaceLoaderImpl) load(ctx context.Context, ids []string) ([]*st
 	return namespaces, nil
 }
 
-func (nsldr *namespaceLoaderImpl) setAll(namespaces []*storage.NamespaceMetadata) {
+func (nsldr *namespaceLoaderImpl) setAll(namespaces []storage.ImmutableNamespaceMetadata) {
 	nsldr.lock.Lock()
 	defer nsldr.lock.Unlock()
 
@@ -128,7 +128,7 @@ func (nsldr *namespaceLoaderImpl) setAll(namespaces []*storage.NamespaceMetadata
 	}
 }
 
-func (nsldr *namespaceLoaderImpl) readAll(ids []string) (namespaces []*storage.NamespaceMetadata, missing []int) {
+func (nsldr *namespaceLoaderImpl) readAll(ids []string) (namespaces []storage.ImmutableNamespaceMetadata, missing []int) {
 	nsldr.lock.RLock()
 	defer nsldr.lock.RUnlock()
 

@@ -1,6 +1,7 @@
 package effectiveaccessscope
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -567,31 +568,31 @@ func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespace
 	return m
 }
 
-func included(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func included(n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return namespace(Included, n)
 }
 
-func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func includedStandard(n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return namespaceStandard(Included, n)
 }
 
-func excluded(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func excluded(n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return namespace(Excluded, n)
 }
 
-func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func excludedStandard(n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return namespaceStandard(Excluded, n)
 }
 
-func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespace(scope scopeState, n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
 		ID:     n.GetId(),
 		Name:   n.GetName(),
-		Labels: n.GetLabels(),
+		Labels: maps.Collect(n.GetImmutableLabels()),
 	}}
 }
 
-func namespaceStandard(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespaceStandard(scope scopeState, n storage.ImmutableNamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
 		ID:   n.GetId(),
 		Name: n.GetName(),

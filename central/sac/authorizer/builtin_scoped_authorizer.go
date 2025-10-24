@@ -42,7 +42,7 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 	return newGlobalScopeCheckerCore(clusters, namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
 }
 
-func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
+func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []storage.ImmutableNamespaceMetadata, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
 	scc := &globalScopeChecker{
 		roles: roles,
 		trace: trace,
@@ -284,7 +284,7 @@ func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeChecke
 type authorizerDataCache struct {
 	lock                      sync.RWMutex
 	clusters                  []*storage.Cluster
-	namespaces                []*storage.NamespaceMetadata
+	namespaces                []storage.ImmutableNamespaceMetadata
 	effectiveAccessScopesByID map[string]*effectiveaccessscope.ScopeTree
 
 	// Should be nil unless authorization tracing is enabled for this instance.

@@ -19,6 +19,15 @@ const (
 	namespace3 = "namespace3"
 )
 
+// Helper to convert immutable interfaces to concrete types for protoassert
+func cloneAll(namespaces []storage.ImmutableNamespaceMetadata) []*storage.NamespaceMetadata {
+	result := make([]*storage.NamespaceMetadata, len(namespaces))
+	for i, ns := range namespaces {
+		result[i] = ns.CloneVT()
+	}
+	return result
+}
+
 func TestNamespaceLoader(t *testing.T) {
 	suite.Run(t, new(NamespaceLoaderTestSuite))
 }
@@ -45,9 +54,9 @@ func (suite *NamespaceLoaderTestSuite) TearDownTest() {
 
 func (suite *NamespaceLoaderTestSuite) TestFromID() {
 	loader := namespaceLoaderImpl{
-		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+		loaded: map[string]storage.ImmutableNamespaceMetadata{
+			"namespace1": &storage.NamespaceMetadata{Id: namespace1},
+			"namespace2": &storage.NamespaceMetadata{Id: namespace2},
 		},
 		ds: suite.mockDataStore,
 	}
@@ -55,28 +64,28 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 	// Get a preloaded namespace from id.
 	namespace, err := loader.FromID(suite.ctx, namespace1)
 	suite.NoError(err)
-	protoassert.Equal(suite.T(), loader.loaded[namespace1], namespace)
+	protoassert.Equal(suite.T(), loader.loaded[namespace1].CloneVT(), namespace.CloneVT())
 
 	// Get a non-preloaded namespace from id.
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
-		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
+		Return([]storage.ImmutableNamespaceMetadata{thirdNamespace}, nil)
 
 	namespace, err = loader.FromID(suite.ctx, namespace3)
 	suite.NoError(err)
-	protoassert.Equal(suite.T(), thirdNamespace, namespace)
+	protoassert.Equal(suite.T(), thirdNamespace, namespace.CloneVT())
 
 	// Above call should now be preloaded.
 	namespace, err = loader.FromID(suite.ctx, namespace3)
 	suite.NoError(err)
-	protoassert.Equal(suite.T(), loader.loaded[namespace3], namespace)
+	protoassert.Equal(suite.T(), loader.loaded[namespace3].CloneVT(), namespace.CloneVT())
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 	loader := namespaceLoaderImpl{
-		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+		loaded: map[string]storage.ImmutableNamespaceMetadata{
+			"namespace1": &storage.NamespaceMetadata{Id: namespace1},
+			"namespace2": &storage.NamespaceMetadata{Id: namespace2},
 		},
 		ds: suite.mockDataStore,
 	}
@@ -85,38 +94,38 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 	namespaces, err := loader.FromIDs(suite.ctx, []string{namespace1, namespace2})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
-	}, namespaces)
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
+	}, cloneAll(namespaces))
 
 	// Get a non-preloaded namespace from id.
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
-		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
+		Return([]storage.ImmutableNamespaceMetadata{thirdNamespace}, nil)
 
 	namespaces, err = loader.FromIDs(suite.ctx, []string{namespace1, namespace2, namespace3})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
 		thirdNamespace,
-	}, namespaces)
+	}, cloneAll(namespaces))
 
 	// Above call should now be preloaded.
 	namespaces, err = loader.FromIDs(suite.ctx, []string{namespace1, namespace2, namespace3})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
-		loader.loaded[namespace3],
-	}, namespaces)
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
+		loader.loaded[namespace3].CloneVT(),
+	}, cloneAll(namespaces))
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 	loader := namespaceLoaderImpl{
-		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+		loaded: map[string]storage.ImmutableNamespaceMetadata{
+			"namespace1": &storage.NamespaceMetadata{Id: namespace1},
+			"namespace2": &storage.NamespaceMetadata{Id: namespace2},
 		},
 		ds: suite.mockDataStore,
 	}
@@ -135,9 +144,9 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 	namespaces, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
-	}, namespaces)
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
+	}, cloneAll(namespaces))
 
 	// Get a non-preloaded namespace
 	results = []search.Result{
@@ -155,15 +164,15 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 
 	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
-		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
+		Return([]storage.ImmutableNamespaceMetadata{thirdNamespace}, nil)
 
 	namespaces, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
 		thirdNamespace,
-	}, namespaces)
+	}, cloneAll(namespaces))
 
 	// Above call should now be preloaded.
 	results = []search.Result{
@@ -182,8 +191,8 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 	namespaces, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.NamespaceMetadata{
-		loader.loaded[namespace1],
-		loader.loaded[namespace2],
-		loader.loaded[namespace3],
-	}, namespaces)
+		loader.loaded[namespace1].CloneVT(),
+		loader.loaded[namespace2].CloneVT(),
+		loader.loaded[namespace3].CloneVT(),
+	}, cloneAll(namespaces))
 }

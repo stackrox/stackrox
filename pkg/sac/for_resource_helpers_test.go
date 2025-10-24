@@ -13,6 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Helper to convert immutable interfaces to concrete types for protoassert
+func toConcreteNamespaces(namespaces []storage.ImmutableNamespaceMetadata) []*storage.NamespaceMetadata {
+	result := make([]*storage.NamespaceMetadata, len(namespaces))
+	for i, ns := range namespaces {
+		result[i] = ns.CloneVT()
+	}
+	return result
+}
+
 var (
 	targetResource = resources.Deployment
 	otherResource  = resources.Namespace
@@ -167,7 +176,7 @@ var (
 		ClusterName: clusterArrakis.GetName(),
 	}
 
-	allNamespaces = []*storage.NamespaceMetadata{
+	allNamespaces = []storage.ImmutableNamespaceMetadata{
 		namespaceSkunkWorks,
 		namespaceFraunhofer,
 		namespaceCERN,
@@ -296,7 +305,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 	for name, tc := range map[string]struct {
 		ctx                        context.Context
 		targetResource             permissions.ResourceMetadata
-		expectedFilteredNamespaces []*storage.NamespaceMetadata
+		expectedFilteredNamespaces []storage.ImmutableNamespaceMetadata
 	}{
 		"Full Access context will let all namespaces through for a global-scoped resource": {
 			ctx:                        fullAccessCtx,
@@ -316,17 +325,17 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 		"No Access context will let no namespace through for a global-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Administration,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"No Access context will let no namespace through for a cluster-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"No Access context will let no namespace through for a namespace-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Cluster-restricted context will let all namespaces through for a global-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -350,7 +359,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				),
 			),
 			targetResource: resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -368,7 +377,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				),
 			),
 			targetResource: resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceSkunkWorks,
 				namespaceFraunhofer,
 				namespaceCERN,
@@ -399,7 +408,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				),
 			),
 			targetResource: resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -418,7 +427,7 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				),
 			),
 			targetResource: resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -435,14 +444,14 @@ func TestFilterAccessibleNamespacesForRead(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Deployment,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
 			helper := ForResource(tc.targetResource)
 			filteredNamespaces, err := helper.FilterAccessibleNamespaces(tc.ctx, storage.Access_READ_ACCESS, allNamespaces)
 			assert.NoError(it, err)
-			protoassert.ElementsMatch(it, filteredNamespaces, tc.expectedFilteredNamespaces)
+			protoassert.ElementsMatch(it, toConcreteNamespaces(filteredNamespaces), toConcreteNamespaces(tc.expectedFilteredNamespaces))
 		})
 	}
 }
@@ -451,7 +460,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 	for name, tc := range map[string]struct {
 		ctx                        context.Context
 		targetResource             permissions.ResourceMetadata
-		expectedFilteredNamespaces []*storage.NamespaceMetadata
+		expectedFilteredNamespaces []storage.ImmutableNamespaceMetadata
 	}{
 		"Full Access context will let all namespaces through for a global-scoped resource": {
 			ctx:                        fullAccessCtx,
@@ -471,17 +480,17 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 		"No Access context will let no namespace through for a global-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Administration,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"No Access context will let no namespace through for a cluster-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"No Access context will let no namespace through for a namespace-scoped resource": {
 			ctx:                        noAccessCtx,
 			targetResource:             resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Cluster-restricted read context will let no namespaces through for a global-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -493,7 +502,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Administration,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Cluster-restricted write context will let all namespaces through for a global-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -517,7 +526,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Cluster-restricted write context will only let the namespaces within that cluster through for a cluster-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -529,7 +538,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource: resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -547,7 +556,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Cluster-restricted write context will only let the namespaces within that cluster through for a namespace-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -559,7 +568,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource: resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceSkunkWorks,
 				namespaceFraunhofer,
 				namespaceCERN,
@@ -577,7 +586,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Administration,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Namespace-restricted write context will let all namespaces through for a global-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -603,7 +612,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Namespace-restricted write context will let the namespaces within the same cluster through for cluster-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -616,7 +625,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource: resources.Node,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -635,7 +644,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 		"Namespace-restricted write context will only let the defined namespaces through for namespace-scoped resource": {
 			ctx: WithGlobalAccessScopeChecker(
@@ -648,7 +657,7 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource: resources.Image,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{
 				namespaceAtreides,
 				namespaceBeneGesserit,
 				namespaceFremen,
@@ -665,14 +674,14 @@ func TestFilterAccessibleNamespacesForWrite(t *testing.T) {
 				),
 			),
 			targetResource:             resources.Deployment,
-			expectedFilteredNamespaces: []*storage.NamespaceMetadata{},
+			expectedFilteredNamespaces: []storage.ImmutableNamespaceMetadata{},
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
 			helper := ForResource(tc.targetResource)
 			filteredNamespaces, err := helper.FilterAccessibleNamespaces(tc.ctx, storage.Access_READ_WRITE_ACCESS, allNamespaces)
 			assert.NoError(it, err)
-			protoassert.ElementsMatch(it, filteredNamespaces, tc.expectedFilteredNamespaces)
+			protoassert.ElementsMatch(it, toConcreteNamespaces(filteredNamespaces), toConcreteNamespaces(tc.expectedFilteredNamespaces))
 		})
 	}
 }
