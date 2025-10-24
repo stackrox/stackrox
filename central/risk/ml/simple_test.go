@@ -100,20 +100,20 @@ func TestFeatureImportance_Creation(t *testing.T) {
 
 func TestDeploymentFeatures_Creation(t *testing.T) {
 	features := &DeploymentFeatures{
-		PolicyViolationCount:          5,
-		PolicyViolationSeverityScore:  7.5,
-		HostNetwork:                   false,
-		HostPID:                       false,
-		HostIPC:                       false,
-		PrivilegedContainerCount:      0,
-		AutomountServiceAccountToken:  true,
-		ExposedPortCount:              2,
-		HasExternalExposure:           true,
-		ReplicaCount:                  3,
-		IsOrchestratorComponent:       false,
-		IsPlatformComponent:           false,
-		Namespace:                     "test-ns",
-		IsInactive:                    false,
+		PolicyViolationCount:         5,
+		PolicyViolationSeverityScore: 7.5,
+		HostNetwork:                  false,
+		HostPID:                      false,
+		HostIPC:                      false,
+		PrivilegedContainerCount:     0,
+		AutomountServiceAccountToken: true,
+		ExposedPortCount:             2,
+		HasExternalExposure:          true,
+		ReplicaCount:                 3,
+		IsOrchestratorComponent:      false,
+		IsPlatformComponent:          false,
+		Namespace:                    "test-ns",
+		IsInactive:                   false,
 	}
 
 	assert.Equal(t, int32(5), features.PolicyViolationCount)
@@ -126,19 +126,19 @@ func TestDeploymentFeatures_Creation(t *testing.T) {
 
 func TestImageFeatures_Creation(t *testing.T) {
 	features := &ImageFeatures{
-		ImageID:                "test-image-id",
-		ImageName:              "test-image:latest",
-		CriticalVulnCount:      2,
-		HighVulnCount:          5,
-		MediumVulnCount:        10,
-		LowVulnCount:           20,
-		AvgCVSSScore:           6.5,
-		MaxCVSSScore:           9.2,
-		TotalComponentCount:    100,
-		RiskyComponentCount:    15,
-		IsClusterLocal:         false,
-		BaseImage:              "ubuntu:20.04",
-		LayerCount:             5,
+		ImageID:             "test-image-id",
+		ImageName:           "test-image:latest",
+		CriticalVulnCount:   2,
+		HighVulnCount:       5,
+		MediumVulnCount:     10,
+		LowVulnCount:        20,
+		AvgCVSSScore:        6.5,
+		MaxCVSSScore:        9.2,
+		TotalComponentCount: 100,
+		RiskyComponentCount: 15,
+		IsClusterLocal:      false,
+		BaseImage:           "ubuntu:20.04",
+		LayerCount:          5,
 	}
 
 	assert.Equal(t, "test-image-id", features.ImageID)

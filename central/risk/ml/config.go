@@ -32,41 +32,41 @@ var (
 	ModelRetentionDays = env.RegisterIntegerSetting("ROX_ML_MODEL_RETENTION_DAYS", 0)
 
 	// GCS configuration
-	GCSProjectID = env.RegisterSetting("ROX_ML_GCS_PROJECT_ID")
+	GCSProjectID       = env.RegisterSetting("ROX_ML_GCS_PROJECT_ID")
 	GCSCredentialsPath = env.RegisterSetting("ROX_ML_GCS_CREDENTIALS_PATH")
-	GCSBucketName = env.RegisterSetting("ROX_ML_GCS_BUCKET_NAME")
+	GCSBucketName      = env.RegisterSetting("ROX_ML_GCS_BUCKET_NAME")
 
 	// Model versioning settings
 	ModelVersioningEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_VERSIONING_ENABLED", true)
-	MaxModelVersions = env.RegisterIntegerSetting("ROX_ML_MAX_MODEL_VERSIONS", 10)
+	MaxModelVersions       = env.RegisterIntegerSetting("ROX_ML_MAX_MODEL_VERSIONS", 10)
 
 	// Auto-deployment settings
-	ModelAutoDeployEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_AUTO_DEPLOY_ENABLED", false)
+	ModelAutoDeployEnabled   = env.RegisterBooleanSetting("ROX_ML_MODEL_AUTO_DEPLOY_ENABLED", false)
 	ModelDeploymentThreshold = env.RegisterSetting("ROX_ML_MODEL_DEPLOYMENT_THRESHOLD", env.WithDefault("0.85"))
 
 	// Model health check settings
-	ModelHealthCheckEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_HEALTH_CHECK_ENABLED", true)
+	ModelHealthCheckEnabled  = env.RegisterBooleanSetting("ROX_ML_MODEL_HEALTH_CHECK_ENABLED", true)
 	ModelHealthCheckInterval = env.RegisterSetting("ROX_ML_MODEL_HEALTH_CHECK_INTERVAL", env.WithDefault("5m"))
 
 	// Model monitoring settings
 	ModelDriftDetectionEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_DRIFT_DETECTION_ENABLED", false)
-	ModelDriftThreshold = env.RegisterSetting("ROX_ML_MODEL_DRIFT_THRESHOLD", env.WithDefault("0.1"))
+	ModelDriftThreshold        = env.RegisterSetting("ROX_ML_MODEL_DRIFT_THRESHOLD", env.WithDefault("0.1"))
 )
 
 // ModelStorageConfig provides configuration for model storage
 type ModelStorageConfig struct {
-	Backend             string
-	BasePath            string
-	EncryptionEnabled   bool
-	CompressionEnabled  bool
-	BackupEnabled       bool
-	BackupFrequency     string
-	RetentionDays       int
-	VersioningEnabled   bool
-	MaxVersions         int
+	Backend            string
+	BasePath           string
+	EncryptionEnabled  bool
+	CompressionEnabled bool
+	BackupEnabled      bool
+	BackupFrequency    string
+	RetentionDays      int
+	VersioningEnabled  bool
+	MaxVersions        int
 
 	// Cloud-specific configurations
-	GCSConfig   *GCSConfig
+	GCSConfig *GCSConfig
 }
 
 // GCSConfig provides Google Cloud Storage configuration
@@ -78,26 +78,26 @@ type GCSConfig struct {
 
 // ModelDeploymentConfig provides configuration for model deployment
 type ModelDeploymentConfig struct {
-	AutoDeployEnabled    bool
-	DeploymentThreshold  float64
-	HealthCheckEnabled   bool
-	HealthCheckInterval  time.Duration
+	AutoDeployEnabled     bool
+	DeploymentThreshold   float64
+	HealthCheckEnabled    bool
+	HealthCheckInterval   time.Duration
 	DriftDetectionEnabled bool
-	DriftThreshold       float64
+	DriftThreshold        float64
 }
 
 // GetModelStorageConfig creates a ModelStorageConfig from environment variables
 func GetModelStorageConfig() *ModelStorageConfig {
 	config := &ModelStorageConfig{
-		Backend:             ModelStorageBackend.Setting(),
-		BasePath:            ModelStorageBasePath.Setting(),
-		EncryptionEnabled:   ModelEncryptionEnabled.BooleanSetting(),
-		CompressionEnabled:  ModelCompressionEnabled.BooleanSetting(),
-		BackupEnabled:       ModelBackupEnabled.BooleanSetting(),
-		BackupFrequency:     ModelBackupFrequency.Setting(),
-		RetentionDays:       ModelRetentionDays.IntegerSetting(),
-		VersioningEnabled:   ModelVersioningEnabled.BooleanSetting(),
-		MaxVersions:         MaxModelVersions.IntegerSetting(),
+		Backend:            ModelStorageBackend.Setting(),
+		BasePath:           ModelStorageBasePath.Setting(),
+		EncryptionEnabled:  ModelEncryptionEnabled.BooleanSetting(),
+		CompressionEnabled: ModelCompressionEnabled.BooleanSetting(),
+		BackupEnabled:      ModelBackupEnabled.BooleanSetting(),
+		BackupFrequency:    ModelBackupFrequency.Setting(),
+		RetentionDays:      ModelRetentionDays.IntegerSetting(),
+		VersioningEnabled:  ModelVersioningEnabled.BooleanSetting(),
+		MaxVersions:        MaxModelVersions.IntegerSetting(),
 	}
 
 	// Configure cloud storage based on backend

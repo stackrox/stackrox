@@ -89,24 +89,24 @@ func TestNoOpClient_GetDetailedHealth(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name         string
+		name          string
 		includeTrends bool
-		trendHours   int
+		trendHours    int
 	}{
 		{
-			name:         "without trends",
+			name:          "without trends",
 			includeTrends: false,
-			trendHours:   0,
+			trendHours:    0,
 		},
 		{
-			name:         "with trends",
+			name:          "with trends",
 			includeTrends: true,
-			trendHours:   24,
+			trendHours:    24,
 		},
 		{
-			name:         "with custom trend hours",
+			name:          "with custom trend hours",
 			includeTrends: true,
-			trendHours:   48,
+			trendHours:    48,
 		},
 	}
 

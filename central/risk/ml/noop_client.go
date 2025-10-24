@@ -38,11 +38,11 @@ func (n *noOpClient) GetModelHealth(ctx context.Context) (*ModelHealthResponse, 
 // GetDetailedHealth returns unhealthy status with no trends
 func (n *noOpClient) GetDetailedHealth(ctx context.Context, includeTrends bool, trendHours int) (*DetailedHealthResponse, error) {
 	return &DetailedHealthResponse{
-		OverallStatus: "error",
-		OverallScore:  0.0,
-		HealthChecks:  []*HealthCheckDetail{},
+		OverallStatus:   "error",
+		OverallScore:    0.0,
+		HealthChecks:    []*HealthCheckDetail{},
 		Recommendations: []string{"ML Risk Service is disabled"},
-		Trends:        map[string]interface{}{},
+		Trends:          map[string]interface{}{},
 	}, nil
 }
 
