@@ -14,42 +14,41 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-
 // ModelStatus represents the status of a model
 type ModelStatus string
 
 const (
-	ModelStatusDraft     ModelStatus = "draft"
-	ModelStatusTraining  ModelStatus = "training"
-	ModelStatusReady     ModelStatus = "ready"
-	ModelStatusDeployed  ModelStatus = "deployed"
+	ModelStatusDraft      ModelStatus = "draft"
+	ModelStatusTraining   ModelStatus = "training"
+	ModelStatusReady      ModelStatus = "ready"
+	ModelStatusDeployed   ModelStatus = "deployed"
 	ModelStatusDeprecated ModelStatus = "deprecated"
-	ModelStatusFailed    ModelStatus = "failed"
+	ModelStatusFailed     ModelStatus = "failed"
 )
 
 // ModelMetadata represents ML model metadata stored in Central
 type ModelMetadata struct {
-	ID                   string                 `json:"id" db:"id"`
-	ModelID              string                 `json:"model_id" db:"model_id"`
-	Version              string                 `json:"version" db:"version"`
-	Algorithm            string                 `json:"algorithm" db:"algorithm"`
-	FeatureCount         int                    `json:"feature_count" db:"feature_count"`
-	TrainingTimestamp    time.Time              `json:"training_timestamp" db:"training_timestamp"`
-	ModelSizeBytes       int64                  `json:"model_size_bytes" db:"model_size_bytes"`
-	Checksum             string                 `json:"checksum" db:"checksum"`
-	PerformanceMetrics   map[string]interface{} `json:"performance_metrics" db:"performance_metrics"`
-	Config               map[string]interface{} `json:"config" db:"config"`
-	Tags                 map[string]string      `json:"tags" db:"tags"`
-	Description          string                 `json:"description" db:"description"`
-	CreatedBy            string                 `json:"created_by" db:"created_by"`
-	Status               ModelStatus            `json:"status" db:"status"`
-	StorageBackend       string                 `json:"storage_backend" db:"storage_backend"`
-	StoragePath          string                 `json:"storage_path" db:"storage_path"`
-	CreatedAt            time.Time              `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time              `json:"updated_at" db:"updated_at"`
-	DeployedAt           *time.Time             `json:"deployed_at,omitempty" db:"deployed_at"`
-	LastUsedAt           *time.Time             `json:"last_used_at,omitempty" db:"last_used_at"`
-	UsageCount           int64                  `json:"usage_count" db:"usage_count"`
+	ID                 string                 `json:"id" db:"id"`
+	ModelID            string                 `json:"model_id" db:"model_id"`
+	Version            string                 `json:"version" db:"version"`
+	Algorithm          string                 `json:"algorithm" db:"algorithm"`
+	FeatureCount       int                    `json:"feature_count" db:"feature_count"`
+	TrainingTimestamp  time.Time              `json:"training_timestamp" db:"training_timestamp"`
+	ModelSizeBytes     int64                  `json:"model_size_bytes" db:"model_size_bytes"`
+	Checksum           string                 `json:"checksum" db:"checksum"`
+	PerformanceMetrics map[string]interface{} `json:"performance_metrics" db:"performance_metrics"`
+	Config             map[string]interface{} `json:"config" db:"config"`
+	Tags               map[string]string      `json:"tags" db:"tags"`
+	Description        string                 `json:"description" db:"description"`
+	CreatedBy          string                 `json:"created_by" db:"created_by"`
+	Status             ModelStatus            `json:"status" db:"status"`
+	StorageBackend     string                 `json:"storage_backend" db:"storage_backend"`
+	StoragePath        string                 `json:"storage_path" db:"storage_path"`
+	CreatedAt          time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt          time.Time              `json:"updated_at" db:"updated_at"`
+	DeployedAt         *time.Time             `json:"deployed_at,omitempty" db:"deployed_at"`
+	LastUsedAt         *time.Time             `json:"last_used_at,omitempty" db:"last_used_at"`
+	UsageCount         int64                  `json:"usage_count" db:"usage_count"`
 }
 
 // ModelRegistryStore provides database operations for model metadata
@@ -69,14 +68,14 @@ type ModelRegistryStore interface {
 
 // ModelRegistryStats provides statistics about the model registry
 type ModelRegistryStats struct {
-	TotalModels        int       `json:"total_models"`
-	TotalVersions      int       `json:"total_versions"`
-	DeployedModel      string    `json:"deployed_model,omitempty"`
-	DeployedVersion    string    `json:"deployed_version,omitempty"`
-	LastTrainingTime   time.Time `json:"last_training_time"`
-	TotalStorageBytes  int64     `json:"total_storage_bytes"`
-	ModelsbyAlgorithm  map[string]int `json:"models_by_algorithm"`
-	ModelsByStatus     map[string]int `json:"models_by_status"`
+	TotalModels       int            `json:"total_models"`
+	TotalVersions     int            `json:"total_versions"`
+	DeployedModel     string         `json:"deployed_model,omitempty"`
+	DeployedVersion   string         `json:"deployed_version,omitempty"`
+	LastTrainingTime  time.Time      `json:"last_training_time"`
+	TotalStorageBytes int64          `json:"total_storage_bytes"`
+	ModelsbyAlgorithm map[string]int `json:"models_by_algorithm"`
+	ModelsByStatus    map[string]int `json:"models_by_status"`
 }
 
 // modelRegistryStoreImpl implements ModelRegistryStore using PostgreSQL
@@ -148,7 +147,6 @@ func (s *modelRegistryStoreImpl) RegisterModel(ctx context.Context, metadata *Mo
 		string(tagsJSON), metadata.Description, metadata.CreatedBy, metadata.Status,
 		metadata.StorageBackend, metadata.StoragePath, metadata.CreatedAt,
 		metadata.UpdatedAt, metadata.UsageCount)
-
 	if err != nil {
 		return pkgerrors.Wrapf(err, "failed to register model %s version %s", metadata.ModelID, metadata.Version)
 	}
@@ -176,7 +174,6 @@ func (s *modelRegistryStoreImpl) GetModel(ctx context.Context, modelID, version 
 		&metadata.Description, &metadata.CreatedBy, &metadata.Status,
 		&metadata.StorageBackend, &metadata.StoragePath, &metadata.CreatedAt,
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -224,7 +221,6 @@ func (s *modelRegistryStoreImpl) GetLatestModel(ctx context.Context, modelID str
 		&metadata.Description, &metadata.CreatedBy, &metadata.Status,
 		&metadata.StorageBackend, &metadata.StoragePath, &metadata.CreatedAt,
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -234,12 +230,15 @@ func (s *modelRegistryStoreImpl) GetLatestModel(ctx context.Context, modelID str
 
 	// Unmarshal JSON fields
 	if err := json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics); err != nil {
+		log.Warnf("Failed to unmarshal performance metrics for model %s: %v", modelID, err)
 		metadata.PerformanceMetrics = make(map[string]interface{})
 	}
 	if err := json.Unmarshal([]byte(configJSON), &metadata.Config); err != nil {
+		log.Warnf("Failed to unmarshal config for model %s: %v", modelID, err)
 		metadata.Config = make(map[string]interface{})
 	}
 	if err := json.Unmarshal([]byte(tagsJSON), &metadata.Tags); err != nil {
+		log.Warnf("Failed to unmarshal tags for model %s: %v", modelID, err)
 		metadata.Tags = make(map[string]string)
 	}
 
@@ -257,7 +256,6 @@ func (s *modelRegistryStoreImpl) ListModels(ctx context.Context, modelID string)
 		WHERE model_id = $1
 		ORDER BY training_timestamp DESC`,
 		modelID)
-
 	if err != nil {
 		return nil, pkgerrors.Wrapf(err, "failed to list models for %s", modelID)
 	}
@@ -275,16 +273,24 @@ func (s *modelRegistryStoreImpl) ListModels(ctx context.Context, modelID string)
 			&metadata.Description, &metadata.CreatedBy, &metadata.Status,
 			&metadata.StorageBackend, &metadata.StoragePath, &metadata.CreatedAt,
 			&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
-
 		if err != nil {
 			log.Warnf("Failed to scan model row: %v", err)
 			continue
 		}
 
 		// Unmarshal JSON fields
-		json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics)
-		json.Unmarshal([]byte(configJSON), &metadata.Config)
-		json.Unmarshal([]byte(tagsJSON), &metadata.Tags)
+		if err := json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics); err != nil {
+			log.Warnf("Failed to unmarshal performance metrics: %v", err)
+			metadata.PerformanceMetrics = make(map[string]interface{})
+		}
+		if err := json.Unmarshal([]byte(configJSON), &metadata.Config); err != nil {
+			log.Warnf("Failed to unmarshal config: %v", err)
+			metadata.Config = make(map[string]interface{})
+		}
+		if err := json.Unmarshal([]byte(tagsJSON), &metadata.Tags); err != nil {
+			log.Warnf("Failed to unmarshal tags: %v", err)
+			metadata.Tags = make(map[string]string)
+		}
 
 		models = append(models, &metadata)
 	}
@@ -301,7 +307,6 @@ func (s *modelRegistryStoreImpl) ListAllModels(ctx context.Context) ([]*ModelMet
 		       created_at, updated_at, deployed_at, last_used_at, usage_count
 		FROM ml_model_registry
 		ORDER BY model_id, training_timestamp DESC`)
-
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "failed to list all models")
 	}
@@ -319,16 +324,24 @@ func (s *modelRegistryStoreImpl) ListAllModels(ctx context.Context) ([]*ModelMet
 			&metadata.Description, &metadata.CreatedBy, &metadata.Status,
 			&metadata.StorageBackend, &metadata.StoragePath, &metadata.CreatedAt,
 			&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
-
 		if err != nil {
 			log.Warnf("Failed to scan model row: %v", err)
 			continue
 		}
 
 		// Unmarshal JSON fields
-		json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics)
-		json.Unmarshal([]byte(configJSON), &metadata.Config)
-		json.Unmarshal([]byte(tagsJSON), &metadata.Tags)
+		if err := json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics); err != nil {
+			log.Warnf("Failed to unmarshal performance metrics: %v", err)
+			metadata.PerformanceMetrics = make(map[string]interface{})
+		}
+		if err := json.Unmarshal([]byte(configJSON), &metadata.Config); err != nil {
+			log.Warnf("Failed to unmarshal config: %v", err)
+			metadata.Config = make(map[string]interface{})
+		}
+		if err := json.Unmarshal([]byte(tagsJSON), &metadata.Tags); err != nil {
+			log.Warnf("Failed to unmarshal tags: %v", err)
+			metadata.Tags = make(map[string]string)
+		}
 
 		models = append(models, &metadata)
 	}
@@ -343,7 +356,6 @@ func (s *modelRegistryStoreImpl) UpdateModelStatus(ctx context.Context, modelID,
 		SET status = $1, updated_at = $2
 		WHERE model_id = $3 AND version = $4`,
 		status, time.Now(), modelID, version)
-
 	if err != nil {
 		return pkgerrors.Wrapf(err, "failed to update status for model %s version %s", modelID, version)
 	}
@@ -362,7 +374,6 @@ func (s *modelRegistryStoreImpl) DeleteModel(ctx context.Context, modelID, versi
 		DELETE FROM ml_model_registry
 		WHERE model_id = $1 AND version = $2`,
 		modelID, version)
-
 	if err != nil {
 		return pkgerrors.Wrapf(err, "failed to delete model %s version %s", modelID, version)
 	}
@@ -396,7 +407,6 @@ func (s *modelRegistryStoreImpl) GetDeployedModel(ctx context.Context) (*ModelMe
 		&metadata.Description, &metadata.CreatedBy, &metadata.Status,
 		&metadata.StorageBackend, &metadata.StoragePath, &metadata.CreatedAt,
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
@@ -405,9 +415,18 @@ func (s *modelRegistryStoreImpl) GetDeployedModel(ctx context.Context) (*ModelMe
 	}
 
 	// Unmarshal JSON fields
-	json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics)
-	json.Unmarshal([]byte(configJSON), &metadata.Config)
-	json.Unmarshal([]byte(tagsJSON), &metadata.Tags)
+	if err := json.Unmarshal([]byte(performanceMetricsJSON), &metadata.PerformanceMetrics); err != nil {
+		log.Warnf("Failed to unmarshal performance metrics: %v", err)
+		metadata.PerformanceMetrics = make(map[string]interface{})
+	}
+	if err := json.Unmarshal([]byte(configJSON), &metadata.Config); err != nil {
+		log.Warnf("Failed to unmarshal config: %v", err)
+		metadata.Config = make(map[string]interface{})
+	}
+	if err := json.Unmarshal([]byte(tagsJSON), &metadata.Tags); err != nil {
+		log.Warnf("Failed to unmarshal tags: %v", err)
+		metadata.Tags = make(map[string]string)
+	}
 
 	return &metadata, true, nil
 }
@@ -422,7 +441,6 @@ func (s *modelRegistryStoreImpl) SetDeployedModel(ctx context.Context, modelID, 
 		SET status = $1, updated_at = $2
 		WHERE status = $3`,
 		ModelStatusReady, now, ModelStatusDeployed)
-
 	if err != nil {
 		return pkgerrors.Wrap(err, "failed to unset current deployed model")
 	}
@@ -433,7 +451,6 @@ func (s *modelRegistryStoreImpl) SetDeployedModel(ctx context.Context, modelID, 
 		SET status = $1, deployed_at = $2, updated_at = $3
 		WHERE model_id = $4 AND version = $5`,
 		ModelStatusDeployed, now, now, modelID, version)
-
 	if err != nil {
 		return pkgerrors.Wrapf(err, "failed to set model %s version %s as deployed", modelID, version)
 	}
@@ -453,7 +470,6 @@ func (s *modelRegistryStoreImpl) UpdateUsageStats(ctx context.Context, modelID, 
 		SET usage_count = usage_count + 1, last_used_at = $1, updated_at = $2
 		WHERE model_id = $3 AND version = $4`,
 		time.Now(), time.Now(), modelID, version)
-
 	if err != nil {
 		return pkgerrors.Wrapf(err, "failed to update usage stats for model %s version %s", modelID, version)
 	}
@@ -477,7 +493,6 @@ func (s *modelRegistryStoreImpl) GetModelStats(ctx context.Context) (*ModelRegis
 			COALESCE(MAX(training_timestamp), '1970-01-01'::timestamp) as last_training_time
 		FROM ml_model_registry`).Scan(
 		&stats.TotalModels, &stats.TotalVersions, &stats.TotalStorageBytes, &stats.LastTrainingTime)
-
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "failed to get basic model stats")
 	}

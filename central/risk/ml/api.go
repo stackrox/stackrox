@@ -14,9 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	apiLog = logging.LoggerForModule()
-)
+var apiLog = logging.LoggerForModule()
 
 // ModelManagementAPI provides REST API endpoints for model management
 type ModelManagementAPI struct {
@@ -93,20 +91,20 @@ type DeploymentRequest struct {
 }
 
 type TrainingRequest struct {
-	ModelID     string                   `json:"model_id"`
-	Description string                   `json:"description,omitempty"`
-	Config      map[string]interface{}   `json:"config,omitempty"`
-	DataSource  string                   `json:"data_source,omitempty"`
-	Tags        map[string]string        `json:"tags,omitempty"`
+	ModelID     string                 `json:"model_id"`
+	Description string                 `json:"description,omitempty"`
+	Config      map[string]interface{} `json:"config,omitempty"`
+	DataSource  string                 `json:"data_source,omitempty"`
+	Tags        map[string]string      `json:"tags,omitempty"`
 }
 
 type TrainingStatusResponse struct {
-	Status      string    `json:"status"`
-	ModelID     string    `json:"model_id,omitempty"`
-	Progress    float64   `json:"progress,omitempty"`
-	StartedAt   time.Time `json:"started_at,omitempty"`
+	Status              string     `json:"status"`
+	ModelID             string     `json:"model_id,omitempty"`
+	Progress            float64    `json:"progress,omitempty"`
+	StartedAt           time.Time  `json:"started_at,omitempty"`
 	EstimatedCompletion *time.Time `json:"estimated_completion,omitempty"`
-	Message     string    `json:"message,omitempty"`
+	Message             string     `json:"message,omitempty"`
 }
 
 type ReloadModelRequest struct {
@@ -114,32 +112,32 @@ type ReloadModelRequest struct {
 }
 
 type ModelLineageResponse struct {
-	ModelID string                   `json:"model_id"`
-	Version string                   `json:"version"`
-	Lineage []ModelVersionInfo       `json:"lineage"`
+	ModelID string             `json:"model_id"`
+	Version string             `json:"version"`
+	Lineage []ModelVersionInfo `json:"lineage"`
 }
 
 type ModelVersionInfo struct {
-	Version           string             `json:"version"`
-	SemanticVersion   string             `json:"semantic_version"`
-	Status            string             `json:"status"`
-	CreatedAt         string             `json:"created_at"`
+	Version            string             `json:"version"`
+	SemanticVersion    string             `json:"semantic_version"`
+	Status             string             `json:"status"`
+	CreatedAt          string             `json:"created_at"`
 	PerformanceMetrics map[string]float64 `json:"performance_metrics"`
-	QualityScore      *float64           `json:"quality_score,omitempty"`
+	QualityScore       *float64           `json:"quality_score,omitempty"`
 }
 
 type ModelComparisonResponse struct {
-	ModelID        string                `json:"model_id"`
-	Version1       ModelVersionInfo      `json:"version1"`
-	Version2       ModelVersionInfo      `json:"version2"`
-	PerformanceDiff map[string]float64   `json:"performance_diff"`
-	QualityDiff    *float64              `json:"quality_diff,omitempty"`
+	ModelID         string             `json:"model_id"`
+	Version1        ModelVersionInfo   `json:"version1"`
+	Version2        ModelVersionInfo   `json:"version2"`
+	PerformanceDiff map[string]float64 `json:"performance_diff"`
+	QualityDiff     *float64           `json:"quality_diff,omitempty"`
 }
 
 type MetricHistoryResponse struct {
-	ModelID string                 `json:"model_id"`
-	Metric  string                 `json:"metric"`
-	History []MetricHistoryPoint   `json:"history"`
+	ModelID string               `json:"model_id"`
+	Metric  string               `json:"metric"`
+	History []MetricHistoryPoint `json:"history"`
 }
 
 type MetricHistoryPoint struct {
@@ -158,17 +156,17 @@ type ProductionValidationResponse struct {
 }
 
 type DriftReportResponse struct {
-	ModelID               string             `json:"model_id"`
-	Version               string             `json:"version"`
-	OverallDriftStatus    string             `json:"overall_drift_status"`
-	OverallDriftScore     float64            `json:"overall_drift_score"`
-	DataDriftScore        float64            `json:"data_drift_score"`
-	PredictionDriftScore  float64            `json:"prediction_drift_score"`
-	PerformanceDriftScore float64            `json:"performance_drift_score"`
-	ActiveAlertsCount     int                `json:"active_alerts_count"`
-	Recommendations       []string           `json:"recommendations"`
-	ReportPeriodHours     int                `json:"report_period_hours"`
-	Timestamp             string             `json:"timestamp"`
+	ModelID               string   `json:"model_id"`
+	Version               string   `json:"version"`
+	OverallDriftStatus    string   `json:"overall_drift_status"`
+	OverallDriftScore     float64  `json:"overall_drift_score"`
+	DataDriftScore        float64  `json:"data_drift_score"`
+	PredictionDriftScore  float64  `json:"prediction_drift_score"`
+	PerformanceDriftScore float64  `json:"performance_drift_score"`
+	ActiveAlertsCount     int      `json:"active_alerts_count"`
+	Recommendations       []string `json:"recommendations"`
+	ReportPeriodHours     int      `json:"report_period_hours"`
+	Timestamp             string   `json:"timestamp"`
 }
 
 type DriftAlert struct {
@@ -483,7 +481,7 @@ func (api *ModelManagementAPI) getDetailedHealth(w http.ResponseWriter, r *http.
 
 	// Parse query parameters
 	includeTrends := r.URL.Query().Get("include_trends") != "false" // Default to true
-	trendHours := 24 // Default to 24 hours
+	trendHours := 24                                                // Default to 24 hours
 
 	if hoursStr := r.URL.Query().Get("trend_hours"); hoursStr != "" {
 		if hours, err := strconv.Atoi(hoursStr); err == nil && hours > 0 && hours <= 168 { // Max 1 week
@@ -549,7 +547,6 @@ func (api *ModelManagementAPI) triggerTraining(w http.ResponseWriter, r *http.Re
 
 // getTrainingStatus handles GET /api/v1/ml/training/status
 func (api *ModelManagementAPI) getTrainingStatus(w http.ResponseWriter, r *http.Request) {
-
 	// TODO: Implement training status tracking
 	// For now, return a placeholder response
 	api.writeJSONResponse(w, http.StatusOK, APIResponse{
@@ -721,7 +718,7 @@ func (api *ModelManagementAPI) getModelLineage(w http.ResponseWriter, r *http.Re
 			Version:         version,
 			SemanticVersion: "1.2.3",
 			Status:          "production",
-			CreatedAt:       time.Now().Add(-7*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-7 * 24 * time.Hour).Format(time.RFC3339),
 			PerformanceMetrics: map[string]float64{
 				"validation_ndcg": 0.87,
 				"validation_auc":  0.81,
@@ -732,7 +729,7 @@ func (api *ModelManagementAPI) getModelLineage(w http.ResponseWriter, r *http.Re
 			Version:         "v1",
 			SemanticVersion: "1.2.2",
 			Status:          "deprecated",
-			CreatedAt:       time.Now().Add(-14*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-14 * 24 * time.Hour).Format(time.RFC3339),
 			PerformanceMetrics: map[string]float64{
 				"validation_ndcg": 0.85,
 				"validation_auc":  0.78,
@@ -771,7 +768,7 @@ func (api *ModelManagementAPI) compareModelVersions(w http.ResponseWriter, r *ht
 		Version:         version1,
 		SemanticVersion: "1.2.2",
 		Status:          "production",
-		CreatedAt:       time.Now().Add(-14*24*time.Hour).Format(time.RFC3339),
+		CreatedAt:       time.Now().Add(-14 * 24 * time.Hour).Format(time.RFC3339),
 		PerformanceMetrics: map[string]float64{
 			"validation_ndcg": 0.85,
 			"validation_auc":  0.78,
@@ -783,7 +780,7 @@ func (api *ModelManagementAPI) compareModelVersions(w http.ResponseWriter, r *ht
 		Version:         version2,
 		SemanticVersion: "1.2.3",
 		Status:          "staging",
-		CreatedAt:       time.Now().Add(-7*24*time.Hour).Format(time.RFC3339),
+		CreatedAt:       time.Now().Add(-7 * 24 * time.Hour).Format(time.RFC3339),
 		PerformanceMetrics: map[string]float64{
 			"validation_ndcg": 0.87,
 			"validation_auc":  0.81,
@@ -799,11 +796,11 @@ func (api *ModelManagementAPI) compareModelVersions(w http.ResponseWriter, r *ht
 	qualityDiff := 0.04
 
 	response := ModelComparisonResponse{
-		ModelID:        modelID,
-		Version1:       v1Info,
-		Version2:       v2Info,
+		ModelID:         modelID,
+		Version1:        v1Info,
+		Version2:        v2Info,
 		PerformanceDiff: performanceDiff,
-		QualityDiff:    &qualityDiff,
+		QualityDiff:     &qualityDiff,
 	}
 
 	api.writeJSONResponse(w, http.StatusOK, APIResponse{
@@ -829,25 +826,25 @@ func (api *ModelManagementAPI) getMetricHistory(w http.ResponseWriter, r *http.R
 			Version:         "v1",
 			SemanticVersion: "1.2.0",
 			Value:           0.82,
-			CreatedAt:       time.Now().Add(-30*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-30 * 24 * time.Hour).Format(time.RFC3339),
 		},
 		{
 			Version:         "v2",
 			SemanticVersion: "1.2.1",
 			Value:           0.85,
-			CreatedAt:       time.Now().Add(-21*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-21 * 24 * time.Hour).Format(time.RFC3339),
 		},
 		{
 			Version:         "v3",
 			SemanticVersion: "1.2.2",
 			Value:           0.87,
-			CreatedAt:       time.Now().Add(-14*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-14 * 24 * time.Hour).Format(time.RFC3339),
 		},
 		{
 			Version:         "v4",
 			SemanticVersion: "1.2.3",
 			Value:           0.89,
-			CreatedAt:       time.Now().Add(-7*24*time.Hour).Format(time.RFC3339),
+			CreatedAt:       time.Now().Add(-7 * 24 * time.Hour).Format(time.RFC3339),
 		},
 	}
 
@@ -944,7 +941,7 @@ func (api *ModelManagementAPI) getModelsByStatus(w http.ResponseWriter, r *http.
 	for _, model := range models {
 		// Mock status filtering
 		if (status == "production" && model.Status == ModelStatusReady) ||
-		   (status == "deprecated" && model.Status == ModelStatusDeprecated) {
+			(status == "deprecated" && model.Status == ModelStatusDeprecated) {
 			filteredModels = append(filteredModels, *model)
 		}
 	}
@@ -970,7 +967,6 @@ func (api *ModelManagementAPI) getUserFromContext(ctx context.Context) string {
 
 // getDriftReport handles GET /api/v1/ml/drift/report
 func (api *ModelManagementAPI) getDriftReport(w http.ResponseWriter, r *http.Request) {
-
 	// Parse query parameters
 	modelID := r.URL.Query().Get("model_id")
 	version := r.URL.Query().Get("version")
@@ -1010,7 +1006,6 @@ func (api *ModelManagementAPI) getDriftReport(w http.ResponseWriter, r *http.Req
 
 // getActiveAlerts handles GET /api/v1/ml/drift/alerts
 func (api *ModelManagementAPI) getActiveAlerts(w http.ResponseWriter, r *http.Request) {
-
 	// Parse query parameters
 	modelID := r.URL.Query().Get("model_id")
 	severity := r.URL.Query().Get("severity")
