@@ -240,7 +240,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		imageScanScannerVersion = ""
 	}
 
-	if features.SBOMGeneration.Enabled() && features.ScannerV4StoreExternalIndexReports.Enabled() {
+	if features.ScannerV4StoreExternalIndexReports.Enabled() {
 		// Store the index report from external scanners. Note that this will use
 		// some time from the scan timeout.
 		err := s.scannerClient.StoreImageIndex(ctx, digest, imageScanScannerVersion, v4Contents)
