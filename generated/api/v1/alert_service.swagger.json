@@ -620,9 +620,25 @@
         "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
-        "RESOURCE"
+        "RESOURCE",
+        "NODE"
       ],
       "default": "UNSET"
+    },
+    "AlertFileAccessViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "accesses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageFileAccess"
+          }
+        }
+      }
     },
     "AlertGroupAlertCounts": {
       "type": "object",
@@ -724,6 +740,42 @@
         }
       }
     },
+    "FileAccessFileMetadata": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mode": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        }
+      }
+    },
+    "FileAccessOperation": {
+      "type": "string",
+      "enum": [
+        "CREATE",
+        "UNLINK",
+        "RENAME",
+        "PERMISSION_CHANGE",
+        "OWNERSHIP_CHANGE",
+        "WRITE",
+        "OPEN"
+      ],
+      "default": "CREATE"
+    },
     "GetAlertTimeseriesResponseClusterAlerts": {
       "type": "object",
       "properties": {
@@ -794,6 +846,14 @@
         }
       },
       "description": "Fields common to all entities that an alert might belong to."
+    },
+    "ListAlertNodeEntity": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "ListAlertPolicyDevFields": {
       "type": "object",
@@ -950,6 +1010,10 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
+        "node": {
+          "$ref": "#/definitions/storageAlertNode",
+          "title": "Represents an alert on a node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
         "violations": {
           "type": "array",
           "items": {
@@ -960,6 +1024,9 @@
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
+        },
+        "fileAccessViolation": {
+          "$ref": "#/definitions/AlertFileAccessViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
@@ -987,7 +1054,7 @@
           "$ref": "#/definitions/AlertEntityType"
         }
       },
-      "title": "Next available tag: 24"
+      "title": "Next available tag: 26"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -1038,6 +1105,17 @@
         },
         "inactive": {
           "type": "boolean"
+        }
+      }
+    },
+    "storageAlertNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -1118,7 +1196,8 @@
       "enum": [
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
-        "AUDIT_LOG_EVENT"
+        "AUDIT_LOG_EVENT",
+        "NODE_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -1156,6 +1235,45 @@
       "properties": {
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "storageFileAccess": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "$ref": "#/definitions/storageFileAccessFile"
+        },
+        "operation": {
+          "$ref": "#/definitions/FileAccessOperation"
+        },
+        "moved": {
+          "$ref": "#/definitions/storageFileAccessFile",
+          "description": "specific to `RENAME` activity, the new location / metadata of the file."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "title": "When the file activity happened"
+        },
+        "process": {
+          "$ref": "#/definitions/storageProcessIndicator",
+          "description": "The process that performed the action. May contain deployment/namespace\ninformation."
+        }
+      },
+      "description": "FileAccess contains fields related to arbitrary file accesses\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."
+    },
+    "storageFileAccessFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "hostPath": {
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "#/definitions/FileAccessFileMetadata"
         }
       }
     },
@@ -1234,6 +1352,10 @@
         "resource": {
           "$ref": "#/definitions/ListAlertResourceEntity",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "node": {
+          "$ref": "#/definitions/ListAlertNodeEntity",
+          "title": "Represents an alert on a node\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         }
       }
     },

@@ -78,6 +78,7 @@ const (
 	Alert_DEPLOYMENT      Alert_EntityType = 1
 	Alert_CONTAINER_IMAGE Alert_EntityType = 2
 	Alert_RESOURCE        Alert_EntityType = 3
+	Alert_NODE            Alert_EntityType = 4
 )
 
 // Enum value maps for Alert_EntityType.
@@ -87,12 +88,14 @@ var (
 		1: "DEPLOYMENT",
 		2: "CONTAINER_IMAGE",
 		3: "RESOURCE",
+		4: "NODE",
 	}
 	Alert_EntityType_value = map[string]int32{
 		"UNSET":           0,
 		"DEPLOYMENT":      1,
 		"CONTAINER_IMAGE": 2,
 		"RESOURCE":        3,
+		"NODE":            4,
 	}
 )
 
@@ -236,7 +239,7 @@ func (x Alert_Violation_Type) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Alert_Violation_Type.Descriptor instead.
 func (Alert_Violation_Type) EnumDescriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2, 0}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3, 0}
 }
 
 // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
@@ -305,7 +308,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_alert_proto_rawDescGZIP(), []int{1, 0}
 }
 
-// Next available tag: 24
+// Next available tag: 26
 type Alert struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
@@ -320,13 +323,15 @@ type Alert struct {
 	//	*Alert_Deployment_
 	//	*Alert_Image
 	//	*Alert_Resource_
+	//	*Alert_Node_
 	Entity isAlert_Entity `protobuf_oneof:"Entity"`
 	// For run-time phase alert, a maximum of 40 violations are retained.
-	Violations       []*Alert_Violation      `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"`                                      // @gotags: search:"-"
-	ProcessViolation *Alert_ProcessViolation `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"` // @gotags: search:"-"
-	Enforcement      *Alert_Enforcement      `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
-	Time             *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
-	FirstOccurred    *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	Violations          []*Alert_Violation         `protobuf:"bytes,5,rep,name=violations,proto3" json:"violations,omitempty" search:"-"`                                                 // @gotags: search:"-"
+	ProcessViolation    *Alert_ProcessViolation    `protobuf:"bytes,13,opt,name=process_violation,json=processViolation,proto3" json:"process_violation,omitempty" search:"-"`            // @gotags: search:"-"
+	FileAccessViolation *Alert_FileAccessViolation `protobuf:"bytes,25,opt,name=file_access_violation,json=fileAccessViolation,proto3" json:"file_access_violation,omitempty" search:"-"` // @gotags: search:"-"
+	Enforcement         *Alert_Enforcement         `protobuf:"bytes,6,opt,name=enforcement,proto3" json:"enforcement,omitempty"`
+	Time                *timestamppb.Timestamp     `protobuf:"bytes,7,opt,name=time,proto3" json:"time,omitempty" sensorhash:"ignore" search:"Violation Time" sql:"index=btree"`                                         // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
+	FirstOccurred       *timestamppb.Timestamp     `protobuf:"bytes,10,opt,name=first_occurred,json=firstOccurred,proto3" json:"first_occurred,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
 	// The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
 	ResolvedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty" sensorhash:"ignore"`                                // @gotags: sensorhash:"ignore"
 	State             ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State" sql:"index=btree"`                               // @gotags: search:"Violation State" sql:"index=btree"
@@ -449,6 +454,15 @@ func (x *Alert) GetResource() *Alert_Resource {
 	return nil
 }
 
+func (x *Alert) GetNode() *Alert_Node {
+	if x != nil {
+		if x, ok := x.Entity.(*Alert_Node_); ok {
+			return x.Node
+		}
+	}
+	return nil
+}
+
 func (x *Alert) GetViolations() []*Alert_Violation {
 	if x != nil {
 		return x.Violations
@@ -459,6 +473,13 @@ func (x *Alert) GetViolations() []*Alert_Violation {
 func (x *Alert) GetProcessViolation() *Alert_ProcessViolation {
 	if x != nil {
 		return x.ProcessViolation
+	}
+	return nil
+}
+
+func (x *Alert) GetFileAccessViolation() *Alert_FileAccessViolation {
+	if x != nil {
+		return x.FileAccessViolation
 	}
 	return nil
 }
@@ -534,11 +555,19 @@ type Alert_Resource_ struct {
 	Resource *Alert_Resource `protobuf:"bytes,16,opt,name=resource,proto3,oneof"`
 }
 
+type Alert_Node_ struct {
+	// Represents an alert on a node.
+	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+	Node *Alert_Node `protobuf:"bytes,24,opt,name=node,proto3,oneof"`
+}
+
 func (*Alert_Deployment_) isAlert_Entity() {}
 
 func (*Alert_Image) isAlert_Entity() {}
 
 func (*Alert_Resource_) isAlert_Entity() {}
+
+func (*Alert_Node_) isAlert_Entity() {}
 
 type ListAlert struct {
 	state             protoimpl.MessageState      `protogen:"open.v1"`
@@ -556,6 +585,7 @@ type ListAlert struct {
 	//
 	//	*ListAlert_Deployment
 	//	*ListAlert_Resource
+	//	*ListAlert_Node
 	Entity        isListAlert_Entity `protobuf_oneof:"Entity"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -672,6 +702,15 @@ func (x *ListAlert) GetResource() *ListAlert_ResourceEntity {
 	return nil
 }
 
+func (x *ListAlert) GetNode() *ListAlert_NodeEntity {
+	if x != nil {
+		if x, ok := x.Entity.(*ListAlert_Node); ok {
+			return x.Node
+		}
+	}
+	return nil
+}
+
 type isListAlert_Entity interface {
 	isListAlert_Entity()
 }
@@ -688,9 +727,17 @@ type ListAlert_Resource struct {
 	Resource *ListAlert_ResourceEntity `protobuf:"bytes,11,opt,name=resource,proto3,oneof"`
 }
 
+type ListAlert_Node struct {
+	// Represents an alert on a node
+	// An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+	Node *ListAlert_NodeEntity `protobuf:"bytes,12,opt,name=node,proto3,oneof"`
+}
+
 func (*ListAlert_Deployment) isListAlert_Entity() {}
 
 func (*ListAlert_Resource) isListAlert_Entity() {}
+
+func (*ListAlert_Node) isListAlert_Entity() {}
 
 type ListAlertPolicy struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
@@ -1102,6 +1149,58 @@ func (x *Alert_Resource) GetNamespaceId() string {
 	return ""
 }
 
+type Alert_Node struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID"`     // @gotags: search:"Node ID"
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node"` // @gotags: search:"Node"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Alert_Node) Reset() {
+	*x = Alert_Node{}
+	mi := &file_storage_alert_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Alert_Node) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Alert_Node) ProtoMessage() {}
+
+func (x *Alert_Node) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_alert_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Alert_Node.ProtoReflect.Descriptor instead.
+func (*Alert_Node) Descriptor() ([]byte, []int) {
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2}
+}
+
+func (x *Alert_Node) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Alert_Node) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 type Alert_Violation struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Message string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -1122,7 +1221,7 @@ type Alert_Violation struct {
 
 func (x *Alert_Violation) Reset() {
 	*x = Alert_Violation{}
-	mi := &file_storage_alert_proto_msgTypes[6]
+	mi := &file_storage_alert_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1134,7 +1233,7 @@ func (x *Alert_Violation) String() string {
 func (*Alert_Violation) ProtoMessage() {}
 
 func (x *Alert_Violation) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[6]
+	mi := &file_storage_alert_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,7 +1246,7 @@ func (x *Alert_Violation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alert_Violation.ProtoReflect.Descriptor instead.
 func (*Alert_Violation) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3}
 }
 
 func (x *Alert_Violation) GetMessage() string {
@@ -1222,7 +1321,7 @@ type Alert_ProcessViolation struct {
 
 func (x *Alert_ProcessViolation) Reset() {
 	*x = Alert_ProcessViolation{}
-	mi := &file_storage_alert_proto_msgTypes[7]
+	mi := &file_storage_alert_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1234,7 +1333,7 @@ func (x *Alert_ProcessViolation) String() string {
 func (*Alert_ProcessViolation) ProtoMessage() {}
 
 func (x *Alert_ProcessViolation) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[7]
+	mi := &file_storage_alert_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1247,7 +1346,7 @@ func (x *Alert_ProcessViolation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alert_ProcessViolation.ProtoReflect.Descriptor instead.
 func (*Alert_ProcessViolation) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 4}
 }
 
 func (x *Alert_ProcessViolation) GetMessage() string {
@@ -1264,6 +1363,58 @@ func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 	return nil
 }
 
+type Alert_FileAccessViolation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Accesses      []*FileAccess          `protobuf:"bytes,2,rep,name=accesses,proto3" json:"accesses,omitempty" sql:"ignore-fks"` // @gotags: sql:"ignore-fks"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Alert_FileAccessViolation) Reset() {
+	*x = Alert_FileAccessViolation{}
+	mi := &file_storage_alert_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Alert_FileAccessViolation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Alert_FileAccessViolation) ProtoMessage() {}
+
+func (x *Alert_FileAccessViolation) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_alert_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Alert_FileAccessViolation.ProtoReflect.Descriptor instead.
+func (*Alert_FileAccessViolation) Descriptor() ([]byte, []int) {
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 5}
+}
+
+func (x *Alert_FileAccessViolation) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *Alert_FileAccessViolation) GetAccesses() []*FileAccess {
+	if x != nil {
+		return x.Accesses
+	}
+	return nil
+}
+
 type Alert_Enforcement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
@@ -1274,7 +1425,7 @@ type Alert_Enforcement struct {
 
 func (x *Alert_Enforcement) Reset() {
 	*x = Alert_Enforcement{}
-	mi := &file_storage_alert_proto_msgTypes[8]
+	mi := &file_storage_alert_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1286,7 +1437,7 @@ func (x *Alert_Enforcement) String() string {
 func (*Alert_Enforcement) ProtoMessage() {}
 
 func (x *Alert_Enforcement) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[8]
+	mi := &file_storage_alert_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1299,7 +1450,7 @@ func (x *Alert_Enforcement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alert_Enforcement.ProtoReflect.Descriptor instead.
 func (*Alert_Enforcement) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 4}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 6}
 }
 
 func (x *Alert_Enforcement) GetAction() EnforcementAction {
@@ -1326,7 +1477,7 @@ type Alert_Deployment_Container struct {
 
 func (x *Alert_Deployment_Container) Reset() {
 	*x = Alert_Deployment_Container{}
-	mi := &file_storage_alert_proto_msgTypes[10]
+	mi := &file_storage_alert_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1338,7 +1489,7 @@ func (x *Alert_Deployment_Container) String() string {
 func (*Alert_Deployment_Container) ProtoMessage() {}
 
 func (x *Alert_Deployment_Container) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[10]
+	mi := &file_storage_alert_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1377,7 +1528,7 @@ type Alert_Violation_KeyValueAttrs struct {
 
 func (x *Alert_Violation_KeyValueAttrs) Reset() {
 	*x = Alert_Violation_KeyValueAttrs{}
-	mi := &file_storage_alert_proto_msgTypes[12]
+	mi := &file_storage_alert_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1389,7 +1540,7 @@ func (x *Alert_Violation_KeyValueAttrs) String() string {
 func (*Alert_Violation_KeyValueAttrs) ProtoMessage() {}
 
 func (x *Alert_Violation_KeyValueAttrs) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[12]
+	mi := &file_storage_alert_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1402,7 +1553,7 @@ func (x *Alert_Violation_KeyValueAttrs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alert_Violation_KeyValueAttrs.ProtoReflect.Descriptor instead.
 func (*Alert_Violation_KeyValueAttrs) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2, 0}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3, 0}
 }
 
 func (x *Alert_Violation_KeyValueAttrs) GetAttrs() []*Alert_Violation_KeyValueAttrs_KeyValueAttr {
@@ -1423,7 +1574,7 @@ type Alert_Violation_NetworkFlowInfo struct {
 
 func (x *Alert_Violation_NetworkFlowInfo) Reset() {
 	*x = Alert_Violation_NetworkFlowInfo{}
-	mi := &file_storage_alert_proto_msgTypes[13]
+	mi := &file_storage_alert_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1435,7 +1586,7 @@ func (x *Alert_Violation_NetworkFlowInfo) String() string {
 func (*Alert_Violation_NetworkFlowInfo) ProtoMessage() {}
 
 func (x *Alert_Violation_NetworkFlowInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[13]
+	mi := &file_storage_alert_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,7 +1599,7 @@ func (x *Alert_Violation_NetworkFlowInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alert_Violation_NetworkFlowInfo.ProtoReflect.Descriptor instead.
 func (*Alert_Violation_NetworkFlowInfo) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2, 1}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3, 1}
 }
 
 func (x *Alert_Violation_NetworkFlowInfo) GetProtocol() L4Protocol {
@@ -1482,7 +1633,7 @@ type Alert_Violation_KeyValueAttrs_KeyValueAttr struct {
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) Reset() {
 	*x = Alert_Violation_KeyValueAttrs_KeyValueAttr{}
-	mi := &file_storage_alert_proto_msgTypes[14]
+	mi := &file_storage_alert_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1494,7 +1645,7 @@ func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) String() string {
 func (*Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoMessage() {}
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[14]
+	mi := &file_storage_alert_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1507,7 +1658,7 @@ func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) ProtoReflect() protoreflect
 
 // Deprecated: Use Alert_Violation_KeyValueAttrs_KeyValueAttr.ProtoReflect.Descriptor instead.
 func (*Alert_Violation_KeyValueAttrs_KeyValueAttr) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2, 0, 0}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3, 0, 0}
 }
 
 func (x *Alert_Violation_KeyValueAttrs_KeyValueAttr) GetKey() string {
@@ -1537,7 +1688,7 @@ type Alert_Violation_NetworkFlowInfo_Entity struct {
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) Reset() {
 	*x = Alert_Violation_NetworkFlowInfo_Entity{}
-	mi := &file_storage_alert_proto_msgTypes[15]
+	mi := &file_storage_alert_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1549,7 +1700,7 @@ func (x *Alert_Violation_NetworkFlowInfo_Entity) String() string {
 func (*Alert_Violation_NetworkFlowInfo_Entity) ProtoMessage() {}
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[15]
+	mi := &file_storage_alert_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1562,7 +1713,7 @@ func (x *Alert_Violation_NetworkFlowInfo_Entity) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use Alert_Violation_NetworkFlowInfo_Entity.ProtoReflect.Descriptor instead.
 func (*Alert_Violation_NetworkFlowInfo_Entity) Descriptor() ([]byte, []int) {
-	return file_storage_alert_proto_rawDescGZIP(), []int{0, 2, 1, 0}
+	return file_storage_alert_proto_rawDescGZIP(), []int{0, 3, 1, 0}
 }
 
 func (x *Alert_Violation_NetworkFlowInfo_Entity) GetName() string {
@@ -1614,7 +1765,7 @@ type ListAlert_CommonEntityInfo struct {
 
 func (x *ListAlert_CommonEntityInfo) Reset() {
 	*x = ListAlert_CommonEntityInfo{}
-	mi := &file_storage_alert_proto_msgTypes[16]
+	mi := &file_storage_alert_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1626,7 +1777,7 @@ func (x *ListAlert_CommonEntityInfo) String() string {
 func (*ListAlert_CommonEntityInfo) ProtoMessage() {}
 
 func (x *ListAlert_CommonEntityInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[16]
+	mi := &file_storage_alert_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1686,7 +1837,7 @@ type ListAlert_ResourceEntity struct {
 
 func (x *ListAlert_ResourceEntity) Reset() {
 	*x = ListAlert_ResourceEntity{}
-	mi := &file_storage_alert_proto_msgTypes[17]
+	mi := &file_storage_alert_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1698,7 +1849,7 @@ func (x *ListAlert_ResourceEntity) String() string {
 func (*ListAlert_ResourceEntity) ProtoMessage() {}
 
 func (x *ListAlert_ResourceEntity) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[17]
+	mi := &file_storage_alert_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1721,6 +1872,50 @@ func (x *ListAlert_ResourceEntity) GetName() string {
 	return ""
 }
 
+type ListAlert_NodeEntity struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAlert_NodeEntity) Reset() {
+	*x = ListAlert_NodeEntity{}
+	mi := &file_storage_alert_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAlert_NodeEntity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAlert_NodeEntity) ProtoMessage() {}
+
+func (x *ListAlert_NodeEntity) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_alert_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAlert_NodeEntity.ProtoReflect.Descriptor instead.
+func (*ListAlert_NodeEntity) Descriptor() ([]byte, []int) {
+	return file_storage_alert_proto_rawDescGZIP(), []int{1, 2}
+}
+
+func (x *ListAlert_NodeEntity) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 type ListAlertPolicy_DevFields struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SORTName      string                 `protobuf:"bytes,6,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty"`
@@ -1730,7 +1925,7 @@ type ListAlertPolicy_DevFields struct {
 
 func (x *ListAlertPolicy_DevFields) Reset() {
 	*x = ListAlertPolicy_DevFields{}
-	mi := &file_storage_alert_proto_msgTypes[18]
+	mi := &file_storage_alert_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1742,7 +1937,7 @@ func (x *ListAlertPolicy_DevFields) String() string {
 func (*ListAlertPolicy_DevFields) ProtoMessage() {}
 
 func (x *ListAlertPolicy_DevFields) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_alert_proto_msgTypes[18]
+	mi := &file_storage_alert_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1769,7 +1964,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xfd\x19\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x98\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -1783,11 +1978,13 @@ const file_storage_alert_proto_rawDesc = "" +
 	"deployment\x18\x04 \x01(\v2\x19.storage.Alert.DeploymentH\x00R\n" +
 	"deployment\x12/\n" +
 	"\x05image\x18\x0f \x01(\v2\x17.storage.ContainerImageH\x00R\x05image\x125\n" +
-	"\bresource\x18\x10 \x01(\v2\x17.storage.Alert.ResourceH\x00R\bresource\x128\n" +
+	"\bresource\x18\x10 \x01(\v2\x17.storage.Alert.ResourceH\x00R\bresource\x12)\n" +
+	"\x04node\x18\x18 \x01(\v2\x13.storage.Alert.NodeH\x00R\x04node\x128\n" +
 	"\n" +
 	"violations\x18\x05 \x03(\v2\x18.storage.Alert.ViolationR\n" +
 	"violations\x12L\n" +
-	"\x11process_violation\x18\r \x01(\v2\x1f.storage.Alert.ProcessViolationR\x10processViolation\x12<\n" +
+	"\x11process_violation\x18\r \x01(\v2\x1f.storage.Alert.ProcessViolationR\x10processViolation\x12V\n" +
+	"\x15file_access_violation\x18\x19 \x01(\v2\".storage.Alert.FileAccessViolationR\x13fileAccessViolation\x12<\n" +
 	"\venforcement\x18\x06 \x01(\v2\x1a.storage.Alert.EnforcementR\venforcement\x12.\n" +
 	"\x04time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12A\n" +
 	"\x0efirst_occurred\x18\n" +
@@ -1842,7 +2039,10 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x04\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\x05\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\x06\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\a\x1a\xe4\a\n" +
+	"\x10EGRESS_FIREWALLS\x10\a\x1a*\n" +
+	"\x04Node\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x1a\xe4\a\n" +
 	"\tViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12P\n" +
 	"\x0fkey_value_attrs\x18\x04 \x01(\v2&.storage.Alert.Violation.KeyValueAttrsH\x00R\rkeyValueAttrs\x12V\n" +
@@ -1873,18 +2073,22 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x11MessageAttributesJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\x1ae\n" +
 	"\x10ProcessViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x127\n" +
-	"\tprocesses\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorR\tprocesses\x1a[\n" +
+	"\tprocesses\x18\x02 \x03(\v2\x19.storage.ProcessIndicatorR\tprocesses\x1a`\n" +
+	"\x13FileAccessViolation\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12/\n" +
+	"\baccesses\x18\x02 \x03(\v2\x13.storage.FileAccessR\baccesses\x1a[\n" +
 	"\vEnforcement\x122\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x1a.storage.EnforcementActionR\x06action\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"J\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"T\n" +
 	"\n" +
 	"EntityType\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\x0e\n" +
 	"\n" +
 	"DEPLOYMENT\x10\x01\x12\x13\n" +
 	"\x0fCONTAINER_IMAGE\x10\x02\x12\f\n" +
-	"\bRESOURCE\x10\x03B\b\n" +
-	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\x88\b\n" +
+	"\bRESOURCE\x10\x03\x12\b\n" +
+	"\x04NODE\x10\x04B\b\n" +
+	"\x06EntityJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0fR\vsnooze_till\"\xdf\b\n" +
 	"\tListAlert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12.\n" +
@@ -1898,7 +2102,8 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
 	"deployment\x18\x05 \x01(\v2\x1c.storage.ListAlertDeploymentH\x00R\n" +
 	"deployment\x12?\n" +
-	"\bresource\x18\v \x01(\v2!.storage.ListAlert.ResourceEntityH\x00R\bresource\x1a\xdb\x01\n" +
+	"\bresource\x18\v \x01(\v2!.storage.ListAlert.ResourceEntityH\x00R\bresource\x123\n" +
+	"\x04node\x18\f \x01(\v2\x1d.storage.ListAlert.NodeEntityH\x00R\x04node\x1a\xdb\x01\n" +
 	"\x10CommonEntityInfo\x12!\n" +
 	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1d\n" +
@@ -1907,6 +2112,9 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\fnamespace_id\x18\x04 \x01(\tR\vnamespaceId\x12D\n" +
 	"\rresource_type\x18\x05 \x01(\x0e2\x1f.storage.ListAlert.ResourceTypeR\fresourceType\x1a$\n" +
 	"\x0eResourceEntity\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x1a \n" +
+	"\n" +
+	"NodeEntity\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\xb7\x01\n" +
 	"\fResourceType\x12\x0e\n" +
 	"\n" +
@@ -1961,88 +2169,96 @@ func file_storage_alert_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_alert_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_storage_alert_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_storage_alert_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_storage_alert_proto_goTypes = []any{
-	(ViolationState)(0),                     // 0: storage.ViolationState
-	(Alert_EntityType)(0),                   // 1: storage.Alert.EntityType
-	(Alert_Resource_ResourceType)(0),        // 2: storage.Alert.Resource.ResourceType
-	(Alert_Violation_Type)(0),               // 3: storage.Alert.Violation.Type
-	(ListAlert_ResourceType)(0),             // 4: storage.ListAlert.ResourceType
-	(*Alert)(nil),                           // 5: storage.Alert
-	(*ListAlert)(nil),                       // 6: storage.ListAlert
-	(*ListAlertPolicy)(nil),                 // 7: storage.ListAlertPolicy
-	(*ListAlertDeployment)(nil),             // 8: storage.ListAlertDeployment
-	(*Alert_Deployment)(nil),                // 9: storage.Alert.Deployment
-	(*Alert_Resource)(nil),                  // 10: storage.Alert.Resource
-	(*Alert_Violation)(nil),                 // 11: storage.Alert.Violation
-	(*Alert_ProcessViolation)(nil),          // 12: storage.Alert.ProcessViolation
-	(*Alert_Enforcement)(nil),               // 13: storage.Alert.Enforcement
-	nil,                                     // 14: storage.Alert.Deployment.LabelsEntry
-	(*Alert_Deployment_Container)(nil),      // 15: storage.Alert.Deployment.Container
-	nil,                                     // 16: storage.Alert.Deployment.AnnotationsEntry
-	(*Alert_Violation_KeyValueAttrs)(nil),   // 17: storage.Alert.Violation.KeyValueAttrs
-	(*Alert_Violation_NetworkFlowInfo)(nil), // 18: storage.Alert.Violation.NetworkFlowInfo
-	(*Alert_Violation_KeyValueAttrs_KeyValueAttr)(nil), // 19: storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
-	(*Alert_Violation_NetworkFlowInfo_Entity)(nil),     // 20: storage.Alert.Violation.NetworkFlowInfo.Entity
-	(*ListAlert_CommonEntityInfo)(nil),                 // 21: storage.ListAlert.CommonEntityInfo
-	(*ListAlert_ResourceEntity)(nil),                   // 22: storage.ListAlert.ResourceEntity
-	(*ListAlertPolicy_DevFields)(nil),                  // 23: storage.ListAlertPolicy.DevFields
-	(*Policy)(nil),                                     // 24: storage.Policy
-	(LifecycleStage)(0),                                // 25: storage.LifecycleStage
-	(*ContainerImage)(nil),                             // 26: storage.ContainerImage
-	(*timestamppb.Timestamp)(nil),                      // 27: google.protobuf.Timestamp
-	(EnforcementAction)(0),                             // 28: storage.EnforcementAction
-	(Severity)(0),                                      // 29: storage.Severity
-	(*ProcessIndicator)(nil),                           // 30: storage.ProcessIndicator
-	(L4Protocol)(0),                                    // 31: storage.L4Protocol
-	(NetworkEntityInfo_Type)(0),                        // 32: storage.NetworkEntityInfo.Type
+	(ViolationState)(0),                                // 0: storage.ViolationState
+	(Alert_EntityType)(0),                              // 1: storage.Alert.EntityType
+	(Alert_Resource_ResourceType)(0),                   // 2: storage.Alert.Resource.ResourceType
+	(Alert_Violation_Type)(0),                          // 3: storage.Alert.Violation.Type
+	(ListAlert_ResourceType)(0),                        // 4: storage.ListAlert.ResourceType
+	(*Alert)(nil),                                      // 5: storage.Alert
+	(*ListAlert)(nil),                                  // 6: storage.ListAlert
+	(*ListAlertPolicy)(nil),                            // 7: storage.ListAlertPolicy
+	(*ListAlertDeployment)(nil),                        // 8: storage.ListAlertDeployment
+	(*Alert_Deployment)(nil),                           // 9: storage.Alert.Deployment
+	(*Alert_Resource)(nil),                             // 10: storage.Alert.Resource
+	(*Alert_Node)(nil),                                 // 11: storage.Alert.Node
+	(*Alert_Violation)(nil),                            // 12: storage.Alert.Violation
+	(*Alert_ProcessViolation)(nil),                     // 13: storage.Alert.ProcessViolation
+	(*Alert_FileAccessViolation)(nil),                  // 14: storage.Alert.FileAccessViolation
+	(*Alert_Enforcement)(nil),                          // 15: storage.Alert.Enforcement
+	nil,                                                // 16: storage.Alert.Deployment.LabelsEntry
+	(*Alert_Deployment_Container)(nil),                 // 17: storage.Alert.Deployment.Container
+	nil,                                                // 18: storage.Alert.Deployment.AnnotationsEntry
+	(*Alert_Violation_KeyValueAttrs)(nil),              // 19: storage.Alert.Violation.KeyValueAttrs
+	(*Alert_Violation_NetworkFlowInfo)(nil),            // 20: storage.Alert.Violation.NetworkFlowInfo
+	(*Alert_Violation_KeyValueAttrs_KeyValueAttr)(nil), // 21: storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
+	(*Alert_Violation_NetworkFlowInfo_Entity)(nil),     // 22: storage.Alert.Violation.NetworkFlowInfo.Entity
+	(*ListAlert_CommonEntityInfo)(nil),                 // 23: storage.ListAlert.CommonEntityInfo
+	(*ListAlert_ResourceEntity)(nil),                   // 24: storage.ListAlert.ResourceEntity
+	(*ListAlert_NodeEntity)(nil),                       // 25: storage.ListAlert.NodeEntity
+	(*ListAlertPolicy_DevFields)(nil),                  // 26: storage.ListAlertPolicy.DevFields
+	(*Policy)(nil),                                     // 27: storage.Policy
+	(LifecycleStage)(0),                                // 28: storage.LifecycleStage
+	(*ContainerImage)(nil),                             // 29: storage.ContainerImage
+	(*timestamppb.Timestamp)(nil),                      // 30: google.protobuf.Timestamp
+	(EnforcementAction)(0),                             // 31: storage.EnforcementAction
+	(Severity)(0),                                      // 32: storage.Severity
+	(*ProcessIndicator)(nil),                           // 33: storage.ProcessIndicator
+	(*FileAccess)(nil),                                 // 34: storage.FileAccess
+	(L4Protocol)(0),                                    // 35: storage.L4Protocol
+	(NetworkEntityInfo_Type)(0),                        // 36: storage.NetworkEntityInfo.Type
 }
 var file_storage_alert_proto_depIdxs = []int32{
-	24, // 0: storage.Alert.policy:type_name -> storage.Policy
-	25, // 1: storage.Alert.lifecycle_stage:type_name -> storage.LifecycleStage
+	27, // 0: storage.Alert.policy:type_name -> storage.Policy
+	28, // 1: storage.Alert.lifecycle_stage:type_name -> storage.LifecycleStage
 	9,  // 2: storage.Alert.deployment:type_name -> storage.Alert.Deployment
-	26, // 3: storage.Alert.image:type_name -> storage.ContainerImage
+	29, // 3: storage.Alert.image:type_name -> storage.ContainerImage
 	10, // 4: storage.Alert.resource:type_name -> storage.Alert.Resource
-	11, // 5: storage.Alert.violations:type_name -> storage.Alert.Violation
-	12, // 6: storage.Alert.process_violation:type_name -> storage.Alert.ProcessViolation
-	13, // 7: storage.Alert.enforcement:type_name -> storage.Alert.Enforcement
-	27, // 8: storage.Alert.time:type_name -> google.protobuf.Timestamp
-	27, // 9: storage.Alert.first_occurred:type_name -> google.protobuf.Timestamp
-	27, // 10: storage.Alert.resolved_at:type_name -> google.protobuf.Timestamp
-	0,  // 11: storage.Alert.state:type_name -> storage.ViolationState
-	1,  // 12: storage.Alert.entity_type:type_name -> storage.Alert.EntityType
-	25, // 13: storage.ListAlert.lifecycle_stage:type_name -> storage.LifecycleStage
-	27, // 14: storage.ListAlert.time:type_name -> google.protobuf.Timestamp
-	7,  // 15: storage.ListAlert.policy:type_name -> storage.ListAlertPolicy
-	0,  // 16: storage.ListAlert.state:type_name -> storage.ViolationState
-	28, // 17: storage.ListAlert.enforcement_action:type_name -> storage.EnforcementAction
-	21, // 18: storage.ListAlert.common_entity_info:type_name -> storage.ListAlert.CommonEntityInfo
-	8,  // 19: storage.ListAlert.deployment:type_name -> storage.ListAlertDeployment
-	22, // 20: storage.ListAlert.resource:type_name -> storage.ListAlert.ResourceEntity
-	29, // 21: storage.ListAlertPolicy.severity:type_name -> storage.Severity
-	23, // 22: storage.ListAlertPolicy.developer_internal_fields:type_name -> storage.ListAlertPolicy.DevFields
-	14, // 23: storage.Alert.Deployment.labels:type_name -> storage.Alert.Deployment.LabelsEntry
-	15, // 24: storage.Alert.Deployment.containers:type_name -> storage.Alert.Deployment.Container
-	16, // 25: storage.Alert.Deployment.annotations:type_name -> storage.Alert.Deployment.AnnotationsEntry
-	2,  // 26: storage.Alert.Resource.resource_type:type_name -> storage.Alert.Resource.ResourceType
-	17, // 27: storage.Alert.Violation.key_value_attrs:type_name -> storage.Alert.Violation.KeyValueAttrs
-	18, // 28: storage.Alert.Violation.network_flow_info:type_name -> storage.Alert.Violation.NetworkFlowInfo
-	3,  // 29: storage.Alert.Violation.type:type_name -> storage.Alert.Violation.Type
-	27, // 30: storage.Alert.Violation.time:type_name -> google.protobuf.Timestamp
-	30, // 31: storage.Alert.ProcessViolation.processes:type_name -> storage.ProcessIndicator
-	28, // 32: storage.Alert.Enforcement.action:type_name -> storage.EnforcementAction
-	26, // 33: storage.Alert.Deployment.Container.image:type_name -> storage.ContainerImage
-	19, // 34: storage.Alert.Violation.KeyValueAttrs.attrs:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
-	31, // 35: storage.Alert.Violation.NetworkFlowInfo.protocol:type_name -> storage.L4Protocol
-	20, // 36: storage.Alert.Violation.NetworkFlowInfo.source:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
-	20, // 37: storage.Alert.Violation.NetworkFlowInfo.destination:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
-	32, // 38: storage.Alert.Violation.NetworkFlowInfo.Entity.entity_type:type_name -> storage.NetworkEntityInfo.Type
-	4,  // 39: storage.ListAlert.CommonEntityInfo.resource_type:type_name -> storage.ListAlert.ResourceType
-	40, // [40:40] is the sub-list for method output_type
-	40, // [40:40] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	11, // 5: storage.Alert.node:type_name -> storage.Alert.Node
+	12, // 6: storage.Alert.violations:type_name -> storage.Alert.Violation
+	13, // 7: storage.Alert.process_violation:type_name -> storage.Alert.ProcessViolation
+	14, // 8: storage.Alert.file_access_violation:type_name -> storage.Alert.FileAccessViolation
+	15, // 9: storage.Alert.enforcement:type_name -> storage.Alert.Enforcement
+	30, // 10: storage.Alert.time:type_name -> google.protobuf.Timestamp
+	30, // 11: storage.Alert.first_occurred:type_name -> google.protobuf.Timestamp
+	30, // 12: storage.Alert.resolved_at:type_name -> google.protobuf.Timestamp
+	0,  // 13: storage.Alert.state:type_name -> storage.ViolationState
+	1,  // 14: storage.Alert.entity_type:type_name -> storage.Alert.EntityType
+	28, // 15: storage.ListAlert.lifecycle_stage:type_name -> storage.LifecycleStage
+	30, // 16: storage.ListAlert.time:type_name -> google.protobuf.Timestamp
+	7,  // 17: storage.ListAlert.policy:type_name -> storage.ListAlertPolicy
+	0,  // 18: storage.ListAlert.state:type_name -> storage.ViolationState
+	31, // 19: storage.ListAlert.enforcement_action:type_name -> storage.EnforcementAction
+	23, // 20: storage.ListAlert.common_entity_info:type_name -> storage.ListAlert.CommonEntityInfo
+	8,  // 21: storage.ListAlert.deployment:type_name -> storage.ListAlertDeployment
+	24, // 22: storage.ListAlert.resource:type_name -> storage.ListAlert.ResourceEntity
+	25, // 23: storage.ListAlert.node:type_name -> storage.ListAlert.NodeEntity
+	32, // 24: storage.ListAlertPolicy.severity:type_name -> storage.Severity
+	26, // 25: storage.ListAlertPolicy.developer_internal_fields:type_name -> storage.ListAlertPolicy.DevFields
+	16, // 26: storage.Alert.Deployment.labels:type_name -> storage.Alert.Deployment.LabelsEntry
+	17, // 27: storage.Alert.Deployment.containers:type_name -> storage.Alert.Deployment.Container
+	18, // 28: storage.Alert.Deployment.annotations:type_name -> storage.Alert.Deployment.AnnotationsEntry
+	2,  // 29: storage.Alert.Resource.resource_type:type_name -> storage.Alert.Resource.ResourceType
+	19, // 30: storage.Alert.Violation.key_value_attrs:type_name -> storage.Alert.Violation.KeyValueAttrs
+	20, // 31: storage.Alert.Violation.network_flow_info:type_name -> storage.Alert.Violation.NetworkFlowInfo
+	3,  // 32: storage.Alert.Violation.type:type_name -> storage.Alert.Violation.Type
+	30, // 33: storage.Alert.Violation.time:type_name -> google.protobuf.Timestamp
+	33, // 34: storage.Alert.ProcessViolation.processes:type_name -> storage.ProcessIndicator
+	34, // 35: storage.Alert.FileAccessViolation.accesses:type_name -> storage.FileAccess
+	31, // 36: storage.Alert.Enforcement.action:type_name -> storage.EnforcementAction
+	29, // 37: storage.Alert.Deployment.Container.image:type_name -> storage.ContainerImage
+	21, // 38: storage.Alert.Violation.KeyValueAttrs.attrs:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
+	35, // 39: storage.Alert.Violation.NetworkFlowInfo.protocol:type_name -> storage.L4Protocol
+	22, // 40: storage.Alert.Violation.NetworkFlowInfo.source:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
+	22, // 41: storage.Alert.Violation.NetworkFlowInfo.destination:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
+	36, // 42: storage.Alert.Violation.NetworkFlowInfo.Entity.entity_type:type_name -> storage.NetworkEntityInfo.Type
+	4,  // 43: storage.ListAlert.CommonEntityInfo.resource_type:type_name -> storage.ListAlert.ResourceType
+	44, // [44:44] is the sub-list for method output_type
+	44, // [44:44] is the sub-list for method input_type
+	44, // [44:44] is the sub-list for extension type_name
+	44, // [44:44] is the sub-list for extension extendee
+	0,  // [0:44] is the sub-list for field type_name
 }
 
 func init() { file_storage_alert_proto_init() }
@@ -2051,6 +2267,7 @@ func file_storage_alert_proto_init() {
 		return
 	}
 	file_storage_deployment_proto_init()
+	file_storage_file_access_proto_init()
 	file_storage_network_flow_proto_init()
 	file_storage_policy_proto_init()
 	file_storage_process_indicator_proto_init()
@@ -2058,12 +2275,14 @@ func file_storage_alert_proto_init() {
 		(*Alert_Deployment_)(nil),
 		(*Alert_Image)(nil),
 		(*Alert_Resource_)(nil),
+		(*Alert_Node_)(nil),
 	}
 	file_storage_alert_proto_msgTypes[1].OneofWrappers = []any{
 		(*ListAlert_Deployment)(nil),
 		(*ListAlert_Resource)(nil),
+		(*ListAlert_Node)(nil),
 	}
-	file_storage_alert_proto_msgTypes[6].OneofWrappers = []any{
+	file_storage_alert_proto_msgTypes[7].OneofWrappers = []any{
 		(*Alert_Violation_KeyValueAttrs_)(nil),
 		(*Alert_Violation_NetworkFlowInfo_)(nil),
 	}
@@ -2073,7 +2292,7 @@ func file_storage_alert_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_alert_proto_rawDesc), len(file_storage_alert_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   19,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

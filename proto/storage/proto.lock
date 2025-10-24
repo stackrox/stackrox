@@ -344,6 +344,10 @@
               {
                 "name": "RESOURCE",
                 "integer": 3
+              },
+              {
+                "name": "NODE",
+                "integer": 4
               }
             ]
           },
@@ -464,6 +468,12 @@
                 "oneof_parent": "Entity"
               },
               {
+                "id": 24,
+                "name": "node",
+                "type": "Node",
+                "oneof_parent": "Entity"
+              },
+              {
                 "id": 5,
                 "name": "violations",
                 "type": "Violation",
@@ -473,6 +483,11 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
+              },
+              {
+                "id": 25,
+                "name": "file_access_violation",
+                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -640,6 +655,21 @@
                 ]
               },
               {
+                "name": "Node",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
                 "name": "Violation",
                 "fields": [
                   {
@@ -774,6 +804,22 @@
                 ]
               },
               {
+                "name": "FileAccessViolation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "accesses",
+                    "type": "FileAccess",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
                 "name": "Enforcement",
                 "fields": [
                   {
@@ -844,6 +890,12 @@
                 "name": "resource",
                 "type": "ResourceEntity",
                 "oneof_parent": "Entity"
+              },
+              {
+                "id": 12,
+                "name": "node",
+                "type": "NodeEntity",
+                "oneof_parent": "Entity"
               }
             ],
             "reserved_ids": [
@@ -882,6 +934,16 @@
               },
               {
                 "name": "ResourceEntity",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "NodeEntity",
                 "fields": [
                   {
                     "id": 1,
@@ -1019,6 +1081,9 @@
           },
           {
             "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/file_access.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -8101,11 +8166,11 @@
       }
     },
     {
-      "protopath": "file_activity.proto",
+      "protopath": "file_access.proto",
       "def": {
         "enums": [
           {
-            "name": "FileActivity.Operation",
+            "name": "FileAccess.Operation",
             "enum_fields": [
               {
                 "name": "CREATE"
@@ -8139,7 +8204,7 @@
         ],
         "messages": [
           {
-            "name": "FileActivity",
+            "name": "FileAccess",
             "fields": [
               {
                 "id": 1,
@@ -8154,8 +8219,7 @@
               {
                 "id": 3,
                 "name": "moved",
-                "type": "File",
-                "optional": true
+                "type": "File"
               },
               {
                 "id": 4,
@@ -13104,6 +13168,10 @@
               {
                 "name": "AUDIT_LOG_EVENT",
                 "integer": 2
+              },
+              {
+                "name": "NODE_EVENT",
+                "integer": 3
               }
             ]
           },
