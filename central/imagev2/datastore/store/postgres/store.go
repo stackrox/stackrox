@@ -605,9 +605,6 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
-	// in the same transaction as the updates.
-	ctx = postgres.ContextWithTx(ctx, tx)
 
 	image, found, err := s.getFullImage(ctx, id)
 	if err != nil {
@@ -853,10 +850,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	if err != nil {
 		return nil, err
 	}
-
-	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
-	// in the same transaction as the updates.
-	ctx = postgres.ContextWithTx(ctx, tx)
 
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
