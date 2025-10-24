@@ -52,13 +52,13 @@ func setupMultiContainerPodTest(t *testing.T) (*coreV1.Pod, string, Pod, func())
 		ensurePodExists(retryT, client, kPod)
 		// Wait for pod to be fully running with all containers ready
 		k8sPod = waitForPodRunning(retryT, client, kPod.GetNamespace(), kPod.GetName())
-		t.Logf("Pod %s is running with all containers ready", kPod.GetName())
+		retryT.Logf("Pod %s is running with all containers ready", kPod.GetName())
 
 		// Now wait for Central to see the deployment
 		// This can take time as Sensor needs to detect the pod and report it to Central
-		t.Logf("Waiting for Central to see deployment %s", kPod.GetName())
-		waitForDeployment(retryT, kPod.GetName())
-		t.Logf("Central now sees deployment %s", kPod.GetName())
+		retryT.Logf("Waiting for Central to see deployment %s", kPod.GetName())
+		waitForDeploymentInCentral(retryT, kPod.GetName())
+		retryT.Logf("Central now sees deployment %s", kPod.GetName())
 	})
 
 	deploymentID := ""
