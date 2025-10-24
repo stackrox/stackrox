@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkKeyFence(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		counters := []int{0, 0}
 
 		keyFence := NewKeyFence()

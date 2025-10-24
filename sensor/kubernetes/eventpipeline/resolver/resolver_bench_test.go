@@ -60,7 +60,7 @@ var (
 func BenchmarkProcessDeploymentReferences(b *testing.B) {
 	for _, bc := range cases {
 		b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event", bc.numEvents, bc.numDeployments), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				b.StopTimer()
 				doneSignal := concurrency.NewSignal()
 				setupMocks(b, &doneSignal)
@@ -81,7 +81,7 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
 	for _, bc := range cases {
 		b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event", bc.numEvents, bc.numDeployments), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				b.StopTimer()
 				doneSignal := concurrency.NewSignal()
 				setupMocks(b, &doneSignal)

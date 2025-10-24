@@ -60,8 +60,7 @@ func BenchmarkDashboard(b *testing.B) {
 	alertService := v1.NewAlertServiceClient(connection)
 	deploymentService := v1.NewDeploymentServiceClient(connection)
 
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		wg := concurrency.NewWaitGroup(0)
 		asyncWithWaitGroup(getAlertsSummaryByCluster(alertService), &wg)
 		asyncWithWaitGroup(getDeploymentsWithProcessInfo(deploymentService), &wg)
