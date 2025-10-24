@@ -124,11 +124,25 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - `/ui/` - Web frontend application
 - `/roxctl/` - Command-line interface
 - `/operator/` - Kubernetes operator
+- `/image/` - Container image build files, Helm charts, and deployment templates
 - `/generated/` - Auto-generated code from protobuf definitions
 - `/proto/` - Protocol buffer definitions
 - `/pkg/` - Shared Go libraries and utilities
 - `/deploy/` - Deployment scripts and configurations
 - `/qa-tests-backend/` - Integration tests (Groovy/Spock)
+
+### Detailed Documentation
+
+When working on specific areas, refer to these detailed guides:
+
+**Operator Development:**
+- `operator/EXTENDING_CRDS.md` - How to add new fields to CRDs (Central/SecuredCluster)
+- `operator/DEFAULTING.md` - Defaulting mechanisms and best practices for CRD fields
+
+**Helm Chart Development:**
+- `image/templates/README.md` - Working with Helm charts, testing, and development workflow
+- `image/templates/CHART_TEMPLATING.md` - Meta-templating system, feature flags, and chart instantiation
+- `image/templates/CHANGING_CHARTS.md` - How to add/modify Helm values fields and cluster config
 
 ### Development Workflow
 1. Use `make install-dev-tools` to set up development environment
