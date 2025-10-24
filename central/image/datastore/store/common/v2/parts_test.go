@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -636,30 +635,17 @@ func TestSplitAndMergeImage(t *testing.T) {
 
 	splitActual, err := SplitV2(image, true)
 	assert.NoError(t, err)
-	if !features.FlattenCVEData.Enabled() {
-		protoassert.MapEqual(t, splitExpected.ImageCVEEdges, splitActual.ImageCVEEdges)
-	}
 	protoassert.Equal(t, splitExpected.Image, splitActual.Image)
 
 	assert.Len(t, splitActual.Children, len(splitExpected.Children))
 	for i, expected := range splitExpected.Children {
 		actual := splitActual.Children[i]
-		if features.FlattenCVEData.Enabled() {
-			protoassert.Equal(t, expected.ComponentV2, actual.ComponentV2)
-		} else {
-			protoassert.Equal(t, expected.Component, actual.Component)
-			protoassert.Equal(t, expected.Edge, actual.Edge)
-		}
+		protoassert.Equal(t, expected.ComponentV2, actual.ComponentV2)
 
 		assert.Len(t, actual.Children, len(expected.Children))
 		for i, e := range expected.Children {
 			a := actual.Children[i]
-			if features.FlattenCVEData.Enabled() {
-				protoassert.Equal(t, e.CVEV2, a.CVEV2)
-			} else {
-				protoassert.Equal(t, e.Edge, a.Edge)
-				protoassert.Equal(t, e.CVE, a.CVE)
-			}
+			protoassert.Equal(t, e.CVEV2, a.CVEV2)
 		}
 	}
 
@@ -670,11 +656,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 	}
 
 	var imageActual *storage.Image
-	if features.FlattenCVEData.Enabled() {
-		imageActual = MergeV2(splitActual)
-	} else {
-		imageActual = Merge(splitActual)
-	}
+	imageActual = MergeV2(splitActual)
 	protoassert.Equal(t, dedupedImage(), imageActual)
 }
 

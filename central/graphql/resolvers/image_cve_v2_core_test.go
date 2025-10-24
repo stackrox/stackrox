@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -33,10 +32,6 @@ type ImageCVEV2CoreResolverTestSuite struct {
 }
 
 func (s *ImageCVEV2CoreResolverTestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
-	}
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = contextWithImagePerm(s.T(), s.mockCtrl)
 	s.imageCVEView = imageCVEViewMock.NewMockCveView(s.mockCtrl)

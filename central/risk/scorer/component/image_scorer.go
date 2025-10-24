@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/multipliers/component"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
@@ -44,13 +43,7 @@ func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scan
 		return nil
 	}
 
-	var componentID string
-	var err error
-	if features.FlattenCVEData.Enabled() {
-		componentID = scancomponent.ComponentIDV2(imageComponent, imageID, index)
-	} else {
-		componentID = scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), os)
-	}
+	componentID := scancomponent.ComponentIDV2(imageComponent, imageID, index)
 
 	risk := &storage.Risk{
 		Score:   overallScore,

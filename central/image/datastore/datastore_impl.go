@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -364,24 +363,16 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
 		for index, component := range image.GetScan().GetComponents() {
-			if features.FlattenCVEData.Enabled() {
-				componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
-				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
-			} else {
-				component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
-			}
+			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
+			component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
 		}
 	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	for index, component := range image.GetScan().GetComponents() {
-		if features.FlattenCVEData.Enabled() {
-			componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
-		} else {
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
-		}
+		componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
+		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 	}
 }
 

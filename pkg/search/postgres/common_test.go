@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -22,9 +21,7 @@ import (
 var (
 	deploymentBaseSchema   = schema.DeploymentsSchema
 	imagesSchema           = schema.ImagesSchema
-	imageCVEsSchema        = schema.ImageCvesSchema
 	alertSchema            = schema.AlertsSchema
-	_                      = schema.ImageCveEdgesSchema
 	imageComponentV2Schema = schema.ImageComponentV2Schema
 	imageCVEV2Schema       = schema.ImageCvesV2Schema
 )
@@ -257,7 +254,7 @@ func TestMultiTableQueries(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, c.expectedFrom, actual.From)
 				expectedWhere := c.expectedWhere
-				if features.FlattenCVEData.Enabled() && c.expectedFlattenedWhere != "" {
+				if c.expectedFlattenedWhere != "" {
 					expectedWhere = c.expectedFlattenedWhere
 				}
 				assert.Equal(t, expectedWhere, actual.Where)
@@ -271,7 +268,7 @@ func TestMultiTableQueries(t *testing.T) {
 					}
 				}
 				expectedJoinTables := c.expectedJoinTables
-				if features.FlattenCVEData.Enabled() && c.expectedFlattenedJoinTables != nil {
+				if c.expectedFlattenedJoinTables != nil {
 					expectedJoinTables = c.expectedFlattenedJoinTables
 				}
 				assert.Equal(t, expectedJoinTables, actualJoins)
@@ -516,7 +513,7 @@ func TestCountQueries(t *testing.T) {
 			} else {
 				assert.NoError(it, err)
 				expectedStatement := c.expectedStatement
-				if features.FlattenCVEData.Enabled() && c.expectedFlattenedStatement != "" {
+				if c.expectedFlattenedStatement != "" {
 					expectedStatement = c.expectedFlattenedStatement
 				}
 				assert.Equal(it, expectedStatement, actual.AsSQL())
@@ -747,7 +744,7 @@ func TestSelectQueries(t *testing.T) {
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
 				AddStrings(search.PlatformComponent, "true", "-").
 				ProtoQuery(),
-			schema:          imageCVEsSchema,
+			schema:          imageComponentV2Schema,
 			flattenedSchema: imageComponentV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve,
 				distinct(image_cves.Id) as cve_id, max(image_cves.Cvss) as cvss_max,
@@ -777,7 +774,7 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddRegexes(search.VulnerabilityState, ".+ED").
 				ProtoQuery(),
-			schema:          imageCVEsSchema,
+			schema:          imageCVEV2Schema,
 			flattenedSchema: imageCVEV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve
 				from image_cves
@@ -797,7 +794,7 @@ func TestSelectQueries(t *testing.T) {
 				ctx = context.Background()
 			}
 			testSchema := c.schema
-			if features.FlattenCVEData.Enabled() && c.flattenedSchema != nil {
+			if c.flattenedSchema != nil {
 				testSchema = c.flattenedSchema
 			}
 			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)
@@ -814,7 +811,7 @@ func TestSelectQueries(t *testing.T) {
 			}
 
 			expectedQuery := c.expectedQuery
-			if features.FlattenCVEData.Enabled() && c.expectedFlattenedQuery != "" {
+			if c.expectedFlattenedQuery != "" {
 				expectedQuery = c.expectedFlattenedQuery
 			}
 			actual := actualQ.AsSQL()

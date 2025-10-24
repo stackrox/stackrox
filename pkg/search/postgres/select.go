@@ -11,8 +11,6 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -99,13 +97,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	parsedQuery := &query{

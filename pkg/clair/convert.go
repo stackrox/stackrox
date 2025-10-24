@@ -6,10 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairConvert "github.com/stackrox/scanner/api/v1/convert"
@@ -149,19 +147,6 @@ func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageSc
 		if convertedVuln := ConvertVulnerability(v); convertedVuln != nil {
 			component.Vulns = append(component.Vulns, convertedVuln)
 		}
-	}
-	// TODO:  Figure out what is happening with Active Vuln Management
-	if features.ActiveVulnMgmt.Enabled() && !features.FlattenCVEData.Enabled() {
-		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
-		for _, executable := range feature.Executables {
-			imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
-			for _, f := range executable.GetRequiredFeatures() {
-				imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
-			}
-			exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
-			executables = append(executables, exec)
-		}
-		component.Executables = executables
 	}
 
 	return component

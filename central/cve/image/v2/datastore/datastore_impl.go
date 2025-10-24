@@ -8,9 +8,19 @@ import (
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	vulnRequesterOrApproverSAC = sac.ForResources(
+		sac.ForResource(resources.VulnerabilityManagementRequests),
+		sac.ForResource(resources.VulnerabilityManagementApprovals),
+	)
 )
 
 type datastoreImpl struct {
@@ -18,6 +28,8 @@ type datastoreImpl struct {
 
 	cveSuppressionLock  sync.RWMutex
 	cveSuppressionCache common.CVESuppressionCache
+
+	keyFence concurrency.KeyFence
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -80,6 +92,22 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 }
 
 func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+	ds.cveSuppressionLock.RLock()
+	defer ds.cveSuppressionLock.RUnlock()
+
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
+				vuln.Suppressed = true
+				vuln.SuppressActivation = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation)
+				vuln.SuppressExpiry = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry)
+				vuln.State = storage.VulnerabilityState_DEFERRED
+			}
+		}
+	}
+}
+
+func (ds *datastoreImpl) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
 	ds.cveSuppressionLock.RLock()
 	defer ds.cveSuppressionLock.RUnlock()
 

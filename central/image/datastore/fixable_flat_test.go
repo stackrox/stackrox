@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -25,9 +24,6 @@ type normalizedImageComponent struct {
 }
 
 func TestFixableFlatSearch(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is disabled so skip.")
-	}
 	suite.Run(t, new(FixableFlatSearchTestSuite))
 }
 
@@ -395,4 +391,122 @@ func splitFlattenedIDs(ids []string) []string {
 		}
 	}
 	return results
+}
+
+func fixableSearchTestImages() []*storage.Image {
+	return []*storage.Image{
+		{
+			Id: "image-1",
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp-1",
+						Version: "ver-1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve: "cve-1",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "ver-2",
+								},
+								State: storage.VulnerabilityState_OBSERVED,
+							},
+							{
+								Cve: "cve-2",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "ver-3",
+								},
+								State: storage.VulnerabilityState_OBSERVED,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Id: "image-2",
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp-1",
+						Version: "ver-3",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:   "cve-1",
+								State: storage.VulnerabilityState_OBSERVED,
+							},
+							{
+								Cve: "cve-2",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "ver-3",
+								},
+								State: storage.VulnerabilityState_DEFERRED,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Id: "image-3",
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp-2",
+						Version: "ver-1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:   "cve-1",
+								State: storage.VulnerabilityState_OBSERVED,
+							},
+							{
+								Cve:   "cve-2",
+								State: storage.VulnerabilityState_OBSERVED,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Id: "image-4",
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp-1",
+						Version: "ver-1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve: "cve-1",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "ver-2",
+								},
+								State: storage.VulnerabilityState_DEFERRED,
+							},
+							{
+								Cve: "cve-2",
+								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+									FixedBy: "ver-3",
+								},
+								State: storage.VulnerabilityState_DEFERRED,
+							},
+						},
+					},
+					{
+						Name:    "comp-2",
+						Version: "ver-1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:   "cve-1",
+								State: storage.VulnerabilityState_DEFERRED,
+							},
+							{
+								Cve:   "cve-2",
+								State: storage.VulnerabilityState_DEFERRED,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
