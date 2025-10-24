@@ -79,6 +79,14 @@ test_e2e() {
     # Give some time for previous tests to finish up
     wait_for_api
 
+    info "Scanner E2E tests"
+    make -C tests scanner-e2e-tests || touch FAIL
+    store_test_results "tests/scanner-e2e-tests-results" "scanner-e2e-tests-results"
+    [[ ! -f FAIL ]] || die "scanner e2e tests failed"
+
+    # Give some time for previous tests to finish up
+    wait_for_api
+
     info "E2E destructive tests"
     make -C tests destructive-tests || touch FAIL
     store_test_results "tests/destructive-tests-results" "destructive-tests-results"
