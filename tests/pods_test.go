@@ -138,7 +138,6 @@ func TestPod(testT *testing.T) {
 	// after any previous tests that may have restarted Sensor.
 	waitForSensorHealthy(testT)
 
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
