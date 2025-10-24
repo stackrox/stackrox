@@ -84,3 +84,7 @@ type envVar struct {
 type imageSignatureVerification struct {
 	VerifierIDs []string `search:"Image Signature Verified By"`
 }
+
+type NodeDetails struct {
+	Name string `search:"Node"`
+}

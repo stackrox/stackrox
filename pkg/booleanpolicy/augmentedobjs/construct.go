@@ -114,6 +114,11 @@ func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, err
 	return augmentedFlow, nil
 }
 
+func ConstructFileAccess(access *storage.FileAccess) (*pathutil.AugmentedObj, error) {
+	augmentedFile := pathutil.NewAugmentedObj(access)
+	return augmentedFile, nil
+}
+
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,
