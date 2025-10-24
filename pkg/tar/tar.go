@@ -88,7 +88,7 @@ func ToPath(untarTo string, fileReader io.Reader) error {
 	if err != nil {
 		return errors.Wrapf(err, "unable to open root directory: %s", untarTo)
 	}
-	defer root.Close()
+	defer utils.IgnoreError(root.Close)
 
 	tarReader := tar.NewReader(fileReader)
 	var header *tar.Header

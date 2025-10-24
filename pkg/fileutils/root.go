@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // MkdirAllInRoot creates all directories in the path iteratively within the secured root.
@@ -40,7 +41,7 @@ func MkdirAllInRoot(root *os.Root, dirPath string, perm os.FileMode) error {
 // This helper combines directory creation, file opening, and content copying into a single safe operation.
 // The ReadCloser is always closed, even on error.
 func WriteFileInRoot(root *os.Root, name string, perm os.FileMode, rc io.ReadCloser) error {
-	defer rc.Close()
+	defer utils.IgnoreError(rc.Close)
 
 	cleaned := filepath.Clean(name)
 	dir := filepath.Dir(cleaned)
@@ -54,7 +55,7 @@ func WriteFileInRoot(root *os.Root, name string, perm os.FileMode, rc io.ReadClo
 	if err != nil {
 		return errors.Wrapf(err, "opening file %q", cleaned)
 	}
-	defer f.Close()
+	defer utils.IgnoreError(f.Close)
 
 	if _, err := io.Copy(f, rc); err != nil {
 		return errors.Wrapf(err, "writing file %q", cleaned)
