@@ -38,7 +38,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -50,8 +49,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
-			Limit(int32(0)).
-			Offset(int32(env.ReportMaxRows.IntegerSetting())).
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
 	}
@@ -60,8 +59,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
-			Limit(int32(0)).
-			Offset(int32(env.ReportMaxRows.IntegerSetting())).
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 )
@@ -139,12 +138,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	var err error
 	var reportData *ReportData
 	if req.ReportSnapshot.GetVulnReportFilters() != nil {
-		if features.PaginateVulnReportingQuery.Enabled() {
-
-			reportData, err = rg.getReportDataSQFPaginated(req.ReportSnapshot, req.Collection, req.DataStartTime)
-		} else {
-			reportData, err = rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
-		}
+		reportData, err = rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
 	}
 	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
 		reportData, err = rg.getReportDataViewBased(req.ReportSnapshot)
@@ -247,99 +241,6 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 		Length:       int64(data.Len()),
 	}
 	return rg.blobStore.Upsert(reportGenCtx, b, data)
-}
-
-func (rg *reportGeneratorImpl) getReportDataSQFPaginated(
-	snap *storage.ReportSnapshot,
-	collection *storage.ResourceCollection,
-	dataStartTime time.Time,
-) (*ReportData, error) {
-	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
-	if err != nil {
-		return nil, err
-	}
-
-	cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, err
-	}
-	var allCVEResponses []*ImageCVEQueryResponse
-
-	numDeployedImageResults := 0
-	// Paginate deployed images
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
-		baseQuery := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
-
-		deployedCVEs, err := rg.fetchPaginatedCVEData(
-			baseQuery,
-			deployedImagesQueryParts,
-			"deployed images",
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		allCVEResponses = append(allCVEResponses, deployedCVEs...)
-		numDeployedImageResults = len(deployedCVEs)
-	}
-
-	// Paginate watched images
-	numWatchedImageResults := 0
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
-		watchedImages, err := rg.getWatchedImages()
-		if err != nil {
-			return nil, err
-		}
-		if len(watchedImages) != 0 {
-			baseQuery := search.ConjunctionQuery(
-				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
-				cveFilterQuery,
-			)
-			watchedCVEs, err := rg.fetchPaginatedCVEData(
-				baseQuery,
-				watchedImagesQueryParts,
-				"watched images",
-			)
-			if err != nil {
-				return nil, err
-			}
-			allCVEResponses = append(allCVEResponses, watchedCVEs...)
-			numWatchedImageResults = len(watchedCVEs)
-		}
-	}
-
-	allCVEResponses, err = rg.withCVEReferenceLinks(allCVEResponses)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ReportData{
-		CVEResponses:            allCVEResponses,
-		NumDeployedImageResults: numDeployedImageResults,
-		NumWatchedImageResults:  numWatchedImageResults,
-	}, nil
-}
-
-func (rg *reportGeneratorImpl) fetchPaginatedCVEData(
-	baseQuery *v1.Query,
-	queryParts *ReportQueryParts,
-	dataType string,
-) ([]*ImageCVEQueryResponse, error) {
-	query := proto.Clone(baseQuery).(*v1.Query)
-	query.Pagination = queryParts.Pagination
-	query.Selects = queryParts.Selects
-	// Execute paginated query
-	pageResults, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](
-		reportGenCtx,
-		rg.db,
-		queryParts.Schema,
-		query,
-	)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fetch page at offset %d for %s", 0, dataType)
-	}
-
-	return pageResults, nil
 }
 
 func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
