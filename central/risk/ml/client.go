@@ -169,25 +169,25 @@ type ListModelsResponse struct {
 
 // ModelInfo represents information about a model
 type ModelInfo struct {
-	ModelID              string             `json:"model_id"`
-	Version              string             `json:"version"`
-	Algorithm            string             `json:"algorithm"`
-	TrainingTimestamp    int64              `json:"training_timestamp"`
-	ModelSizeBytes       int64              `json:"model_size_bytes"`
-	PerformanceMetrics   map[string]float32 `json:"performance_metrics"`
-	Status               string             `json:"status"`
+	ModelID            string             `json:"model_id"`
+	Version            string             `json:"version"`
+	Algorithm          string             `json:"algorithm"`
+	TrainingTimestamp  int64              `json:"training_timestamp"`
+	ModelSizeBytes     int64              `json:"model_size_bytes"`
+	PerformanceMetrics map[string]float32 `json:"performance_metrics"`
+	Status             string             `json:"status"`
 }
 
 // DetailedHealthResponse represents detailed health report
 type DetailedHealthResponse struct {
-	ModelID       string                    `json:"model_id"`
-	Version       string                    `json:"version"`
-	OverallStatus string                    `json:"overall_status"`
-	OverallScore  float32                   `json:"overall_score"`
-	HealthChecks  []*HealthCheckDetail      `json:"health_checks"`
-	Recommendations []string                `json:"recommendations"`
-	Trends        map[string]interface{}    `json:"trends"`
-	Timestamp     int64                     `json:"timestamp"`
+	ModelID         string                 `json:"model_id"`
+	Version         string                 `json:"version"`
+	OverallStatus   string                 `json:"overall_status"`
+	OverallScore    float32                `json:"overall_score"`
+	HealthChecks    []*HealthCheckDetail   `json:"health_checks"`
+	Recommendations []string               `json:"recommendations"`
+	Trends          map[string]interface{} `json:"trends"`
+	Timestamp       int64                  `json:"timestamp"`
 }
 
 // HealthCheckDetail represents a single health check result
@@ -443,9 +443,9 @@ func (c *mlRiskClientImpl) GetDetailedHealth(ctx context.Context, includeTrends 
 			Message:   "Prediction quality good (CV: 0.089)",
 			Details: map[string]interface{}{
 				"prediction_count": 1523,
-				"mean_score":      4.2,
-				"std_dev":         0.37,
-				"score_range":     []float32{0.1, 9.8},
+				"mean_score":       4.2,
+				"std_dev":          0.37,
+				"score_range":      []float32{0.1, 9.8},
 			},
 		},
 		{
@@ -482,13 +482,13 @@ func (c *mlRiskClientImpl) GetDetailedHealth(ctx context.Context, includeTrends 
 	trends := map[string]interface{}{}
 	if includeTrends {
 		trends = map[string]interface{}{
-			"period_hours":   trendHours,
-			"report_count":   24,
-			"trend":          "stable",
-			"avg_score":      0.87,
-			"min_score":      0.82,
-			"max_score":      0.94,
-			"latest_status":  "warning",
+			"period_hours":  trendHours,
+			"report_count":  24,
+			"trend":         "stable",
+			"avg_score":     0.87,
+			"min_score":     0.82,
+			"max_score":     0.94,
+			"latest_status": "warning",
 			"status_distribution": map[string]int{
 				"healthy":  18,
 				"warning":  6,
