@@ -21,7 +21,6 @@ var (
 // NewService creates a new streaming service with the fact agent. It should only be called once.
 func NewService() Service {
 	srv := &serviceImpl{
-		authFuncOverride: authFuncOverride,
 		writer:           nil,
 	}
 
@@ -36,7 +35,6 @@ func authFuncOverride(ctx context.Context, fullMethodName string) (context.Conte
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
 
-	authFuncOverride func(context.Context, string) (context.Context, error)
 	writer           io.Writer
 }
 
@@ -70,9 +68,8 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 	return nil
 }
 
-// AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return s.authFuncOverride(ctx, fullMethodName)
+	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "file activity authorization for  %q", fullMethodName)
 }
 
 func (s *serviceImpl) Communicate(stream sensor.FileActivityService_CommunicateServer) error {
