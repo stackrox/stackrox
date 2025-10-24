@@ -27,7 +27,7 @@ func TestIBM(t *testing.T) {
 	reg, err := newRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{
-				Endpoint: "us.icr.io",
+				Endpoint: "icr.io",
 				ApiKey:   os.Getenv("IBM_CR_READONLY"),
 			},
 		},
