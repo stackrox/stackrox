@@ -5,8 +5,6 @@ export ROX_DIR="$( cd "${DIR}" && git rev-parse --show-toplevel)"
 
 export LOCAL_PORT=${LOCAL_PORT:-8000}
 
-git rev-parse --show-toplevel
-
 if [[ -z "$1" ]]; then
   >&2 echo "usage: $0 <workload name> <num sensors>"
   exit 1
