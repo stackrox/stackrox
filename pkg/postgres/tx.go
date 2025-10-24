@@ -82,6 +82,9 @@ func (t *Tx) Commit(ctx context.Context) error {
 // prefer Commit.
 func (t *Tx) Rollback(ctx context.Context) error {
 	defer t.cancelFunc()
+	if t.mode == inner {
+		return nil
+	}
 
 	if err := t.Tx.Rollback(ctx); err != nil {
 		if t.mode == outer && errors.Is(err, pgx.ErrTxClosed) {
