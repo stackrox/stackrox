@@ -97,7 +97,8 @@ func ToPath(untarTo string, fileReader io.Reader) error {
 			continue
 		}
 
-		// Handle directory entries with preserved permissions
+		// Handle directory entries - preserve only basic permissions, not special bits
+		// (setuid/setgid/sticky) for security when extracting potentially untrusted archives
 		if header.Typeflag == tar.TypeDir {
 			if err := fileutils.MkdirAllInRoot(root, header.Name, header.FileInfo().Mode().Perm()); err != nil {
 				return errors.Wrapf(err, "unable to create directory: %s", header.Name)

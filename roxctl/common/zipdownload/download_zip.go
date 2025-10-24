@@ -55,7 +55,8 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 }
 
 func extractFile(f *zip.File, root *os.Root) error {
-	// Handle directory entries with preserved permissions
+	// Handle directory entries - preserve only basic permissions, not special bits
+	// (setuid/setgid/sticky) for security when extracting potentially untrusted archives
 	if f.FileInfo().IsDir() {
 		if err := fileutils.MkdirAllInRoot(root, f.Name, f.Mode().Perm()); err != nil {
 			return errors.Wrapf(err, "Unable to create directory %q", f.Name)
