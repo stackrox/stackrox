@@ -586,7 +586,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			for _, image := range c.images {
 				if features.FlattenImageData.Enabled() {
 					imageV2 := utils.ConvertToV2(image)
-					imageV2.Digest = types.NewDigest(image.Id).Digest()
+					imageV2.Digest = types.NewDigest(image.GetId()).Digest()
 					imageV2.Id = uuid.NewV5FromNonUUIDs(imageV2.GetName().GetFullName(), imageV2.GetDigest()).String()
 					require.NoError(t, imagesV2.UpsertImage(ctx, imageV2))
 				} else {
@@ -622,7 +622,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, imagesV2.DeleteImages(ctx, cleanUpIDs...))
 
 				if c.pod != nil {
-					require.NoError(t, pods.RemovePod(ctx, c.pod.Id))
+					require.NoError(t, pods.RemovePod(ctx, c.pod.GetId()))
 				}
 			} else {
 				remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
@@ -967,7 +967,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			}
 			clusterID, err := clusterDS.AddCluster(ctx, cluster)
 			require.NoError(t, err)
-			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.HealthStatus))
+			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.GetHealthStatus()))
 
 			// Add the deployments whose params are being changed for this test
 			for _, d := range c.deploys {
