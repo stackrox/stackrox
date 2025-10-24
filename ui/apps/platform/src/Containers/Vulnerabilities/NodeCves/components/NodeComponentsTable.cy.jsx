@@ -1,5 +1,3 @@
-import React from 'react';
-
 import NodeComponentsTable from './NodeComponentsTable';
 
 const mockData = [

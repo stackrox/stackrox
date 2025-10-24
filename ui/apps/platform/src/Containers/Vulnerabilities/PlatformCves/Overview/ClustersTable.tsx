@@ -1,4 +1,3 @@
-import React from 'react';
 import { pluralize } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';

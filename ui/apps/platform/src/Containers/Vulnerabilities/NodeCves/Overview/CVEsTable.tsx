@@ -1,10 +1,8 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Text } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -12,9 +10,10 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
-import useURLPagination from 'hooks/useURLPagination';
+import type useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import TooltipTh from 'Components/TooltipTh';
@@ -22,9 +21,9 @@ import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useMap from 'hooks/useMap';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ApiSortOption } from 'types/search';
+import type useMap from 'hooks/useMap';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ApiSortOption } from 'types/search';
 
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { vulnerabilitySeverityLabels } from 'messages/common';
@@ -44,7 +43,8 @@ import {
     sortCveDistroList,
 } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { QuerySearchFilter, isVulnerabilitySeverityLabel } from '../../types';
+import { isVulnerabilitySeverityLabel } from '../../types';
+import type { QuerySearchFilter } from '../../types';
 import useNodeCves from './useNodeCves';
 import useTotalNodeCount from './useTotalNodeCount';
 

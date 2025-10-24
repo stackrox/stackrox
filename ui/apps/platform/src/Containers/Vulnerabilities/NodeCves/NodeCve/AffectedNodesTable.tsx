@@ -1,10 +1,9 @@
-import React from 'react';
 import { Truncate, pluralize } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 import { Link } from 'react-router-dom-v5-compat';
 
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 
 import useSet from 'hooks/useSet';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -12,7 +11,7 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import {
     CLUSTER_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
@@ -28,10 +27,8 @@ import {
     getHighestCvssScore,
 } from '../../utils/vulnerabilityUtils';
 
-import NodeComponentsTable, {
-    NodeComponent,
-    nodeComponentFragment,
-} from '../components/NodeComponentsTable';
+import NodeComponentsTable, { nodeComponentFragment } from '../components/NodeComponentsTable';
+import type { NodeComponent } from '../components/NodeComponentsTable';
 
 export const sortFields = [
     NODE_SORT_FIELD,

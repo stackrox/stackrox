@@ -1,7 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
-import { ClientPagination, Pagination } from 'services/types';
-import { QuerySearchFilter } from '../../types';
+import type { ClientPagination, Pagination } from 'services/types';
+import type { QuerySearchFilter } from '../../types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 
 const cvesListQuery = gql`

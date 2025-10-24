@@ -1,16 +1,13 @@
-import qs from 'qs';
+import type { ParsedQs } from 'qs';
 
 import {
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
-import {
-    VulnerabilitySeverity,
-    VulnerabilityState,
-    vulnerabilitySeverities,
-} from 'types/cve.proto';
-import { SearchFilter } from 'types/search';
+import { vulnerabilitySeverities } from 'types/cve.proto';
+import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
+import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import {
     searchValueAsArray,
@@ -21,7 +18,8 @@ import { ensureExhaustive } from 'utils/type.utils';
 
 import { ensureStringArray } from 'utils/ensure';
 
-import {
+import { isFixableStatus, isVulnerabilitySeverityLabel } from '../types';
+import type {
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
@@ -29,8 +27,6 @@ import {
     VirtualMachineEntityTab,
     VulnerabilitySeverityLabel,
     WorkloadEntityTab,
-    isFixableStatus,
-    isVulnerabilitySeverityLabel,
 } from '../types';
 
 export type OverviewPageSearch = {
@@ -64,7 +60,7 @@ export function getWorkloadEntityPagePath(
     workloadCveEntity: WorkloadEntityTab,
     id: string,
     vulnerabilityState: VulnerabilityState,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
@@ -82,7 +78,7 @@ export function getWorkloadEntityPagePath(
 export function getPlatformEntityPagePath(
     platformCveEntity: PlatformEntityTab,
     id: string,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString(queryOptions);
     switch (platformCveEntity) {
@@ -99,7 +95,7 @@ export function getPlatformEntityPagePath(
 export function getNodeEntityPagePath(
     nodeCveEntity: NodeEntityTab,
     id: string,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString(queryOptions);
     switch (nodeCveEntity) {
@@ -115,7 +111,7 @@ export function getNodeEntityPagePath(
 export function getVirtualMachineEntityPagePath(
     virtualMachineCveEntity: VirtualMachineEntityTab,
     id: string,
-    queryOptions?: qs.ParsedQs
+    queryOptions?: ParsedQs
 ): string {
     const queryString = getQueryString(queryOptions);
     switch (virtualMachineCveEntity) {
