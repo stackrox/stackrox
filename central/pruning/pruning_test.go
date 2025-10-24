@@ -24,6 +24,9 @@ import (
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2DatastoreMocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
+	imageV2Postgres "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -63,6 +66,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -158,6 +162,9 @@ func newImageInstance(id string, daysOld int) *storage.Image {
 	return &storage.Image{
 		Id:          id,
 		LastUpdated: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Duration(daysOld) * time.Hour)),
+		Name: &storage.ImageName{
+			FullName: "ghcr.io/stackrox/rox:latest@sha256:" + id,
+		},
 	}
 }
 
@@ -167,7 +174,8 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 		digest := types.NewDigest(id).Digest()
 		containers = append(containers, &storage.Container{
 			Image: &storage.ContainerImage{
-				Id: digest,
+				Id:   digest,
+				IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/rox:latest@"+digest, digest).String(),
 			},
 		})
 	}
@@ -218,7 +226,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 	}
 }
 
-func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore) {
+func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, imageV2Datastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore) {
 	// Setup the mocks
 	ctrl := gomock.NewController(s.T())
 	mockComponentDatastore := componentsMocks.NewMockDataStore(ctrl)
@@ -246,16 +254,27 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
 
-	images := imageDatastore.NewWithPostgres(
-		imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
-		mockRiskDatastore,
-		ranking.ImageRanker(),
-		ranking.ComponentRanker(),
-	)
+	var images imageDatastore.DataStore
+	var imagesV2 imageV2Datastore.DataStore
+	if features.FlattenImageData.Enabled() {
+		imagesV2 = imageV2Datastore.NewWithPostgres(
+			imageV2Postgres.New(s.pool, true, concurrency.NewKeyFence()),
+			mockRiskDatastore,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+	} else {
+		images = imageDatastore.NewWithPostgres(
+			imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
+			mockRiskDatastore,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+	}
 
 	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
-	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods
+	return mockAlertDatastore, mockConfigDatastore, images, imagesV2, deployments, pods
 }
 
 func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
@@ -291,7 +310,7 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	return nodes
 }
 
-func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
+func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, imageV2Datastore.DataStore, deploymentDatastore.DataStore) {
 	// Initialize real datastore
 	var (
 		alerts alertDatastore.DataStore
@@ -305,6 +324,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockImageDatastore := imageDatastoreMocks.NewMockDataStore(ctrl)
+	mockImageV2Datastore := imageV2DatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil)
 
@@ -312,7 +332,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
-	return alerts, mockConfigDatastore, mockImageDatastore, deployments
+	return alerts, mockConfigDatastore, mockImageDatastore, mockImageV2Datastore, deployments
 }
 
 func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.DataStore, deploymentDatastore.DataStore, clusterDatastore.DataStore) {
@@ -501,7 +521,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 				Containers: []*storage.Container{
 					{
 						Image: &storage.ContainerImage{
-							Id: "sha256:id1",
+							Id:   "sha256:id1",
+							IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/rox:latest@sha256:id1", "sha256:id1").String(),
 						},
 					},
 				},
@@ -546,10 +567,10 @@ func (s *PruningTestSuite) TestImagePruning() {
 		s.T().Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments, pods := s.generateImageDataStructures(ctx)
+			alerts, config, images, imagesV2, deployments, pods := s.generateImageDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
+			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil).(*garbageCollectorImpl)
@@ -563,8 +584,15 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
-				image.Id = types.NewDigest(image.GetId()).Digest()
-				require.NoError(t, images.UpsertImage(ctx, image))
+				if features.FlattenImageData.Enabled() {
+					imageV2 := utils.ConvertToV2(image)
+					imageV2.Digest = types.NewDigest(image.Id).Digest()
+					imageV2.Id = uuid.NewV5FromNonUUIDs(imageV2.GetName().GetFullName(), imageV2.GetDigest()).String()
+					require.NoError(t, imagesV2.UpsertImage(ctx, imageV2))
+				} else {
+					image.Id = types.NewDigest(image.GetId()).Digest()
+					require.NoError(t, images.UpsertImage(ctx, image))
+				}
 			}
 
 			privateConfig, err := config.GetPrivateConfig(ctx)
@@ -573,27 +601,52 @@ func (s *PruningTestSuite) TestImagePruning() {
 			gc.collectImages(privateConfig)
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
-			remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
-			require.NoError(t, err)
+			if features.FlattenImageData.Enabled() {
+				remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
+				require.NoError(t, err)
 
-			var ids []string
-			for _, i := range remainingImages {
-				ids = append(ids, i.GetId())
-			}
-			for i, eid := range c.expectedIDs {
-				c.expectedIDs[i] = types.NewDigest(eid).Digest()
-			}
+				var ids []string
+				for _, i := range remainingImages {
+					ids = append(ids, i.GetDigest())
+				}
+				for i, eid := range c.expectedIDs {
+					c.expectedIDs[i] = types.NewDigest(eid).Digest()
+				}
 
-			assert.ElementsMatch(t, c.expectedIDs, ids)
+				assert.ElementsMatch(t, c.expectedIDs, ids)
 
-			var cleanUpIDs []string
-			for _, image := range c.images {
-				cleanUpIDs = append(cleanUpIDs, image.GetId())
-			}
-			require.NoError(t, images.DeleteImages(ctx, cleanUpIDs...))
+				var cleanUpIDs []string
+				for _, image := range remainingImages {
+					cleanUpIDs = append(cleanUpIDs, image.GetId())
+				}
+				require.NoError(t, imagesV2.DeleteImages(ctx, cleanUpIDs...))
 
-			if c.pod != nil {
-				require.NoError(t, pods.RemovePod(ctx, c.pod.GetId()))
+				if c.pod != nil {
+					require.NoError(t, pods.RemovePod(ctx, c.pod.Id))
+				}
+			} else {
+				remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
+				require.NoError(t, err)
+
+				var ids []string
+				for _, i := range remainingImages {
+					ids = append(ids, i.GetId())
+				}
+				for i, eid := range c.expectedIDs {
+					c.expectedIDs[i] = types.NewDigest(eid).Digest()
+				}
+
+				assert.ElementsMatch(t, c.expectedIDs, ids)
+
+				var cleanUpIDs []string
+				for _, image := range c.images {
+					cleanUpIDs = append(cleanUpIDs, image.GetId())
+				}
+				require.NoError(t, images.DeleteImages(ctx, cleanUpIDs...))
+
+				if c.pod != nil {
+					require.NoError(t, pods.RemovePod(ctx, c.pod.GetId()))
+				}
 			}
 		})
 	}
@@ -811,7 +864,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
+			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
@@ -914,7 +967,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			}
 			clusterID, err := clusterDS.AddCluster(ctx, cluster)
 			require.NoError(t, err)
-			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.GetHealthStatus()))
+			require.NoError(t, clusterDS.UpdateClusterHealth(ctx, clusterID, cluster.HealthStatus))
 
 			// Add the deployments whose params are being changed for this test
 			for _, d := range c.deploys {
@@ -938,9 +991,9 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
-				nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil,
+			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
+				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
@@ -1113,12 +1166,12 @@ func (s *PruningTestSuite) TestAlertPruning() {
 		s.T().Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
+			alerts, config, images, imagesV2, deployments := s.generateAlertDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
-				nil, nil, nil, config, nil,
-				nil, nil, nil, nil, nil, nil, nil,
+			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
+				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
@@ -1829,14 +1882,20 @@ func (s *PruningTestSuite) TestRemoveOrphanedImageRisks() {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			images := imageDatastoreMocks.NewMockDataStore(ctrl)
+			imagesV2 := imageV2DatastoreMocks.NewMockDataStore(ctrl)
 			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
 			gci := &garbageCollectorImpl{
-				images: images,
-				risks:  risks,
+				images:   images,
+				imagesV2: imagesV2,
+				risks:    risks,
 			}
 
 			risks.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.risks, nil)
-			images.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.images, nil)
+			if features.FlattenImageData.Enabled() {
+				imagesV2.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.images, nil)
+			} else {
+				images.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.images, nil)
+			}
 			for _, id := range c.expectedDeletions {
 				risks.EXPECT().RemoveRisk(gomock.Any(), id, storage.RiskSubjectType_IMAGE).Return(nil)
 			}
