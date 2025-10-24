@@ -78,10 +78,15 @@ func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) strin
 }
 
 func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
-	indicatorIds := make([]string, 0)
+	seen := make(map[string]struct{})
+	indicatorIds := make([]string, 0, len(plops))
+
 	for _, plop := range plops {
 		indicatorID := getIndicatorIDForPlop(plop)
-		indicatorIds = append(indicatorIds, indicatorID)
+		if _, ok := seen[indicatorID]; !ok {
+			seen[indicatorID] = struct{}{}
+			indicatorIds = append(indicatorIds, indicatorID)
+		}
 	}
 
 	return indicatorIds
@@ -320,35 +325,13 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	return ds.storage.DeleteMany(ctx, ids)
 }
 
-func getUniqueIds(ids []string) []string {
-	// 1. Use a map as a set to track encountered IDs.
-	// The boolean value is just a placeholder (the existence of the key is what matters).
-	seen := make(map[string]bool)
-
-	// Pre-allocate the unique slice with a capacity equal to the input slice length
-	// for efficiency, though it may be smaller in the end.
-	unique := make([]string, 0, len(ids))
-
-	for _, id := range ids {
-		// Check if the ID has already been seen.
-		if _, ok := seen[id]; !ok {
-			// If not seen (ok is false), mark it as seen and add it to the unique slice.
-			seen[id] = true
-			unique = append(unique, id)
-		}
-	}
-
-	return unique
-}
-
 func (ds *datastoreImpl) fetchExistingPLOPs(
 	ctx context.Context,
 	indicatorIds []string,
 ) ([]*storage.ProcessListeningOnPortStorage, error) {
 
-	uniqueIds := getUniqueIds(indicatorIds)
-	existingPlops := make([]*storage.ProcessListeningOnPortStorage, 0, len(uniqueIds))
-	for idsBatch := range slices.Chunk(uniqueIds, getBatchSize) {
+	existingPlops := make([]*storage.ProcessListeningOnPortStorage, 0, len(indicatorIds))
+	for idsBatch := range slices.Chunk(indicatorIds, getBatchSize) {
 		batchExistingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 			AddStrings(search.ProcessID, idsBatch...).ProtoQuery())
 		if err != nil {
