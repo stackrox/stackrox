@@ -29,7 +29,6 @@ type DataStore interface {
 		deployment string,
 	) ([]*storage.ProcessListeningOnPort, error)
 	WalkAll(ctx context.Context, fn WalkFn) error
-	RemoveAllPlops(ctx context.Context) error
 	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
 	RemovePlopsByPod(ctx context.Context, id string) error
 	PruneOrphanedPLOPs(ctx context.Context, orphanWindow time.Duration) int64

@@ -19,6 +19,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func getUniquePodsFromPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
+	pods := make([]string, 0, len(plops))
+	podSet := make(map[string]struct{})
+
+	for _, plop := range plops {
+		if _, exists := podSet[plop.PodUid]; !exists {
+			pods = append(pods, plop.PodUid)
+			podSet[plop.PodUid] = struct{}{}
+		}
+	}
+
+	return pods
+}
+
+func removeAllPlops(ctx context.Context, ds DataStore, plops []*storage.ProcessListeningOnPortFromSensor) error {
+	pods := getUniquePodsFromPlops(plops)
+
+	for _, pod := range pods {
+		err := ds.RemovePlopsByPod(ctx, pod)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // addIndicators inserts all unique process indicators corresponding to the PLOPs.
 func addIndicators(b *testing.B, ctx context.Context, ds DataStore, plops []*storage.ProcessListeningOnPortFromSensor) {
 	indicatorMap := make(map[string]struct{})
@@ -106,7 +133,7 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 
 		for i := 0; i < b.N; i++ {
 			// Clean the DB state between runs so that the db is not always increasing in size
-			if err := ds.RemoveAllPlops(ctx); err != nil {
+			if err := removeAllPlops(ctx, ds, plopObjects); err != nil {
 				require.NoError(b, err)
 			}
 			

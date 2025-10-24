@@ -560,21 +560,6 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	return append(plopObjects, newPLOP)
 }
 
-// RemoveAllPlops is meant to be used only for testing
-func (ds *datastoreImpl) RemoveAllPlops(ctx context.Context) error {
-	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
-	q := search.NewQueryBuilder().ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
-}
-
 func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {
 	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
