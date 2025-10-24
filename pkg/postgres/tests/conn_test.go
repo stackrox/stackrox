@@ -57,21 +57,29 @@ func (s *postgresConnTestSuite) TestConnBegin() {
 	s.mockPgxPoolConn.EXPECT().Begin(gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context) (pgx.Tx, error) {
 		return s.mockTx, nil
 	})
-	tx1, err := s.conn.Begin(context.Background())
+	tx1, ctx1, err := s.conn.Begin(context.Background())
 	s.NoError(err)
 	s.NotNil(tx1)
+	fromContext, ok := postgres.TxFromContext(ctx1)
+	s.Same(fromContext, tx1)
+	s.True(ok)
 
-	// With tx
-	ctxWithTx := postgres.ContextWithTx(context.Background(), tx1)
-	tx2, err := s.conn.Begin(ctxWithTx)
-	s.NoError(err)
-	s.Same(tx1.Tx, tx2.Tx)
+	//// With tx
+	ctxWithTx := postgres.ContextWithTx(context.Background(), &postgres.Tx{})
+	s.PanicsWithValue("it is not allowed to wrap a tx twice", func() {
+		s.conn.Begin(ctxWithTx)
+	})
+
+	// With tx from another context
+	s.PanicsWithValue("it is not allowed to use one tx in two or more contexts", func() {
+		postgres.ContextWithTx(context.Background(), tx1)
+	})
 
 	// Error
 	s.mockPgxPoolConn.EXPECT().Begin(gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context) (pgx.Tx, error) {
 		return nil, errFake
 	})
-	tx3, err := s.conn.Begin(context.Background())
+	tx3, _, err := s.conn.Begin(context.Background())
 	s.Equal(errFake, err)
 	s.Nil(tx3)
 }
