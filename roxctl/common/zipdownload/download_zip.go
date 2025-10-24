@@ -55,31 +55,11 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 }
 
 func extractFile(f *zip.File, root *os.Root) error {
-	fileReader, err := f.Open()
+	rc, err := f.Open()
 	if err != nil {
 		return errors.Wrapf(err, "Unable to open file %q", f.Name)
 	}
-	defer utils.IgnoreError(fileReader.Close)
-
-	// Create parent directories if needed - os.Root ensures they stay within the root
-	dirPath := filepath.Dir(f.Name)
-	if dirPath != "." && dirPath != "" {
-		if err := fileutils.MkdirAllInRoot(root, dirPath, 0755); err != nil {
-			return errors.Wrapf(err, "Unable to create folder %q", dirPath)
-		}
-	}
-
-	// Write the file using os.Root - automatically prevents path traversal
-	outFile, err := root.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_EXCL, f.Mode())
-	if err != nil {
-		return errors.Wrapf(err, "Unable to create output file %q", f.Name)
-	}
-	defer utils.IgnoreError(outFile.Close)
-
-	if _, err := io.Copy(outFile, fileReader); err != nil {
-		return errors.Wrapf(err, "Unable to write file %q", f.Name)
-	}
-	return nil
+	return fileutils.WriteFileInRoot(root, f.Name, f.Mode(), rc)
 }
 
 // GetZipOptions specifies a request to download a zip file

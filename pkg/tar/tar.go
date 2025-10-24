@@ -93,29 +93,27 @@ func ToPath(untarTo string, fileReader io.Reader) error {
 	tarReader := tar.NewReader(fileReader)
 	var header *tar.Header
 	for header, err = tarReader.Next(); err == nil; header, err = tarReader.Next() {
-		if header == nil || header.FileInfo().IsDir() || header.Typeflag != tar.TypeReg {
+		if header == nil {
 			continue
 		}
 
-		// Create parent directories if needed - os.Root ensures they stay within untarTo
-		dirPath := filepath.Dir(header.Name)
-		if dirPath != "." && dirPath != "" {
-			if err := fileutils.MkdirAllInRoot(root, dirPath, 0755); err != nil {
-				return errors.Wrapf(err, "unable to make directory: %s", dirPath)
+		// Handle directory entries with preserved permissions
+		if header.Typeflag == tar.TypeDir {
+			if err := fileutils.MkdirAllInRoot(root, header.Name, header.FileInfo().Mode().Perm()); err != nil {
+				return errors.Wrapf(err, "unable to create directory: %s", header.Name)
 			}
+			continue
 		}
 
-		// Write the file using os.Root - automatically prevents path traversal
-		f, err := root.OpenFile(header.Name, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
-		if err != nil {
-			return errors.Wrapf(err, "unable to open file for write: %s", header.Name)
+		// Skip non-regular files (symlinks, devices, etc.)
+		if header.Typeflag != tar.TypeReg {
+			continue
 		}
-		if _, err := io.Copy(f, tarReader); err != nil {
-			utils.IgnoreError(f.Close)
-			return errors.Wrapf(err, "unable to copy to opened file: %s", header.Name)
-		}
-		if err := f.Close(); err != nil {
-			return errors.Wrapf(err, "unable to close file: %s", header.Name)
+
+		// Write regular file using helper - combines dir creation, file open, and copy
+		rc := io.NopCloser(tarReader)
+		if err := fileutils.WriteFileInRoot(root, header.Name, os.FileMode(header.Mode), rc); err != nil {
+			return err
 		}
 	}
 	if err == io.EOF {
