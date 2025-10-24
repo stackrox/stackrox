@@ -2,6 +2,8 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
+LOCAL_PORT=${LOCAL_PORT:-8000}
+
 export STORAGE=pvc
 export STORAGE_SIZE=100
 # This is GKE specific so we may need to be careful in the future
@@ -21,4 +23,4 @@ fi
 kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"16Gi","cpu":"8"},"limits":{"memory":"16Gi","cpu":"8"}}}]}}}}'
 kubectl -n stackrox patch deploy/central-db -p '{"spec":{"template":{"spec":{"containers":[{"name":"central-db","resources":{"requests":{"memory":"32Gi","cpu":"16"},"limits":{"memory":"32Gi","cpu":"16"}}}]}}}}'
 
-$DIR/port-forward.sh 8000
+$DIR/port-forward.sh "${LOCAL_PORT}"
