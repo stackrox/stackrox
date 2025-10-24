@@ -38,7 +38,7 @@ func migrate(database *types.Databases) error {
 			oidcAuthProviders = append(oidcAuthProviders, obj)
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func migrateAuthProviderClaims(ctx context.Context, groupStore groups.Store, pro
 			providerToGroups[authProviderID] = append(providerToGroups[authProviderID], obj)
 		}
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get groups from the store")
 	}

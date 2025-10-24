@@ -157,7 +157,7 @@ func (s *migrationTestSuite) TestMigration() {
 			edgeObjs = append(edgeObjs, obj)
 		}
 		return nil
-	})
+	}, true)
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), edgeObjs, 3)
 	for _, obj := range edgeObjs {

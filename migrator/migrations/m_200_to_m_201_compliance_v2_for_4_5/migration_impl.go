@@ -145,7 +145,7 @@ func migrateRules(database *types.Databases) error {
 		}
 
 		return nil
-	})
+	}, true)
 	if err != nil {
 		return err
 	}

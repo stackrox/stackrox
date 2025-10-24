@@ -90,7 +90,7 @@ func updateVulnerabilityRequests(ctx context.Context, database *types.Databases)
 			updatedObjs = updatedObjs[:0]
 		}
 		return nil
-	})
+	}, true)
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to update %s table", schema.VulnerabilityRequestsTableName)

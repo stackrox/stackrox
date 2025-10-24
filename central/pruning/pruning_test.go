@@ -2129,7 +2129,7 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			err := logImbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
 				assert.False(t, c.expectedLogDeletions.Contains(li.GetId()))
 				return nil
-			})
+			}, true)
 			assert.NoError(t, err)
 		})
 	}
