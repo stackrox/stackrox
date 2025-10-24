@@ -77,7 +77,7 @@ describe('Download Diagnostic Data', () => {
             cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
 
             // TODO factor out as helper function
-            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get('[placeholder="Type a cluster name"]').click();
             cy.get(`[role="option"]:contains("${clusterName}")`).click();
 
             cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
@@ -128,7 +128,7 @@ describe('Download Diagnostic Data', () => {
             const clusterName = 'remote';
 
             // TODO factor out as helper function
-            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get('[placeholder="Type a cluster name"]').click();
             cy.get(`[role="option"]:contains("${clusterName}")`).click();
 
             cy.get(startingDate).type('2020-10-20');
