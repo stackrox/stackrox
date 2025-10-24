@@ -26,7 +26,7 @@ import (
 
 const (
 	deleteBatchSize = 5000
-	getBatchSize = 10000
+	getBatchSize    = 10000
 )
 
 var (
@@ -82,15 +82,15 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error) {
 	indicators := make([]*storage.ProcessIndicator, 0, len(ids))
 
-        for idsBatch := range slices.Chunk(ids, getBatchSize) {
-                batchIndicators, _, err := ds.storage.GetMany(ctx, idsBatch)
+	for idsBatch := range slices.Chunk(ids, getBatchSize) {
+		batchIndicators, _, err := ds.storage.GetMany(ctx, idsBatch)
 
-                if err != nil {
-                        return nil, false, err
-                }
+		if err != nil {
+			return nil, false, err
+		}
 
-                indicators = append(indicators, batchIndicators...)
-        }
+		indicators = append(indicators, batchIndicators...)
+	}
 
 	if len(indicators) == 0 {
 		return nil, false, nil

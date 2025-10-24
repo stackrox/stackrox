@@ -24,9 +24,9 @@ func getUniquePodsFromPlops(plops []*storage.ProcessListeningOnPortFromSensor) [
 	podSet := make(map[string]struct{})
 
 	for _, plop := range plops {
-		if _, exists := podSet[plop.PodUid]; !exists {
-			pods = append(pods, plop.PodUid)
-			podSet[plop.PodUid] = struct{}{}
+		if _, exists := podSet[plop.GetPodUid()]; !exists {
+			pods = append(pods, plop.GetPodUid())
+			podSet[plop.GetPodUid()] = struct{}{}
 		}
 	}
 
@@ -86,9 +86,9 @@ func addIndicators(b *testing.B, ctx context.Context, ds DataStore, plops []*sto
 // setupBenchmark sets up the necessary datastore and prerequisites for the benchmark.
 func setupBenchmark(b *testing.B) (context.Context, DataStore) {
 	ctx := sac.WithAllAccess(sac.WithAllAccess(context.Background()))
-	
+
 	postgres := pgtest.ForT(b)
-	
+
 	store := postgresStore.NewFullStore(postgres.DB)
 	indicatorStorage := processIndicatorStorage.New(postgres.DB)
 	indicatorDataStore := processIndicatorDataStore.New(postgres.DB, indicatorStorage, store, nil)
@@ -100,13 +100,13 @@ func setupBenchmark(b *testing.B) (context.Context, DataStore) {
 		b.Fatal(err)
 	}
 	if err := deploymentDS.UpsertDeployment(ctx, &storage.Deployment{
-		Id:        fixtureconsts.Deployment1, 
-		Namespace: fixtureconsts.Namespace1, 
+		Id:        fixtureconsts.Deployment1,
+		Namespace: fixtureconsts.Namespace1,
 		ClusterId: fixtureconsts.Cluster1,
 	}); err != nil {
 		require.NoError(b, err)
 	}
-	
+
 	return ctx, ds
 }
 
@@ -120,7 +120,7 @@ func BenchmarkAddPLOPs(b *testing.B) {
 func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
 	return func(b *testing.B) {
 		ctx, ds := setupBenchmark(b)
-		
+
 		// Generate the data once before the loop
 		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
 		b.Logf("Benchmarking processing of %d new PLOP objects...", len(plopObjects))
@@ -136,7 +136,7 @@ func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*te
 			if err := removeAllPlops(ctx, ds, plopObjects); err != nil {
 				require.NoError(b, err)
 			}
-			
+
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
 				require.NoError(b, err)
 			}

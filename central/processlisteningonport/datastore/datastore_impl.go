@@ -366,8 +366,6 @@ func (ds *datastoreImpl) fetchExistingPLOPsMap(
 	// If no corresponding processes found, we can't verify if the PLOP
 	// object is opening/closing an existing one. Collect existingPLOPMap
 	// only if there are some matching indicators.
-	//existingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-	//	AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
 	existingPLOPs, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return nil, err
