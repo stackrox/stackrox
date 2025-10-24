@@ -93,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) error {
+func insertIntoActiveComponents(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ActiveComponent) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -115,13 +117,13 @@ func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) 
 
 	for childIndex, child := range obj.GetActiveContextsSlice() {
 		if err := insertIntoActiveComponentsActiveContextsSlices(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from active_components_active_contexts_slices where active_components_Id = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetId(), len(obj.GetActiveContextsSlice()))
-	return nil
+	return buf, nil
 }
 
 func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
@@ -140,7 +142,7 @@ func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
+func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ActiveComponent) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -150,6 +152,12 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"id",
@@ -161,7 +169,10 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -191,6 +202,9 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	for _, obj := range objs {

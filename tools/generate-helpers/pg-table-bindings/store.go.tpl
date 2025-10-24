@@ -209,11 +209,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, {{if not $schema.Parent }}pool pgSearch.BufferPool,{{end}} obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) ({{if not $schema.Parent }}*[]byte,{{end}} error) {
     {{if not $schema.Parent }}
-    serialized, marshalErr := obj.MarshalVT()
+    buf := pool.Get(obj.SizeVT())
+    n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+    serialized := (*buf)[:n]
     if marshalErr != nil {
-        return marshalErr
+        return buf, marshalErr
     }
     {{end}}
 
@@ -232,14 +234,14 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{range $index, $child := $schema.Children }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
-            return err
+            return {{if not $schema.Parent }}buf,{{end}} err
         }
     }
 
     query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- end}}
-    return nil
+    return {{if not $schema.Parent }}buf,{{end}} nil
 }
 
 {{range $index, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
@@ -254,7 +256,7 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
 {{- define "copyObject"}}
 {{- $schema := .schema }}
-func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{if not $schema.Parent }}pool pgSearch.BufferPool,{{end}} {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
     if len(objs) == 0 {
         return nil
     }
@@ -264,6 +266,12 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     deletes := make([]string, 0, batchSize)
+
+    // Keep track of pooled buffers to return after batch processing
+    pooledBuffers := make([]*[]byte, 0, batchSize)
+    defer func() {
+        pool.Put(pooledBuffers...)
+    }()
     {{end}}
 
     copyCols := []string {
@@ -278,7 +286,10 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         for _, obj := range objBatch {
             {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
-            serialized, marshalErr := obj.MarshalVT()
+            buf := pool.Get(obj.SizeVT())
+            pooledBuffers = append(pooledBuffers, buf)
+            n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+            serialized := (*buf)[:n]
             if marshalErr != nil {
                 return marshalErr
             }
@@ -309,6 +320,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         }
         // clear the input rows for the next batch
         inputRows = inputRows[:0]
+        {{if not $schema.Parent -}}
+        // Return all pooled buffers after successful CopyFrom
+        pool.Put(pooledBuffers...)
+        pooledBuffers = pooledBuffers[:0]
+        {{- end -}}
     }
 
     {{if $schema.Children }}

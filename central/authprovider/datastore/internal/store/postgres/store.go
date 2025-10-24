@@ -92,11 +92,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error {
+func insertIntoAuthProviders(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.AuthProvider) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -109,10 +111,10 @@ func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error 
 	finalStr := "INSERT INTO auth_providers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AuthProvider) error {
+func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.AuthProvider) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -123,6 +125,12 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"id",
 		"name",
@@ -132,7 +140,10 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -161,6 +172,9 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

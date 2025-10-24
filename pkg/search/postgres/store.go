@@ -53,8 +53,8 @@ type ClonedUnmarshaler[T any] interface {
 
 type primaryKeyGetter[T any, PT ClonedUnmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
-type copier[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type inserter[T any, PT ClonedUnmarshaler[T]] func(batch *pgx.Batch, pool BufferPool, obj PT) (*[]byte, error)
+type copier[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, pool BufferPool, objs ...PT) error
 type upsertChecker[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
@@ -461,10 +461,17 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	defer conn.Release()
 
 	batch := &pgx.Batch{}
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, len(objs))
+	defer func() {
+		defaultBufferPool.Put(pooledBuffers...)
+	}()
 	for _, obj := range objs {
-		if err := s.insertInto(batch, obj); err != nil {
+		buf, err := s.insertInto(batch, defaultBufferPool, obj)
+		if err != nil {
 			return errors.Wrap(err, "error on insertInto")
 		}
+		pooledBuffers = append(pooledBuffers, buf)
 	}
 	batchResults := conn.SendBatch(ctx, batch)
 	if err := batchResults.Close(); err != nil {
@@ -489,7 +496,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return errors.Wrap(err, "could not begin transaction")
 	}
 
-	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
+	if err := s.copyFromObj(ctx, s, tx, defaultBufferPool, objs...); err != nil {
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			return errors.Wrap(rollbackErr, "could not rollback transaction")
 		}
