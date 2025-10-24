@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -18,9 +17,7 @@ var (
 
 // NewService creates a new streaming service with the fact agent. It should only be called once.
 func NewService() Service {
-	srv := &serviceImpl{
-		writer:           nil,
-	}
+	srv := &serviceImpl{}
 
 	return srv
 }
@@ -32,8 +29,6 @@ func authFuncOverride(ctx context.Context, fullMethodName string) (context.Conte
 
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
-
-	writer           io.Writer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
