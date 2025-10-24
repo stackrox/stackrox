@@ -330,7 +330,9 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	return c.walkCacheNoLock(ctx, fn)
+	return c.walkCacheNoLock(ctx, func(obj PT) error {
+		return fn(obj.CloneVT())
+	})
 }
 
 // GetAllFromCache iterates over all the objects in the store and applies the closure.
@@ -407,7 +409,7 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj.CloneVT())
+		err := fn(obj)
 		if err != nil {
 			return err
 		}
