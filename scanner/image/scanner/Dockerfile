@@ -45,7 +45,7 @@ COPY scripts/save-dir-contents /out/usr/local/bin/
 
 # Setup CA trust directories with proper permissions in /out/
 RUN chown -R 65534:65534 /out/etc/pki/ca-trust /out/etc/ssl /out/tmp && \
-    PATH="/out/usr/local/bin:$PATH" /out/usr/local/bin/save-dir-contents /out/etc/pki/ca-trust /out/etc/ssl
+    chroot /out /usr/local/bin/save-dir-contents /etc/pki/ca-trust /etc/ssl
 
 # ============================================================================
 # Stage 3: FINAL - ubi8-micro runtime image
