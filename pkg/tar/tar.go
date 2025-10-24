@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -82,39 +83,44 @@ func createOrAddPathWithBase(fromPath string, toPath string, to *tar.Writer) err
 
 // ToPath writes the contents of a tar file to a specified path.
 func ToPath(untarTo string, fileReader io.Reader) error {
+	// Create a secured root directory to prevent path traversal attacks
+	root, err := os.OpenRoot(untarTo)
+	if err != nil {
+		return errors.Wrapf(err, "unable to open root directory: %s", untarTo)
+	}
+	defer root.Close()
+
 	tarReader := tar.NewReader(fileReader)
 	var header *tar.Header
-	var err error
 	for header, err = tarReader.Next(); err == nil; header, err = tarReader.Next() {
 		if header == nil || header.FileInfo().IsDir() || header.Typeflag != tar.TypeReg {
 			continue
 		}
-		path := filepath.Join(untarTo, header.Name)
-		dirPath := filepath.Dir(path)
 
-		// Create the directory if it does not already exist.
-		if _, err := os.Stat(dirPath); err != nil {
-			if err := os.MkdirAll(dirPath, 0755); err != nil {
+		// Create parent directories if needed - os.Root ensures they stay within untarTo
+		dirPath := filepath.Dir(header.Name)
+		if dirPath != "." && dirPath != "" {
+			if err := fileutils.MkdirAllInRoot(root, dirPath, 0755); err != nil {
 				return errors.Wrapf(err, "unable to make directory: %s", dirPath)
 			}
 		}
 
-		// Write the file to the matching target in the scratch path.
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+		// Write the file using os.Root - automatically prevents path traversal
+		f, err := root.OpenFile(header.Name, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 		if err != nil {
-			return errors.Wrapf(err, "unable to open file for write: %s", path)
+			return errors.Wrapf(err, "unable to open file for write: %s", header.Name)
 		}
 		if _, err := io.Copy(f, tarReader); err != nil {
 			utils.IgnoreError(f.Close)
-			return errors.Wrapf(err, "unable to copy to opened file: %s", path)
+			return errors.Wrapf(err, "unable to copy to opened file: %s", header.Name)
 		}
 		if err := f.Close(); err != nil {
-			return errors.Wrapf(err, "unable to close file: %s", path)
+			return errors.Wrapf(err, "unable to close file: %s", header.Name)
 		}
 	}
 	if err == io.EOF {
 		return nil
 	}
 
-	return errors.Wrap(err, "unable to generate backup in scratch path")
+	return errors.Wrap(err, "unable to extract tar archive")
 }

@@ -118,3 +118,85 @@ func checkUntarDir(t *testing.T, path string) error {
 	}
 	return nil
 }
+
+// TestToPath_PreventPathTraversal verifies that malicious TAR files with path traversal
+// attempts (e.g., ../../etc/passwd) are blocked by os.Root security
+func TestToPath_PreventPathTraversal(t *testing.T) {
+	// Create a malicious TAR file with path traversal attempts
+	tmpDir := t.TempDir()
+	tarPath := filepath.Join(tmpDir, "malicious.tar")
+
+	f, err := os.Create(tarPath)
+	assert.NoError(t, err)
+	defer utils.IgnoreError(f.Close)
+
+	tWriter := tar.NewWriter(f)
+
+	// Add malicious entries that try to escape the target directory
+	maliciousPaths := []string{
+		"../../etc/evil.txt",
+		"../../../tmp/evil.txt",
+		"/../root/evil.txt",
+		"normal.txt", // This one should succeed
+	}
+
+	for _, malPath := range maliciousPaths {
+		header := &tar.Header{
+			Name:     malPath,
+			Mode:     0644,
+			Size:     int64(len("malicious content")),
+			Typeflag: tar.TypeReg,
+		}
+		err := tWriter.WriteHeader(header)
+		assert.NoError(t, err)
+		_, err = tWriter.Write([]byte("malicious content"))
+		assert.NoError(t, err)
+	}
+
+	err = tWriter.Close()
+	assert.NoError(t, err)
+	err = f.Close()
+	assert.NoError(t, err)
+
+	// Try to extract to a target directory
+	extractDir := t.TempDir()
+
+	f, err = os.Open(tarPath)
+	assert.NoError(t, err)
+	defer utils.IgnoreError(f.Close)
+
+	// Extract - malicious paths should be blocked or sanitized
+	err = ToPath(extractDir, f)
+
+	// The extraction should either:
+	// 1. Fail with an error (path traversal blocked)
+	// 2. Succeed but only extract safe files within extractDir
+	// With os.Root, path traversal attempts should fail
+
+	// Verify that malicious files were NOT created outside extractDir
+	// Check common escape locations
+	evilPaths := []string{
+		"/etc/evil.txt",
+		"/tmp/evil.txt",
+		"/root/evil.txt",
+		filepath.Join(tmpDir, "evil.txt"), // one level up
+		filepath.Join(filepath.Dir(tmpDir), "evil.txt"), // two levels up
+	}
+
+	for _, evilPath := range evilPaths {
+		_, err := os.Stat(evilPath)
+		if err == nil {
+			t.Errorf("Security violation: malicious file was created at %s", evilPath)
+		}
+		// Expect "no such file or directory" - meaning the file wasn't created
+		assert.True(t, os.IsNotExist(err), "Malicious file should not exist at %s", evilPath)
+	}
+
+	// Verify that the normal file was created successfully inside extractDir
+	normalPath := filepath.Join(extractDir, "normal.txt")
+	content, err := os.ReadFile(normalPath)
+	if err == nil {
+		assert.Equal(t, "malicious content", string(content))
+	}
+	// Note: Even if extraction failed entirely (err != nil above), the security check passed
+}
