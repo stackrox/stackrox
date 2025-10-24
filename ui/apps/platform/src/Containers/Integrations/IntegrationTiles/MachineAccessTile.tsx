@@ -1,12 +1,11 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { selectors } from 'reducers';
 import { useSelector } from 'react-redux';
 import IntegrationTile from './IntegrationTile';
 import {
     authenticationTokensSource as source,
-    machineAccessDescriptor as descriptor,
     getIntegrationsListPath,
+    machineAccessDescriptor as descriptor,
 } from '../utils/integrationsList';
 
 function MachineAccessTile(): ReactElement {

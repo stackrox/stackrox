@@ -1,10 +1,9 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import {
-    paladinCloudDescriptor as descriptor,
     cloudSourcesSource as source,
     getIntegrationsListPath,
+    paladinCloudDescriptor as descriptor,
 } from '../utils/integrationsList';
 import { selectors } from '../../../reducers';
 import IntegrationTile from './IntegrationTile';

@@ -1,11 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
+import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Select,
     SelectOption,
     SelectList,
-    SelectOptionProps,
     MenuToggle,
-    MenuToggleElement,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
@@ -14,13 +13,13 @@ import {
     Flex,
     debounce,
 } from '@patternfly/react-core';
+import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';
 import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
-import SEARCH_AUTOCOMPLETE_QUERY, {
-    SearchAutocompleteQueryResponse,
-} from 'queries/searchAutocomplete';
+import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
+import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
 type SearchFilterAutocompleteProps = {
@@ -160,7 +159,7 @@ function SearchFilterAutocomplete({
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (value) {
@@ -172,7 +171,7 @@ function SearchFilterAutocomplete({
         setActiveItem(null);
     };
 
-    const onTextInputChange = (_event: React.FormEvent<HTMLInputElement>, value: string) => {
+    const onTextInputChange = (_event: FormEvent<HTMLInputElement>, value: string) => {
         onChange(value);
         if (!isOpen) {
             setIsOpen(true);
@@ -211,7 +210,7 @@ function SearchFilterAutocomplete({
         }
     };
 
-    const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         const enabledMenuItems = selectOptions.filter((option) => !option.isDisabled);
         const [firstMenuItem] = enabledMenuItems;
         const focusedItem = focusedItemIndex ? enabledMenuItems[focusedItemIndex] : firstMenuItem;
@@ -245,7 +244,7 @@ function SearchFilterAutocomplete({
         }
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"

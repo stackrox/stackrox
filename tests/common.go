@@ -277,15 +277,78 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
+// ensurePodExists creates a pod in Kubernetes. If the pod already exists, this is a no-op.
+// This makes the function idempotent and safe to retry.
+func ensurePodExists(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
+	t.Logf("Ensuring pod %s %s exists", pod.GetNamespace(), pod.GetName())
 	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
-	require.NoError(t, err)
+	if err != nil && !apiErrors.IsAlreadyExists(err) {
+		require.NoError(t, err)
+	}
+	if apiErrors.IsAlreadyExists(err) {
+		t.Logf("Pod %s already exists, continuing", pod.GetName())
+	}
+}
 
-	waitForDeployment(t, pod.GetName())
+// waitForPodRunning waits for a Kubernetes pod to be in Running phase with all containers ready.
+// It polls the pod status with retries and provides detailed error messages about pod and container states.
+// Timeout is set to 3 minutes to handle slow CI environments (image pull, scheduling, etc.).
+func waitForPodRunning(t testutils.T, client kubernetes.Interface, podNamespace, podName string) *coreV1.Pod {
+	// Increased timeout to 3 minutes to handle slow CI environments (image pull, scheduling, etc.)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	var k8sPod *coreV1.Pod
+	// Increased from 30×2s (60s) to 60×3s (180s) to account for slower pod startup in CI
+	testutils.Retry(t, 60, 3*time.Second, func(waitT testutils.T) {
+		var err error
+		k8sPod, err = client.CoreV1().Pods(podNamespace).Get(ctx, podName, metaV1.GetOptions{})
+		require.NoError(waitT, err, "failed to get pod %s", podName)
+
+		// Log pod and container status for debugging
+		// Note: ImagePullBackOff, ErrImagePull, etc. appear in container status, not pod status
+		logMsg := fmt.Sprintf("Pod phase: %s, Reason: %q, Message: %q",
+			k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
+		var containerInfo strings.Builder
+		for _, status := range k8sPod.Status.ContainerStatuses {
+			// Build log message for non-ready containers
+			if !status.Ready {
+				if status.State.Waiting != nil {
+					logMsg += fmt.Sprintf(", Container %q: %q", status.Name, status.State.Waiting.Reason)
+				} else if status.State.Terminated != nil {
+					logMsg += fmt.Sprintf(", Container %q: Terminated (%q)", status.Name, status.State.Terminated.Reason)
+				}
+			}
+			// Build detailed info for error message (always, in case pod is not running)
+			containerInfo.WriteString(fmt.Sprintf("\n  - %s: ready=%v, started=%v",
+				status.Name, status.Ready, status.Started != nil && *status.Started))
+			if status.State.Waiting != nil {
+				containerInfo.WriteString(fmt.Sprintf(", waiting: %s - %s",
+					status.State.Waiting.Reason, status.State.Waiting.Message))
+			}
+		}
+		waitT.Logf(logMsg)
+
+		// Provide detailed error message if pod is not running
+		if k8sPod.Status.Phase != coreV1.PodRunning {
+			require.Failf(waitT, "pod not in Running phase",
+				"Pod %s is in %s phase (expected Running)\nContainers:%s\nPod Reason: %s\nPod Message: %s",
+				podName, k8sPod.Status.Phase, containerInfo.String(),
+				k8sPod.Status.Reason, k8sPod.Status.Message)
+		}
+
+		// Ensure all containers are ready before checking for process events
+		for _, status := range k8sPod.Status.ContainerStatuses {
+			require.True(waitT, status.Ready, "container %s not ready (state: %+v)",
+				status.Name, status.State)
+		}
+	})
+
+	t.Logf("Pod %s is running with all containers ready in Kubernetes", k8sPod.Name)
+	return k8sPod
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {

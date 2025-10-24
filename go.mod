@@ -26,20 +26,20 @@ require (
 	github.com/adhocore/gronx v1.19.6
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.39.3
-	github.com/aws/aws-sdk-go-v2/config v1.31.13
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.17
+	github.com/aws/aws-sdk-go-v2/config v1.31.14
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.18
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.10
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.13
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.50.6
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.5
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.14
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.50.7
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.6
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.64.5
-	github.com/aws/aws-sdk-go-v2/service/sts v1.38.7
+	github.com/aws/aws-sdk-go-v2/service/sts v1.38.8
 	github.com/aws/smithy-go v1.23.1
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash v1.1.0
 	github.com/cloudflare/cfssl v1.6.5
-	github.com/cockroachdb/pebble/v2 v2.1.0
+	github.com/cockroachdb/pebble/v2 v2.1.1
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/coreos/go-systemd/v22 v22.6.0
@@ -90,7 +90,7 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.1.0
-	github.com/onsi/ginkgo/v2 v2.26.0
+	github.com/onsi/ginkgo/v2 v2.27.1
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -142,7 +142,7 @@ require (
 	golang.org/x/crypto v0.43.0
 	golang.org/x/mod v0.29.0
 	golang.org/x/net v0.46.0
-	golang.org/x/oauth2 v0.31.0
+	golang.org/x/oauth2 v0.32.0
 	golang.org/x/sync v0.17.0
 	golang.org/x/sys v0.37.0
 	golang.org/x/term v0.36.0
@@ -150,7 +150,7 @@ require (
 	golang.org/x/time v0.14.0
 	golang.org/x/tools v0.37.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.252.0
+	google.golang.org/api v0.253.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4
 	google.golang.org/grpc v1.76.0
@@ -501,7 +501,7 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251014184007-4626949a642f // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

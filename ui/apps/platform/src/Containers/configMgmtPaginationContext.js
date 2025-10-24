@@ -1,8 +1,8 @@
-import React from 'react';
+import { createContext } from 'react';
 
 import { pagingParams, sortParams } from 'constants/searchParams';
 
-const configMgmtPaginationContext = React.createContext();
+const configMgmtPaginationContext = createContext();
 
 export default configMgmtPaginationContext;
 

@@ -731,6 +731,11 @@ image_prefetcher_system_await() {
 
 _image_prefetcher_prebuilt_await() {
     case "$CI_JOB_NAME" in
+
+    # Note: when adding a case for a new test job below, add a image_prefetcher_prebuilt_await call
+    # at the last moment before any of the prebuilt images is used. (See other existing examples.)
+    # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
+
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
         ;;
@@ -1032,9 +1037,9 @@ check_collector_version() {
     fi
 }
 
-publish_roxctl() {
+publish_cli() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: publish_roxctl <tag>"
+        die "missing arg. usage: publish_cli <tag>"
     fi
 
     local tag="$1"
@@ -1043,7 +1048,7 @@ publish_roxctl() {
 
     local temp_dir
     temp_dir="$(mktemp -d)"
-    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-roxctl.sh" . "${temp_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-cli.sh" . "${temp_dir}"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
 }

@@ -1,9 +1,10 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import { useField } from 'formik';
 import { TextInput, FormGroup, SelectOption } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
-import { SubComponent } from './policyCriteriaDescriptors';
+import type { SubComponent } from './policyCriteriaDescriptors';
 
 type PolicyCriteriaFieldSubInputProps = {
     subComponent: SubComponent;
@@ -15,7 +16,7 @@ function PolicyCriteriaFieldSubInput({
     subComponent,
     readOnly = false,
     name,
-}: PolicyCriteriaFieldSubInputProps): React.ReactElement {
+}: PolicyCriteriaFieldSubInputProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { setValue } = helper;

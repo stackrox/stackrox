@@ -333,7 +333,7 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
 		return err
 	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
+	log.Debugf("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
 
 	return nil
 }

@@ -1,5 +1,5 @@
 // system under test (SUT)
-import { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
+import type { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
 import {
     parsePolicyImportErrors,
     isDuplicateResolved,
@@ -7,6 +7,8 @@ import {
     getErrorMessages,
     hasDuplicateIdOnly,
     checkForBlockedSubmit,
+} from './PolicyImport.utils';
+import type {
     PolicyResolutionType,
     PolicyImportErrorDuplicateName,
     PolicyImportErrorDuplicateId,

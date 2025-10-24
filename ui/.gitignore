@@ -17,14 +17,12 @@ npm-debug.log*
 
 # misc
 .DS_Store
+/apps/platform/.eslintcache
 
 # AI rules
 # we want to ignore all AI rules while we are experimenting with them
 .cursor/
 .cursorrules/
+.claude/
 CLAUDE.md
 GEMINI.md
-
-# AI workspace
-# general purpose directory for AI development tools (Claude, Cursor, Gemini, etc.)
-/ai-workspace

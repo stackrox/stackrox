@@ -59,6 +59,84 @@ const rules = {
             };
         },
     },
+    'sort-named-imports': {
+        // Sort named imports by imported name (if it differs from local name)
+        // which seems more intuitive especially when wrapped.
+        // ESLint sort-imports rule sorts by local name (if it differs from imported name).
+        //
+        // For simplicity, sort case sensitive in Unicode order (upper case precedes lower case).
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Sort named imports in ascending order',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (
+                        Array.isArray(node.specifiers) &&
+                        node.specifiers.every(
+                            (specifier) => typeof specifier?.imported?.name === 'string'
+                        )
+                    ) {
+                        const { specifiers } = node;
+                        if (
+                            specifiers.some(
+                                (specifier, index) =>
+                                    index !== 0 &&
+                                    specifiers[index - 1].imported.name > specifier.imported.name
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Sort named imports in ascending order',
+                                fix(fixer) {
+                                    if (context.sourceCode.getCommentsInside(node).length !== 0) {
+                                        return null;
+                                    }
+
+                                    // Range array consists of [start, end] similar to arguments of slice method.
+                                    const start = specifiers[0].range[0];
+                                    const end = specifiers[specifiers.length - 1].range[1];
+                                    const range = [start, end];
+
+                                    // Sort by imported name consistent with error criterion above.
+                                    const sortCallback = (
+                                        { imported: { name: nameA } },
+                                        { imported: { name: nameB } }
+                                    ) => (nameA < nameB ? -1 : nameA > nameB ? 1 : 0);
+
+                                    // Map sorted specification to its node text and text that follows in original order.
+                                    const flatMapCallback = (specifier, index) => [
+                                        context.sourceCode.getText(specifier),
+                                        // For original order, specifiers[index] instead of specifier!
+                                        index === specifiers.length - 1
+                                            ? ''
+                                            : context.sourceCode
+                                                  .getText()
+                                                  .slice(
+                                                      specifiers[index].range[1],
+                                                      specifiers[index + 1].range[0]
+                                                  ),
+                                    ];
+
+                                    const replacement = [...specifiers]
+                                        .sort(sortCallback)
+                                        .flatMap(flatMapCallback)
+                                        .join('');
+
+                                    return fixer.replaceTextRange(range, replacement);
+                                },
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
 
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.
@@ -138,8 +216,18 @@ const rules = {
         },
         create(context) {
             return {
+                MemberExpression(node) {
+                    // For example, React.Fragment or React.useState
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
                 TSQualifiedName(node) {
-                    if (node?.left?.name === 'React' && typeof node?.right?.name === 'string') {
+                    // For example, React.ReactElement
+                    if (node.left?.name === 'React' && typeof node.right?.name === 'string') {
                         context.report({
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,

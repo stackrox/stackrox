@@ -6,7 +6,7 @@ import { policyCriteriaCategories } from 'messages/common';
 import type { PolicyCriteriaCategoryKey } from 'messages/common';
 
 import PolicyCriteriaCategory from './PolicyCriteriaCategory';
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Descriptor } from './policyCriteriaDescriptors';
 
 type CriteriaDomain =
     | 'Image criteria'

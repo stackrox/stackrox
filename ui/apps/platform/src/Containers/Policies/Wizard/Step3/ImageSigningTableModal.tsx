@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { integrationsPath } from 'routePaths';
 import { fetchSignatureIntegrations } from 'services/SignatureIntegrationsService';
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
+import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 import tableColumnDescriptor from 'Containers/Integrations/utils/tableColumnDescriptor';
 import TableModal from './TableModal';
 

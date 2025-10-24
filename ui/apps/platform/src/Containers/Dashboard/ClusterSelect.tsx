@@ -1,32 +1,23 @@
-import React from 'react';
-import type { ChangeEvent } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
-import type { SelectOptionObject } from '@patternfly/react-core/deprecated';
+import { useState } from 'react';
+import type { MouseEvent, Ref } from 'react';
+import {
+    Badge,
+    Divider,
+    Flex,
+    FlexItem,
+    MenuToggle,
+    SearchInput,
+    Select,
+    SelectList,
+    SelectOption,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
 import type { Cluster } from './types';
 
-const selectAll: unique symbol = Symbol('Select-All-Clusters');
-
-function createOptions(clusters: Cluster[], filterValue?: string) {
-    const visibleClusters = filterValue
-        ? clusters.filter(({ name }) => name.toLowerCase().includes(filterValue.toLowerCase()))
-        : clusters;
-
-    return [
-        <SelectOption key={selectAll.toString()} value={selectAll}>
-            <span>All clusters</span>
-        </SelectOption>,
-        <Divider key="cluster-select-option-divider" className="pf-v5-u-mb-0" component="div" />,
-        ...visibleClusters.map(({ name }) => (
-            <SelectOption key={name} value={name}>
-                <span>{name}</span>
-            </SelectOption>
-        )),
-    ];
-}
+// TODO: Refactor ClusterSelect and NamespaceSelect to use a shared reusable component
+const SELECT_ALL = '##SELECT_ALL##';
 
 export type SelectionChangeAction =
     | { type: 'add'; value: string; selection: string[] }
@@ -47,21 +38,32 @@ function ClusterSelect({
     onChange,
     onSelectAll,
 }: ClusterSelectProps) {
-    const { isOpen, onToggle } = useSelectToggle();
-    const currentSelection = flattenFilterValue(clusterSearch, selectAll);
-    const options = createOptions(clusters);
+    const [isOpen, setIsOpen] = useState(false);
+    const [filterValue, setFilterValue] = useState('');
+    const currentSelection = flattenFilterValue(clusterSearch, SELECT_ALL);
 
-    function onSelect(e, selectedTarget: string | SelectOptionObject) {
-        if (typeof selectedTarget !== 'string') {
+    const onToggle = () => {
+        const willBeOpen = !isOpen;
+        setIsOpen(willBeOpen);
+        if (!willBeOpen) {
+            setFilterValue('');
+        }
+    };
+
+    function onSelect(_event: MouseEvent | undefined, selectedTarget: string | number | undefined) {
+        if (selectedTarget === SELECT_ALL) {
             onSelectAll();
-        } else if (currentSelection === selectAll) {
+        } else if (typeof selectedTarget !== 'string') {
+            // Do nothing for invalid types
+        } else if (currentSelection === SELECT_ALL) {
             onChange({ type: 'add', value: selectedTarget, selection: [selectedTarget] });
         } else {
-            const isRemoval = Boolean(currentSelection.find((cs) => cs === selectedTarget));
+            const isRemoval = currentSelection.includes(selectedTarget);
             const selection = isRemoval
                 ? currentSelection.filter((cs) => cs !== selectedTarget)
                 : currentSelection.concat(selectedTarget);
 
+            // If deselecting the last cluster, revert to "All clusters" selected
             if (selection.length === 0) {
                 onSelectAll();
             } else {
@@ -74,27 +76,79 @@ function ClusterSelect({
         }
     }
 
-    function onFilter(e: ChangeEvent<HTMLInputElement> | null, filterValue: string) {
-        return createOptions(clusters, filterValue);
-    }
+    const filteredClusters = filterValue
+        ? clusters.filter(({ name }) => name.toLowerCase().includes(filterValue.toLowerCase()))
+        : clusters;
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => {
+        const numSelected = currentSelection === SELECT_ALL ? 0 : currentSelection.length;
+        const placeholderText = currentSelection === SELECT_ALL ? 'All clusters' : 'Clusters';
+
+        return (
+            <MenuToggle
+                ref={toggleRef}
+                onClick={onToggle}
+                isExpanded={isOpen}
+                isDisabled={isDisabled}
+                style={{ width: '180px' }}
+                aria-label="Select clusters"
+            >
+                <Flex
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                >
+                    <FlexItem>{placeholderText}</FlexItem>
+                    {numSelected > 0 && <Badge isRead>{numSelected}</Badge>}
+                </Flex>
+            </MenuToggle>
+        );
+    };
 
     return (
         <Select
-            toggleAriaLabel="Select clusters"
-            variant="checkbox"
             isOpen={isOpen}
-            onToggle={(_e, v) => onToggle(v)}
+            selected={currentSelection}
             onSelect={onSelect}
-            onFilter={onFilter}
-            placeholderText={currentSelection === selectAll ? 'All clusters' : 'Clusters'}
-            selections={currentSelection}
-            isDisabled={isDisabled}
-            maxHeight="50vh"
-            width={180}
-            position="right"
-            hasInlineFilter
+            onOpenChange={setIsOpen}
+            toggle={toggle}
+            popperProps={{
+                position: 'right',
+            }}
         >
-            {options}
+            <SelectList style={{ maxHeight: '50vh', overflow: 'auto' }}>
+                <div className="pf-v5-u-p-md">
+                    <SearchInput
+                        value={filterValue}
+                        onChange={(_event, value) => setFilterValue(value)}
+                        placeholder="Filter by cluster"
+                        aria-label="Filter clusters"
+                    />
+                </div>
+                <Divider />
+                <SelectOption
+                    key={SELECT_ALL}
+                    value={SELECT_ALL}
+                    hasCheckbox
+                    isSelected={currentSelection === SELECT_ALL}
+                >
+                    All clusters
+                </SelectOption>
+                {filteredClusters.length > 0 && (
+                    <Divider className="pf-v5-u-mb-0" component="div" />
+                )}
+                {filteredClusters.map(({ name }) => (
+                    <SelectOption
+                        key={name}
+                        value={name}
+                        hasCheckbox
+                        isSelected={
+                            currentSelection !== SELECT_ALL && currentSelection.includes(name)
+                        }
+                    >
+                        {name}
+                    </SelectOption>
+                ))}
+            </SelectList>
         </Select>
     );
 }

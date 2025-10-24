@@ -1,11 +1,12 @@
-import React, { ReactElement, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Button, Flex } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
 import { fetchMitreAttackVectors } from 'services/MitreService';
-import { MitreAttackVector } from 'types/mitre.proto';
-import { Policy } from 'types/policy.proto';
+import type { MitreAttackVector } from 'types/mitre.proto';
+import type { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import MitreTacticSelect from './MitreTacticSelect';

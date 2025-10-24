@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import {
@@ -13,12 +13,12 @@ import {
     Title,
     Tooltip,
 } from '@patternfly/react-core';
+import { HelpIcon } from '@patternfly/react-icons';
 
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { PrivateConfig } from 'types/config.proto';
+import type { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
-import { HelpIcon } from '@patternfly/react-icons';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 
 type DataRetentionValueProps = {

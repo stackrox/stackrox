@@ -4,8 +4,8 @@ import { Flex } from '@patternfly/react-core';
 import { useDrop } from 'react-dnd';
 import { useFormikContext } from 'formik';
 
-import { Policy } from 'types/policy.proto';
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Policy } from 'types/policy.proto';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import { getEmptyPolicyFieldCard } from '../../policies.utils';
 
 import './PolicySectionDropTarget.css';
