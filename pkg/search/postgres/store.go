@@ -457,6 +457,14 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 		}
 	}
 
+	if tx, ok := postgres.TxFromContext(ctx); ok {
+		batchResults := postgres.BatchResultsFromPgx(tx.SendBatch(ctx, batch))
+		if err := batchResults.Close(); err != nil {
+			return errors.Wrap(err, "closing batch on transaction")
+		}
+		return nil
+	}
+
 	conn, err := s.acquireConn(ctx, ops.Upsert)
 	if err != nil {
 		return err
@@ -475,15 +483,17 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return utils.ShouldErr(errInvalidOperation)
 	}
 
-	conn, err := s.acquireConn(ctx, ops.UpsertAll)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+	tx, ok := postgres.TxFromContext(ctx)
+	if !ok {
+		conn, err := s.acquireConn(ctx, ops.UpsertAll)
+		if err != nil {
+			return err
+		}
+		defer conn.Release()
+		tx, ctx, err = conn.Begin(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not begin transaction")
+		}
 	}
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
