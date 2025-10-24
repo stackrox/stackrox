@@ -889,7 +889,12 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 	}
 	defer postgres.FinishReadOnlyTransaction(tx)
 
-	callback := func(node *storage.Node) error {
+	rows := make([]*storage.Node, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, tx, func(obj *storage.Node) error {
+		rows = append(rows, obj)
+		return nil
+	})
+	for _, node := range rows {
 		err := s.populateNode(ctx, tx, node)
 		if err != nil {
 			return errors.Wrap(err, "populate node")
@@ -897,12 +902,9 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		if err := fn(node); err != nil {
 			return errors.Wrap(err, "failed to process node")
 		}
-		return nil
 	}
-
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
 	if err != nil {
-		return errors.Wrap(err, "cursor by query")
+		return errors.Wrap(err, "get fn by query")
 	}
 	return nil
 }
