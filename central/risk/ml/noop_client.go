@@ -35,6 +35,32 @@ func (n *noOpClient) GetModelHealth(ctx context.Context) (*ModelHealthResponse, 
 	}, nil
 }
 
+// GetDetailedHealth returns unhealthy status with no trends
+func (n *noOpClient) GetDetailedHealth(ctx context.Context, includeTrends bool, trendHours int) (*DetailedHealthResponse, error) {
+	return &DetailedHealthResponse{
+		OverallStatus: "error",
+		OverallScore:  0.0,
+		HealthChecks:  []*HealthCheckDetail{},
+		Recommendations: []string{"ML Risk Service is disabled"},
+		Trends:        map[string]interface{}{},
+	}, nil
+}
+
+// ReloadModel returns error indicating service is disabled
+func (n *noOpClient) ReloadModel(ctx context.Context, modelID, version string, forceReload bool) (*ReloadModelResponse, error) {
+	return &ReloadModelResponse{
+		Success: false,
+		Message: "ML Risk Service is disabled",
+	}, nil
+}
+
+// ListModels returns empty models list
+func (n *noOpClient) ListModels(ctx context.Context, modelID string) (*ListModelsResponse, error) {
+	return &ListModelsResponse{
+		Models: []*ModelInfo{},
+	}, nil
+}
+
 // Close does nothing
 func (n *noOpClient) Close() error {
 	return nil

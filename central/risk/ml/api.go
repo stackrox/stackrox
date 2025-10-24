@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -524,8 +522,6 @@ func (api *ModelManagementAPI) getRegistryStats(w http.ResponseWriter, r *http.R
 
 // triggerTraining handles POST /api/v1/ml/training/trigger
 func (api *ModelManagementAPI) triggerTraining(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var req TrainingRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		api.writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Invalid request body: %v", err))
@@ -553,7 +549,6 @@ func (api *ModelManagementAPI) triggerTraining(w http.ResponseWriter, r *http.Re
 
 // getTrainingStatus handles GET /api/v1/ml/training/status
 func (api *ModelManagementAPI) getTrainingStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
 	// TODO: Implement training status tracking
 	// For now, return a placeholder response
@@ -710,7 +705,6 @@ func (api *ModelManagementAPI) listAvailableModels(w http.ResponseWriter, r *htt
 
 // getModelLineage handles GET /api/v1/ml/models/{modelId}/versions/{version}/lineage
 func (api *ModelManagementAPI) getModelLineage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	modelID := vars["modelId"]
 	version := vars["version"]
@@ -761,7 +755,6 @@ func (api *ModelManagementAPI) getModelLineage(w http.ResponseWriter, r *http.Re
 
 // compareModelVersions handles GET /api/v1/ml/models/{modelId}/versions/compare
 func (api *ModelManagementAPI) compareModelVersions(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	modelID := vars["modelId"]
 
@@ -821,7 +814,6 @@ func (api *ModelManagementAPI) compareModelVersions(w http.ResponseWriter, r *ht
 
 // getMetricHistory handles GET /api/v1/ml/models/{modelId}/metrics/{metric}/history
 func (api *ModelManagementAPI) getMetricHistory(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	modelID := vars["modelId"]
 	metric := vars["metric"]
@@ -873,7 +865,6 @@ func (api *ModelManagementAPI) getMetricHistory(w http.ResponseWriter, r *http.R
 
 // validateForProduction handles GET /api/v1/ml/models/{modelId}/versions/{version}/validate
 func (api *ModelManagementAPI) validateForProduction(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	modelID := vars["modelId"]
 	version := vars["version"]
@@ -971,15 +962,14 @@ func (api *ModelManagementAPI) getModelsByStatus(w http.ResponseWriter, r *http.
 
 // getUserFromContext extracts user information from request context
 func (api *ModelManagementAPI) getUserFromContext(ctx context.Context) string {
-	if userInfo := user.FromContext(ctx); userInfo != nil {
-		return userInfo.GetUsername()
+	if userInfo := authn.UserFromContext(ctx); userInfo != nil {
+		return userInfo.GetName()
 	}
 	return "unknown"
 }
 
 // getDriftReport handles GET /api/v1/ml/drift/report
 func (api *ModelManagementAPI) getDriftReport(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
 	// Parse query parameters
 	modelID := r.URL.Query().Get("model_id")
@@ -1020,7 +1010,6 @@ func (api *ModelManagementAPI) getDriftReport(w http.ResponseWriter, r *http.Req
 
 // getActiveAlerts handles GET /api/v1/ml/drift/alerts
 func (api *ModelManagementAPI) getActiveAlerts(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 
 	// Parse query parameters
 	modelID := r.URL.Query().Get("model_id")

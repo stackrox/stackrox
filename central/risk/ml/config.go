@@ -2,6 +2,7 @@ package ml
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -41,7 +42,7 @@ var (
 
 	// Auto-deployment settings
 	ModelAutoDeployEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_AUTO_DEPLOY_ENABLED", false)
-	ModelDeploymentThreshold = env.RegisterFloatSetting("ROX_ML_MODEL_DEPLOYMENT_THRESHOLD", 0.85)
+	ModelDeploymentThreshold = env.RegisterSetting("ROX_ML_MODEL_DEPLOYMENT_THRESHOLD", env.WithDefault("0.85"))
 
 	// Model health check settings
 	ModelHealthCheckEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_HEALTH_CHECK_ENABLED", true)
@@ -49,7 +50,7 @@ var (
 
 	// Model monitoring settings
 	ModelDriftDetectionEnabled = env.RegisterBooleanSetting("ROX_ML_MODEL_DRIFT_DETECTION_ENABLED", false)
-	ModelDriftThreshold = env.RegisterFloatSetting("ROX_ML_MODEL_DRIFT_THRESHOLD", 0.1)
+	ModelDriftThreshold = env.RegisterSetting("ROX_ML_MODEL_DRIFT_THRESHOLD", env.WithDefault("0.1"))
 )
 
 // ModelStorageConfig provides configuration for model storage
@@ -118,13 +119,16 @@ func GetModelDeploymentConfig() *ModelDeploymentConfig {
 		healthCheckInterval = 5 * time.Minute
 	}
 
+	deploymentThreshold, _ := strconv.ParseFloat(ModelDeploymentThreshold.Setting(), 64)
+	driftThreshold, _ := strconv.ParseFloat(ModelDriftThreshold.Setting(), 64)
+
 	return &ModelDeploymentConfig{
 		AutoDeployEnabled:     ModelAutoDeployEnabled.BooleanSetting(),
-		DeploymentThreshold:   ModelDeploymentThreshold.FloatSetting(),
+		DeploymentThreshold:   deploymentThreshold,
 		HealthCheckEnabled:    ModelHealthCheckEnabled.BooleanSetting(),
 		HealthCheckInterval:   healthCheckInterval,
 		DriftDetectionEnabled: ModelDriftDetectionEnabled.BooleanSetting(),
-		DriftThreshold:        ModelDriftThreshold.FloatSetting(),
+		DriftThreshold:        driftThreshold,
 	}
 }
 

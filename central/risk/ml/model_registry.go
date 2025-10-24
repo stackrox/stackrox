@@ -3,19 +3,17 @@ package ml
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/jackc/pgx/v5"
+	pkgerrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
 
 // ModelStatus represents the status of a model
 type ModelStatus string
@@ -110,17 +108,17 @@ func (s *modelRegistryStoreImpl) RegisterModel(ctx context.Context, metadata *Mo
 	// Convert maps to JSON for storage
 	performanceMetricsJSON, err := json.Marshal(metadata.PerformanceMetrics)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal performance metrics")
+		return pkgerrors.Wrap(err, "failed to marshal performance metrics")
 	}
 
 	configJSON, err := json.Marshal(metadata.Config)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal config")
+		return pkgerrors.Wrap(err, "failed to marshal config")
 	}
 
 	tagsJSON, err := json.Marshal(metadata.Tags)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal tags")
+		return pkgerrors.Wrap(err, "failed to marshal tags")
 	}
 
 	_, err = s.db.Exec(ctx, `
@@ -152,7 +150,7 @@ func (s *modelRegistryStoreImpl) RegisterModel(ctx context.Context, metadata *Mo
 		metadata.UpdatedAt, metadata.UsageCount)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to register model %s version %s", metadata.ModelID, metadata.Version)
+		return pkgerrors.Wrapf(err, "failed to register model %s version %s", metadata.ModelID, metadata.Version)
 	}
 
 	log.Infof("Registered model %s version %s in registry", metadata.ModelID, metadata.Version)
@@ -180,10 +178,10 @@ func (s *modelRegistryStoreImpl) GetModel(ctx context.Context, modelID, version 
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
 
 	if err != nil {
-		if postgres.IsNoResultsErr(err) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
 		}
-		return nil, false, errors.Wrapf(err, "failed to get model %s version %s", modelID, version)
+		return nil, false, pkgerrors.Wrapf(err, "failed to get model %s version %s", modelID, version)
 	}
 
 	// Unmarshal JSON fields
@@ -228,10 +226,10 @@ func (s *modelRegistryStoreImpl) GetLatestModel(ctx context.Context, modelID str
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
 
 	if err != nil {
-		if postgres.IsNoResultsErr(err) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
 		}
-		return nil, false, errors.Wrapf(err, "failed to get latest model %s", modelID)
+		return nil, false, pkgerrors.Wrapf(err, "failed to get latest model %s", modelID)
 	}
 
 	// Unmarshal JSON fields
@@ -261,7 +259,7 @@ func (s *modelRegistryStoreImpl) ListModels(ctx context.Context, modelID string)
 		modelID)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to list models for %s", modelID)
+		return nil, pkgerrors.Wrapf(err, "failed to list models for %s", modelID)
 	}
 	defer rows.Close()
 
@@ -305,7 +303,7 @@ func (s *modelRegistryStoreImpl) ListAllModels(ctx context.Context) ([]*ModelMet
 		ORDER BY model_id, training_timestamp DESC`)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list all models")
+		return nil, pkgerrors.Wrap(err, "failed to list all models")
 	}
 	defer rows.Close()
 
@@ -347,7 +345,7 @@ func (s *modelRegistryStoreImpl) UpdateModelStatus(ctx context.Context, modelID,
 		status, time.Now(), modelID, version)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update status for model %s version %s", modelID, version)
+		return pkgerrors.Wrapf(err, "failed to update status for model %s version %s", modelID, version)
 	}
 
 	if result.RowsAffected() == 0 {
@@ -366,7 +364,7 @@ func (s *modelRegistryStoreImpl) DeleteModel(ctx context.Context, modelID, versi
 		modelID, version)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete model %s version %s", modelID, version)
+		return pkgerrors.Wrapf(err, "failed to delete model %s version %s", modelID, version)
 	}
 
 	if result.RowsAffected() == 0 {
@@ -400,10 +398,10 @@ func (s *modelRegistryStoreImpl) GetDeployedModel(ctx context.Context) (*ModelMe
 		&metadata.UpdatedAt, &metadata.DeployedAt, &metadata.LastUsedAt, &metadata.UsageCount)
 
 	if err != nil {
-		if postgres.IsNoResultsErr(err) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, false, nil
 		}
-		return nil, false, errors.Wrap(err, "failed to get deployed model")
+		return nil, false, pkgerrors.Wrap(err, "failed to get deployed model")
 	}
 
 	// Unmarshal JSON fields
@@ -426,7 +424,7 @@ func (s *modelRegistryStoreImpl) SetDeployedModel(ctx context.Context, modelID, 
 		ModelStatusReady, now, ModelStatusDeployed)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to unset current deployed model")
+		return pkgerrors.Wrap(err, "failed to unset current deployed model")
 	}
 
 	// Set the new deployed model
@@ -437,7 +435,7 @@ func (s *modelRegistryStoreImpl) SetDeployedModel(ctx context.Context, modelID, 
 		ModelStatusDeployed, now, now, modelID, version)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to set model %s version %s as deployed", modelID, version)
+		return pkgerrors.Wrapf(err, "failed to set model %s version %s as deployed", modelID, version)
 	}
 
 	if result.RowsAffected() == 0 {
@@ -457,7 +455,7 @@ func (s *modelRegistryStoreImpl) UpdateUsageStats(ctx context.Context, modelID, 
 		time.Now(), time.Now(), modelID, version)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update usage stats for model %s version %s", modelID, version)
+		return pkgerrors.Wrapf(err, "failed to update usage stats for model %s version %s", modelID, version)
 	}
 
 	return nil
@@ -481,7 +479,7 @@ func (s *modelRegistryStoreImpl) GetModelStats(ctx context.Context) (*ModelRegis
 		&stats.TotalModels, &stats.TotalVersions, &stats.TotalStorageBytes, &stats.LastTrainingTime)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get basic model stats")
+		return nil, pkgerrors.Wrap(err, "failed to get basic model stats")
 	}
 
 	// Get deployed model info
