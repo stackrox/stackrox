@@ -227,6 +227,7 @@ function CollectionSelection({
                     placeholder="Select a collection"
                     onChange={onSearchChange}
                     onFocus={ensureOpen}
+                    onBlur={handleBlur}
                     autoComplete="off"
                     id={id}
                 />
