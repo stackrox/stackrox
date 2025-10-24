@@ -7,12 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
@@ -32,12 +32,20 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 		return errors.Wrap(err, "could not read from zip")
 	}
 
+	// Locations opened later with os.Root must be created traditionally.
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return errors.Wrapf(err, "Unable to create folder %q", outputDir)
 	}
 
+	// Create a secured root directory to prevent path traversal attacks
+	root, err := os.OpenRoot(outputDir)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to open root directory %q", outputDir)
+	}
+	defer root.Close()
+
 	for _, f := range reader.File {
-		if err := extractFile(f, outputDir); err != nil {
+		if err := extractFile(f, root); err != nil {
 			return err
 		}
 	}
@@ -46,22 +54,25 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 	return nil
 }
 
-func extractFile(f *zip.File, outputDir string) error {
+func extractFile(f *zip.File, root *os.Root) error {
 	fileReader, err := f.Open()
 	if err != nil {
 		return errors.Wrapf(err, "Unable to open file %q", f.Name)
 	}
 	defer utils.IgnoreError(fileReader.Close)
 
-	outputFilePath := filepath.Join(outputDir, f.Name)
-	folder := path.Dir(outputFilePath)
-	if err := os.MkdirAll(folder, 0755); err != nil {
-		return errors.Wrapf(err, "Unable to create folder %q", folder)
+	// Create parent directories if needed - os.Root ensures they stay within the root
+	dirPath := filepath.Dir(f.Name)
+	if dirPath != "." && dirPath != "" {
+		if err := fileutils.MkdirAllInRoot(root, dirPath, 0755); err != nil {
+			return errors.Wrapf(err, "Unable to create folder %q", dirPath)
+		}
 	}
 
-	outFile, err := os.OpenFile(outputFilePath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, f.Mode())
+	// Write the file using os.Root - automatically prevents path traversal
+	outFile, err := root.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_EXCL, f.Mode())
 	if err != nil {
-		return errors.Wrapf(err, "Unable to create output file %q", outputFilePath)
+		return errors.Wrapf(err, "Unable to create output file %q", f.Name)
 	}
 	defer utils.IgnoreError(outFile.Close)
 
