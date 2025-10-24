@@ -110,10 +110,7 @@ func (m *MLIntegration) combineRiskAssessments(traditionalRisk, mlRisk *storage.
 	// Combine risk results
 	combinedResults := make([]*storage.Risk_Result, 0, len(traditionalRisk.GetResults())+len(mlRisk.GetResults())+1)
 
-	// Add traditional results
-	for _, result := range traditionalRisk.GetResults() {
-		combinedResults = append(combinedResults, result)
-	}
+	combinedResults = append(combinedResults, traditionalRisk.GetResults()...)
 
 	// Add ML results
 	for _, result := range mlRisk.GetResults() {
