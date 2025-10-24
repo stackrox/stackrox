@@ -18,24 +18,11 @@ import tempfile
 
 # Storage backends
 try:
-    import boto3
-    from botocore.exceptions import NoCredentialsError, ClientError
-    S3_AVAILABLE = True
-except ImportError:
-    S3_AVAILABLE = False
-
-try:
     from google.cloud import storage
     GCS_AVAILABLE = True
 except ImportError:
     GCS_AVAILABLE = False
 
-try:
-    from azure.storage.blob import BlobServiceClient, ContentSettings
-    from azure.core.exceptions import ResourceNotFoundError
-    AZURE_AVAILABLE = True
-except ImportError:
-    AZURE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +229,7 @@ class ModelMetadata:
 @dataclass
 class StorageConfig:
     """Configuration for model storage."""
-    backend: str  # 'local', 's3', 'gcs', 'azure'
+    backend: str  # 'local', 'gcs'
     base_path: str
     encryption_enabled: bool = False
     compression_enabled: bool = True
@@ -251,13 +238,8 @@ class StorageConfig:
     backup_frequency: str = "daily"  # 'hourly', 'daily', 'weekly'
 
     # Cloud-specific settings
-    aws_region: Optional[str] = None
-    aws_access_key_id: Optional[str] = None
-    aws_secret_access_key: Optional[str] = None
     gcs_project_id: Optional[str] = None
     gcs_credentials_path: Optional[str] = None
-    azure_connection_string: Optional[str] = None
-    azure_container_name: Optional[str] = None
 
     @classmethod
     def from_env(cls, backend: str = None) -> 'StorageConfig':
@@ -484,190 +466,12 @@ class LocalModelStorage(ModelStorage):
             return str(sorted(versions)[-1])
 
 
-class S3ModelStorage(ModelStorage):
-    """AWS S3 storage backend."""
 
-    def __init__(self, config: StorageConfig):
-        super().__init__(config)
 
-        if not S3_AVAILABLE:
-            raise ImportError("boto3 is required for S3 storage")
 
-        self.bucket_name = config.base_path.split('/')[-1]
-        self.prefix = '/'.join(config.base_path.split('/')[:-1])
 
-        try:
-            self.s3_client = boto3.client(
-                's3',
-                region_name=config.aws_region,
-                aws_access_key_id=config.aws_access_key_id,
-                aws_secret_access_key=config.aws_secret_access_key
-            )
-            # Test connection
-            self.s3_client.head_bucket(Bucket=self.bucket_name)
-        except Exception as e:
-            raise ConnectionError(f"Failed to connect to S3: {e}")
 
-    def save_model(self, model_data: bytes, metadata: ModelMetadata) -> bool:
-        """Save model to S3."""
-        try:
-            # Update metadata
-            metadata.model_size_bytes = len(model_data)
-            metadata.checksum = self._calculate_checksum(model_data)
 
-            # Upload model data
-            model_key = f"{self.prefix}/{self._get_model_path(metadata.model_id, metadata.version)}/model.joblib"
-            self.s3_client.put_object(
-                Bucket=self.bucket_name,
-                Key=model_key,
-                Body=model_data,
-                Metadata={'checksum': metadata.checksum}
-            )
-
-            # Upload metadata
-            metadata_key = f"{self.prefix}/{self._get_metadata_path(metadata.model_id, metadata.version)}"
-            self.s3_client.put_object(
-                Bucket=self.bucket_name,
-                Key=metadata_key,
-                Body=json.dumps(metadata.to_dict(), indent=2).encode('utf-8'),
-                ContentType='application/json'
-            )
-
-            self.logger.info(f"Model {metadata.model_id} v{metadata.version} saved to S3")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to save model to S3: {e}")
-            return False
-
-    def load_model(self, model_id: str, version: Optional[str] = None) -> Tuple[bytes, ModelMetadata]:
-        """Load model from S3."""
-        if version is None:
-            version = self._get_latest_version(model_id)
-            if not version:
-                raise FileNotFoundError(f"No versions found for model {model_id}")
-
-        try:
-            # Load metadata
-            metadata_key = f"{self.prefix}/{self._get_metadata_path(model_id, version)}"
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=metadata_key)
-            metadata_dict = json.loads(response['Body'].read().decode('utf-8'))
-            metadata = ModelMetadata.from_dict(metadata_dict)
-
-            # Load model data
-            model_key = f"{self.prefix}/{self._get_model_path(model_id, version)}/model.joblib"
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=model_key)
-            model_data = response['Body'].read()
-
-            # Verify checksum
-            if metadata.checksum != self._calculate_checksum(model_data):
-                raise ValueError(f"Checksum mismatch for model {model_id} v{version}")
-
-            self.logger.info(f"Model {model_id} v{version} loaded from S3")
-            return model_data, metadata
-
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'NoSuchKey':
-                raise FileNotFoundError(f"Model {model_id} v{version} not found in S3")
-            raise
-
-    def list_models(self, model_id: Optional[str] = None) -> List[ModelMetadata]:
-        """List available models in S3."""
-        models = []
-
-        try:
-            prefix = f"{self.prefix}/models/"
-            if model_id:
-                prefix += f"{model_id}/"
-
-            paginator = self.s3_client.get_paginator('list_objects_v2')
-            for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
-                for obj in page.get('Contents', []):
-                    if obj['Key'].endswith('metadata.json'):
-                        try:
-                            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=obj['Key'])
-                            metadata_dict = json.loads(response['Body'].read().decode('utf-8'))
-                            models.append(ModelMetadata.from_dict(metadata_dict))
-                        except Exception as e:
-                            self.logger.warning(f"Failed to load metadata from {obj['Key']}: {e}")
-
-        except Exception as e:
-            self.logger.error(f"Failed to list models from S3: {e}")
-
-        return sorted(models, key=lambda m: m.training_timestamp, reverse=True)
-
-    def delete_model(self, model_id: str, version: Optional[str] = None) -> bool:
-        """Delete model from S3."""
-        try:
-            prefix = f"{self.prefix}/models/{model_id}/"
-            if version:
-                prefix += f"v{version}/"
-
-            # List objects to delete
-            objects_to_delete = []
-            paginator = self.s3_client.get_paginator('list_objects_v2')
-            for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
-                for obj in page.get('Contents', []):
-                    objects_to_delete.append({'Key': obj['Key']})
-
-            # Delete objects
-            if objects_to_delete:
-                self.s3_client.delete_objects(
-                    Bucket=self.bucket_name,
-                    Delete={'Objects': objects_to_delete}
-                )
-
-            self.logger.info(f"Deleted model {model_id} v{version} from S3")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete model from S3: {e}")
-            return False
-
-    def model_exists(self, model_id: str, version: Optional[str] = None) -> bool:
-        """Check if model exists in S3."""
-        try:
-            if version:
-                metadata_key = f"{self.prefix}/{self._get_metadata_path(model_id, version)}"
-                self.s3_client.head_object(Bucket=self.bucket_name, Key=metadata_key)
-                return True
-            else:
-                prefix = f"{self.prefix}/models/{model_id}/"
-                response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix, MaxKeys=1)
-                return 'Contents' in response
-
-        except ClientError:
-            return False
-
-    def _get_latest_version(self, model_id: str) -> Optional[str]:
-        """Get the latest version of a model from S3."""
-        try:
-            prefix = f"{self.prefix}/models/{model_id}/"
-            versions = []
-
-            paginator = self.s3_client.get_paginator('list_objects_v2')
-            for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix, Delimiter='/'):
-                for prefix_info in page.get('CommonPrefixes', []):
-                    version_path = prefix_info['Prefix']
-                    version_name = version_path.split('/')[-2]  # Extract version from path
-                    if version_name.startswith('v'):
-                        version_num = version_name[1:]
-                        try:
-                            versions.append(int(version_num))
-                        except ValueError:
-                            versions.append(version_num)
-
-            if not versions:
-                return None
-
-            if all(isinstance(v, int) for v in versions):
-                return str(max(versions))
-            else:
-                return str(sorted(versions)[-1])
-
-        except Exception as e:
-            self.logger.error(f"Failed to get latest version for {model_id}: {e}")
-            return None
 
 
 class GCSModelStorage(ModelStorage):
@@ -861,199 +665,13 @@ class GCSModelStorage(ModelStorage):
             return None
 
 
-class AzureModelStorage(ModelStorage):
-    """Azure Blob Storage backend."""
 
-    def __init__(self, config: StorageConfig):
-        super().__init__(config)
 
-        if not AZURE_AVAILABLE:
-            raise ImportError("azure-storage-blob is required for Azure storage")
 
-        self.container_name = config.base_path.split('/')[-1]
-        self.prefix = '/'.join(config.base_path.split('/')[:-1]).strip('/')
 
-        try:
-            # Initialize Azure Blob client
-            self.blob_service_client = BlobServiceClient.from_connection_string(
-                config.azure_connection_string
-            )
 
-            # Get container client
-            self.container_client = self.blob_service_client.get_container_client(
-                self.container_name
-            )
 
-            # Test connection
-            self.container_client.get_container_properties()
 
-        except Exception as e:
-            raise ConnectionError(f"Failed to connect to Azure Blob Storage: {e}")
-
-    def save_model(self, model_data: bytes, metadata: ModelMetadata) -> bool:
-        """Save model to Azure Blob Storage."""
-        try:
-            # Update metadata
-            metadata.model_size_bytes = len(model_data)
-            metadata.checksum = self._calculate_checksum(model_data)
-
-            # Upload model data
-            model_path = f"{self.prefix}/{self._get_model_path(metadata.model_id, metadata.version)}/model.joblib"
-            model_blob_client = self.container_client.get_blob_client(model_path)
-            model_blob_client.upload_blob(
-                model_data,
-                overwrite=True,
-                metadata={'checksum': metadata.checksum}
-            )
-
-            # Upload metadata
-            metadata_path = f"{self.prefix}/{self._get_metadata_path(metadata.model_id, metadata.version)}"
-            metadata_blob_client = self.container_client.get_blob_client(metadata_path)
-            metadata_blob_client.upload_blob(
-                json.dumps(metadata.to_dict(), indent=2),
-                overwrite=True,
-                content_settings=ContentSettings(content_type='application/json')
-            )
-
-            self.logger.info(f"Model {metadata.model_id} v{metadata.version} saved to Azure")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to save model to Azure: {e}")
-            return False
-
-    def load_model(self, model_id: str, version: Optional[str] = None) -> Tuple[bytes, ModelMetadata]:
-        """Load model from Azure Blob Storage."""
-        if version is None:
-            version = self._get_latest_version(model_id)
-            if not version:
-                raise FileNotFoundError(f"No versions found for model {model_id}")
-
-        try:
-            # Load metadata
-            metadata_path = f"{self.prefix}/{self._get_metadata_path(model_id, version)}"
-            metadata_blob_client = self.container_client.get_blob_client(metadata_path)
-
-            try:
-                metadata_content = metadata_blob_client.download_blob().readall().decode('utf-8')
-            except ResourceNotFoundError:
-                raise FileNotFoundError(f"Model {model_id} v{version} not found in Azure")
-
-            metadata_dict = json.loads(metadata_content)
-            metadata = ModelMetadata.from_dict(metadata_dict)
-
-            # Load model data
-            model_path = f"{self.prefix}/{self._get_model_path(model_id, version)}/model.joblib"
-            model_blob_client = self.container_client.get_blob_client(model_path)
-            model_data = model_blob_client.download_blob().readall()
-
-            # Verify checksum
-            if metadata.checksum != self._calculate_checksum(model_data):
-                raise ValueError(f"Checksum mismatch for model {model_id} v{version}")
-
-            self.logger.info(f"Model {model_id} v{version} loaded from Azure")
-            return model_data, metadata
-
-        except ResourceNotFoundError:
-            raise FileNotFoundError(f"Model {model_id} v{version} not found in Azure")
-
-    def list_models(self, model_id: Optional[str] = None) -> List[ModelMetadata]:
-        """List available models in Azure."""
-        models = []
-
-        try:
-            name_starts_with = f"{self.prefix}/models/"
-            if model_id:
-                name_starts_with += f"{model_id}/"
-
-            # List all metadata files
-            for blob in self.container_client.list_blobs(name_starts_with=name_starts_with):
-                if blob.name.endswith('metadata.json'):
-                    try:
-                        blob_client = self.container_client.get_blob_client(blob.name)
-                        metadata_content = blob_client.download_blob().readall().decode('utf-8')
-                        metadata_dict = json.loads(metadata_content)
-                        models.append(ModelMetadata.from_dict(metadata_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Failed to load metadata from {blob.name}: {e}")
-
-        except Exception as e:
-            self.logger.error(f"Failed to list models from Azure: {e}")
-
-        return sorted(models, key=lambda m: m.training_timestamp, reverse=True)
-
-    def delete_model(self, model_id: str, version: Optional[str] = None) -> bool:
-        """Delete model from Azure."""
-        try:
-            name_starts_with = f"{self.prefix}/models/{model_id}/"
-            if version:
-                name_starts_with += f"v{version}/"
-
-            # List and delete all blobs with the prefix
-            blobs_to_delete = list(self.container_client.list_blobs(name_starts_with=name_starts_with))
-
-            for blob in blobs_to_delete:
-                blob_client = self.container_client.get_blob_client(blob.name)
-                blob_client.delete_blob()
-
-            self.logger.info(f"Deleted model {model_id} v{version} from Azure")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete model from Azure: {e}")
-            return False
-
-    def model_exists(self, model_id: str, version: Optional[str] = None) -> bool:
-        """Check if model exists in Azure."""
-        try:
-            if version:
-                metadata_path = f"{self.prefix}/{self._get_metadata_path(model_id, version)}"
-                blob_client = self.container_client.get_blob_client(metadata_path)
-                try:
-                    blob_client.get_blob_properties()
-                    return True
-                except ResourceNotFoundError:
-                    return False
-            else:
-                name_starts_with = f"{self.prefix}/models/{model_id}/"
-                # Check if any blobs exist with this prefix
-                for blob in self.container_client.list_blobs(name_starts_with=name_starts_with, results_per_page=1):
-                    return True
-                return False
-
-        except Exception:
-            return False
-
-    def _get_latest_version(self, model_id: str) -> Optional[str]:
-        """Get the latest version of a model from Azure."""
-        try:
-            name_starts_with = f"{self.prefix}/models/{model_id}/"
-            versions = []
-
-            # List all metadata files and extract versions
-            for blob in self.container_client.list_blobs(name_starts_with=name_starts_with):
-                if blob.name.endswith('metadata.json'):
-                    path_parts = blob.name.split('/')
-                    for part in path_parts:
-                        if part.startswith('v'):
-                            version_num = part[1:]
-                            try:
-                                versions.append(int(version_num))
-                            except ValueError:
-                                versions.append(version_num)
-                            break
-
-            if not versions:
-                return None
-
-            if all(isinstance(v, int) for v in versions):
-                return str(max(versions))
-            else:
-                return str(sorted(versions)[-1])
-
-        except Exception as e:
-            self.logger.error(f"Failed to get latest version for {model_id}: {e}")
-            return None
 
 
 class ModelStorageManager:
