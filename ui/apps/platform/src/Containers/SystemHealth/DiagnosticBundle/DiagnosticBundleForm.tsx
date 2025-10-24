@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
+    Button,
+    Chip,
+    ChipGroup,
     Checkbox,
     DatePicker,
     Flex,
@@ -10,12 +13,21 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
+    MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
     TimePicker,
+    TextInputGroup,
+    TextInputGroupMain,
+    TextInputGroupUtilities,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 export type DiagnosticBundleFormValues = {
     startingDate: string; // YYYY-MM-DD or empty string, derived from patternfly date picker
@@ -40,6 +52,7 @@ function DiagnosticBundleForm({
 }: DiagnosticBundleFormProps): ReactElement {
     const [availableClusterOptions, setAvailableClusterOptions] = useState<string[]>([]);
     const [clusterSelectOpen, setClusterSelectOpen] = useState(false);
+    const [inputValue, setInputValue] = useState('');
     const { hasReadAccess } = usePermissions();
 
     const hasReadAccessForCluster = hasReadAccess('Cluster');
@@ -59,19 +72,79 @@ function DiagnosticBundleForm({
         setClusterSelectOpen(!clusterSelectOpen);
     }
 
-    function onSelect(event: ReactMouseEvent | ChangeEvent, selection) {
-        const newClusterFilter = values.filterByClusters.includes(selection)
-            ? values.filterByClusters.filter((item) => item !== selection)
-            : [...values.filterByClusters, selection];
-
-        return setFieldValue('filterByClusters', newClusterFilter);
+    function onSelect(_event: ReactMouseEvent | undefined, selection: string | number | undefined) {
+        if (typeof selection === 'string') {
+            const newClusterFilter = toggleItemInArray(values.filterByClusters, selection);
+            setInputValue('');
+            setFieldValue('filterByClusters', newClusterFilter);
+        }
     }
 
-    function clearSelection(e) {
-        e.stopPropagation();
-
+    function clearSelection() {
+        setInputValue('');
         setFieldValue('filterByClusters', []);
     }
+
+    function onRemoveChip(clusterToRemove: string) {
+        setFieldValue(
+            'filterByClusters',
+            values.filterByClusters.filter((cluster) => cluster !== clusterToRemove)
+        );
+    }
+
+    const filteredClusters = availableClusterOptions.filter((cluster) =>
+        cluster.toLowerCase().includes(inputValue.toLowerCase())
+    );
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            variant="typeahead"
+            onClick={toggleClusterSelect}
+            isExpanded={clusterSelectOpen}
+            isDisabled={values.isDatabaseDiagnosticsOnly}
+            isFullWidth
+        >
+            <TextInputGroup isPlain>
+                <TextInputGroupMain
+                    value={inputValue}
+                    onClick={toggleClusterSelect}
+                    onChange={(_event, value) => setInputValue(value)}
+                    id="filterByClusters-input"
+                    placeholder="Type a cluster name"
+                    role="combobox"
+                    isExpanded={clusterSelectOpen}
+                    aria-controls="filterByClusters-listbox"
+                >
+                    <ChipGroup>
+                        {values.filterByClusters.map((cluster) => (
+                            <Chip
+                                key={cluster}
+                                onClick={(event: ReactMouseEvent) => {
+                                    event.stopPropagation();
+                                    onRemoveChip(cluster);
+                                }}
+                                aria-label={`Remove ${cluster}`}
+                            >
+                                {cluster}
+                            </Chip>
+                        ))}
+                    </ChipGroup>
+                </TextInputGroupMain>
+                <TextInputGroupUtilities>
+                    {values.filterByClusters.length > 0 && (
+                        <Button
+                            variant="plain"
+                            onClick={clearSelection}
+                            aria-label="Clear all selections"
+                        >
+                            <TimesIcon />
+                        </Button>
+                    )}
+                </TextInputGroupUtilities>
+            </TextInputGroup>
+        </MenuToggle>
+    );
 
     return (
         <Form>
@@ -90,18 +163,26 @@ function DiagnosticBundleForm({
                 <FormGroup label="Filter by clusters" fieldId="filterByClusters">
                     <Select
                         id="filterByClusters"
-                        variant="typeaheadmulti"
-                        typeAheadAriaLabel="Type a cluster name"
-                        onToggle={toggleClusterSelect}
-                        onSelect={onSelect}
-                        onClear={clearSelection}
-                        selections={values.filterByClusters}
                         isOpen={clusterSelectOpen}
-                        isDisabled={values.isDatabaseDiagnosticsOnly}
+                        selected={values.filterByClusters}
+                        onSelect={onSelect}
+                        onOpenChange={(isOpen) => setClusterSelectOpen(isOpen)}
+                        toggle={toggle}
                     >
-                        {availableClusterOptions.map((cluster) => (
-                            <SelectOption key={cluster} value={cluster} />
-                        ))}
+                        <SelectList
+                            id="filterByClusters-listbox"
+                            style={{ maxHeight: '300px', overflowY: 'auto' }}
+                        >
+                            {filteredClusters.length > 0 ? (
+                                filteredClusters.map((cluster) => (
+                                    <SelectOption key={cluster} value={cluster}>
+                                        {cluster}
+                                    </SelectOption>
+                                ))
+                            ) : (
+                                <SelectOption isDisabled>No matching clusters</SelectOption>
+                            )}
+                        </SelectList>
                     </Select>
                     <FormHelperText>
                         <HelperText>
