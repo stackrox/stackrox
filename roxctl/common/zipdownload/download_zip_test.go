@@ -65,6 +65,31 @@ func TestExtractZipToFolder_HappyPaths(t *testing.T) {
 				assert.Empty(t, entries)
 			},
 		},
+		"should handle explicit directory entries": {
+			files: map[string]string{
+				"emptydir/":    "", // Explicit directory entry
+				"dir/file.txt": "content",
+				"dir/subdir/":  "", // Explicit subdirectory entry
+			},
+			validate: func(t *testing.T, extractDir string, files map[string]string) {
+				// Verify directories were created
+				dirPath := filepath.Join(extractDir, "emptydir")
+				info, err := os.Stat(dirPath)
+				assert.NoError(t, err, "emptydir should exist")
+				assert.True(t, info.IsDir(), "emptydir should be a directory")
+
+				subdirPath := filepath.Join(extractDir, "dir/subdir")
+				info, err = os.Stat(subdirPath)
+				assert.NoError(t, err, "dir/subdir should exist")
+				assert.True(t, info.IsDir(), "dir/subdir should be a directory")
+
+				// Verify file was created
+				filePath := filepath.Join(extractDir, "dir/file.txt")
+				content, err := os.ReadFile(filePath)
+				assert.NoError(t, err)
+				assert.Equal(t, "content", string(content))
+			},
+		},
 	}
 
 	for name, tc := range testCases {
@@ -74,10 +99,21 @@ func TestExtractZipToFolder_HappyPaths(t *testing.T) {
 			zipWriter := zip.NewWriter(buf)
 
 			for fileName, content := range tc.files {
-				w, err := zipWriter.Create(fileName)
-				require.NoError(t, err)
-				_, err = w.Write([]byte(content))
-				require.NoError(t, err)
+				// Handle directory entries (names ending with /)
+				if strings.HasSuffix(fileName, "/") {
+					header := &zip.FileHeader{
+						Name:   fileName,
+						Method: zip.Deflate,
+					}
+					header.SetMode(0755 | os.ModeDir)
+					_, err := zipWriter.CreateHeader(header)
+					require.NoError(t, err)
+				} else {
+					w, err := zipWriter.Create(fileName)
+					require.NoError(t, err)
+					_, err = w.Write([]byte(content))
+					require.NoError(t, err)
+				}
 			}
 
 			err := zipWriter.Close()

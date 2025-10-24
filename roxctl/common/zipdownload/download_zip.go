@@ -42,7 +42,7 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 	if err != nil {
 		return errors.Wrapf(err, "Unable to open root directory %q", outputDir)
 	}
-	defer root.Close()
+	defer utils.IgnoreError(root.Close)
 
 	for _, f := range reader.File {
 		if err := extractFile(f, root); err != nil {
@@ -55,11 +55,28 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 }
 
 func extractFile(f *zip.File, root *os.Root) error {
+	// Handle directory entries with preserved permissions
+	if f.FileInfo().IsDir() {
+		if err := fileutils.MkdirAllInRoot(root, f.Name, f.Mode().Perm()); err != nil {
+			return errors.Wrapf(err, "Unable to create directory %q", f.Name)
+		}
+		return nil
+	}
+
+	// Skip non-regular files (symlinks, etc.)
+	// Note: os.Root doesn't support symlinks anyway (by design for security)
+	if !f.Mode().IsRegular() {
+		return nil
+	}
+
 	rc, err := f.Open()
 	if err != nil {
 		return errors.Wrapf(err, "Unable to open file %q", f.Name)
 	}
-	return fileutils.WriteFileInRoot(root, f.Name, f.Mode(), rc)
+	if err := fileutils.WriteFileInRoot(root, f.Name, f.Mode(), rc); err != nil {
+		return errors.Wrapf(err, "Unable to write file %q", f.Name)
+	}
+	return nil
 }
 
 // GetZipOptions specifies a request to download a zip file
