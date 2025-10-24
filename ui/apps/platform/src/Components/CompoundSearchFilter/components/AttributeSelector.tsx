@@ -1,4 +1,3 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';

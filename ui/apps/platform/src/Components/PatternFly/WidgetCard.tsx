@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { Skeleton, Card, CardBody, CardHeader } from '@patternfly/react-core';
 

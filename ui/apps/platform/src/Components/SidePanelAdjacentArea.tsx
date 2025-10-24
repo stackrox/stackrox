@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 
 type Width = '1/3' | '2/5' | '1/2' | '3/5';

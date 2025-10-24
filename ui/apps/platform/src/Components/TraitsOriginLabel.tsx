@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Label } from '@patternfly/react-core';
 import type { Traits } from 'types/traits.proto';

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Button, Modal, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 import { useFormik } from 'formik';

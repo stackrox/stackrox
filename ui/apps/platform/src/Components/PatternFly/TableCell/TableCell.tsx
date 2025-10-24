@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Td } from '@patternfly/react-table';
 import get from 'lodash/get';

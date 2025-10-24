@@ -1,4 +1,3 @@
-import React from 'react';
 import { isValid, parse } from 'date-fns';
 
 import { getDateTime } from 'utils/dateUtils';

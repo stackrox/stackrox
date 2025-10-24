@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FC, PropsWithChildren } from 'react';
 import {
     AngleDoubleDownIcon,

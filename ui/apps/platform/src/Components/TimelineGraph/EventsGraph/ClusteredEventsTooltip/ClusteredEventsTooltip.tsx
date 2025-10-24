@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, RefObject } from 'react';
 import pluralize from 'pluralize';
 import { Popover } from '@patternfly/react-core';

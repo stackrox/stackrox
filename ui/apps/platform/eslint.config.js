@@ -830,7 +830,6 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Components/**',
             'src/ConsolePlugin/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Administration/**',

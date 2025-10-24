@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardBody, CardTitle, EmptyState, List, ListItem } from '@patternfly/react-core';
 
 type ContainerCommandInfoProps = {

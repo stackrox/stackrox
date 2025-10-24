@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, TextInput, SelectOption } from '@patternfly/react-core';
 import type { FormikErrors } from 'formik';

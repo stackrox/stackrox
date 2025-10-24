@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Key, ReactElement, ReactNode } from 'react';
 import {
     Badge,

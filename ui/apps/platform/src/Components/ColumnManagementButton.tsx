@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { ColumnManagementModal } from '@patternfly/react-component-groups';
 import { Button } from '@patternfly/react-core';

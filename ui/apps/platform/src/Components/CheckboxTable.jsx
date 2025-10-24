@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactTablePropTypes from 'react-table-6/lib/propTypes';
 import Table, { rtTrActionsClassName } from 'Components/Table';

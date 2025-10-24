@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 import type { LabelProps } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons';

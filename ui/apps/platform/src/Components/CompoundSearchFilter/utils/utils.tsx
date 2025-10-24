@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import type { SearchFilter } from 'types/search';
