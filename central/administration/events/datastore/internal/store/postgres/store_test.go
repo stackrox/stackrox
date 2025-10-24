@@ -93,6 +93,11 @@ func (s *AdministrationEventsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, administrationEvents))
 
+	foundAdministrationEvents, missing, err := store.GetMany(ctx, administrationEventIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), administrationEvents, foundAdministrationEvents)
+
 	administrationEventCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, administrationEventCount)

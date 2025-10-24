@@ -96,6 +96,11 @@ func (s *ClustersStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, clusters))
 
+	foundClusters, missing, err := store.GetMany(ctx, clusterIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), clusters, foundClusters)
+
 	clusterCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, clusterCount)

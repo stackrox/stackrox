@@ -93,6 +93,11 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, activeComponents))
 
+	foundActiveComponents, missing, err := store.GetMany(ctx, activeComponentIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), activeComponents, foundActiveComponents)
+
 	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, activeComponentCount)

@@ -93,6 +93,11 @@ func (s *AuthProvidersStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, authProviders))
 
+	foundAuthProviders, missing, err := store.GetMany(ctx, authProviderIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), authProviders, foundAuthProviders)
+
 	authProviderCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, authProviderCount)

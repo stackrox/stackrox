@@ -96,6 +96,11 @@ func (s *NetworkBaselinesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkBaselines))
 
+	foundNetworkBaselines, missing, err := store.GetMany(ctx, networkBaselineIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), networkBaselines, foundNetworkBaselines)
+
 	networkBaselineCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkBaselineCount)

@@ -93,6 +93,11 @@ func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkGraphConfigs))
 
+	foundNetworkGraphConfigs, missing, err := store.GetMany(ctx, networkGraphConfigIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), networkGraphConfigs, foundNetworkGraphConfigs)
+
 	networkGraphConfigCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkGraphConfigCount)

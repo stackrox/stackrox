@@ -96,6 +96,11 @@ func (s *ListeningEndpointsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, processListeningOnPortStorages))
 
+	foundProcessListeningOnPortStorages, missing, err := store.GetMany(ctx, processListeningOnPortStorageIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), processListeningOnPortStorages, foundProcessListeningOnPortStorages)
+
 	processListeningOnPortStorageCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, processListeningOnPortStorageCount)

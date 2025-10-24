@@ -258,12 +258,18 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     if len(objs) == 0 {
         return nil
     }
-    batchSize := min(len(objs), pgSearch.MaxBatchSize)
-    inputRows := make([][]interface{}, 0, batchSize)
     {{if not $schema.Parent }}
-    // This is a copy so first we must delete the rows and re-add them
-    // Which is essentially the desired behaviour of an upsert.
-    deletes := make([]string, 0, batchSize)
+    {
+        // CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+        // Parent deletion cascades to children, so only the top-level parent needs deletion.
+        deletes := make([]string, 0, len(objs))
+        for _, obj := range objs {
+            deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}{{end}})
+        }
+        if err := s.DeleteMany(ctx, deletes); err != nil {
+            return err
+        }
+    }
     {{end}}
 
     copyCols := []string {
@@ -272,51 +278,32 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     {{- end }}
     }
 
-    {{ $idx := false }}{{ range $field := $schema.DBColumnFields }}{{if eq "idx" ($field.Getter "obj") -}}{{ $idx = true }}{{end}}{{ end -}}
-    {{ if $idx }}idx := 0{{ end }}
-    for objBatch := range slices.Chunk(objs, batchSize) {
-        for _, obj := range objBatch {
-            // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-            log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-            "in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-            "to simply use the object.  %s", obj)
-            {{/* If embedded, the top-level has the full serialized object */}}
-            {{if not $schema.Parent }}
-            serialized, marshalErr := obj.MarshalVT()
-            if marshalErr != nil {
-                return marshalErr
-            }
-            {{end}}
-
-            inputRows = append(inputRows, []interface{}{
-                {{- template "insertValues" $schema }}
-            })
-
-            {{ if not $schema.Parent }}
-            // Add the ID to be deleted.
-            deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-            {{end}}
-            {{- if $idx }}idx++{{ end -}}
+    idx := 0
+    inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+        if idx >= len(objs) {
+            return nil, nil
         }
+        obj := objs[idx]
+        idx++
 
-        // copy does not upsert so have to delete first.  parent deletion cascades so only need to
-        // delete for the top level parent
         {{if not $schema.Parent }}
-        if err := s.DeleteMany(ctx, deletes); err != nil {
-            return err
+        serialized, marshalErr := obj.MarshalVT()
+        if marshalErr != nil {
+            return nil, marshalErr
         }
-        // clear the inserts and vals for the next batch
-        deletes = deletes[:0]
         {{end}}
-        if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+
+        return []interface{}{
+            {{- template "insertValues" $schema }}
+        }, nil
+    })
+
+    if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, inputRows); err != nil {
             return err
-        }
-        // clear the input rows for the next batch
-        inputRows = inputRows[:0]
     }
 
     {{if $schema.Children }}
-    for {{ if $idx }}idx{{else}}_{{ end }}, obj := range objs {
+    for _, obj := range objs {
         {{- range $child := $schema.Children }}
         if err := {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err

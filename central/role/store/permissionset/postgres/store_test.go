@@ -93,6 +93,11 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
+	foundPermissionSets, missing, err := store.GetMany(ctx, permissionSetIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), permissionSets, foundPermissionSets)
+
 	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, permissionSetCount)
