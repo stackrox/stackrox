@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testImage = "us.icr.io/sr-testing/nginx:1.10"
+	testImage = "icr.io/sr-testing/nginx:1.10"
 )
 
 func TestIBM(t *testing.T) {
