@@ -318,9 +318,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		}
 	}
 
-	retryCtxForSetting, cancelForSetting := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-	defer cancelForSetting()
-	err = m.callWithRetryWithOnConflictCallback(retryCtxForSetting,
+	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			_, err := resSS.Update(ctx, updatedScanSetting, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
@@ -343,9 +341,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Process SSB as an update
 	if ssbObj != nil {
-		retryCtxForBinding, cancelForBinding := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-		defer cancelForBinding()
-		err = m.callWithRetryWithOnConflictCallback(retryCtxForBinding,
+		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
 				_, err = resSSB.Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
 				return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
@@ -430,10 +426,7 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-	defer cancel()
 	return m.callWithRetryWithOnConflictCallback(
-		ctx,
 		func(ctx context.Context) error {
 			log.Infof("Rerunning compliance scan %s", complianceScan)
 			_, err = resI.Update(ctx, scanObj, v1.UpdateOptions{})
@@ -497,11 +490,8 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
-	ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-	defer cancel()
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	err = m.callWithRetryWithOnConflictCallback(
-		ctx,
 		func(ctx context.Context) error {
 			_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
@@ -678,10 +668,7 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		ctx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
-		defer cancel()
 		err = m.callWithRetryWithOnConflictCallback(
-			ctx,
 			func(ctx context.Context) error {
 				_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
 				return errors.Wrapf(err, "updating namespace %q", namespace)
@@ -913,7 +900,9 @@ func (m *handlerImpl) callWithRetry(fn retriableCall) error {
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, nil)
 }
 
-func (m *handlerImpl) callWithRetryWithOnConflictCallback(retryCtx context.Context, fn retriableCall, onConflict onConflictCall) error {
+func (m *handlerImpl) callWithRetryWithOnConflictCallback(fn retriableCall, onConflict onConflictCall) error {
+	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
+	defer cancel()
 	return m.callWithRetryWithOnErrorCallback(retryCtx, fn, onConflictErrorWrapper(onConflict))
 }
 
