@@ -562,7 +562,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -648,7 +648,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -830,7 +830,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -878,7 +878,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -929,7 +929,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -939,7 +939,12 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		}
 	}()
 
-	callback := func(node *storage.Node) error {
+	rows := make([]*storage.Node, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, tx, func(obj *storage.Node) error {
+		rows = append(rows, obj)
+		return nil
+	})
+	for _, node := range rows {
 		err := s.populateNode(ctx, tx, node)
 		if err != nil {
 			return errors.Wrap(err, "populate node")
@@ -947,12 +952,9 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		if err := fn(node); err != nil {
 			return errors.Wrap(err, "failed to process node")
 		}
-		return nil
 	}
-
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
 	if err != nil {
-		return errors.Wrap(err, "cursor by query")
+		return errors.Wrap(err, "get fn by query")
 	}
 	return nil
 }

@@ -482,7 +482,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -560,7 +560,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -754,7 +754,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -803,7 +803,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -843,7 +843,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -853,19 +853,21 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 	}()
 
-	callback := func(image *storage.Image) error {
-		err := s.populateImage(ctx, tx, image)
-		if err != nil {
+	rows := make([]*storage.Image, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, tx, func(obj *storage.Image) error {
+		rows = append(rows, obj)
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "get by query")
+	}
+	for _, image := range rows {
+		if err := s.populateImage(ctx, tx, image); err != nil {
 			return errors.Wrap(err, "populate image")
 		}
 		if err := fn(image); err != nil {
 			return errors.Wrap(err, "failed to process image")
 		}
-		return nil
-	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
-	if err != nil {
-		return errors.Wrap(err, "cursor by query")
 	}
 	return nil
 }
@@ -948,7 +950,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

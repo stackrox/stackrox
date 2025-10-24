@@ -13,6 +13,10 @@ type BatchResults struct {
 	cancel context.CancelFunc
 }
 
+func BatchResultsFromPgx(b pgx.BatchResults) *BatchResults {
+	return &BatchResults{BatchResults: b, cancel: func() {}}
+}
+
 // Close wraps pgx.BatchResults Close
 func (b *BatchResults) Close() error {
 	defer b.cancel()
