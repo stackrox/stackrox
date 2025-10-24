@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -19,11 +19,11 @@ import (
 // This light-weight controller does not invoke Helm, it provides real-time updates for Ready and
 // Progressing conditions.
 type Reconciler struct {
-	client.Client
+	ctrlClient.Client
 }
 
 // New creates a new Central status reconciler.
-func New(c client.Client) *Reconciler {
+func New(c ctrlClient.Client) *Reconciler {
 	return &Reconciler{
 		Client: c,
 	}
@@ -36,7 +36,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Get the Central CR.
 	central := &platform.Central{}
 	if err := r.Get(ctx, req.NamespacedName, central); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, ctrlClient.IgnoreNotFound(err)
 	}
 
 	// Check if reconciliation is in progress.
@@ -45,8 +45,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// List all deployments owned by this Central.
 	deployments := &appsv1.DeploymentList{}
 	if err := r.List(ctx, deployments,
-		client.InNamespace(central.Namespace),
-		client.MatchingLabels{
+		ctrlClient.InNamespace(central.Namespace),
+		ctrlClient.MatchingLabels{
 			"app.kubernetes.io/instance":   central.Name,
 			"app.kubernetes.io/managed-by": "stackrox-operator",
 		},

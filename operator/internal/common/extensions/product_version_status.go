@@ -17,7 +17,7 @@ func ReconcileProductVersionStatusExtension(version string) extensions.Reconcile
 
 		statusUpdater(func(uSt *unstructured.Unstructured) bool {
 			productVersionChanged := updateProductVersion(uSt, version)
-			reconciledVersionChanged := updateReconciledVersion(uSt)
+			reconciledVersionChanged := updateReconciledVersion(uSt, version)
 			observedGenChanged := updateObservedGeneration(uSt, obj.GetGeneration())
 			return productVersionChanged || reconciledVersionChanged || observedGenChanged
 		})
@@ -39,9 +39,10 @@ func updateProductVersion(uSt *unstructured.Unstructured, version string) bool {
 	return true
 }
 
-func updateReconciledVersion(uSt *unstructured.Unstructured) bool {
-	// Get the deployed release version from status.deployedRelease.version
-	deployedVersion, _, _ := unstructured.NestedString(uSt.Object, "deployedRelease", "version")
+func updateReconciledVersion(uSt *unstructured.Unstructured, version string) bool {
+	// Use the operator's version as the reconciled version
+	// This represents the version of the helm chart that was successfully reconciled
+	deployedVersion := version
 
 	// Get the current reconciledVersion
 	currentReconciledVersion, _, _ := unstructured.NestedString(uSt.Object, "reconciledVersion")
