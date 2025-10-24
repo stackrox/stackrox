@@ -21,4 +21,6 @@ type Store interface {
 
 	Walk(ctx context.Context, fn func(obj *storage.Cluster) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.Cluster) error) error
+
+	GetAllFromCache() []*storage.Cluster
 }

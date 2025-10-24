@@ -103,23 +103,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.Nam
 	} else if !ok {
 		return b.SearchNamespaces(ctx, search.EmptyQuery())
 	}
-	var allowedNamespaces []*storage.NamespaceMetadata
-	walkFn := func() error {
-		allowedNamespaces = allowedNamespaces[:0]
-		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-				IsAllowed() {
-				return nil
-			}
-			allowedNamespaces = append(allowedNamespaces, namespace)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
-		return nil, err
-	}
-	return allowedNamespaces, nil
+	return b.store.GetAllFromCache(), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
