@@ -269,6 +269,17 @@ func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
 	return qb
 }
 
+// ForSearchResults is a convenience method that adds select fields commonly needed for
+// constructing SearchResult protos (name and location fields).
+// This enables single-pass queries instead of the traditional 2-pass pattern.
+// Example: qb.ForSearchResults(search.ImageName, search.ImageRegistry)
+func (qb *QueryBuilder) ForSearchResults(fields ...FieldLabel) *QueryBuilder {
+	for _, field := range fields {
+		qb.AddSelectFields(NewQuerySelect(field))
+	}
+	return qb
+}
+
 // WithGroupBy sets query group by.
 func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
 	qb.groupBy = grpBy
