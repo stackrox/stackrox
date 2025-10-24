@@ -8,8 +8,7 @@ metadata:
     app.kubernetes.io/component: ml-service
 spec:
   accessModes:
-  - ReadWriteMany  # Allow multiple pods to share model storage
+    - ReadWriteMany # Allow multiple pods to share model storage
   resources:
     requests:
       storage: 10Gi
-  storageClassName: standard  # Adjust based on your cluster's storage classes

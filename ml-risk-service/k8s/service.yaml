@@ -13,14 +13,14 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: grpc
-    port: 8080
-    targetPort: grpc
-    protocol: TCP
-  - name: health
-    port: 8081
-    targetPort: health
-    protocol: TCP
+    - name: grpc
+      port: 8080
+      targetPort: grpc
+      protocol: TCP
+    - name: health
+      port: 8081
+      targetPort: health
+      protocol: TCP
   selector:
     app.kubernetes.io/name: ml-risk-service
 
@@ -37,9 +37,9 @@ spec:
   type: ClusterIP
   clusterIP: None
   ports:
-  - name: grpc
-    port: 8080
-    targetPort: grpc
-    protocol: TCP
+    - name: grpc
+      port: 8080
+      targetPort: grpc
+      protocol: TCP
   selector:
     app.kubernetes.io/name: ml-risk-service

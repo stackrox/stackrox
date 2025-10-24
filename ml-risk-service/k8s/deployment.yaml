@@ -31,102 +31,98 @@ spec:
       serviceAccountName: ml-risk-service
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - name: ml-risk-service
-        image: stackrox/ml-risk-service:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - name: grpc
-          containerPort: 8080
-          protocol: TCP
-        - name: health
-          containerPort: 8081
-          protocol: TCP
-        env:
-        - name: GRPC_PORT
-          value: "8080"
-        - name: HEALTH_PORT
-          value: "8081"
-        - name: CONFIG_FILE
-          value: "/app/config/feature_config.yaml"
-        - name: LOG_LEVEL
-          value: "INFO"
-        - name: PYTHONPATH
-          value: "/app"
-        # Optional: Load pre-trained model
-        # - name: MODEL_FILE
-        #   value: "/app/models/pretrained_model.pkl"
-        resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
-            cpu: 2000m
-            memory: 4Gi
-        volumeMounts:
-        - name: config
-          mountPath: /app/config
-          readOnly: true
-        - name: model-storage
-          mountPath: /app/models
-        - name: tmp
-          mountPath: /tmp
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: health
-          initialDelaySeconds: 60
-          periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: health
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 1000
-          capabilities:
-            drop:
-            - ALL
+        - name: ml-risk-service
+          image: stackrox/ml-risk-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 8080
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: GRPC_PORT
+              value: "8080"
+            - name: HEALTH_PORT
+              value: "8081"
+            - name: CONFIG_FILE
+              value: "/app/config/feature_config.yaml"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: PYTHONPATH
+              value: "/app"
+          # Optional: Load pre-trained model
+          # - name: MODEL_FILE
+          #   value: "/app/models/pretrained_model.pkl"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: model-storage
+              mountPath: /app/models
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
       volumes:
-      - name: config
-        configMap:
-          name: ml-risk-config
-      - name: model-storage
-        persistentVolumeClaim:
-          claimName: ml-risk-models
-      - name: tmp
-        emptyDir: {}
+        - name: config
+          configMap:
+            name: ml-risk-config
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: ml-risk-models
+        - name: tmp
+          emptyDir: {}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                  - ml-risk-service
-              topologyKey: kubernetes.io/hostname
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - ml-risk-service
+                topologyKey: kubernetes.io/hostname
       tolerations:
-      - key: node.kubernetes.io/not-ready
-        operator: Exists
-        effect: NoExecute
-        tolerationSeconds: 30
-      - key: node.kubernetes.io/unreachable
-        operator: Exists
-        effect: NoExecute
-        tolerationSeconds: 30
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
