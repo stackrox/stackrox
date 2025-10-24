@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     DatePicker,
@@ -8,9 +7,9 @@ import {
     DescriptionListTerm,
     Form,
     PageSection,
+    SelectOption,
     TextInput,
     yyyyMMddFormat,
-    SelectOption,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';

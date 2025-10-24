@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -32,7 +33,7 @@ import * as yup from 'yup';
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { saveSystemConfig } from 'services/SystemConfigService';
-import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
+import type { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { initializeAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from 'hooks/usePublicConfig';
@@ -40,8 +41,9 @@ import useTelemetryConfig from 'hooks/useTelemetryConfig';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
-import { getPlatformComponentsConfigRules, PlatformComponentsConfigRules } from '../configUtils';
-import { Values } from './formTypes';
+import { getPlatformComponentsConfigRules } from '../configUtils';
+import type { PlatformComponentsConfigRules } from '../configUtils';
+import type { Values } from './formTypes';
 import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
 import { PrometheusMetricsForm } from '../Details/components/PrometheusMetricsCard';
 

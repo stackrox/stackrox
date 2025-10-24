@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
 import { Select, MenuToggle, Badge, Flex, FlexItem } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOption } from '@patternfly/react-core';
@@ -24,7 +24,7 @@ function CheckboxSelect({
     toggleLabel,
     toggleIcon,
 }: CheckboxSelectProps) {
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
         setIsOpen(!isOpen);

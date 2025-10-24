@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import {
     Alert,
     Card,
@@ -16,8 +16,8 @@ import {
 import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
-import { Policy } from 'types/policy.proto';
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Policy } from 'types/policy.proto';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldValue from './PolicyCriteriaFieldValue';
 import AndOrOperatorField from './AndOrOperatorField';
 import './PolicyGroupCard.css';
@@ -150,7 +150,7 @@ function PolicyGroupCard({
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
                         const groupName = `policySections[${sectionIndex}].policyGroups[${groupIndex}]`;
                         return (
-                            <React.Fragment key={name}>
+                            <Fragment key={name}>
                                 <Flex
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
@@ -172,7 +172,7 @@ function PolicyGroupCard({
                                         </FlexItem>
                                     )}
                                 </Flex>
-                            </React.Fragment>
+                            </Fragment>
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}

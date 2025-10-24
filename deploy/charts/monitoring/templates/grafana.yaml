@@ -89,3 +89,5 @@ data:
 {{ .Files.Get "dashboards/enrichment-connections.json" | indent 4 }}
   enrichment-endpoints.json: |-
 {{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}
+  enrichment-updatecomputer.json: |-
+{{ .Files.Get "dashboards/enrichment-updatecomputer.json" | indent 4 }}

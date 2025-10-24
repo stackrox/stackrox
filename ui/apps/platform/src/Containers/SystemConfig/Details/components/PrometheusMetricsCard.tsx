@@ -1,9 +1,4 @@
-import React, { ReactElement } from 'react';
-import {
-    PrometheusMetricsCategory,
-    PrivateConfig,
-    PrometheusMetricsLabels,
-} from 'types/config.proto';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -27,7 +22,13 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tr, Td, Thead, Tbody, Th } from '@patternfly/react-table';
 import pluralize from 'pluralize';
-import { FormikErrors, FormikValues } from 'formik';
+import type { FormikErrors, FormikValues } from 'formik';
+
+import type {
+    PrometheusMetricsCategory,
+    PrivateConfig,
+    PrometheusMetricsLabels,
+} from 'types/config.proto';
 
 const metricPrefixes = {
     imageVulnerabilities: 'rox_central_image_vuln_',

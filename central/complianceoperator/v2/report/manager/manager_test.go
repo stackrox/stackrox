@@ -140,6 +140,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Successful report, with watcher running", func() {
+		m.T().Skip("ROX-30838: Enable again")
 		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(2)

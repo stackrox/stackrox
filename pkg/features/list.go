@@ -21,9 +21,6 @@ var (
 	// ClusterAwareDeploymentCheck enables roxctl deployment check to check deployments on the cluster level.
 	ClusterAwareDeploymentCheck = registerFeature("Enables cluster level check for the 'roxctl deployment check' command.", "ROX_CLUSTER_AWARE_DEPLOYMENT_CHECK", enabled)
 
-	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
-	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", enabled)
-
 	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
 	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL")
 
@@ -55,9 +52,6 @@ var (
 	// DelegateWatchedImageReprocessing when set to enabled reprocessing of watched images may be delegated to secured clusters based
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", enabled)
-
-	// CollectorRuntimeConfig enables filtering of runtime events.
-	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG")
 
 	// SensorSingleScanPerImage when set to enabled forces Sensor to allow only a single scan per image to be active at any given
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.

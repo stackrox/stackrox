@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import {
     Divider,
     SearchInput,
@@ -7,12 +7,12 @@ import {
     SelectOption,
 } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/CheckboxSelect';
 import { ensureString, ensureStringArray } from 'utils/ensure';
-import { SelectedEntity } from './EntitySelector';
-import { SelectedAttribute } from './AttributeSelector';
-import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
+import type { SelectedEntity } from './EntitySelector';
+import type { SelectedAttribute } from './AttributeSelector';
+import type { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
 import {
     conditionMap,
     dateConditionMap,
@@ -187,7 +187,7 @@ function CompoundSearchFilterInputField({
         ) {
             content = attribute.inputProps.groupOptions.map(({ name, options }, index) => {
                 return (
-                    <React.Fragment key={name}>
+                    <Fragment key={name}>
                         <SelectGroup label={name}>
                             <SelectList>
                                 {options.map((option) => (
@@ -203,7 +203,7 @@ function CompoundSearchFilterInputField({
                             </SelectList>
                         </SelectGroup>
                         {index !== options.length - 1 && <Divider component="div" />}
-                    </React.Fragment>
+                    </Fragment>
                 );
             });
         } else if (

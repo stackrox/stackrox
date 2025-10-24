@@ -1,6 +1,4 @@
-import React, { ReactElement } from 'react';
-
-import { PublicConfig } from 'types/config.proto';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
@@ -13,6 +11,8 @@ import {
     Divider,
     Label,
 } from '@patternfly/react-core';
+
+import type { PublicConfig } from 'types/config.proto';
 
 export type PublicConfigLoginDetailsProps = {
     publicConfig: PublicConfig | null;

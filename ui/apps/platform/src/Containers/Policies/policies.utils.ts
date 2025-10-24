@@ -1,19 +1,14 @@
 import pluralize from 'pluralize';
 import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
+import isEqual from 'lodash/isEqual';
 import omit from 'lodash/omit';
 
-import {
-    policyCriteriaDescriptors,
-    auditLogDescriptor,
-    imageSigningCriteriaName,
-    Descriptor,
-} from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
 import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
-import { ClusterScopeObject } from 'services/RolesService';
-import { NotifierIntegration } from 'types/notifier.proto';
-import {
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { NotifierIntegration } from 'types/notifier.proto';
+import type {
     EnforcementAction,
     LifecycleStage,
     PolicyEventSource,
@@ -28,11 +23,17 @@ import {
     PolicyImageExclusion,
     ListPolicy,
 } from 'types/policy.proto';
-import { SearchFilter } from 'types/search';
-import { ExtendedPageAction } from 'utils/queryStringUtils';
+import type { SearchFilter } from 'types/search';
+import type { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
-import isEqual from 'lodash/isEqual';
+
+import {
+    policyCriteriaDescriptors,
+    auditLogDescriptor,
+    imageSigningCriteriaName,
+} from './Wizard/Step3/policyCriteriaDescriptors';
+import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';

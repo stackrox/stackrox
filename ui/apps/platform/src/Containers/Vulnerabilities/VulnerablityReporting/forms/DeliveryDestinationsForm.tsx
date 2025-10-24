@@ -47,11 +47,15 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
 
     function onDeleteLastNotifierConfiguration() {
         // Update only the schedule because spread ...formik.values overwrites deletion of last notifier.
-        formik.setFieldValue('schedule', {
-            intervalType: null,
-            daysOfWeek: [],
-            daysOfMonth: [],
-        });
+        formik
+            .setFieldValue('schedule', {
+                intervalType: null,
+                daysOfWeek: [],
+                daysOfMonth: [],
+            })
+            // Revalidate form after schedule change completes to update dependent fields
+            // @ts-expect-error Formik's types incorrectly declare setFieldValue as void, but it returns a Promise
+            .then(() => formik.validateForm());
     }
 
     function onScheduledRepeatChange(_id, selection) {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
@@ -63,12 +63,10 @@ function MitreAttackVectorsViewContainer({
         },
     });
 
-    const [allMitreAttackVectors, setAllMitreAttackVectors] = React.useState<MitreAttackVector[]>(
-        []
-    );
-    const [mitreAttackVectorsError, setMitreAttackVectorsError] = React.useState('');
+    const [allMitreAttackVectors, setAllMitreAttackVectors] = useState<MitreAttackVector[]>([]);
+    const [mitreAttackVectorsError, setMitreAttackVectorsError] = useState('');
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchMitreAttackVectors()
             .then((mitreAttackVectors) => {
                 setAllMitreAttackVectors(mitreAttackVectors);

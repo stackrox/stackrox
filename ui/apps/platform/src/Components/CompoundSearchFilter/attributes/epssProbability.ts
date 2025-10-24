@@ -1,5 +1,5 @@
-import { ConditionTextFilterAttribute } from '../types';
-import { ConditionEntries } from '../components/ConditionText';
+import type { ConditionTextFilterAttribute } from '../types';
+import type { ConditionEntries } from '../components/ConditionText';
 
 const conditionEntries: ConditionEntries = [
     ['>', 'Is greater than'],

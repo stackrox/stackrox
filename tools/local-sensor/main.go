@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -490,10 +489,7 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
 		message.NetworkBaselineSync([]*storage.NetworkBaseline{}),
-	}
-
-	if features.SensorReconciliationOnReconnect.Enabled() {
-		initialMessages = append(initialMessages, message.DeduperState(nil, 1, 1))
+		message.DeduperState(nil, 1, 1),
 	}
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(initialMessages...)

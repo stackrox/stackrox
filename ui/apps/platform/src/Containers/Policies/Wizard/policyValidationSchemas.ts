@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import { Policy } from 'types/policy.proto';
+import type { Policy } from 'types/policy.proto';
 
 import {
     POLICY_DEFINITION_DETAILS_ID,
@@ -8,7 +8,7 @@ import {
     POLICY_DEFINITION_RULES_ID,
     POLICY_BEHAVIOR_SCOPE_ID,
 } from '../policies.constants';
-import { WizardPolicyStep4, WizardScope } from '../policies.utils';
+import type { WizardPolicyStep4, WizardScope } from '../policies.utils';
 import {
     imageSigningCriteriaName,
     mountPropagationCriteriaName,

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FormEvent, ReactElement } from 'react';
 import * as yup from 'yup';
 import {
