@@ -891,7 +891,12 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 	}()
 
-	callback := func(image *storage.ImageV2) error {
+	rows := make([]*storage.ImageV2, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
+	err = pgSearch.RunQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, tx, func(obj *storage.ImageV2) error {
+		rows = append(rows, obj)
+		return nil
+	})
+	for _, image := range rows {
 		err := s.populateImage(ctx, tx, image)
 		if err != nil {
 			return errors.Wrap(err, "populate image")
@@ -899,11 +904,9 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		if err := fn(image); err != nil {
 			return errors.Wrap(err, "failed to process image")
 		}
-		return nil
 	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, callback)
 	if err != nil {
-		return errors.Wrap(err, "cursor by query")
+		return errors.Wrap(err, "get fn by query")
 	}
 	return nil
 }
