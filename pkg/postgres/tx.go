@@ -65,10 +65,10 @@ func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.
 
 // Commit wraps pgx.Tx Commit but is a NOOP for inner transaction
 func (t *Tx) Commit(ctx context.Context) error {
-	defer t.cancelFunc()
 	if t.mode == inner {
 		return nil
 	}
+	defer t.cancelFunc()
 
 	if err := t.Tx.Commit(ctx); err != nil {
 		incQueryErrors("commit", err)
@@ -81,6 +81,9 @@ func (t *Tx) Commit(ctx context.Context) error {
 // In case Rollback or Commit might have the same effect (e.g. read only transaction)
 // prefer Commit.
 func (t *Tx) Rollback(ctx context.Context) error {
+	if t.mode == inner {
+		return nil
+	}
 	defer t.cancelFunc()
 
 	if err := t.Tx.Rollback(ctx); err != nil {
