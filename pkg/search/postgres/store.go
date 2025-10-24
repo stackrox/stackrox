@@ -497,13 +497,20 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	}
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return errors.Wrap(rollbackErr, "could not rollback transaction")
+		// Only rollback if we created the transaction
+		if !ok {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrap(rollbackErr, "could not rollback transaction")
+			}
 		}
 		return errors.Wrap(err, "copy from objects failed")
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+
+	// Only commit if we created the transaction
+	if !ok {
+		if err := tx.Commit(ctx); err != nil {
+			return errors.Wrap(err, "could not commit transaction")
+		}
 	}
 	return nil
 }
