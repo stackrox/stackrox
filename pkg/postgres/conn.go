@@ -8,6 +8,11 @@ import (
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
+// Queryable is an interface to support both Tx and Conn
+type Queryable interface {
+	Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error)
+}
+
 // Conn is a wrapper around pgxpool.Conn
 type Conn struct {
 	PgxPoolConn
