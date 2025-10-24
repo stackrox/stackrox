@@ -43,7 +43,7 @@ func TestSortedKeys(t *testing.T) {
 }
 
 func BenchmarkSortedKeys(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var sk SortedKeys
 		sk, _ = sk.Insert([]byte("4key4"))
 		sk, _ = sk.Insert([]byte("key1"))

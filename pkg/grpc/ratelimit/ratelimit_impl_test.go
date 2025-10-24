@@ -168,7 +168,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
 			l := NewRateLimiter(tt.maxPerSec, tt.maxThrottleDuration)
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_ = l.Limit(context.Background())
 			}
 		})
