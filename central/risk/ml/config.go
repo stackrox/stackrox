@@ -9,7 +9,7 @@ import (
 
 // Storage configuration environment variables
 var (
-	// Model storage backend (local, s3, gcs, azure)
+	// Model storage backend (local, gcs)
 	ModelStorageBackend = env.RegisterSetting("ROX_ML_MODEL_STORAGE_BACKEND", env.WithDefault("local"))
 
 	// Base path for model storage
