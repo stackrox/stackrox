@@ -2,6 +2,7 @@ package tar
 
 import (
 	"archive/tar"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -122,81 +124,218 @@ func checkUntarDir(t *testing.T, path string) error {
 // TestToPath_PreventPathTraversal verifies that malicious TAR files with path traversal
 // attempts (e.g., ../../etc/passwd) are blocked by os.Root security
 func TestToPath_PreventPathTraversal(t *testing.T) {
-	// Create a malicious TAR file with path traversal attempts
-	tmpDir := t.TempDir()
-	tarPath := filepath.Join(tmpDir, "malicious.tar")
-
-	f, err := os.Create(tarPath)
-	assert.NoError(t, err)
-	defer utils.IgnoreError(f.Close)
-
-	tWriter := tar.NewWriter(f)
-
-	// Add malicious entries that try to escape the target directory
-	maliciousPaths := []string{
-		"../../etc/evil.txt",
-		"../../../tmp/evil.txt",
-		"/../root/evil.txt",
-		"normal.txt", // This one should succeed
+	var errPathEscapes = errors.New("path escapes from parent")
+	testCases := map[string]struct {
+		path    string
+		errorIs error
+	}{
+		"should block parent directory traversal": {
+			path:    "../../etc/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block deep parent traversal": {
+			path:    "../../../tmp/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block absolute path traversal": {
+			path:    "/../root/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block mixed relative and parent traversal": {
+			path:    "subdir/../../etc/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block absolute path to system directory": {
+			path:    "/etc/passwd",
+			errorIs: errPathEscapes,
+		},
+		"should block path starting with multiple slashes": {
+			path:    "///etc/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block parent traversal with extra slashes": {
+			path:    "dir//..//..//etc/evil.txt",
+			errorIs: errPathEscapes,
+		},
+		"should block path with trailing parent reference": {
+			path:    "valid/../../..",
+			errorIs: errPathEscapes,
+		},
+		"should allow single dot in path": {
+			path:    "./safe.txt",
+			errorIs: nil,
+		},
+		"should allow double dot that stays within bounds": {
+			path:    "a/b/../c/file.txt",
+			errorIs: nil,
+		},
+		"should allow relative path without traversal": {
+			path:    "deeply/nested/safe/path.txt",
+			errorIs: nil,
+		},
 	}
 
-	for _, malPath := range maliciousPaths {
-		header := &tar.Header{
-			Name:     malPath,
-			Mode:     0644,
-			Size:     int64(len("malicious content")),
-			Typeflag: tar.TypeReg,
-		}
-		err := tWriter.WriteHeader(header)
-		assert.NoError(t, err)
-		_, err = tWriter.Write([]byte("malicious content"))
-		assert.NoError(t, err)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			// Create a TAR file with the test entry
+			tmpDir := t.TempDir()
+			tarPath := filepath.Join(tmpDir, "test.tar")
+
+			f, err := os.Create(tarPath)
+			require.NoError(t, err)
+			defer utils.IgnoreError(f.Close)
+
+			tWriter := tar.NewWriter(f)
+
+			// Add the test entry
+			content := "test content"
+			header := &tar.Header{
+				Name:     tc.path,
+				Mode:     0644,
+				Size:     int64(len(content)),
+				Typeflag: tar.TypeReg,
+			}
+			err = tWriter.WriteHeader(header)
+			require.NoError(t, err)
+			_, err = tWriter.Write([]byte(content))
+			require.NoError(t, err)
+
+			err = tWriter.Close()
+			require.NoError(t, err)
+			err = f.Close()
+			require.NoError(t, err)
+
+			// Try to extract to a target directory
+			extractDir := t.TempDir()
+
+			f, err = os.Open(tarPath)
+			require.NoError(t, err)
+			defer utils.IgnoreError(f.Close)
+
+			// Extract - behavior depends on path safety
+			gotErr := ToPath(extractDir, f)
+			entries, readDirErr := os.ReadDir(extractDir)
+			require.NoError(t, readDirErr)
+
+			if tc.errorIs != nil {
+				// Assert that extraction failed with expected error
+				assert.Error(t, gotErr, "Expected error when extracting path: %s", tc.path)
+				assert.ErrorContains(t, gotErr, tc.errorIs.Error(),
+					"Error should indicate path traversal was blocked")
+
+				// Defense-in-depth: verify no files escaped the extractDir
+				assert.Empty(t, entries, "No files should be extracted when path traversal is detected")
+			} else {
+				// Assert that extraction succeeded
+				assert.NoError(t, gotErr, "Expected successful extraction for safe path: %s", tc.path)
+
+				// Verify file was extracted (path may be cleaned/normalized)
+				assert.NotEmpty(t, entries, "File should be extracted for safe path")
+			}
+		})
+	}
+}
+
+func TestToPath_HappyPath(t *testing.T) {
+	testCases := map[string]struct {
+		files    map[string]string
+		validate func(t *testing.T, extractDir string)
+	}{
+		"should extract single file": {
+			files: map[string]string{
+				"test.txt": "test content",
+			},
+			validate: func(t *testing.T, extractDir string) {
+				content, err := os.ReadFile(filepath.Join(extractDir, "test.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "test content", string(content))
+			},
+		},
+		"should extract nested files": {
+			files: map[string]string{
+				"dir1/file1.txt":      "content1",
+				"dir1/dir2/file2.txt": "content2",
+			},
+			validate: func(t *testing.T, extractDir string) {
+				content1, err := os.ReadFile(filepath.Join(extractDir, "dir1/file1.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "content1", string(content1))
+
+				content2, err := os.ReadFile(filepath.Join(extractDir, "dir1/dir2/file2.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "content2", string(content2))
+			},
+		},
+		"should handle safe path with current dir reference": {
+			files: map[string]string{
+				"./safe.txt":     "safe content",
+				"dir/./file.txt": "nested safe",
+			},
+			validate: func(t *testing.T, extractDir string) {
+				content1, err := os.ReadFile(filepath.Join(extractDir, "safe.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "safe content", string(content1))
+
+				content2, err := os.ReadFile(filepath.Join(extractDir, "dir/file.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "nested safe", string(content2))
+			},
+		},
+		"should handle safe navigation within root": {
+			files: map[string]string{
+				"dir1/../dir2/file.txt": "content", // navigates but stays within root
+			},
+			validate: func(t *testing.T, extractDir string) {
+				// After cleaning, this should be extracted as "dir2/file.txt"
+				content, err := os.ReadFile(filepath.Join(extractDir, "dir2/file.txt"))
+				assert.NoError(t, err)
+				assert.Equal(t, "content", string(content))
+			},
+		},
 	}
 
-	err = tWriter.Close()
-	assert.NoError(t, err)
-	err = f.Close()
-	assert.NoError(t, err)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			// Create TAR file with specified files
+			tmpDir := t.TempDir()
+			tarPath := filepath.Join(tmpDir, "test.tar")
 
-	// Try to extract to a target directory
-	extractDir := t.TempDir()
+			f, err := os.Create(tarPath)
+			require.NoError(t, err)
+			defer utils.IgnoreError(f.Close)
 
-	f, err = os.Open(tarPath)
-	assert.NoError(t, err)
-	defer utils.IgnoreError(f.Close)
+			tWriter := tar.NewWriter(f)
 
-	// Extract - malicious paths should be blocked or sanitized
-	err = ToPath(extractDir, f)
+			for fileName, content := range tc.files {
+				header := &tar.Header{
+					Name:     fileName,
+					Mode:     0644,
+					Size:     int64(len(content)),
+					Typeflag: tar.TypeReg,
+				}
+				err = tWriter.WriteHeader(header)
+				require.NoError(t, err)
+				_, err = tWriter.Write([]byte(content))
+				require.NoError(t, err)
+			}
 
-	// The extraction should either:
-	// 1. Fail with an error (path traversal blocked)
-	// 2. Succeed but only extract safe files within extractDir
-	// With os.Root, path traversal attempts should fail
+			err = tWriter.Close()
+			require.NoError(t, err)
+			err = f.Close()
+			require.NoError(t, err)
 
-	// Verify that malicious files were NOT created outside extractDir
-	// Check common escape locations
-	evilPaths := []string{
-		"/etc/evil.txt",
-		"/tmp/evil.txt",
-		"/root/evil.txt",
-		filepath.Join(tmpDir, "evil.txt"), // one level up
-		filepath.Join(filepath.Dir(tmpDir), "evil.txt"), // two levels up
+			// Extract the TAR
+			extractDir := t.TempDir()
+
+			f, err = os.Open(tarPath)
+			require.NoError(t, err)
+			defer utils.IgnoreError(f.Close)
+
+			err = ToPath(extractDir, f)
+			assert.NoError(t, err, "Extraction should succeed for valid paths")
+
+			// Run test-specific validation
+			tc.validate(t, extractDir)
+		})
 	}
-
-	for _, evilPath := range evilPaths {
-		_, err := os.Stat(evilPath)
-		if err == nil {
-			t.Errorf("Security violation: malicious file was created at %s", evilPath)
-		}
-		// Expect "no such file or directory" - meaning the file wasn't created
-		assert.True(t, os.IsNotExist(err), "Malicious file should not exist at %s", evilPath)
-	}
-
-	// Verify that the normal file was created successfully inside extractDir
-	normalPath := filepath.Join(extractDir, "normal.txt")
-	content, err := os.ReadFile(normalPath)
-	if err == nil {
-		assert.Equal(t, "malicious content", string(content))
-	}
-	// Note: Even if extraction failed entirely (err != nil above), the security check passed
 }
