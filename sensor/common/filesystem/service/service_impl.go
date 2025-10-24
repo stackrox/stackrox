@@ -7,10 +7,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
 
@@ -36,25 +34,6 @@ type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
 
 	writer           io.Writer
-}
-
-func (s *serviceImpl) Name() string {
-	return "filesystem.serviceImpl"
-}
-
-func (s *serviceImpl) Start() error {
-	log.Info("Start filesystem")
-	return nil
-}
-
-func (s *serviceImpl) Stop() {}
-
-func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
