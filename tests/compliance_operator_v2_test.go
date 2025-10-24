@@ -96,7 +96,7 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 	return nil
 }
 
-func createDynamicClient(t T) dynclient.Client {
+func createDynamicClient(t testutils.T) dynclient.Client {
 	restCfg := getConfig(t)
 	restCfg.WarningHandler = rest.NoWarnings{}
 	k8sClient := createK8sClient(t)
@@ -168,7 +168,7 @@ func cleanUpResources(ctx context.Context, t *testing.T, resourceName string, na
 	}
 }
 
-func assertResourceDoesExist(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+func assertResourceDoesExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
 		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil
@@ -176,7 +176,7 @@ func assertResourceDoesExist(ctx context.Context, t T, resourceName string, name
 	return obj
 }
 
-func assertResourceWasUpdated(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+func assertResourceWasUpdated(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	oldResourceVersion := obj.GetResourceVersion()
 	require.Eventually(t, func() bool {
@@ -185,7 +185,7 @@ func assertResourceWasUpdated(ctx context.Context, t T, resourceName string, nam
 	return obj
 }
 
-func assertResourceDoesNotExist(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) {
+func assertResourceDoesNotExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
 		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)

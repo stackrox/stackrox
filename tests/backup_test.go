@@ -31,9 +31,9 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	setupDeployment(t, "nginx", deploymentName)
+	setupDeploymentInNamespace(t, "nginx", deploymentName, "default")
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
-	waitForDeployment(t, deploymentName)
+	waitForDeploymentInCentral(t, deploymentName)
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {
