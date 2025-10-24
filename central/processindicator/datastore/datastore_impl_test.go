@@ -380,7 +380,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 	mockStore := suite.setupDataStoreWithMocks()
-	mockStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.ProcessIndicator{}, true, nil)
+	mockStore.EXPECT().Get(suite.hasNoneCtx, gomock.Any()).Return(nil, false, nil)
 
 	indicator, exists, err := suite.datastore.GetProcessIndicator(suite.hasNoneCtx, uuid.Nil.String())
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -405,24 +405,28 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 	protoassert.Equal(suite.T(), testIndicator, indicator)
 }
 
+// TODO: replace this mocked test with a Postgres integration one
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 
+	storeMock.EXPECT().UpsertMany(suite.hasNoneCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
 
+	storeMock.EXPECT().UpsertMany(suite.hasReadCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
+// TODO: replace this mocked test with a Postgres integration one
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().UpsertMany(suite.hasWriteCtx, gomock.Any()).Times(0)
 
+	storeMock.EXPECT().UpsertMany(suite.hasNoneCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
 
+	storeMock.EXPECT().UpsertMany(suite.hasReadCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
 }
@@ -434,10 +438,15 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
+// TODO: replace this mocked test with a Postgres integration one
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
+	storeMock := suite.setupDataStoreWithMocks()
+
+	storeMock.EXPECT().DeleteByQuery(suite.hasNoneCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasNoneCtx, uuid.NewDummy().String())
 	suite.Error(err, "expected an error trying to write without permissions")
 
+	storeMock.EXPECT().DeleteByQuery(suite.hasReadCtx, gomock.Any()).Times(1).Return(sac.ErrResourceAccessDenied)
 	err = suite.datastore.RemoveProcessIndicatorsByPod(suite.hasReadCtx, uuid.Nil.String())
 	suite.Error(err, "expected an error trying to write without permissions")
 }
