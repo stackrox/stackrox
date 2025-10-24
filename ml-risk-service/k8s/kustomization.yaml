@@ -19,15 +19,13 @@ images:
 - name: stackrox/ml-risk-service
   newTag: latest
 
-commonLabels:
-  app.kubernetes.io/name: ml-risk-service
-  app.kubernetes.io/component: ml-service
-  app.kubernetes.io/part-of: stackrox
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/name: ml-risk-service
+    app.kubernetes.io/component: ml-service
+    app.kubernetes.io/part-of: stackrox
 
-configMapGenerator:
-- name: ml-risk-config
-  files:
-  - config/feature_config.yaml
 
 patches:
 # Patch to adjust resource requests/limits based on environment
