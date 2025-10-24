@@ -160,7 +160,7 @@ When working on specific areas, refer to these detailed guides:
 
 ### Testing Notes
 - PostgreSQL integration tests require Postgres running on port 5432
-- Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:13` for test setup
+- Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:15` for test setup
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
 
