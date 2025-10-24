@@ -481,14 +481,10 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	}
 	defer conn.Release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not begin transaction")
 	}
-
-	// Pass the transaction via context so that nested operations (like DeleteMany)
-	// can reuse the same transaction instead of trying to create a new one
-	ctx = postgres.ContextWithTx(ctx, tx)
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {

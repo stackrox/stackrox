@@ -99,7 +99,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.SystemInfo
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
