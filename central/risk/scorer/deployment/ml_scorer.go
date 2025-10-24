@@ -48,7 +48,7 @@ func (s *MLScorer) Score(ctx context.Context, deployment *storage.Deployment, im
 	}
 
 	if mlResponse == nil {
-		log.Debug("No ML risk response for deployment %s", deployment.GetId())
+		log.Debugf("No ML risk response for deployment %s", deployment.GetId())
 		return nil
 	}
 
