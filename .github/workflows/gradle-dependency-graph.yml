@@ -20,5 +20,4 @@ jobs:
       with:
         dependency-graph: generate-and-submit
     - run: ./gradlew build -x test
-      with: 
-        working-directory: ./
+      working-directory: qa-tests-backend 
