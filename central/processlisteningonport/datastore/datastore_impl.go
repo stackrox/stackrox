@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -34,6 +35,10 @@ type datastoreImpl struct {
 var (
 	plopSAC = sac.ForResource(resources.DeploymentExtension)
 	log     = logging.LoggerForModule()
+)
+
+const (
+	getBatchSize = 10000
 )
 
 func newDatastoreImpl(
@@ -145,7 +150,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 	}
 
-	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
+	existingPLOPMap, err := ds.fetchExistingPLOPsMap(ctx, indicatorIds)
 	if err != nil {
 		return err
 	}
@@ -315,7 +320,47 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	return ds.storage.DeleteMany(ctx, ids)
 }
 
-// fetchExistingPLOPs: Query already existing PLOP objects belonging to the
+func getUniqueIds(ids []string) []string {
+	// 1. Use a map as a set to track encountered IDs.
+	// The boolean value is just a placeholder (the existence of the key is what matters).
+	seen := make(map[string]bool)
+
+	// Pre-allocate the unique slice with a capacity equal to the input slice length
+	// for efficiency, though it may be smaller in the end.
+	unique := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+		// Check if the ID has already been seen.
+		if _, ok := seen[id]; !ok {
+			// If not seen (ok is false), mark it as seen and add it to the unique slice.
+			seen[id] = true
+			unique = append(unique, id)
+		}
+	}
+
+	return unique
+}
+
+func (ds *datastoreImpl) fetchExistingPLOPs(
+	ctx context.Context,
+	indicatorIds []string,
+) ([]*storage.ProcessListeningOnPortStorage, error) {
+
+	uniqueIds := getUniqueIds(indicatorIds)
+	existingPlops := make([]*storage.ProcessListeningOnPortStorage, 0, len(uniqueIds))
+	for idsBatch := range slices.Chunk(uniqueIds, getBatchSize) {
+		batchExistingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+			AddStrings(search.ProcessID, idsBatch...).ProtoQuery())
+		if err != nil {
+			return nil, err
+		}
+		existingPlops = append(existingPlops, batchExistingPLOPs...)
+	}
+
+	return existingPlops, nil
+}
+
+// fetchExistingPLOPsMap: Query already existing PLOP objects belonging to the
 // specified process indicators.
 //
 // XXX: This function queries all PLOP, no matter if they are matching port +
@@ -324,7 +369,7 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 // introduce filtering by port and protocol to the query, and even without
 // extra indices PostgreSQL will be able to do it relatively efficiently using
 // bitmap scan.
-func (ds *datastoreImpl) fetchExistingPLOPs(
+func (ds *datastoreImpl) fetchExistingPLOPsMap(
 	ctx context.Context,
 	indicatorIds []string,
 ) (map[string]*storage.ProcessListeningOnPortStorage, error) {
@@ -338,8 +383,9 @@ func (ds *datastoreImpl) fetchExistingPLOPs(
 	// If no corresponding processes found, we can't verify if the PLOP
 	// object is opening/closing an existing one. Collect existingPLOPMap
 	// only if there are some matching indicators.
-	existingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-		AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
+	//existingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+	//	AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
+	existingPLOPs, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return nil, err
 	}
@@ -529,6 +575,21 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	}
 
 	return append(plopObjects, newPLOP)
+}
+
+// RemoveAllPlops is meant to be used only for testing
+func (ds *datastoreImpl) RemoveAllPlops(ctx context.Context) error {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	q := search.NewQueryBuilder().ProtoQuery()
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {

@@ -2288,7 +2288,7 @@ func makeRandomString(length int) string {
 	return string(randomString)
 }
 
-func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*storage.ProcessListeningOnPortFromSensor {
+func makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*storage.ProcessListeningOnPortFromSensor {
 	count := 0
 
 	nplops := 2 * nprocess * npod * nport
@@ -2350,7 +2350,7 @@ func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
 	nprocess := 30
 	npod := 30
 
-	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	plopObjects := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
 	// Get a set of PodUids so that we can delete by PodUid later
 	podUids := set.NewStringSet()
@@ -2740,7 +2740,7 @@ func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListenin
 }
 
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
-	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	plopObjects := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
 	plopsWithoutPodUids := 0
 	for _, plop := range plopObjects {
@@ -2798,7 +2798,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			nport := 30
 			nprocess := 30
 			npod := 30
-			plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+			plopObjects := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
 			for _, plop := range plopObjects {
 				p := rand.Float32()
@@ -2871,7 +2871,7 @@ func (suite *PLOPDataStoreTestSuite) TestSortMany() {
 	nprocess := 50
 	npod := 50
 
-	plops := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+	plops := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 	suite.addTooMany(plops)
 
 	suite.addDeployments()
