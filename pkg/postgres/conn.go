@@ -23,11 +23,12 @@ func (c *Conn) Release() {
 // Begin wraps pgxpool.Conn Begin
 func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 	if tx, ok := TxFromContext(ctx); ok {
-		return &Tx{
+		t := &Tx{
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
-		}, ctx, nil
+		}
+		return t, ContextWithTx(ctx, t), nil
 	}
 
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
