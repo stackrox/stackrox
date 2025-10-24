@@ -459,7 +459,6 @@ Scanner V4 claims the images contain vulnerabilities which the official Red Hat 
 - The default policy "No resource requests or limits specified" has been renamed to "No CPU request or memory limit specified" and now no longer checks CPU limit or memory request. Rather it only detects that the CPU request and memory limits are set.
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
-- The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
 
 ## [4.3.0]
 
