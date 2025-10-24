@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Badge, SelectOption } from '@patternfly/react-core';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';

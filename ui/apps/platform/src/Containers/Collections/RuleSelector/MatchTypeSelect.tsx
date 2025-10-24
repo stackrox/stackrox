@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Select } from '@patternfly/react-core/deprecated';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';

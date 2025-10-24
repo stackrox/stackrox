@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ChangeEvent, FocusEvent, FormEvent, ReactElement } from 'react';
 import type { FormikErrors, FormikTouched } from 'formik';
 import {
