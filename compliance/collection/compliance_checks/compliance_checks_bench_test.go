@@ -27,8 +27,8 @@ func BenchmarkRunChecks(b *testing.B) {
 	conf := &sensor.MsgToCompliance_ScrapeConfig{
 		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		getCheckResults(run, conf, data)
 	}
 }
@@ -47,8 +47,7 @@ func BenchmarkCompressResults(b *testing.B) {
 	}
 	results := getCheckResults(run, conf, data)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, err := cutils.CompressResults(results)
 		if err != nil {
 			panic(err)
@@ -68,8 +67,8 @@ func BenchmarkChecksAndCompression(b *testing.B) {
 	conf := &sensor.MsgToCompliance_ScrapeConfig{
 		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		results := getCheckResults(run, conf, data)
 		_, err := cutils.CompressResults(results)
 		if err != nil {
