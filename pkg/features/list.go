@@ -64,6 +64,9 @@ var (
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
 	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
+	// PaginateVulnReportingQuery paginates Vuln Reporting Queries
+	PaginateVulnReportingQuery = registerFeature("paginate vuln reporting queries for improved performance", "ROX_VULN_REPORTING_QUERY")
+
 	// Display clusters page patternfly redesign.
 	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI", enabled)
 
