@@ -1,8 +1,10 @@
 package fileutils
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/utils"
@@ -119,6 +121,85 @@ func TestMkdirAllInRoot_PathTraversalProtection(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestWriteFileInRoot(t *testing.T) {
+	tmpDir := t.TempDir()
+	root, err := os.OpenRoot(tmpDir)
+	require.NoError(t, err)
+	defer utils.IgnoreError(root.Close)
+
+	testCases := map[string]struct {
+		fileName string
+		content  string
+		perm     os.FileMode
+	}{
+		"should write simple file": {
+			fileName: "test.txt",
+			content:  "test content",
+			perm:     0644,
+		},
+		"should write file in nested directory": {
+			fileName: "a/b/c/nested.txt",
+			content:  "nested content",
+			perm:     0644,
+		},
+		"should write file with executable permissions": {
+			fileName: "script.sh",
+			content:  "#!/bin/bash\necho test",
+			perm:     0755,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			rc := io.NopCloser(strings.NewReader(tc.content))
+			err := WriteFileInRoot(root, tc.fileName, tc.perm, rc)
+			assert.NoError(t, err)
+
+			// Verify file was created with correct content
+			filePath := filepath.Join(tmpDir, tc.fileName)
+			content, err := os.ReadFile(filePath)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.content, string(content))
+
+			// Verify permissions
+			info, err := os.Stat(filePath)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.perm, info.Mode().Perm())
+		})
+	}
+}
+
+func TestWriteFileInRoot_PathTraversal(t *testing.T) {
+	tmpDir := t.TempDir()
+	root, err := os.OpenRoot(tmpDir)
+	require.NoError(t, err)
+	defer utils.IgnoreError(root.Close)
+
+	testCases := map[string]struct {
+		maliciousPath string
+		errorContains string
+	}{
+		"should block parent directory traversal": {
+			maliciousPath: "../../etc/evil.txt",
+			errorContains: "path escapes from parent",
+		},
+		"should block absolute path": {
+			maliciousPath: "/etc/evil.txt",
+			errorContains: "path escapes from parent",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			rc := io.NopCloser(strings.NewReader("malicious content"))
+			err := WriteFileInRoot(root, tc.maliciousPath, 0644, rc)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), tc.errorContains)
 		})
 	}
 }
