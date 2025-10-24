@@ -80,15 +80,21 @@ docker-run: ## Run Docker container locally
 		--name ml-risk-service \
 		-p 8080:8080 \
 		-p 8081:8081 \
+		-p 8090:8090 \
 		-v $(PWD)/models:/app/models \
 		-e LOG_LEVEL=INFO \
 		-e GRPC_PORT=8080 \
 		-e HEALTH_PORT=8081 \
+		-e REST_PORT=8090 \
+		-e ENABLE_REST=true \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
-	@echo "$(GREEN)Container started! gRPC: localhost:8080, Health: http://localhost:8081$(NC)"
+	@echo "$(GREEN)Container started!$(NC)"
+	@echo "$(BLUE)  - gRPC API: localhost:8080$(NC)"
+	@echo "$(BLUE)  - Health: http://localhost:8081$(NC)"
+	@echo "$(BLUE)  - REST API: http://localhost:8090$(NC)"
+	@echo "$(BLUE)  - API Docs: http://localhost:8090/docs$(NC)"
 	@echo "$(BLUE)Check logs with: make docker-logs$(NC)"
-	@echo "$(BLUE)Check health with: curl http://localhost:8081/health$(NC)"
 
 .PHONY: docker-stop
 docker-stop: ## Stop Docker container
@@ -149,7 +155,12 @@ k8s-logs: ## Show Kubernetes pod logs
 .PHONY: k8s-port-forward
 k8s-port-forward: ## Port forward to Kubernetes service
 	@echo "$(GREEN)Port forwarding to Kubernetes service...$(NC)"
-	kubectl port-forward -n $(NAMESPACE) svc/ml-risk-service 8080:8080 8081:8081
+	@echo "$(BLUE)Access endpoints at:$(NC)"
+	@echo "$(BLUE)  - gRPC: localhost:8080$(NC)"
+	@echo "$(BLUE)  - Health: http://localhost:8081$(NC)"
+	@echo "$(BLUE)  - REST API: http://localhost:8090$(NC)"
+	@echo "$(BLUE)  - API Docs: http://localhost:8090/docs$(NC)"
+	kubectl port-forward -n $(NAMESPACE) svc/ml-risk-service 8080:8080 8081:8081 8090:8090
 
 .PHONY: k8s-shell
 k8s-shell: ## Get shell in Kubernetes pod

@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from dataclasses import asdict
+from datetime import datetime, timedelta
 
 from src.feature_extraction.baseline_features import BaselineFeatureExtractor
 
@@ -332,7 +333,6 @@ class JSONTrainingDataGenerator:
         """
         import random
         import uuid
-        from datetime import datetime, timedelta
 
         deployments = []
 

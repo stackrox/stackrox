@@ -44,11 +44,18 @@ spec:
             - name: health
               containerPort: 8081
               protocol: TCP
+            - name: rest
+              containerPort: 8090
+              protocol: TCP
           env:
             - name: GRPC_PORT
               value: "8080"
             - name: HEALTH_PORT
               value: "8081"
+            - name: REST_PORT
+              value: "8090"
+            - name: ENABLE_REST
+              value: "true"
             - name: CONFIG_FILE
               value: "/app/config/feature_config.yaml"
             - name: LOG_LEVEL

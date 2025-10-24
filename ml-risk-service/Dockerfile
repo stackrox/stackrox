@@ -67,7 +67,7 @@ RUN chmod +x /app/entrypoint.sh /app/healthcheck.sh && \
 USER mlrisk
 
 # Expose ports
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

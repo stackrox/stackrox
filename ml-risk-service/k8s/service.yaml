@@ -21,6 +21,10 @@ spec:
       port: 8081
       targetPort: health
       protocol: TCP
+    - name: rest
+      port: 8090
+      targetPort: rest
+      protocol: TCP
   selector:
     app.kubernetes.io/name: ml-risk-service
 
