@@ -185,24 +185,44 @@ func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	namespaces, results, err := b.searchNamespaces(ctx, q)
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+
+	// Add required fields for SearchResult proto: name (namespace name) and location (cluster/namespace)
+	// ForSearchResults will add these as select fields to the query
+	selectSelects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := b.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	searchResults := make([]*v1.SearchResult, 0, len(namespaces))
-	for i, r := range results {
-		namespace := namespaces[i]
-		searchResults = append(searchResults, &v1.SearchResult{
-			Id:             r.ID,
-			Name:           namespace.GetName(),
-			Category:       v1.SearchCategory_NAMESPACES,
-			Score:          r.Score,
-			FieldToMatches: search.GetProtoMatchesMap(r.Matches),
-			Location:       fmt.Sprintf("%s/%s", namespace.GetClusterName(), namespace.GetName()),
-		})
+	// Build name and location strings from selected fields
+	for i := range results {
+		clusterName := ""
+		namespaceName := ""
+
+		// Extract values from FieldValues if available
+		if results[i].FieldValues != nil {
+			if cluster, ok := results[i].FieldValues[search.Cluster.String()]; ok {
+				clusterName, _ = cluster.(string)
+			}
+			if namespace, ok := results[i].FieldValues[search.Namespace.String()]; ok {
+				namespaceName, _ = namespace.(string)
+			}
+		}
+
+		results[i].Name = namespaceName
+		results[i].Location = fmt.Sprintf("%s/%s", clusterName, namespaceName)
 	}
-	return searchResults, nil
+
+	// Convert search Results directly to SearchResult protos without a second database pass
+	converter := &NamespaceSearchResultConverter{}
+	return search.ResultsToSearchResultProtos(results, converter), nil
 }
 
 func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
@@ -242,4 +262,20 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 	for _, ns := range nss {
 		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
 	}
+}
+
+// NamespaceSearchResultConverter implements search.SearchResultConverter for namespace search results.
+// This enables single-pass query construction for SearchResult protos.
+type NamespaceSearchResultConverter struct{}
+
+func (c *NamespaceSearchResultConverter) BuildName(result *search.Result) string {
+	return result.Name
+}
+
+func (c *NamespaceSearchResultConverter) BuildLocation(result *search.Result) string {
+	return result.Location
+}
+
+func (c *NamespaceSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NAMESPACES
 }

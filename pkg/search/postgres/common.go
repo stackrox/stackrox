@@ -966,8 +966,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 			idx = len(searchResults)
 			recordIDIdxMap[id] = idx
 			searchResults = append(searchResults, searchPkg.Result{
-				ID:      IDFromPks(idParts), // TODO: figure out what separator to use
-				Matches: make(map[string][]string),
+				ID:          IDFromPks(idParts), // TODO: figure out what separator to use
+				Matches:     make(map[string][]string),
+				FieldValues: make(map[string]interface{}),
 			})
 		}
 		result := searchResults[idx]
@@ -981,6 +982,8 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
 					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
+				// Store raw field value for SearchResult proto construction
+				result.FieldValues[field.FieldPath] = returnedValue
 			}
 		}
 		searchResults[idx] = result
