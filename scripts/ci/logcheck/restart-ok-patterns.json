@@ -48,6 +48,12 @@
         "logline": "checking central status failed after"
     },
     {
+        "comment": "Central may still hold handle to closed connection due to various db restarts",
+        "job": "upgrade",
+        "logfile": "central-previous",
+        "logline": "panic: close of closed channel"
+    },
+    {
         "comment": "collector restart due to sensor bounce in compliance test",
         "job": "compliance-e2e-tests",
         "logfile": "collector-previous",
