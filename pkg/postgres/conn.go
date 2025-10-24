@@ -21,13 +21,13 @@ func (c *Conn) Release() {
 }
 
 // Begin wraps pgxpool.Conn Begin
-func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
+func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 	if tx, ok := TxFromContext(ctx); ok {
 		return &Tx{
 			Tx:         tx.Tx,
 			cancelFunc: tx.cancelFunc,
 			mode:       inner,
-		}, nil
+		}, ctx, nil
 	}
 
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
@@ -35,12 +35,13 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, error) {
 	tx, err := c.PgxPoolConn.Begin(ctx)
 	if err != nil {
 		incQueryErrors("begin", err)
-		return nil, err
+		return nil, ctx, err
 	}
-	return &Tx{
+	t := &Tx{
 		Tx:         tx,
 		cancelFunc: cancel,
-	}, nil
+	}
+	return t, ContextWithTx(ctx, t), nil
 }
 
 // Exec wraps pgxpool.Conn Exec

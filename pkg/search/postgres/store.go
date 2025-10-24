@@ -492,7 +492,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	}
 	defer conn.Release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not begin transaction")
 	}
