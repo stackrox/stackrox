@@ -7,44 +7,46 @@ metadata:
 namespace: stackrox
 
 resources:
-- namespace.yaml
-- configmap.yaml
-- rbac.yaml
-- pvc.yaml
-- deployment.yaml
-- service.yaml
-- network-policy.yaml
+  - namespace.yaml
+  - configmap.yaml
+  - rbac.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - network-policy.yaml
+# Uncomment the line below if dynamic UID assignment doesn't work
+# Requires cluster admin privileges to apply
+# - scc.yaml
 
 images:
-- name: stackrox/ml-risk-service
-  newTag: latest
+  - name: stackrox/ml-risk-service
+    newTag: latest
 
 labels:
-- includeSelectors: true
-  pairs:
-    app.kubernetes.io/name: ml-risk-service
-    app.kubernetes.io/component: ml-service
-    app.kubernetes.io/part-of: stackrox
-
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: ml-risk-service
+      app.kubernetes.io/component: ml-service
+      app.kubernetes.io/part-of: stackrox
 
 patches:
-# Patch to adjust resource requests/limits based on environment
-- target:
-    kind: Deployment
-    name: ml-risk-service
-  patch: |-
-    - op: replace
-      path: /spec/template/spec/containers/0/resources/requests/memory
-      value: 1Gi
-    - op: replace
-      path: /spec/template/spec/containers/0/resources/limits/memory
-      value: 4Gi
+  # Patch to adjust resource requests/limits based on environment
+  - target:
+      kind: Deployment
+      name: ml-risk-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 4Gi
 
-# Patch to adjust replica count based on environment
-- target:
-    kind: Deployment
-    name: ml-risk-service
-  patch: |-
-    - op: replace
-      path: /spec/replicas
-      value: 2
+  # Patch to adjust replica count based on environment
+  - target:
+      kind: Deployment
+      name: ml-risk-service
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
