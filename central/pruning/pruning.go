@@ -15,6 +15,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -89,6 +90,7 @@ type GarbageCollector interface {
 func newGarbageCollector(alerts alertDatastore.DataStore,
 	nodes nodeDatastore.DataStore,
 	images imageDatastore.DataStore,
+	imagesV2 imageV2Datastore.DataStore,
 	clusters clusterDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
 	pods podDatastore.DataStore,
@@ -114,6 +116,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		clusters:          clusters,
 		nodes:             nodes,
 		images:            images,
+		imagesV2:          imagesV2,
 		imageComponents:   imageComponents,
 		imageComponentsV2: imageComponentsV2,
 		deployments:       deployments,
@@ -144,6 +147,7 @@ type garbageCollectorImpl struct {
 	clusters          clusterDatastore.DataStore
 	nodes             nodeDatastore.DataStore
 	images            imageDatastore.DataStore
+	imagesV2          imageV2Datastore.DataStore
 	imageComponents   imageComponentDatastore.DataStore
 	imageComponentsV2 imageComponentV2Datastore.DataStore
 	deployments       deploymentDatastore.DataStore
@@ -616,41 +620,81 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 		return
 	}
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
-	imageResults, err := g.images.Search(pruningCtx, qb)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	log.Infof("[Image pruning] Found %d image search results", len(imageResults))
-
-	imagesToPrune := make([]string, 0, len(imageResults))
-	for _, result := range imageResults {
-		q1 := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, result.ID).ProtoQuery()
-		deploymentResults, err := g.deployments.Search(pruningCtx, q1)
+	if features.FlattenImageData.Enabled() {
+		imageResults, err := g.imagesV2.SearchRawImages(pruningCtx, qb)
 		if err != nil {
-			log.Errorf("[Image pruning] searching deployments: %v", err)
-			continue
-		}
-		if len(deploymentResults) != 0 {
-			continue
-		}
-
-		q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.ID).ProtoQuery()
-		podResults, err := g.pods.Search(pruningCtx, q2)
-		if err != nil {
-			log.Errorf("[Image pruning] searching pods: %v", err)
-			continue
-		}
-		if len(podResults) != 0 {
-			continue
-		}
-		imagesToPrune = append(imagesToPrune, result.ID)
-	}
-	if len(imagesToPrune) > 0 {
-		log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
-		log.Debugf("[Image Pruning] Removing images %+v", imagesToPrune)
-		if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
 			log.Error(err)
+			return
+		}
+		log.Infof("[Image pruning] Found %d image search results", len(imageResults))
+
+		imagesToPrune := make([]string, 0, len(imageResults))
+		for _, result := range imageResults {
+			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageID, result.GetId()).ProtoQuery()
+			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
+			if err != nil {
+				log.Errorf("[Image pruning] searching deployments: %v", err)
+				continue
+			}
+			if len(deploymentResults) != 0 {
+				continue
+			}
+
+			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.GetDigest()).ProtoQuery()
+			podResults, err := g.pods.Search(pruningCtx, q2)
+			if err != nil {
+				log.Errorf("[Image pruning] searching pods: %v", err)
+				continue
+			}
+			if len(podResults) != 0 {
+				continue
+			}
+			imagesToPrune = append(imagesToPrune, result.GetId())
+		}
+		if len(imagesToPrune) > 0 {
+			log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
+			log.Debugf("[Image Pruning] Removing images %+v", imagesToPrune)
+			if err := g.imagesV2.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
+				log.Error(err)
+			}
+		}
+	} else {
+		imageResults, err := g.images.Search(pruningCtx, qb)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		log.Infof("[Image pruning] Found %d image search results", len(imageResults))
+
+		imagesToPrune := make([]string, 0, len(imageResults))
+		for _, result := range imageResults {
+			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, result.ID).ProtoQuery()
+			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
+			if err != nil {
+				log.Errorf("[Image pruning] searching deployments: %v", err)
+				continue
+			}
+			if len(deploymentResults) != 0 {
+				continue
+			}
+
+			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.ID).ProtoQuery()
+			podResults, err := g.pods.Search(pruningCtx, q2)
+			if err != nil {
+				log.Errorf("[Image pruning] searching pods: %v", err)
+				continue
+			}
+			if len(podResults) != 0 {
+				continue
+			}
+			imagesToPrune = append(imagesToPrune, result.ID)
+		}
+		if len(imagesToPrune) > 0 {
+			log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
+			log.Debugf("[Image Pruning] Removing images %+v", imagesToPrune)
+			if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
+				log.Error(err)
+			}
 		}
 	}
 }
@@ -990,7 +1034,13 @@ func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
 func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
 	defer metrics.SetPruningDuration(time.Now(), "ImageRisks")
 	imagesWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE)
-	results, err := g.images.Search(pruningCtx, search.EmptyQuery())
+	var results []search.Result
+	var err error
+	if features.FlattenImageData.Enabled() {
+		results, err = g.imagesV2.Search(pruningCtx, search.EmptyQuery())
+	} else {
+		results, err = g.images.Search(pruningCtx, search.EmptyQuery())
+	}
 	if err != nil {
 		log.Errorf("[Risk pruning] Searching images: %v", err)
 		return
