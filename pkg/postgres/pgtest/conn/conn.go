@@ -15,7 +15,7 @@ import (
 
 // GetConnectionStringWithPoolConfiguration returns a connection string with pool configuration
 func GetConnectionStringWithPoolConfiguration(t testing.TB, database string) string {
-	return fmt.Sprintf("%s pool_min_conns=1 pool_max_conns=2", GetConnectionStringWithDatabaseName(t, database))
+	return fmt.Sprintf("%s pool_min_conns=1 pool_max_conns=1", GetConnectionStringWithDatabaseName(t, database))
 }
 
 // GetConnectionStringWithDatabaseName returns a connection string with the passed database

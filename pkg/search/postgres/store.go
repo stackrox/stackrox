@@ -506,6 +506,10 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		}
 	}
 
+	// Pass the transaction via context so that nested operations (like DeleteMany)
+	// can reuse the same transaction instead of trying to create a new one
+	ctx = postgres.ContextWithTx(ctx, tx)
+
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
 		// Only rollback if we created the transaction
 		if !wasTxInCtx {
