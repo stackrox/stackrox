@@ -585,9 +585,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 			}
 			for _, image := range c.images {
 				if features.FlattenImageData.Enabled() {
+					image.Id = types.NewDigest(image.GetId()).Digest()
 					imageV2 := utils.ConvertToV2(image)
-					imageV2.Digest = types.NewDigest(image.GetId()).Digest()
-					imageV2.Id = uuid.NewV5FromNonUUIDs(imageV2.GetName().GetFullName(), imageV2.GetDigest()).String()
 					require.NoError(t, imagesV2.UpsertImage(ctx, imageV2))
 				} else {
 					image.Id = types.NewDigest(image.GetId()).Digest()
