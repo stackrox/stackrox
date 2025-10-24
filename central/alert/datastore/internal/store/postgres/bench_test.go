@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkMany(b *testing.B) {
@@ -62,8 +61,12 @@ func BenchmarkMany(b *testing.B) {
 					count++
 					return nil
 				})
-				assert.NoError(b, err)
-				assert.Equal(b, alertsNum, count)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if alertsNum != count {
+					b.Fatalf("Expected %d alerts, got %d", alertsNum, count)
+				}
 			}
 		})
 	}
