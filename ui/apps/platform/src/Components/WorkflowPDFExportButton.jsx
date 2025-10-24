@@ -1,14 +1,17 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import { Button } from '@patternfly/react-core';
 
 import { getDate } from 'utils/dateUtils';
 import { enhanceWordBreak } from 'utils/pdfUtils';
 import { getProductBranding } from 'constants/productBranding';
+
+// Register the AutoTable plugin with jsPDF
+applyPlugin(jsPDF);
 
 const printClassName = 'pdf-page';
 const imagesClassName = 'pdf-page-image';
@@ -279,6 +282,9 @@ class WorkflowPDFExportButton extends Component {
                 });
                 element.removeChild(header);
                 doc.save(`${fileName}.pdf`);
+                setIsExporting(false);
+            }).catch((error) => {
+                console.error('PDF export failed:', error);
                 setIsExporting(false);
             });
         }, 0);
