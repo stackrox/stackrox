@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { selectOptionEventTypes, rootTypes } from 'constants/timelineTypes';
+import { rootTypes, selectOptionEventTypes } from 'constants/timelineTypes';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import DeploymentEventTimeline from './DeploymentEventTimeline';
 import PodEventTimeline from './PodEventTimeline';

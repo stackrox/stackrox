@@ -20,13 +20,13 @@ import {
     LabelGroup,
     TextInput,
 } from '@patternfly/react-core';
-import { Table, Tr, Td, Thead, Tbody, Th } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import type { FormikErrors, FormikValues } from 'formik';
 
 import type {
-    PrometheusMetricsCategory,
     PrivateConfig,
+    PrometheusMetricsCategory,
     PrometheusMetricsLabels,
 } from 'types/config.proto';
 

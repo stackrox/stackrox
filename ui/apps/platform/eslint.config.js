@@ -783,8 +783,6 @@ module.exports = [
             'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
-            'src/Containers/Risk/**',
-            'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
