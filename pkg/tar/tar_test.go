@@ -219,7 +219,7 @@ func TestToPath_PreventPathTraversal(t *testing.T) {
 
 			if tc.errorIs != nil {
 				// Assert that extraction failed with expected error
-				assert.Error(t, gotErr, "Expected error when extracting path: %s", tc.path)
+				assert.Errorf(t, gotErr, "Expected error when extracting path: %s", tc.path)
 				assert.ErrorContains(t, gotErr, tc.errorIs.Error(),
 					"Error should indicate path traversal was blocked")
 
