@@ -9,12 +9,10 @@ function useEntityName(entityType, entityId, skip) {
     // Header query
     const entityNameQuery = entityNameQueryMap[entityType || entityTypes.CLUSTER];
     const nameQueryOptions = {
-        options: {
-            fetchPolicy: 'cache-first',
-            skip,
-        },
+        fetchPolicy: 'cache-first',
+        skip: skip || !entityId,
         variables: {
-            id: decodeURIComponent(entityId) || '',
+            id: entityId ? decodeURIComponent(entityId) : '',
         },
     };
     const { loading, error, data } = useQuery(entityNameQuery, nameQueryOptions);
