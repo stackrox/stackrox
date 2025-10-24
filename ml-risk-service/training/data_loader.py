@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from dataclasses import asdict
 
-from ..src.feature_extraction.baseline_features import BaselineFeatureExtractor
+from src.feature_extraction.baseline_features import BaselineFeatureExtractor
 
 logger = logging.getLogger(__name__)
 

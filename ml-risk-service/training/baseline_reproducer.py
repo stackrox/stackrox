@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
 
 from .data_loader import TrainingDataLoader
-from ..src.feature_extraction.baseline_features import BaselineFeatureExtractor
+from src.feature_extraction.baseline_features import BaselineFeatureExtractor
 
 logger = logging.getLogger(__name__)
 

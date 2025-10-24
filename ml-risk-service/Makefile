@@ -70,13 +70,25 @@ docker-build: ## Build Docker image
 .PHONY: docker-run
 docker-run: ## Run Docker container locally
 	@echo "$(GREEN)Starting Docker container...$(NC)"
+	@# Stop and remove existing container if it exists
+	@docker stop ml-risk-service 2>/dev/null || true
+	@docker rm ml-risk-service 2>/dev/null || true
+	@# Ensure models directory exists
+	@mkdir -p $(PWD)/models
+	@# Run the container
 	docker run -d \
 		--name ml-risk-service \
 		-p 8080:8080 \
 		-p 8081:8081 \
 		-v $(PWD)/models:/app/models \
+		-e LOG_LEVEL=INFO \
+		-e GRPC_PORT=8080 \
+		-e HEALTH_PORT=8081 \
+		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
-	@echo "$(GREEN)Container started! gRPC: http://localhost:8080, Health: http://localhost:8081$(NC)"
+	@echo "$(GREEN)Container started! gRPC: localhost:8080, Health: http://localhost:8081$(NC)"
+	@echo "$(BLUE)Check logs with: make docker-logs$(NC)"
+	@echo "$(BLUE)Check health with: curl http://localhost:8081/health$(NC)"
 
 .PHONY: docker-stop
 docker-stop: ## Stop Docker container

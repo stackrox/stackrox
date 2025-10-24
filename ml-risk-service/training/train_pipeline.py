@@ -12,8 +12,8 @@ from datetime import datetime
 
 from .data_loader import TrainingDataLoader, JSONTrainingDataGenerator
 from .baseline_reproducer import BaselineReproducer
-from ..src.models.ranking_model import RiskRankingModel
-from ..src.models.feature_importance import FeatureImportanceAnalyzer
+from src.models.ranking_model import RiskRankingModel
+from src.models.feature_importance import FeatureImportanceAnalyzer
 
 logger = logging.getLogger(__name__)
 
