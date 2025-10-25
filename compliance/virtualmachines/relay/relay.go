@@ -117,9 +117,15 @@ func (r *Relay) Run() error {
 
 	for {
 		if err := r.vsockServer.acquireSemaphore(r.ctx); err != nil {
+			if r.ctx.Err() != nil {
+				log.Info("Stopping virtual machine relay")
+				return r.ctx.Err()
+			}
+
 			log.Warnf("Failed to acquire semaphore to handle connection after %v: %v",
 				r.vsockServer.maxSemaphoreWaitTime, err,
 			)
+
 			continue
 		}
 
