@@ -22,11 +22,6 @@ func NewService() Service {
 	return srv
 }
 
-func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
-	return ctx, errors.Wrapf(err, "file activity authorization for %q", fullMethodName)
-}
-
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
 }
