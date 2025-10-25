@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/filesystem/pipeline"
-	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
 
@@ -20,7 +19,7 @@ var (
 // NewService creates a new streaming service with the fact agent. It should only be called once.
 func NewService(pipeline *pipeline.Pipeline) Service {
 	srv := &serviceImpl{
-		pipeline:         *pipeline,
+		pipeline: *pipeline,
 	}
 
 	return srv
@@ -28,7 +27,7 @@ func NewService(pipeline *pipeline.Pipeline) Service {
 
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
-	pipeline         pipeline.Pipeline
+	pipeline pipeline.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
