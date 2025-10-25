@@ -1,11 +1,3 @@
 {
-  "continuations": [
-    {
-      "command": [
-        "branch",
-        "restack"
-      ],
-      "branch": "master-base/gualvare/vm-relay-vsock-server-interface"
-    }
-  ]
+  "continuations": null
 }
