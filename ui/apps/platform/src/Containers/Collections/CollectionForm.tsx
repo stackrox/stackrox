@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
     Badge,
     Button,
     EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
     EmptyStateIcon,
     ExpandableSection,
     ExpandableSectionToggle,
@@ -12,17 +14,15 @@ import {
     FlexItem,
     Form,
     FormGroup,
-    Label,
-    TextInput,
-    Title,
-    EmptyStateHeader,
-    EmptyStateFooter,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Label,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
-import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 

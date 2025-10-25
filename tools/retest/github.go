@@ -93,7 +93,7 @@ type Status struct {
 
 func statusesForPR(ctx context.Context, client *github.Client, url string) (map[string]string, error) {
 	var statuses []Status
-	statusRequest, err := http.NewRequest("GET", url, nil)
+	statusRequest, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

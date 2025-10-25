@@ -272,7 +272,7 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 			return valuesString
 		},
 	}
-	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(j.notifier.GetUiEndpoint(), alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap, j.mitreStore)
 }
 
@@ -400,7 +400,7 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	}
 
 	var priorityMapping map[storage.Severity]string
-	if !conf.DisablePriority {
+	if !conf.GetDisablePriority() {
 		priorityMapping, err = configurePriority(client, conf, notifier.GetLabelDefault())
 
 		if err != nil {
@@ -424,7 +424,7 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 		mitreStore:         mitreStore,
 		severityToPriority: priorityMapping,
 
-		needsPriority: !conf.DisablePriority,
+		needsPriority: !conf.GetDisablePriority(),
 		unknownMap:    unknownMap,
 	}, nil
 }
@@ -471,7 +471,7 @@ func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	log.Debugf("Making request to Jira at %s", urlPath)
 	if resp, err = client.Do(req, nil); err != nil {
 		// If the underlying http.Client.Do() returns an error, the Jira response will be nil.
-		if resp == nil || (resp.StatusCode != 401 && resp.StatusCode != 403) {
+		if resp == nil || (resp.StatusCode != http.StatusUnauthorized && resp.StatusCode != http.StatusForbidden) {
 			return nil, errors.Wrap(err, "Could not make request to Jira")
 		}
 		log.Debug("Retrying request to Jira using Bearer auth")
@@ -509,7 +509,7 @@ func canCreateIssuesInProject(client *jiraLib.Client, project string) (bool, err
 	resp, err := client.Do(req, nil)
 	if err != nil {
 		log.Debugf("Raw error message from jira lib: %s", err.Error())
-		if resp != nil && resp.StatusCode == 404 {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return false, fmt.Errorf("Project %s not found", project)
 		}
 		return false, err
@@ -558,10 +558,10 @@ func mapPriorities(prios []jiraLib.Priority, storageMapping []*storage.Jira_Prio
 	finalizedMapping := map[storage.Severity]string{}
 	missingFromJira := []string{}
 	for _, prioMapping := range storageMapping {
-		if _, exists := prioNameSet[prioMapping.PriorityName]; exists {
-			finalizedMapping[prioMapping.Severity] = prioMapping.PriorityName
+		if _, exists := prioNameSet[prioMapping.GetPriorityName()]; exists {
+			finalizedMapping[prioMapping.GetSeverity()] = prioMapping.GetPriorityName()
 		} else {
-			missingFromJira = append(missingFromJira, prioMapping.PriorityName)
+			missingFromJira = append(missingFromJira, prioMapping.GetPriorityName())
 		}
 	}
 
@@ -579,7 +579,7 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 func (j *jira) createIssue(_ context.Context, severity storage.Severity, i *jiraLib.Issue) error {
 	i.Fields.Unknowns = j.unknownMap
 
-	if !j.conf.DisablePriority {
+	if !j.conf.GetDisablePriority() {
 		i.Fields.Priority = &jiraLib.Priority{
 			Name: j.severityToPriority[severity],
 		}

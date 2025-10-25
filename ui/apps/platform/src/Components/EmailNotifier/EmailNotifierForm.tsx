@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { FocusEvent, ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
@@ -10,12 +11,12 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
-import { FormikErrors, FormikTouched } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
 import AnnotationKeyLabelIcon from 'Containers/Integrations/IntegrationForm//AnnotationKeyLabelIcon';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
+import type { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
 
 const startTLSAuthMethods = [
     {
@@ -35,7 +36,7 @@ const startTLSAuthMethods = [
 export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
     setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
-    handleBlur: (e: React.FocusEvent<any, Element>) => void;
+    handleBlur: (e: FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
 };

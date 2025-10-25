@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -20,7 +20,7 @@ const userMenuStyleConstant = {
     pointerEvents: 'none',
 } as CSSProperties;
 
-function UserMenu({ logout, setInviteModalVisibility, userData }) {
+function UserMenu({ logout, setInviteModalVisibility, userData }): ReactElement {
     const navigate = useNavigate();
     const { analyticsTrack } = useAnalytics();
     const { hasReadWriteAccess } = usePermissions();

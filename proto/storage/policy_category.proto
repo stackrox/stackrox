@@ -8,6 +8,6 @@ option java_package = "io.stackrox.proto.storage";
 
 message PolicyCategory {
   string id = 1; // @gotags: sql:"pk"
-  string name = 2; // @gotags: search:"Policy Category,store,hidden" sql:"unique"
+  string name = 2; // @gotags: search:"Policy Category,hidden" sql:"unique"
   bool isDefault = 3;
 }

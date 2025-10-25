@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -13,7 +13,7 @@ import {
     StackItem,
 } from '@patternfly/react-core';
 
-import { EmbeddedSecret } from 'types/deployment.proto';
+import type { EmbeddedSecret } from 'types/deployment.proto';
 
 type ContainerSecretsInfoProps = {
     secrets: EmbeddedSecret[];

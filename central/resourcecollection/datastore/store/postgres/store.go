@@ -160,10 +160,6 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
@@ -223,10 +219,6 @@ func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Dele
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			inputRows = append(inputRows, []interface{}{
 				collectionID,

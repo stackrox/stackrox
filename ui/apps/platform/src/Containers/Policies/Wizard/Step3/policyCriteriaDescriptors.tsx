@@ -7,9 +7,10 @@ import {
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import ImageSigningTableModal from 'Containers/Policies/Wizard/Step3/ImageSigningTableModal';
-import { LifecycleStage } from 'types/policy.proto';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { LifecycleStage } from 'types/policy.proto';
+
+import ImageSigningTableModal from './ImageSigningTableModal';
 
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
@@ -1386,17 +1387,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
                 value: 'PODS_PORTFORWARD',
             },
         ],
-        canBooleanLogic: false,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        label: 'Kubernetes API verb',
-        name: 'Kubernetes API Verb',
-        shortName: 'Kubernetes API verb',
-        category: policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS,
-        type: 'select',
-        placeholder: 'Select an API verb',
-        options: [{ label: 'CREATE', value: 'CREATE' }],
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

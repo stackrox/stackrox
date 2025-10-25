@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 
 export const vulnerabilitySeverityLabels = [
     'Critical',
@@ -18,6 +18,12 @@ const fixableStatuses = ['Fixable', 'Not fixable'] as const;
 export type FixableStatus = (typeof fixableStatuses)[number];
 export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);
+}
+
+const scannableStatuses = ['Scanned', 'Not scanned'] as const;
+export type ScannableStatus = (typeof scannableStatuses)[number];
+export function isScannableStatus(value: unknown): value is ScannableStatus {
+    return scannableStatuses.some((status) => status === value);
 }
 
 // `QuerySearchFilter` is a restricted subset of the `SearchFilter` obtained from the URL that
@@ -59,6 +65,7 @@ export const detailsTabValues = [
     'Details',
     'Resources',
     'Signature verification',
+    'Packages',
 ] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];

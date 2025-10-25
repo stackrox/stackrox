@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
@@ -6,11 +6,8 @@ import { clustersBasePath } from 'routePaths';
 
 import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
-import {
-    ClusterStatusCounts,
-    getClustersHealthPhrase,
-    getClustersHealthVariant,
-} from './ClustersHealth.utils';
+import { getClustersHealthPhrase, getClustersHealthVariant } from './ClustersHealth.utils';
+import type { ClusterStatusCounts } from './ClustersHealth.utils';
 
 export type ClustersHealthCardHeaderProps = {
     counts: ClusterStatusCounts | null;

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
     Flex,
     FlexItem,
@@ -13,13 +13,13 @@ import {
 } from '@patternfly/react-core';
 import uniq from 'lodash/uniq';
 
-import { QueryValue } from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 import {
     getDeploymentNodesInNamespace,
     getNodeById,
     getNumDeploymentFlows,
 } from '../utils/networkGraphUtils';
-import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import NamespaceDeployments from './NamespaceDeployments';

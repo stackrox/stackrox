@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -20,11 +19,21 @@ import (
 )
 
 const (
-	waitTimeout = 20 * time.Millisecond
+	// sendToCentralTimeout is the maximum duration to wait for channel operations (send/receive) with Central.
+	// Includes time for enrichmentDoneSignal + goroutine scheduling + actual channel send operation.
+	// Set to 100ms to accommodate race detector overhead and scheduling delays.
+	sendToCentralTimeout = 100 * time.Millisecond
+
+	// enrichmentTimeout is the maximum duration to wait for an enrichment cycle to complete.
+	// This includes goroutine scheduling, entity lookups, and enrichment processing.
+	enrichmentTimeout = 500 * time.Millisecond
+
+	// tickerSendTimeout is the maximum duration to wait for ticker send to enrichment goroutine.
+	// Short timeout provides fast failure detection if enrichment goroutine becomes unresponsive.
+	tickerSendTimeout = 50 * time.Millisecond
 )
 
 func TestSendNetworkFlows(t *testing.T) {
-	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 	t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
 	suite.Run(t, new(sendNetflowsSuite))
 }
@@ -54,6 +63,9 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 	b.m.updateComputer = b.uc
 
+	// Set up RecordTick mock expectation (called after each enrichment cycle)
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
+
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
 }
@@ -71,14 +83,12 @@ func (b *sendNetflowsSuite) updateEp(pair *endpointPair) {
 }
 
 func (b *sendNetflowsSuite) expectContainerLookups(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
 	}, true, false)()
 }
 
 func (b *sendNetflowsSuite) expectLookups(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
 	}, true, false)()
@@ -91,7 +101,6 @@ func (b *sendNetflowsSuite) expectLookups(n int) {
 }
 
 func (b *sendNetflowsSuite) expectFailedLookup(n int) {
-	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{}, false, false)()
 }
 
@@ -122,7 +131,7 @@ func (b *sendNetflowsSuite) TestCloseConnectionFailedLookup() {
 
 	b.updateConn(createConnectionPair().lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
@@ -151,7 +160,7 @@ func (b *sendNetflowsSuite) TestCloseEndpointFailedLookup() {
 
 	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour), timestamp.Now()).lastSeen(timestamp.Now()))
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
@@ -176,7 +185,7 @@ func (b *sendNetflowsSuite) TestUnchangedConnection() {
 
 	// There should be no second update, the connection did not change
 	b.thenTickerTicks()
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) TestSendTwoUpdatesOnConnectionChanged() {
@@ -198,13 +207,17 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 	b.expectLookups(4)
 	b.expectDetections(4)
 
+	startingSendCycles := b.m.sendCyclesCompleted.Load()
+
 	// four times without reading
 	for i := 4; i > 0; i-- {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
 	}
+
+	// Wait for all 4 send cycles to complete before reading
+	b.waitForSendCycles(startingSendCycles + 4)
 
 	// should be able to read four buffered updates in sequence
 	for i := 0; i < 4; i++ {
@@ -216,27 +229,69 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 	b.expectLookups(6)
 	b.expectDetections(6)
 
+	startingSendCycles := b.m.sendCyclesCompleted.Load()
+
 	for i := 6; i > 0; i-- {
 		ts := protoconv.NowMinus(time.Duration(i) * time.Hour)
 		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
-		time.Sleep(100 * time.Millisecond)
 	}
+
+	// Wait for all 6 send cycles to complete (ensures all channel operations attempted)
+	b.waitForSendCycles(startingSendCycles + 6)
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
 	for i := 0; i < 5; i++ {
 		b.assertOneUpdatedCloseConnection()
 	}
 
-	mustNotRead(b.T(), b.m.sensorUpdates)
+	b.assertNoMoreUpdatesToCentral()
 }
 
 func (b *sendNetflowsSuite) thenTickerTicks() {
-	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
+	b.m.enrichmentDoneSignal.Reset()
+	select {
+	case b.fakeTicker <- time.Now():
+	case <-time.After(tickerSendTimeout):
+		b.T().Fatal("ticker send blocked - enrichment goroutine not responsive")
+	}
+	b.waitForEnrichmentDone()
+}
+
+func (b *sendNetflowsSuite) waitForEnrichmentDone() {
+	start := time.Now()
+	// Wait for enrichment cycle to complete (signal from manager) with timeout
+	select {
+	case <-b.m.enrichmentDoneSignal.Done():
+		elapsed := time.Since(start)
+		b.T().Logf("enrichment completed in %v", elapsed)
+	case <-time.After(enrichmentTimeout):
+		b.T().Fatal("enrichment did not complete within timeout")
+	}
+}
+
+func (b *sendNetflowsSuite) waitForSendCycles(expectedCycles uint64) {
+	start := time.Now()
+	deadline := time.Now().Add(sendToCentralTimeout)
+
+	for {
+		currentCycles := b.m.sendCyclesCompleted.Load()
+		if currentCycles >= expectedCycles {
+			elapsed := time.Since(start)
+			b.T().Logf("send cycles completed: %d/%d in %v", currentCycles, expectedCycles, elapsed)
+			return
+		}
+
+		if time.Now().After(deadline) {
+			b.T().Fatalf("send cycles did not complete within timeout: got %d, expected %d", currentCycles, expectedCycles)
+		}
+
+		time.Sleep(1 * time.Millisecond) // Poll every 1ms
+	}
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -244,7 +299,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
@@ -252,7 +307,7 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 }
 
 func (b *sendNetflowsSuite) assertOneUpdatedEndpoint(isOpen bool) {
-	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints(), 1, "one updated endpint")
@@ -268,29 +323,22 @@ func mustNotRead[T any](t *testing.T, ch chan T) {
 	select {
 	case <-ch:
 		t.Fatal("should not receive in channel")
-	case <-time.After(waitTimeout):
+	case <-time.After(sendToCentralTimeout):
 	}
 }
 
-func mustReadTimeout[T any](t *testing.T, ch chan T) T {
+func mustReadTimeout[T any](t *testing.T, ch chan T, timeout time.Duration) T {
 	var result T
 	select {
 	case v, more := <-ch:
-		if !more {
-			require.True(t, more, "channel should never close")
-		}
+		require.True(t, more, "channel should never close")
 		result = v
-	case <-time.After(waitTimeout):
+	case <-time.After(timeout):
 		t.Fatal("blocked on reading from channel")
 	}
 	return result
 }
 
-func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
-	select {
-	case ch <- v:
-		return
-	case <-time.After(waitTimeout):
-		t.Fatal("blocked on sending to channel")
-	}
+func mustSendToCentralWithoutBlock[T any](t *testing.T, ch chan T) T {
+	return mustReadTimeout(t, ch, sendToCentralTimeout)
 }

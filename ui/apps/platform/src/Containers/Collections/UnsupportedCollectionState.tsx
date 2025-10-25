@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExpandableSection, List, ListItem } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 

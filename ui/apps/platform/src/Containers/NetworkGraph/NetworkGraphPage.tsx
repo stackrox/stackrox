@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -27,15 +27,17 @@ import { isCompleteSearchFilter } from 'utils/searchUtils';
 import { CodeViewerThemeProvider } from 'Components/CodeViewer';
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
-import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
+import NetworkGraphContainer from './NetworkGraphContainer';
+import type { Models } from './NetworkGraphContainer';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NodeUpdateSection from './components/NodeUpdateSection';
 import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
 import EdgeStateSelect from './components/EdgeStateSelect';
-import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
+import DisplayOptionsSelect from './components/DisplayOptionsSelect';
+import type { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
 import { useScopeHierarchy } from './hooks/useScopeHierarchy';
 import {

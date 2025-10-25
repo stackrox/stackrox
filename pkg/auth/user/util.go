@@ -27,7 +27,7 @@ func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
 		result = append(result, attr)
 	}
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].Key < result[j].Key
+		return result[i].GetKey() < result[j].GetKey()
 	})
 	return result
 }

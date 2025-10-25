@@ -1,5 +1,4 @@
 /* eslint-disable no-void */
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     Checkbox,
@@ -7,8 +6,8 @@ import {
     FormSelect,
     PageSection,
     Text,
-    TextInput,
     TextArea,
+    TextInput,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';

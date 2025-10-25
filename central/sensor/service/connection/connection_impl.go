@@ -161,7 +161,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	typ := reflectutils.Type(msg.Msg)
+	typ := reflectutils.Type(msg.GetMsg())
 	queue := queues[typ]
 	if queue == nil {
 		concurrency.WithLock(&c.queuesMutex, func() {
@@ -288,7 +288,7 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 }
 
 func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
-	switch m := msg.Msg.(type) {
+	switch m := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_ScrapeUpdate:
 		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
@@ -334,7 +334,7 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
-	switch m := msg.Response.(type) {
+	switch m := msg.GetResponse().(type) {
 	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
 		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, m.ApplyComplianceScanConfigResponse.GetId(), c.clusterID, m.ApplyComplianceScanConfigResponse.GetError())
 	case *central.ComplianceResponse_DeleteComplianceScanConfigResponse_:
@@ -343,7 +343,7 @@ func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *c
 	default:
 		log.Infof("Unimplemented compliance response  %T", m)
 	}
-	return errors.Errorf("Unimplemented compliance response  %T", msg.Response)
+	return errors.Errorf("Unimplemented compliance response  %T", msg.GetResponse())
 }
 
 func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
@@ -733,7 +733,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	}
 
-	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SendDeduperStateOnReconnect) {
+	if connectionCapabilities.Contains(centralsensor.SendDeduperStateOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 

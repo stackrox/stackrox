@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, AlertActionLink } from '@patternfly/react-core';
 
 import { getProductBranding } from 'constants/productBranding';

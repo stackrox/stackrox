@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties } from 'react';
 import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 

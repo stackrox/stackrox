@@ -124,7 +124,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 // mergeContainerInstances merges container instances from oldPod into newPod.
 func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
-	newPod.TerminatedInstances = oldPod.TerminatedInstances
+	newPod.TerminatedInstances = oldPod.GetTerminatedInstances()
 
 	idxByContainerName := make(map[string]int)
 	for i, instanceList := range newPod.GetTerminatedInstances() {
@@ -143,7 +143,7 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 			if idx, exists := idxByContainerName[instance.GetContainerName()]; exists {
 				deadInstancesList := newPod.GetTerminatedInstances()[idx]
 				var startIdx int
-				if len(deadInstancesList.Instances) == maxNumberOfDeadContainers {
+				if len(deadInstancesList.GetInstances()) == maxNumberOfDeadContainers {
 					// Remove the oldest entry.
 					startIdx = 1
 				}
@@ -155,7 +155,7 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 			}
 		}
 	}
-	newPod.LiveInstances = newPod.LiveInstances[:endIdx]
+	newPod.LiveInstances = newPod.GetLiveInstances()[:endIdx]
 }
 
 // RemovePod removes a pod from the podStore

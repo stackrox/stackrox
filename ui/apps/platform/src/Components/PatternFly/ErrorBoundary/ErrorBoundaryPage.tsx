@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactElement } from 'react';
+import type { ErrorInfo, ReactElement } from 'react';
 import {
     EmptyState,
     EmptyStateIcon,

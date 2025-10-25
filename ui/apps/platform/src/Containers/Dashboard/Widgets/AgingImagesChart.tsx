@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { Chart, ChartAxis, ChartBar, ChartContainer } from '@patternfly/react-charts';
 import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
-    patternflySeverityTheme,
+    defaultChartHeight,
     navigateOnClickEvent,
+    patternflySeverityTheme,
     severityColorScale,
 } from 'utils/chartUtils';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';

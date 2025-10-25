@@ -1,6 +1,7 @@
 package cve
 
 import (
+	_ "embed"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"

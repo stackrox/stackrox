@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Modal, ModalBoxBody } from '@patternfly/react-core';
 import useModal from 'hooks/useModal';
 import AdministrationUsageForm from './AdministrationUsageForm';

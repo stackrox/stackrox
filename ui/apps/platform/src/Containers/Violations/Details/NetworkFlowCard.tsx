@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardHeader,
@@ -9,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { NetworkFlowInfo } from 'types/alert.proto';
+import type { NetworkFlowInfo } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 export type NetworkFlowCardProps = {

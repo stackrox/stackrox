@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Card,
@@ -11,7 +11,7 @@ import {
 
 import pluralize from 'pluralize';
 import IntegrationsHealth from './IntegrationsHealth';
-import { IntegrationMergedItem } from '../utils/integrations';
+import type { IntegrationMergedItem } from '../utils/integrations';
 import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
 type IntegrationHealthWidgetVisualProps = {

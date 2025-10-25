@@ -1,14 +1,23 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type {
+    FocusEventHandler,
+    FormEvent,
+    KeyboardEvent,
+    MouseEvent as ReactMouseEvent,
+    ReactElement,
+    ReactNode,
+    Ref,
+} from 'react';
 import {
     Select,
     SelectOption,
     MenuToggle,
-    MenuToggleElement,
     SelectList,
     TextInputGroup,
     TextInputGroupMain,
     MenuFooter,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 export type TypeaheadSelectOption = {
     value: string;
@@ -26,9 +35,9 @@ export type TypeaheadSelectProps = {
     placeholder?: string;
     isDisabled?: boolean;
     toggleAriaLabel?: string;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     menuAppendTo?: () => HTMLElement;
-    footer?: React.ReactNode;
+    footer?: ReactNode;
     maxHeight?: string;
     direction?: 'up' | 'down';
     className?: string;
@@ -56,7 +65,7 @@ function TypeaheadSelect({
     const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1);
 
     function onSelect(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         selection: string | number | undefined
     ) {
         if (typeof selection === 'string') {
@@ -70,7 +79,7 @@ function TypeaheadSelect({
         setIsOpen(!isOpen);
     }
 
-    function onInputChange(_event: React.FormEvent<HTMLInputElement>, text: string) {
+    function onInputChange(_event: FormEvent<HTMLInputElement>, text: string) {
         setInputValue(text);
         setFocusedItemIndex(-1); // Reset focus when typing
         if (!isOpen) {
@@ -78,7 +87,7 @@ function TypeaheadSelect({
         }
     }
 
-    function onKeyDown(event: React.KeyboardEvent) {
+    function onKeyDown(event: KeyboardEvent) {
         const allOptions = shouldShowCreateOption
             ? [...filteredOptions, { value: inputValue, label: `Create "${inputValue}"` }]
             : filteredOptions;
@@ -133,7 +142,7 @@ function TypeaheadSelect({
         return selectedOption?.label || selectedOption?.value || value;
     };
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"

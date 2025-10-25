@@ -1,8 +1,9 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Card, CardBody, CardTitle, List, ListItem } from '@patternfly/react-core';
 
 import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import type { NetworkPolicy } from 'types/networkPolicy.proto';
 
 import NetworkPolicyModal from './NetworkPolicyModal';
 

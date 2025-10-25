@@ -1,12 +1,5 @@
-import React, {
-    createContext,
-    CSSProperties,
-    Dispatch,
-    ReactNode,
-    SetStateAction,
-    useContext,
-    useState,
-} from 'react';
+import { createContext, useContext, useState } from 'react';
+import type { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from 'react';
 import { CodeBlockAction, ClipboardCopyButton, Button, CodeBlock } from '@patternfly/react-core';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
@@ -66,7 +59,7 @@ export default function CodeViewer({
     className = '',
     style,
     additionalControls,
-}: CodeViewerProps) {
+}: CodeViewerProps): ReactElement {
     const { wasCopied, setWasCopied, copyToClipboard } = useClipboardCopy();
     const [theme, setTheme] = useCodeViewerThemeContext();
 

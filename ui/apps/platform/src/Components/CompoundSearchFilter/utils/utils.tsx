@@ -1,10 +1,9 @@
-import React from 'react';
-
-import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
-import { SearchFilter } from 'types/search';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { SetSearchFilter } from 'hooks/useURLSearch';
-import {
+import { FilterChip } from 'Components/PatternFly/SearchFilterChips';
+import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import type { SearchFilter } from 'types/search';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { SetSearchFilter } from 'hooks/useURLSearch';
+import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
     CompoundSearchFilterEntity,

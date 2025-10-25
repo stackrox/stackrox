@@ -1,17 +1,16 @@
-import React from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import {
+    Button,
+    Checkbox,
     Flex,
     FlexItem,
-    Title,
-    Button,
     Form,
     FormGroup,
-    Checkbox,
     TextInput,
+    Title,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { useQuery, gql } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
@@ -24,8 +23,8 @@ import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
-import AgingImagesChart, { timeRangeTupleIndices, getTimeFilterOption } from './AgingImagesChart';
-import type { TimeRangeCounts, TimeRangeTupleIndex, TimeRangeTuple } from './AgingImagesChart';
+import AgingImagesChart, { getTimeFilterOption, timeRangeTupleIndices } from './AgingImagesChart';
+import type { TimeRangeCounts, TimeRangeTuple, TimeRangeTupleIndex } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';

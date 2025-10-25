@@ -1,4 +1,4 @@
-import React from 'react';
+import { Component } from 'react';
 import { Sunburst as SunburstReactVis, DiscreteColorLegend, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
@@ -34,7 +34,7 @@ const LABEL_STYLE = {
     fill: 'var(--primary-800)',
 };
 
-class Sunburst extends React.Component {
+class Sunburst extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(
             PropTypes.shape({

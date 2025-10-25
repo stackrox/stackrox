@@ -1,5 +1,5 @@
-import React from 'react';
-import { Label, LabelProps } from '@patternfly/react-core';
+import { Label } from '@patternfly/react-core';
+import type { LabelProps } from '@patternfly/react-core';
 
 export type TechPreviewLabelProps = LabelProps;
 

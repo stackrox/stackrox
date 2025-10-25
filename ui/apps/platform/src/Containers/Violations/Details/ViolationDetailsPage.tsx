@@ -1,4 +1,5 @@
-import React, { ReactElement, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
@@ -19,7 +20,8 @@ import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
-import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 

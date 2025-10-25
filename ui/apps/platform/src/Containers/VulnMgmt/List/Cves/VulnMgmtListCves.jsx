@@ -17,7 +17,6 @@ import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/Vulnera
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import Menu from 'Components/Menu';
 import TableCellLink from 'Components/TableCellLink';
-import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -49,6 +48,7 @@ import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManag
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
+import TableCountLinks from '../../TableCountLinks';
 
 export const defaultCveSort = [
     {

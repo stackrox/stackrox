@@ -1,4 +1,4 @@
-import type { CollectionRequest, Collection } from 'services/CollectionsService';
+import type { Collection, CollectionRequest } from 'services/CollectionsService';
 import { generateRequest, isCollectionParseError, parseCollection } from './converter';
 import type { ClientCollection } from './types';
 

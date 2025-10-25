@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Brand } from '@patternfly/react-core';
 import { getProductBranding } from 'constants/productBranding';
 

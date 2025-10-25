@@ -127,10 +127,11 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 		obj.GetNamespace(),
 		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetClusterName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machines (Id, Namespace, Name, ClusterId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Namespace = EXCLUDED.Namespace, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machines (Id, Namespace, Name, ClusterId, ClusterName, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Namespace = EXCLUDED.Namespace, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -152,15 +153,12 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"namespace",
 		"name",
 		"clusterid",
+		"clustername",
 		"serialized",
 	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
@@ -172,6 +170,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 				obj.GetNamespace(),
 				obj.GetName(),
 				pgutils.NilOrUUID(obj.GetClusterId()),
+				obj.GetClusterName(),
 				serialized,
 			})
 

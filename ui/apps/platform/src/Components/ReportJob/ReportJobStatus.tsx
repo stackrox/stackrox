@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     CheckCircleIcon,
     DownloadIcon,
@@ -11,7 +11,7 @@ import {
 import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import capitalize from 'lodash/capitalize';
 
-import { ReportStatus } from 'types/reportJob';
+import type { ReportStatus } from 'types/reportJob';
 import PartialReportModal from './PartialReportModal';
 
 export type ReportJobStatusProps = {

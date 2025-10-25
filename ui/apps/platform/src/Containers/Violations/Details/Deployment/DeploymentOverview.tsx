@@ -1,11 +1,11 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
-import { AlertDeployment } from 'types/alert.proto';
-import { Deployment } from 'types/deployment.proto';
+import type { AlertDeployment } from 'types/alert.proto';
+import type { Deployment } from 'types/deployment.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import FlatObjectDescriptionList from './FlatObjectDescriptionList';

@@ -1,7 +1,7 @@
 // If you're adding a new attribute, make sure to add it to "policyAttributes" as well
 
 import { severityLabels } from 'messages/common';
-import { CompoundSearchFilterAttribute } from '../types';
+import type { CompoundSearchFilterAttribute } from '../types';
 
 export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
@@ -99,6 +99,40 @@ export const EntityType: CompoundSearchFilterAttribute = {
             },
         ],
     },
+};
+
+export const Description: CompoundSearchFilterAttribute = {
+    displayName: 'Description',
+    filterChipLabel: 'Description',
+    searchTerm: 'Description',
+    inputType: 'autocomplete',
+};
+
+export const Enforcement: CompoundSearchFilterAttribute = {
+    displayName: 'Enforcement',
+    filterChipLabel: 'Enforcement',
+    searchTerm: 'Enforcement',
+    inputType: 'autocomplete',
+};
+
+export const Status: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Status',
+    searchTerm: 'Disabled',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: 'Disabled', value: 'true' },
+            { label: 'Enabled', value: 'false' },
+        ],
+    },
+};
+
+export const LastUpdated: CompoundSearchFilterAttribute = {
+    displayName: 'Last updated',
+    filterChipLabel: 'Last updated',
+    searchTerm: 'Policy Last Updated',
+    inputType: 'date-picker',
 };
 
 export const policyAttributes = [

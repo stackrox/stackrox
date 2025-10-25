@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
-import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
+import type { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
 import { getDefaultAttributeName, getDefaultEntityName } from '../utils/utils';
 
-import EntitySelector, { SelectedEntity } from './EntitySelector';
-import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
-import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
+import EntitySelector from './EntitySelector';
+import type { SelectedEntity } from './EntitySelector';
+import AttributeSelector from './AttributeSelector';
+import type { SelectedAttribute } from './AttributeSelector';
+import CompoundSearchFilterInputField from './CompoundSearchFilterInputField';
+import type { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
     config: CompoundSearchFilterConfig;

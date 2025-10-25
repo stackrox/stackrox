@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type componentPieces struct {
@@ -144,28 +143,24 @@ func TestImageCVEV2ToEmbeddedCVEs(t *testing.T) {
 func TestEmbeddedCVEToImageCVEV2(t *testing.T) {
 	for idx, embeddedVuln := range testVulns {
 		componentInfo := getComponentInfo(t)
-		convertedVuln, err := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, embeddedVuln)
+		convertedVuln, err := EmbeddedVulnerabilityToImageCVEV2(componentInfo[idx].imageID, componentInfo[idx].componentID, idx, embeddedVuln)
 		assert.NoError(t, err)
 		protoassert.Equal(t, getTestCVEs(t)[idx], convertedVuln)
 	}
 }
 
-func getTestComponentID(t *testing.T) string {
-	id, err := scancomponent.ComponentIDV2(testComponent, "sha")
-	require.NoError(t, err)
-	return id
+func getTestComponentID(index int) string {
+	return scancomponent.ComponentIDV2(testComponent, "sha", index)
 }
 
-func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
-	id, err := cve.IDV2(testCVE, componentID)
-	require.NoError(t, err)
-	return id
+func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string, index int) string {
+	return cve.IDV2(testCVE, componentID, index)
 }
 
 func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 	return []*storage.ImageCVEV2{
 		{
-			Id:      getTestCVEID(t, testVulns[0], getTestComponentID(t)),
+			Id:      getTestCVEID(testVulns[0], getTestComponentID(0), 0),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve1",
@@ -229,10 +224,10 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			State:                0,
 			IsFixable:            false,
 			HasFixedBy:           nil,
-			ComponentId:          getTestComponentID(t),
+			ComponentId:          getTestComponentID(0),
 		},
 		{
-			Id:      getTestCVEID(t, testVulns[1], getTestComponentID(t)),
+			Id:      getTestCVEID(testVulns[1], getTestComponentID(1), 1),
 			ImageId: "sha",
 			CveBaseInfo: &storage.CVEInfo{
 				Cve:          "cve2",
@@ -271,7 +266,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			HasFixedBy: &storage.ImageCVEV2_FixedBy{
 				FixedBy: "ver3",
 			},
-			ComponentId: getTestComponentID(t),
+			ComponentId: getTestComponentID(1),
 		},
 	}
 }
@@ -280,12 +275,12 @@ func getComponentInfo(t *testing.T) []*componentPieces {
 	return []*componentPieces{
 		{
 			imageID:     "sha",
-			componentID: getTestComponentID(t),
+			componentID: getTestComponentID(0),
 			cveIndex:    0,
 		},
 		{
 			imageID:     "sha",
-			componentID: getTestComponentID(t),
+			componentID: getTestComponentID(1),
 			cveIndex:    1,
 		},
 	}

@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -15,7 +16,10 @@ import {
     Title,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
-import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from 'types/administrationUsage.proto';
+import type {
+    MaxSecuredUnitsUsageResponse,
+    SecuredUnitsUsage,
+} from 'types/administrationUsage.proto';
 import {
     downloadAdministrationUsageCsv,
     fetchCurrentAdministrationUsage,

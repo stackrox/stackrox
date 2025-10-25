@@ -54,7 +54,7 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 }
 
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
-	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	eventMsg, ok := msg.GetMsg().(*central.MsgFromSensor_Event)
 	if !ok || skipDeduping(eventMsg.Event) {
 		if err := d.stream.Send(msg); err != nil {
 			return errors.Wrap(err, "forwarding message without dedupe")

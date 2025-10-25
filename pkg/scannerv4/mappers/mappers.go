@@ -41,6 +41,8 @@ const (
 	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
 	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
 	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
+
+	rhelRepositoryKey = "rhel-cpe-repository"
 )
 
 var (
@@ -155,36 +157,27 @@ func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, erro
 	if contents == nil {
 		return nil, errors.New("internal error: empty contents")
 	}
-	pkgs, err := convertSliceToMap(contents.GetPackages(), toClairCorePackage)
+	pkgs, err := v4ToClaircore(contents.GetPackages(), contents.GetPackagesDEPRECATED(), ccPackage)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	dists, err := convertSliceToMap(contents.GetDistributions(), toClairCoreDistribution)
+	dists, err := v4ToClaircore(contents.GetDistributions(), contents.GetDistributionsDEPRECATED(), ccDistribution)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	repos, err := convertSliceToMap(contents.GetRepositories(), toClairCoreRepository)
+	repos, err := v4ToClaircore(contents.GetRepositories(), contents.GetRepositoriesDEPRECATED(), ccRepository)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	var environments map[string][]*claircore.Environment
-	if envs := contents.GetEnvironments(); envs != nil {
-		environments = make(map[string][]*claircore.Environment, len(envs))
-		for k, v := range envs {
-			for _, env := range v.GetEnvironments() {
-				ccEnv, err := toClairCoreEnvironment(env)
-				if err != nil {
-					return nil, err
-				}
-				environments[k] = append(environments[k], ccEnv)
-			}
-		}
+	envs, err := ccEnvironments(contents)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &claircore.IndexReport{
 		Packages:      pkgs,
 		Distributions: dists,
 		Repositories:  repos,
-		Environments:  environments,
+		Environments:  envs,
 	}, nil
 }
 
@@ -195,38 +188,50 @@ func toProtoV4Contents(
 	envs map[string][]*claircore.Environment,
 	pkgFixedBy map[string]string,
 ) (*v4.Contents, error) {
-	var environments map[string]*v4.Environment_List
-	if len(envs) > 0 {
-		environments = make(map[string]*v4.Environment_List, len(envs))
+	packages, deprecatedPackages, err := v4Packages(pkgs, pkgFixedBy)
+	if err != nil {
+		return nil, err
 	}
-	for k, v := range envs {
-		l, ok := environments[k]
-		if !ok {
-			l = &v4.Environment_List{}
-			environments[k] = l
-		}
-		for _, e := range v {
-			l.Environments = append(l.Environments, toProtoV4Environment(e))
-		}
+	distributions, deprecatedDistributions, err := claircoreToV4(dists, v4Distribution)
+	if err != nil {
+		return nil, err
 	}
-	var packages []*v4.Package
-	for _, ccP := range pkgs {
-		pkg, err := toProtoV4Package(ccP)
-		if err != nil {
-			return nil, err
-		}
-		pkg.FixedInVersion = pkgFixedBy[pkg.GetId()]
-		packages = append(packages, pkg)
+	repositories, deprecatedRepositories, err := claircoreToV4(repos, v4Repository)
+	if err != nil {
+		return nil, err
 	}
+	environments, deprecatedEnrivonments := v4Environments(envs, repos)
 	return &v4.Contents{
-		Packages:      packages,
-		Distributions: convertMapToSlice(toProtoV4Distribution, dists),
-		Repositories:  convertMapToSlice(toProtoV4Repository, repos),
-		Environments:  environments,
+		Packages:                packages,
+		PackagesDEPRECATED:      deprecatedPackages,
+		Distributions:           distributions,
+		DistributionsDEPRECATED: deprecatedDistributions,
+		Repositories:            repositories,
+		RepositoriesDEPRECATED:  deprecatedRepositories,
+		Environments:            environments,
+		EnvironmentsDEPRECATED:  deprecatedEnrivonments,
 	}, nil
 }
 
-func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
+func v4Packages(ccPkgs map[string]*claircore.Package, pkgFixedBy map[string]string) (map[string]*v4.Package, []*v4.Package, error) {
+	if len(ccPkgs) == 0 {
+		return nil, nil, nil
+	}
+	packages := make(map[string]*v4.Package, len(ccPkgs))
+	deprecatedPackages := make([]*v4.Package, 0, len(ccPkgs))
+	for id, ccPkg := range ccPkgs {
+		v4Pkg, err := v4Package(ccPkg)
+		if err != nil {
+			return nil, nil, err
+		}
+		v4Pkg.FixedInVersion = pkgFixedBy[id]
+		packages[id] = v4Pkg
+		deprecatedPackages = append(deprecatedPackages, v4Pkg)
+	}
+	return packages, deprecatedPackages, nil
+}
+
+func v4Package(p *claircore.Package) (*v4.Package, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -241,7 +246,7 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 			V:    version.V[:],
 		}
 	}
-	srcPkg, err := toProtoV4Package(p.Source)
+	srcPkg, err := v4Package(p.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -276,9 +281,26 @@ func VersionID(d *claircore.Distribution) string {
 	return vID
 }
 
-func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
+func claircoreToV4[K comparable, V1, V2 any](cc map[K]V1, f func(V1) (V2, error)) (map[K]V2, []V2, error) {
+	if len(cc) == 0 {
+		return nil, nil, nil
+	}
+	v4Map := make(map[K]V2, len(cc))
+	v4Slice := make([]V2, 0, len(cc))
+	for k, v := range cc {
+		v4Resource, err := f(v)
+		if err != nil {
+			return nil, nil, err
+		}
+		v4Map[k] = v4Resource
+		v4Slice = append(v4Slice, v4Resource)
+	}
+	return v4Map, v4Slice, nil
+}
+
+func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 	if d == nil {
-		return nil
+		return nil, nil
 	}
 	return &v4.Distribution{
 		Id:              d.ID,
@@ -290,12 +312,12 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,
-	}
+	}, nil
 }
 
-func toProtoV4Repository(r *claircore.Repository) *v4.Repository {
+func v4Repository(r *claircore.Repository) (*v4.Repository, error) {
 	if r == nil {
-		return nil
+		return nil, nil
 	}
 	return &v4.Repository{
 		Id:   r.ID,
@@ -303,10 +325,33 @@ func toProtoV4Repository(r *claircore.Repository) *v4.Repository {
 		Key:  r.Key,
 		Uri:  r.URI,
 		Cpe:  toCPEString(r.CPE),
-	}
+	}, nil
 }
 
-func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
+func v4Environments(ccEnvs map[string][]*claircore.Environment, ccRepos map[string]*claircore.Repository) (map[string]*v4.Environment_List, map[string]*v4.Environment_List) {
+	if len(ccEnvs) == 0 {
+		return nil, nil
+	}
+	environments := make(map[string]*v4.Environment_List, len(ccEnvs))
+	environmentsDeprecated := make(map[string]*v4.Environment_List, len(ccEnvs))
+	for id, envs := range ccEnvs {
+		l, ok := environments[id]
+		lDeprecated := environmentsDeprecated[id]
+		if !ok {
+			l = &v4.Environment_List{}
+			environments[id] = l
+			lDeprecated = &v4.Environment_List{}
+			environmentsDeprecated[id] = lDeprecated
+		}
+		for _, env := range envs {
+			l.Environments = append(l.Environments, v4Environment(env))
+			lDeprecated.Environments = append(lDeprecated.Environments, v4EnvironmentDeprecated(env, ccRepos))
+		}
+	}
+	return environments, environmentsDeprecated
+}
+
+func v4Environment(e *claircore.Environment) *v4.Environment {
 	if e == nil {
 		return nil
 	}
@@ -315,6 +360,35 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 		IntroducedIn:   toDigestString(e.IntroducedIn),
 		DistributionId: e.DistributionID,
 		RepositoryIds:  append([]string(nil), e.RepositoryIDs...),
+	}
+}
+
+func v4EnvironmentDeprecated(e *claircore.Environment, repos map[string]*claircore.Repository) *v4.Environment {
+	if e == nil {
+		return nil
+	}
+	repoIDs := make([]string, 0, len(e.RepositoryIDs))
+	for _, id := range e.RepositoryIDs {
+		repo, ok := repos[id]
+		if !ok {
+			continue
+		}
+		// In Claircore v1.5.40+, the repositories are no longer all keyed by ID.
+		// RPMs in RHEL-based containers are now keyed by name.
+		// In older ACS versions, we assumed all repos were keyed by ID,
+		// so if the key is not the ID, we check if it's actually the name
+		// and this is, in fact, a RHEL RPM.
+		if repo.Key == rhelRepositoryKey {
+			repoIDs = append(repoIDs, repo.ID)
+			continue
+		}
+		repoIDs = append(repoIDs, id)
+	}
+	return &v4.Environment{
+		PackageDb:      e.PackageDB,
+		IntroducedIn:   toDigestString(e.IntroducedIn),
+		DistributionId: e.DistributionID,
+		RepositoryIds:  repoIDs,
 	}
 }
 
@@ -688,7 +762,44 @@ func toClairCoreCPE(s string) (cpe.WFN, error) {
 	return c, nil
 }
 
-func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
+func v4ToClaircore[V1, V2 any](m map[string]*V1, s []*V1, f func(*V1) (string, *V2, error)) (map[string]*V2, error) {
+	ccVs := make(map[string]*V2, len(m))
+	// If the map is empty, fallback to the deprecated slice.
+	if len(m) == 0 {
+		if len(s) == 0 {
+			return nil, nil
+		}
+		for _, v := range s {
+			if v == nil {
+				continue
+			}
+			k, ccV, err := f(v)
+			if err != nil {
+				return nil, err
+			}
+			if ccV == nil {
+				continue
+			}
+			ccVs[k] = ccV
+		}
+		return ccVs, nil
+	}
+	for k, v := range m {
+		_, ccV, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if ccV == nil {
+			continue
+		}
+		ccVs[k] = ccV
+	}
+	return ccVs, nil
+}
+
+// ccPackage converts the given package into its Claircore equivalent.
+// The first return is the package's ID.
+func ccPackage(p *v4.Package) (string, *claircore.Package, error) {
 	if p == nil {
 		return "", nil, nil
 	}
@@ -707,7 +818,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 		return "", nil, fmt.Errorf("package %q: invalid source package %q: source specifies source",
 			p.GetId(), p.GetSource().GetId())
 	}
-	_, src, err := toClairCorePackage(p.GetSource())
+	_, src, err := ccPackage(p.GetSource())
 	if err != nil {
 		return "", nil, err
 	}
@@ -726,7 +837,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 	}, nil
 }
 
-func toClairCoreDistribution(d *v4.Distribution) (string, *claircore.Distribution, error) {
+func ccDistribution(d *v4.Distribution) (string, *claircore.Distribution, error) {
 	if d == nil {
 		return "", nil, nil
 	}
@@ -747,7 +858,7 @@ func toClairCoreDistribution(d *v4.Distribution) (string, *claircore.Distributio
 	}, nil
 }
 
-func toClairCoreRepository(r *v4.Repository) (string, *claircore.Repository, error) {
+func ccRepository(r *v4.Repository) (string, *claircore.Repository, error) {
 	if r == nil {
 		return "", nil, nil
 	}
@@ -756,15 +867,37 @@ func toClairCoreRepository(r *v4.Repository) (string, *claircore.Repository, err
 		return "", nil, fmt.Errorf("repository %q: %w", r.GetId(), err)
 	}
 	return r.GetId(), &claircore.Repository{
-		ID:   r.Id,
-		Name: r.Name,
-		Key:  r.Key,
-		URI:  r.Uri,
+		ID:   r.GetId(),
+		Name: r.GetName(),
+		Key:  r.GetKey(),
+		URI:  r.GetUri(),
 		CPE:  ccCPE,
 	}, nil
 }
 
-func toClairCoreEnvironment(env *v4.Environment) (*claircore.Environment, error) {
+func ccEnvironments(contents *v4.Contents) (map[string][]*claircore.Environment, error) {
+	environments := contents.GetEnvironments()
+	if len(environments) == 0 {
+		environments = contents.GetEnvironmentsDEPRECATED()
+		if len(environments) == 0 {
+			return nil, nil
+		}
+	}
+	ccEnvironments := make(map[string][]*claircore.Environment, len(environments))
+	for id, envs := range environments {
+		ccEnvironments[id] = make([]*claircore.Environment, 0, len(envs.GetEnvironments()))
+		for _, env := range envs.GetEnvironments() {
+			ccEnv, err := ccEnvironment(env)
+			if err != nil {
+				return nil, err
+			}
+			ccEnvironments[id] = append(ccEnvironments[id], ccEnv)
+		}
+	}
+	return ccEnvironments, nil
+}
+
+func ccEnvironment(env *v4.Environment) (*claircore.Environment, error) {
 	introducedIn, err := claircore.ParseDigest(env.GetIntroducedIn())
 	if err != nil {
 		return nil, err
@@ -775,40 +908,6 @@ func toClairCoreEnvironment(env *v4.Environment) (*claircore.Environment, error)
 		DistributionID: env.GetDistributionId(),
 		RepositoryIDs:  env.GetRepositoryIds(),
 	}, nil
-}
-
-// convertSliceToMap converts a slice of pointers of a generic type to a map
-// based on the returned value of a conversion function that returns a string
-// key, the pointer to the converted value, or error if the conversion failed.
-// Nils in the slice are ignored.
-func convertSliceToMap[IN any, OUT any](in []*IN, convF func(*IN) (string, *OUT, error)) (map[string]*OUT, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-	m := make(map[string]*OUT, len(in))
-	for _, v := range in {
-		if v == nil {
-			continue
-		}
-		k, ccV, err := convF(v)
-		if err != nil {
-			return nil, err
-		}
-		if ccV == nil {
-			continue
-		}
-		m[k] = ccV
-	}
-	return m, nil
-}
-
-// convertMapToSlice converts generic maps keyed by strings to a slice using a
-// provided conversion function.
-func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN) (out []*OUT) {
-	for _, i := range in {
-		out = append(out, convF(i))
-	}
-	return out
 }
 
 // fixedInVersion returns the fixed in string, typically provided the report's

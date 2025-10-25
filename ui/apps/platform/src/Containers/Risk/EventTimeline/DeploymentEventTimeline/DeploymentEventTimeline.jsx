@@ -1,11 +1,10 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { useQuery } from '@apollo/client';
 
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import queryService from 'utils/queryService';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import TimelineLegend from 'Components/TimelineLegend';

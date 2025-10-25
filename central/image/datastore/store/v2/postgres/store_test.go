@@ -127,7 +127,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.True(exists)
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(s.store.Delete(s.ctx, image.GetId()))
@@ -245,7 +245,7 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	cloned := image.CloneVT()
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	// Because of times we need to reconcile the components to account
 	// for first image occurrence and first system time of a CVE
 	cloned.Scan.Components = getTestImageComponentsVerify()
@@ -263,7 +263,7 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// Should pull the old CVE times for CVE1 even though it just appeared in
 	// the component.  The CVE has still existed in the image even though it is
 	// new to the component.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
 	}
@@ -282,7 +282,7 @@ func (s *ImagesStoreSuite) TestUpsert() {
 	// Should pull the old CVE times for CVE1 even though it just appeared in
 	// the component.  The CVE has still existed in the image even though it is
 	// new to the component.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
 	}

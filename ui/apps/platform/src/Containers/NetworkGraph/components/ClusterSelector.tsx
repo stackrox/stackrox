@@ -1,7 +1,6 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { ClusterScopeObject } from 'services/RolesService';
+import type { ClusterScopeObject } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { ClusterIcon } from '../common/NetworkGraphIcons';
 

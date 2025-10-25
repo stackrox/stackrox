@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, Spinner } from '@patternfly/react-core';
 
 import './LoadingSection.css';

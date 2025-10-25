@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSection, Divider, Title, Flex, FlexItem, TextInput } from '@patternfly/react-core';
 
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import PolicyCategoriesList from './PolicyCategoriesList';
-import PolicyCategoriesFilterSelect, { CategoryFilter } from './PolicyCategoriesFilterSelect';
+import PolicyCategoriesFilterSelect from './PolicyCategoriesFilterSelect';
+import type { CategoryFilter } from './PolicyCategoriesFilterSelect';
 import PolicyCategorySidePanel from './PolicyCategorySidePanel';
 import DeletePolicyCategoryModal from './DeletePolicyCategoryModal';
 

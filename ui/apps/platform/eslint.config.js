@@ -5,8 +5,10 @@ const path = require('node:path');
 const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
+const pluginCSS = require('@eslint/css').default;
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginJSON = require('@eslint/json').default;
+const pluginMarkdown = require('@eslint/markdown').default; // ECMAScript module requires Node.js 22.12.0 or later
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
@@ -46,6 +48,26 @@ module.exports = [
         ],
     },
     {
+        // Only for lint commands.
+        // ESLint extension for VSCode does not probe css files.
+        files: ['src/**/*.css'],
+        ignores: ['src/app.tw.css'],
+
+        language: 'css/css',
+
+        plugins: {
+            css: pluginCSS,
+        },
+        rules: {
+            // https://github.com/eslint/css/blob/main/src/index.js
+            ...pluginCSS.configs.recommended.rules,
+
+            'css/no-important': 'off',
+            'css/no-invalid-properties': ['error', { allowUnknownVariables: true }], // allow --pf variables
+            'css/use-baseline': ['error', { available: 'newly' }],
+        },
+    },
+    {
         files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
         ignores: [
             'package-lock.json', // ignore because it is auto-generated
@@ -66,6 +88,20 @@ module.exports = [
 
         // https://github.com/eslint/json/blob/main/src/index.js
         ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['*.md', 'src/**/*.md'],
+        // Beware that ui/README.md file is outside of scope of application lint.
+
+        language: 'markdown/gfm',
+
+        plugins: {
+            markdown: pluginMarkdown,
+        },
+        rules: {
+            // https://github.com/eslint/markdown/blob/main/src/index.js
+            ...pluginMarkdown.configs.recommended[0].rules, // recommended is array!
+        },
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
@@ -134,7 +170,7 @@ module.exports = [
             'grouped-accessor-pairs': 'error',
             'guard-for-in': 'error',
             'max-classes-per-file': ['error', 1],
-            'no-alert': 'warn',
+            'no-alert': 'error', // instead of 'warn'
             'no-caller': 'error',
             'no-constructor-return': 'error',
             'no-else-return': ['error', { allowElseIf: false }], // TODO
@@ -265,7 +301,7 @@ module.exports = [
             'no-async-promise-executor': 'error',
             'no-compare-neg-zero': 'error',
             'no-cond-assign': ['error', 'always'],
-            'no-constant-condition': 'warn',
+            'no-constant-condition': 'error', // instead of 'warn'
             'no-control-regex': 'error',
             'no-debugger': 'error',
             'no-dupe-args': 'error',
@@ -678,7 +714,7 @@ module.exports = [
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
-            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error?
+            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
         },
     },
     {
@@ -741,48 +777,39 @@ module.exports = [
             'src/Components/**',
             'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Dashboard/**',
-            'src/Containers/Integrations/**',
             'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
-            'src/Containers/Risk/**',
-            'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
         ],
 
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+
         // Separate from the following configuration to limit size of contributions.
         rules: {
-            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+            'limited/sort-named-imports': 'error',
         },
     },
     {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
-            'src/Components/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/MainPage/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
-            'src/Containers/PolicyCategories/**',
-            'src/Containers/PolicyManagement/**',
-            'src/Containers/Risk/**',
-            'src/Containers/Search/**',
-            'src/Containers/SystemConfig/**',
-            'src/Containers/SystemHealth/**',
-            'src/Containers/User/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
 
@@ -798,6 +825,63 @@ module.exports = [
             'limited/no-qualified-name-react': 'error',
             'limited/no-absolute-path-within-container-in-import': 'error',
             'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/ConsolePlugin/**',
+            'src/Containers/Audit/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ComplianceEnhanced/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Docs/**',
+            'src/Containers/ExceptionConfiguration/**',
+            'src/Containers/Images/**',
+            'src/Containers/Login/**',
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/Policies/**',
+            'src/Containers/Search/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
+            'src/Containers/Workflow/**', // deprecated
+            'src/Containers/*.{js,jsx,ts,tsx}',
+            'src/constants/**',
+            'src/hooks/**',
+            'src/providers/**',
+            'src/test-utils/**',
+            'src/utils/**',
+            'src/*.{js,jsx,ts,tsx}',
+        ],
+
+        // After deprecated folders have been deleted:
+        // Move jsxPragma property to languageOptions at module scope.
+        // Move react rules into appropriate configuration objects.
+
+        // Set parserOptions and turn off rules explicitly,
+        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
+
+        languageOptions: {
+            parserOptions: {
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+        },
+
+        plugins: {
+            limited: pluginLimited,
+            react: pluginReact,
+        },
+        rules: {
+            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
+            'limited/no-default-import-react': 'error',
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
         },
     },
     {
@@ -825,6 +909,7 @@ module.exports = [
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
                         path.join(__dirname, 'webpack.ocp-plugin.config.js'),
                         path.join(__dirname, 'vite.config.js'),
+                        path.join(__dirname, 'cypress.config.js'),
                     ],
                 },
             ],

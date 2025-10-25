@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { BaseVulnerabilityException } from 'services/VulnerabilityExceptionService';
-import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal/ExceptionRequestModal';
+import type { BaseVulnerabilityException } from 'services/VulnerabilityExceptionService';
+import type { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal/ExceptionRequestModal';
 
 export type ShowExceptionModalAction =
     | {

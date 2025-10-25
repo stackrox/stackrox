@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Button,
     Flex,
@@ -12,7 +12,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
-import { FailedCluster } from 'types/reportJob';
+import type { FailedCluster } from 'types/reportJob';
 
 export type PartialReportModalProps = {
     failedClusters?: FailedCluster[];
@@ -20,7 +20,7 @@ export type PartialReportModalProps = {
 };
 
 function PartialReportModal({ failedClusters = [], onDownload }: PartialReportModalProps) {
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
 
@@ -57,7 +57,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
         : [];
 
     return (
-        <React.Fragment>
+        <>
             <Button
                 variant="link"
                 isInline
@@ -116,7 +116,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                     </Table>
                 </Flex>
             </Modal>
-        </React.Fragment>
+        </>
     );
 }
 

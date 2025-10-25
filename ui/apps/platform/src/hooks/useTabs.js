@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Children, useState } from 'react';
 
 import Tab from 'Components/Tab';
 
@@ -14,7 +14,7 @@ import Tab from 'Components/Tab';
 function useTabs(children) {
     const [activeTabIndex, selectActiveTabIndex] = useState(0);
 
-    const tabHeaders = React.Children.toArray(children).map((child, i) => {
+    const tabHeaders = Children.toArray(children).map((child, i) => {
         const {
             type,
             props: { title, dataTestId },
@@ -39,7 +39,7 @@ function useTabs(children) {
         return { title, isActive, onSelectTab, dataTestId };
     });
 
-    const activeTabContent = React.Children.toArray(children)[activeTabIndex];
+    const activeTabContent = Children.toArray(children)[activeTabIndex];
 
     return { tabHeaders, activeTabContent };
 }

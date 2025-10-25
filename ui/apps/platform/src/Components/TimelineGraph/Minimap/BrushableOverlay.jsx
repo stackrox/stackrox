@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { brushX } from 'd3-brush';
 import { scaleLinear } from 'd3-scale';

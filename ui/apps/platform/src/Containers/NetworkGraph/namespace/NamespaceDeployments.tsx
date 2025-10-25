@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import {
     Button,
     Flex,
@@ -19,7 +19,7 @@ type NamespaceDeploymentsProps = {
 };
 
 function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeploymentsProps) {
-    const [searchValue, setSearchValue] = React.useState('');
+    const [searchValue, setSearchValue] = useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
 
     function onSearchInputChange(_event, value) {

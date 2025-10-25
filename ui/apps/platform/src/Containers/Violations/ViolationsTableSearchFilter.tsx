@@ -1,11 +1,10 @@
-import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import {
+import type {
     CompoundSearchFilterConfig,
     OnSearchCallback,
     OnSearchPayload,

@@ -10,8 +10,10 @@ import (
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -21,6 +23,8 @@ const (
 
 type datastoreImpl struct {
 	store virtualMachineStore.VirtualMachineStore
+
+	mutex sync.Mutex
 }
 
 func newDatastoreImpl(store virtualMachineStore.VirtualMachineStore) DataStore {
@@ -58,12 +62,46 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 	now := time.Now()
 	virtualMachine.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&now)
 
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+	oldVM, found, err := ds.GetVirtualMachine(ctx, virtualMachine.GetId())
+	if err != nil {
+		return errors.Wrap(err, "retrieving old virtual machine")
+	}
+	if found && oldVM != nil {
+		// Propagate previous scan information to updated virtual machine
+		virtualMachine.Scan = oldVM.GetScan()
+	}
+
 	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{virtualMachine})
+}
+
+func (ds *datastoreImpl) UpdateVirtualMachineScan(
+	ctx context.Context,
+	virtualMachineID string,
+	scanData *storage.VirtualMachineScan,
+) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpdateVirtualMachineScan")
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+	vmToUpdate, found, err := ds.store.Get(ctx, virtualMachineID)
+	if err != nil {
+		return errors.Wrap(err, "retrieving virtual machine for scan update")
+	}
+	if !found {
+		return errox.NotFound
+	}
+	vmToUpdate.Scan = scanData
+
+	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{vmToUpdate})
 }
 
 func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "DeleteVirtualMachines")
 
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 	return ds.store.DeleteMany(ctx, ids)
 }
 
@@ -111,4 +149,11 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 		return nil, err
 	}
 	return results, nil
+}
+
+// Walk iterates over all virtual machines and invokes the provided function for each.
+// This method is optimized for processing VMs without loading them all into memory.
+func (ds *datastoreImpl) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Walk")
+	return ds.store.Walk(ctx, fn)
 }

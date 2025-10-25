@@ -264,7 +264,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
     * Add `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
     * Add code below to `deploy_central_via_operator` function in tests/e2e/lib.sh
 
-        ```
+        ```sh
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```
@@ -362,7 +362,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
     * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
     * Delete code below from `deploy_central_via_operator` function in tests/e2e/lib.sh
 
-        ```
+        ```sh
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```

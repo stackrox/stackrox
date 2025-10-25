@@ -77,7 +77,7 @@ func (s *k8sRoleSACSuite) deleteK8sRole(id string) {
 }
 
 func (s *k8sRoleSACSuite) TestUpsertRole() {
-	cases := testutils.GenericGlobalSACUpsertTestCases(s.T(), testutils.VerbUpsert)
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -123,7 +123,7 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 }
 
 func (s *k8sRoleSACSuite) TestRemoveRole() {
-	cases := testutils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -137,11 +137,19 @@ func (s *k8sRoleSACSuite) TestRemoveRole() {
 			defer s.deleteK8sRole(role.GetId())
 
 			err = s.datastore.RemoveRole(ctx, role.GetId())
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetchedRole, found, err := s.datastore.GetRole(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				role.GetId(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), role, fetchedRole)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetchedRole)
 			}
 		})
 	}

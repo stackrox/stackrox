@@ -1,4 +1,3 @@
-import React from 'react';
 import type { CSSProperties } from 'react';
 import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
 
@@ -78,6 +77,7 @@ function DashboardPage() {
             <Divider component="div" />
             <PageSection>
                 <Gallery
+                    id="main-dashboard-widget-gallery"
                     style={
                         {
                             // Ensure the grid has never grows large enough to show 4 columns

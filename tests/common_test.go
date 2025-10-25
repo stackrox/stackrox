@@ -97,7 +97,7 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 		}`
 
 		return &http.Response{
-			StatusCode: 200,
+			StatusCode: http.StatusOK,
 			Status:     "200 OK",
 			Body:       io.NopCloser(strings.NewReader(responseBody)),
 			Header:     make(http.Header),

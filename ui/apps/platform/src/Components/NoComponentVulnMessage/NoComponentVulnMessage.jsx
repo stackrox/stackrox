@@ -1,5 +1,3 @@
-import React from 'react';
-
 const NoComponentVulnMessage = () => (
     <div className="p-3 leading-normal flex w-full justify-center items-center">
         <div className="p-3 rounded w-full h-full flex items-center justify-center">

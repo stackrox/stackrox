@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import isEmpty from 'lodash/isEmpty';
 
 import useAnalytics, { EXTERNAL_IPS_SIDE_PANEL } from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
 import { getExternalIpsFlowsMetadata } from 'services/NetworkService';
-import { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
+import type { ExternalNetworkFlowsMetadataResponse } from 'types/networkFlow.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import ExternalIpsTable from './ExternalIpsTable';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { timeWindowToISO } from '../utils/timeWindow';
 
 import {

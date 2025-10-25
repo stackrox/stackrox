@@ -198,7 +198,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.origSensorLogLevel, err = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
 	requireNoErrorOrEnvVarNotFound(t, err)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
-		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
+		_ = ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
 		logf(t, "Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
 
 		ts.waitForHealthyCentralSensorConn()
@@ -236,7 +236,7 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	// not impacted by the additional logging.
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		if ts.origSensorLogLevel != "" {
-			ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
+			_ = ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
 			logf(t, "Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
 		} else {
 			ts.mustDeleteDeploymentEnvVar(ctx, ts.namespace, sensorDeployment, deleScanLogLevelEnvVar)
@@ -296,9 +296,9 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 
 		cfg, err := service.GetConfig(ctx, &v1.Empty{})
 		require.NoError(t, err)
-		assert.Equal(t, "", cfg.DefaultClusterId)
-		assert.Equal(t, v1.DelegatedRegistryConfig_NONE, cfg.EnabledFor)
-		assert.Len(t, cfg.Registries, 0)
+		assert.Equal(t, "", cfg.GetDefaultClusterId())
+		assert.Equal(t, v1.DelegatedRegistryConfig_NONE, cfg.GetEnabledFor())
+		assert.Len(t, cfg.GetRegistries(), 0)
 	})
 
 	// Verify the API returns the same values that were sent in. At the time
@@ -415,7 +415,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 		)
 
 		// Update image integration.
-		ii.GetDocker().Insecure = !ii.GetDocker().Insecure
+		ii.GetDocker().Insecure = !ii.GetDocker().GetInsecure()
 		_, err := service.UpdateImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: ii, UpdatePassword: false})
 		require.NoError(t, err)
 
@@ -544,7 +544,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		query := fmt.Sprintf("Image:%s", ts.ubi9Image.TagRef())
 		delResp, err := service.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 		require.NoError(t, err)
-		logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
+		logf(t, "Num images deleted from query %q: %d", query, delResp.GetNumDeleted())
 
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
@@ -844,7 +844,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			query := fmt.Sprintf("Image Sha:%s", tc.imgID)
 			delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 			require.NoError(t, err)
-			logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
+			logf(t, "Num images deleted from query %q: %d", query, delResp.GetNumDeleted())
 
 			fromByte := ts.getSensorLastLogBytePos(ctx)
 
@@ -1181,7 +1181,7 @@ func (ts *DelegatedScanningSuite) deleteImageByID(id string) {
 	delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 	require.NoError(t, err)
 
-	logf(t, "Num images deleted from query %q: %d", query, delResp.NumDeleted)
+	logf(t, "Num images deleted from query %q: %d", query, delResp.GetNumDeleted())
 }
 
 // waitForHealthyCentralSensorConn will wait for the Sensor deployment to be ready
@@ -1191,7 +1191,6 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 	ctx := ts.ctx
 
 	// Wait for critical components to be healthy.
-	logf(t, "Waiting for Sensor to be ready")
 	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
 
 	logf(t, "Waiting for Central/Sensor connection to be ready")

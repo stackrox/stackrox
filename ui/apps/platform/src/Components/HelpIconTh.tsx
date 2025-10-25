@@ -1,10 +1,11 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Button, Flex, FlexItem, Popover } from '@patternfly/react-core';
-import { Th, ThProps } from '@patternfly/react-table';
+import { Th } from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 type HelpIconThProps = {
-    children: string | React.ReactNode;
+    children: string | ReactNode;
     sort?: ThProps['sort'];
     popoverContent: ReactElement;
 };

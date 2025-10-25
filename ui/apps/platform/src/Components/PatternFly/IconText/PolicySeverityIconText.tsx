@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import { severityLabels } from 'messages/common';
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import { PolicySeverity } from 'types/policy.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import type { PolicySeverity } from 'types/policy.proto';
 
 import SeverityIcons from '../SeverityIcons';
 

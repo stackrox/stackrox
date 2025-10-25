@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { DropdownItem } from '@patternfly/react-core';

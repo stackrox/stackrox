@@ -1,13 +1,13 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
-import EmailTemplateModal, {
-    TemplatePreviewArgs,
-} from 'Components/EmailTemplate/EmailTemplateModal';
+import EmailTemplateModal from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import useIndexKey from 'hooks/useIndexKey';
-import { NotifierConfiguration } from 'services/ReportsService.types';
+import type { NotifierConfiguration } from 'services/ReportsService.types';
 
 export type NotifierConfigurationViewProps = {
     headingLevel: 'h2' | 'h3';

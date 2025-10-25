@@ -5,7 +5,6 @@ import queryService from 'utils/queryService';
 import DateTimeField from 'Components/DateTimeField';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
-import TableCountLink from 'Components/workflow/TableCountLink';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
@@ -21,6 +20,7 @@ import { getRatioOfScannedImages } from './deployments.utils';
 import WorkflowListPage from '../WorkflowListPage';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
+import TableCountLink from '../../TableCountLink';
 
 export const defaultDeploymentSort = [
     {

@@ -72,10 +72,6 @@ spec:
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
           value: "sensor.stackrox.svc"
-        [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
-        - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
-          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
-        [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
           {{- ._rox.collector._resources | nindent 10 }}
@@ -109,24 +105,45 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-        [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
-        {{- if ._rox.collector.containerd.enabled }}
-        - mountPath: /host/run/containerd/containerd.sock
-          name: containerd-sock
-          mountPropagation: HostToContainer
-        {{- end }}
-        {{- if ._rox.collector.crio.enabled }}
-        - mountPath: /host/run/crio/crio.sock
-          name: crio-sock
-          mountPropagation: HostToContainer
-        {{- end }}
-        [<- end >]
         - mountPath: "/etc/stackrox"
           name: collector-config
           readOnly: true
         - mountPath: /var/profiles
           name: collector-profiles
       {{- end }}
+
+      [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+      - name: fact
+        image: {{ quote ._rox.image.fact.fullRef }}
+        imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
+        {{- if ._rox.fact.exposeMonitoring }}
+        ports:
+          - containerPort: 9001
+            name: monitoring
+        {{- end }}
+        command: ["/usr/local/bin/fact", "--skip-pre-flight"]
+        env:
+        - name: FACT_LOGLEVEL
+          value: 'debug'
+        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        resources:
+          {{- ._rox.fact._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      [<- end >]
+
       - command:
         - stackrox/compliance
         env:
@@ -294,18 +311,6 @@ spec:
         emptyDir:
           sizeLimit: 200Mi
 
-      [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
-      {{- if ._rox.collector.containerd.enabled }}
-      - name: containerd-sock
-        hostPath:
-          path: /run/containerd/containerd.sock
-      {{- end }}
-      {{- if ._rox.collector.crio.enabled }}
-      - name: crio-sock
-        hostPath:
-          path: /run/crio/crio.sock
-      {{- end }}
-      [<- end >]
       - name: collector-config
         configMap:
           name: collector-config

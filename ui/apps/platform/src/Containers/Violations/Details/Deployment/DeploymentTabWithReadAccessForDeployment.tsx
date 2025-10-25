@@ -1,10 +1,10 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Card, CardBody, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { AlertDeployment } from 'types/alert.proto';
+import type { AlertDeployment } from 'types/alert.proto';
 
 import DeploymentOverview from './DeploymentOverview';
 import SecurityContext from './SecurityContext';

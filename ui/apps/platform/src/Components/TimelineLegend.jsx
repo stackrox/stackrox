@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
 import Button from 'Components/Button';

@@ -65,12 +65,15 @@ spec:
                     - ScanIfMissing
                     - DoNotScanInline
                     type: string
-                  enforce:
+                  enforcement:
                     description: |-
-                      Set to false to disable policy enforcement for the admission controller. This is not recommended.
-                      On new deployments starting with version 4.9, defaults to true.
-                      On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
-                    type: boolean
+                      Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
+                      On new deployments starting with version 4.9, defaults to Enabled.
+                      On old deployments, defaults to Enabled if at least one of listenOnCreates or listenOnUpdates is true.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
                   failurePolicy:
                     description: |-
                       If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller

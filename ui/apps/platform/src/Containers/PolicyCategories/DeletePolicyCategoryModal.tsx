@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Modal,
     ModalBoxBody,
@@ -17,7 +17,7 @@ import {
 
 import { getPolicies } from 'services/PoliciesService';
 import { deletePolicyCategory } from 'services/PolicyCategoriesService';
-import { PolicyCategory, ListPolicy } from 'types/policy.proto';
+import type { PolicyCategory, ListPolicy } from 'types/policy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 type DeletePolicyCategoryModalProps = {

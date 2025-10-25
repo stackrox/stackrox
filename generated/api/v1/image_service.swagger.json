@@ -1876,25 +1876,49 @@
     "v4Contents": {
       "type": "object",
       "properties": {
-        "packages": {
+        "packagesDEPRECATED": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v4Package"
           }
         },
-        "distributions": {
+        "packages": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v4Package"
+          }
+        },
+        "distributionsDEPRECATED": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v4Distribution"
           }
         },
-        "repositories": {
+        "distributions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v4Distribution"
+          }
+        },
+        "repositoriesDEPRECATED": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v4Repository"
+          }
+        },
+        "repositories": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v4Repository"
+          }
+        },
+        "environmentsDEPRECATED": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EnvironmentList"
           }
         },
         "environments": {

@@ -103,26 +103,26 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestListReportConfigurations() {
 	// Empty Query
 	res, err := s.service.ListReportConfigurations(s.ctx, &apiV2.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	protoassert.ElementsMatch(s.T(), apiV2Configs, res.ReportConfigs)
+	protoassert.ElementsMatch(s.T(), apiV2Configs, res.GetReportConfigs())
 
 	// Non empty query
 	res, err = s.service.ListReportConfigurations(s.ctx,
-		&apiV2.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v2Configs[0].Name)})
+		&apiV2.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v2Configs[0].GetName())})
 	s.Require().NoError(err)
-	s.Require().Equal(1, len(res.ReportConfigs))
-	protoassert.Equal(s.T(), apiV2Configs[0], res.ReportConfigs[0])
+	s.Require().Equal(1, len(res.GetReportConfigs()))
+	protoassert.Equal(s.T(), apiV2Configs[0], res.GetReportConfigs()[0])
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestGetReportConfiguration() {
 	apiV2Configs := s.convertConfigs(s.v2Configs)
 
 	// returns v2 config
-	res, err := s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v2Configs[0].Id})
+	res, err := s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v2Configs[0].GetId()})
 	s.Require().NoError(err)
 	protoassert.Equal(s.T(), apiV2Configs[0], res)
 
 	// error on requesting v1 config
-	_, err = s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v1Configs[0].Id})
+	_, err = s.service.GetReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v1Configs[0].GetId()})
 	s.Require().Error(err)
 }
 
@@ -130,18 +130,18 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestCountReportConfigurations() {
 	// Empty query
 	res, err := s.service.CountReportConfigurations(s.ctx, &apiV2.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	s.Require().Equal(int32(len(s.v2Configs)), res.Count)
+	s.Require().Equal(int32(len(s.v2Configs)), res.GetCount())
 
 	// Non empty query
 	res, err = s.service.CountReportConfigurations(s.ctx,
-		&apiV2.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v2Configs[0].Name)})
+		&apiV2.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v2Configs[0].GetName())})
 	s.Require().NoError(err)
-	s.Require().Equal(int32(1), res.Count)
+	s.Require().Equal(int32(1), res.GetCount())
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestDeleteReportConfiguration() {
 	// Error on v1 config ID
-	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v1Configs[0].Id})
+	_, err := s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: s.v1Configs[0].GetId()})
 	s.Require().Error(err)
 
 	// No error on v2 config ID
@@ -151,14 +151,14 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestDeleteReportConfiguration() {
 	config.Name = "Delete report config"
 	config.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, config)
 	s.Require().NoError(err)
-	_, err = s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: config.Id})
+	_, err = s.service.DeleteReportConfiguration(s.ctx, &apiV2.ResourceByID{Id: config.GetId()})
 	s.Require().NoError(err)
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestRunReport() {
 	// Error on v1 config
 	_, err := s.service.RunReport(s.ctx, &apiV2.RunReportRequest{
-		ReportConfigId:           s.v1Configs[0].Id,
+		ReportConfigId:           s.v1Configs[0].GetId(),
 		ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
 	})
 	s.Require().Error(err)

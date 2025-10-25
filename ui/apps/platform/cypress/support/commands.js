@@ -16,7 +16,7 @@ Cypress.Commands.add('checkAccessibility', (context = null) => {
     // inject axe only if it hasn't been injected yet
     cy.window().then((win) => {
         if (!win.axe) {
-            cy.injectAxe();
+            cy.injectAxe({ axeCorePath: Cypress.env('AXE_CORE_PATH') });
         }
     });
 

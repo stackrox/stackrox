@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import {
     PageSection,
     Bullseye,
@@ -15,15 +16,16 @@ import {
 } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import PolicyCategoriesListSection from './PolicyCategoriesListSection';
 import CreatePolicyCategoryModal from './CreatePolicyCategoryModal';
 
-function PolicyCategoriesPage(): React.ReactElement {
+function PolicyCategoriesPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPolicy = hasReadWriteAccess('WorkflowAdministration');
 

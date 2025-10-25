@@ -1,13 +1,13 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     FormGroup,
-    FormGroupProps,
     FormHelperText,
     HelperText,
     HelperTextItem,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { FormikTouched, FormikErrors } from 'formik';
+import type { FormGroupProps } from '@patternfly/react-core';
+import type { FormikTouched, FormikErrors } from 'formik';
 import get from 'lodash/get';
 
 export interface FormLabelGroupProps<T> extends FormGroupProps {

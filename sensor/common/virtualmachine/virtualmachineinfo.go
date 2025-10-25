@@ -9,6 +9,7 @@ type Info struct {
 	Namespace string
 	VSOCKCID  *uint32
 	Running   bool
+	GuestOS   string
 }
 
 // Copy returns a copy of the VirtualMachineInfo
@@ -21,6 +22,7 @@ func (v *Info) Copy() *Info {
 		Name:      v.Name,
 		Namespace: v.Namespace,
 		Running:   v.Running,
+		GuestOS:   v.GuestOS,
 	}
 	if v.VSOCKCID != nil {
 		vsockCIDValue := *v.VSOCKCID

@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -11,6 +12,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 )
+
+var h = xxhash.New()
 
 func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	now := timestamp.Now()
@@ -31,7 +34,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 		expectedNumContainerLookups int
 		expectedNumUpdatesEndpoint  int
 		expectedNumUpdatesProcess   int
-		expectedDeduperState        map[string]string
+		expectedDeduperState        map[indicator.BinaryHash]indicator.BinaryHash
 		expectedUpdatedProcesses    *indicator.ProcessInfo
 	}
 
@@ -47,8 +50,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   1,
-					expectedDeduperState: map[string]string{
-						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p1,
 				},
@@ -58,7 +61,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   1,
-					expectedDeduperState:        map[string]string{},
+					expectedDeduperState:        map[indicator.BinaryHash]indicator.BinaryHash{},
 					expectedUpdatedProcesses:    &p1,
 				},
 			},
@@ -72,8 +75,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   0,
-					expectedDeduperState: map[string]string{
-						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): "",
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): indicator.BinaryHash(0),
 					},
 					expectedUpdatedProcesses: nil,
 				},
@@ -83,7 +86,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   0,
-					expectedDeduperState:        map[string]string{},
+					expectedDeduperState:        map[indicator.BinaryHash]indicator.BinaryHash{},
 					expectedUpdatedProcesses:    nil,
 				},
 			},
@@ -97,8 +100,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  1,
 					expectedNumUpdatesProcess:   1,
-					expectedDeduperState: map[string]string{
-						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p1,
 				},
@@ -108,8 +111,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  0,
 					expectedNumUpdatesProcess:   1,
-					expectedDeduperState: map[string]string{
-						e1p2open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p2open.processListeningIndicator().Key(indicator.HashingAlgoHash),
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p2open.endpointIndicator(deploymentID).BinaryKey(h): e1p2open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: &p2,
 				},
@@ -132,8 +135,8 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 					expectedNumContainerLookups: 1,
 					expectedNumUpdatesEndpoint:  0,
 					expectedNumUpdatesProcess:   0,
-					expectedDeduperState: map[string]string{
-						e1p1open.endpointIndicator(deploymentID).Key(indicator.HashingAlgoHash): e1p1open.processListeningIndicator().Key(indicator.HashingAlgoHash),
+					expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{
+						e1p1open.endpointIndicator(deploymentID).BinaryKey(h): e1p1open.processListeningIndicator().BinaryKey(h),
 					},
 					expectedUpdatedProcesses: nil,
 				},
@@ -158,7 +161,7 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 				b.T().Logf("event[%d]: got updatesP: %v", i, updatesP)
 				b.T().Logf("event[%d]: got updatesE: %v", i, updatesE)
 				b.printDedupers()
-				b.assertNoOtherUpdates()
+				b.assertNoMoreUpdatesToCentral()
 
 				b.Require().Equal(e.expectedNumUpdatesProcess, len(updatesP), "Number of process updates should match")
 				b.Require().Equal(e.expectedNumUpdatesEndpoint, len(updatesE), "Number of endpoint updates should match")
@@ -179,14 +182,13 @@ func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
 	}
 }
 
-func (b *sendNetflowsSuite) assertNoOtherUpdates() {
-	// No other updates
+func (b *sendNetflowsSuite) assertNoMoreUpdatesToCentral() {
 	mustNotRead(b.T(), b.m.sensorUpdates)
 }
 
-func (b *sendNetflowsSuite) assertDeduperState(expected map[string]string) {
+func (b *sendNetflowsSuite) assertDeduperState(expected map[indicator.BinaryHash]indicator.BinaryHash) {
 	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
-		testable.WithEndpointDeduperAccess(func(epDeduper map[string]string) {
+		testable.WithEndpointDeduperAccess(func(epDeduper map[indicator.BinaryHash]indicator.BinaryHash) {
 			b.EqualValuesf(expected, epDeduper, "deduper state should match expected")
 		})
 	} else {
@@ -196,7 +198,7 @@ func (b *sendNetflowsSuite) assertDeduperState(expected map[string]string) {
 
 func (b *sendNetflowsSuite) printDedupers() {
 	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
-		testable.WithEndpointDeduperAccess(func(deduper map[string]string) {
+		testable.WithEndpointDeduperAccess(func(deduper map[indicator.BinaryHash]indicator.BinaryHash) {
 			b.T().Logf("endpoint->process deduper: (%v)", deduper)
 		})
 	} else {
@@ -208,7 +210,7 @@ func (b *sendNetflowsSuite) getUpdates(num int) ([]*storage.ProcessListeningOnPo
 	p := make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	e := make([]*storage.NetworkEndpoint, 0)
 	for range num {
-		msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+		msg := mustSendToCentralWithoutBlock(b.T(), b.m.sensorUpdates)
 		switch msg.Msg.(type) {
 		case *central.MsgFromSensor_ProcessListeningOnPortUpdate:
 			update := msg.GetMsg().(*central.MsgFromSensor_ProcessListeningOnPortUpdate)

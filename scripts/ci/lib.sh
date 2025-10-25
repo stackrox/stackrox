@@ -321,6 +321,50 @@ push_main_image_set() {
     fi
 }
 
+push_operator_image() {
+    info "Pushing stackrox-operator image"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "Missing parameter. Usage: push_operator_image <push_context> <brand> <arch>"
+    fi
+
+    local push_context="$1" # Allowed to be empty.
+    local brand="$2"
+    local arch="$3"
+
+    if [[ "$brand" == "" ]]; then
+        die "Brand must be non-empty"
+    fi
+    if [[ "$arch" == "" ]]; then
+        die "Arch must be non-empty"
+    fi
+
+    _push_operator_image() {
+        local registry="$1"
+        local tag="$2"
+        local arch="$3"
+
+        retry 5 true \
+            docker push "${registry}/stackrox-operator:${tag}-${arch}" | cat
+    }
+
+    local registry
+    registry="$(registry_from_branding "$brand")"
+
+    local tag
+    tag="$(make -C operator/ --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+
+    docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:${tag}-${arch}"
+    _push_operator_image "$registry" "$tag" "$arch"
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
+        _push_operator_image "$registry" "latest" "$arch"
+    fi
+}
+
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
@@ -380,6 +424,32 @@ push_scanner_image_set() {
 
     _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
     _push_scanner_image_set "$registry" "$tag-$arch"
+}
+
+push_operator_manifest_lists() {
+    info "Pushing stackrox-operator images as manifest lists"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+    local architectures="$3"
+
+    local registry
+    registry="$(registry_from_branding "$brand")"
+
+    local tag
+    tag="$(make -C operator --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+    retry 5 true \
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${tag}" "$architectures" | cat
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        retry 5 true \
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "$architectures" | cat
+    fi
 }
 
 registry_rw_login() {
@@ -543,6 +613,13 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
+    *nongroovy-e2e-tests)
+        image_prefetcher_start_set qa-nongroovy-e2e
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
@@ -654,8 +731,16 @@ image_prefetcher_system_await() {
 
 _image_prefetcher_prebuilt_await() {
     case "$CI_JOB_NAME" in
+
+    # Note: when adding a case for a new test job below, add a image_prefetcher_prebuilt_await call
+    # at the last moment before any of the prebuilt images is used. (See other existing examples.)
+    # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
+
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
+        ;;
+    *nongroovy-e2e-tests)
+        image_prefetcher_await_set qa-nongroovy-e2e
         ;;
     *-operator-e2e-tests)
         image_prefetcher_await_set operator-e2e
@@ -810,6 +895,9 @@ populate_prefetcher_image_list() {
     qa-e2e)
         cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
         ;;
+    qa-nongroovy-e2e)
+        cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
+        ;;
     *)
         die "ERROR: An unsupported image prefetcher target was requested: $name"
         ;;
@@ -949,9 +1037,9 @@ check_collector_version() {
     fi
 }
 
-publish_roxctl() {
+publish_cli() {
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: publish_roxctl <tag>"
+        die "missing arg. usage: publish_cli <tag>"
     fi
 
     local tag="$1"
@@ -960,7 +1048,7 @@ publish_roxctl() {
 
     local temp_dir
     temp_dir="$(mktemp -d)"
-    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-roxctl.sh" . "${temp_dir}"
+    "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/prepare-cli.sh" . "${temp_dir}"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
     "${SCRIPTS_ROOT}/scripts/ci/artifacts-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
 }

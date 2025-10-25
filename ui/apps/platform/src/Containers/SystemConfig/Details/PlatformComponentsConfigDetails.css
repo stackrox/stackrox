@@ -1,6 +1,6 @@
 .truncate-multiline {
     display: -webkit-box;
-    line-clamp: 3;
+    line-clamp: 3; /* eslint-disable-line css/use-baseline */
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;

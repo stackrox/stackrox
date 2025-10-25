@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MouseEvent } from 'react';
 import {
     ExpandableSection,
@@ -6,9 +6,9 @@ import {
     FlexItem,
     Label,
     LabelGroup,
+    Skeleton,
     Text,
     Title,
-    Skeleton,
 } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
@@ -24,7 +24,7 @@ function ProfileDetailsHeader({
     profileDetails,
     profileName,
 }: ProfileDetailsHeaderProps) {
-    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     function onToggleDescription(_event: MouseEvent, isExpanded: boolean) {
         setIsExpanded(isExpanded);

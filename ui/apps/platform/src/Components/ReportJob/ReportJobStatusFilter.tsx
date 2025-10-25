@@ -1,9 +1,9 @@
-import React from 'react';
 import { SelectList, SelectOption } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 
 import CheckboxSelect from 'Components/CheckboxSelect';
-import { ReportJobStatus, reportJobStatuses, reportJobStatusLabels } from './types';
+import { reportJobStatuses, reportJobStatusLabels } from './types';
+import type { ReportJobStatus } from './types';
 
 function isReportJobStatus(value: string): value is ReportJobStatus {
     return value in reportJobStatuses;

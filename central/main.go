@@ -174,6 +174,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
@@ -668,6 +669,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(authProviderTelemetry.Gather)
 	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 	add(clusterDataStore.Gather)
+	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
 	add(declarativeconfig.ManagerSingleton().Gather())
 	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 	add(externalbackupsDS.Gather)
@@ -935,7 +937,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	// Append report custom routes
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
-		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)),
 		ServerHandler: v2Service.NewDownloadHandler(),
 		Compression:   true,
 	})

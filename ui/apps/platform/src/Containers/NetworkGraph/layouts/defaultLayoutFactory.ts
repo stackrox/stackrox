@@ -1,7 +1,4 @@
 import {
-    Graph,
-    Layout,
-    LayoutFactory,
     ForceLayout,
     ColaLayout,
     ConcentricLayout,
@@ -9,6 +6,7 @@ import {
     GridLayout,
     BreadthFirstLayout,
 } from '@patternfly/react-topology';
+import type { Graph, Layout, LayoutFactory } from '@patternfly/react-topology';
 import { ColaGroupsLayout } from '@patternfly/react-topology/dist/esm/layouts/ColaGroupsLayout';
 
 const defaultLayoutFactory: LayoutFactory = (type: string, graph: Graph): Layout | undefined => {

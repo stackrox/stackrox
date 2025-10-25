@@ -103,6 +103,9 @@ var (
 		"processViolation": {
 			"message": "This is a process violation"
 		},
+		"fileAccessViolation": {
+			"message": "This is a file access violation"
+		},
 		"violations": [
 			{
 				"message": "Deployment is affected by 'CVE-2017-15670'"
@@ -127,7 +130,7 @@ type fakeSplunk struct {
 }
 
 func (s *fakeSplunk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusBadRequest)
 		s.tb.Error("Bad HTTP method", r.Method)
 		return
@@ -149,7 +152,7 @@ func (s *fakeSplunk) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/text")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("ok"))
 	assert.NoError(s.tb, err)
 }

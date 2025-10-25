@@ -1,11 +1,11 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import { excludeDeployments } from 'services/PoliciesService';
-import { DeploymentListAlert, ListAlert } from 'types/alert.proto';
+import type { DeploymentListAlert, ListAlert } from 'types/alert.proto';
 import useRestMutation from 'hooks/useRestMutation';
-import { Empty } from 'services/types';
+import type { Empty } from 'services/types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 // Filter the excludableAlerts displayed down to the ones checked, and group them into a map from policy ID to a list of

@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { FormikProvider, useFormik } from 'formik';
 import {
@@ -10,16 +11,16 @@ import {
     PageSection,
     Wizard,
     WizardStep,
-    WizardStepType,
 } from '@patternfly/react-core';
+import type { WizardStepType } from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { fetchAlertCount } from 'services/AlertsService';
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { ExtendedPageAction } from 'utils/queryStringUtils';
+import type { ExtendedPageAction } from 'utils/queryStringUtils';
 
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
@@ -66,7 +67,14 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 pageAction === 'edit' ? savePolicy(serverPolicy) : createPolicy(serverPolicy);
             request
                 .then(() => {
-                    navigate(-1);
+                    if (pageAction === 'edit') {
+                        // Either navigate back to the policies list or the policy detail page
+                        navigate(-1);
+                    } else {
+                        // Unconditionally navigate to the policies list, note that for "clone" it would
+                        // be more consistent to navigate to the policy detail page for the new policy
+                        navigate(policiesBasePath);
+                    }
                 })
                 .catch((error) => {
                     setPolicyErrorMessage(getAxiosErrorMessage(error));

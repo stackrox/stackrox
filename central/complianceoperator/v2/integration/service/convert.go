@@ -24,7 +24,7 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		return nil, false, err
 	}
 	if !found {
-		return nil, false, errors.Errorf("unable to get details for compliance integration %q", integrationDetail.Id)
+		return nil, false, errors.Errorf("unable to get details for compliance integration %q", integrationDetail.GetId())
 	}
 
 	opStatus := v2.COStatus_UNHEALTHY

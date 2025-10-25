@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import { ClipLoader } from 'react-spinners';
 
 const Loader = ({ size }: { size: number }) => (
@@ -8,7 +8,7 @@ const Loader = ({ size }: { size: number }) => (
 export type ButtonProps = {
     dataTestId?: string | null;
     className?: string;
-    icon?: React.ReactElement | null;
+    icon?: ReactElement | null;
     text?: string | null;
     textCondensed?: string | null;
     textClass?: string;
@@ -34,7 +34,7 @@ const Button = ({
     loaderSize = 20,
     tabIndex,
     ...ariaProps
-}: ButtonProps) => {
+}: ButtonProps): ReactElement => {
     const content = (
         <div className="flex items-center">
             {icon}

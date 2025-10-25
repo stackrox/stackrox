@@ -106,14 +106,11 @@ collector:
   nodescanningEndpoint: "127.0.0.1:8444"
   tolerations:
   - operator: "Exists"
-  [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
-  containerd:
-    enabled: {{ eq ._rox.env.openshift 0 }}
-  crio:
-    enabled: {{ ne ._rox.env.openshift 0 }}
-  runtimeConfig:
-    enabled: true
-  [<- end >]
+
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+fact:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+[<- end >]
 
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}

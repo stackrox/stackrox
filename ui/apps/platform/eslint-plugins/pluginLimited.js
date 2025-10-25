@@ -59,12 +59,152 @@ const rules = {
             };
         },
     },
+    'sort-named-imports': {
+        // Sort named imports by imported name (if it differs from local name)
+        // which seems more intuitive especially when wrapped.
+        // ESLint sort-imports rule sorts by local name (if it differs from imported name).
+        //
+        // For simplicity, sort case sensitive in Unicode order (upper case precedes lower case).
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Sort named imports in ascending order',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (
+                        Array.isArray(node.specifiers) &&
+                        node.specifiers.every(
+                            (specifier) => typeof specifier?.imported?.name === 'string'
+                        )
+                    ) {
+                        const { specifiers } = node;
+                        if (
+                            specifiers.some(
+                                (specifier, index) =>
+                                    index !== 0 &&
+                                    specifiers[index - 1].imported.name > specifier.imported.name
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Sort named imports in ascending order',
+                                fix(fixer) {
+                                    if (context.sourceCode.getCommentsInside(node).length !== 0) {
+                                        return null;
+                                    }
+
+                                    // Range array consists of [start, end] similar to arguments of slice method.
+                                    const start = specifiers[0].range[0];
+                                    const end = specifiers[specifiers.length - 1].range[1];
+                                    const range = [start, end];
+
+                                    // Sort by imported name consistent with error criterion above.
+                                    const sortCallback = (
+                                        { imported: { name: nameA } },
+                                        { imported: { name: nameB } }
+                                    ) => (nameA < nameB ? -1 : nameA > nameB ? 1 : 0);
+
+                                    // Map sorted specification to its node text and text that follows in original order.
+                                    const flatMapCallback = (specifier, index) => [
+                                        context.sourceCode.getText(specifier),
+                                        // For original order, specifiers[index] instead of specifier!
+                                        index === specifiers.length - 1
+                                            ? ''
+                                            : context.sourceCode
+                                                  .getText()
+                                                  .slice(
+                                                      specifiers[index].range[1],
+                                                      specifiers[index + 1].range[0]
+                                                  ),
+                                    ];
+
+                                    const replacement = [...specifiers]
+                                        .sort(sortCallback)
+                                        .flatMap(flatMapCallback)
+                                        .join('');
+
+                                    return fixer.replaceTextRange(range, replacement);
+                                },
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
 
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     // TODO move rule to pluginGeneric after all errors have been fixed.
+    'no-default-import-react': {
+        // Omit default import of React because it is not needed for JSX tranform.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Omit default import of React because it is not needed for JSX tranform',
+            },
+            fixable: 'code',
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDefaultSpecifier(node) {
+                    if (node.local?.name === 'React') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            typeof ancestors[ancestors.length - 1].source?.value === 'string' &&
+                            // endsWith for edge case: '@testing-library/react' instead of 'react'
+                            ancestors[ancestors.length - 1].source.value.endsWith('react')
+                        ) {
+                            const parent = ancestors[ancestors.length - 1];
+                            context.report({
+                                node,
+                                message:
+                                    'Omit default import of React because it is not needed for JSX tranform',
+                                fix(fixer) {
+                                    const { specifiers } = parent;
+                                    if (Array.isArray(specifiers) && specifiers.length !== 0) {
+                                        // If default import only, remove import declaration.
+                                        if (specifiers.length === 1) {
+                                            // Remove node does not remove following newline.
+                                            // Command line autofixes secondary errors after primary fixes.
+                                            // Integrated development environment requires a second interaction to fix.
+                                            return fixer.remove(parent);
+                                        }
+
+                                        // Because default import precedes named imports,
+                                        // remove from beginning of default import to opening brace.
+
+                                        // Range array consists of [start, end] similar to arguments of slice method.
+                                        const startDefaultSpecifier = node.range[0];
+                                        const endDefaultSpecifier = node.range[1];
+                                        const startNextSpecifier = specifiers[1].range[0];
+                                        const end = context.sourceCode
+                                            .getText()
+                                            .indexOf('{', endDefaultSpecifier);
+                                        if (end !== -1 && end < startNextSpecifier) {
+                                            return fixer.removeRange([startDefaultSpecifier, end]);
+                                        }
+                                    }
+
+                                    return null;
+                                },
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
@@ -78,8 +218,27 @@ const rules = {
         },
         create(context) {
             return {
+                JSXMemberExpression(node) {
+                    // For example, React.Fragment
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
+                MemberExpression(node) {
+                    // For example, React.useState
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
                 TSQualifiedName(node) {
-                    if (node?.left?.name === 'React' && typeof node?.right?.name === 'string') {
+                    // For example, React.ReactElement
+                    if (node.left?.name === 'React' && typeof node.right?.name === 'string') {
                         context.report({
                             node,
                             message: `Replace React qualified name with named import: ${node.right.name}`,

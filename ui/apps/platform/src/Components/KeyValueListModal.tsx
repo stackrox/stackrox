@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import {
     Bullseye,
     Button,
@@ -39,7 +39,7 @@ function filterKeyValuesBySearchValue(keyValues: KeyValue[], searchValue: string
 
 function KeyValueListModal({ type, keyValues }: KeyValueListModalProps) {
     const { isModalOpen, openModal, closeModal } = useModal();
-    const [searchValue, setSearchValue] = React.useState('');
+    const [searchValue, setSearchValue] = useState('');
 
     const onChange = (value: string) => {
         setSearchValue(value);

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import AffectedNodesTable from './AffectedNodesTable';
 

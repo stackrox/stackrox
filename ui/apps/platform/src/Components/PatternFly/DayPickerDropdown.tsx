@@ -1,8 +1,8 @@
-import React, { ReactElement } from 'react';
+import type { FocusEventHandler, ReactElement } from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import { IntervalType } from 'services/ComplianceScanConfigurationService';
+import type { IntervalType } from 'services/ComplianceScanConfigurationService';
 
 export type DayPickerDropdownProps = {
     fieldId: string;
@@ -10,7 +10,7 @@ export type DayPickerDropdownProps = {
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
     intervalType: IntervalType | null;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     toggleId?: string;
 };
 

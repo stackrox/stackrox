@@ -1,4 +1,5 @@
-import React, { useEffect, useState, ReactElement, FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, FormEvent, ReactElement } from 'react';
 import {
     Form,
     FormGroup,
@@ -11,7 +12,7 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
-import { DiagnosticBundleRequest } from 'services/DebugService';
+import type { DiagnosticBundleRequest } from 'services/DebugService';
 import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
 
 const startingTimeFormat = 'yyyy-mm-ddThh:mmZ'; // seconds are optional but UTC is required
@@ -58,7 +59,7 @@ function DiagnosticBundleForm({
         setClusterSelectOpen(!clusterSelectOpen);
     }
 
-    function onSelect(event: React.MouseEvent | React.ChangeEvent, selection) {
+    function onSelect(event: ReactMouseEvent | ChangeEvent, selection) {
         const newClusterFilter = values.filterByClusters.includes(selection)
             ? values.filterByClusters.filter((item) => item !== selection)
             : [...values.filterByClusters, selection];
@@ -72,7 +73,7 @@ function DiagnosticBundleForm({
         setFieldValue('filterByClusters', []);
     }
 
-    function startingTimeChangeHandler(value: string, event: React.FormEvent<HTMLInputElement>) {
+    function startingTimeChangeHandler(value: string, event: FormEvent<HTMLInputElement>) {
         onChangeStartingTime(event);
         return setFieldValue(event.currentTarget.id, value);
     }

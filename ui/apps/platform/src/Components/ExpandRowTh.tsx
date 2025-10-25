@@ -1,5 +1,5 @@
-import React from 'react';
-import { Th, ThProps } from '@patternfly/react-table';
+import { Th } from '@patternfly/react-table';
+import type { ThProps } from '@patternfly/react-table';
 
 const expandButtonWidth = '1em';
 const expandButtonPaddingX = '(var(--pf-v5-global--spacer--md) * 2)';

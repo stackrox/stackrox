@@ -1,11 +1,11 @@
-import React, { ElementType, ReactElement, useEffect } from 'react';
+import { useEffect } from 'react';
+import type { ElementType, ReactElement } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
-    RouteKey,
     accessControlBasePath,
     administrationEventsPathWithParam,
     apidocsPath,
@@ -51,12 +51,14 @@ import {
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
+import type { RouteKey } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
-import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
+import type { HasReadAccess } from 'hooks/usePermissions';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 

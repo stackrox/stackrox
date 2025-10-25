@@ -6,6 +6,7 @@ import { assertSearchEntities } from '../../integration/vulnerabilities/workload
 import { selectors } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.selectors';
 import { selectors as vulnerabilitiesSelectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import pf6 from '../../selectors/pf6';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../../helpers/request';
 
 function visitFirstCve() {
     withOcpAuth();
@@ -48,11 +49,12 @@ describe('Security vulnerabilities - CVE Detail page', () => {
             assertSearchEntities(['Image', 'Image component', 'Deployment', 'Namespace']);
 
             // Change to the 'stackrox' project
-            selectProject('stackrox');
-
-            // Wait for the table data to update
-            cy.get(selectors.loadingSpinner).should('exist');
-            cy.get(selectors.loadingSpinner).should('not.exist');
+            interactAndWaitForResponses(
+                () => {
+                    selectProject('stackrox');
+                },
+                getRouteMatcherMapForGraphQL(['getImageCVEList'])
+            );
 
             // Verify that the "Namespace" column is not present
             assertVisibleTableColumns(topLevelTableSelector, [...baseColumns]);

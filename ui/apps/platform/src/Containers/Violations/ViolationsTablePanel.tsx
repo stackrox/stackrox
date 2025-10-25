@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import { useState } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -11,8 +12,12 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Select,
+    SelectOption,
+    SelectList,
+    MenuToggle,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
@@ -22,16 +27,16 @@ import TableCell from 'Components/PatternFly/TableCell';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
-import { GetSortParams } from 'hooks/useURLSort';
+import type { GetSortParams } from 'hooks/useURLSort';
 import useRestMutation from 'hooks/useRestMutation';
 import useToasts from 'hooks/patternfly/useToasts';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
-import { ListAlert } from 'types/alert.proto';
-import { TableColumn } from 'types/table';
+import type { ListAlert } from 'types/alert.proto';
+import type { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { SearchFilter } from 'types/search';
-import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import type { SearchFilter } from 'types/search';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
@@ -124,16 +129,18 @@ function ViolationsTablePanel({
         }
     );
 
-    function onToggleSelect(toggleOpen) {
-        setIsSelectOpen(toggleOpen);
+    function onToggleSelect() {
+        setIsSelectOpen(!isSelectOpen);
     }
 
     // Handle setting confirmation modals for bulk actions
     function showResolveConfirmationDialog() {
         setModalType('resolve');
+        setIsSelectOpen(false);
     }
     function showExcludeConfirmationDialog() {
         setModalType('excludeScopes');
+        setIsSelectOpen(false);
     }
 
     // Handle closing confirmation modals for bulk actions;
@@ -158,10 +165,6 @@ function ViolationsTablePanel({
         setPerPage(newPerPage);
     }
 
-    function closeSelect() {
-        setIsSelectOpen(false);
-    }
-
     function resolveAlertAction(addToBaseline, id) {
         return resolveAlert(id, addToBaseline).then(onClearAll, onClearAll);
     }
@@ -179,6 +182,17 @@ function ViolationsTablePanel({
             numResolveable += 1;
         }
     });
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggleSelect}
+            isExpanded={isSelectOpen}
+            isDisabled={!hasSelections}
+        >
+            Row actions
+        </MenuToggle>
+    );
 
     return (
         <>
@@ -220,27 +234,29 @@ function ViolationsTablePanel({
                     {hasActions && (
                         <ToolbarItem align={{ default: 'alignRight' }}>
                             <Select
-                                onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
                                 isOpen={isSelectOpen}
-                                placeholderText="Row actions"
-                                onSelect={closeSelect}
-                                isDisabled={!hasSelections}
+                                onOpenChange={setIsSelectOpen}
+                                toggle={toggle}
                             >
-                                <SelectOption
-                                    key="1"
-                                    value={`Mark as resolved (${numResolveable})`}
-                                    isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
-                                    onClick={showResolveConfirmationDialog}
-                                />
-                                <SelectOption
-                                    key="2"
-                                    value={`Exclude deployments from policy (${numScopesToExclude})`}
-                                    isDisabled={
-                                        !hasWriteAccessForExcludeDeploymentsFromPolicy ||
-                                        numScopesToExclude === 0
-                                    }
-                                    onClick={showExcludeConfirmationDialog}
-                                />
+                                <SelectList>
+                                    <SelectOption
+                                        value="resolve"
+                                        isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
+                                        onClick={showResolveConfirmationDialog}
+                                    >
+                                        Mark as resolved ({numResolveable})
+                                    </SelectOption>
+                                    <SelectOption
+                                        value="exclude"
+                                        isDisabled={
+                                            !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                            numScopesToExclude === 0
+                                        }
+                                        onClick={showExcludeConfirmationDialog}
+                                    >
+                                        Exclude deployments from policy ({numScopesToExclude})
+                                    </SelectOption>
+                                </SelectList>
                             </Select>
                         </ToolbarItem>
                     )}

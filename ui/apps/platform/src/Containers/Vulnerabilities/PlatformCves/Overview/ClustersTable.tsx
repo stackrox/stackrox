@@ -1,15 +1,14 @@
-import React from 'react';
 import { pluralize } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useURLPagination from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { Pagination } from 'services/types';
-import { ClusterType } from 'types/cluster.proto';
-import { ApiSortOption } from 'types/search';
+import type useURLPagination from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { Pagination } from 'services/types';
+import type { ClusterType } from 'types/cluster.proto';
+import type { ApiSortOption } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -21,7 +20,7 @@ import {
     CVE_COUNT_SORT_FIELD,
 } from '../../utils/sortFields';
 import { getPlatformEntityPagePath, getRegexScopedQueryString } from '../../utils/searchUtils';
-import { QuerySearchFilter } from '../../types';
+import type { QuerySearchFilter } from '../../types';
 import { displayClusterType } from '../utils/stringUtils';
 
 const clusterListQuery = gql`

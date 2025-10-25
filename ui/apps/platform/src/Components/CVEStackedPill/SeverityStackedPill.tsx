@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
 import { getPercentage } from 'utils/mathUtils';

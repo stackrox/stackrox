@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Button,
@@ -15,8 +15,8 @@ import {
     Modal,
     Stack,
     Tab,
-    Tabs,
     TabTitleText,
+    Tabs,
     Text,
     TextArea,
     TextInput,
@@ -24,8 +24,8 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { PlusCircleIcon, RedoAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { FormikErrors } from 'formik';
-import { Values } from './formTypes';
+import type { FormikErrors } from 'formik';
+import type { Values } from './formTypes';
 
 export type PlatformComponentsConfigFormProps = {
     values: Values;

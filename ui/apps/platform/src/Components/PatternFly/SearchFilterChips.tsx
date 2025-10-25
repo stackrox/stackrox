@@ -1,8 +1,9 @@
-import React from 'react';
-import { Button, ChipGroup, Chip, Flex, FlexItem, ToolbarChip } from '@patternfly/react-core';
+import type { ReactElement, ReactNode } from 'react';
+import { Button, ChipGroup, Chip, Flex, FlexItem } from '@patternfly/react-core';
+import type { ToolbarChip } from '@patternfly/react-core';
 import { Globe } from 'react-feather';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
 import './SearchFilterChips.css';
@@ -30,7 +31,7 @@ export type FilterChipGroupDescriptor = {
     /** The name of the search filter category as it appears in the URL */
     searchFilterName: string;
     /** Optional render function for the chip. Defaults to rendering plain text inside a PatternFly `Chip` component */
-    render?: (filter: string) => React.ReactNode;
+    render?: (filter: string) => ReactNode;
 };
 
 export type SearchFilterChipsProps = {
@@ -50,7 +51,7 @@ function SearchFilterChips({
     filterChipGroupDescriptors,
     searchFilter,
     onFilterChange,
-}: SearchFilterChipsProps) {
+}: SearchFilterChipsProps): ReactElement {
     function onChangeSearchFilter(newFilter: SearchFilter) {
         onFilterChange(newFilter);
     }

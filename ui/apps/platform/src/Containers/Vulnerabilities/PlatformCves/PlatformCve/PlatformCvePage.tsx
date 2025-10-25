@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     PageSection,
     Breadcrumb,
@@ -23,10 +22,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -34,8 +29,9 @@ import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { clusterSearchFilterConfig } from '../../searchFilterConfig';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
+import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import {
     getOverviewPagePath,

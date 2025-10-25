@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import { Fragment } from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, Title } from '@patternfly/react-core';
 
-import { Deployment } from 'types/deployment.proto';
+import type { Deployment } from 'types/deployment.proto';
 import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import ContainerConfigurationDescriptionList from './ContainerConfigurationDescriptionList';
 
@@ -21,14 +22,14 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
             'Container configurations are unavailable because the alert’s deployment no longer exists.';
     } else if (deployment.containers.length !== 0) {
         content = deployment.containers.map((container, i) => (
-            <React.Fragment key={container.id}>
+            <Fragment key={container.id}>
                 <Title headingLevel="h4" className="pf-v5-u-mb-md">{`containers[${i}]`}</Title>
                 <ContainerConfigurationDescriptionList
                     key={container.id}
                     container={container}
                     vulnMgmtBasePath={vulnMgmtBasePath}
                 />
-            </React.Fragment>
+            </Fragment>
         ));
     }
 

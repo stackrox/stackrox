@@ -1,9 +1,8 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnerabilitiesUserWorkloadsPath, vulnerabilitiesPlatformPath } from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import KeyValuePairs from './KeyValuePairs';

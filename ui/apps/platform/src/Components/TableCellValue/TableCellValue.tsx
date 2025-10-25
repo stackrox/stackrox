@@ -1,4 +1,4 @@
-import React from 'react';
+import type { ReactElement } from 'react';
 import resolvePath from 'object-resolve-path';
 
 type TableCellValueProps<T> = {
@@ -9,7 +9,7 @@ type TableCellValueProps<T> = {
     };
 };
 
-function TableCellValue<T>({ row, column }: TableCellValueProps<T>): React.ReactElement {
+function TableCellValue<T>({ row, column }: TableCellValueProps<T>): ReactElement {
     let value: string;
     if (typeof column.accessor === 'function') {
         value = column.accessor(row).toString();

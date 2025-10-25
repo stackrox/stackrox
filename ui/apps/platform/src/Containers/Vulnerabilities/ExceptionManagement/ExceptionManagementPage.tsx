@@ -1,4 +1,3 @@
-import React from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 
 import ExceptionRequestsPage from './ExceptionRequestsPage';

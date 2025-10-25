@@ -123,7 +123,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 						continue
 					}
 
-					if resp.StatusCode != 200 {
+					if resp.StatusCode != http.StatusOK {
 						a.Require().Equal(http.StatusTooManyRequests, resp.StatusCode)
 						hitLimit = true
 

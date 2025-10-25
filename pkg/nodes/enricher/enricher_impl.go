@@ -64,7 +64,7 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
-	node.Notes = node.Notes[:0]
+	node.Notes = node.GetNotes()[:0]
 
 	err := e.enrichWithScan(node, nodeInventory, indexReport)
 	if err != nil {
@@ -130,7 +130,11 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	if scanner.Type() == types.ScannerV4 {
 		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
 		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-		e.metrics.SetNodeInventoryNumberComponents(len(indexReport.GetContents().GetPackages()), node.GetClusterName(), node.GetName(), scanner.Name())
+		count := len(indexReport.GetContents().GetPackages())
+		if count == 0 {
+			count = len(indexReport.GetContents().GetPackagesDEPRECATED())
+		}
+		e.metrics.SetNodeInventoryNumberComponents(count, node.GetClusterName(), node.GetName(), scanner.Name())
 	} else {
 		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
 		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)

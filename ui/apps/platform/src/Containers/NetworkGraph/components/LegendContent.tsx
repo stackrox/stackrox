@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
 import {
     PficonNetworkRangeIcon,

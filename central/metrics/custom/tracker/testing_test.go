@@ -5,41 +5,20 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
 // The test tracker finds some integers to track.
 type testFinding int
 
-func (f testFinding) GetError() error {
-	if f == 0xbadf00d {
-		return errox.InvariantViolation.CausedByf("bad finding %v", f)
-	} else {
-		return nil
-	}
-}
-
-func (f testFinding) GetIncrement() int {
-	return 1
-}
-
-var testLabelGetters = []LazyLabel[testFinding]{
-	testLabel("test"),
-	testLabel("Cluster"),
-	testLabel("Namespace"),
-	testLabel("CVE"),
-	testLabel("Severity"),
-	testLabel("CVSS"),
-	testLabel("IsFixable"),
-}
-
-var testLabelOrder = MakeLabelOrderMap(testLabelGetters)
-
-func testLabel(label Label) LazyLabel[testFinding] {
-	return LazyLabel[testFinding]{
-		label,
-		func(i testFinding) string { return testData[i][label] }}
+var testLabelGetters = LazyLabelGetters[testFinding]{
+	"test":      func(f testFinding) string { return testData[f]["test"] },
+	"Cluster":   func(f testFinding) string { return testData[f]["Cluster"] },
+	"Namespace": func(f testFinding) string { return testData[f]["Namespace"] },
+	"CVE":       func(f testFinding) string { return testData[f]["CVE"] },
+	"Severity":  func(f testFinding) string { return testData[f]["Severity"] },
+	"CVSS":      func(f testFinding) string { return testData[f]["CVSS"] },
+	"IsFixable": func(f testFinding) string { return testData[f]["IsFixable"] },
 }
 
 var testData = []map[Label]string{

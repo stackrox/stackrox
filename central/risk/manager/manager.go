@@ -166,7 +166,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
 	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
 
-	deployment.RiskScore = risk.Score
+	deployment.RiskScore = risk.GetScore()
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}
@@ -187,7 +187,7 @@ func (e *managerImpl) calculateAndUpsertNodeRisk(node *storage.Node) error {
 		e.reprocessNodeComponentRisk(c, node.GetScan().GetOperatingSystem())
 	}
 
-	node.RiskScore = risk.Score
+	node.RiskScore = risk.GetScore()
 	return nil
 }
 
@@ -217,11 +217,11 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 	}
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
-	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
+	for index, component := range image.GetScan().GetComponents() {
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId(), index)
 	}
 
-	image.RiskScore = risk.Score
+	image.RiskScore = risk.GetScore()
 	return nil
 }
 
@@ -299,11 +299,11 @@ func (e *managerImpl) calculateAndUpsertImageV2Risk(image *storage.ImageV2) erro
 	}
 
 	// We want to compute and store risk for image components when image risk is reprocessed.
-	for _, component := range image.GetScan().GetComponents() {
-		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
+	for index, component := range image.GetScan().GetComponents() {
+		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId(), index)
 	}
 
-	image.RiskScore = risk.Score
+	image.RiskScore = risk.GetScore()
 	return nil
 }
 
@@ -349,16 +349,22 @@ func (e *managerImpl) skipImageV2Upsert(img *storage.ImageV2) (bool, error) {
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
 // Image Component ID is generated as <component_name>:<component_version>
-func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string) {
+func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent, os string, imageID string, componentIndex int) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
 
-	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID)
+	risk := e.imageComponentScorer.Score(allAccessCtx, scancomponent.NewFromImageComponent(imageComponent), os, imageComponent, imageID, componentIndex)
 	if risk == nil {
 		return
 	}
 
-	oldScore := e.imageComponentRanker.GetScoreForID(
-		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	var oldScore float32
+	if features.FlattenCVEData.Enabled() {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
+	} else {
+		oldScore = e.imageComponentRanker.GetScoreForID(
+			scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
+	}
 
 	// Image component risk results are currently unused so if the score is the same then no need to upsert
 	if risk.GetScore() == oldScore {
@@ -369,7 +375,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		log.Errorf("Error reprocessing risk for image component %s %s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
 
-	imageComponent.RiskScore = risk.Score
+	imageComponent.RiskScore = risk.GetScore()
 	// skip direct upsert here since it is handled during image upsert
 }
 
@@ -395,7 +401,7 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 		log.Errorf("Error reprocessing risk for node component %s %s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
 	}
 
-	nodeComponent.RiskScore = risk.Score
+	nodeComponent.RiskScore = risk.GetScore()
 	// skip direct upsert here since it is handled during node upsert
 }
 

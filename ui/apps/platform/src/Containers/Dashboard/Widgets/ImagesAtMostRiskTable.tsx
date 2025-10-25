@@ -1,7 +1,6 @@
-import React from 'react';
 import { HashLink as Link } from 'react-router-hash-link';
 import { Tooltip, Truncate } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
 import { noViolationsColor } from 'constants/severityColors';

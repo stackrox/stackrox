@@ -95,7 +95,7 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		ret.ImageTypes = append(ret.ImageTypes, storage.VulnerabilityReportFilters_ImageType(imageType))
 	}
 
-	switch filters.CvesSince.(type) {
+	switch filters.GetCvesSince().(type) {
 	case *apiV2.VulnerabilityReportFilters_AllVuln:
 		ret.CvesSince = &storage.VulnerabilityReportFilters_AllVuln{
 			AllVuln: filters.GetAllVuln(),
@@ -160,7 +160,7 @@ func (s *serviceImpl) convertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *
 		Hour:         schedule.GetHour(),
 		Minute:       schedule.GetMinute(),
 	}
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *apiV2.ReportSchedule_DaysOfWeek_:
 		ret.Interval = &storage.Schedule_DaysOfWeek_{
 			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -236,7 +236,7 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		ret.ImageTypes = append(ret.ImageTypes, apiV2.VulnerabilityReportFilters_ImageType(imageType))
 	}
 
-	switch filters.CvesSince.(type) {
+	switch filters.GetCvesSince().(type) {
 	case *storage.VulnerabilityReportFilters_AllVuln:
 		ret.CvesSince = &apiV2.VulnerabilityReportFilters_AllVuln{
 			AllVuln: filters.GetAllVuln(),
@@ -325,7 +325,7 @@ func (s *serviceImpl) convertProtoScheduleToV2(schedule *storage.Schedule) *apiV
 		Minute:       schedule.GetMinute(),
 	}
 
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *storage.Schedule_DaysOfWeek_:
 		ret.Interval = &apiV2.ReportSchedule_DaysOfWeek_{
 			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -413,7 +413,7 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
 				ViewBasedVulnReportFilters: viewBasedFilters,
 			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based", snapshot.GetReportId())),
+			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based-report", snapshot.GetReportId())),
 		}
 		v2snaps = append(v2snaps, snapshotv2)
 	}
@@ -468,7 +468,11 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
-				blobNames = append(blobNames, common.GetReportBlobPath(snap.GetReportConfigurationId(), snap.GetReportId()))
+				parentDir := snap.GetReportConfigurationId()
+				if snap.GetViewBasedVulnReportFilters() != nil {
+					parentDir = "view-based-report"
+				}
+				blobNames = append(blobNames, common.GetReportBlobPath(parentDir, snap.GetReportId()))
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Bullseye, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
 

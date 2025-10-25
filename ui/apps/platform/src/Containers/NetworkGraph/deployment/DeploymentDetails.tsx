@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -19,8 +19,8 @@ import {
 } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
-import { Deployment } from 'types/deployment.proto';
-import { ListenPort } from 'types/networkFlow.proto';
+import type { Deployment } from 'types/deployment.proto';
+import type { ListenPort } from 'types/networkFlow.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import DeploymentPortConfig from 'Components/DeploymentPortConfig';
@@ -31,8 +31,8 @@ import EgressOnly from 'images/network-graph/egress-only.svg?react';
 import IngressOnly from 'images/network-graph/ingress-only.svg?react';
 import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 
-import { EdgeState } from '../components/EdgeStateSelect';
-import { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../types/topology.type';
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../types/topology.type';
 
 import AnomalousTraffic from './AnomalousTraffic';
 

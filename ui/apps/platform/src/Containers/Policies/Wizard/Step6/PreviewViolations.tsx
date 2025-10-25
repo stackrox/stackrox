@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { List, ListItem, Title } from '@patternfly/react-core';
 
-import { DryRunAlert } from 'services/PoliciesService';
+import type { DryRunAlert } from 'services/PoliciesService';
 
 type PreviewViolationsProps = {
     alertsFromDryRun: DryRunAlert[];

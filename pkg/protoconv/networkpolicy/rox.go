@@ -91,6 +91,9 @@ func (np RoxNetworkPolicyWrap) convertPorts(protoPorts []*storage.NetworkPolicyP
 		if p.GetPort() != 0 {
 			t := intstr.FromInt(int(p.GetPort()))
 			intString = &t
+		} else if p.GetPortName() != "" {
+			t := intstr.FromString(p.GetPortName())
+			intString = &t
 		}
 		ports = append(ports, k8sV1.NetworkPolicyPort{
 			Port:     intString,
@@ -130,7 +133,7 @@ func (np RoxNetworkPolicyWrap) convertIngressRules(protoIngressRules []*storage.
 	for _, rule := range protoIngressRules {
 		ingressRules = append(ingressRules, k8sV1.NetworkPolicyIngressRule{
 			Ports: np.convertPorts(rule.GetPorts()),
-			From:  np.convertNetworkPolicyPeer(rule.From),
+			From:  np.convertNetworkPolicyPeer(rule.GetFrom()),
 		})
 	}
 	return ingressRules

@@ -1,9 +1,9 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
-import TypeaheadSelect, { TypeaheadSelectOption } from './TypeaheadSelect';
+import TypeaheadSelect from './TypeaheadSelect';
+import type { TypeaheadSelectOption } from './TypeaheadSelect';
 
 const options: TypeaheadSelectOption[] = [
     { value: 'apple', label: 'Apple' },

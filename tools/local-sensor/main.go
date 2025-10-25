@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -42,6 +41,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"k8s.io/apimachinery/pkg/util/validation"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
@@ -97,6 +97,7 @@ type localSensorConfig struct {
 	PprofServer        bool
 	CentralEndpoint    string
 	FakeCollector      bool
+	Namespace          string
 }
 
 const (
@@ -166,6 +167,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PprofServer:        false,
 		CentralEndpoint:    "",
 		FakeCollector:      false,
+		Namespace:          certs.DefaultNamespace,
 	}
 	flag.BoolVar(&sensorConfig.NoCPUProfile, "no-cpu-prof", sensorConfig.NoCPUProfile, "disables producing CPU profile for performance analysis")
 	flag.BoolVar(&sensorConfig.NoMemProfile, "no-mem-prof", sensorConfig.NoMemProfile, "disables producing memory profile for performance analysis")
@@ -184,6 +186,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
+	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
 	flag.BoolVar(&sensorConfig.FakeCollector, "with-fake-collector", sensorConfig.FakeCollector, "enables sensor to allow connections from a fake collector")
 	flag.Parse()
 
@@ -206,6 +209,10 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	if !isValidOutputFormat(sensorConfig.OutputFormat) {
 		log.Fatalf("invalid format '%s'", sensorConfig.OutputFormat)
+	}
+
+	if errs := validation.IsDNS1123Label(sensorConfig.Namespace); len(errs) > 0 {
+		log.Fatalf("invalid namespace '%s': %s", sensorConfig.Namespace, errs[0])
 	}
 
 	sensorConfig.ReplayK8sTraceFile = path.Clean(sensorConfig.ReplayK8sTraceFile)
@@ -325,6 +332,14 @@ func main() {
 		WithLocalSensor(true).
 		WithWorkloadManager(workloadManager)
 
+	// When connecting to real Central, override deployment identification with explicit namespace
+	// to avoid panic during certificate generation (namespace is required but cannot be detected
+	// when running outside a Kubernetes pod without service account files)
+	if !isFakeCentral {
+		deploymentID := createDeploymentIdentificationWithNamespace(localConfig.Namespace)
+		sensorConfig = sensorConfig.WithDeploymentIdentification(deploymentID)
+	}
+
 	if localConfig.FakeCollector {
 		acceptAnyFn := func(ctx context.Context, _ string) (context.Context, error) {
 			return ctx, nil
@@ -421,6 +436,17 @@ func main() {
 	}
 }
 
+// createDeploymentIdentificationWithNamespace creates a minimal DeploymentIdentification
+// for local-sensor connecting to real Central. Only AppNamespace is required for certificate
+// generation; other fields (namespace IDs, service account ID) can remain empty for local development.
+func createDeploymentIdentificationWithNamespace(namespace string) *storage.SensorDeploymentIdentification {
+	return &storage.SensorDeploymentIdentification{
+		AppNamespace: namespace,
+		// SystemNamespaceId, DefaultNamespaceId, AppNamespaceId, AppServiceaccountId
+		// are not required for certificate generation and can be empty for local-sensor
+	}
+}
+
 func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
 	certFetcher := certs.NewCertificateFetcher(cli, certs.WithOutputDir("tmp/"))
 	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
@@ -463,10 +489,7 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
 		message.NetworkBaselineSync([]*storage.NetworkBaseline{}),
-	}
-
-	if features.SensorReconciliationOnReconnect.Enabled() {
-		initialMessages = append(initialMessages, message.DeduperState(nil, 1, 1))
+		message.DeduperState(nil, 1, 1),
 	}
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(initialMessages...)

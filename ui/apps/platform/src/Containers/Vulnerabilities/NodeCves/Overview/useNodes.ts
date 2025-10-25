@@ -1,8 +1,8 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
-import { ClientPagination } from 'services/types';
+import type { ClientPagination } from 'services/types';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
-import { QuerySearchFilter } from '../../types';
+import type { QuerySearchFilter } from '../../types';
 
 const nodeListQuery = gql`
     query getNodes($query: String, $pagination: Pagination) {

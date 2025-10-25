@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import cluster from 'images/side-panel-icons/cluster.svg';

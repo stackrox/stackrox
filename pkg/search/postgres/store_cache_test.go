@@ -278,7 +278,7 @@ func TestCachedWalk(t *testing.T) {
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -323,7 +323,7 @@ func TestCachedGetByQueryDoesNotModifyTheObject(t *testing.T) {
 
 	walkedNames := make([]string, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		obj.Name = "changed"
 		return nil
 	}
@@ -358,7 +358,7 @@ func TestCachedWalkByQuery(t *testing.T) {
 	walkedNames := make([]string, 0, len(testObjects))
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -393,7 +393,7 @@ func TestCachedWalkByQueryScopedContext(t *testing.T) {
 	walkedNames := make([]string, 0, len(testObjects))
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
 	}
@@ -689,7 +689,7 @@ func TestCachedGetByQueryFnWithInvalidScopedContext(t *testing.T) {
 	assert.NoError(t, err)
 	// Since scope is invalid and filtered out, should find the matching object
 	assert.Len(t, walkedObjects, 1)
-	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].Name)
+	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].GetName())
 
 	// Test 2: GetByQueryFn with nil query and invalid scope results in nil query after filtering
 	// Since scope is invalid and gets filtered out, and the original query was nil, the result is no results
@@ -703,7 +703,7 @@ func TestCachedGetByQueryFnWithInvalidScopedContext(t *testing.T) {
 	err = store.GetByQueryFn(cachedStoreCtx, query, walkFn)
 	assert.NoError(t, err)
 	assert.Len(t, walkedObjects, 1)
-	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].Name)
+	assert.Equal(t, "Test ScopedGetByQueryFn 2", walkedObjects[0].GetName())
 
 	// Test 4: GetByQueryFn with empty query and no scope should use cache
 	walkedObjects = nil
@@ -729,7 +729,7 @@ func TestCachedWalkByQueryWithInvalidScopedContext(t *testing.T) {
 
 	var walkedNames []string
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
+		walkedNames = append(walkedNames, obj.GetName())
 		return nil
 	}
 

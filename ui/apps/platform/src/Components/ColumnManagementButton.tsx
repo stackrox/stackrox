@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { ColumnManagementModal } from '@patternfly/react-component-groups';
 import { Button } from '@patternfly/react-core';
 import { CogIcon } from '@patternfly/react-icons';
 
-import { ColumnConfig } from 'hooks/useManagedColumns';
+import type { ColumnConfig } from 'hooks/useManagedColumns';
 
 export type ColumnManagementButtonProps<ColumnKey extends string> = {
     columnConfig: Record<ColumnKey, ColumnConfig>;

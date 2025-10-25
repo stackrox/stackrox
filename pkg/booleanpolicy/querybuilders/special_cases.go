@@ -32,8 +32,8 @@ func ForDropCaps() QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		// Do the group values already contain "ALL" as a value"?
 		containsAll := false
-		for _, v := range group.Values {
-			if v.Value == "ALL" {
+		for _, v := range group.GetValues() {
+			if v.GetValue() == "ALL" {
 				containsAll = true
 			}
 		}

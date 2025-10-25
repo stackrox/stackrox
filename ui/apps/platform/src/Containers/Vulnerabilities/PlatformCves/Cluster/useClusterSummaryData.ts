@@ -1,12 +1,8 @@
 import { gql, useQuery } from '@apollo/client';
-import {
-    PlatformCVECountByStatus,
-    platformCveCountByStatusFragment,
-} from './PlatformCvesByStatusSummaryCard';
-import {
-    PlatformCVECountByType,
-    platformCveCountByTypeFragment,
-} from './PlatformCvesByTypeSummaryCard';
+import { platformCveCountByStatusFragment } from './PlatformCvesByStatusSummaryCard';
+import type { PlatformCVECountByStatus } from './PlatformCvesByStatusSummaryCard';
+import { platformCveCountByTypeFragment } from './PlatformCvesByTypeSummaryCard';
+import type { PlatformCVECountByType } from './PlatformCvesByTypeSummaryCard';
 
 export const clusterSummaryDataQuery = gql`
     ${platformCveCountByStatusFragment}
