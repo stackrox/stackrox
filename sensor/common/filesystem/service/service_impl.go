@@ -2,15 +2,13 @@ package service
 
 import (
 	"context"
-	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/filesystem/pipeline"
 	"google.golang.org/grpc"
 )
 
@@ -19,44 +17,17 @@ var (
 )
 
 // NewService creates a new streaming service with the fact agent. It should only be called once.
-func NewService() Service {
+func NewService(pipeline *pipeline.Pipeline) Service {
 	srv := &serviceImpl{
-		authFuncOverride: authFuncOverride,
-		writer:           nil,
+		pipeline: *pipeline,
 	}
 
 	return srv
 }
 
-func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
-	return ctx, errors.Wrapf(err, "file activity authorization for %q", fullMethodName)
-}
-
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
-
-	authFuncOverride func(context.Context, string) (context.Context, error)
-	writer           io.Writer
-}
-
-func (s *serviceImpl) Name() string {
-	return "filesystem.serviceImpl"
-}
-
-func (s *serviceImpl) Start() error {
-	log.Info("Start filesystem")
-	return nil
-}
-
-func (s *serviceImpl) Stop() {}
-
-func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return nil
+	pipeline pipeline.Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -70,9 +41,8 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 	return nil
 }
 
-// AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return s.authFuncOverride(ctx, fullMethodName)
+	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "file activity authorization for  %q", fullMethodName)
 }
 
 func (s *serviceImpl) Communicate(stream sensor.FileActivityService_CommunicateServer) error {
@@ -88,5 +58,6 @@ func (s *serviceImpl) receiveMessages(stream sensor.FileActivityService_Communic
 		}
 
 		log.Debug("Got file activity: ", msg)
+		s.pipeline.Process(msg)
 	}
 }
