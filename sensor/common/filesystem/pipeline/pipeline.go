@@ -42,7 +42,13 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	return p
 }
 
-func translateFileInfo(fs *sensorAPI.FileActivity, activity *storage.FileActivity) {
+func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileActivity {
+	// psignal := fs.GetProcess()
+
+	activity := &storage.FileActivity{
+		Process: p.getIndicator(fs.GetProcess()),
+	}
+
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		activity.File = &storage.FileActivity_File{
@@ -101,37 +107,36 @@ func translateFileInfo(fs *sensorAPI.FileActivity, activity *storage.FileActivit
 		activity.Operation = storage.FileActivity_OPEN
 	default:
 		log.Warn("Not implemented file activity type")
-		return
+		return nil
 	}
 
+	return activity
 }
 
-func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
-	psignal := fs.GetProcess()
-
+func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id: uuid.NewV4().String(),
 		Signal: &storage.ProcessSignal{
-			Id:           psignal.GetId(),
-			Uid:          psignal.GetUid(),
-			Gid:          psignal.GetGid(),
-			Time:         psignal.GetCreationTime(),
-			Name:         psignal.GetName(),
-			Args:         psignal.GetArgs(),
-			ExecFilePath: psignal.GetExecFilePath(),
-			Pid:          psignal.GetPid(),
-			Scraped:      psignal.GetScraped(),
-			ContainerId:  psignal.GetContainerId(),
+			Id:           process.GetId(),
+			Uid:          process.GetUid(),
+			Gid:          process.GetGid(),
+			Time:         process.GetCreationTime(),
+			Name:         process.GetName(),
+			Args:         process.GetArgs(),
+			ExecFilePath: process.GetExecFilePath(),
+			Pid:          process.GetPid(),
+			Scraped:      process.GetScraped(),
+			ContainerId:  process.GetContainerId(),
 		},
 	}
 
-	if psignal.GetContainerId() != "" {
+	if process.GetContainerId() != "" {
 		// TODO(ROX-30798): Enrich file system events with deployment details
-		metadata, ok, _ := p.clusterEntities.LookupByContainerID(psignal.GetContainerId())
+		metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
 		if !ok {
 			// unexpected - process should exist before file activity is
 			// reported
-			log.Debug("Container ID:", psignal.GetContainerId(), "not found for file activity")
+			log.Debug("Container ID:", process.GetContainerId(), "not found for file activity")
 		} else {
 			pi.DeploymentId = metadata.DeploymentID
 			pi.ContainerName = metadata.ContainerName
@@ -144,13 +149,16 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 	}
 	// TODO: populate node info otherwise
 
-	activity := &storage.FileActivity{
-		Process: pi,
+	return pi
+}
+
+func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
+
+	activity := p.translate(fs)
+
+	if activity != nil {
+		p.activityChan <- activity
 	}
-
-	translateFileInfo(fs, activity)
-
-	p.activityChan <- activity
 }
 
 func (p *Pipeline) run() {
