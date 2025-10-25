@@ -3,6 +3,7 @@
 package ibm
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -12,20 +13,22 @@ import (
 )
 
 const (
-	testImage = "us.icr.io/sr-testing/nginx:1.10"
-	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB" //#nosec G101
+	testImage = "icr.io/sr-testing/busybox:latest"
 )
 
 func TestIBM(t *testing.T) {
-	t.Skip("This registry is currently broken (ROX-3589)")
+	if os.Getenv("IBM_CR_READONLY") == "" {
+		t.Skip("IBM_CR_READONLY env variable required")
+		return
+	}
 	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
 	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
 
 	reg, err := newRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{
-				Endpoint: "us.icr.io",
-				ApiKey:   apiToken,
+				Endpoint: "icr.io",
+				ApiKey:   os.Getenv("IBM_CR_READONLY"),
 			},
 		},
 	}, false, nil)
