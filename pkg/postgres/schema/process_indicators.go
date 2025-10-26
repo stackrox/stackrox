@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -29,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
+		schema = getProcessIndicatorSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Deployment": DeploymentsSchema,
 		}
@@ -37,7 +35,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)
@@ -67,4 +64,140 @@ type ProcessIndicators struct {
 	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
 	ContainerStartTime *time.Time `gorm:"column:containerstarttime;type:timestamp"`
 	Serialized         []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	processIndicatorSearchFields = map[search.FieldLabel]*search.Field{}
+
+	processIndicatorSchema = &walker.Schema{
+		Table:    "process_indicators",
+		Type:     "*storage.ProcessIndicator",
+		TypeName: "ProcessIndicator",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "DeploymentId",
+				ColumnName: "DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ContainerName",
+				ColumnName: "ContainerName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PodId",
+				ColumnName: "PodId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PodUid",
+				ColumnName: "PodUid",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ContainerId",
+				ColumnName: "Signal_ContainerId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Time",
+				ColumnName: "Signal_Time",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Signal_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Args",
+				ColumnName: "Signal_Args",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ExecFilePath",
+				ColumnName: "Signal_ExecFilePath",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Uid",
+				ColumnName: "Signal_Uid",
+				Type:       "uint32",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getProcessIndicatorSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if processIndicatorSchema.OptionsMap == nil {
+		processIndicatorSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_PROCESS_INDICATORS, processIndicatorSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range processIndicatorSchema.Fields {
+		processIndicatorSchema.Fields[i].Schema = processIndicatorSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(processIndicatorSchema)
+	return processIndicatorSchema
 }

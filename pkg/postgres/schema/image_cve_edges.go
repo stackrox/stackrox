@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_edges")
+		schema = getImageCVEEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":    ImagesSchema,
 			"storage.ImageCVE": ImageCvesSchema,
@@ -38,7 +37,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "imagecveedge", (*storage.ImageCVEEdge)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
 			v1.SearchCategory_COMPONENT_VULN_EDGE,
@@ -71,4 +69,84 @@ type ImageCveEdges struct {
 	ImageCveID           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash"`
 	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
 	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	imageCVEEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	imageCVEEdgeSchema = &walker.Schema{
+		Table:    "image_cve_edges",
+		Type:     "*storage.ImageCVEEdge",
+		TypeName: "ImageCVEEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "FirstImageOccurrence",
+				ColumnName: "FirstImageOccurrence",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "State",
+				ColumnName: "State",
+				Type:       "storage.VulnerabilityState",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ImageId",
+				ColumnName: "ImageId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ImageCveId",
+				ColumnName: "ImageCveId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getImageCVEEdgeSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if imageCVEEdgeSchema.OptionsMap == nil {
+		imageCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_IMAGE_VULN_EDGE, imageCVEEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range imageCVEEdgeSchema.Fields {
+		imageCVEEdgeSchema.Fields[i].Schema = imageCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(imageCVEEdgeSchema)
+	return imageCVEEdgeSchema
 }

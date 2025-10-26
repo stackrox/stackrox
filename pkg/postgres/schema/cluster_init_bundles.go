@@ -3,12 +3,11 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), "cluster_init_bundles")
+		schema = getInitBundleMetaSchema()
 		schema.ScopingResource = resources.InitBundleMeta
 		RegisterTable(schema, CreateTableClusterInitBundlesStmt)
 		return schema
@@ -40,4 +39,56 @@ const (
 type ClusterInitBundles struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	initBundleMetaSearchFields = map[search.FieldLabel]*search.Field{}
+
+	initBundleMetaSchema = &walker.Schema{
+		Table:    "cluster_init_bundles",
+		Type:     "*storage.InitBundleMeta",
+		TypeName: "InitBundleMeta",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getInitBundleMetaSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if initBundleMetaSchema.OptionsMap == nil {
+		initBundleMetaSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, initBundleMetaSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range initBundleMetaSchema.Fields {
+		initBundleMetaSchema.Fields[i].Schema = initBundleMetaSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(initBundleMetaSchema)
+	return initBundleMetaSchema
 }

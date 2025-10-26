@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestChild1)(nil)), "test_child1")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(102), "testchild1", (*storage.TestChild1)(nil)))
+		schema = getTestChild1Schema()
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(102), schema)
@@ -46,4 +42,63 @@ type TestChild1 struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	testChild1SearchFields = map[search.FieldLabel]*search.Field{}
+
+	testChild1Schema = &walker.Schema{
+		Table:    "test_child1",
+		Type:     "*storage.TestChild1",
+		TypeName: "TestChild1",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Val",
+				ColumnName: "Val",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTestChild1Schema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if testChild1Schema.OptionsMap == nil {
+		testChild1Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(102), testChild1SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testChild1Schema.Fields {
+		testChild1Schema.Fields[i].Schema = testChild1Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testChild1Schema)
+	return testChild1Schema
 }
