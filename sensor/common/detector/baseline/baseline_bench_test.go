@@ -51,16 +51,6 @@ func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, basel
 	runtime.KeepAlive(baselines)
 }
 
-// benchmarkAddBaselinePerformance measures CPU performance of adding baselines
-func benchmarkAddBaselinePerformance(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string) {
-	for i := 0; i < b.N; i++ {
-		evaluator := evaluatorFactory()
-		for _, baseline := range baselines {
-			evaluator.AddBaseline(baseline)
-		}
-	}
-}
-
 func BenchmarkAllMemory(b *testing.B) {
 	imageTypes := 10
 	containerCount := 10000
@@ -225,5 +215,15 @@ func BenchmarkAddBaseline(b *testing.B) {
 		b.Run(scenarioName, func(b *testing.B) {
 			benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, scenarioName)
 		})
+	}
+}
+
+// benchmarkAddBaselinePerformance measures CPU performance of adding baselines
+func benchmarkAddBaselinePerformance(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string) {
+	for i := 0; i < b.N; i++ {
+		evaluator := evaluatorFactory()
+		for _, baseline := range baselines {
+			evaluator.AddBaseline(baseline)
+		}
 	}
 }
