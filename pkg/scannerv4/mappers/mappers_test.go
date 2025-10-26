@@ -10,6 +10,7 @@ import (
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/features"
@@ -1560,7 +1561,78 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			enableEPSS := "true"
 			t.Setenv(features.EPSSScore.EnvVar(), enableEPSS)
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil, nil)
+			assert.NoError(t, err)
+			protoassert.MapEqual(t, tt.want, got)
+		})
+	}
+}
+
+func Test_toProtoV4VulnerabilitiesMapWithExploit(t *testing.T) {
+	now := time.Now()
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
+	require.NoError(t, err)
+
+	tests := map[string]struct {
+		ccVulnerabilities map[string]*claircore.Vulnerability
+		exploits          map[string]map[string]*kev.Entry
+		want              map[string]*v4.VulnerabilityReport_Vulnerability
+	}{
+		"basic": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:     "foo",
+					Name:   "CVE-1234-567",
+					Issued: now,
+				},
+				"bar": {
+					ID:     "bar",
+					Name:   "CVE-1234-568",
+					Issued: now,
+				},
+			},
+			exploits: map[string]map[string]*kev.Entry{
+				"foo": {
+					"CVE-1234-567": &kev.Entry{
+						CVE:                        "CVE-1234-567",
+						VulnerabilityName:          "bad news",
+						CatalogVersion:             "2025.10.01",
+						DateAdded:                  "2025-09-20",
+						ShortDescription:           "This is a bad vulnerability",
+						RequiredAction:             "hide",
+						DueDate:                    "2025-10-12",
+						KnownRansomwareCampaignUse: "Known",
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:     "foo",
+					Issued: protoNow,
+					Name:   "CVE-1234-567",
+					Exploit: &v4.VulnerabilityReport_Vulnerability_CISAExploit{
+						CatalogVersion:             "2025.10.01",
+						DateAdded:                  "2025-09-20",
+						ShortDescription:           "This is a bad vulnerability",
+						RequiredAction:             "hide",
+						DueDate:                    "2025-10-12",
+						KnownRansomwareCampaignUse: "Known",
+					},
+				},
+				"bar": {
+					Id:     "bar",
+					Issued: protoNow,
+					Name:   "CVE-1234-568",
+				},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.CISAKEV.EnvVar(), "true")
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, nil, nil, nil, tt.exploits)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
@@ -2355,7 +2427,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			}
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			// EPSS scores are intentionally not covered here
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories, nil)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
 		})
