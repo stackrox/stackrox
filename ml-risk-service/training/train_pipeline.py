@@ -7,6 +7,8 @@ import json
 import os
 import yaml
 import hashlib
+import io
+import joblib
 from typing import Dict, Any, List, Optional
 import numpy as np
 from datetime import datetime
@@ -322,14 +324,30 @@ class TrainingPipeline:
                 performance_metrics = model_info.get('training_metrics', {})
                 sanitized_metrics = self._sanitize_float_values(performance_metrics)
 
+                # Create structured model data matching the expected format
+                model_data = {
+                    'model': self.model.model,
+                    'scaler': self.model.scaler,
+                    'feature_names': self.model.feature_names,
+                    'model_version': self.model.model_version,
+                    'algorithm': self.model.algorithm,
+                    'config': self.model.config,
+                    'training_metrics': self.model.training_metrics
+                }
+
+                # Serialize the structured data using joblib
+                model_buffer = io.BytesIO()
+                joblib.dump(model_data, model_buffer)
+                model_data_bytes = model_buffer.getvalue()
+
                 metadata = ModelMetadata(
                     model_id=model_id,
                     version=version,
                     algorithm=model_info.get('algorithm', 'lightgbm_ranker'),
                     feature_count=int(model_info.get('feature_count', 0)),
                     training_timestamp=datetime.now().isoformat(),
-                    model_size_bytes=len(pickle.dumps(self.model.model)),
-                    checksum=hashlib.md5(pickle.dumps(self.model.model)).hexdigest(),
+                    model_size_bytes=len(model_data_bytes),
+                    checksum=hashlib.md5(model_data_bytes).hexdigest(),
                     performance_metrics=sanitized_metrics,
                     config=self.config,
                     created_by="training-pipeline",
@@ -338,11 +356,8 @@ class TrainingPipeline:
                     deployment_stage="development"
                 )
 
-                # Serialize model to bytes
-                model_data = pickle.dumps(self.model.model)
-
                 # Save using storage manager
-                success = self.storage_manager.save_model(model_data, metadata)
+                success = self.storage_manager.save_model(model_data_bytes, metadata)
 
                 if success:
                     model_file = f"models/{model_id}/v{version}/model.joblib"

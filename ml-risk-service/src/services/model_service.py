@@ -95,9 +95,10 @@ class ModelManagementService:
                     reload_time_ms=reload_time
                 )
             else:
+                version_display = request.version or "latest"
                 return ReloadModelResponse(
                     success=False,
-                    message=f"Failed to load model {request.model_id} v{request.version}",
+                    message=f"Failed to load model {request.model_id} v{version_display}",
                     previous_model_version=previous_version,
                     new_model_version="",
                     reload_time_ms=reload_time
@@ -201,7 +202,8 @@ class ModelManagementService:
                     logger.info(f"Model loaded from storage: {model_id} v{self.current_model_version}")
                 return success
         except Exception as e:
-            logger.error(f"Failed to load model from storage {model_id} v{version}: {e}")
+            version_display = version or "latest"
+            logger.error(f"Failed to load model from storage {model_id} v{version_display}: {e}")
             return False
 
     def get_current_model_info(self) -> Dict[str, Any]:

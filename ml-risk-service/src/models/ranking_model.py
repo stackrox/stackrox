@@ -446,12 +446,29 @@ class RiskRankingModel:
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the current model."""
+        def convert_numpy_types(obj):
+            """Convert numpy types to Python native types for JSON serialization."""
+            if hasattr(obj, 'item'):  # numpy scalar
+                return obj.item()
+            elif isinstance(obj, dict):
+                return {k: convert_numpy_types(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_types(v) for v in obj]
+            else:
+                return obj
+
+        # Convert training_metrics to dict and handle numpy types
+        training_metrics_dict = None
+        if self.training_metrics:
+            training_metrics_dict = asdict(self.training_metrics)
+            training_metrics_dict = convert_numpy_types(training_metrics_dict)
+
         return {
             'model_version': self.model_version,
             'algorithm': self.algorithm,
             'feature_count': len(self.feature_names) if self.feature_names else 0,
             'feature_names': self.feature_names,
-            'training_metrics': asdict(self.training_metrics) if self.training_metrics else None,
+            'training_metrics': training_metrics_dict,
             'shap_available': self.shap_explainer is not None,
             'trained': self.model is not None
         }
