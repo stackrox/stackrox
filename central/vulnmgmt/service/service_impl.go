@@ -79,7 +79,16 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		return errors.Wrap(errox.ServerError, err.Error())
 	}
 
-	return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
+	deployments := make([]*storage.Deployment, 0, cacheSize)
+	err = s.deployments.WalkByQuery(ctx, parsedQuery, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	fn := func(d *storage.Deployment) error {
 		containers := d.GetContainers()
 		images := make([]*storage.Image, 0, len(containers))
 		imageIDs := set.NewStringSet()
@@ -125,5 +134,13 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 			return err
 		}
 		return nil
-	})
+	}
+
+	for _, deployment := range deployments {
+		if err := fn(deployment); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
