@@ -224,7 +224,15 @@ class CentralExportClient:
                             logger.info(f"Processed {records_processed} {data_type} records "
                                       f"({rate:.1f} records/sec)")
                     else:
-                        logger.warning(f"Skipping invalid {data_type} record: {record.get('id', 'unknown')}")
+                        # Extract ID for logging based on data type
+                        record_id = 'unknown'
+                        if data_type == 'workloads' and 'result' in record and isinstance(record['result'], dict):
+                            deployment = record['result'].get('deployment', {})
+                            if isinstance(deployment, dict):
+                                record_id = deployment.get('id', 'unknown')
+                        else:
+                            record_id = record.get('id', 'unknown')
+                        logger.warning(f"Skipping invalid {data_type} record: {record_id}")
 
                 except json.JSONDecodeError as e:
                     logger.warning(f"Failed to parse JSON line in {data_type} stream: {e}")
@@ -252,7 +260,7 @@ class CentralExportClient:
 
         Args:
             record: Record to validate
-            data_type: Type of record (deployments, images, alerts, policies)
+            data_type: Type of record (workloads, alerts, policies)
 
         Returns:
             True if record is valid, False otherwise
@@ -260,20 +268,34 @@ class CentralExportClient:
         if not isinstance(record, dict):
             return False
 
-        # Common required fields
-        if 'id' not in record:
-            return False
-
         # Type-specific validation
         if data_type == 'workloads':
-            # Workloads should contain deployment and images data
-            return ('deployment' in record and
-                    isinstance(record['deployment'], dict) and
-                    'id' in record['deployment'] and
-                    'images' in record)
+            # Workloads from Central API have structure: {"result": {"deployment": {...}, "images": [...], "livePods": [...]}}
+            if 'result' not in record:
+                return False
+
+            result = record['result']
+            if not isinstance(result, dict):
+                return False
+
+            # Check required fields in result
+            return ('deployment' in result and
+                    isinstance(result['deployment'], dict) and
+                    'id' in result['deployment'] and
+                    'images' in result)
+
         elif data_type == 'alerts':
+            # For alerts, check for either direct fields or nested in result
+            if 'result' in record:
+                result = record['result']
+                return isinstance(result, dict) and ('policy' in result or 'violation' in result)
             return 'policy' in record or 'violation' in record
+
         elif data_type == 'policies':
+            # For policies, check for either direct fields or nested in result
+            if 'result' in record:
+                result = record['result']
+                return isinstance(result, dict) and 'name' in result
             return 'name' in record
 
         return True
