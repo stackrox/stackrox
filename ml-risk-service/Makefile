@@ -60,9 +60,21 @@ train-model: ## Train ML model with sample data
 	python -c "from training.train_pipeline import TrainingPipeline; tp = TrainingPipeline(); tp.quick_test_pipeline()"
 	@echo "$(GREEN)Model training completed!$(NC)"
 
+# Configuration commands
+.PHONY: generate-config
+generate-config: ## Generate config with expanded environment variables
+	@echo "$(GREEN)Generating expanded configuration...$(NC)"
+	@# Set defaults for missing variables to prevent envsubst errors
+	@export CENTRAL_API_TOKEN="$${CENTRAL_API_TOKEN:-}" && \
+	export CENTRAL_CLIENT_CERT_PATH="$${CENTRAL_CLIENT_CERT_PATH:-}" && \
+	export CENTRAL_CLIENT_KEY_PATH="$${CENTRAL_CLIENT_KEY_PATH:-}" && \
+	export CENTRAL_CA_CERT_PATH="$${CENTRAL_CA_CERT_PATH:-}" && \
+	envsubst < src/config/feature_config.yaml > src/config/feature_config.expanded.yaml
+	@echo "$(GREEN)Configuration expanded: src/config/feature_config.expanded.yaml$(NC)"
+
 # Docker commands
 .PHONY: docker-build
-docker-build: ## Build Docker image
+docker-build: generate-config ## Build Docker image
 	@echo "$(GREEN)Building Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 	@echo "$(GREEN)Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
@@ -202,6 +214,7 @@ clean: ## Clean up temporary files
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	rm -rf .coverage htmlcov/ .pytest_cache/
+	rm -f src/config/feature_config.expanded.yaml
 	@echo "$(GREEN)Cleanup completed!$(NC)"
 
 .PHONY: clean-docker
