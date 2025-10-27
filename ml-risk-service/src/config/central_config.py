@@ -94,6 +94,10 @@ class CentralConfig:
             env_var = token[2:-1]
             token = os.getenv(env_var)
 
+        # Fallback to direct environment variable lookup if no token found
+        if not token:
+            token = os.getenv('CENTRAL_API_TOKEN')
+
         if not token:
             raise ValueError("API token not configured or found in environment")
 
