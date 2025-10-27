@@ -74,15 +74,17 @@ docker-run: ## Run Docker container locally
 	@docker stop ml-risk-service 2>/dev/null || true
 	@docker rm ml-risk-service 2>/dev/null || true
 	@# Ensure directories exist
-	@mkdir -p $(PWD)/models $(PWD)/reports
+	@mkdir -p $(PWD)/deploy/models $(PWD)/deploy/reports
+	@# Fix permissions for container user
+	@chmod 777 $(PWD)/deploy/models $(PWD)/deploy/reports
 	@# Run the container
 	docker run -d \
 		--name ml-risk-service \
 		-p 8080:8080 \
 		-p 8081:8081 \
 		-p 8090:8090 \
-		-v $(PWD)/models:/app/models \
-		-v $(PWD)/reports:/app/reports \
+		-v $(PWD)/deploy/models:/app/models \
+		-v $(PWD)/deploy/reports:/app/reports \
 		-e LOG_LEVEL=INFO \
 		-e GRPC_PORT=8080 \
 		-e HEALTH_PORT=8081 \

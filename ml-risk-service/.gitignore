@@ -1,6 +1,8 @@
 # ML Risk Service specific ignores
 
 # Generated model files and training artifacts
+deploy/models/
+deploy/reports/
 models/
 reports/
 
