@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -74,7 +73,7 @@ func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
 			metrics.VsockConnectionsRejected.Inc()
 			log.Warnf("Could not acquire semaphore, too many concurrent vsock connections")
 		}
-		return multierror.Append(err, errors.New("failed to acquire semaphore"))
+		return errors.Wrap(err, "failed to acquire semaphore")
 	}
 	metrics.VsockSemaphoreHoldingSize.Inc()
 	return nil
