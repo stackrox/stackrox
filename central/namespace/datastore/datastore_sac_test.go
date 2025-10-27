@@ -397,8 +397,7 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespacesForSAC() {
 
 	for _, c := range cases {
 		s.Run(c.ScopeKey, func() {
-			ctx := s.testContexts[c.ScopeKey]
-			res, err := s.datastore.GetNamespacesForSAC(ctx)
+			res, err := s.datastore.GetNamespacesForSAC()
 			s.Require().NoError(err)
 			expectedNamespaceIDs := make([]string, 0, len(c.VisibleNamespaces))
 			for ix := range c.VisibleNamespaces {

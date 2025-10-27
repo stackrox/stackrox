@@ -307,14 +307,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
-func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error) {
-	ok, err := clusterSAC.ReadAllowed(ctx)
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
-	}
-
+func (ds *datastoreImpl) GetClustersForSAC() ([]*storage.Cluster, error) {
 	return ds.clusterStorage.GetAllFromCache(), nil
 }
 

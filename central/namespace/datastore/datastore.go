@@ -24,7 +24,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -96,13 +96,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	ok, err := namespaceSAC.ReadAllowed(ctx)
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return b.SearchNamespaces(ctx, search.EmptyQuery())
-	}
+func (b *datastoreImpl) GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error) {
 	return b.store.GetAllFromCache(), nil
 }
 
