@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
 )
@@ -253,6 +255,17 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
+func conflictErrorOnce(once *sync.Once, api k8sapi.APIResource, name string) error {
+	var err error
+	once.Do(func() {
+		err = kubeAPIErr.NewConflict(schema.GroupResource{
+			Group:    api.Group,
+			Resource: api.Name,
+		}, name, errors.New("fake conflict error"))
+	})
+	return err
+}
+
 func (m *handlerImpl) processUpdateScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) bool {
 	if err := validateUpdateScheduledScanConfigRequest(request); err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
@@ -318,10 +331,14 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		}
 	}
 
+	var ssOnce sync.Once
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			if updatedScanSetting == nil {
 				return retry.MakeRetryable(errors.Errorf("updated ScanSetting %q is 'nil'", request.GetScanSettings().GetScanName()))
+			}
+			if err := conflictErrorOnce(&ssOnce, complianceoperator.ScanSetting, updatedScanSetting.GetName()); err != nil {
+				return err
 			}
 			_, err := resSS.Update(ctx, updatedScanSetting, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
@@ -344,10 +361,14 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Process SSB as an update
 	if ssbObj != nil {
+		var ssbOnce sync.Once
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
 				if updatedScanSettingBinding == nil {
 					return retry.MakeRetryable(errors.Errorf("updated ScanSettingBinding %q is 'nil'", request.GetScanSettings().GetScanName()))
+				}
+				if err := conflictErrorOnce(&ssbOnce, complianceoperator.ScanSettingBinding, updatedScanSettingBinding.GetName()); err != nil {
+					return err
 				}
 				_, err = resSSB.Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
 				return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
@@ -432,11 +453,15 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 	if err != nil {
 		return err
 	}
+	var updateOnce sync.Once
 	return m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			log.Infof("Rerunning compliance scan %s", complianceScan)
 			if scanObj == nil {
 				return retry.MakeRetryable(errors.Errorf("Scan %q is 'nil'", complianceScan))
+			}
+			if err := conflictErrorOnce(&updateOnce, complianceoperator.ComplianceScan, scan.Name); err != nil {
+				return err
 			}
 			_, err = resI.Update(ctx, scanObj, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan)
@@ -500,10 +525,14 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+	var updateOnce sync.Once
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			if obj == nil {
 				return retry.MakeRetryable(errors.Errorf("ScanSetting %q is 'nil'", config.ScanName))
+			}
+			if err := conflictErrorOnce(&updateOnce, complianceoperator.ScanSetting, config.ScanName); err != nil {
+				return err
 			}
 			_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
@@ -680,10 +709,14 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
+		var updateOnce sync.Once
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
 				if updatedResource == nil {
 					return retry.MakeRetryable(errors.Errorf("updated %s %q is 'nil'", api.GroupVersionResource(), resource.GetName()))
+				}
+				if err := conflictErrorOnce(&updateOnce, api, updatedResource.GetName()); err != nil {
+					return err
 				}
 				_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
 				return errors.Wrapf(err, "updating namespace %q", namespace)
