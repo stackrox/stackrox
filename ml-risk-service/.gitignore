@@ -1,5 +1,8 @@
 # ML Risk Service specific ignores
 
+# Generated configuration with expanded environment variables
+src/config/feature_config.expanded.yaml
+
 # Generated model files and training artifacts
 deploy/models/
 deploy/reports/
