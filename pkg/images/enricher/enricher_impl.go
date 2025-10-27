@@ -89,6 +89,8 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 			}
 
 			res, err := e.enrichWithVulnerabilities(scanner.Name(), imageScanner.DataSource(), vulnScanner, image, components, notes)
+			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 			if err != nil {
 				return EnrichmentResult{
 					ScanResult: ScanNotDone,
