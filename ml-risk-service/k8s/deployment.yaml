@@ -78,6 +78,8 @@ spec:
               readOnly: true
             - name: model-storage
               mountPath: /app/models
+            - name: report-storage
+              mountPath: /app/reports
             - name: tmp
               mountPath: /tmp
           livenessProbe:
@@ -110,6 +112,9 @@ spec:
         - name: model-storage
           persistentVolumeClaim:
             claimName: ml-risk-models
+        - name: report-storage
+          persistentVolumeClaim:
+            claimName: ml-risk-reports
         - name: tmp
           emptyDir: {}
       affinity:
