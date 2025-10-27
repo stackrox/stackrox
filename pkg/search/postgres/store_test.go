@@ -138,7 +138,7 @@ func TestStoreWithAllScenarios(t *testing.T) {
 					for _, storeTest := range storeTests {
 						t.Run(storeTest.name, func(t *testing.T) {
 							testCtx, store := setup(t, txScenario.setupCtx, storeType.storeFactory)
-							testUpsertImpl(t, testCtx, store)
+							storeTest.test(t, testCtx, store)
 						})
 					}
 				})
