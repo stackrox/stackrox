@@ -33,6 +33,7 @@ func New(c ctrlClient.Client) *Reconciler {
 // Reconcile reads deployment statuses and helm state, updates Available and Progressing conditions.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
+	log.Info("Central status controller reconciliation started")
 
 	// Get the Central CR.
 	central := &platform.Central{}
@@ -42,23 +43,38 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Update condition "Progressing".
 	progressingChanged := r.updateProgressing(ctx, central)
+	if progressingChanged {
+		progCond := getCondition(central.Status.Conditions, "Progressing")
+		if progCond != nil {
+			log.Info("Progressing condition updated", "status", progCond.Status, "reason", progCond.Reason)
+		}
+	}
 
 	// Update condition "Available".
 	availableChanged := r.updateAvailable(ctx, central)
+	if availableChanged {
+		availCond := getCondition(central.Status.Conditions, "Available")
+		if availCond != nil {
+			log.Info("Available condition updated", "status", availCond.Status, "reason", availCond.Reason)
+		}
+	}
 
 	// If nothing changed, skip the status update.
 	if !progressingChanged && !availableChanged {
+		log.V(1).Info("No status changes detected, skipping update")
 		return ctrl.Result{}, nil
 	}
 
 	// Update status subresource.
 	// Note that in case of a conflict, we return the conflict here and the status reconciliation
 	// will be automatically retried within controller-runtime with the latest version of the CR.
+	log.Info("Updating Central status")
 	if err := r.Status().Update(ctx, central); err != nil {
 		log.Error(err, "Failed to update Central status")
 		return ctrl.Result{}, err
 	}
 
+	log.Info("Central status updated successfully")
 	return ctrl.Result{}, nil
 }
 
@@ -86,13 +102,14 @@ func (r *Reconciler) updateAvailable(ctx context.Context, central *platform.Cent
 
 	// List all deployments owned by this Central.
 	deployments := &appsv1.DeploymentList{}
-	if err := r.List(ctx, deployments,
+	err := r.List(ctx, deployments,
 		ctrlClient.InNamespace(central.Namespace),
 		ctrlClient.MatchingLabels{
-			"app.kubernetes.io/instance":   central.Name,
-			"app.kubernetes.io/managed-by": "stackrox-operator",
+			"app.kubernetes.io/instance": central.Name,
+			"app.stackrox.io/managed-by": "operator",
 		},
-	); err != nil {
+	)
+	if err != nil {
 		log.Error(err, "Failed to list deployments")
 		return false
 	}
@@ -111,18 +128,19 @@ func (r *Reconciler) updateAvailable(ctx context.Context, central *platform.Cent
 	return changed
 }
 
-// determineProgressingState infers if helm reconciliation is in progress.
+// determineProgressingState infers if Helm reconciliation is in progress.
+// Returns (isProgressing, reason, message).
 func (r *Reconciler) determineProgressingState(central *platform.Central) (bool, platform.ConditionReason, string) {
-	// Strategy 1: Check observedGeneration (most reliable)
+	// Check observedGeneration.
 	// If metadata.generation > status.observedGeneration, spec has changed and reconcile is pending
 	if central.Generation > central.Status.ObservedGeneration {
 		return true, "Reconciling", "Spec changes pending reconciliation"
 	}
 
-	// Strategy 2: Check helm conditions set by the operator
+	// Check Helm conditions set by the operator.
 	for _, cond := range central.Status.Conditions {
 		// If Deployed condition is Unknown, helm is working
-		if cond.Type == platform.ConditionDeployed && cond.Status == platform.StatusUnknown {
+		if cond.Type == platform.ConditionDeployed && cond.Status != platform.StatusTrue {
 			return true, "Reconciling", "Helm reconciliation in progress"
 		}
 
@@ -137,18 +155,7 @@ func (r *Reconciler) determineProgressingState(central *platform.Central) (bool,
 		}
 	}
 
-	// Strategy 3: Check if deployedRelease version matches reconciledVersion
-	if central.Status.DeployedRelease != nil && central.Status.ReconciledVersion != "" {
-		deployedVersion := central.Status.DeployedRelease.Version
-		reconciledVersion := central.Status.ReconciledVersion
-
-		// If versions don't match, reconciliation might be in progress
-		if deployedVersion != reconciledVersion {
-			return true, "VersionMismatch", "Deployed version differs from reconciled version"
-		}
-	}
-
-	// No signs of active reconciliation
+	// No signs of active reconciliation.
 	return false, "ReconcileSuccessful", "Reconciliation completed successfully"
 }
 
