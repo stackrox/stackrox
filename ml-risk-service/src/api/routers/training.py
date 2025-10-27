@@ -14,6 +14,7 @@ from src.api.schemas import (
 )
 from src.services.training_service import TrainingService
 from src.services.risk_service import RiskPredictionService
+from training.data_loader import TrainingDataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +226,188 @@ async def get_training_info(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve training service information"
+        )
+
+
+@router.post(
+    "/central/test-connection",
+    response_model=Dict[str, Any],
+    summary="Test Central API connection",
+    description="Test connection to StackRox Central's workloads export API"
+)
+async def test_central_connection() -> Dict[str, Any]:
+    """
+    Test connection to Central API using configured settings.
+
+    Returns connection status and Central version information.
+    """
+    try:
+        from src.config.central_config import CentralConfig, create_central_client_from_config
+
+        # Load configuration
+        config = CentralConfig()
+
+        if not config.is_enabled():
+            return {
+                "success": False,
+                "message": "Central API integration is not enabled",
+                "enabled": False
+            }
+
+        # Validate configuration
+        is_valid, issues = config.validate_configuration()
+        if not is_valid:
+            return {
+                "success": False,
+                "message": f"Configuration validation failed: {'; '.join(issues)}",
+                "enabled": True,
+                "configuration_valid": False,
+                "issues": issues
+            }
+
+        # Create and test client
+        client = create_central_client_from_config()
+        connection_test = client.test_connection()
+
+        # Get capabilities
+        capabilities = client.get_export_capabilities()
+
+        client.close()
+
+        return {
+            "success": connection_test['success'],
+            "message": connection_test['message'],
+            "enabled": True,
+            "configuration_valid": True,
+            "central_version": connection_test.get('central_version', 'unknown'),
+            "endpoint": config.get_endpoint(),
+            "auth_method": config.get_authentication_config()['method'],
+            "capabilities": capabilities
+        }
+
+    except ImportError as e:
+        logger.error(f"Central API components not available: {e}")
+        return {
+            "success": False,
+            "message": "Central API integration components not available",
+            "enabled": False,
+            "error": str(e)
+        }
+    except Exception as e:
+        logger.error(f"Central connection test failed: {e}")
+        return {
+            "success": False,
+            "message": f"Connection test failed: {str(e)}",
+            "enabled": True,
+            "error": str(e)
+        }
+
+
+@router.post(
+    "/central/collect-sample",
+    response_model=Dict[str, Any],
+    summary="Collect sample training data from Central",
+    description="Collect sample training data using Central's workloads export API"
+)
+async def collect_sample_from_central(
+    limit: int = Query(10, description="Number of training examples to collect"),
+    days_back: int = Query(7, description="Number of days back to look for data")
+) -> Dict[str, Any]:
+    """
+    Collect a small sample of training data from Central's workloads API.
+
+    This endpoint uses the /v1/export/vuln-mgmt/workloads endpoint to collect
+    deployments with their associated images and vulnerability data efficiently.
+    """
+    try:
+        from src.config.central_config import CentralConfig
+
+        # Check if Central integration is enabled
+        config = CentralConfig()
+        if not config.is_enabled():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Central API integration is not enabled"
+            )
+
+        # Create data loader
+        data_loader = TrainingDataLoader()
+
+        # Set up filters for sample collection
+        filters = {
+            'days_back': days_back,
+            'include_inactive': False,
+            'severity_threshold': 'MEDIUM_SEVERITY'
+        }
+
+        # Collect sample data
+        logger.info(f"Collecting {limit} training examples from Central (last {days_back} days)")
+
+        # Collect sample data using streaming approach with limit
+        training_examples = []
+        streaming_data = data_loader.load_from_central_api_streaming_with_config(
+            config_path=None,
+            filters=filters
+        )
+
+        for example in streaming_data:
+            training_examples.append(example)
+            if len(training_examples) >= limit:
+                break
+
+        # Analyze collected data
+        if training_examples:
+            sample_example = training_examples[0]
+            feature_count = len(sample_example.get('features', {}))
+
+            # Get some basic statistics
+            risk_scores = [ex.get('risk_score', 0) for ex in training_examples]
+            avg_risk_score = sum(risk_scores) / len(risk_scores) if risk_scores else 0
+
+            clusters = set(ex.get('export_metadata', {}).get('cluster_id', 'unknown')
+                          for ex in training_examples)
+            namespaces = set(ex.get('export_metadata', {}).get('namespace', 'unknown')
+                           for ex in training_examples)
+
+            return {
+                "success": True,
+                "message": f"Successfully collected {len(training_examples)} training examples",
+                "data_summary": {
+                    "examples_collected": len(training_examples),
+                    "feature_count": feature_count,
+                    "avg_risk_score": round(avg_risk_score, 2),
+                    "unique_clusters": len(clusters),
+                    "unique_namespaces": len(namespaces),
+                    "clusters": list(clusters),
+                    "namespaces": list(namespaces)
+                },
+                "sample_features": list(sample_example.get('features', {}).keys())[:10],
+                "filters_used": filters
+            }
+        else:
+            return {
+                "success": True,
+                "message": "No training examples found with current filters",
+                "data_summary": {
+                    "examples_collected": 0,
+                    "feature_count": 0
+                },
+                "filters_used": filters
+            }
+
+    except HTTPException:
+        raise
+    except ImportError as e:
+        logger.error(f"Central API components not available: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Central API integration components not available"
+        )
+    except Exception as e:
+        logger.error(f"Sample collection from Central failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Sample collection failed: {str(e)}"
         )
 
 
