@@ -3,7 +3,7 @@ Pydantic schemas for ML Risk Service REST API.
 These models provide automatic validation and OpenAPI documentation.
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -558,6 +558,44 @@ class ReadinessStatus(BaseModel):
     ready: bool = Field(description="Whether service is ready")
     checks: Dict[str, bool] = Field(description="Individual readiness checks")
     timestamp: int = Field(description="Unix timestamp")
+
+
+class QuickTestPipelineResponse(BaseModel):
+    """Response from quick test pipeline execution."""
+
+    success: bool = Field(description="Whether the test pipeline completed successfully")
+    test_completed: bool = Field(description="Whether the full test was completed")
+    pipeline_results: Dict[str, Any] = Field(
+        default={},
+        description="Detailed results from the training pipeline execution"
+    )
+    error_message: Optional[str] = Field(
+        default="",
+        description="Error message if the test failed"
+    )
+    execution_time_seconds: Optional[float] = Field(
+        default=None,
+        description="Time taken to execute the test pipeline"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "test_completed": True,
+                "pipeline_results": {
+                    "success": True,
+                    "stages_completed": ["data_loading", "feature_extraction", "model_training"],
+                    "model_metrics": {
+                        "validation_ndcg": 0.85,
+                        "validation_auc": 0.92
+                    },
+                    "training_examples": 50
+                },
+                "error_message": "",
+                "execution_time_seconds": 45.2
+            }
+        }
 
 
 class ErrorResponse(BaseModel):

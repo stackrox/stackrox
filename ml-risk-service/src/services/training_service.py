@@ -14,7 +14,8 @@ from src.api.schemas import (
     TrainModelResponse,
     TrainingMetrics,
     FeatureImportance,
-    TrainingExample
+    TrainingExample,
+    QuickTestPipelineResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -268,3 +269,91 @@ class TrainingService:
             'training_examples_count': self.training_examples_count,
             'training_pipeline_ready': True
         }
+
+    def run_quick_test_pipeline(self) -> QuickTestPipelineResponse:
+        """
+        Run the quick test pipeline to validate the training system.
+
+        This method:
+        1. Generates 50 sample training examples
+        2. Runs the complete training pipeline with this data
+        3. Returns comprehensive results including metrics and status
+        4. Cleans up temporary files automatically
+
+        Returns:
+            QuickTestPipelineResponse with test results and pipeline metrics
+        """
+        start_time = time.time()
+
+        try:
+            logger.info("Starting quick test pipeline execution")
+
+            # Run the quick test pipeline
+            results = self.training_pipeline.quick_test_pipeline()
+
+            execution_time = time.time() - start_time
+
+            if results['success']:
+                logger.info(f"Quick test pipeline completed successfully in {execution_time:.2f} seconds")
+
+                # Sanitize pipeline results to ensure JSON serialization
+                sanitized_results = self._sanitize_float_values(results.get('pipeline_results', {}))
+
+                return QuickTestPipelineResponse(
+                    success=True,
+                    test_completed=results.get('test_completed', True),
+                    pipeline_results=sanitized_results,
+                    error_message="",
+                    execution_time_seconds=execution_time
+                )
+            else:
+                error_msg = results.get('error', 'Unknown error during pipeline execution')
+                logger.error(f"Quick test pipeline failed: {error_msg}")
+
+                return QuickTestPipelineResponse(
+                    success=False,
+                    test_completed=False,
+                    pipeline_results={},
+                    error_message=error_msg,
+                    execution_time_seconds=execution_time
+                )
+
+        except Exception as e:
+            execution_time = time.time() - start_time
+            error_msg = f"Quick test pipeline execution failed: {str(e)}"
+            logger.error(error_msg)
+
+            return QuickTestPipelineResponse(
+                success=False,
+                test_completed=False,
+                pipeline_results={},
+                error_message=error_msg,
+                execution_time_seconds=execution_time
+            )
+
+    def _sanitize_float_values(self, data: Any) -> Any:
+        """
+        Recursively sanitize float values to ensure JSON serialization compatibility.
+        Converts NaN, infinity, and -infinity to None or appropriate string representations.
+
+        Args:
+            data: Data structure to sanitize
+
+        Returns:
+            Sanitized data structure
+        """
+        import math
+
+        if isinstance(data, dict):
+            return {key: self._sanitize_float_values(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_float_values(item) for item in data]
+        elif isinstance(data, float):
+            if math.isnan(data):
+                return None  # or could use "NaN" string
+            elif math.isinf(data):
+                return "Infinity" if data > 0 else "-Infinity"
+            else:
+                return data
+        else:
+            return data
