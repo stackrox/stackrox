@@ -556,7 +556,7 @@ replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.2024080613095
 // we currently depend on.
 // It includes a number of features and bug fixes which we faced in StackRox. We use this fork
 // primarily to iterate faster. See https://issues.redhat.com/browse/ROX-7911
-replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.8.1-0.20250929095149-d1ee3c386305
+replace github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.8.1-0.20251027145523-14f2d612b48e
 
 // @stackrox/sensor-ecosystem
 replace (
