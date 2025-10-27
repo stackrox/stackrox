@@ -443,27 +443,52 @@ class LocalModelStorage(ModelStorage):
     def _get_latest_version(self, model_id: str) -> Optional[str]:
         """Get the latest version of a model."""
         model_dir = self.base_path / "models" / model_id
+        self.logger.debug(f"Looking for latest version in: {model_dir}")
+
         if not model_dir.exists():
+            self.logger.debug(f"Model directory does not exist: {model_dir}")
             return None
 
         versions = []
         for version_dir in model_dir.iterdir():
             if version_dir.is_dir() and version_dir.name.startswith('v'):
                 version_num = version_dir.name[1:]  # Remove 'v' prefix
-                try:
+                self.logger.debug(f"Found version directory: {version_dir.name}, extracted version: {version_num}")
+                # Check if it's a pure numeric version (no underscores or other chars)
+                if version_num.isdigit():
                     versions.append(int(version_num))
-                except ValueError:
-                    # Handle non-numeric versions
+                    self.logger.debug(f"Added numeric version: {int(version_num)}")
+                else:
+                    # Handle non-numeric versions (like timestamps with underscores)
+                    self.logger.debug(f"Adding string version to list: '{version_num}'")
                     versions.append(version_num)
+                    self.logger.debug(f"Versions list after append: {versions}")
+
+        self.logger.debug(f"All versions found: {versions}")
 
         if not versions:
+            self.logger.debug("No versions found")
             return None
 
         # Return highest numeric version or latest string version
         if all(isinstance(v, int) for v in versions):
-            return str(max(versions))
+            latest = str(max(versions))
+            self.logger.debug(f"Using numeric max: {latest}")
+            return latest
         else:
-            return str(sorted(versions)[-1])
+            # For string versions (like timestamps), sort them properly
+            # Handle timestamp format YYYYMMDD_HHMMSS by replacing _ with empty string for sorting
+            def version_sort_key(v):
+                if isinstance(v, str) and '_' in v:
+                    # Convert timestamp format to sortable string by removing underscore
+                    return v.replace('_', '')
+                return str(v)
+
+            sorted_versions = sorted(versions, key=version_sort_key)
+            latest = str(sorted_versions[-1])
+            self.logger.debug(f"Sorted versions: {sorted_versions}")
+            self.logger.debug(f"Latest version selected: {latest}")
+            return latest
 
 
 
@@ -658,7 +683,16 @@ class GCSModelStorage(ModelStorage):
             if all(isinstance(v, int) for v in versions):
                 return str(max(versions))
             else:
-                return str(sorted(versions)[-1])
+                # For string versions (like timestamps), sort them properly
+                # Handle timestamp format YYYYMMDD_HHMMSS by replacing _ with empty string for sorting
+                def version_sort_key(v):
+                    if isinstance(v, str) and '_' in v:
+                        # Convert timestamp format to sortable string by removing underscore
+                        return v.replace('_', '')
+                    return str(v)
+
+                sorted_versions = sorted(versions, key=version_sort_key)
+                return str(sorted_versions[-1])
 
         except Exception as e:
             self.logger.error(f"Failed to get latest version for {model_id}: {e}")

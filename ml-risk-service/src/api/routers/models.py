@@ -155,9 +155,12 @@ async def reload_model(
     Returns reload status, timing information, and version details.
     """
     try:
+        # Convert empty string to None for latest version
+        version_param = version if version else None
+
         request = ReloadModelRequest(
             model_id=model_id,
-            version=version,
+            version=version_param,
             force_reload=force_reload
         )
 
