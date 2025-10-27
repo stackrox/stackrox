@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -54,8 +55,15 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPostExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+7)
+	// Add GenerationChangedPredicate to skip reconciliation for status-only updates to prevent
+	// unnecessary Helm dry-runs triggered by the status controller updating CR status.
+	predicates := []pkgReconciler.Option{
+		pkgReconciler.WithPredicate(predicate.GenerationChangedPredicate{}),
+	}
+
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+7)
 	opts = append(opts, extraEventWatcher)
+	opts = append(opts, predicates...)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
