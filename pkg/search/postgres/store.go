@@ -431,7 +431,6 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 // GetAllFromCache panics as generic store has no cache.
 func (s *genericStore[T, PT]) GetAllFromCache() []PT {
 	panic("generic store has no cache")
-	return nil
 }
 
 func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
