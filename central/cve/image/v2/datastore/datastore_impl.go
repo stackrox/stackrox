@@ -2,23 +2,16 @@ package datastore
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 type datastoreImpl struct {
 	storage store.Store
-
-	cveSuppressionLock  sync.RWMutex
-	cveSuppressionCache common.CVESuppressionCache
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -78,88 +71,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return cves, nil
-}
-
-func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	ds.cveSuppressionLock.RLock()
-	defer ds.cveSuppressionLock.RUnlock()
-
-	for _, component := range image.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = true
-				vuln.SuppressActivation = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation)
-				vuln.SuppressExpiry = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry)
-				vuln.State = storage.VulnerabilityState_DEFERRED
-			}
-		}
-	}
-}
-
-func (ds *datastoreImpl) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
-	ds.cveSuppressionLock.RLock()
-	defer ds.cveSuppressionLock.RUnlock()
-
-	for _, component := range image.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = true
-				vuln.SuppressActivation = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation)
-				vuln.SuppressExpiry = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry)
-				vuln.State = storage.VulnerabilityState_DEFERRED
-			}
-		}
-	}
-}
-
-func (ds *datastoreImpl) ApplyException(_ context.Context, _, _ *time.Time, _ ...string) error {
-	// TODO(ROX-28123): figure out if we need to add this function or not.
-	return nil
-	//if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
-	//	return err
-	//} else if !ok {
-	//	return sac.ErrResourceAccessDenied
-	//}
-	//
-	//vulns, err := ds.SearchRawImageCVEs(ctx,
-	//	pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
-	//	for _, vuln := range vulns {
-	//		vuln.Snoozed = true
-	//		vuln.SnoozeStart = protocompat.ConvertTimeToTimestampOrNil(start)
-	//		vuln.SnoozeExpiry = protocompat.ConvertTimeToTimestampOrNil(expiry)
-	//	}
-	//	return ds.storage.UpsertMany(ctx, vulns)
-	//})
-}
-
-func (ds *datastoreImpl) RevertException(_ context.Context, _ ...string) error {
-	// TODO(ROX-28123): figure out if we need to add this function or not.
-	return nil
-	//if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
-	//	return err
-	//} else if !ok {
-	//	return sac.ErrResourceAccessDenied
-	//}
-	//
-	//vulns, err := ds.SearchRawImageCVEs(ctx,
-	//	pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
-	//	for _, vuln := range vulns {
-	//		vuln.Snoozed = false
-	//		vuln.SnoozeStart = nil
-	//		vuln.SnoozeExpiry = nil
-	//	}
-	//	return ds.storage.UpsertMany(ctx, vulns)
-	//})
 }
 
 func convertMany(cves []*storage.ImageCVEV2, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
