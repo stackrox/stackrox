@@ -9,7 +9,9 @@ export function visitListeningEndpointsFromLeftNav() {
 
 export function selectFilterEntity(entity) {
     cy.get(selectors.entityDropdownToggle).click();
-    cy.get(`div${selectors.entityDropdownToggle} button:contains("${entity}")`).click();
+    cy.get(`${selectors.entityDropdownToggle} button`)
+        .contains(new RegExp(`^${entity}$`, 'i'))
+        .click();
 }
 
 export function addEntityFilterValue(entity, value) {
