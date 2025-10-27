@@ -15,11 +15,20 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
     - jsonPath: .status.conditions[?(@.type=="Progressing")].reason
       name: Progressing
       type: string
     - jsonPath: .status.reconciledVersion
       name: Version
+      type: string
+    - jsonPath: .spec.central.adminPasswordSecretName
+      name: AdminPassword
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].message
+      name: Message
       type: string
     name: v1alpha1
     schema:
