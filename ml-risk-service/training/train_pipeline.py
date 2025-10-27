@@ -6,14 +6,17 @@ import logging
 import json
 import os
 import yaml
+import hashlib
 from typing import Dict, Any, List, Optional
 import numpy as np
 from datetime import datetime
+import pickle
 
 from .data_loader import TrainingDataLoader, JSONTrainingDataGenerator
 from .baseline_reproducer import BaselineReproducer
 from src.models.ranking_model import RiskRankingModel
 from src.models.feature_importance import FeatureImportanceAnalyzer
+from src.storage.model_storage import ModelMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +27,13 @@ class TrainingPipeline:
     Handles data loading, model training, evaluation, and model persistence.
     """
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, storage_manager=None):
         self.config = self._load_config(config_path)
         self.data_loader = TrainingDataLoader(self.config)
         self.baseline_reproducer = BaselineReproducer()
         self.model = RiskRankingModel(self.config)
         self.feature_analyzer = FeatureImportanceAnalyzer()
+        self.storage_manager = storage_manager
 
         # Training state
         self.training_data = None
@@ -303,21 +307,59 @@ class TrainingPipeline:
             return {'success': False, 'error': str(e)}
 
     def _save_model_and_reports(self) -> Dict[str, Any]:
-        """Save trained model and generate reports."""
+        """Save trained model using structured storage and generate reports."""
         try:
-            # Create output directories
-            model_dir = self.config.get('output', {}).get('model_dir', './models')
-            reports_dir = self.config.get('output', {}).get('reports_dir', './reports')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-            os.makedirs(model_dir, exist_ok=True)
+            # Save model using storage manager if available
+            if self.storage_manager:
+                # Create model metadata
+                model_info = self.model.get_model_info()
+                model_id = "stackrox-risk-model"
+                version = timestamp
+
+                # Create ModelMetadata - sanitize performance metrics for JSON serialization
+                performance_metrics = model_info.get('training_metrics', {})
+                sanitized_metrics = self._sanitize_float_values(performance_metrics)
+
+                metadata = ModelMetadata(
+                    model_id=model_id,
+                    version=version,
+                    algorithm=model_info.get('algorithm', 'lightgbm_ranker'),
+                    feature_count=int(model_info.get('feature_count', 0)),
+                    training_timestamp=datetime.now().isoformat(),
+                    model_size_bytes=len(pickle.dumps(self.model.model)),
+                    checksum=hashlib.md5(pickle.dumps(self.model.model)).hexdigest(),
+                    performance_metrics=sanitized_metrics,
+                    config=self.config,
+                    created_by="training-pipeline",
+                    semantic_version=f"1.0.{len(str(timestamp))}",
+                    status="production",
+                    deployment_stage="development"
+                )
+
+                # Serialize model to bytes
+                model_data = pickle.dumps(self.model.model)
+
+                # Save using storage manager
+                success = self.storage_manager.save_model(model_data, metadata)
+
+                if success:
+                    model_file = f"models/{model_id}/v{version}/model.joblib"
+                    logger.info(f"Model saved using storage manager: {model_id} v{version}")
+                else:
+                    raise Exception("Failed to save model using storage manager")
+            else:
+                # Fallback to old method if no storage manager
+                model_dir = self.config.get('output', {}).get('model_dir', './models')
+                os.makedirs(model_dir, exist_ok=True)
+                model_file = os.path.join(model_dir, f'risk_ranking_model_{timestamp}.pkl')
+                self.model.save_model(model_file)
+
+            # Generate training report (keep existing behavior)
+            reports_dir = self.config.get('output', {}).get('reports_dir', './reports')
             os.makedirs(reports_dir, exist_ok=True)
 
-            # Save model
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            model_file = os.path.join(model_dir, f'risk_ranking_model_{timestamp}.pkl')
-            self.model.save_model(model_file)
-
-            # Generate training report
             training_report = {
                 'model_info': self.model.get_model_info(),
                 'training_config': self.config,
@@ -335,10 +377,13 @@ class TrainingPipeline:
                 'success': True,
                 'model_file': model_file,
                 'report_file': report_file,
-                'model_version': self.model.model_version
+                'model_version': self.model.model_version,
+                'model_id': model_id if self.storage_manager else None,
+                'version': version if self.storage_manager else None
             }
 
         except Exception as e:
+            logger.error(f"Failed to save model and reports: {e}")
             return {'success': False, 'error': str(e)}
 
     def create_sample_training_data(self, output_file: str, num_examples: int = 1000) -> Dict[str, Any]:
@@ -468,3 +513,46 @@ class TrainingPipeline:
 
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    def _sanitize_float_values(self, data: Any) -> Any:
+        """
+        Recursively sanitize values to ensure JSON serialization compatibility.
+        Converts NaN, infinity, numpy types to Python native types.
+
+        Args:
+            data: Data structure to sanitize
+
+        Returns:
+            Sanitized data structure
+        """
+        import math
+        import numpy as np
+
+        if isinstance(data, dict):
+            return {key: self._sanitize_float_values(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_float_values(item) for item in data]
+        elif isinstance(data, float):
+            if math.isnan(data):
+                return None
+            elif math.isinf(data):
+                return "Infinity" if data > 0 else "-Infinity"
+            else:
+                return data
+        elif hasattr(data, 'dtype') and hasattr(data, 'item'):  # numpy scalar
+            if np.issubdtype(data.dtype, np.integer):
+                return int(data.item())
+            elif np.issubdtype(data.dtype, np.floating):
+                val = float(data.item())
+                if math.isnan(val):
+                    return None
+                elif math.isinf(val):
+                    return "Infinity" if val > 0 else "-Infinity"
+                else:
+                    return val
+            else:
+                return data.item()
+        elif isinstance(data, (list, tuple)) and hasattr(data, '__iter__'):
+            return [self._sanitize_float_values(item) for item in data]
+        else:
+            return data

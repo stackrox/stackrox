@@ -9,6 +9,7 @@ import time
 from typing import Dict, Any, List, Optional
 
 from training.train_pipeline import TrainingPipeline
+from src.storage.model_storage import ModelStorageManager, StorageConfig
 from src.api.schemas import (
     TrainModelRequest,
     TrainModelResponse,
@@ -26,7 +27,13 @@ class TrainingService:
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
-        self.training_pipeline = TrainingPipeline()
+
+        # Initialize model storage manager
+        storage_config = StorageConfig.from_env()
+        self.storage_manager = ModelStorageManager(storage_config)
+
+        # Initialize training pipeline with storage manager
+        self.training_pipeline = TrainingPipeline(storage_manager=self.storage_manager)
 
         # Training state
         self.last_training_time = 0

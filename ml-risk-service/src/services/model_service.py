@@ -140,11 +140,23 @@ class ModelManagementService:
                     metrics = {k: float(v) for k, v in model.performance_metrics.items()
                               if isinstance(v, (int, float))}
 
+                # Parse training timestamp string to datetime, then to unix timestamp
+                from datetime import datetime
+                try:
+                    if isinstance(model.training_timestamp, str):
+                        dt = datetime.fromisoformat(model.training_timestamp.replace('Z', '+00:00'))
+                        training_timestamp = int(dt.timestamp())
+                    else:
+                        training_timestamp = int(model.training_timestamp.timestamp())
+                except (ValueError, AttributeError):
+                    # Fallback to current time if parsing fails
+                    training_timestamp = int(datetime.now().timestamp())
+
                 model_info = ModelInfo(
                     model_id=model.model_id,
                     version=model.version,
                     algorithm=model.algorithm,
-                    training_timestamp=int(model.training_timestamp.timestamp()),
+                    training_timestamp=training_timestamp,
                     model_size_bytes=model.model_size_bytes,
                     performance_metrics=metrics,
                     status="ready"  # Default status, could be enhanced
