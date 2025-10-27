@@ -1192,8 +1192,10 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		if ok {
 			return
 		}
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back cursor transaction: %v", err)
+		ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
+		defer cancel()
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
 		}
 	}
 
@@ -1256,7 +1258,7 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 		}
 
 		if rowsAffected != cursorBatchSize {
-			return nil
+			return ctx.Err()
 		}
 	}
 }
