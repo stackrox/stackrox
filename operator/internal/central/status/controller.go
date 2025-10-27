@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -221,8 +222,12 @@ func updateCondition(
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Watch Central CRs and also trigger reconciliation when deployments change
+	// Watch for
+	// 1. Central CRs and trigger reconciliation unless a CR update involves changes
+	//    fields the status controller itself manages. We only want to react to external changes.
+	// 2. Owned Deployments to react to deployment status changes.
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&platform.Central{}).
+		For(&platform.Central{}, builder.WithPredicates(CentralStatusPredicate{})).
+		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }
