@@ -358,7 +358,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Required image signature',
         name: imageSigningCriteriaName,
         shortName: 'Required image signature',
-        longName: 'Image signature is missing or wrong',
+        longName: 'Image must be signed by a trusted signer',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'tableModal',
         tableType: 'imageSigning',
