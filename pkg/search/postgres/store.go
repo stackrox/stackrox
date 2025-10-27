@@ -430,7 +430,7 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // GetAllFromCache panics as generic store has no cache.
 func (s *genericStore[T, PT]) GetAllFromCache() []PT {
-	utils.Must(errors.New("generic store has no cache"))
+	panic("generic store has no cache")
 	return nil
 }
 
