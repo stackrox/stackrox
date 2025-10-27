@@ -335,7 +335,8 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 	})
 }
 
-// GetAllFromCache iterates over all the objects in the store and applies the closure.
+// GetAllFromCache returns all the objects in the store without cloning.
+// Deprecated: It will not clone the object so it should be used only for SAC.
 func (c *cachedStore[T, PT]) GetAllFromCache() []PT {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
