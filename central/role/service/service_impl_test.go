@@ -72,12 +72,14 @@ var (
 		},
 	}
 )
-var clusters = []*storage.Cluster{
+
+var clusters = []effectiveaccessscope.Cluster{
 	clusterQueen,
 	clusterPinkFloyd,
 	clusterDeepPurple,
 }
-var sacClusters = []effectiveaccessscope.Cluster{
+
+var storageClusters = []*storage.Cluster{
 	clusterQueen,
 	clusterPinkFloyd,
 	clusterDeepPurple,
@@ -135,7 +137,7 @@ var (
 	}
 )
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []effectiveaccessscope.Namespace{
 	// Queen
 	namespaceQueenInClusterQueen,
 	namespaceJazzInClusterQueen,
@@ -146,7 +148,7 @@ var namespaces = []*storage.NamespaceMetadata{
 	namespaceMachineHeadInClusterDeepPurple,
 }
 
-var sacNamespaces = []effectiveaccessscope.Namespace{
+var storageNamespaces = []*storage.NamespaceMetadata{
 	// Queen
 	namespaceQueenInClusterQueen,
 	namespaceJazzInClusterQueen,
@@ -491,22 +493,22 @@ func TestEffectiveAccessScopeForSimpleAccessScope(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc+"detail: HIGH", func(t *testing.T) {
-			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
+			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedHigh, resHigh)
 		})
 		t.Run(tc.desc+"detail: STANDARD", func(t *testing.T) {
-			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
+			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedStandard, resStandard)
 		})
 		t.Run(tc.desc+"detail: MINIMAL", func(t *testing.T) {
-			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedMinimal, resMinimal)
 		})
 		t.Run(tc.desc+"unknown detail maps to STANDARD", func(t *testing.T) {
-			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, 42)
+			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, 42)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedStandard, resUnknown)
 		})
@@ -562,7 +564,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 
 	writeCtx := sac.WithAllAccess(context.Background())
 
-	for _, cluster := range clusters {
+	for _, cluster := range storageClusters {
 		clusterToAdd := cluster.CloneVT()
 		clusterToAdd.Id = ""
 		clusterToAdd.MainImage = "quay.io/rhacs-eng/main:latest"
@@ -572,7 +574,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 		s.storedClusterIDs = append(s.storedClusterIDs, id)
 	}
 
-	for _, namespace := range namespaces {
+	for _, namespace := range storageNamespaces {
 		ns := namespace.CloneVT()
 		ns.Id = getNamespaceID(ns.GetName())
 		ns.ClusterId = s.clusterNameToIDMap[ns.GetClusterName()]

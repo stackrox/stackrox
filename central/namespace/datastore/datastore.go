@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/ranking"
@@ -99,12 +100,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 
 // GetNamespacesForSAC retrieves namespaces matching the request
 func (b *datastoreImpl) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
-	fetchedNamespaces := b.store.GetAllFromCacheForSAC()
-	namespaces := make([]effectiveaccessscope.Namespace, 0, len(fetchedNamespaces))
-	for _, ns := range fetchedNamespaces {
-		namespaces = append(namespaces, ns)
-	}
-	return namespaces, nil
+	return storagetoeffectiveaccessscope.Namespaces(b.store.GetAllFromCacheForSAC()), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {

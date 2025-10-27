@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -354,18 +355,12 @@ func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]effectiveacce
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
-	sacClusters := make([]effectiveaccessscope.Cluster, 0, len(allClusters))
-	for _, cluster := range allClusters {
-		sacClusters = append(sacClusters, cluster)
-	}
+	sacClusters := storagetoeffectiveaccessscope.Clusters(allClusters)
 	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
 	}
-	sacNamespaces := make([]effectiveaccessscope.Namespace, 0, len(allNamespaces))
-	for _, ns := range allNamespaces {
-		sacNamespaces = append(sacNamespaces, ns)
-	}
+	sacNamespaces := storagetoeffectiveaccessscope.Namespaces(allNamespaces)
 	return sacClusters, sacNamespaces, nil
 }
 
