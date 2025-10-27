@@ -24,8 +24,8 @@ func (CentralStatusPredicate) Update(e event.UpdateEvent) bool {
 
 	oldCentral, okOld := e.ObjectOld.(*platform.Central)
 	newCentral, okNew := e.ObjectNew.(*platform.Central)
-	if !okOld || !okNew {
-		// Not a Central CR, this shouldn't happen - block it.
+	if !okOld || !okNew || oldCentral == nil || newCentral == nil {
+		// Not a Central CR or nil pointer wrapped in interface - block it.
 		return false
 	}
 
