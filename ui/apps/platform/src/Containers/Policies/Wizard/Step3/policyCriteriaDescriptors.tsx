@@ -355,10 +355,10 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Image signature',
+        label: 'Required image signature',
         name: imageSigningCriteriaName,
-        shortName: 'Image signature',
-        longName: 'Image signature is missing or wrong',
+        shortName: 'Required image signature',
+        longName: 'Required image signature',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'tableModal',
         tableType: 'imageSigning',
