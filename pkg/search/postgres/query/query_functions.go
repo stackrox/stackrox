@@ -47,7 +47,8 @@ func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClau
 				}
 				return "derived." + ctx.derivedMetadata.DerivationType.String() + ctx.field.FieldPath
 			}(),
-			PostTransform: postTransformFunc,
+			PostTransform:    postTransformFunc,
+			IncludeInMatches: true, // Fields from query constraints should be in Matches
 		}}
 	}
 	return qe
