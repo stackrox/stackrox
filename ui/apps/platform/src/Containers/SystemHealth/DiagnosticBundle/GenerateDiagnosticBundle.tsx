@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
@@ -32,7 +32,7 @@ function GenerateDiagnosticBundle(): ReactElement {
             onSubmit: triggerDownload,
         });
 
-    const startingTimeIso: string | null = React.useMemo(() => {
+    const startingTimeIso: string | null = useMemo(() => {
         if (!values.startingDate) {
             return null;
         }
