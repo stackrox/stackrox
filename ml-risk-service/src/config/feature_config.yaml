@@ -105,6 +105,11 @@ central_api:
     client_key_path: "${CENTRAL_CLIENT_KEY_PATH}"
     ca_cert_path: "${CENTRAL_CA_CERT_PATH}"
 
+  # SSL/TLS Configuration
+  ssl:
+    verify_certificates: false  # Set to false for self-signed certs in dev/test
+    ca_bundle_path: ""  # Optional custom CA bundle path
+
   export_settings:
     # Simplified settings for workloads endpoint
     chunk_size: 1000

@@ -12,6 +12,7 @@ from urllib.parse import urljoin, urlencode
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,20 @@ class CentralExportClient:
             'Accept': 'application/json',
             'User-Agent': 'StackRox-ML-Risk-Service/1.0'
         })
+
+        # Configure SSL verification
+        verify_certs = self.config.get('verify_certificates', True)
+        ca_bundle_path = self.config.get('ca_bundle_path', '')
+
+        if not verify_certs:
+            session.verify = False
+            # Disable SSL warnings when verification is disabled
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            logger.warning("SSL certificate verification is DISABLED - this should only be used in development/testing")
+        elif ca_bundle_path:
+            session.verify = ca_bundle_path
+            logger.info(f"Using custom CA bundle: {ca_bundle_path}")
+        # else: use default verification (session.verify = True by default)
 
         return session
 

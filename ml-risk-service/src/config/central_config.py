@@ -169,6 +169,15 @@ class CentralConfig:
             'memory_limit_mb': perf_config.get('memory_limit_mb', 1024)
         }
 
+    def get_ssl_settings(self) -> Dict[str, Any]:
+        """Get SSL/TLS configuration settings."""
+        ssl_config = self.config.get('ssl', {})
+
+        return {
+            'verify_certificates': ssl_config.get('verify_certificates', True),
+            'ca_bundle_path': ssl_config.get('ca_bundle_path', '')
+        }
+
     def get_default_filters(self) -> Dict[str, Any]:
         """Get default filters for data collection."""
         filters = self.config.get('export_settings', {}).get('filters', {})
@@ -274,12 +283,14 @@ class CentralConfig:
         auth_config = self.get_authentication_config()
         export_settings = self.get_export_settings()
         retry_settings = self.get_retry_settings()
+        ssl_settings = self.get_ssl_settings()
 
         config = {
             'endpoint': self.get_endpoint(),
             'authentication': auth_config,
             **export_settings,
-            **retry_settings
+            **retry_settings,
+            **ssl_settings
         }
 
         # Add SSL context for mTLS
