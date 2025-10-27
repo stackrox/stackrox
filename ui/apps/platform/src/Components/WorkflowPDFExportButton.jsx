@@ -9,6 +9,7 @@ import { Button } from '@patternfly/react-core';
 import { getDate } from 'utils/dateUtils';
 import { enhanceWordBreak } from 'utils/pdfUtils';
 import { getProductBranding } from 'constants/productBranding';
+import logError from 'utils/logError';
 
 // Register the AutoTable plugin with jsPDF
 applyPlugin(jsPDF);
@@ -286,7 +287,7 @@ class WorkflowPDFExportButton extends Component {
                     setIsExporting(false);
                 })
                 .catch((error) => {
-                    console.error('PDF export failed:', error);
+                    logError(error);
                     setIsExporting(false);
                 });
         }, 0);
