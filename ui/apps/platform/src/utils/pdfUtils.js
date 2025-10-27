@@ -119,7 +119,11 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                 let colValue = '';
                 // Adjust column index if type was prepended
                 const columnIndex = tableData[0].rows && type ? index - 1 : index;
-                if (columnIndex >= 0 && filteredColumns[columnIndex] && filteredColumns[columnIndex].Cell) {
+                if (
+                    columnIndex >= 0 &&
+                    filteredColumns[columnIndex] &&
+                    filteredColumns[columnIndex].Cell
+                ) {
                     colValue = ReactDOMServer.renderToString(
                         filteredColumns[columnIndex].Cell({ original: val, pdf: true })
                     );

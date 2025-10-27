@@ -215,78 +215,80 @@ class WorkflowPDFExportButton extends Component {
         }
 
         setTimeout(() => {
-            Promise.all(this.beforePDFPrinting()).then((canvases) => {
-                const printClonedElements = Array.from(
-                    element.getElementsByClassName('clonedNode')
-                );
-                const header = document.getElementById('pdf-header');
-                canvases.forEach((canvas, index) => {
-                    const isWidgetsView =
-                        id.includes('capture-dashboard') || id.includes('capture-widgets');
-                    const imgData = canvas.toDataURL('image/jpeg');
-                    if (isWidgetsView && index > 0) {
-                        imgWidth = canvas.classList.contains('pdf-stretch')
-                            ? (WIDGET_WIDTH + paddingX) * 2
-                            : WIDGET_WIDTH;
-                    }
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                    // for PDF page header
-                    if (index === 0) {
-                        doc.addImage(
-                            imgData,
-                            'jpg',
-                            positionX,
-                            positionY,
-                            imgWidth,
-                            imgHeight,
-                            `Image${index}`,
-                            'FAST'
-                        );
-                        positionY = imgHeight + paddingY;
-                        remainingHeight -= imgHeight;
-                    } else {
-                        if (isWidgetsView) {
-                            if (id === 'capture-dashboard' || id === 'capture-widgets') {
-                                drawPDF(imgHeight, imgWidth, index, imgData, canvases);
-                            } else {
-                                drawStretchPDF(imgHeight, index, imgData);
-                            }
+            Promise.all(this.beforePDFPrinting())
+                .then((canvases) => {
+                    const printClonedElements = Array.from(
+                        element.getElementsByClassName('clonedNode')
+                    );
+                    const header = document.getElementById('pdf-header');
+                    canvases.forEach((canvas, index) => {
+                        const isWidgetsView =
+                            id.includes('capture-dashboard') || id.includes('capture-widgets');
+                        const imgData = canvas.toDataURL('image/jpeg');
+                        if (isWidgetsView && index > 0) {
+                            imgWidth = canvas.classList.contains('pdf-stretch')
+                                ? (WIDGET_WIDTH + paddingX) * 2
+                                : WIDGET_WIDTH;
                         }
-                        if (id === 'capture-list') {
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                        // for PDF page header
+                        if (index === 0) {
                             doc.addImage(
                                 imgData,
-                                'JPEG',
+                                'jpg',
                                 positionX,
                                 positionY,
                                 imgWidth,
-                                imgHeight
+                                imgHeight,
+                                `Image${index}`,
+                                'FAST'
                             );
-                            positionY += imgHeight;
+                            positionY = imgHeight + paddingY;
+                            remainingHeight -= imgHeight;
+                        } else {
+                            if (isWidgetsView) {
+                                if (id === 'capture-dashboard' || id === 'capture-widgets') {
+                                    drawPDF(imgHeight, imgWidth, index, imgData, canvases);
+                                } else {
+                                    drawStretchPDF(imgHeight, index, imgData);
+                                }
+                            }
+                            if (id === 'capture-list') {
+                                doc.addImage(
+                                    imgData,
+                                    'JPEG',
+                                    positionX,
+                                    positionY,
+                                    imgWidth,
+                                    imgHeight
+                                );
+                                positionY += imgHeight;
+                                this.drawTable(positionY, doc);
+                            }
+                        }
+                    });
+
+                    // only header and table
+                    if (canvases.length === 1) {
+                        if (id === 'capture-list') {
                             this.drawTable(positionY, doc);
                         }
                     }
+                    Array.from(imgElements).forEach((el, index) => {
+                        printElements[index].className =
+                            printClonedElements[index].getAttribute('data-class-name');
+                        el.parentNode.removeChild(printClonedElements[index]);
+                        el.parentNode.removeChild(el);
+                    });
+                    element.removeChild(header);
+                    doc.save(`${fileName}.pdf`);
+                    setIsExporting(false);
+                })
+                .catch((error) => {
+                    console.error('PDF export failed:', error);
+                    setIsExporting(false);
                 });
-
-                // only header and table
-                if (canvases.length === 1) {
-                    if (id === 'capture-list') {
-                        this.drawTable(positionY, doc);
-                    }
-                }
-                Array.from(imgElements).forEach((el, index) => {
-                    printElements[index].className =
-                        printClonedElements[index].getAttribute('data-class-name');
-                    el.parentNode.removeChild(printClonedElements[index]);
-                    el.parentNode.removeChild(el);
-                });
-                element.removeChild(header);
-                doc.save(`${fileName}.pdf`);
-                setIsExporting(false);
-            }).catch((error) => {
-                console.error('PDF export failed:', error);
-                setIsExporting(false);
-            });
         }, 0);
     };
 
