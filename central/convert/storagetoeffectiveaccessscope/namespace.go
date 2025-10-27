@@ -9,9 +9,9 @@ func Namespaces(namespaces []*storage.NamespaceMetadata) []effectiveaccessscope.
 	if namespaces == nil {
 		return nil
 	}
-	result := make([]effectiveaccessscope.Namespace, 0, len(namespaces))
-	for _, ns := range namespaces {
-		result = append(result, ns)
+	result := make([]effectiveaccessscope.Namespace, len(namespaces))
+	for ix, ns := range namespaces {
+		result[ix] = ns
 	}
 	return result
 }

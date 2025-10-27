@@ -15,6 +15,9 @@ func TestClusters(t *testing.T) {
 		"nil input": {
 			input: nil,
 		},
+		"empty input": {
+			input: []*storage.Cluster{},
+		},
 		"single cluster": {
 			input: []*storage.Cluster{
 				{Id: "cluster1", Name: "cluster1"},

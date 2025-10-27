@@ -9,9 +9,9 @@ func Clusters(clusters []*storage.Cluster) []effectiveaccessscope.Cluster {
 	if clusters == nil {
 		return nil
 	}
-	result := make([]effectiveaccessscope.Cluster, 0, len(clusters))
-	for _, cluster := range clusters {
-		result = append(result, cluster)
+	result := make([]effectiveaccessscope.Cluster, len(clusters))
+	for ix, cluster := range clusters {
+		result[ix] = cluster
 	}
 	return result
 }
