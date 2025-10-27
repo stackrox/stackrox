@@ -11,7 +11,7 @@ if [[ -z "$1" ]]; then
 fi
 
 if ! kubectl -n stackrox get deploy/central; then
-  "$DIR"/launch_central.sh
+  "$DIR"/launch_central.sh "${LOCAL_PORT}"
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
 else
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
