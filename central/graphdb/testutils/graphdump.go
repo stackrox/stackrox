@@ -159,20 +159,6 @@ func (ice *DebugImageCVEEdge) log(offset int) {
 	)
 }
 
-// DebugImageCVE is a stripped down image CVE to troubleshoot graph DB linking
-// issues.
-type DebugImageCVE struct {
-	ID string
-}
-
-func (ic *DebugImageCVE) log(offset int) {
-	log.Infof(
-		"%s* image CVE {ID: %q}",
-		getIndent(offset),
-		ic.ID,
-	)
-}
-
 // DebugImageCVEV2 is a stripped down image CVE to troubleshoot graph DB linking
 // issues.
 type DebugImageCVEV2 struct {
@@ -199,7 +185,6 @@ type DebugImageGraph struct {
 	ImageComponentsV2      []DebugImageComponentV2
 	ImageComponentCVEEdges []DebugImageComponentCVEEdge
 	ImageCVEEdges          []DebugImageCVEEdge
-	ImageCVEs              []DebugImageCVE
 	ImageCVEsV2            []DebugImageCVEV2
 }
 
@@ -382,7 +367,6 @@ func GetImageGraph(ctx context.Context, t *testing.T, db postgres.DB) DebugImage
 	graph.ImageComponentsV2 = listImageComponentsV2(ctx, t, db)
 	graph.ImageComponentCVEEdges = listImageComponentToCVEEdges(ctx, t, db)
 	graph.ImageCVEEdges = listImageToCVEEdges(ctx, t, db)
-	graph.ImageCVEs = listImageCVEs(ctx, t, db)
 	graph.ImageCVEsV2 = listImageCVEsV2(ctx, t, db)
 	return graph
 }
@@ -487,15 +471,6 @@ func listImageToCVEEdges(ctx context.Context, t *testing.T, db postgres.DB) []De
 		edge.State = int32(state)
 	}
 	return populateListFromDB[DebugImageCVEEdge](ctx, t, db, selectStmt, fieldCount, populate)
-}
-
-func listImageCVEs(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageCVE {
-	const selectStmt = "select id from image_cves"
-	const fieldCount = 1
-	populate := func(vulnerability *DebugImageCVE, r [][]byte) {
-		vulnerability.ID = string(r[0])
-	}
-	return populateListFromDB[DebugImageCVE](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
 func listImageCVEsV2(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageCVEV2 {

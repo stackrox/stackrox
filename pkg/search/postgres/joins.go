@@ -304,24 +304,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	return joinTreeRoot.toJoins(), reachableFields
 }
 
-func containsFieldsFromSchemas(fields set.StringSet, schemas []*walker.Schema) bool {
-	for _, s := range schemas {
-		for _, f := range s.Fields {
-			if !f.Derived {
-				if fields.Contains(strings.ToLower(f.Search.FieldName)) {
-					return true
-				}
-			}
-			for _, derivedF := range f.DerivedSearchFields {
-				if fields.Contains(strings.ToLower(derivedF.DerivedFrom)) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
 // removeUnnecessaryRelations removes inner join tables where the same column
 // is used by the previous and next table in the join chain. i.e.
 // a INNER JOIN b ON a.id = b.same_column
