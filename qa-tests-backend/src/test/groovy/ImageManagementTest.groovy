@@ -1,9 +1,7 @@
 import static util.Helpers.withRetry
 
-import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
 import objects.GenericNotifier

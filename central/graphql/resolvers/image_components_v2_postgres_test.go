@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -597,4 +598,29 @@ func (s *GraphQLImageComponentV2TestSuite) getComponentIDMap() map[string]string
 		comp32: getTestComponentID(testImages()[1].GetScan().GetComponents()[1], "sha2", 1),
 		comp42: getTestComponentID(testImages()[1].GetScan().GetComponents()[2], "sha2", 2),
 	}
+}
+
+func verifyLocationAndLayerIndex(ctx context.Context, t *testing.T, component ImageComponentResolver, assertEmpty bool) {
+	if strings.EqualFold(component.Source(ctx), storage.SourceType_OS.String()) {
+		return
+	}
+
+	if assertEmpty {
+		loc, err := component.Location(ctx, RawQuery{})
+		assert.NoError(t, err)
+		assert.Empty(t, loc)
+
+		layerIdx, err := component.LayerIndex()
+		assert.NoError(t, err)
+		assert.Zero(t, layerIdx)
+		return
+	}
+
+	loc, err := component.Location(ctx, RawQuery{})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, loc)
+
+	layerIdx, err := component.LayerIndex()
+	assert.NoError(t, err)
+	assert.NotZero(t, layerIdx)
 }

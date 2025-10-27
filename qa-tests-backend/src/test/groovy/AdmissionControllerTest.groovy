@@ -1,14 +1,10 @@
 import static util.Helpers.withRetry
 
 import io.stackrox.annotations.Retry
-import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
-import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
-import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
