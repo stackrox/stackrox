@@ -15,6 +15,8 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -173,16 +175,16 @@ func (s *servicePostgresTestSuite) TestExport() {
 			request := &v1.VulnMgmtExportWorkloadsRequest{Timeout: 5, Query: c.query}
 			conn, closeFunc, err := pkgGRPC.CreateTestGRPCStreamingService(
 				s.helper.Ctx,
-				s.T(),
+				t,
 				func(registrar grpc.ServiceRegistrar) {
 					v1.RegisterVulnMgmtServiceServer(registrar, s.service)
 				},
 			)
-			s.Require().NoError(err)
+			require.NoError(t, err)
 			defer closeFunc()
 			client := v1.NewVulnMgmtServiceClient(conn)
-			results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
-			s.Require().NoError(err)
+			results, err := receiveWorkloads(s.helper.Ctx, t, client, request, false)
+			assert.NoError(t, err)
 
 			// The images are the same for all deployments to simplify the assertions.
 			expectedImages := fixtures.DeploymentImages()
@@ -190,19 +192,22 @@ func (s *servicePostgresTestSuite) TestExport() {
 
 			// We cannot perform a full assert on the response because it contains variable data
 			// and timestamps.
-			s.Require().Len(results, len(c.expectedDeploymentIDs))
+			if len(results) != len(c.expectedDeploymentIDs) {
+				t.Logf("MISMATCH: Test '%s' expected %d results, got %d", c.name, len(c.expectedDeploymentIDs), len(results))
+			}
+			assert.Len(t, results, len(c.expectedDeploymentIDs))
 			for i := range results {
 				depID := results[i].GetDeployment().GetId()
-				s.Assert().Contains(c.expectedDeploymentIDs, depID)
-				protoassert.Equal(s.T(), c.deploymentsByID[depID], results[i].GetDeployment())
+				assert.Contains(t, c.expectedDeploymentIDs, depID)
+				protoassert.Equal(t, c.deploymentsByID[depID], results[i].GetDeployment())
 
-				s.Assert().Equal(c.expectedLivePodsByDepID[depID], results[i].GetLivePods())
+				assert.Equal(t, c.expectedLivePodsByDepID[depID], results[i].GetLivePods())
 
 				var imageIDs []string
 				for _, image := range results[i].GetImages() {
 					imageIDs = append(imageIDs, image.GetId())
 				}
-				s.Assert().ElementsMatch(expectedImageIDs, imageIDs)
+				assert.ElementsMatch(t, expectedImageIDs, imageIDs)
 			}
 		})
 	}
