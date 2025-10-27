@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
@@ -316,22 +317,14 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
-	sacClusters := make([]effectiveaccessscope.Cluster, 0, len(clusters))
-	for _, cluster := range clusters {
-		sacClusters = append(sacClusters, cluster)
-	}
+	sacClusters := storagetoeffectiveaccessscope.Clusters(clusters)
 
 	namespaces, err := s.namespaceDataStore.GetAllNamespaces(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
-	sacNamespaces := make([]effectiveaccessscope.Namespace, 0, len(namespaces))
-	for _, ns := range namespaces {
-		sacNamespaces = append(sacNamespaces, ns)
-	}
+	sacNamespaces := storagetoeffectiveaccessscope.Namespaces(namespaces)
 
-	_ = sacClusters
-	_ = sacNamespaces
 	response, err := effectiveAccessScopeForSimpleAccessScope(
 		req.GetAccessScope().GetSimpleRules(),
 		sacClusters,
