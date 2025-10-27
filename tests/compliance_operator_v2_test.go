@@ -40,7 +40,7 @@ import (
 
 const (
 	coNamespaceV2     = "openshift-compliance"
-	stackroxNamespace = "stackrox"
+	stackroxNamespace = "rhacs-operator" // "stackrox"
 )
 
 var (
