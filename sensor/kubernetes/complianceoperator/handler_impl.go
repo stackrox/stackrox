@@ -263,6 +263,7 @@ func conflictErrorOnce(once *sync.Once, api k8sapi.APIResource, name string) err
 			Resource: api.Name,
 		}, name, errors.New("fake conflict error"))
 	})
+	log.Infof("lvm --> conflictErrorOnce: %v", err)
 	return err
 }
 

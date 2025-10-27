@@ -40,7 +40,7 @@ import (
 
 const (
 	coNamespaceV2     = "openshift-compliance"
-	stackroxNamespace = "stackrox"
+	stackroxNamespace = "rhacs-operator" // "stackrox"
 	defaultTimeout    = 90 * time.Second
 	eventuallyTimeout = 120 * time.Second
 )
