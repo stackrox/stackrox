@@ -597,18 +597,6 @@ func testPruneManyImpl(t *testing.T, ctx context.Context, store Store[storage.Te
 
 type storeFactory func(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]
 
-func setupTestStoreAndContext(
-	t *testing.T,
-	setupCtx func(t *testing.T, db *pgtest.TestPostgres) (context.Context, func()),
-	storeFactory storeFactory,
-) (context.Context, Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
-	testDB := pgtest.ForT(t)
-	testCtx, cleanup := setupCtx(t, testDB)
-	t.Cleanup(cleanup)
-	store := storeFactory(testDB)
-	return testCtx, store
-}
-
 func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
