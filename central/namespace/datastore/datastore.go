@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -50,7 +49,6 @@ func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore,
 
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
-	log          = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -201,18 +199,16 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 		search.NewQuerySelect(search.Cluster).Proto(),
 	}
 	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
-	log.Infof("clonedQuery %v", clonedQuery.String())
 
 	results, err := b.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Infof("SHREWS -- results %v+", results)
 	// Build name and location strings from selected fields
 	for i := range results {
-		clusterName := ""
-		namespaceName := ""
+		var clusterName string
+		var namespaceName string
 
 		// Extract values from FieldValues if available
 		// Keys are lowercase versions of the field names (e.g., "cluster", "namespace")
@@ -230,7 +226,6 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 			}
 		}
 
-		log.Infof("SHREWS -- namespace %s, cluster %s", namespaceName, clusterName)
 		results[i].Name = namespaceName
 		results[i].Location = fmt.Sprintf("%s/%s", clusterName, namespaceName)
 	}
