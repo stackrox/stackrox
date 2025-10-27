@@ -1,8 +1,11 @@
 import { saveFile } from 'services/DownloadService';
 
 export type DiagnosticBundleRequest = {
+    startingDate: string;
+    startingTime: string;
     filterByClusters: string[];
-    filterByStartingTime: string;
+    isDatabaseDiagnosticsOnly: boolean;
+    includeComplianceOperatorResources: boolean;
 };
 
 /**

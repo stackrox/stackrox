@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent, FormEvent, ReactElement } from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
 import {
+    Checkbox,
+    DatePicker,
+    Flex,
+    FlexItem,
     Form,
     FormGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
-    TextInput,
+    TimePicker,
 } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
 import type { DiagnosticBundleRequest } from 'services/DebugService';
-import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
-
-const startingTimeFormat = 'yyyy-mm-ddThh:mmZ'; // seconds are optional but UTC is required
 
 export type DiagnosticBundleFormProps = {
     values: DiagnosticBundleRequest;
@@ -23,20 +24,12 @@ export type DiagnosticBundleFormProps = {
     setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handleBlur: (e: any) => void;
-    currentTimeObject: Date | null;
-    isStartingTimeValid: boolean;
-    startingTimeObject: Date | null;
-    onChangeStartingTime: (event: FormEvent<HTMLInputElement>) => void;
 };
 
 function DiagnosticBundleForm({
     values,
     setFieldValue,
     handleBlur,
-    currentTimeObject,
-    isStartingTimeValid,
-    startingTimeObject,
-    onChangeStartingTime,
 }: DiagnosticBundleFormProps): ReactElement {
     const [availableClusterOptions, setAvailableClusterOptions] = useState<string[]>([]);
     const [clusterSelectOpen, setClusterSelectOpen] = useState(false);
@@ -73,14 +66,19 @@ function DiagnosticBundleForm({
         setFieldValue('filterByClusters', []);
     }
 
-    function startingTimeChangeHandler(value: string, event: FormEvent<HTMLInputElement>) {
-        onChangeStartingTime(event);
-        return setFieldValue(event.currentTarget.id, value);
-    }
-
     return (
         <Form>
-            <p>You can filter which platform data to include in the Zip file (max size 50MB)</p>
+            <FormGroup fieldId="diagnosticOptions">
+                <Checkbox
+                    label="Database diagnostics only"
+                    id="isDatabaseDiagnosticsOnly"
+                    isChecked={values.isDatabaseDiagnosticsOnly}
+                    onChange={(_event, checked) =>
+                        setFieldValue('isDatabaseDiagnosticsOnly', checked)
+                    }
+                    description="Only Central database, metrics, and logs. Other filters disabled."
+                />
+            </FormGroup>
             {hasReadAccessForCluster && (
                 <FormGroup label="Filter by clusters" fieldId="filterByClusters">
                     <Select
@@ -92,6 +90,7 @@ function DiagnosticBundleForm({
                         onClear={clearSelection}
                         selections={values.filterByClusters}
                         isOpen={clusterSelectOpen}
+                        isDisabled={values.isDatabaseDiagnosticsOnly}
                     >
                         {availableClusterOptions.map((cluster) => (
                             <SelectOption key={cluster} value={cluster} />
@@ -106,33 +105,50 @@ function DiagnosticBundleForm({
                     </FormHelperText>
                 </FormGroup>
             )}
-            <FormGroup
-                label="Filter by starting time"
-                labelInfo={
-                    <FilterByStartingTimeValidationMessage
-                        currentTimeObject={currentTimeObject}
-                        isStartingTimeValid={isStartingTimeValid}
-                        startingTimeFormat={startingTimeFormat}
-                        startingTimeObject={startingTimeObject}
-                    />
-                }
-                fieldId="filterByStartingTime"
-            >
-                <TextInput
-                    type="text"
-                    id="filterByStartingTime"
-                    placeholder={startingTimeFormat}
-                    value={values.filterByStartingTime}
-                    onChange={(event, value: string) => startingTimeChangeHandler(value, event)}
-                    onBlur={handleBlur}
-                />
+            <FormGroup label="Filter by starting time" fieldId="filterByStartingTime">
+                <Flex spaceItems={{ default: 'spaceItemsMd' }}>
+                    <FlexItem>
+                        <DatePicker
+                            value={values.startingDate}
+                            onChange={(_event, value) => setFieldValue('startingDate', value)}
+                            isDisabled={values.isDatabaseDiagnosticsOnly}
+                            inputProps={{
+                                id: 'startingDate',
+                                onBlur: handleBlur,
+                            }}
+                        />
+                    </FlexItem>
+                    <FlexItem>
+                        <TimePicker
+                            time={values.startingTime}
+                            onChange={(_event, time) => setFieldValue('startingTime', time)}
+                            is24Hour
+                            isDisabled={values.isDatabaseDiagnosticsOnly}
+                            inputProps={{
+                                id: 'startingTime',
+                                onBlur: handleBlur,
+                            }}
+                        />
+                    </FlexItem>
+                </Flex>
                 <FormHelperText>
                     <HelperText>
                         <HelperTextItem>
-                            To override default, use UTC format (seconds are optional)
+                            Default is 20 minutes ago. Override using the filters (UTC format)
                         </HelperTextItem>
                     </HelperText>
                 </FormHelperText>
+            </FormGroup>
+            <FormGroup label="Additional diagnostics" fieldId="additionalDiagnostics">
+                <Checkbox
+                    label="Include compliance operator resources"
+                    id="includeComplianceOperatorResources"
+                    isChecked={values.includeComplianceOperatorResources}
+                    isDisabled={values.isDatabaseDiagnosticsOnly}
+                    onChange={(_event, checked) =>
+                        setFieldValue('includeComplianceOperatorResources', checked)
+                    }
+                />
             </FormGroup>
         </Form>
     );
