@@ -40,8 +40,49 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, ctrlClient.IgnoreNotFound(err)
 	}
 
-	// Check if reconciliation is in progress.
-	progressing, progressReason, progressMessage := r.determineProgressingState(central)
+	// Update condition "Progressing".
+	progressingChanged := r.updateProgressing(ctx, central)
+
+	// Update condition "Ready".
+	readyChanged := r.updateReady(ctx, central)
+
+	// If nothing changed, skip the status update.
+	if !progressingChanged && !readyChanged {
+		return ctrl.Result{}, nil
+	}
+
+	// Update status subresource.
+	// Note that in case of a conflict, we return the conflict here and the status reconciliation
+	// will be automatically retried within controller-runtime with the latest version of the CR.
+	if err := r.Status().Update(ctx, central); err != nil {
+		log.Error(err, "Failed to update Central status")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+// updateProgressing updates the Progressing condition based on helm reconciliation state.
+// Returns true if the condition changed.
+func (r *Reconciler) updateProgressing(_ context.Context, central *platform.Central) bool {
+	progressing, reason, message := r.determineProgressingState(central)
+
+	var changed bool
+	central.Status.Conditions, changed = updateCondition(
+		central.Status.Conditions,
+		"Progressing",
+		progressing,
+		reason,
+		message,
+	)
+
+	return changed
+}
+
+// updateReady updates the Ready condition based on deployment readiness.
+// Returns true if the condition changed.
+func (r *Reconciler) updateReady(ctx context.Context, central *platform.Central) bool {
+	log := log.FromContext(ctx)
 
 	// List all deployments owned by this Central.
 	deployments := &appsv1.DeploymentList{}
@@ -53,54 +94,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 	); err != nil {
 		log.Error(err, "Failed to list deployments")
-		return ctrl.Result{}, err
+		return false
 	}
 
-	// Check if all deployments are ready
-	ready, readyReason, readyMessage := r.determineReadyState(deployments.Items)
+	ready, reason, message := r.determineReadyState(deployments.Items)
 
-	// Update both conditions
-	updatedConditions := central.Status.Conditions
-
-	updatedConditions, progressingChanged := updateCondition(
-		updatedConditions,
-		"Progressing",
-		progressing,
-		progressReason,
-		progressMessage,
-	)
-
-	updatedConditions, readyChanged := updateCondition(
-		updatedConditions,
+	var changed bool
+	central.Status.Conditions, changed = updateCondition(
+		central.Status.Conditions,
 		"Ready",
 		ready,
-		readyReason,
-		readyMessage,
+		reason,
+		message,
 	)
-	anyChanged := progressingChanged || readyChanged
 
-	if !anyChanged {
-		// Nothing to update.
-		return ctrl.Result{}, nil
-	}
-
-	central.Status.Conditions = updatedConditions
-
-	// Update status subresource.
-	// Note that in case of a conflict, we return the conflict here and the status reconciliation
-	// will be automatically retried within controller-runtime with the latest version of the CR.
-	if err := r.Status().Update(ctx, central); err != nil {
-		log.Error(err, "Failed to update Central status")
-		return ctrl.Result{}, err
-	}
-
-	log.Info("Updated status conditions",
-		"progressing", progressing,
-		"progressReason", progressReason,
-		"ready", ready,
-		"readyReason", readyReason,
-	)
-	return ctrl.Result{}, nil
+	return changed
 }
 
 // determineProgressingState infers if helm reconciliation is in progress.
