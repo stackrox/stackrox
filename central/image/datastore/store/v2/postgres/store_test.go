@@ -165,7 +165,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 }
 
 // TODO(ROX-28123): figure out what to do about this
-//func (s *ImagesStoreSuite) TestUpsertLegacyToNew() {
+// func (s *ImagesStoreSuite) TestUpsertLegacyToNew() {
 //	image := getTestImage("image1")
 //
 //	// Upsert image using legacy store. This will insert CVEs and components into the old tables and set created at and
@@ -225,7 +225,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 //
 //	// Created at and first image occurrence timestamps should not have changed to the future ones.
 //	s.Assert().Equal(expectedTimestamps, actualTimestamps)
-//}
+// }
 
 func (s *ImagesStoreSuite) TestUpsert() {
 	image := getTestImage("image1")
