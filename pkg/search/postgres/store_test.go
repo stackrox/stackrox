@@ -135,11 +135,6 @@ func TestStoreWithAllScenarios(t *testing.T) {
 		t.Run(txScenario.name, func(t *testing.T) {
 			for _, storeType := range storeTypes {
 				t.Run(storeType.name, func(t *testing.T) {
-					// Skip cached store with transaction in context to avoid deadlock
-					if storeType.name == "cached store" && txScenario.name == "with transaction in context" {
-						t.Skip("Skipping cached store with transaction in context - deadlock issue during cache population")
-						return
-					}
 					for _, storeTest := range storeTests {
 						t.Run(storeTest.name, func(t *testing.T) {
 							testCtx, store := setup(t, txScenario.setupCtx, storeType.storeFactory)
@@ -157,9 +152,9 @@ func setup(t *testing.T,
 	storeFactory storeFactory,
 ) (context.Context, Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testDB := pgtest.ForT(t)
+	store := storeFactory(testDB)
 	testCtx, cleanup := setupCtx(t, testDB)
 	t.Cleanup(cleanup)
-	store := storeFactory(testDB)
 	return testCtx, store
 }
 
