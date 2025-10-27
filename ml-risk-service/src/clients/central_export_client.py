@@ -32,13 +32,13 @@ class CentralExportClient:
         self.auth_token = auth_token
         self.config = config or {}
 
-        # Initialize session with retry strategy
-        self.session = self._create_session()
-
-        # Client configuration
+        # Client configuration (must be set before session creation)
         self.chunk_size = self.config.get('chunk_size', 1000)
         self.timeout = self.config.get('timeout_seconds', 300)
         self.max_retries = self.config.get('max_retries', 3)
+
+        # Initialize session with retry strategy
+        self.session = self._create_session()
 
         logger.info(f"Initialized Central Export Client for {self.endpoint}")
 
@@ -50,7 +50,7 @@ class CentralExportClient:
         retry_strategy = Retry(
             total=self.max_retries,
             status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["HEAD", "GET", "OPTIONS"],
+            allowed_methods=["HEAD", "GET", "OPTIONS"],
             backoff_factor=2,
             raise_on_status=False
         )

@@ -6,7 +6,7 @@ Handles authentication, environment variables, and configuration validation.
 import os
 import logging
 import ssl
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 import yaml
 

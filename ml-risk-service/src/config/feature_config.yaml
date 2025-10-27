@@ -93,7 +93,7 @@ api:
 
 # Central API configuration for training data collection
 central_api:
-  enabled: false  # Set to true to enable Central API integration
+  enabled: true  # Set to true to enable Central API integration
   endpoint: "https://central-stackrox.apps.sh-10-17-5.ocp.infra.rox.systems"
   use_streaming_exports: true
 
