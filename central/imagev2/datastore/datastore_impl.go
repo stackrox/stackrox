@@ -98,9 +98,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	for i := range results {
 		if results[i].FieldValues != nil {
 			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.ImageName.String())]; ok {
-				if nameStr, ok := nameVal.(string); ok {
-					results[i].Name = nameStr
-				}
+				results[i].Name = nameVal
 			}
 		}
 	}

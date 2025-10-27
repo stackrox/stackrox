@@ -13,10 +13,10 @@ type Result struct {
 
 	// NEW: Optional fields populated when selects are provided in query
 	// These fields enable single-pass query construction of SearchResult protos
-	Name        string                 // Display name (e.g., image name, deployment name)
-	Location    string                 // Human-readable location (e.g., cluster/namespace/name)
-	Category    v1.SearchCategory      // Search result category
-	FieldValues map[string]interface{} // Raw selected field values keyed by field name
+	Name        string            // Display name (e.g., image name, deployment name)
+	Location    string            // Human-readable location (e.g., cluster/namespace/name)
+	Category    v1.SearchCategory // Search result category
+	FieldValues map[string]string // Selected field values as strings, keyed by field name
 }
 
 // NewResult returns a new search result
