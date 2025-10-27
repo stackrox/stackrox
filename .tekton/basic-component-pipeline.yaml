@@ -409,10 +409,10 @@ spec:
 
   - name: clair-scan
     matrix:
-      - params:
-        - name: image-platform
-          value:
-          - $(params.build-platforms)
+      params:
+      - name: image-platform
+        value:
+        - $(params.build-platforms)
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
