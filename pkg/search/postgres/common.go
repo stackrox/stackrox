@@ -996,11 +996,15 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
-				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
-					// Store the first string value for SearchResult proto construction (consistent with Matches)
-					if len(matches) > 0 {
-						result.FieldValues[field.FieldPath] = matches[0]
+				if printedValues := mustPrintForDataType(field.FieldType, returnedValue); len(printedValues) > 0 {
+					// Only add to Matches if this field is from a query constraint (not just a selected field)
+					// Fields selected only for SearchResult proto construction (ROX-29943) should not affect Matches
+					if field.IncludeInMatches {
+						result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], printedValues...)
+					}
+					// Always populate FieldValues for SearchResult proto construction
+					if len(printedValues) > 0 {
+						result.FieldValues[field.FieldPath] = printedValues[0]
 					}
 				}
 			}

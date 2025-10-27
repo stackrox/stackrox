@@ -96,10 +96,11 @@ func queryOnArray(baseQueryFunc queryFunction, postTransformFuncGetter func(entr
 			}
 
 			entry.SelectedFields = []SelectQueryField{{
-				SelectPath:    ctx.qualifiedColumnName,
-				FieldType:     ctx.sqlDataType,
-				FieldPath:     ctx.field.FieldPath,
-				PostTransform: postTransformFunc,
+				SelectPath:       ctx.qualifiedColumnName,
+				FieldType:        ctx.sqlDataType,
+				FieldPath:        ctx.field.FieldPath,
+				PostTransform:    postTransformFunc,
+				IncludeInMatches: true, // Fields from query constraints should be in Matches
 			}}
 		}
 		return entry, nil
