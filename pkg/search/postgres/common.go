@@ -1097,13 +1097,19 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := preparedQuery.AsSQL()
 
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
+	tx, ok := postgres.TxFromContext(ctx)
+	if !ok {
+		tx, err = db.Begin(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating transaction")
+		}
 	}
 
 	// We have to ensure that cleanup function is called if exit early.
 	cleanupFunc := func() {
+		if ok {
+			return
+		}
 		if err := tx.Rollback(ctx); err != nil {
 			log.Errorf("error rolling back cursor transaction: %v", err)
 		}
