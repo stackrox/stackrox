@@ -3,7 +3,7 @@ package observe
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -35,7 +35,10 @@ func (t *AuthzTrace) RecordScopeCheckerCoreType(sccType ScopeCheckerCoreType) {
 
 // RecordKnownClustersAndNamespaces writes the number of all known clusters and
 // namespaces iff the receiver is not nil.
-func (t *AuthzTrace) RecordKnownClustersAndNamespaces(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata) {
+func (t *AuthzTrace) RecordKnownClustersAndNamespaces(
+	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
+) {
 	if t == nil {
 		return
 	}

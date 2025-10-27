@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -348,16 +349,24 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 }
 
-func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]*storage.Cluster, []*storage.NamespaceMetadata, error) {
+func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]effectiveaccessscope.Cluster, []effectiveaccessscope.Namespace, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	sacClusters := make([]effectiveaccessscope.Cluster, 0, len(allClusters))
+	for _, cluster := range allClusters {
+		sacClusters = append(sacClusters, cluster)
 	}
 	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
 	}
-	return allClusters, allNamespaces, nil
+	sacNamespaces := make([]effectiveaccessscope.Namespace, 0, len(allNamespaces))
+	for _, ns := range allNamespaces {
+		sacNamespaces = append(sacNamespaces, ns)
+	}
+	return sacClusters, sacNamespaces, nil
 }
 
 func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {

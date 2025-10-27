@@ -316,13 +316,28 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
+	sacClusters := make([]effectiveaccessscope.Cluster, 0, len(clusters))
+	for _, cluster := range clusters {
+		sacClusters = append(sacClusters, cluster)
+	}
 
 	namespaces, err := s.namespaceDataStore.GetAllNamespaces(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
+	sacNamespaces := make([]effectiveaccessscope.Namespace, 0, len(namespaces))
+	for _, ns := range namespaces {
+		sacNamespaces = append(sacNamespaces, ns)
+	}
 
-	response, err := effectiveAccessScopeForSimpleAccessScope(req.GetAccessScope().GetSimpleRules(), clusters, namespaces, req.GetDetail())
+	_ = sacClusters
+	_ = sacNamespaces
+	response, err := effectiveAccessScopeForSimpleAccessScope(
+		req.GetAccessScope().GetSimpleRules(),
+		sacClusters,
+		sacNamespaces,
+		req.GetDetail(),
+	)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
@@ -365,7 +380,12 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 
 // effectiveAccessScopeForSimpleAccessScope computes the effective access scope
 // for the given rules and converts it to the desired response.
-func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*storage.EffectiveAccessScope, error) {
+func effectiveAccessScopeForSimpleAccessScope(
+	scopeRules *storage.SimpleAccessScope_Rules,
+	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
+	detail v1.ComputeEffectiveAccessScopeRequest_Detail,
+) (*storage.EffectiveAccessScope, error) {
 	tree, err := effectiveaccessscope.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
 	if err != nil {
 		return nil, err

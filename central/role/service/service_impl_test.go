@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -72,6 +73,11 @@ var (
 	}
 )
 var clusters = []*storage.Cluster{
+	clusterQueen,
+	clusterPinkFloyd,
+	clusterDeepPurple,
+}
+var sacClusters = []effectiveaccessscope.Cluster{
 	clusterQueen,
 	clusterPinkFloyd,
 	clusterDeepPurple,
@@ -130,6 +136,17 @@ var (
 )
 
 var namespaces = []*storage.NamespaceMetadata{
+	// Queen
+	namespaceQueenInClusterQueen,
+	namespaceJazzInClusterQueen,
+	namespaceInnuendoInClusterQueen,
+	// Pink Floyd
+	namespaceTheWallInClusterPinkFloyd,
+	// Deep Purple
+	namespaceMachineHeadInClusterDeepPurple,
+}
+
+var sacNamespaces = []effectiveaccessscope.Namespace{
 	// Queen
 	namespaceQueenInClusterQueen,
 	namespaceJazzInClusterQueen,
@@ -474,22 +491,22 @@ func TestEffectiveAccessScopeForSimpleAccessScope(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc+"detail: HIGH", func(t *testing.T) {
-			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
+			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedHigh, resHigh)
 		})
 		t.Run(tc.desc+"detail: STANDARD", func(t *testing.T) {
-			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
+			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedStandard, resStandard)
 		})
 		t.Run(tc.desc+"detail: MINIMAL", func(t *testing.T) {
-			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedMinimal, resMinimal)
 		})
 		t.Run(tc.desc+"unknown detail maps to STANDARD", func(t *testing.T) {
-			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, 42)
+			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, sacClusters, sacNamespaces, 42)
 			assert.NoError(t, err)
 			protoassert.Equal(t, tc.expectedStandard, resUnknown)
 		})

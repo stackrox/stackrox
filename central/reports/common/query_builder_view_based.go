@@ -3,6 +3,7 @@ package common
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -24,8 +25,11 @@ func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabil
 }
 
 // BuildQueryViewBased builds scope and cve filtering queries for view-based vuln reporting
-func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata, watchedImages []string) (*ReportQueryViewBased, error) {
+func (q *queryBuilderViewBased) BuildQueryViewBased(
+	clusters []effectiveaccessscope.Cluster,
+	namespaces []effectiveaccessscope.Namespace,
+	watchedImages []string,
+) (*ReportQueryViewBased, error) {
 	deploymentsScopedQuery, err := BuildAccessScopeQuery(q.vulnFilters.GetAccessScopeRules(), clusters, namespaces)
 	if err != nil {
 		return nil, err
