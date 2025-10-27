@@ -43,7 +43,7 @@ Printer columns are defined using kubebuilder annotations in the CRD type defini
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.reconciledVersion`
-//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecretName`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecret.name`
 //+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
 //+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 //+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].reason`
@@ -75,7 +75,7 @@ The Version column is implemented as a **postExtension** in the helm-operator re
 The adminPassword column can be read **directly from the spec** without requiring any status updates or reconciler extensions:
 
 ```go
-//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecretName`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecret.name`
 ```
 
 Since this value is in the spec, it's immediately visible when the CR is created or updated, with no additional implementation required.

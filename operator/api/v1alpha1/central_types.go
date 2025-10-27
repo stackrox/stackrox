@@ -681,7 +681,7 @@ type CentralComponentStatus struct {
 //+kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 //+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].reason`
 //+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.reconciledVersion`
-//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecretName`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecret.name`
 //+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
 //+genclient

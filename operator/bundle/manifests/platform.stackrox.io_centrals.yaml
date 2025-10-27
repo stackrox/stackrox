@@ -24,7 +24,7 @@ spec:
     - jsonPath: .status.reconciledVersion
       name: Version
       type: string
-    - jsonPath: .spec.central.adminPasswordSecretName
+    - jsonPath: .spec.central.adminPasswordSecret.name
       name: AdminPassword
       type: string
     - jsonPath: .status.conditions[?(@.type=="Deployed")].message
