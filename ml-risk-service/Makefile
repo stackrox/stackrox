@@ -89,7 +89,7 @@ docker-build: generate-config ## Build Docker image
 	@echo -e "$(GREEN)Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
 
 .PHONY: docker-run
-docker-run: ## Run Docker container locally
+docker-run: docker-build ## Run Docker container locally
 	@echo -e "$(GREEN)Starting Docker container...$(NC)"
 	@# Stop and remove existing container if it exists
 	@docker stop ml-risk-service 2>/dev/null || true
