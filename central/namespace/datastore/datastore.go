@@ -212,17 +212,13 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 
 		// Extract values from FieldValues if available
 		// Keys are lowercase versions of the field names (e.g., "cluster", "namespace")
-		// Values are already dereferenced by the postgres framework
+		// Values are already converted to strings by the postgres framework
 		if results[i].FieldValues != nil {
 			if cluster, ok := results[i].FieldValues[strings.ToLower(search.Cluster.String())]; ok {
-				if clusterStr, ok := cluster.(string); ok {
-					clusterName = clusterStr
-				}
+				clusterName = cluster
 			}
 			if namespace, ok := results[i].FieldValues[strings.ToLower(search.Namespace.String())]; ok {
-				if nsStr, ok := namespace.(string); ok {
-					namespaceName = nsStr
-				}
+				namespaceName = namespace
 			}
 		}
 

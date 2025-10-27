@@ -854,45 +854,6 @@ func valueFromStringPtrInterface(val interface{}) string {
 	return *strPtr
 }
 
-// derefPointerValue extracts the actual value from a database scan result pointer.
-// Database scans allocate pointers, so we need to dereference them to get the actual values.
-func derefPointerValue(val interface{}, dataType postgres.DataType) interface{} {
-	if val == nil {
-		return nil
-	}
-
-	switch dataType {
-	case postgres.String, postgres.UUID:
-		if strPtr, ok := val.(*string); ok && strPtr != nil {
-			return *strPtr
-		}
-	case postgres.Bool:
-		if boolPtr, ok := val.(*bool); ok && boolPtr != nil {
-			return *boolPtr
-		}
-	case postgres.Integer:
-		if intPtr, ok := val.(*int); ok && intPtr != nil {
-			return *intPtr
-		}
-	case postgres.BigInteger:
-		if int64Ptr, ok := val.(*int64); ok && int64Ptr != nil {
-			return *int64Ptr
-		}
-	case postgres.StringArray, postgres.IntArray, postgres.EnumArray:
-		// These are already dereference-able slices
-		return val
-	case postgres.DateTime, postgres.Numeric, postgres.Map:
-		// These need special handling, return as-is
-		return val
-	case postgres.Enum:
-		if intPtr, ok := val.(*int); ok && intPtr != nil {
-			return *intPtr
-		}
-	}
-
-	return val
-}
-
 func standardizeFieldNamesInQuery(q *v1.Query) {
 	for idx, s := range q.GetSelects() {
 		q.Selects[idx].Field.Name = strings.ToLower(s.GetField().GetName())
@@ -1024,7 +985,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 			searchResults = append(searchResults, searchPkg.Result{
 				ID:          IDFromPks(idParts), // TODO: figure out what separator to use
 				Matches:     make(map[string][]string),
-				FieldValues: make(map[string]interface{}),
+				FieldValues: make(map[string]string),
 			})
 		}
 		result := searchResults[idx]
@@ -1037,9 +998,11 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				}
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
 					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
+					// Store the first string value for SearchResult proto construction (consistent with Matches)
+					if len(matches) > 0 {
+						result.FieldValues[field.FieldPath] = matches[0]
+					}
 				}
-				// Store actual field value (dereferenced) for SearchResult proto construction
-				result.FieldValues[field.FieldPath] = derefPointerValue(returnedValue, field.FieldType)
 			}
 		}
 		searchResults[idx] = result
