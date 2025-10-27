@@ -15,6 +15,9 @@ func TestNamespaces(t *testing.T) {
 		"nil input": {
 			input: nil,
 		},
+		"empty input": {
+			input: []*storage.NamespaceMetadata{},
+		},
 		"single namespace": {
 			input: []*storage.NamespaceMetadata{
 				{
