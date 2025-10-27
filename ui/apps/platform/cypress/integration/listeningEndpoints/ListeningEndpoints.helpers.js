@@ -9,12 +9,12 @@ export function visitListeningEndpointsFromLeftNav() {
 
 export function selectFilterEntity(entity) {
     cy.get(selectors.entityDropdownToggle).click();
-    cy.get(`${selectors.entityDropdownMenuItems} button:contains("${entity}")`).click();
+    cy.get(`div${selectors.entityDropdownToggle} button:contains("${entity}")`).click();
 }
 
 export function addEntityFilterValue(entity, value) {
     cy.get(selectors.filterInputBox(entity)).type(value);
-    cy.get(`${selectors.filterAutocompleteResults(entity)} button:contains("${value}")`).click();
+    cy.get(`${selectors.filterAutocompleteResults(value)}`).click();
 }
 
 export function addEntityFilter(entity, value) {
