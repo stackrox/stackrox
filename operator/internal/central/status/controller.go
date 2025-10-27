@@ -17,7 +17,7 @@ import (
 )
 
 // Reconciler reconciles deployment status and Helm reconciliation state into the Central CR status.
-// This light-weight controller does not invoke Helm, it provides real-time updates for Ready and
+// This light-weight controller does not invoke Helm, it provides real-time updates for Available and
 // Progressing conditions.
 type Reconciler struct {
 	ctrlClient.Client
@@ -30,7 +30,7 @@ func New(c ctrlClient.Client) *Reconciler {
 	}
 }
 
-// Reconcile reads deployment statuses and helm state, updates Ready and Progressing conditions.
+// Reconcile reads deployment statuses and helm state, updates Available and Progressing conditions.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -43,11 +43,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Update condition "Progressing".
 	progressingChanged := r.updateProgressing(ctx, central)
 
-	// Update condition "Ready".
-	readyChanged := r.updateReady(ctx, central)
+	// Update condition "Available".
+	availableChanged := r.updateAvailable(ctx, central)
 
 	// If nothing changed, skip the status update.
-	if !progressingChanged && !readyChanged {
+	if !progressingChanged && !availableChanged {
 		return ctrl.Result{}, nil
 	}
 
@@ -79,9 +79,9 @@ func (r *Reconciler) updateProgressing(_ context.Context, central *platform.Cent
 	return changed
 }
 
-// updateReady updates the Ready condition based on deployment readiness.
+// updateAvailable updates the Available condition based on deployment readiness.
 // Returns true if the condition changed.
-func (r *Reconciler) updateReady(ctx context.Context, central *platform.Central) bool {
+func (r *Reconciler) updateAvailable(ctx context.Context, central *platform.Central) bool {
 	log := log.FromContext(ctx)
 
 	// List all deployments owned by this Central.
@@ -97,13 +97,13 @@ func (r *Reconciler) updateReady(ctx context.Context, central *platform.Central)
 		return false
 	}
 
-	ready, reason, message := r.determineReadyState(deployments.Items)
+	available, reason, message := r.determineAvailableState(deployments.Items)
 
 	var changed bool
 	central.Status.Conditions, changed = updateCondition(
 		central.Status.Conditions,
-		"Ready",
-		ready,
+		"Available",
+		available,
 		reason,
 		message,
 	)
@@ -152,8 +152,8 @@ func (r *Reconciler) determineProgressingState(central *platform.Central) (bool,
 	return false, "ReconcileSuccessful", "Reconciliation completed successfully"
 }
 
-// determineReadyState checks if all deployments are ready.
-func (r *Reconciler) determineReadyState(deployments []appsv1.Deployment) (bool, platform.ConditionReason, string) {
+// determineAvailableState checks if all deployments are available.
+func (r *Reconciler) determineAvailableState(deployments []appsv1.Deployment) (bool, platform.ConditionReason, string) {
 	if len(deployments) == 0 {
 		return false, "NoDeployments", "No deployments found"
 	}

@@ -15,10 +15,10 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=="Ready")].status
-      name: Ready
+    - jsonPath: .status.conditions[?(@.type=="Available")].status
+      name: Available
       type: string
-    - jsonPath: .status.conditions[?(@.type=="Progressing")].reason
+    - jsonPath: .status.conditions[?(@.type=="Progressing")].status
       name: Progressing
       type: string
     - jsonPath: .status.reconciledVersion

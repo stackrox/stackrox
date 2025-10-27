@@ -31,7 +31,7 @@ func (CentralStatusPredicate) Update(e event.UpdateEvent) bool {
 
 	// Conditions owned by this status controller.
 	ownedConditions := []platform.ConditionType{
-		"Ready",
+		"Available",
 		"Progressing",
 	}
 
