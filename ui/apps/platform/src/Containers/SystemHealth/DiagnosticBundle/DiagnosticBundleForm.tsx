@@ -76,7 +76,7 @@ function DiagnosticBundleForm({
         if (typeof selection === 'string') {
             const newClusterFilter = toggleItemInArray(values.filterByClusters, selection);
             setInputValue('');
-            return setFieldValue('filterByClusters', newClusterFilter);
+            setFieldValue('filterByClusters', newClusterFilter);
         }
     }
 
