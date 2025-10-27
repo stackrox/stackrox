@@ -185,6 +185,9 @@ func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	if q == nil {
+		q = search.EmptyQuery()
+	}
 	// Clone the query and add select fields for SearchResult construction
 	clonedQuery := q.CloneVT()
 

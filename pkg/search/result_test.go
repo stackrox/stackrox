@@ -82,19 +82,19 @@ func TestResultsToSearchResultProtos(t *testing.T) {
 	// Verify the conversion
 	require.Len(t, protos, 2)
 
-	assert.Equal(t, "id1", protos[0].Id)
-	assert.Equal(t, "test-deployment", protos[0].Name)
-	assert.Equal(t, "cluster1/namespace1/test-deployment", protos[0].Location)
-	assert.Equal(t, 0.95, protos[0].Score)
-	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[0].Category)
-	assert.NotNil(t, protos[0].FieldToMatches)
-	assert.Len(t, protos[0].FieldToMatches, 1)
+	assert.Equal(t, "id1", protos[0].GetId())
+	assert.Equal(t, "test-deployment", protos[0].GetName())
+	assert.Equal(t, "cluster1/namespace1/test-deployment", protos[0].GetLocation())
+	assert.Equal(t, 0.95, protos[0].GetScore())
+	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[0].GetCategory())
+	assert.NotNil(t, protos[0].GetFieldToMatches())
+	assert.Len(t, protos[0].GetFieldToMatches(), 1)
 
-	assert.Equal(t, "id2", protos[1].Id)
-	assert.Equal(t, "prod-deployment", protos[1].Name)
-	assert.Equal(t, "cluster2/namespace2/prod-deployment", protos[1].Location)
-	assert.Equal(t, 0.87, protos[1].Score)
-	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[1].Category)
+	assert.Equal(t, "id2", protos[1].GetId())
+	assert.Equal(t, "prod-deployment", protos[1].GetName())
+	assert.Equal(t, "cluster2/namespace2/prod-deployment", protos[1].GetLocation())
+	assert.Equal(t, 0.87, protos[1].GetScore())
+	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[1].GetCategory())
 }
 
 // TestDefaultSearchResultConverter tests the DefaultSearchResultConverter implementation
@@ -130,4 +130,5 @@ func TestResultsWithFieldValues(t *testing.T) {
 	assert.Equal(t, "docker.io", result.FieldValues["Registry"])
 	assert.Equal(t, 42, result.FieldValues["Count"])
 	assert.Equal(t, true, result.FieldValues["IsScanned"])
+	assert.Equal(t, "test-id", result.ID)
 }
