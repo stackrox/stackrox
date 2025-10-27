@@ -576,6 +576,13 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, err
 	}
 
+	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
+	if len(q.GetSelects()) > 0 && queryType == SEARCH {
+		if err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
+		}
+	}
+
 	// Populate primary key select fields once so that we do not have to evaluate multiple times.
 	parsedQuery.populatePrimaryKeySelectFields()
 
@@ -833,8 +840,57 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 	return nil, nil
 }
 
-func valueFromStringPtrInterface(value interface{}) string {
-	return *(value.(*string))
+func valueFromStringPtrInterface(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	strPtr, ok := val.(*string)
+	if !ok {
+		return ""
+	}
+	if strPtr == nil {
+		return ""
+	}
+	return *strPtr
+}
+
+// derefPointerValue extracts the actual value from a database scan result pointer.
+// Database scans allocate pointers, so we need to dereference them to get the actual values.
+func derefPointerValue(val interface{}, dataType postgres.DataType) interface{} {
+	if val == nil {
+		return nil
+	}
+
+	switch dataType {
+	case postgres.String, postgres.UUID:
+		if strPtr, ok := val.(*string); ok && strPtr != nil {
+			return *strPtr
+		}
+	case postgres.Bool:
+		if boolPtr, ok := val.(*bool); ok && boolPtr != nil {
+			return *boolPtr
+		}
+	case postgres.Integer:
+		if intPtr, ok := val.(*int); ok && intPtr != nil {
+			return *intPtr
+		}
+	case postgres.BigInteger:
+		if int64Ptr, ok := val.(*int64); ok && int64Ptr != nil {
+			return *int64Ptr
+		}
+	case postgres.StringArray, postgres.IntArray, postgres.EnumArray:
+		// These are already dereference-able slices
+		return val
+	case postgres.DateTime, postgres.Numeric, postgres.Map:
+		// These need special handling, return as-is
+		return val
+	case postgres.Enum:
+		if intPtr, ok := val.(*int); ok && intPtr != nil {
+			return *intPtr
+		}
+	}
+
+	return val
 }
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
@@ -982,8 +1038,8 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
 					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
 				}
-				// Store raw field value for SearchResult proto construction
-				result.FieldValues[field.FieldPath] = returnedValue
+				// Store actual field value (dereferenced) for SearchResult proto construction
+				result.FieldValues[field.FieldPath] = derefPointerValue(returnedValue, field.FieldType)
 			}
 		}
 		searchResults[idx] = result

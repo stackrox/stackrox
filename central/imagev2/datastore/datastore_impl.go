@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"context"
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -78,7 +78,6 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	if q == nil {
 		q = search.EmptyQuery()
 	}
-	
 	// Clone the query and add select fields for SearchResult construction
 	clonedQuery := q.CloneVT()
 
@@ -98,8 +97,10 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	// Populate Name field from FieldValues for each result
 	for i := range results {
 		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[pkgSearch.ImageName.String()]; ok {
-				results[i].Name = fmt.Sprintf("%v", nameVal)
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.ImageName.String())]; ok {
+				if nameStr, ok := nameVal.(string); ok {
+					results[i].Name = nameStr
+				}
 			}
 		}
 	}
