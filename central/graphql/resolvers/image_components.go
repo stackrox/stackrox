@@ -2,12 +2,10 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -249,60 +247,6 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 Utility Functions
 */
 
-func getDeploymentIDFromQuery(q *v1.Query) string {
-	if q == nil {
-		return ""
-	}
-	var deploymentID string
-	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if !ok {
-			return
-		}
-		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.DeploymentID.String()) {
-			deploymentID = matchFieldQuery.MatchFieldQuery.GetValue()
-			deploymentID = strings.TrimRight(deploymentID, `"`)
-			deploymentID = strings.TrimLeft(deploymentID, `"`)
-		}
-	})
-	return deploymentID
-}
-
-func getDeploymentScope(scopeQuery *v1.Query, contexts ...context.Context) string {
-	for _, ctx := range contexts {
-		if scope, ok := scoped.GetScope(ctx); ok && scope.Level == v1.SearchCategory_DEPLOYMENTS {
-			if len(scope.IDs) != 1 {
-				return ""
-			}
-			return scope.IDs[0]
-		} else if deploymentID := deploymentctx.FromContext(ctx); deploymentID != "" {
-			return deploymentID
-		}
-	}
-	if scopeQuery != nil {
-		return getDeploymentIDFromQuery(scopeQuery)
-	}
-	return ""
-}
-
-func getImageIDFromScope(contexts ...context.Context) string {
-	var scope scoped.Scope
-	var hasScope bool
-	for _, ctx := range contexts {
-		searchCategory := v1.SearchCategory_IMAGES
-		if features.FlattenImageData.Enabled() {
-			searchCategory = v1.SearchCategory_IMAGES_V2
-		}
-		if scope, hasScope = scoped.GetScopeAtLevel(ctx, searchCategory); hasScope {
-			if len(scope.IDs) != 1 {
-				return ""
-			}
-			return scope.IDs[0]
-		}
-	}
-	return ""
-}
-
 /*
 Sub Resolver Functions
 */
@@ -436,7 +380,7 @@ func (resolver *imageComponentV2Resolver) FixedIn(_ context.Context) string {
 	return resolver.data.GetFixedBy()
 }
 
-func (resolver *imageComponentV2Resolver) License(ctx context.Context) (*licenseResolver, error) {
+func (resolver *imageComponentV2Resolver) License(_ context.Context) (*licenseResolver, error) {
 	return nil, nil
 }
 

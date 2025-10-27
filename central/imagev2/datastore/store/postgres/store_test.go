@@ -446,16 +446,6 @@ func getTestImageV2(name, sha string) *storage.ImageV2 {
 	}
 }
 
-func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
-	return &storage.Image{
-		Id:        imageV2.GetDigest(),
-		Name:      imageV2.GetName(),
-		Scan:      imageV2.GetScan(),
-		RiskScore: imageV2.GetRiskScore(),
-		Priority:  imageV2.GetPriority(),
-	}
-}
-
 func getTestImageComponentsVerify() []*storage.EmbeddedImageScanComponent {
 	return []*storage.EmbeddedImageScanComponent{
 		{

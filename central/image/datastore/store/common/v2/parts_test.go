@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -300,25 +299,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 				FixableCves: 4,
 			},
 		},
-		ImageCVEEdges: map[string]*storage.ImageCVEEdge{
-			cve.ID("cve1", ""): {
-				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve1", "")}),
-				ImageId:    "sha",
-				ImageCveId: cve.ID("cve1", ""),
-			},
-			cve.ID("cve2", ""): {
-				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve2", "")}),
-				ImageId:    "sha",
-				ImageCveId: cve.ID("cve2", ""),
-			},
-		},
 		Children: []ComponentParts{
 			{
-				Component: &storage.ImageComponent{
-					Id:      scancomponent.ComponentID("comp1", "ver1", ""),
-					Name:    "comp1",
-					Version: "ver1",
-				},
 				ComponentV2: &storage.ImageComponentV2{
 					Id:      getTestComponentID(testComponents[0], "sha", 0),
 					Name:    "comp1",
@@ -328,22 +310,9 @@ func TestSplitAndMergeImage(t *testing.T) {
 						LayerIndex: 1,
 					},
 				},
-				Edge: &storage.ImageComponentEdge{
-					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver1", "")}),
-					ImageId:          "sha",
-					ImageComponentId: scancomponent.ComponentID("comp1", "ver1", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 1,
-					},
-				},
 				Children: []CVEParts{},
 			},
 			{
-				Component: &storage.ImageComponent{
-					Id:      scancomponent.ComponentID("comp1", "ver2", ""),
-					Name:    "comp1",
-					Version: "ver2",
-				},
 				ComponentV2: &storage.ImageComponentV2{
 					Id:      getTestComponentID(testComponents[1], "sha", 1),
 					Name:    "comp1",
@@ -353,29 +322,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 						LayerIndex: 3,
 					},
 				},
-				Edge: &storage.ImageComponentEdge{
-					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver2", "")}),
-					ImageId:          "sha",
-					ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 3,
-					},
-				},
 				Children: []CVEParts{
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve1", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve1",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
-							ImageCveId:       cve.ID("cve1", ""),
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve1comp1"], getTestComponentID(testComponents[1], "sha", 1), 0),
 							ImageId: "sha",
@@ -389,23 +337,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 						},
 					},
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve2",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
-							ImageCveId:       cve.ID("cve2", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver3",
-							},
-							IsFixable: true,
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve2comp1"], getTestComponentID(testComponents[1], "sha", 1), 1),
 							ImageId: "sha",
@@ -423,23 +354,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 						},
 					},
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve2",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
-							ImageCveId:       cve.ID("cve2", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver3",
-							},
-							IsFixable: true,
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve2comp1"], getTestComponentID(testComponents[1], "sha", 1), 2),
 							ImageId: "sha",
@@ -459,11 +373,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 				},
 			},
 			{
-				Component: &storage.ImageComponent{
-					Id:      scancomponent.ComponentID("comp2", "ver1", ""),
-					Name:    "comp2",
-					Version: "ver1",
-				},
 				ComponentV2: &storage.ImageComponentV2{
 					Id:      getTestComponentID(testComponents[2], "sha", 2),
 					Name:    "comp2",
@@ -473,33 +382,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 						LayerIndex: 2,
 					},
 				},
-				Edge: &storage.ImageComponentEdge{
-					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
-					ImageId:          "sha",
-					ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 2,
-					},
-				},
 				Children: []CVEParts{
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve1", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve1",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-							ImageCveId:       cve.ID("cve1", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver2",
-							},
-							IsFixable: true,
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[2], "sha", 2), 0),
 							ImageId: "sha",
@@ -517,19 +401,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 						},
 					},
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve2",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-							ImageCveId:       cve.ID("cve2", ""),
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[2], "sha", 2), 1),
 							ImageId: "sha",
@@ -545,11 +416,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 				},
 			},
 			{
-				Component: &storage.ImageComponent{
-					Id:      scancomponent.ComponentID("comp2", "ver1", ""),
-					Name:    "comp2",
-					Version: "ver1",
-				},
 				ComponentV2: &storage.ImageComponentV2{
 					Id:      getTestComponentID(testComponents[2], "sha", 3),
 					Name:    "comp2",
@@ -559,33 +425,8 @@ func TestSplitAndMergeImage(t *testing.T) {
 						LayerIndex: 2,
 					},
 				},
-				Edge: &storage.ImageComponentEdge{
-					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
-					ImageId:          "sha",
-					ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 2,
-					},
-				},
 				Children: []CVEParts{
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve1", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve1",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-							ImageCveId:       cve.ID("cve1", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver2",
-							},
-							IsFixable: true,
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[2], "sha", 3), 0),
 							ImageId: "sha",
@@ -603,19 +444,6 @@ func TestSplitAndMergeImage(t *testing.T) {
 						},
 					},
 					{
-						CVE: &storage.ImageCVE{
-							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
-								Cve:       "cve2",
-								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
-							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
-							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-							ImageCveId:       cve.ID("cve2", ""),
-						},
 						CVEV2: &storage.ImageCVEV2{
 							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[2], "sha", 3), 1),
 							ImageId: "sha",
@@ -649,14 +477,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 		}
 	}
 
-	// Need to add first occurrence edges as otherwise they will be filtered out
-	// These values are added on insertion for the DB which is why we will populate them artificially here
-	for _, v := range splitActual.ImageCVEEdges {
-		v.FirstImageOccurrence = ts
-	}
-
-	var imageActual *storage.Image
-	imageActual = MergeV2(splitActual)
+	imageActual := MergeV2(splitActual)
 	protoassert.Equal(t, dedupedImage(), imageActual)
 }
 
