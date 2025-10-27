@@ -90,3 +90,52 @@ api:
   grpc_port: 8080
   health_port: 8081
   max_workers: 10
+
+# Central API configuration for training data collection
+central_api:
+  enabled: false  # Set to true to enable Central API integration
+  endpoint: "https://central.stackrox.io"
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"  # Options: "api_token", "mtls"
+    api_token: "${CENTRAL_API_TOKEN}"
+    # For mTLS authentication:
+    client_cert_path: "${CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${CENTRAL_CA_CERT_PATH}"
+
+  export_settings:
+    # Simplified settings for workloads endpoint
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2  # Only workloads + optional alerts/policies
+
+    # Workload-specific settings
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    # Default filters for training data collection
+    filters:
+      deployment_age_days: 90
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+      # clusters: ["prod-cluster-1", "staging-cluster"]
+      # namespaces: ["default", "kube-system"]
+      # vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  # Performance tuning
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2  # Simplified for workloads + alerts
+    memory_limit_mb: 512  # Reduced due to simplified processing

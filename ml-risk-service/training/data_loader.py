@@ -75,30 +75,120 @@ class TrainingDataLoader:
             logger.error(f"Failed to load training data from {json_file_path}: {e}")
             raise
 
-    def load_from_central_api(self, central_endpoint: str,
-                            auth_token: str,
-                            limit: int = 1000) -> List[Dict[str, Any]]:
+
+    def load_from_central_api_streaming_with_config(self,
+                                                  config_path: Optional[str] = None,
+                                                  filters: Optional[Dict[str, Any]] = None) -> Iterator[Dict[str, Any]]:
         """
-        Load training data from Central API.
-        This would connect to Central's gRPC or REST API to fetch real deployment data.
+        Load training data from Central API using streaming approach with configuration.
 
         Args:
-            central_endpoint: Central API endpoint
-            auth_token: Authentication token
-            limit: Maximum number of deployments to fetch
+            config_path: Optional path to configuration file
+            filters: Optional filters for data collection (override config defaults)
+
+        Yields:
+            Training examples as they are processed
+        """
+        logger.info("Starting streaming data load from Central API using configuration")
+
+        try:
+            from src.config.central_config import create_central_client_from_config, CentralConfig
+            from src.services.central_export_service import CentralExportService
+
+            # Load configuration
+            config = CentralConfig(config_path)
+            if not config.is_enabled():
+                raise RuntimeError("Central API integration is not enabled in configuration")
+
+            # Create configured client
+            export_client = create_central_client_from_config(config_path)
+
+            # Test connection
+            connection_test = export_client.test_connection()
+            if not connection_test['success']:
+                raise ConnectionError(f"Failed to connect to Central API: {connection_test['message']}")
+
+            # Create export service with configured settings
+            export_settings = config.get_export_settings()
+            export_service = CentralExportService(
+                client=export_client,
+                config=export_settings
+            )
+
+            # Prepare filters
+            default_filters = config.get_default_filters()
+            if filters:
+                export_filters = {**default_filters, **filters}
+            else:
+                export_filters = default_filters
+
+            # Stream training data
+            examples_yielded = 0
+            for example in export_service.collect_training_data(export_filters):
+                yield example
+                examples_yielded += 1
+
+                if examples_yielded % 100 == 0:
+                    logger.info(f"Streamed {examples_yielded} training examples")
+
+            # Clean up
+            export_service.close()
+
+            logger.info(f"Completed streaming: {examples_yielded} training examples")
+
+        except ImportError as e:
+            logger.error(f"Central API components not available: {e}")
+            raise NotImplementedError("Central API integration requires additional components")
+        except Exception as e:
+            logger.error(f"Failed to load training data from Central API: {e}")
+            raise
+
+
+    def _prepare_export_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Prepare filters for Central export APIs.
+
+        Args:
+            filters: Input filters dictionary
 
         Returns:
-            List of training examples
+            Processed filters for export APIs
         """
-        # This is a placeholder - would implement actual Central API client
-        logger.info(f"Loading training data from Central API: {central_endpoint}")
+        if not filters:
+            # Default filters for training data
+            from datetime import datetime, timezone, timedelta
+            return {
+                'start_date': datetime.now(timezone.utc) - timedelta(days=90),
+                'include_inactive': False,
+                'severity_threshold': 'MEDIUM_SEVERITY'
+            }
 
-        # TODO: Implement Central API client
-        # - Connect to Central's deployment service
-        # - Fetch deployments with images and risk data
-        # - Process through baseline feature extractor
+        export_filters = {}
 
-        raise NotImplementedError("Central API integration not yet implemented")
+        # Date range filters
+        if 'start_date' in filters:
+            export_filters['start_date'] = filters['start_date']
+        if 'end_date' in filters:
+            export_filters['end_date'] = filters['end_date']
+        if 'days_back' in filters:
+            from datetime import datetime, timezone, timedelta
+            export_filters['start_date'] = datetime.now(timezone.utc) - timedelta(days=filters['days_back'])
+
+        # Scope filters
+        if 'clusters' in filters:
+            export_filters['clusters'] = filters['clusters']
+        if 'namespaces' in filters:
+            export_filters['namespaces'] = filters['namespaces']
+
+        # Security filters
+        if 'severity_threshold' in filters:
+            export_filters['severity_threshold'] = filters['severity_threshold']
+        if 'include_inactive' in filters:
+            export_filters['include_inactive'] = filters['include_inactive']
+        if 'policy_categories' in filters:
+            export_filters['policy_categories'] = filters['policy_categories']
+
+        return export_filters
 
     def _process_deployment_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
         """
