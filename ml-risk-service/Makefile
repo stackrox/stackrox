@@ -73,8 +73,8 @@ docker-run: ## Run Docker container locally
 	@# Stop and remove existing container if it exists
 	@docker stop ml-risk-service 2>/dev/null || true
 	@docker rm ml-risk-service 2>/dev/null || true
-	@# Ensure models directory exists
-	@mkdir -p $(PWD)/models
+	@# Ensure directories exist
+	@mkdir -p $(PWD)/models $(PWD)/reports
 	@# Run the container
 	docker run -d \
 		--name ml-risk-service \
@@ -82,6 +82,7 @@ docker-run: ## Run Docker container locally
 		-p 8081:8081 \
 		-p 8090:8090 \
 		-v $(PWD)/models:/app/models \
+		-v $(PWD)/reports:/app/reports \
 		-e LOG_LEVEL=INFO \
 		-e GRPC_PORT=8080 \
 		-e HEALTH_PORT=8081 \
