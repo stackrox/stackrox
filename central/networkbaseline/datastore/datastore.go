@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 )
 
 // ReadOnlyDataStore is a sub-interface of datastore with the read-only methods.
@@ -23,4 +24,5 @@ type DataStore interface {
 	UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error
 	DeleteNetworkBaseline(ctx context.Context, deploymentID string) error
 	DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error
+	Begin(ctx context.Context) (context.Context, *pgPkg.Tx, error)
 }

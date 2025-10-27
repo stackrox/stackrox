@@ -741,7 +741,15 @@ func (m *manager) initFromStore() error {
 	walkFn := func() error {
 		seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
 		m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
-		return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
+		ctxWithThx, tx, err := m.ds.Begin(managerCtx)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err := tx.Rollback(managerCtx)
+			utils.Should(err)
+		}()
+		return m.ds.Walk(ctxWithThx, func(baseline *storage.NetworkBaseline) error {
 			baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 			if err != nil {
 				return err
@@ -755,7 +763,7 @@ func (m *manager) initFromStore() error {
 				// Mark seen
 				seenClusterAndNamespace[curPair] = struct{}{}
 
-				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.GetClusterId(), baseline.GetNamespace())
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(ctxWithThx, baseline.GetClusterId(), baseline.GetNamespace())
 				if err != nil {
 					return err
 				}
