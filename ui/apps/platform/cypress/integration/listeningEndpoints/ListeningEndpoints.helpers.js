@@ -16,7 +16,9 @@ export function selectFilterEntity(entity) {
 
 export function addEntityFilterValue(entity, value) {
     cy.get(selectors.filterInputBox(entity)).type(value);
-    cy.get(`${selectors.filterAutocompleteResults(value)}`).click();
+    cy.get(`${selectors.filterAutocompleteResultItem}`)
+        .contains(new RegExp(`^${value}$`, 'i'))
+        .click();
 }
 
 export function addEntityFilter(entity, value) {
