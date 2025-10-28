@@ -43,7 +43,6 @@ import {
 import type { SearchCategory } from 'services/SearchService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
-import { toggleRow } from 'utils/checkboxUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
@@ -263,23 +262,23 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     };
 
     function toggleCluster(id) {
-        // TODO uncouple from CheckboxTable?
-        const selection = toggleRow(id, checkedClusterIds);
-        setCheckedClusterIds(selection);
+        const selection = checkedClusterIds.includes(id)
+            ? checkedClusterIds.filter((checkedId) => checkedId !== id)
+            : [...checkedClusterIds, id];
 
+        setCheckedClusterIds(selection);
         calculateUpgradeableClusters(selection);
     }
 
     function toggleAllClusters() {
-        // TODO uncouple from CheckboxTable?
-        /*
-        const rowsLength = checkedClusterIds.length;
-        const ref = tableRef?.reactTable;
-        const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
+        // If all are selected in the entire table, all become unselected in the table.
+        // If some or none are selected, all become selected on that page.
+        const selection: string[] =
+            checkedClusterIds.length === currentClusters.length
+                ? []
+                : currentClusters.map(({ id }) => id);
         setCheckedClusterIds(selection);
-
         calculateUpgradeableClusters(selection);
-        */
     }
 
     // After there is a response, if there are clusters or search filter.
