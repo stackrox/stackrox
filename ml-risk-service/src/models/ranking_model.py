@@ -156,13 +156,80 @@ class RiskRankingModel:
         X_train, X_val, y_train, y_val = train_test_split(
             X, y, test_size=val_split, random_state=random_state)
 
+        # Analyze raw features before scaling
+        raw_feature_variances = [np.var(X_train[:, i]) for i in range(X_train.shape[1])]
+        raw_zero_variance_count = sum(1 for v in raw_feature_variances if v < 1e-12)
+        logger.info(f"Raw feature analysis (before scaling):")
+        logger.info(f"  Zero-variance features: {raw_zero_variance_count}/{len(raw_feature_variances)}")
+        logger.info(f"  Raw feature variance range: [{min(raw_feature_variances):.10f}, {max(raw_feature_variances):.10f}]")
+
+        # Show sample values for first few features to debug
+        for i in range(min(5, X_train.shape[1])):
+            feature_name = self.feature_names[i] if i < len(self.feature_names) else f"feature_{i}"
+            unique_vals = len(np.unique(X_train[:, i]))
+            min_val, max_val = np.min(X_train[:, i]), np.max(X_train[:, i])
+            logger.info(f"  {feature_name}: {unique_vals} unique values, range [{min_val:.6f}, {max_val:.6f}], variance: {raw_feature_variances[i]:.10f}")
+
+        # Handle zero-variance features before scaling
+        if raw_zero_variance_count > 0:
+            logger.warning(f"Found {raw_zero_variance_count} zero-variance features. Applying variance enhancement.")
+
+            # Add small random noise to zero-variance features to enable meaningful scaling
+            X_train_enhanced = X_train.copy()
+            X_val_enhanced = X_val.copy()
+
+            np.random.seed(42)  # Deterministic noise
+            for i in range(X_train.shape[1]):
+                if raw_feature_variances[i] < 1e-12:
+                    # Add small noise proportional to the mean value (or 0.01 if mean is zero)
+                    mean_val = np.mean(X_train[:, i])
+                    noise_std = max(0.01, abs(mean_val) * 0.01)  # 1% of mean or 0.01 minimum
+
+                    train_noise = np.random.normal(0, noise_std, X_train.shape[0])
+                    val_noise = np.random.normal(0, noise_std, X_val.shape[0])
+
+                    X_train_enhanced[:, i] += train_noise
+                    X_val_enhanced[:, i] += val_noise
+
+                    feature_name = self.feature_names[i] if i < len(self.feature_names) else f"feature_{i}"
+                    logger.info(f"  Enhanced {feature_name} with noise (std={noise_std:.6f})")
+
+            # Use enhanced features for scaling
+            X_train_for_scaling = X_train_enhanced
+            X_val_for_scaling = X_val_enhanced
+        else:
+            X_train_for_scaling = X_train
+            X_val_for_scaling = X_val
+
         # Scale features
         self.scaler = StandardScaler()
-        X_train_scaled = self.scaler.fit_transform(X_train)
-        X_val_scaled = self.scaler.transform(X_val)
+        X_train_scaled = self.scaler.fit_transform(X_train_for_scaling)
+        X_val_scaled = self.scaler.transform(X_val_for_scaling)
 
         # Use float scores directly for sklearn
         logger.info(f"Using float scores - Train: {y_train.min():.6f}-{y_train.max():.6f}, Val: {y_val.min():.6f}-{y_val.max():.6f}")
+
+        # Feature variance analysis before training
+        feature_variances = [np.var(X_train_scaled[:, i]) for i in range(X_train_scaled.shape[1])]
+        total_feature_variance = sum(feature_variances)
+        zero_variance_count = sum(1 for v in feature_variances if v < 1e-10)
+        logger.info(f"Pre-training feature analysis:")
+        logger.info(f"  Total feature variance: {total_feature_variance:.6f}")
+        logger.info(f"  Zero-variance features: {zero_variance_count}/{len(feature_variances)}")
+        logger.info(f"  Feature variance range: [{min(feature_variances):.6f}, {max(feature_variances):.6f}]")
+
+        if zero_variance_count > len(feature_variances) * 0.5:
+            logger.warning(f"More than 50% of features have zero variance! This will cause poor feature importance.")
+
+        # Target variance on training split
+        train_target_variance = np.var(y_train)
+        train_unique_targets = len(np.unique(y_train))
+        logger.info(f"Training split target analysis:")
+        logger.info(f"  Target variance: {train_target_variance:.6f}")
+        logger.info(f"  Unique target values: {train_unique_targets}")
+
+        if train_target_variance < 1e-6:
+            logger.warning(f"Training target variance is extremely low ({train_target_variance:.10f}). RandomForest may not learn meaningful patterns.")
 
         # Train model
         metrics = self._train_model(X_train_scaled, y_train, X_val_scaled, y_val)
@@ -208,16 +275,26 @@ class RiskRankingModel:
             importance_values = self.model.feature_importances_
             importance_dict = dict(zip(self.feature_names, importance_values))
 
-            # Check if all importance values are zero
+            # Enhanced diagnostics for feature importance
             total_importance = sum(importance_values)
+            max_importance = max(importance_values) if len(importance_values) > 0 else 0.0
+            min_importance = min(importance_values) if len(importance_values) > 0 else 0.0
+            non_zero_count = sum(1 for v in importance_values if v > 0)
+
+            logger.info(f"RandomForest feature importance analysis:")
+            logger.info(f"  Total: {total_importance:.6f}, Max: {max_importance:.6f}, Min: {min_importance:.6f}")
+            logger.info(f"  Non-zero features: {non_zero_count}/{len(importance_values)}")
+            logger.info(f"  Top 5 features: {sorted(zip(self.feature_names, importance_values), key=lambda x: x[1], reverse=True)[:5]}")
+
+            # Check if all importance values are zero
             if total_importance == 0.0:
-                logger.warning("All feature importances are zero. Computing fallback importance using feature variance.")
+                logger.warning("All RandomForest feature importances are zero. Computing fallback importance using correlation analysis.")
                 importance_dict = self._compute_fallback_feature_importance(X_train, y_train)
             else:
-                logger.info(f"Feature importance computed successfully. Total importance: {total_importance:.6f}")
+                logger.info(f"RandomForest feature importance computed successfully. Using RandomForest values.")
 
         except Exception as e:
-            logger.warning(f"Failed to compute feature importance: {e}. Using fallback method.")
+            logger.warning(f"Failed to compute RandomForest feature importance: {e}. Using fallback method.")
             importance_dict = self._compute_fallback_feature_importance(X_train, y_train)
 
         return ModelMetrics(
@@ -339,34 +416,48 @@ class RiskRankingModel:
 
             # Normalize importance scores to sum to 1.0
             total_importance = sum(importance_dict.values())
-            logger.info(f"Total raw importance before normalization: {total_importance:.6f}")
+            logger.info(f"Total raw correlation importance before normalization: {total_importance:.10f}")
+
+            # Enhanced diagnostic for correlation analysis
+            valid_correlations = [v for v in importance_dict.values() if v > 0]
+            logger.info(f"Correlation analysis results: {len(valid_correlations)} features with positive correlation importance")
 
             if total_importance > 1e-10:  # More lenient threshold
                 importance_dict = {name: score / total_importance for name, score in importance_dict.items()}
                 top_features = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]
-                logger.info(f"Fallback feature importance computed using correlation. Top features: {top_features}")
+                logger.info(f"SUCCESS: Fallback feature importance computed using correlation. Top features: {top_features}")
             else:
                 # If all correlations are zero, use alternative methods
-                logger.warning(f"All correlations are effectively zero (total={total_importance:.10f}). Trying alternative importance calculation.")
+                logger.warning(f"Correlation method failed: all correlations effectively zero (total={total_importance:.10f}). Trying variance-based importance.")
 
-                # Alternative: Use feature variance as importance
+                # Enhanced variance analysis
                 variance_importance = {}
                 total_variance = 0.0
+                variance_stats = []
 
                 for i, feature_name in enumerate(self.feature_names):
                     feature_var = np.var(X[:, i])
                     variance_importance[feature_name] = feature_var
                     total_variance += feature_var
+                    variance_stats.append((feature_name, feature_var))
 
-                if total_variance > 0:
+                # Sort by variance for logging
+                variance_stats.sort(key=lambda x: x[1], reverse=True)
+                logger.info(f"Feature variance analysis - total variance: {total_variance:.10f}")
+                logger.info(f"Top 5 variance features: {variance_stats[:5]}")
+                logger.info(f"Bottom 5 variance features: {variance_stats[-5:]}")
+
+                if total_variance > 1e-12:  # Even more lenient threshold for variance
                     importance_dict = {name: var / total_variance for name, var in variance_importance.items()}
-                    logger.info(f"Using feature variance as importance. Top variance features: "
-                               f"{sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]}")
+                    top_features = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]
+                    logger.info(f"SUCCESS: Using feature variance as importance. Top variance features: {top_features}")
                 else:
                     # Last resort: equal importance
                     equal_importance = 1.0 / len(self.feature_names)
                     importance_dict = {name: equal_importance for name in self.feature_names}
-                    logger.warning(f"All features have zero variance. Assigning equal importance: {equal_importance:.6f}")
+                    logger.error(f"FALLBACK TO EQUAL IMPORTANCE: All features have effectively zero variance (total={total_variance:.12f}). "
+                               f"Assigning equal importance: {equal_importance:.10f} to each of {len(self.feature_names)} features.")
+                    logger.error(f"This suggests either: 1) All feature values are identical, 2) Data preprocessing issue, or 3) Synthetic scoring not working properly.")
 
             return importance_dict
 
