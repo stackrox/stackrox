@@ -1365,7 +1365,7 @@ func TestMetadataUpToDate(t *testing.T) {
 }
 
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
-	return New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
+	return New(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter, nil)
