@@ -274,12 +274,14 @@ class TrainingDataLoader:
             group_sizes.append(len(cluster_groups[cluster_id]))
 
         X = np.array(feature_vectors, dtype=np.float32)
-        y = np.array(risk_scores, dtype=np.float32)
+        y_float = np.array(risk_scores, dtype=np.float32)
         groups = np.array(group_sizes, dtype=np.int32)
 
         logger.info(f"Created ranking dataset: {X.shape[0]} examples, {X.shape[1]} features, {len(groups)} groups")
+        logger.info(f"Risk score range: {y_float.min():.6f} - {y_float.max():.6f}, unique values: {len(np.unique(y_float))}")
 
-        return X, y, groups
+        # Return float scores - ranking transformation will be done in the model after data splitting
+        return X, y_float, groups
 
     def save_processed_data(self, training_samples: List[Dict[str, Any]],
                           output_path: str) -> None:
