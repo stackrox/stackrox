@@ -346,7 +346,7 @@ func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) 
 	// Ensure the reported vsock CID is correct, to prevent spoofing
 	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()
-		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
+		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
 	}
 	return nil
 }
