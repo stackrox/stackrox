@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import React from 'react';
+import { Divider, SelectOption } from '@patternfly/react-core';
 
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import { isType, types } from 'services/DiscoveredClusterService';
 import type { DiscoveredClusterType } from 'services/DiscoveredClusterService';
 
 import { getTypeText } from './DiscoveredCluster';
 
-const optionAll = 'All_types';
+const optionAll = '##All Types##';
 
 type SearchFilterTypesProps = {
     typesSelected: DiscoveredClusterType[] | undefined;
@@ -20,19 +20,17 @@ function SearchFilterTypes({
     isDisabled,
     setTypesSelected,
 }: SearchFilterTypesProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    function onSelect(selections: string[]) {
+        const hadAllOption = (typesSelected ?? []).length === 0;
+        const isSelectAll = selections.includes(optionAll) && !hadAllOption;
+        const validTypes = selections.filter((s) => s !== optionAll && isType(s));
 
-    function onSelect(_event, selection) {
-        const previousTypes = typesSelected ?? [];
-        if (isType(selection)) {
-            setTypesSelected(
-                previousTypes.includes(selection)
-                    ? previousTypes.filter((type) => type !== selection)
-                    : [...previousTypes, selection]
-            );
-        } else {
+        if (isSelectAll || validTypes.length === 0) {
             setTypesSelected(undefined);
+            return;
         }
+
+        setTypesSelected(validTypes);
     }
 
     const options = types.map((type) => (
@@ -48,19 +46,16 @@ function SearchFilterTypes({
     );
 
     return (
-        <Select
-            variant="checkbox"
+        <CheckboxSelect
+            id="type-filter"
+            selections={typesSelected ?? [optionAll]}
+            onChange={onSelect}
+            ariaLabel="Type filter menu items"
             placeholderText="Filter by type"
-            aria-label="Type filter menu items"
-            toggleAriaLabel="Type filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={typesSelected ?? optionAll}
             isDisabled={isDisabled}
-            isOpen={isOpen}
         >
             {options}
-        </Select>
+        </CheckboxSelect>
     );
 }
 
