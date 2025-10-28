@@ -746,7 +746,7 @@ func (m *manager) initFromStore() error {
 			return err
 		}
 		defer func() {
-			err := tx.Rollback(managerCtx)
+			err := tx.Commit(managerCtx)
 			utils.Should(err)
 		}()
 		return m.ds.Walk(ctxWithThx, func(baseline *storage.NetworkBaseline) error {
