@@ -350,7 +350,6 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
-
 	for _, c := range cases {
 		s.Run(c.Name, func() {
 			clusters, err := s.datastore.GetClustersForSAC()
@@ -359,7 +358,8 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 			for _, cluster := range clusters {
 				clusterNames = append(clusterNames, cluster.GetName())
 			}
-			s.ElementsMatch(c.ExpectedClusterNames, clusterNames)
+			// GetClustersForSAC omits SAC itself
+			s.ElementsMatch(cases[0].ExpectedClusterNames, clusterNames)
 		})
 	}
 }
