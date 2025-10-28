@@ -3,7 +3,7 @@ Training endpoints for ML Risk Service REST API.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 
 from src.api.schemas import (
@@ -470,4 +470,121 @@ async def run_quick_test_pipeline(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to execute quick test pipeline: {str(e)}"
+        )
+
+
+@router.post(
+    "/central/train-full",
+    response_model=TrainModelResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid parameters or Central not enabled"},
+        500: {"model": ErrorResponse, "description": "Training failed"}
+    },
+    summary="Train model with all data from Central API",
+    description="Perform complete model training using data collected from Central's workloads API"
+)
+async def train_full_from_central(
+    days_back: int = Query(30, ge=1, le=365, description="Number of days back to collect data"),
+    limit: Optional[int] = Query(None, ge=10, le=10000, description="Maximum training examples to collect"),
+    include_inactive: bool = Query(False, description="Include inactive deployments"),
+    severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold"),
+    clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
+    namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
+    config_override: Optional[str] = Query("", description="JSON configuration overrides"),
+    training_service: TrainingService = Depends(get_training_service),
+    risk_service: RiskPredictionService = Depends(get_risk_service)
+) -> TrainModelResponse:
+    """
+    Train a complete ML model using all available data from Central API.
+
+    This endpoint performs a comprehensive training workflow:
+
+    1. **Data Collection**: Streams workload data from Central's `/v1/export/vuln-mgmt/workloads` endpoint
+    2. **Data Processing**: Converts Central API format to training format with feature extraction
+    3. **Model Training**: Uses existing training pipeline with cross-validation and evaluation
+    4. **Model Storage**: Saves trained model with version management and metadata
+
+    **Parameters:**
+    - **days_back**: Number of days back to collect workload data (1-365)
+    - **limit**: Optional limit on training examples to prevent memory issues
+    - **include_inactive**: Whether to include inactive/stopped deployments
+    - **severity_threshold**: Minimum vulnerability severity to include (LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, CRITICAL_SEVERITY)
+    - **clusters**: Optional comma-separated list of cluster IDs to filter
+    - **namespaces**: Optional comma-separated list of namespaces to filter
+    - **config_override**: Optional JSON string with training configuration overrides
+
+    **Use Cases:**
+    - **Production Training**: Train models with real enterprise workload data
+    - **Scheduled Retraining**: Periodic model updates with latest security data
+    - **Custom Model Training**: Train models for specific environments or use cases
+
+    **Note:** This operation may take several minutes for large datasets. The endpoint
+    will return detailed training metrics, model version, and feature importance analysis.
+
+    Returns comprehensive training results including metrics, model version, and feature importance.
+    """
+    try:
+        from src.config.central_config import CentralConfig
+
+        # Validate Central API is enabled
+        config = CentralConfig()
+        if not config.is_enabled():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Central API integration is not enabled in configuration"
+            )
+
+        # Validate configuration
+        is_valid, issues = config.validate_configuration()
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Central API configuration invalid: {'; '.join(issues)}"
+            )
+
+        # Build filters for data collection
+        filters = {
+            'days_back': days_back,
+            'include_inactive': include_inactive,
+            'severity_threshold': severity_threshold
+        }
+
+        # Add optional filters
+        if clusters:
+            filters['clusters'] = [c.strip() for c in clusters.split(',') if c.strip()]
+        if namespaces:
+            filters['namespaces'] = [n.strip() for n in namespaces.split(',') if n.strip()]
+
+        logger.info(f"Starting full model training from Central API")
+        logger.info(f"Filters: {filters}")
+        logger.info(f"Limit: {limit}")
+
+        # Train model using Central API data
+        response = training_service.train_model_from_central(
+            filters=filters,
+            limit=limit,
+            config_override=config_override if config_override else None,
+            risk_service=risk_service
+        )
+
+        if response.success:
+            logger.info(f"Central API model training completed successfully. Version: {response.model_version}")
+        else:
+            logger.error(f"Central API model training failed: {response.error_message}")
+
+        return response
+
+    except HTTPException:
+        raise
+    except ImportError as e:
+        logger.error(f"Central API components not available: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Central API integration components not available"
+        )
+    except Exception as e:
+        logger.error(f"Central API training request failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Training failed: {str(e)}"
         )
