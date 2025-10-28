@@ -162,91 +162,91 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 		},
 		{
 			ScopeKey:          testutils.Cluster1ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.MixedClusterAndNamespaceReadCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 	}
 
@@ -307,91 +307,91 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespacesForSAC() {
 		},
 		{
 			ScopeKey:          testutils.Cluster1ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3ReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceAReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceBReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesABReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesACReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesBCReadWriteCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{},
+			VisibleNamespaces: testNamespaces,
 		},
 		{
 			ScopeKey:          testutils.MixedClusterAndNamespaceReadCtx,
-			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster2NamespaceB, cluster2NamespaceC},
+			VisibleNamespaces: testNamespaces,
 		},
 	}
 
