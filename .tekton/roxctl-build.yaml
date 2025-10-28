@@ -74,7 +74,6 @@ spec:
           cpu: 2
         requests:
           cpu: 2
-
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
