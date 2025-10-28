@@ -250,15 +250,15 @@ class TrainingDataLoader:
 
         # Group deployments by cluster for ranking
         cluster_groups = {}
-        for i, example in enumerate(training_samples):
-            cluster_id = example.get('cluster_id', 'unknown')
+        for i, sample in enumerate(training_samples):
+            cluster_id = sample.get('cluster_id', 'unknown')
             if cluster_id not in cluster_groups:
                 cluster_groups[cluster_id] = []
             cluster_groups[cluster_id].append(i)
 
         # Build feature matrix
-        for example in training_samples:
-            features = example['features']
+        for sample in training_samples:
+            features = sample['features']
 
             if feature_names is None:
                 feature_names = sorted(features.keys())
@@ -266,7 +266,7 @@ class TrainingDataLoader:
             # Create feature vector in consistent order
             feature_vector = [features.get(name, 0.0) for name in feature_names]
             feature_vectors.append(feature_vector)
-            risk_scores.append(example['risk_score'])
+            risk_scores.append(sample['risk_score'])
 
         # Create group assignments
         group_sizes = []
