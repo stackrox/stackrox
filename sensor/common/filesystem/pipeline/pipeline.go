@@ -43,7 +43,6 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 }
 
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileActivity {
-	// psignal := fs.GetProcess()
 
 	activity := &storage.FileActivity{
 		Process: p.getIndicator(fs.GetProcess()),
@@ -147,7 +146,7 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 			pi.ImageId = metadata.ImageID
 		}
 	}
-	// TODO: populate node info otherwise
+	// TODO(ROX-31434): populate node info otherwise
 
 	return pi
 }
