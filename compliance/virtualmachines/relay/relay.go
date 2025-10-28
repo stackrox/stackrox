@@ -213,7 +213,7 @@ func (r *Relay) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, e
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout)
+	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout, vsockCID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
@@ -274,11 +274,11 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSize, timeout)
+func readFromConn(conn net.Conn, maxSize int, timeout time.Duration, vsockCID uint32) ([]byte, error) {
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s, vsockCID: %d)", maxSize, timeout, vsockCID)
 
 	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-		return nil, errors.Wrap(err, "setting read deadline on connection")
+		return nil, errors.Wrapf(err, "setting read deadline on connection (vsockCID: %d)", vsockCID)
 	}
 
 	// Even if not strictly required, we limit the amount of data to be read to protect Sensor against large workloads.
@@ -288,11 +288,11 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 	limitedReader := io.LimitReader(conn, int64(maxSize+1))
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading data from vsock connection")
+		return nil, errors.Wrapf(err, "reading data from vsock connection (vsockCID: %d)", vsockCID)
 	}
 
 	if len(data) > maxSize {
-		return nil, errors.Errorf("data size exceeds the limit (%d bytes)", maxSize)
+		return nil, errors.Errorf("data size exceeds the limit (%d bytes, vsockCID: %d)", maxSize, vsockCID)
 	}
 
 	return data, nil
