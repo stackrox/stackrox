@@ -31,7 +31,7 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	setupDeployment(t, "nginx", deploymentName)
+	setupDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName)
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeployment(t, deploymentName)
 
