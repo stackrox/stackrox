@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Dispatch, FormEvent, MouseEvent, ReactElement, SetStateAction } from 'react';
 import {
     Badge,
@@ -17,6 +17,7 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import type { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 export type AdvancedFlowsFilterProps = {
     filters: AdvancedFlowsFilterType;
@@ -60,9 +61,7 @@ function AdvancedFlowsFilter({
         // Handle port selection
         if (allUniquePorts.includes(value)) {
             setFilters((prevFilters) => {
-                const newPorts = prevFilters.ports.includes(value)
-                    ? prevFilters.ports.filter((port) => port !== value)
-                    : [...prevFilters.ports, value];
+                const newPorts = toggleItemInArray(prevFilters.ports, value);
                 return { ...prevFilters, ports: newPorts };
             });
             setPortsFilterValue('');
@@ -91,15 +90,11 @@ function AdvancedFlowsFilter({
         setPortsFilterValue(value);
     };
 
-    // Filter ports based on search input
-    const filteredPorts = useMemo(() => {
-        if (!portsFilterValue) {
-            return allUniquePorts;
-        }
-        return allUniquePorts.filter((port) =>
-            port.toLowerCase().includes(portsFilterValue.toLowerCase())
-        );
-    }, [allUniquePorts, portsFilterValue]);
+    // Filter and sort ports based on search input
+    const filtered = allUniquePorts.filter((port) =>
+        port.toLowerCase().includes(portsFilterValue.toLowerCase())
+    );
+    const filteredPorts = filtered.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
     return (
         <Select
