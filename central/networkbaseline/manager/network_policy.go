@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func (m *manager) getHashOfNetworkPolicyWithResourceAction(
+func getHashOfNetworkPolicyWithResourceAction(
 	action central.ResourceAction,
 	policy *storage.NetworkPolicy,
 ) (uint64, error) {
@@ -29,7 +29,7 @@ func (m *manager) shouldIgnoreNetworkPolicy(
 	action central.ResourceAction,
 	policy *storage.NetworkPolicy,
 ) (bool, uint64, error) {
-	hash, err := m.getHashOfNetworkPolicyWithResourceAction(action, policy)
+	hash, err := getHashOfNetworkPolicyWithResourceAction(action, policy)
 	if err != nil {
 		return false, 0, err
 	}
