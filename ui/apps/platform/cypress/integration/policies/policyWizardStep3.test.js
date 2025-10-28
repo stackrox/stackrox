@@ -118,7 +118,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
             'Image registry',
             'Image name',
             'Image tag',
-            'Image signature',
+            'Require image signature',
         ];
         cy.get('.pf-v5-c-tree-view__list-item:first').click();
         cy.get(TREE_VIEW_FIRST_LEVEL_CHILD).each((element, index) => {
@@ -387,7 +387,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
 
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
-                addPolicyField('Image signature');
+                addPolicyField('Require image signature');
                 cy.wait('@getSignatureIntegrations');
             });
 
