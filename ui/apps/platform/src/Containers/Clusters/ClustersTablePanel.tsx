@@ -1,12 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
-    Alert,
-    Bullseye,
     Button,
     DropdownItem,
     PageSection,
-    Spinner,
     Text,
     Title,
     Toolbar,
@@ -109,7 +106,9 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
     const [showDialog, setShowDialog] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorForClustersWithRetentionInfo, setErrorForClustersWithRetentionInfo] = useState<
+        Error | undefined
+    >(undefined);
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
     const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
@@ -164,10 +163,10 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                 .then(({ clusters, clusterIdToRetentionInfo }) => {
                     setCurrentClusters(clusters);
                     setClusterIdToRetentionInfo(clusterIdToRetentionInfo);
-                    setErrorMessage('');
+                    setErrorForClustersWithRetentionInfo(undefined);
                     setHasFetchedClusters(true);
                 })
-                .catch((err) => setErrorMessage(getAxiosErrorMessage(err)))
+                .catch((err) => setErrorForClustersWithRetentionInfo(err))
                 .finally(() => showLoadingSpinner && setIsLoadingVisible(false));
         },
         [restSearch]
@@ -182,32 +181,9 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     const tableState = getTableUIState({
         isLoading: !hasFetchedClusters || isLoadingVisible,
         data: currentClusters,
-        error: errorMessage ? new Error(errorMessage) : undefined,
+        error: errorForClustersWithRetentionInfo,
         searchFilter,
     });
-
-    // Before there is a response:
-    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
-    if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
-        return (
-            <PageSection variant="light">
-                <Bullseye>
-                    {errorMessage ? (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Unable to fetch clusters"
-                            component="p"
-                        >
-                            {errorMessage}
-                        </Alert>
-                    ) : (
-                        <Spinner />
-                    )}
-                </Bullseye>
-            </PageSection>
-        );
-    }
 
     const hasSearchApplied = getHasSearchApplied(searchFilter);
 
@@ -496,16 +472,6 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                         )}
                     </ToolbarContent>
                 </Toolbar>
-                {errorMessage && !isClustersPageMigrationEnabled && (
-                    <Alert
-                        variant="warning"
-                        isInline
-                        title="Unable to fetch clusters"
-                        component="p"
-                    >
-                        {errorMessage}
-                    </Alert>
-                )}
                 {messages.length > 0 && (
                     <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
                         {messages}
