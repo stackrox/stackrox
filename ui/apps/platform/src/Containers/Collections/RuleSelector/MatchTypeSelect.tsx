@@ -22,12 +22,7 @@ function MatchTypeSelect<T extends MatchType>({
     }
 
     return (
-        <SelectSingle
-            id={id}
-            value={selected}
-            handleSelect={onSelect}
-            isDisabled={isDisabled}
-        >
+        <SelectSingle id={id} value={selected} handleSelect={onSelect} isDisabled={isDisabled}>
             {children}
         </SelectSingle>
     );
