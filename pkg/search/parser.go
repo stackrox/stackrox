@@ -166,6 +166,7 @@ func queryFromFieldValues(field string, values []string, highlight bool) *v1.Que
 	if len(values) > MaxQueryParameters {
 		debug.PrintStack()
 		utils.Should(errors.Errorf("UNEXPECTED: too many parameters %d for a query.  No more than %d parameters allowed in single query", len(values), MaxQueryParameters))
+		log.Errorf("too many values are %v", values)
 	}
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
