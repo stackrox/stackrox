@@ -47,7 +47,7 @@ message BatchDeploymentRiskResponse {
 
 // Training request
 message TrainModelRequest {
-  repeated TrainingExample training_data = 1;
+  repeated TrainingSample training_data = 1;
   string config_override = 2; // YAML config override
 }
 
@@ -67,7 +67,7 @@ message ModelHealthResponse {
   bool healthy = 1;
   string model_version = 2;
   int64 last_training_time = 3;
-  int32 training_examples_count = 4;
+  int32 training_samples_count = 4;
   ModelMetrics current_metrics = 5;
 }
 
@@ -145,8 +145,8 @@ message FeatureImportance {
   string description = 4;
 }
 
-// Training example
-message TrainingExample {
+// Training sample
+message TrainingSample {
   DeploymentFeatures deployment_features = 1;
   repeated ImageFeatures image_features = 2;
   float current_risk_score = 3; // Ground truth from existing system

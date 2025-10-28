@@ -169,7 +169,7 @@ class TrainingPipeline:
             # Use a subset for baseline validation
             validation_subset = self.training_data[:min(100, len(self.training_data))]
 
-            # Convert training examples back to baseline format
+            # Convert training samples back to baseline format
             baseline_test_data = []
             for example in validation_subset:
                 if 'deployment_id' in example:

@@ -309,13 +309,13 @@ class BaselineFeatureExtractor:
         }
         return severity_values.get(severity, 1.0)
 
-    def create_training_example(self,
+    def create_training_sample(self,
                                deployment_data: Dict[str, Any],
                                image_data_list: List[Dict[str, Any]],
                                alert_data: List[Dict[str, Any]] = None,
                                baseline_violations: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Create a training example with features and baseline risk score.
+        Create a training sample with features and baseline risk score.
 
         Returns:
             Dict with 'features' and 'risk_score' keys for ML training

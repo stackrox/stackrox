@@ -45,13 +45,13 @@ class TrainingDataLoader:
             json_file_path: Path to JSON training data file
 
         Returns:
-            List of training examples
+            List of training samples
         """
         try:
             with open(json_file_path, 'r') as f:
                 data = json.load(f)
 
-            training_examples = []
+            training_samples = []
             deployments = data.get('deployments', [])
 
             logger.info(f"Loading {len(deployments)} deployment examples from {json_file_path}")
@@ -59,7 +59,7 @@ class TrainingDataLoader:
             for i, deployment_record in enumerate(deployments):
                 try:
                     example = self._process_deployment_record(deployment_record)
-                    training_examples.append(example)
+                    training_samples.append(example)
 
                     if (i + 1) % 100 == 0:
                         logger.info(f"Processed {i + 1} examples")
@@ -68,8 +68,8 @@ class TrainingDataLoader:
                     logger.warning(f"Failed to process deployment record {i}: {e}")
                     continue
 
-            logger.info(f"Successfully loaded {len(training_examples)} training examples")
-            return training_examples
+            logger.info(f"Successfully loaded {len(training_samples)} training samples")
+            return training_samples
 
         except Exception as e:
             logger.error(f"Failed to load training data from {json_file_path}: {e}")
@@ -87,7 +87,7 @@ class TrainingDataLoader:
             filters: Optional filters for data collection (override config defaults)
 
         Yields:
-            Training examples as they are processed
+            Training samples as they are processed
         """
         logger.info("Starting streaming data load from Central API using configuration")
 
@@ -129,12 +129,12 @@ class TrainingDataLoader:
                 examples_yielded += 1
 
                 if examples_yielded % 100 == 0:
-                    logger.info(f"Streamed {examples_yielded} training examples")
+                    logger.info(f"Streamed {examples_yielded} training samples")
 
             # Clean up
             export_service.close()
 
-            logger.info(f"Completed streaming: {examples_yielded} training examples")
+            logger.info(f"Completed streaming: {examples_yielded} training samples")
 
         except ImportError as e:
             logger.error(f"Central API components not available: {e}")
@@ -192,13 +192,13 @@ class TrainingDataLoader:
 
     def _process_deployment_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process a single deployment record into a training example.
+        Process a single deployment record into a training sample.
 
         Args:
             record: Raw deployment record from JSON
 
         Returns:
-            Processed training example
+            Processed training sample
         """
         deployment_data = record.get('deployment', {})
         images_data = record.get('images', [])
@@ -206,8 +206,8 @@ class TrainingDataLoader:
         baseline_violations = record.get('baseline_violations', [])
         existing_risk_score = record.get('current_risk_score')
 
-        # Create training example using baseline feature extractor
-        example = self.baseline_extractor.create_training_example(
+        # Create training sample using baseline feature extractor
+        example = self.baseline_extractor.create_training_sample(
             deployment_data=deployment_data,
             image_data_list=images_data,
             alert_data=alerts_data,
@@ -226,12 +226,12 @@ class TrainingDataLoader:
 
         return example
 
-    def create_ranking_dataset(self, training_examples: List[Dict[str, Any]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def create_ranking_dataset(self, training_samples: List[Dict[str, Any]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Create ranking dataset for learning-to-rank algorithms.
 
         Args:
-            training_examples: List of training examples
+            training_samples: List of training samples
 
         Returns:
             Tuple of (X, y, groups) where:
@@ -239,8 +239,8 @@ class TrainingDataLoader:
             - y: Risk scores
             - groups: Group assignments for ranking
         """
-        if not training_examples:
-            raise ValueError("No training examples provided")
+        if not training_samples:
+            raise ValueError("No training samples provided")
 
         # Extract features and risk scores
         feature_names = None
@@ -250,14 +250,14 @@ class TrainingDataLoader:
 
         # Group deployments by cluster for ranking
         cluster_groups = {}
-        for i, example in enumerate(training_examples):
+        for i, example in enumerate(training_samples):
             cluster_id = example.get('cluster_id', 'unknown')
             if cluster_id not in cluster_groups:
                 cluster_groups[cluster_id] = []
             cluster_groups[cluster_id].append(i)
 
         # Build feature matrix
-        for example in training_examples:
+        for example in training_samples:
             features = example['features']
 
             if feature_names is None:
@@ -281,20 +281,20 @@ class TrainingDataLoader:
 
         return X, y, groups
 
-    def save_processed_data(self, training_examples: List[Dict[str, Any]],
+    def save_processed_data(self, training_samples: List[Dict[str, Any]],
                           output_path: str) -> None:
         """
         Save processed training data to file.
 
         Args:
-            training_examples: Processed training examples
+            training_samples: Processed training samples
             output_path: Path to save processed data
         """
         try:
             output_data = {
-                'training_examples': training_examples,
+                'training_samples': training_samples,
                 'metadata': {
-                    'count': len(training_examples),
+                    'count': len(training_samples),
                     'feature_extractor': 'BaselineFeatureExtractor',
                     'timestamp': pd.Timestamp.now().isoformat()
                 }
@@ -303,7 +303,7 @@ class TrainingDataLoader:
             with open(output_path, 'w') as f:
                 json.dump(output_data, f, indent=2, default=str)
 
-            logger.info(f"Saved {len(training_examples)} training examples to {output_path}")
+            logger.info(f"Saved {len(training_samples)} training samples to {output_path}")
 
         except Exception as e:
             logger.error(f"Failed to save processed data to {output_path}: {e}")
@@ -317,40 +317,40 @@ class TrainingDataLoader:
             input_path: Path to processed data file
 
         Returns:
-            List of training examples
+            List of training samples
         """
         try:
             with open(input_path, 'r') as f:
                 data = json.load(f)
 
-            training_examples = data.get('training_examples', [])
+            training_samples = data.get('training_samples', [])
             metadata = data.get('metadata', {})
 
-            logger.info(f"Loaded {len(training_examples)} training examples from {input_path}")
+            logger.info(f"Loaded {len(training_samples)} training samples from {input_path}")
             logger.info(f"Data metadata: {metadata}")
 
-            return training_examples
+            return training_samples
 
         except Exception as e:
             logger.error(f"Failed to load processed data from {input_path}: {e}")
             raise
 
-    def validate_training_data(self, training_examples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def validate_training_data(self, training_samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Validate training data quality and consistency.
 
         Args:
-            training_examples: List of training examples
+            training_samples: List of training samples
 
         Returns:
             Validation report
         """
-        if not training_examples:
-            return {'valid': False, 'error': 'No training examples provided'}
+        if not training_samples:
+            return {'valid': False, 'error': 'No training samples provided'}
 
         validation_report = {
             'valid': True,
-            'total_examples': len(training_examples),
+            'total_examples': len(training_samples),
             'feature_consistency': True,
             'risk_score_stats': {},
             'issues': []
@@ -360,7 +360,7 @@ class TrainingDataLoader:
         feature_names = None
         risk_scores = []
 
-        for i, example in enumerate(training_examples):
+        for i, example in enumerate(training_samples):
             # Check required fields
             if 'features' not in example:
                 validation_report['issues'].append(f"Example {i}: Missing 'features' field")
@@ -397,7 +397,7 @@ class TrainingDataLoader:
 
         # Overall validation
         if validation_report['issues']:
-            validation_report['valid'] = len(validation_report['issues']) < len(training_examples) * 0.1  # Allow 10% errors
+            validation_report['valid'] = len(validation_report['issues']) < len(training_samples) * 0.1  # Allow 10% errors
 
         logger.info(f"Validation complete: {validation_report}")
         return validation_report
@@ -450,7 +450,7 @@ class JSONTrainingDataGenerator:
         with open(output_file, 'w') as f:
             json.dump(training_data, f, indent=2, default=str)
 
-        logger.info(f"Generated {num_examples} sample training examples in {output_file}")
+        logger.info(f"Generated {num_examples} sample training samples in {output_file}")
 
     def _generate_sample_deployment(self, index: int) -> Dict[str, Any]:
         """Generate sample deployment data."""

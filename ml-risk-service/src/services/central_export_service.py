@@ -52,7 +52,7 @@ class CentralExportService:
 
         Args:
             filters: Export filters to apply
-            limit: Maximum number of training examples to collect
+            limit: Maximum number of training samples to collect
 
         Yields:
             Training examples as dictionaries
@@ -61,20 +61,20 @@ class CentralExportService:
 
         try:
             # Process workloads directly - much simpler than correlation approach
-            training_examples = self._stream_workload_data(filters, limit)
+            training_samples = self._stream_workload_data(filters, limit)
 
             examples_yielded = 0
-            for example in training_examples:
+            for example in training_samples:
                 yield example
                 examples_yielded += 1
 
                 if limit and examples_yielded >= limit:
-                    logger.info(f"Reached limit of {limit} training examples")
+                    logger.info(f"Reached limit of {limit} training samples")
                     break
 
                 # Log progress periodically
                 if examples_yielded % self.batch_size == 0:
-                    logger.info(f"Yielded {examples_yielded} training examples")
+                    logger.info(f"Yielded {examples_yielded} training samples")
 
             logger.info(f"Training data collection completed: {examples_yielded} examples")
 
@@ -91,7 +91,7 @@ class CentralExportService:
 
         Args:
             filters: Export filters to apply
-            limit: Maximum number of training examples
+            limit: Maximum number of training samples
 
         Yields:
             Training examples from workload data
@@ -117,10 +117,10 @@ class CentralExportService:
         try:
             for workload in self.client.stream_workloads(workload_filters):
                 # Direct processing - no correlation needed
-                training_example = self._create_training_example_from_workload(workload)
+                training_sample = self._create_training_sample_from_workload(workload)
 
-                if training_example:
-                    yield training_example
+                if training_sample:
+                    yield training_sample
                     examples_yielded += 1
 
                     if limit and examples_yielded >= limit:
@@ -148,9 +148,9 @@ class CentralExportService:
 
         logger.info(f"Workload streaming completed: {examples_yielded} examples")
 
-    def _create_training_example_from_workload(self, workload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _create_training_sample_from_workload(self, workload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Create training example directly from workload data.
+        Create training sample directly from workload data.
         No correlation needed - all data is already linked.
 
         Args:
@@ -172,7 +172,7 @@ class CentralExportService:
                     alerts_data = self._alert_cache.get(deployment_id, [])
 
             # Direct feature extraction using baseline extractor
-            training_example = self.feature_extractor.create_training_example(
+            training_sample = self.feature_extractor.create_training_sample(
                 deployment_data=deployment_data,
                 image_data_list=images_data,
                 alert_data=alerts_data,
@@ -180,7 +180,7 @@ class CentralExportService:
             )
 
             # Add workload-specific metadata
-            training_example['workload_metadata'] = {
+            training_sample['workload_metadata'] = {
                 'deployment_id': deployment_id,
                 'deployment_name': deployment_data.get('name', ''),
                 'namespace': deployment_data.get('namespace', ''),
@@ -192,7 +192,7 @@ class CentralExportService:
                 'collected_at': datetime.now(timezone.utc).isoformat()
             }
 
-            return training_example
+            return training_sample
 
         except Exception as e:
             logger.error(f"Failed to create training example from workload: {e}")

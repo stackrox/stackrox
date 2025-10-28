@@ -148,9 +148,9 @@ central_api:
   # Training-specific settings for full model training
   training:
     default_days_back: 30  # Default days back for data collection
-    default_limit: 1000  # Default maximum training examples
-    min_training_examples: 50  # Minimum examples required for training
-    max_training_examples: 5000  # Maximum examples to prevent memory issues
+    default_limit: 1000  # Default maximum training samples
+    min_training_samples: 50  # Minimum samples required for training
+    max_training_samples: 5000  # Maximum samples to prevent memory issues
     default_filters:
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"

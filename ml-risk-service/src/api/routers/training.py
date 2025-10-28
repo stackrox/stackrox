@@ -59,14 +59,14 @@ async def train_model(
     """
     Train a new risk ranking model.
 
-    This endpoint trains a new ML model using the provided training examples.
+    This endpoint trains a new ML model using the provided training samples.
     The training process includes:
     - Data validation and preprocessing
     - Feature extraction and ranking dataset creation
     - Model training with cross-validation
     - Performance evaluation and feature importance analysis
 
-    - **training_data**: List of training examples with features and target scores
+    - **training_data**: List of training samples with features and target scores
     - **config_override**: Optional JSON configuration overrides
 
     Returns training metrics, model version, and feature importance rankings.
@@ -81,16 +81,16 @@ async def train_model(
         if len(request.training_data) < 10:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Insufficient training data (minimum 10 examples required)"
+                detail="Insufficient training data (minimum 10 samples required)"
             )
 
         if len(request.training_data) > 10000:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Training data too large (maximum 10,000 examples)"
+                detail="Training data too large (maximum 10,000 samples)"
             )
 
-        logger.info(f"Starting model training with {len(request.training_data)} examples")
+        logger.info(f"Starting model training with {len(request.training_data)} samples")
         response = training_service.train_model(request, risk_service)
 
         if response.success:
@@ -153,7 +153,7 @@ async def get_training_status(
     description="Generate synthetic training data for testing and development"
 )
 async def generate_sample_data(
-    num_examples: int = Query(100, ge=10, le=1000, description="Number of examples to generate"),
+    num_examples: int = Query(100, ge=10, le=1000, description="Number of samples to generate"),
     training_service: TrainingService = Depends(get_training_service)
 ) -> Dict[str, Any]:
     """
@@ -162,19 +162,19 @@ async def generate_sample_data(
     This endpoint creates synthetic deployment data with realistic risk patterns
     for testing the training pipeline and API endpoints.
 
-    - **num_examples**: Number of training examples to generate (10-1000)
+    - **num_examples**: Number of training samples to generate (10-1000)
 
     Returns the path to generated data file and statistics.
     """
     try:
-        logger.info(f"Generating {num_examples} sample training examples")
+        logger.info(f"Generating {num_examples} sample training samples")
         sample_file = training_service.generate_sample_training_data(num_examples)
 
         return {
             "success": True,
             "sample_file": sample_file,
             "examples_generated": num_examples,
-            "message": f"Generated {num_examples} sample training examples"
+            "message": f"Generated {num_examples} sample training samples"
         }
 
     except Exception as e:
@@ -310,7 +310,7 @@ async def test_central_connection() -> Dict[str, Any]:
     description="Collect sample training data using Central's workloads export API"
 )
 async def collect_sample_from_central(
-    limit: int = Query(10, description="Number of training examples to collect"),
+    limit: int = Query(10, description="Number of training samples to collect"),
     days_back: int = Query(7, description="Number of days back to look for data")
 ) -> Dict[str, Any]:
     """
@@ -341,39 +341,39 @@ async def collect_sample_from_central(
         }
 
         # Collect sample data
-        logger.info(f"Collecting {limit} training examples from Central (last {days_back} days)")
+        logger.info(f"Collecting {limit} training samples from Central (last {days_back} days)")
 
         # Collect sample data using streaming approach with limit
-        training_examples = []
+        training_samples = []
         streaming_data = data_loader.load_from_central_api_streaming_with_config(
             config_path=None,
             filters=filters
         )
 
         for example in streaming_data:
-            training_examples.append(example)
-            if len(training_examples) >= limit:
+            training_samples.append(example)
+            if len(training_samples) >= limit:
                 break
 
         # Analyze collected data
-        if training_examples:
-            sample_example = training_examples[0]
+        if training_samples:
+            sample_example = training_samples[0]
             feature_count = len(sample_example.get('features', {}))
 
             # Get some basic statistics
-            risk_scores = [ex.get('risk_score', 0) for ex in training_examples]
+            risk_scores = [ex.get('risk_score', 0) for ex in training_samples]
             avg_risk_score = sum(risk_scores) / len(risk_scores) if risk_scores else 0
 
             clusters = set(ex.get('export_metadata', {}).get('cluster_id', 'unknown')
-                          for ex in training_examples)
+                          for ex in training_samples)
             namespaces = set(ex.get('export_metadata', {}).get('namespace', 'unknown')
-                           for ex in training_examples)
+                           for ex in training_samples)
 
             return {
                 "success": True,
-                "message": f"Successfully collected {len(training_examples)} training examples",
+                "message": f"Successfully collected {len(training_samples)} training samples",
                 "data_summary": {
-                    "examples_collected": len(training_examples),
+                    "samples_collected": len(training_samples),
                     "feature_count": feature_count,
                     "avg_risk_score": round(avg_risk_score, 2),
                     "unique_clusters": len(clusters),
@@ -387,9 +387,9 @@ async def collect_sample_from_central(
         else:
             return {
                 "success": True,
-                "message": "No training examples found with current filters",
+                "message": "No training samples found with current filters",
                 "data_summary": {
-                    "examples_collected": 0,
+                    "samples_collected": 0,
                     "feature_count": 0
                 },
                 "filters_used": filters
@@ -428,7 +428,7 @@ async def run_quick_test_pipeline(
 
     This endpoint performs a comprehensive test of the training system by:
 
-    1. **Sample Data Generation**: Creates 50 synthetic training examples with realistic patterns
+    1. **Sample Data Generation**: Creates 50 synthetic training samples with realistic patterns
     2. **Full Pipeline Execution**: Runs complete training workflow including:
        - Data loading and validation
        - Feature extraction from deployments and images
@@ -485,7 +485,7 @@ async def run_quick_test_pipeline(
 )
 async def train_full_from_central(
     days_back: int = Query(30, ge=1, le=365, description="Number of days back to collect data"),
-    limit: Optional[int] = Query(None, ge=10, le=10000, description="Maximum training examples to collect"),
+    limit: Optional[int] = Query(None, ge=10, le=10000, description="Maximum training samples to collect"),
     include_inactive: bool = Query(False, description="Include inactive deployments"),
     severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold"),
     clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
@@ -506,7 +506,7 @@ async def train_full_from_central(
 
     **Parameters:**
     - **days_back**: Number of days back to collect workload data (1-365)
-    - **limit**: Optional limit on training examples to prevent memory issues
+    - **limit**: Optional limit on training samples to prevent memory issues
     - **include_inactive**: Whether to include inactive/stopped deployments
     - **severity_threshold**: Minimum vulnerability severity to include (LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, CRITICAL_SEVERITY)
     - **clusters**: Optional comma-separated list of cluster IDs to filter

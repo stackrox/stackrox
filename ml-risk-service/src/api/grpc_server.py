@@ -107,7 +107,7 @@ class BatchDeploymentRiskResponse:
 
 
 @dataclass
-class TrainingExample:
+class TrainingSample:
     deployment_features: DeploymentFeatures
     image_features: TypingList[ImageFeatures]
     current_risk_score: float
@@ -116,7 +116,7 @@ class TrainingExample:
 
 @dataclass
 class TrainModelRequest:
-    training_data: TypingList[TrainingExample]
+    training_data: TypingList[TrainingSample]
     config_override: str = ""
 
 
@@ -155,7 +155,7 @@ class ModelHealthResponse:
     healthy: bool
     model_version: str
     last_training_time: int
-    training_examples_count: int
+    training_samples_count: int
     current_metrics: ModelMetrics
 
 
@@ -250,7 +250,7 @@ class MLRiskServiceImpl:
         self.predictions_served = 0
         self.total_prediction_time = 0.0
         self.last_training_time = 0
-        self.training_examples_count = 0
+        self.training_samples_count = 0
         self.model_loaded = False
         self.current_model_id = None
         self.current_model_version = None
@@ -433,19 +433,19 @@ class MLRiskServiceImpl:
                 logger.info(f"Starting model training with {len(request.training_data)} examples")
 
                 # Convert training data to internal format
-                training_examples = []
+                training_samples = []
                 for example in request.training_data:
-                    # Convert protobuf training example to internal format
-                    features = self._extract_features_from_training_example(example)
-                    training_examples.append({
+                    # Convert protobuf training sample to internal format
+                    features = self._extract_features_from_training_sample(example)
+                    training_samples.append({
                         'features': features,
                         'risk_score': example.current_risk_score,
                         'deployment_id': example.deployment_id
                     })
 
                 # Create ranking dataset
-                X, y, groups = self.training_pipeline.data_loader.create_ranking_dataset(training_examples)
-                feature_names = sorted(training_examples[0]['features'].keys())
+                X, y, groups = self.training_pipeline.data_loader.create_ranking_dataset(training_samples)
+                feature_names = sorted(training_samples[0]['features'].keys())
 
                 # Train model
                 training_metrics = self.model.train(X, y, groups, feature_names)
@@ -453,7 +453,7 @@ class MLRiskServiceImpl:
                 # Update service state
                 self.model_loaded = True
                 self.last_training_time = int(time.time())
-                self.training_examples_count = len(training_examples)
+                self.training_samples_count = len(training_samples)
 
                 # Convert metrics to response format
                 global_importance = self.model.get_global_feature_importance()
@@ -541,7 +541,7 @@ class MLRiskServiceImpl:
                     healthy=is_healthy,
                     model_version=self.model.model_version or "none",
                     last_training_time=self.last_training_time,
-                    training_examples_count=self.training_examples_count,
+                    training_samples_count=self.training_samples_count,
                     current_metrics=current_metrics
                 )
 
@@ -551,7 +551,7 @@ class MLRiskServiceImpl:
                 healthy=False,
                 model_version="error",
                 last_training_time=0,
-                training_examples_count=0,
+                training_samples_count=0,
                 current_metrics=ModelMetrics(0, 0, 0, 0)
             )
 
@@ -654,8 +654,8 @@ class MLRiskServiceImpl:
 
         return feature_vector
 
-    def _extract_features_from_training_example(self, example: TrainingExample) -> Dict[str, float]:
-        """Extract features from training example."""
+    def _extract_features_from_training_sample(self, example: TrainingSample) -> Dict[str, float]:
+        """Extract features from training sample."""
         # Create a mock request and extract features
         mock_request = DeploymentRiskRequest(
             deployment_id=example.deployment_id,

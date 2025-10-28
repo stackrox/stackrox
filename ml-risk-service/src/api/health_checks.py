@@ -200,7 +200,7 @@ class HealthCheckService:
                     'predictions_served': self.ml_service.predictions_served,
                     'avg_prediction_time_ms': avg_prediction_time,
                     'last_training_time': self.ml_service.last_training_time,
-                    'training_examples_count': self.ml_service.training_examples_count
+                    'training_samples_count': self.ml_service.training_samples_count
                 },
                 'system': {
                     'memory_usage_mb': memory_info.used / (1024 * 1024),
