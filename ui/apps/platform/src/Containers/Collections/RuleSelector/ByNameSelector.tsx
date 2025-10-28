@@ -114,6 +114,7 @@ function ByNameSelector({
                         <div className="rule-selector-list-item" key={keyFor(index)}>
                             <div className="rule-selector-match-type-select">
                                 <NameMatchTypeSelect
+                                    id={`${entityType}-name-match-type-${index}`}
                                     selected={matchType}
                                     isDisabled={isDisabled}
                                     onChange={onChangeMatchType(scopedResourceSelector, index)}

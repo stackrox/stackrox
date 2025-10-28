@@ -7,6 +7,7 @@ export type MatchTypeSelectProps<T extends MatchType> = {
     selected: T;
     children: ReactElement[];
     isDisabled?: boolean;
+    id?: string;
 };
 
 function MatchTypeSelect<T extends MatchType>({
@@ -14,6 +15,7 @@ function MatchTypeSelect<T extends MatchType>({
     selected,
     children,
     isDisabled = false,
+    id = 'match-type-select',
 }: MatchTypeSelectProps<T>) {
     function onSelect(_id: string, value: string) {
         onChange(value as T);
@@ -21,7 +23,7 @@ function MatchTypeSelect<T extends MatchType>({
 
     return (
         <SelectSingle
-            id="match-type-select"
+            id={id}
             value={selected}
             handleSelect={onSelect}
             isDisabled={isDisabled}

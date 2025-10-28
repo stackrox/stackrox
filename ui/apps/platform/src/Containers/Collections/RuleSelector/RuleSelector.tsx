@@ -1,4 +1,4 @@
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import type { FormikErrors } from 'formik';
 
