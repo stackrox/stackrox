@@ -206,9 +206,11 @@ func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
 			if c.ExpectedFound {
 				s.True(found)
 				protoassert.Equal(s.T(), processIndicator, fetchedProcess)
-				// TODO: Make the pruning process return fine-grain information on removed items
 				// Note: delete does not return the ID of the removed processes,
 				// and counts items in successful batch as removed, even if they were not.
+				// This is a conscious performance trade-off. The returned metrics might be
+				// slightly off from the actual values here, but should still provide good
+				// order of magnitude information on what was processed by pruning.
 				s.Equal(1, prunedCount)
 			} else {
 				s.False(found)
