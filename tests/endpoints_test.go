@@ -162,6 +162,7 @@ func (c *endpointsTestCase) verifyDialResult(t testutils.T, conn *tls.Conn, err 
 		if err.Error() == "remote error: tls: certificate required" {
 			break
 		}
+		t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
 	}
 
 	if !c.expectConnectFailure {
