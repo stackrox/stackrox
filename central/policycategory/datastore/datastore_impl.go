@@ -3,6 +3,8 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
@@ -19,19 +21,17 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 var (
 	log               = logging.LoggerForModule()
 	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
-	titleCase         = cases.Title(language.English)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+	upperCaseRegex = regexp.MustCompile("[A-Z]")
 )
 
 type datastoreImpl struct {
@@ -47,7 +47,7 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	defer ds.categoryMutex.Unlock()
 
 	for i, categoryName := range categoryNames {
-		categoryNames[i] = titleCase.String(categoryName)
+		categoryNames[i] = fixCase(categoryName)
 	}
 
 	edges, err := ds.policyCategoryEdgeDS.SearchRawEdges(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery())
@@ -244,7 +244,7 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	category.Name = titleCase.String(category.GetName())
+	category.Name = fixCase(category.GetName())
 	err := ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, err
@@ -279,7 +279,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
-	category.Name = titleCase.String(newName)
+	category.Name = fixCase(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
@@ -332,4 +332,20 @@ func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) 
 		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+func fixCase(s string) string {
+	var newStr string
+	for i, c := range s {
+		if i == 0 || s[i-1] == ' ' {
+			if !upperCaseRegex.MatchString(string(c)) {
+				newStr += strings.ToUpper(string(c))
+			} else {
+				newStr += string(c)
+			}
+		} else {
+			newStr += string(c)
+		}
+	}
+	return newStr
 }
