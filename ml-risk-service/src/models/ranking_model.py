@@ -17,7 +17,7 @@ import io
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import ndcg_score, roc_auc_score
-import lightgbm as lgb
+from sklearn.ensemble import RandomForestRegressor
 
 # Explainability
 try:
@@ -54,7 +54,8 @@ class PredictionResult:
 class RiskRankingModel:
     """
     ML model for deployment risk ranking with explainability.
-    Supports both LightGBM ranker and traditional regression approaches.
+    Currently supports sklearn-based regression approach with extensible architecture
+    for future algorithm implementations.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -76,16 +77,9 @@ class RiskRankingModel:
                 'algorithm': 'sklearn_ranksvm',
                 'validation_split': 0.2,
                 'random_state': 42,
-                'lightgbm_params': {
-                    'objective': 'lambdarank',
-                    'metric': 'ndcg',
-                    'num_leaves': 31,
-                    'learning_rate': 0.1,
-                    'feature_fraction': 0.9,
-                    'bagging_fraction': 0.8,
-                    'bagging_freq': 5,
-                    'verbose': 0,
-                    'force_row_wise': True
+                'sklearn_params': {
+                    'n_estimators': 100,
+                    'n_jobs': -1
                 },
                 'explainability': {
                     'shap_enabled': True,
@@ -153,61 +147,25 @@ class RiskRankingModel:
             y_sample = y[:sample_size]
             logger.info(f"Sample of target values: {y_sample}")
 
-        # For LightGBM ranking, ensure all scores are unique by adding small epsilon
-        if self.algorithm == 'lightgbm_ranker':
-            # Add tiny random noise to ensure all values are unique
-            epsilon = 1e-8
-            np.random.seed(42)  # Deterministic noise
-            y = y + np.random.uniform(-epsilon, epsilon, size=len(y))
-            logger.info(f"Added epsilon noise for unique ranking values: {len(np.unique(y))} unique values")
 
         # Split data
         val_split = self.config.get('model', {}).get('validation_split', 0.2)
         random_state = self.config.get('model', {}).get('random_state', 42)
 
-        if groups is not None and self.algorithm == 'lightgbm_ranker':
-            # For ranking, split by groups
-            X_train, X_val, y_train, y_val, groups_train, groups_val = self._split_ranking_data(
-                X, y, groups, val_split, random_state)
-        else:
-            X_train, X_val, y_train, y_val = train_test_split(
-                X, y, test_size=val_split, random_state=random_state)
-            groups_train = groups_val = None
+        # Split data for training and validation
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, test_size=val_split, random_state=random_state)
 
         # Scale features
         self.scaler = StandardScaler()
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_val_scaled = self.scaler.transform(X_val)
 
-        # Convert to integer ranks ONLY for LightGBM, sklearn works with float scores
-        if self.algorithm == 'lightgbm_ranker':
-            # Use simple sequential mapping to ensure contiguous labels
-            unique_train_sorted = np.unique(y_train)
-            unique_val_sorted = np.unique(y_val)
+        # Use float scores directly for sklearn
+        logger.info(f"Using float scores - Train: {y_train.min():.6f}-{y_train.max():.6f}, Val: {y_val.min():.6f}-{y_val.max():.6f}")
 
-            # Create explicit mapping to ensure contiguous labels 0, 1, 2, ..., n-1
-            train_mapping = {orig_val: i for i, orig_val in enumerate(unique_train_sorted)}
-            val_mapping = {orig_val: i for i, orig_val in enumerate(unique_val_sorted)}
-
-            y_train = np.array([train_mapping[val] for val in y_train], dtype=np.int32)
-            y_val = np.array([val_mapping[val] for val in y_val], dtype=np.int32)
-
-            logger.info(f"Sequential mapping - Train: {len(unique_train_sorted)} unique -> 0-{len(unique_train_sorted)-1}, Val: {len(unique_val_sorted)} unique -> 0-{len(unique_val_sorted)-1}")
-            logger.info(f"Final ranking - Train: {y_train.min()}-{y_train.max()} ({len(np.unique(y_train))} unique), Val: {y_val.min()}-{y_val.max()} ({len(np.unique(y_val))} unique)")
-        else:
-            # For sklearn, use float scores directly
-            logger.info(f"Using float scores - Train: {y_train.min():.6f}-{y_train.max():.6f}, Val: {y_val.min():.6f}-{y_val.max():.6f}")
-
-        # Train model based on algorithm
-        if self.algorithm == 'lightgbm_ranker':
-            metrics = self._train_lightgbm_ranker(
-                X_train_scaled, y_train, X_val_scaled, y_val,
-                groups_train, groups_val)
-        elif self.algorithm == 'sklearn_ranksvm':
-            metrics = self._train_sklearn_ranksvm(
-                X_train_scaled, y_train, X_val_scaled, y_val)
-        else:
-            raise ValueError(f"Unknown algorithm: {self.algorithm}")
+        # Train model
+        metrics = self._train_model(X_train_scaled, y_train, X_val_scaled, y_val)
 
         self.training_metrics = metrics
         self.model_version = f"{self.algorithm}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -219,76 +177,22 @@ class RiskRankingModel:
         logger.info(f"Training complete. Validation NDCG: {metrics.val_ndcg:.4f}")
         return metrics
 
-    def _train_lightgbm_ranker(self, X_train: np.ndarray, y_train: np.ndarray,
-                              X_val: np.ndarray, y_val: np.ndarray,
-                              groups_train: Optional[np.ndarray],
-                              groups_val: Optional[np.ndarray]) -> ModelMetrics:
-        """Train LightGBM ranker model."""
 
-        params = self.config.get('model', {}).get('lightgbm_params', {})
-        training_config = self.config.get('training', {})
+    def _train_model(self, X_train: np.ndarray, y_train: np.ndarray,
+                     X_val: np.ndarray, y_val: np.ndarray) -> ModelMetrics:
+        """Train the machine learning model."""
 
-        # Create datasets
-        train_data = lgb.Dataset(X_train, label=y_train, group=groups_train,
-                                feature_name=self.feature_names)
-        val_data = lgb.Dataset(X_val, label=y_val, group=groups_val,
-                              feature_name=self.feature_names)
+        # Get algorithm-specific parameters
+        sklearn_params = self.config.get('model', {}).get('sklearn_params', {})
+        random_state = self.config.get('model', {}).get('random_state', 42)
 
-        # Train model
-        callbacks = []
+        # Create model with configurable parameters
+        model_params = {
+            'random_state': random_state,
+            **sklearn_params  # Merge in configured parameters
+        }
 
-        # Use conservative early stopping to ensure minimum learning
-        early_stopping_rounds = training_config.get('early_stopping_rounds', 10)
-        min_iterations = max(50, early_stopping_rounds * 2)  # Ensure at least 50 iterations for feature learning
-
-        if early_stopping_rounds and len(y_train) > 100:  # Only use early stopping with sufficient data
-            callbacks.append(lgb.early_stopping(early_stopping_rounds, verbose=False))
-        else:
-            logger.info("Skipping early stopping due to insufficient data - training with fixed iterations")
-
-        # Ensure minimum iterations for meaningful training and feature importance learning
-        max_iterations = max(min_iterations, training_config.get('max_iterations', 100))
-
-        self.model = lgb.train(
-            params=params,
-            train_set=train_data,
-            valid_sets=[train_data, val_data],
-            valid_names=['train', 'valid'],
-            num_boost_round=max_iterations,
-            callbacks=callbacks
-        )
-
-        # Calculate metrics
-        train_pred = self.model.predict(X_train)
-        val_pred = self.model.predict(X_val)
-
-        # NDCG scores
-        train_ndcg = self._calculate_ndcg(y_train, train_pred, groups_train)
-        val_ndcg = self._calculate_ndcg(y_val, val_pred, groups_val)
-
-        # Feature importance
-        importance_dict = dict(zip(self.feature_names, self.model.feature_importance()))
-
-        return ModelMetrics(
-            train_ndcg=train_ndcg,
-            val_ndcg=val_ndcg,
-            epochs_completed=self.model.num_trees(),
-            feature_importance=importance_dict
-        )
-
-    def _train_sklearn_ranksvm(self, X_train: np.ndarray, y_train: np.ndarray,
-                              X_val: np.ndarray, y_val: np.ndarray) -> ModelMetrics:
-        """Train sklearn-based ranking model (fallback)."""
-
-        from sklearn.svm import SVR
-        from sklearn.ensemble import RandomForestRegressor
-
-        # Use RandomForest as a ranking approximation
-        self.model = RandomForestRegressor(
-            n_estimators=100,
-            random_state=self.config.get('model', {}).get('random_state', 42),
-            n_jobs=-1
-        )
+        self.model = RandomForestRegressor(**model_params)
 
         self.model.fit(X_train, y_train)
 
@@ -387,55 +291,92 @@ class RiskRankingModel:
         Returns:
             Dictionary of feature names to importance scores
         """
+        logger.info(f"Computing fallback feature importance for {len(self.feature_names)} features")
+
         try:
             import numpy as np
             from scipy.stats import pearsonr
 
             importance_dict = {}
+            correlations_computed = 0
+            zero_variance_features = 0
 
             for i, feature_name in enumerate(self.feature_names):
                 feature_values = X[:, i]
+                feature_var = np.var(feature_values)
 
                 # Skip features with no variance
-                if np.var(feature_values) == 0:
+                if feature_var == 0:
                     importance_dict[feature_name] = 0.0
+                    zero_variance_features += 1
+                    logger.debug(f"Feature {feature_name} has zero variance")
                     continue
 
                 # Calculate correlation with target
                 try:
                     correlation, p_value = pearsonr(feature_values, y)
+                    correlations_computed += 1
+
                     # Use absolute correlation as importance, weighted by significance
                     if np.isnan(correlation) or np.isnan(p_value):
                         importance = 0.0
+                        logger.debug(f"Feature {feature_name}: NaN correlation")
                     else:
-                        # Weight by inverse p-value (more significant = higher importance)
+                        # Enhanced weighting: correlation * significance * variance factor
                         significance_weight = max(0.1, 1.0 - p_value) if p_value < 1.0 else 0.1
-                        importance = abs(correlation) * significance_weight
+                        variance_factor = min(2.0, np.sqrt(feature_var))  # Boost features with higher variance
+                        importance = abs(correlation) * significance_weight * variance_factor
 
                     importance_dict[feature_name] = importance
+                    logger.debug(f"Feature {feature_name}: corr={correlation:.4f}, p={p_value:.4f}, importance={importance:.6f}")
 
                 except Exception as e:
                     logger.debug(f"Failed to compute correlation for feature {feature_name}: {e}")
                     importance_dict[feature_name] = 0.0
 
+            logger.info(f"Fallback computation: {correlations_computed} correlations computed, "
+                       f"{zero_variance_features} zero-variance features")
+
             # Normalize importance scores to sum to 1.0
             total_importance = sum(importance_dict.values())
-            if total_importance > 0:
+            logger.info(f"Total raw importance before normalization: {total_importance:.6f}")
+
+            if total_importance > 1e-10:  # More lenient threshold
                 importance_dict = {name: score / total_importance for name, score in importance_dict.items()}
-                logger.info(f"Fallback feature importance computed using correlation. Top features: "
-                           f"{sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]}")
+                top_features = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]
+                logger.info(f"Fallback feature importance computed using correlation. Top features: {top_features}")
             else:
-                # If all correlations are zero, assign equal importance
-                equal_importance = 1.0 / len(self.feature_names)
-                importance_dict = {name: equal_importance for name in self.feature_names}
-                logger.warning("All correlations are zero. Assigning equal importance to all features.")
+                # If all correlations are zero, use alternative methods
+                logger.warning(f"All correlations are effectively zero (total={total_importance:.10f}). Trying alternative importance calculation.")
+
+                # Alternative: Use feature variance as importance
+                variance_importance = {}
+                total_variance = 0.0
+
+                for i, feature_name in enumerate(self.feature_names):
+                    feature_var = np.var(X[:, i])
+                    variance_importance[feature_name] = feature_var
+                    total_variance += feature_var
+
+                if total_variance > 0:
+                    importance_dict = {name: var / total_variance for name, var in variance_importance.items()}
+                    logger.info(f"Using feature variance as importance. Top variance features: "
+                               f"{sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]}")
+                else:
+                    # Last resort: equal importance
+                    equal_importance = 1.0 / len(self.feature_names)
+                    importance_dict = {name: equal_importance for name in self.feature_names}
+                    logger.warning(f"All features have zero variance. Assigning equal importance: {equal_importance:.6f}")
 
             return importance_dict
 
         except Exception as e:
             logger.error(f"Fallback feature importance calculation failed: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             # Last resort: equal importance
             equal_importance = 1.0 / len(self.feature_names)
+            logger.warning(f"Using last resort equal importance: {equal_importance:.6f}")
             return {name: equal_importance for name in self.feature_names}
 
     def _calculate_prediction_confidence(self, X: np.ndarray, prediction: float) -> float:
@@ -453,32 +394,6 @@ class RiskRankingModel:
         except:
             return 0.5  # Default confidence
 
-    def _calculate_ndcg(self, y_true: np.ndarray, y_pred: np.ndarray,
-                       groups: Optional[np.ndarray]) -> float:
-        """Calculate NDCG score for ranking evaluation."""
-        if groups is None:
-            return self._calculate_regression_ndcg(y_true, y_pred)
-
-        # Calculate NDCG per group and average
-        ndcg_scores = []
-        start_idx = 0
-
-        for group_size in groups:
-            end_idx = start_idx + group_size
-            group_true = y_true[start_idx:end_idx]
-            group_pred = y_pred[start_idx:end_idx]
-
-            if len(np.unique(group_true)) > 1:  # Only if there's variance in scores
-                try:
-                    # Reshape for ndcg_score function
-                    ndcg = ndcg_score([group_true], [group_pred])
-                    ndcg_scores.append(ndcg)
-                except:
-                    pass  # Skip groups with issues
-
-            start_idx = end_idx
-
-        return np.mean(ndcg_scores) if ndcg_scores else 0.0
 
     def _calculate_regression_ndcg(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Calculate NDCG for regression (treat as single group)."""
@@ -490,56 +405,6 @@ class RiskRankingModel:
         except:
             return 0.0
 
-    def _split_ranking_data(self, X: np.ndarray, y: np.ndarray, groups: np.ndarray,
-                           val_split: float, random_state: int) -> Tuple[np.ndarray, ...]:
-        """Split ranking data maintaining group structure."""
-
-        # Split groups, not individual samples
-        n_groups = len(groups)
-
-        # Handle single group case - fall back to sample-based split
-        if n_groups == 1:
-            logger.info(f"Single group detected ({groups[0]} samples), using sample-based validation split")
-            X_train, X_val, y_train, y_val = train_test_split(
-                X, y, test_size=val_split, random_state=random_state)
-
-            # Create group arrays for the splits
-            groups_train = np.array([len(y_train)])
-            groups_val = np.array([len(y_val)])
-
-            return X_train, X_val, y_train, y_val, groups_train, groups_val
-
-        # Regular group-based split for multiple groups
-        # Ensure at least 1 group goes to validation if we have multiple groups
-        n_val_groups = max(1, int(n_groups * val_split))
-
-        np.random.seed(random_state)
-        val_group_indices = np.random.choice(n_groups, n_val_groups, replace=False)
-        train_group_indices = np.setdiff1d(np.arange(n_groups), val_group_indices)
-
-        # Map group indices to sample indices
-        train_indices = []
-        val_indices = []
-        start_idx = 0
-
-        for i, group_size in enumerate(groups):
-            end_idx = start_idx + group_size
-            if i in train_group_indices:
-                train_indices.extend(range(start_idx, end_idx))
-            else:
-                val_indices.extend(range(start_idx, end_idx))
-            start_idx = end_idx
-
-        # Create splits
-        X_train, X_val = X[train_indices], X[val_indices]
-        y_train, y_val = y[train_indices], y[val_indices]
-        groups_train = groups[train_group_indices]
-        groups_val = groups[val_group_indices]
-
-        logger.info(f"Group-based split: {len(groups_train)} training groups ({len(y_train)} samples), "
-                   f"{len(groups_val)} validation groups ({len(y_val)} samples)")
-
-        return X_train, X_val, y_train, y_val, groups_train, groups_val
 
     def _initialize_shap_explainer(self, X_sample: np.ndarray) -> None:
         """Initialize SHAP explainer for the trained model."""
@@ -547,15 +412,9 @@ class RiskRankingModel:
             return
 
         try:
-            if hasattr(self.model, 'predict'):
-                # For LightGBM and sklearn models
-                if isinstance(self.model, lgb.Booster):
-                    self.shap_explainer = shap.TreeExplainer(self.model)
-                else:
-                    # Use KernelExplainer for other models
-                    background = shap.sample(X_sample, min(100, len(X_sample)))
-                    self.shap_explainer = shap.KernelExplainer(self.model.predict, background)
-
+            # Use KernelExplainer for sklearn models
+            background = shap.sample(X_sample, min(100, len(X_sample)))
+            self.shap_explainer = shap.KernelExplainer(self.model.predict, background)
             logger.info("SHAP explainer initialized successfully")
 
         except Exception as e:
