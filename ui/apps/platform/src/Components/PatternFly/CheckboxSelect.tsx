@@ -62,6 +62,7 @@ type CheckboxSelectBaseProps = {
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
+    toggleAriaLabel?: string;
     isDisabled?: boolean;
     popperProps?: SelectPopperProps;
 };
@@ -89,6 +90,7 @@ function CheckboxSelect({
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
+    toggleAriaLabel,
     isDisabled = false,
     popperProps,
 }: CheckboxSelectProps): ReactElement {
@@ -150,7 +152,7 @@ function CheckboxSelect({
             isExpanded={isOpen}
             isDisabled={isDisabled}
             icon={toggleIcon}
-            aria-label={ariaLabel}
+            aria-label={toggleAriaLabel}
         >
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}

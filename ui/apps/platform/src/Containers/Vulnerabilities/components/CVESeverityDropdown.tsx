@@ -23,6 +23,7 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="CVE severity filter menu items"
+            toggleAriaLabel="CVE severity filter menu toggle"
             placeholderText="CVE severity"
         >
             <SelectOption value="Critical">Critical</SelectOption>

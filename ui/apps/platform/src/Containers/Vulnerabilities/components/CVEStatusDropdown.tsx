@@ -28,6 +28,7 @@ function CVEStatusDropdown<FilterField extends 'FIXABLE' | 'CLUSTER CVE FIXABLE'
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="CVE status filter menu items"
+            toggleAriaLabel="CVE status filter menu toggle"
             placeholderText="CVE status"
         >
             <SelectOption value="Fixable">Fixable</SelectOption>

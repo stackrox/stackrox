@@ -26,6 +26,7 @@ function ComponentScannableStatusDropdown({
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="Component scannable status filter menu items"
+            toggleAriaLabel="Component scannable status filter menu toggle"
             placeholderText="Scan status"
         >
             <SelectOption value="Scanned">Scanned</SelectOption>

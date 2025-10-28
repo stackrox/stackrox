@@ -22,6 +22,7 @@ function CheckStatusDropdown({ searchFilter, onSelect }: CheckStatusDropdownProp
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="Check status filter menu items"
+            toggleAriaLabel="Check status filter menu toggle"
             placeholderText="Compliance status"
         >
             <SelectOption value="Pass">Pass</SelectOption>
