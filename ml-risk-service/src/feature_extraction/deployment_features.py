@@ -96,49 +96,110 @@ class DeploymentFeatureExtractor:
         """
         features = DeploymentFeatures()
 
-        # Basic deployment info
-        features.cluster_id = deployment_data.get('cluster_id', '')
+        # Basic deployment info - handle Central API field names with fallbacks
+        features.cluster_id = deployment_data.get('clusterId', deployment_data.get('cluster_id', ''))
         features.namespace = deployment_data.get('namespace', '')
-        features.replica_count = deployment_data.get('replicas', 1)
-        features.is_orchestrator_component = deployment_data.get('orchestrator_component', False)
-        features.is_platform_component = deployment_data.get('platform_component', False)
+        # Handle replica count - may be string or int from Central API
+        replicas = deployment_data.get('replicas', 1)
+        try:
+            features.replica_count = int(replicas) if replicas is not None else 1
+        except (ValueError, TypeError):
+            logger.warning(f"Failed to parse replica count '{replicas}', using default 1")
+            features.replica_count = 1
+        features.is_orchestrator_component = deployment_data.get('orchestratorComponent',
+                                                               deployment_data.get('orchestrator_component', False))
+        features.is_platform_component = deployment_data.get('platformComponent',
+                                                            deployment_data.get('platform_component', False))
         features.is_inactive = deployment_data.get('inactive', False)
 
-        # Creation timestamp
+        # Creation timestamp - handle both protobuf and ISO string formats
         created = deployment_data.get('created')
         if created:
-            # Convert protobuf timestamp to unix timestamp
-            features.creation_timestamp = int(created.get('seconds', 0))
+            if isinstance(created, dict):
+                # Protobuf style: {"seconds": 1698509065}
+                features.creation_timestamp = int(created.get('seconds', 0))
+            elif isinstance(created, str):
+                # ISO string: "2023-10-28T18:54:25.638Z"
+                try:
+                    from datetime import datetime
+                    # Handle both Z and +00:00 timezone formats
+                    created_clean = created.replace('Z', '+00:00') if created.endswith('Z') else created
+                    dt = datetime.fromisoformat(created_clean)
+                    features.creation_timestamp = int(dt.timestamp())
+                except Exception as e:
+                    logger.warning(f"Failed to parse timestamp '{created}': {e}")
+                    features.creation_timestamp = 0
+            else:
+                logger.warning(f"Unknown timestamp format: {type(created)} - {created}")
+                features.creation_timestamp = 0
 
-        # Host access features - mirrors violations multiplier
-        features.host_network = deployment_data.get('host_network', False)
-        features.host_pid = deployment_data.get('host_pid', False)
-        features.host_ipc = deployment_data.get('host_ipc', False)
+        # Host access features - handle Central API field names
+        features.host_network = deployment_data.get('hostNetwork', deployment_data.get('host_network', False))
+        features.host_pid = deployment_data.get('hostPid', deployment_data.get('host_pid', False))
+        features.host_ipc = deployment_data.get('hostIpc', deployment_data.get('host_ipc', False))
 
-        # Service account configuration
+        # Service account configuration - handle Central API field names
         features.automount_service_account_token = deployment_data.get(
-            'automount_service_account_token', False)
+            'automountServiceAccountToken',
+            deployment_data.get('automount_service_account_token', False))
 
-        # Service account permission level
-        perm_level = deployment_data.get('service_account_permission_level')
+        # Service account permission level - handle enum string values from Central API
+        perm_level = (deployment_data.get('serviceAccountPermissionLevel') or
+                     deployment_data.get('service_account_permission_level'))
         if perm_level is not None:
-            features.service_account_permission_level = float(perm_level)
+            try:
+                if isinstance(perm_level, str):
+                    # Map Central API enum values to numeric scores
+                    permission_mapping = {
+                        'NONE': 0.0,
+                        'MINIMAL': 0.1,
+                        'DEFAULT': 0.3,
+                        'ELEVATED_IN_NAMESPACE': 0.6,
+                        'ELEVATED_CLUSTER_WIDE': 0.9,
+                        'CLUSTER_ADMIN': 1.0,
+                        'NULL': 0.0,
+                        'UNKNOWN': 0.0,
+                        '': 0.0
+                    }
+                    perm_upper = perm_level.upper()
+                    if perm_upper in permission_mapping:
+                        features.service_account_permission_level = permission_mapping[perm_upper]
+                    else:
+                        # Try to parse as float if it's a numeric string
+                        features.service_account_permission_level = float(perm_level)
+                else:
+                    features.service_account_permission_level = float(perm_level)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Failed to parse service account permission level '{perm_level}': {e}")
+                features.service_account_permission_level = 0.0
 
-        # Container-level features
+        # Container-level features - handle Central API field names
         containers = deployment_data.get('containers', [])
-        for container in containers:
-            security_context = container.get('security_context', {})
-            if security_context.get('privileged', False):
-                features.privileged_container_count += 1
+        if not isinstance(containers, (list, tuple)):
+            logger.warning(f"Expected containers to be list/tuple, got {type(containers)}: {containers}")
+            containers = []
 
-        # Port exposure - mirrors port exposure multiplier
+        for container in containers:
+            if isinstance(container, dict):
+                # Handle both securityContext and security_context field names
+                security_context = (container.get('securityContext') or
+                                  container.get('security_context', {}))
+                if isinstance(security_context, dict) and security_context.get('privileged', False):
+                    features.privileged_container_count += 1
+
+        # Port exposure - handle Central API port data
         ports = deployment_data.get('ports', [])
+        if not isinstance(ports, (list, tuple)):
+            logger.warning(f"Expected ports to be list/tuple, got {type(ports)}: {ports}")
+            ports = []
+
         features.exposed_port_count = len(ports)
         for port in ports:
-            # Check for external exposure (LoadBalancer, NodePort)
-            if port.get('exposure') in ['EXTERNAL', 'NODE']:
-                features.has_external_exposure = True
-                break
+            if isinstance(port, dict):
+                # Check for external exposure (LoadBalancer, NodePort)
+                if port.get('exposure') in ['EXTERNAL', 'NODE']:
+                    features.has_external_exposure = True
+                    break
 
         # Policy violations - mirrors violations multiplier
         if alert_data:

@@ -108,22 +108,61 @@ class ImageFeatureExtractor:
         else:
             features.image_name = str(name)
 
-        # Metadata
+        # Metadata - handle both layer SHA lists and layer counts from Central API
         metadata = image_data.get('metadata', {})
-        features.layer_count = len(metadata.get('layerShas', []))
+        layer_shas = metadata.get('layerShas', [])
+        if isinstance(layer_shas, (int, float)):
+            # Central API returns layer count as integer
+            features.layer_count = int(layer_shas)
+            logger.debug(f"Using layer count from Central API: {layer_shas}")
+        elif isinstance(layer_shas, (list, tuple)):
+            # Central API returns actual layer SHA list
+            features.layer_count = len(layer_shas)
+        else:
+            logger.warning(f"Unexpected layerShas type {type(layer_shas)}: {layer_shas}, using default 0")
+            features.layer_count = 0
 
-        # Creation timestamp
+        # Creation timestamp - handle both protobuf and ISO string formats
         if 'created' in metadata:
-            features.image_creation_timestamp = int(metadata['created'].get('seconds', 0))
+            created = metadata['created']
+            if isinstance(created, dict):
+                # Protobuf style: {"seconds": 1698509065}
+                features.image_creation_timestamp = int(created.get('seconds', 0))
+            elif isinstance(created, str):
+                # ISO string: "2023-10-28T18:54:25.638Z"
+                try:
+                    from datetime import datetime
+                    created_clean = created.replace('Z', '+00:00') if created.endswith('Z') else created
+                    dt = datetime.fromisoformat(created_clean)
+                    features.image_creation_timestamp = int(dt.timestamp())
+                except Exception as e:
+                    logger.warning(f"Failed to parse image timestamp '{created}': {e}")
+                    features.image_creation_timestamp = 0
+            else:
+                logger.warning(f"Unknown image timestamp format: {type(created)} - {created}")
+                features.image_creation_timestamp = 0
+
             features.image_age_days = self._calculate_age_days(features.image_creation_timestamp)
 
         # Cluster local flag
         features.is_cluster_local = image_data.get('cluster_local', False)
 
-        # Component analysis - mirrors component count and risky component multipliers
+        # Component analysis - handle both component counts and component lists from Central API
         components = image_data.get('components', [])
-        features.total_component_count = len(components)
-        features.risky_component_count = self._count_risky_components(components)
+        if isinstance(components, (int, float)):
+            # Central API returns component count as integer
+            features.total_component_count = int(components)
+            # Estimate risky components as 10% of total (reasonable default)
+            features.risky_component_count = max(1, int(components * 0.1)) if components > 0 else 0
+            logger.debug(f"Using component count from Central API: {components} total, {features.risky_component_count} estimated risky")
+        elif isinstance(components, (list, tuple)):
+            # Central API returns actual component list
+            features.total_component_count = len(components)
+            features.risky_component_count = self._count_risky_components(components)
+        else:
+            logger.warning(f"Unexpected components type {type(components)}: {components}, using defaults")
+            features.total_component_count = 0
+            features.risky_component_count = 0
 
         # Vulnerability analysis - mirrors vulnerability multiplier
         self._extract_vulnerability_features(image_data, features)
@@ -138,6 +177,13 @@ class ImageFeatureExtractor:
         """
         scan = image_data.get('scan', {})
         components = scan.get('components', [])
+
+        # Check if we have count-based data instead of detailed scan results
+        if not isinstance(components, (list, tuple)):
+            # Handle count-based or summary scan data
+            logger.debug(f"Scan components is not a list: {type(components)}, looking for vulnerability counts")
+            self._extract_vulnerability_counts_from_scan(scan, features)
+            return
 
         cvss_scores = []
 
@@ -186,6 +232,43 @@ class ImageFeatureExtractor:
                     break  # Count component only once
 
         return risky_count
+
+    def _extract_vulnerability_counts_from_scan(self, scan: Dict[str, Any], features: ImageFeatures) -> None:
+        """
+        Extract vulnerability features from count-based scan data.
+        Used when Central API provides summary counts instead of detailed vulnerability lists.
+        """
+        # Look for direct vulnerability count fields
+        features.critical_vuln_count = int(scan.get('criticalVulns', scan.get('critical_vulns', 0)))
+        features.high_vuln_count = int(scan.get('highVulns', scan.get('high_vulns', 0)))
+        features.medium_vuln_count = int(scan.get('mediumVulns', scan.get('medium_vulns', 0)))
+        features.low_vuln_count = int(scan.get('lowVulns', scan.get('low_vulns', 0)))
+
+        # Estimate CVSS scores from severity distribution
+        total_vulns = (features.critical_vuln_count + features.high_vuln_count +
+                      features.medium_vuln_count + features.low_vuln_count)
+
+        if total_vulns > 0:
+            # Estimate average CVSS based on severity distribution
+            weighted_score = (features.critical_vuln_count * 9.5 +  # Critical: ~9.5
+                            features.high_vuln_count * 7.5 +        # High: ~7.5
+                            features.medium_vuln_count * 5.0 +      # Medium: ~5.0
+                            features.low_vuln_count * 2.0)          # Low: ~2.0
+            features.avg_cvss_score = weighted_score / total_vulns
+
+            # Estimate max CVSS (critical vulns likely have high CVSS)
+            if features.critical_vuln_count > 0:
+                features.max_cvss_score = 9.8  # Typical critical
+            elif features.high_vuln_count > 0:
+                features.max_cvss_score = 8.5  # Typical high
+            elif features.medium_vuln_count > 0:
+                features.max_cvss_score = 6.0  # Typical medium
+            else:
+                features.max_cvss_score = 3.0  # Typical low
+
+        logger.debug(f"Extracted vulnerability counts: Critical={features.critical_vuln_count}, "
+                    f"High={features.high_vuln_count}, Medium={features.medium_vuln_count}, "
+                    f"Low={features.low_vuln_count}, AvgCVSS={features.avg_cvss_score:.1f}")
 
     def _calculate_age_days(self, timestamp: int) -> int:
         """Calculate image age in days."""
