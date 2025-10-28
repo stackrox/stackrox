@@ -363,12 +363,12 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 				}),
 		},
 		{
-			description: "Node file system policy with no fields",
+			description: "Node policy with no fields",
 			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
 			errExpected: true,
 		},
 		{
-			description: "Node file system policy with deploy-time fields only",
+			description: "Node policy with deploy-time fields only",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.ImageTag:   "latest",
@@ -377,19 +377,20 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			errExpected: true,
 		},
 		{
-			description: "Node file system policy with process field (should be valid)",
+			description: "Node policy with process field (should be invalid)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.ProcessName: "malicious-process",
 				}),
+			errExpected: true,
 		},
 		{
-			description: "Node file system policy with wrong lifecycle stage (build)",
+			description: "Node policy with wrong lifecycle stage (build)",
 			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT, nil),
 			errExpected: true,
 		},
 		{
-			description: "Node file system policy with wrong lifecycle stage (deploy)",
+			description: "Node policy with wrong lifecycle stage (deploy)",
 			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
 			errExpected: true,
 		},
