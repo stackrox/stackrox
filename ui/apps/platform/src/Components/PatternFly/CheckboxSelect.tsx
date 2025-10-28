@@ -22,6 +22,7 @@ import type {
     SelectOptionProps,
     SelectPopperProps,
 } from '@patternfly/react-core';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 // Enhance children to automatically inject hasCheckbox and isSelected props
 function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): ReactNode {
@@ -52,10 +53,9 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
     });
 }
 
-export type CheckboxSelectProps = {
+type CheckboxSelectBaseProps = {
     id?: string;
     selections: string[];
-    onChange: (selection: string[]) => void;
     onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
@@ -66,10 +66,23 @@ export type CheckboxSelectProps = {
     popperProps?: SelectPopperProps;
 };
 
+type CheckboxSelectWithArrayCallback = CheckboxSelectBaseProps & {
+    onChange: (selections: string[]) => void;
+    onItemSelect?: never;
+};
+
+type CheckboxSelectWithItemCallback = CheckboxSelectBaseProps & {
+    onChange?: never;
+    onItemSelect: (selection: string, checked: boolean) => void;
+};
+
+export type CheckboxSelectProps = CheckboxSelectWithArrayCallback | CheckboxSelectWithItemCallback;
+
 function CheckboxSelect({
     id,
     selections,
     onChange,
+    onItemSelect,
     onBlur,
     ariaLabel,
     children,
@@ -117,13 +130,14 @@ function CheckboxSelect({
         _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         selection: string | number | undefined
     ) {
-        if (typeof selection !== 'string' || !selections || !onChange) {
+        if (typeof selection !== 'string' || !selections) {
             return;
         }
-        if (selections.includes(selection)) {
-            onChange(selections.filter((item) => item !== selection));
-        } else {
-            onChange([...selections, selection]);
+
+        if (onItemSelect) {
+            onItemSelect(selection, !selections.includes(selection));
+        } else if (onChange) {
+            onChange(toggleItemInArray(selections, selection));
         }
     }
 
@@ -141,6 +155,7 @@ function CheckboxSelect({
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
+                flexWrap={{ default: 'nowrap' }}
             >
                 <FlexItem>{placeholderText}</FlexItem>
                 {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}

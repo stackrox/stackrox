@@ -1,16 +1,7 @@
-import React, { useState } from 'react';
-import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
-import {
-    Badge,
-    Flex,
-    FlexItem,
-    MenuToggle,
-    Select,
-    SelectList,
-    SelectOption,
-} from '@patternfly/react-core';
-import type { MenuToggleElement } from '@patternfly/react-core';
+import React from 'react';
+import { SelectOption } from '@patternfly/react-core';
 
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import { searchValueAsArray } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 
@@ -20,89 +11,26 @@ type CVESeverityDropdownProps = {
 };
 
 function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProps) {
-    const [cveSeverityIsOpen, setCveSeverityIsOpen] = useState(false);
-
     const selections = searchValueAsArray(searchFilter.SEVERITY);
 
-    function onToggle() {
-        setCveSeverityIsOpen((prev) => !prev);
+    function handleItemSelect(selection: string, checked: boolean) {
+        onSelect('SEVERITY', checked, selection);
     }
-
-    function handleSelect(
-        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
-        selection: string | number | undefined
-    ) {
-        if (typeof selection !== 'string') {
-            return;
-        }
-
-        const isSelected = selections.includes(selection);
-        onSelect('SEVERITY', !isSelected, selection);
-    }
-
-    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
-        <MenuToggle
-            ref={toggleRef}
-            onClick={onToggle}
-            isExpanded={cveSeverityIsOpen}
-            aria-label="CVE severity filter menu toggle"
-        >
-            <Flex
-                alignItems={{ default: 'alignItemsCenter' }}
-                spaceItems={{ default: 'spaceItemsSm' }}
-                flexWrap={{ default: 'nowrap' }}
-            >
-                <FlexItem>CVE severity</FlexItem>
-                {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
-            </Flex>
-        </MenuToggle>
-    );
 
     return (
-        <Select
-            className="vm-filter-toolbar-dropdown cve-severity-select"
-            aria-label="CVE severity filter menu items"
-            isOpen={cveSeverityIsOpen}
-            selected={selections}
-            onSelect={handleSelect}
-            onOpenChange={(nextOpen: boolean) => setCveSeverityIsOpen(nextOpen)}
-            toggle={toggle}
-            shouldFocusToggleOnSelect
+        <CheckboxSelect
+            id="vm-filter-toolbar-dropdown cve-severity-select"
+            selections={selections}
+            onItemSelect={handleItemSelect}
+            ariaLabel="CVE severity filter menu items"
+            placeholderText="CVE severity"
         >
-            <SelectList>
-                <SelectOption
-                    value="Critical"
-                    hasCheckbox
-                    isSelected={selections.includes('Critical')}
-                >
-                    Critical
-                </SelectOption>
-                <SelectOption
-                    value="Important"
-                    hasCheckbox
-                    isSelected={selections.includes('Important')}
-                >
-                    Important
-                </SelectOption>
-                <SelectOption
-                    value="Moderate"
-                    hasCheckbox
-                    isSelected={selections.includes('Moderate')}
-                >
-                    Moderate
-                </SelectOption>
-                <SelectOption value="Low" hasCheckbox isSelected={selections.includes('Low')}>
-                    Low
-                </SelectOption>
-                <SelectOption
-                    value="Unknown"
-                    hasCheckbox
-                    isSelected={selections.includes('Unknown')}
-                >
-                    Unknown
-                </SelectOption>
-            </SelectList>
-        </Select>
+            <SelectOption value="Critical">Critical</SelectOption>
+            <SelectOption value="Important">Important</SelectOption>
+            <SelectOption value="Moderate">Moderate</SelectOption>
+            <SelectOption value="Low">Low</SelectOption>
+            <SelectOption value="Unknown">Unknown</SelectOption>
+        </CheckboxSelect>
     );
 }
 
