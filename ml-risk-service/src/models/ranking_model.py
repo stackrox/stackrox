@@ -348,7 +348,22 @@ class RiskRankingModel:
 
         # Split groups, not individual samples
         n_groups = len(groups)
-        n_val_groups = int(n_groups * val_split)
+
+        # Handle single group case - fall back to sample-based split
+        if n_groups == 1:
+            logger.info(f"Single group detected ({groups[0]} samples), using sample-based validation split")
+            X_train, X_val, y_train, y_val = train_test_split(
+                X, y, test_size=val_split, random_state=random_state)
+
+            # Create group arrays for the splits
+            groups_train = np.array([len(y_train)])
+            groups_val = np.array([len(y_val)])
+
+            return X_train, X_val, y_train, y_val, groups_train, groups_val
+
+        # Regular group-based split for multiple groups
+        # Ensure at least 1 group goes to validation if we have multiple groups
+        n_val_groups = max(1, int(n_groups * val_split))
 
         np.random.seed(random_state)
         val_group_indices = np.random.choice(n_groups, n_val_groups, replace=False)
@@ -372,6 +387,9 @@ class RiskRankingModel:
         y_train, y_val = y[train_indices], y[val_indices]
         groups_train = groups[train_group_indices]
         groups_val = groups[val_group_indices]
+
+        logger.info(f"Group-based split: {len(groups_train)} training groups ({len(y_train)} samples), "
+                   f"{len(groups_val)} validation groups ({len(y_val)} samples)")
 
         return X_train, X_val, y_train, y_val, groups_train, groups_val
 

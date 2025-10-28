@@ -144,3 +144,13 @@ central_api:
     batch_size: 100
     max_concurrent_streams: 2  # Simplified for workloads + alerts
     memory_limit_mb: 512  # Reduced due to simplified processing
+
+  # Training-specific settings for full model training
+  training:
+    default_days_back: 30  # Default days back for data collection
+    default_limit: 1000  # Default maximum training examples
+    min_training_examples: 50  # Minimum examples required for training
+    max_training_examples: 5000  # Maximum examples to prevent memory issues
+    default_filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"

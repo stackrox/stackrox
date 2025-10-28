@@ -364,3 +364,179 @@ class TrainingService:
                 return data
         else:
             return data
+
+    def train_model_from_central(self,
+                                filters: Optional[Dict[str, Any]] = None,
+                                limit: Optional[int] = None,
+                                config_override: Optional[str] = None,
+                                risk_service=None) -> TrainModelResponse:
+        """
+        Train model using data streamed from Central API.
+
+        This method abstracts the data source by using existing streaming and training methods.
+
+        Args:
+            filters: Filters for Central API data collection
+            limit: Maximum number of training examples to collect
+            config_override: Optional JSON configuration overrides
+            risk_service: Risk service instance to update with trained model
+
+        Returns:
+            TrainModelResponse with training results
+        """
+        try:
+            from training.data_loader import TrainingDataLoader
+
+            logger.info(f"Starting model training from Central API with filters: {filters}")
+
+            # Create data loader and collect training data
+            data_loader = TrainingDataLoader()
+
+            # Set up default filters
+            training_filters = filters or {}
+
+            # Stream data from Central API
+            data_iterator = data_loader.load_from_central_api_streaming_with_config(
+                config_path=None,
+                filters=training_filters
+            )
+
+            # Convert streaming data to training examples format
+            training_examples = self._convert_central_data_to_training_examples(
+                data_iterator, limit
+            )
+
+            if not training_examples:
+                return TrainModelResponse(
+                    success=False,
+                    error_message="No training examples found with current filters",
+                    model_version="",
+                    metrics=TrainingMetrics(
+                        validation_ndcg=0.0,
+                        validation_auc=0.0,
+                        training_loss=0.0,
+                        epochs_completed=0,
+                        global_feature_importance=[]
+                    )
+                )
+
+            # Create training request
+            request = TrainModelRequest(
+                training_data=training_examples,
+                config_override=config_override or ""
+            )
+
+            # Use existing training method
+            return self.train_model(request, risk_service)
+
+        except Exception as e:
+            logger.error(f"Central API training failed: {e}")
+            return TrainModelResponse(
+                success=False,
+                error_message=f"Central API training failed: {str(e)}",
+                model_version="",
+                metrics=TrainingMetrics(
+                    validation_ndcg=0.0,
+                    validation_auc=0.0,
+                    training_loss=0.0,
+                    epochs_completed=0,
+                    global_feature_importance=[]
+                )
+            )
+
+    def _convert_central_data_to_training_examples(self,
+                                                  data_iterator,
+                                                  limit: Optional[int] = None) -> List[TrainingExample]:
+        """
+        Convert Central API streaming data to TrainingExample format.
+
+        Args:
+            data_iterator: Iterator yielding Central API training examples
+            limit: Optional limit on number of examples to process
+
+        Returns:
+            List of TrainingExample objects ready for training
+        """
+        training_examples = []
+        count = 0
+
+        try:
+            for example in data_iterator:
+                if limit and count >= limit:
+                    break
+
+                # Convert Central format to TrainingExample format
+                training_example = self._convert_single_central_example(example)
+                if training_example:
+                    training_examples.append(training_example)
+                    count += 1
+
+                    if count % 100 == 0:
+                        logger.info(f"Converted {count} training examples")
+
+        except Exception as e:
+            logger.error(f"Error converting Central data: {e}")
+
+        logger.info(f"Successfully converted {len(training_examples)} training examples from Central API")
+        return training_examples
+
+    def _convert_single_central_example(self, example: Dict[str, Any]) -> Optional[TrainingExample]:
+        """
+        Convert a single Central API example to TrainingExample format.
+
+        Args:
+            example: Central API training example dictionary
+
+        Returns:
+            TrainingExample object or None if conversion fails
+        """
+        try:
+            from src.api.schemas import TrainingExample, DeploymentFeatures, ImageFeatures
+
+            # Extract features from the Central format
+            features = example.get('features', {})
+
+            # Create deployment features using existing mapping logic
+            deployment_features = DeploymentFeatures(
+                policy_violation_count=int(features.get('policy_violation_count', 0)),
+                policy_violation_severity_score=float(features.get('policy_violation_score', 0.0)),
+                process_baseline_violations=int(features.get('process_baseline_violations', 0)),
+                host_network=bool(features.get('host_network', False)),
+                host_pid=bool(features.get('host_pid', False)),
+                host_ipc=bool(features.get('host_ipc', False)),
+                privileged_container_count=int(features.get('privileged_container_count', 0)),
+                automount_service_account_token=bool(features.get('automount_service_account_token', False)),
+                exposed_port_count=int(features.get('exposed_port_count', 0)),
+                replica_count=max(int(features.get('replica_count', 1)), 1),
+                has_external_exposure=bool(features.get('has_external_exposure', False)),
+                is_orchestrator_component=bool(features.get('is_orchestrator_component', False)),
+                creation_timestamp=int(features.get('creation_timestamp', 0))
+            )
+
+            # Create image features (simplified - could be enhanced)
+            image_features = []
+            if 'image_features' in features:
+                for img_data in features['image_features']:
+                    image_feature = ImageFeatures(
+                        critical_vuln_count=int(img_data.get('critical_vuln_count', 0)),
+                        high_vuln_count=int(img_data.get('high_vuln_count', 0)),
+                        medium_vuln_count=int(img_data.get('medium_vuln_count', 0)),
+                        low_vuln_count=int(img_data.get('low_vuln_count', 0)),
+                        total_component_count=int(img_data.get('total_component_count', 0)),
+                        image_age_days=int(img_data.get('image_age_days', 0))
+                    )
+                    image_features.append(image_feature)
+
+            # Create training example
+            training_example = TrainingExample(
+                deployment_features=deployment_features,
+                image_features=image_features,
+                current_risk_score=float(example.get('risk_score', 1.0)),
+                deployment_id=example.get('deployment_id', '')
+            )
+
+            return training_example
+
+        except Exception as e:
+            logger.warning(f"Failed to convert Central example: {e}")
+            return None
