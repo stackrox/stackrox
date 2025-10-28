@@ -89,6 +89,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 			}
 
 			res, err := e.enrichWithVulnerabilities(scanner.Name(), imageScanner.DataSource(), vulnScanner, image, components, notes)
+			log.Infof("Suppressing CVEs in EnrichWithVulnerabilities")
 			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 			if err != nil {
