@@ -67,13 +67,13 @@ class RiskRankingModel:
         self.shap_explainer = None
 
         # Initialize model based on configuration
-        self.algorithm = self.config.get('model', {}).get('algorithm', 'lightgbm_ranker')
+        self.algorithm = self.config.get('model', {}).get('algorithm', 'sklearn_ranksvm')
 
     def _default_config(self) -> Dict[str, Any]:
         """Default model configuration."""
         return {
             'model': {
-                'algorithm': 'lightgbm_ranker',
+                'algorithm': 'sklearn_ranksvm',
                 'validation_split': 0.2,
                 'random_state': 42,
                 'lightgbm_params': {
@@ -118,6 +118,49 @@ class RiskRankingModel:
 
         self.feature_names = feature_names or [f"feature_{i}" for i in range(X.shape[1])]
 
+        # Check for sufficient variance in target values
+        y_variance = np.var(y)
+        y_unique = len(np.unique(y))
+        y_min, y_max = np.min(y), np.max(y)
+        y_range = y_max - y_min
+        logger.info(f"Target variance: {y_variance:.6f}, unique values: {y_unique}, range: [{y_min:.3f}, {y_max:.3f}] (span: {y_range:.3f})")
+
+        # Only return dummy metrics for truly identical targets
+        if y_unique == 1:
+            logger.error("All target values are identical! Cannot train ranking model.")
+            # Return dummy metrics for identical targets
+            return ModelMetrics(
+                train_ndcg=0.0,
+                val_ndcg=0.0,
+                train_auc=0.0,
+                val_auc=0.0,
+                training_loss=0.0,
+                epochs_completed=0,
+                feature_importance={name: 0.0 for name in self.feature_names}
+            )
+
+        # Log warning for low variance but continue training
+        if y_variance < 1e-4:
+            logger.warning(f"Low target variance detected (var={y_variance:.6f}, unique={y_unique}). "
+                          "Training will continue but model may have limited discriminative power.")
+
+        # For very low variance, still proceed but with enhanced logging
+        if y_variance < 1e-6:
+            logger.warning(f"Very low variance detected. Will attempt training with available data. "
+                          f"Consider reviewing data quality and synthetic scoring.")
+            # Log sample of y values for debugging
+            sample_size = min(10, len(y))
+            y_sample = y[:sample_size]
+            logger.info(f"Sample of target values: {y_sample}")
+
+        # For LightGBM ranking, ensure all scores are unique by adding small epsilon
+        if self.algorithm == 'lightgbm_ranker':
+            # Add tiny random noise to ensure all values are unique
+            epsilon = 1e-8
+            np.random.seed(42)  # Deterministic noise
+            y = y + np.random.uniform(-epsilon, epsilon, size=len(y))
+            logger.info(f"Added epsilon noise for unique ranking values: {len(np.unique(y))} unique values")
+
         # Split data
         val_split = self.config.get('model', {}).get('validation_split', 0.2)
         random_state = self.config.get('model', {}).get('random_state', 42)
@@ -135,6 +178,25 @@ class RiskRankingModel:
         self.scaler = StandardScaler()
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_val_scaled = self.scaler.transform(X_val)
+
+        # Convert to integer ranks ONLY for LightGBM, sklearn works with float scores
+        if self.algorithm == 'lightgbm_ranker':
+            # Use simple sequential mapping to ensure contiguous labels
+            unique_train_sorted = np.unique(y_train)
+            unique_val_sorted = np.unique(y_val)
+
+            # Create explicit mapping to ensure contiguous labels 0, 1, 2, ..., n-1
+            train_mapping = {orig_val: i for i, orig_val in enumerate(unique_train_sorted)}
+            val_mapping = {orig_val: i for i, orig_val in enumerate(unique_val_sorted)}
+
+            y_train = np.array([train_mapping[val] for val in y_train], dtype=np.int32)
+            y_val = np.array([val_mapping[val] for val in y_val], dtype=np.int32)
+
+            logger.info(f"Sequential mapping - Train: {len(unique_train_sorted)} unique -> 0-{len(unique_train_sorted)-1}, Val: {len(unique_val_sorted)} unique -> 0-{len(unique_val_sorted)-1}")
+            logger.info(f"Final ranking - Train: {y_train.min()}-{y_train.max()} ({len(np.unique(y_train))} unique), Val: {y_val.min()}-{y_val.max()} ({len(np.unique(y_val))} unique)")
+        else:
+            # For sklearn, use float scores directly
+            logger.info(f"Using float scores - Train: {y_train.min():.6f}-{y_train.max():.6f}, Val: {y_val.min():.6f}-{y_val.max():.6f}")
 
         # Train model based on algorithm
         if self.algorithm == 'lightgbm_ranker':
@@ -174,15 +236,25 @@ class RiskRankingModel:
 
         # Train model
         callbacks = []
-        if training_config.get('early_stopping_rounds'):
-            callbacks.append(lgb.early_stopping(training_config['early_stopping_rounds'], verbose=False))
+
+        # Use conservative early stopping to ensure minimum learning
+        early_stopping_rounds = training_config.get('early_stopping_rounds', 10)
+        min_iterations = max(50, early_stopping_rounds * 2)  # Ensure at least 50 iterations for feature learning
+
+        if early_stopping_rounds and len(y_train) > 100:  # Only use early stopping with sufficient data
+            callbacks.append(lgb.early_stopping(early_stopping_rounds, verbose=False))
+        else:
+            logger.info("Skipping early stopping due to insufficient data - training with fixed iterations")
+
+        # Ensure minimum iterations for meaningful training and feature importance learning
+        max_iterations = max(min_iterations, training_config.get('max_iterations', 100))
 
         self.model = lgb.train(
             params=params,
             train_set=train_data,
             valid_sets=[train_data, val_data],
             valid_names=['train', 'valid'],
-            num_boost_round=training_config.get('max_iterations', 100),
+            num_boost_round=max_iterations,
             callbacks=callbacks
         )
 
@@ -227,8 +299,22 @@ class RiskRankingModel:
         train_ndcg = self._calculate_regression_ndcg(y_train, train_pred)
         val_ndcg = self._calculate_regression_ndcg(y_val, val_pred)
 
-        # Feature importance
-        importance_dict = dict(zip(self.feature_names, self.model.feature_importances_))
+        # Feature importance with fallback calculation
+        try:
+            importance_values = self.model.feature_importances_
+            importance_dict = dict(zip(self.feature_names, importance_values))
+
+            # Check if all importance values are zero
+            total_importance = sum(importance_values)
+            if total_importance == 0.0:
+                logger.warning("All feature importances are zero. Computing fallback importance using feature variance.")
+                importance_dict = self._compute_fallback_feature_importance(X_train, y_train)
+            else:
+                logger.info(f"Feature importance computed successfully. Total importance: {total_importance:.6f}")
+
+        except Exception as e:
+            logger.warning(f"Failed to compute feature importance: {e}. Using fallback method.")
+            importance_dict = self._compute_fallback_feature_importance(X_train, y_train)
 
         return ModelMetrics(
             train_ndcg=train_ndcg,
@@ -289,6 +375,68 @@ class RiskRankingModel:
             ))
 
         return results
+
+    def _compute_fallback_feature_importance(self, X: np.ndarray, y: np.ndarray) -> Dict[str, float]:
+        """
+        Compute fallback feature importance using correlation with target values.
+
+        Args:
+            X: Feature matrix
+            y: Target values
+
+        Returns:
+            Dictionary of feature names to importance scores
+        """
+        try:
+            import numpy as np
+            from scipy.stats import pearsonr
+
+            importance_dict = {}
+
+            for i, feature_name in enumerate(self.feature_names):
+                feature_values = X[:, i]
+
+                # Skip features with no variance
+                if np.var(feature_values) == 0:
+                    importance_dict[feature_name] = 0.0
+                    continue
+
+                # Calculate correlation with target
+                try:
+                    correlation, p_value = pearsonr(feature_values, y)
+                    # Use absolute correlation as importance, weighted by significance
+                    if np.isnan(correlation) or np.isnan(p_value):
+                        importance = 0.0
+                    else:
+                        # Weight by inverse p-value (more significant = higher importance)
+                        significance_weight = max(0.1, 1.0 - p_value) if p_value < 1.0 else 0.1
+                        importance = abs(correlation) * significance_weight
+
+                    importance_dict[feature_name] = importance
+
+                except Exception as e:
+                    logger.debug(f"Failed to compute correlation for feature {feature_name}: {e}")
+                    importance_dict[feature_name] = 0.0
+
+            # Normalize importance scores to sum to 1.0
+            total_importance = sum(importance_dict.values())
+            if total_importance > 0:
+                importance_dict = {name: score / total_importance for name, score in importance_dict.items()}
+                logger.info(f"Fallback feature importance computed using correlation. Top features: "
+                           f"{sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:5]}")
+            else:
+                # If all correlations are zero, assign equal importance
+                equal_importance = 1.0 / len(self.feature_names)
+                importance_dict = {name: equal_importance for name in self.feature_names}
+                logger.warning("All correlations are zero. Assigning equal importance to all features.")
+
+            return importance_dict
+
+        except Exception as e:
+            logger.error(f"Fallback feature importance calculation failed: {e}")
+            # Last resort: equal importance
+            equal_importance = 1.0 / len(self.feature_names)
+            return {name: equal_importance for name in self.feature_names}
 
     def _calculate_prediction_confidence(self, X: np.ndarray, prediction: float) -> float:
         """Calculate prediction confidence score."""
@@ -481,12 +629,27 @@ class RiskRankingModel:
             training_metrics_dict = asdict(self.training_metrics)
             training_metrics_dict = convert_numpy_types(training_metrics_dict)
 
+        # Add feature importance diagnostics
+        feature_importance_info = {}
+        if self.training_metrics and self.training_metrics.feature_importance:
+            importance_values = list(self.training_metrics.feature_importance.values())
+            feature_importance_info = {
+                'total_importance': sum(importance_values),
+                'max_importance': max(importance_values) if importance_values else 0.0,
+                'min_importance': min(importance_values) if importance_values else 0.0,
+                'non_zero_features': sum(1 for v in importance_values if v > 0),
+                'zero_features': sum(1 for v in importance_values if v == 0),
+                'top_5_features': sorted(self.training_metrics.feature_importance.items(),
+                                       key=lambda x: x[1], reverse=True)[:5]
+            }
+
         return {
             'model_version': self.model_version,
             'algorithm': self.algorithm,
             'feature_count': len(self.feature_names) if self.feature_names else 0,
             'feature_names': self.feature_names,
             'training_metrics': training_metrics_dict,
+            'feature_importance_diagnostics': feature_importance_info,
             'shap_available': self.shap_explainer is not None,
             'trained': self.model is not None
         }
