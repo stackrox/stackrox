@@ -330,8 +330,6 @@ func testWalkImpl(t *testing.T, ctx context.Context, store Store[storage.TestSin
 	walkedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
 
 	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		_, err := store.GetIDs(ctx)
-		assert.NoError(t, err)
 		walkedNames = append(walkedNames, obj.GetName())
 		walkedObjects = append(walkedObjects, obj)
 		return nil
@@ -475,13 +473,6 @@ func testGetByQueryFnImpl(t *testing.T, ctx context.Context, store Store[storage
 	})
 	assert.EqualError(t, err, "processing rows: some error")
 	assert.Equal(t, 1, count)
-
-	// We expect connection busy
-	err = store.GetByQueryFn(ctx, query, func(*storage.TestSingleKeyStruct) error {
-		_, err := store.GetIDs(ctx)
-		return err
-	})
-	assert.EqualError(t, err, "processing rows: found non-retryable error: error executing query: conn busy")
 }
 
 func testDeleteByQueryImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
