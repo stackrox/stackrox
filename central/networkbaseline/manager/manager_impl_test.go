@@ -3,8 +3,10 @@ package manager
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
+	"unsafe"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
@@ -14,6 +16,8 @@ import (
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
+	"github.com/stackrox/rox/pkg/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,6 +45,7 @@ var (
 
 type fakeDS struct {
 	baselines map[string]*storage.NetworkBaseline
+	mockCtrl  *gomock.Controller
 
 	// All methods not overriden in this struct will panic.
 	datastore.DataStore
@@ -79,6 +84,23 @@ func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*st
 		return baseline, true, nil
 	}
 	return nil, false, nil
+}
+
+func (f *fakeDS) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	mockTx := pkgmocks.NewMockTx(f.mockCtrl)
+	mockTx.EXPECT().Rollback(gomock.Any()).Return(nil).AnyTimes()
+
+	tx := &postgres.Tx{
+		Tx: mockTx,
+	}
+
+	// Use reflection to set the unexported cancelFunc field
+	txValue := reflect.ValueOf(tx).Elem()
+	cancelFuncField := txValue.FieldByName("cancelFunc")
+	cancelFuncField = reflect.NewAt(cancelFuncField.Type(), unsafe.Pointer(cancelFuncField.UnsafeAddr())).Elem()
+	cancelFuncField.Set(reflect.ValueOf(func() {}))
+
+	return postgres.ContextWithTx(ctx, tx), tx, nil
 }
 
 func TestManager(t *testing.T) {
@@ -121,7 +143,10 @@ func (suite *ManagerTestSuite) TearDownTest() {
 }
 
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
-	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
+	suite.ds = &fakeDS{
+		baselines: make(map[string]*storage.NetworkBaseline),
+		mockCtrl:  suite.mockCtrl,
+	}
 	for _, baseline := range initialBaselines {
 		baseline.ObservationPeriodEnd = protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd())
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
