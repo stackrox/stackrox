@@ -44,7 +44,6 @@ var (
 )
 
 type enricherImpl struct {
-	cvesSuppressor   CVESuppressor
 	cvesSuppressorV2 CVESuppressor
 	integrations     integration.Set
 
@@ -164,7 +163,6 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	if exists && cachedImageIsValid(existingImg) {
 		updated := e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
 		if updated {
-			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
 			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, image)
@@ -185,7 +183,6 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	image.Reset()
 	protocompat.Merge(image, scannedImage)
 
-	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 	return true, nil
 }
@@ -306,7 +303,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	updated = updated || didUpdateSigVerificationData
 
-	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	if !errorList.Empty() {
