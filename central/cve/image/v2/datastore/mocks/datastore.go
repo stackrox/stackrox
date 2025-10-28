@@ -58,30 +58,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// EnrichImageV2WithSuppressedCVEs mocks base method.
-func (m *MockDataStore) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnrichImageV2WithSuppressedCVEs", image)
-}
-
-// EnrichImageV2WithSuppressedCVEs indicates an expected call of EnrichImageV2WithSuppressedCVEs.
-func (mr *MockDataStoreMockRecorder) EnrichImageV2WithSuppressedCVEs(image any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageV2WithSuppressedCVEs), image)
-}
-
-// EnrichImageWithSuppressedCVEs mocks base method.
-func (m *MockDataStore) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnrichImageWithSuppressedCVEs", image)
-}
-
-// EnrichImageWithSuppressedCVEs indicates an expected call of EnrichImageWithSuppressedCVEs.
-func (mr *MockDataStoreMockRecorder) EnrichImageWithSuppressedCVEs(image any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageWithSuppressedCVEs), image)
-}
-
 // Exists mocks base method.
 func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
