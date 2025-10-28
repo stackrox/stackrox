@@ -65,7 +65,7 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 
 ### 2. Machine Learning Models
 
-- **LightGBM Ranker**: Primary model for learning-to-rank
+- **RandomForest Regressor**: Primary model for risk scoring (extensible architecture)
 - **Sklearn Models**: Fallback support
 - **Feature Normalization**: Matches StackRox's normalization
 - **Group-based Ranking**: Ranks deployments within clusters
@@ -104,13 +104,24 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 
 ## Quick Start
 
-### Using Docker Compose (Recommended for Development)
+### Prerequisites
 
-1. **Clone and build:**
+- **UV Package Manager**: Install UV for fast, reliable Python package management
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- **Docker & Docker Compose**: For containerized deployment
+- **Make**: For build automation
+
+### Local Development Setup
+
+1. **Clone repository and setup environment:**
    ```bash
    git clone <repository>
    cd ml-risk-service
-   make docker-build
+
+   # Set up development environment with UV
+   make setup-dev
    ```
 
 2. **Generate sample data and train model:**
@@ -119,12 +130,20 @@ The service extracts features that mirror StackRox's existing risk multipliers:
    make train-model
    ```
 
-3. **Start services:**
+3. **Run tests and checks:**
    ```bash
+   make check  # Runs lint, typecheck, and tests
+   ```
+
+### Using Docker Compose (Recommended for Integration Testing)
+
+1. **Build and start services:**
+   ```bash
+   make docker-build
    make compose-up
    ```
 
-4. **Access services:**
+2. **Access services:**
    - ML Service gRPC: `localhost:8080`
    - Health/Metrics: `localhost:8081`
    - Grafana Dashboard: `localhost:3000` (admin/admin)
@@ -194,7 +213,7 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 Edit `src/config/feature_config.yaml` to configure:
 
 - **Feature weights**: Adjust importance of different risk factors
-- **Model parameters**: LightGBM hyperparameters
+- **Model parameters**: RandomForest hyperparameters (extensible for future algorithms)
 - **Normalization settings**: Saturation and max values
 - **Training settings**: Batch size, iterations, early stopping
 
@@ -331,15 +350,49 @@ Training data should be provided as JSON:
 
 ### Setup Development Environment
 
+The project uses [UV](https://github.com/astral-sh/uv) for fast, reliable Python package management.
+
 ```bash
-make dev-setup
+# Basic setup (core dependencies only)
+make setup
+
+# Development setup (includes dev tools: pytest, black, mypy, etc.)
+make setup-dev
+
+# Full ML setup (includes scikit-multilearn, shap, matplotlib)
+make setup-ml
 ```
 
-### Running Tests
+### Running Tests and Checks
 
 ```bash
-make test
-make lint
+# Run all checks (recommended)
+make check
+
+# Individual commands
+make test         # Run pytest with coverage
+make lint         # Run flake8 and pylint
+make typecheck    # Run mypy type checking
+make format       # Format code with black and isort
+```
+
+### Package Management with UV
+
+```bash
+# Add new dependency
+uv add requests
+
+# Add development dependency
+uv add --dev pytest-mock
+
+# Add optional ML dependency
+uv add --optional ml matplotlib
+
+# Sync dependencies
+uv sync
+
+# Update dependencies
+uv lock --upgrade
 ```
 
 ### Training a Model

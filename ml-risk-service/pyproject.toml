@@ -1,0 +1,225 @@
+[project]
+name = "ml-risk-service"
+version = "1.0.0"
+description = "ML Risk Ranking Service for StackRox"
+authors = [
+    {name = "StackRox ML Team", email = "ml-team@stackrox.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+keywords = ["machine-learning", "security", "risk-assessment", "kubernetes"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core ML dependencies (minimal set for initial setup)
+    "scikit-learn",
+    "numpy",
+    "pandas",
+    "scipy",
+    "joblib",
+
+    # FastAPI and REST API
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "python-multipart",
+
+    # gRPC and API
+    "grpcio",
+    "grpcio-tools",
+    "protobuf",
+
+    # Serialization and data handling
+    "pyyaml",
+    "jsonschema",
+
+    # Monitoring and logging
+    "prometheus-client",
+    "structlog",
+    "requests",
+]
+
+[project.optional-dependencies]
+ml = [
+    # Extended ML dependencies (install separately if needed)
+    "scikit-multilearn",
+    "shap",
+    "matplotlib",
+]
+
+dev = [
+    # Testing
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+
+    # Code formatting and linting
+    "black",
+    "isort",
+    "flake8",
+    "pylint",
+
+    # Type checking
+    "mypy",
+    "types-requests",
+    "types-PyYAML",
+]
+
+[project.urls]
+Homepage = "https://github.com/stackrox/stackrox"
+Documentation = "https://github.com/stackrox/stackrox/tree/master/ml-risk-service"
+Repository = "https://github.com/stackrox/stackrox.git"
+Issues = "https://github.com/stackrox/stackrox/issues"
+
+[project.scripts]
+ml-risk-service = "src.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | proto
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = ["src", "training"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/__pycache__/*",
+    "*/proto/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sklearn.*",
+    "pandas.*",
+    "numpy.*",
+    "scipy.*",
+    "shap.*",
+    "matplotlib.*",
+    "joblib.*",
+    "grpc.*",
+    "prometheus_client.*",
+]
+ignore_missing_imports = true
+
+[tool.pylint.messages_control]
+disable = [
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "import-error",
+    "no-name-in-module",
+]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E203", "W503", "E501"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    "proto",
+    ".mypy_cache",
+    ".pytest_cache",
+]
