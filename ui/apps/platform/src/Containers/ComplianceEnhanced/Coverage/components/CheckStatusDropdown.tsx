@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
+import {
+    Select,
+    SelectOption,
+    SelectList,
+    MenuToggle,
+    Badge,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
+import { searchValueAsArray } from 'utils/searchUtils';
 
 type CheckStatusDropdownProps = {
     searchFilter: SearchFilter;
@@ -11,31 +22,82 @@ type CheckStatusDropdownProps = {
 function CheckStatusDropdown({ searchFilter, onSelect }: CheckStatusDropdownProps) {
     const [checkStatusIsOpen, setCheckStatusIsOpen] = useState(false);
 
-    function onCheckStatusToggle(isOpen: boolean) {
-        setCheckStatusIsOpen(isOpen);
+    const selections = searchValueAsArray(searchFilter['Compliance Check Status']);
+
+    function onToggle() {
+        setCheckStatusIsOpen((prev) => !prev);
     }
+
+    function handleSelect(
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        selection: string | number | undefined
+    ) {
+        if (typeof selection !== 'string') {
+            return;
+        }
+
+        const isSelected = selections.includes(selection);
+        onSelect('Compliance Check Status', !isSelected, selection);
+    }
+
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggle}
+            isExpanded={checkStatusIsOpen}
+            aria-label="Check status filter menu toggle"
+        >
+            <Flex
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+            >
+                <FlexItem>Compliance status</FlexItem>
+                {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
+            </Flex>
+        </MenuToggle>
+    );
 
     return (
         <Select
-            variant="checkbox"
             aria-label="Check status filter menu items"
-            toggleAriaLabel="Check status filter menu toggle"
-            onToggle={(_event, isOpen: boolean) => onCheckStatusToggle(isOpen)}
-            onSelect={(event, selection) => {
-                const { checked } = event.target as HTMLInputElement;
-                onSelect('Compliance Check Status', checked, selection.toString());
-            }}
-            selections={searchFilter['Compliance Check Status']}
             isOpen={checkStatusIsOpen}
-            placeholderText="Compliance status"
+            selected={selections}
+            onSelect={handleSelect}
+            onOpenChange={(nextOpen: boolean) => setCheckStatusIsOpen(nextOpen)}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
         >
-            <SelectOption key="PASS" value="Pass" />
-            <SelectOption key="FAIL" value="Fail" />
-            <SelectOption key="ERROR" value="Error" />
-            <SelectOption key="INFO" value="Info" />
-            <SelectOption key="MANUAL" value="Manual" />
-            <SelectOption key="NOT_APPLICABLE" value="Not Applicable" />
-            <SelectOption key="INCONSISTENT" value="Inconsistent" />
+            <SelectList>
+                <SelectOption value="Pass" hasCheckbox isSelected={selections.includes('Pass')}>
+                    Pass
+                </SelectOption>
+                <SelectOption value="Fail" hasCheckbox isSelected={selections.includes('Fail')}>
+                    Fail
+                </SelectOption>
+                <SelectOption value="Error" hasCheckbox isSelected={selections.includes('Error')}>
+                    Error
+                </SelectOption>
+                <SelectOption value="Info" hasCheckbox isSelected={selections.includes('Info')}>
+                    Info
+                </SelectOption>
+                <SelectOption value="Manual" hasCheckbox isSelected={selections.includes('Manual')}>
+                    Manual
+                </SelectOption>
+                <SelectOption
+                    value="Not Applicable"
+                    hasCheckbox
+                    isSelected={selections.includes('Not Applicable')}
+                >
+                    Not Applicable
+                </SelectOption>
+                <SelectOption
+                    value="Inconsistent"
+                    hasCheckbox
+                    isSelected={selections.includes('Inconsistent')}
+                >
+                    Inconsistent
+                </SelectOption>
+            </SelectList>
         </Select>
     );
 }
