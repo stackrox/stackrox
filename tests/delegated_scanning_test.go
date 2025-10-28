@@ -1,4 +1,4 @@
-//go:build test_e2e
+//go:build scanner_e2e
 
 package tests
 
@@ -177,6 +177,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Verify the StackRox installation supports delegated scanning, Central and Sensor
 	// must have an active connection for this check to succeed, so wait for that connection.
 	ts.waitForHealthyCentralSensorConn()
+	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, "scanner-v4-matcher")
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
