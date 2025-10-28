@@ -174,6 +174,6 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.Netw
 	return ds.storage.Walk(ctx, f)
 }
 
-func (ds *dataStoreImpl) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+func (ds *dataStoreImpl) Begin(ctx context.Context) (context.Context, Tx, error) {
 	return ds.storage.Begin(ctx)
 }
