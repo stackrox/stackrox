@@ -236,7 +236,7 @@ func (r *Relay) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, e
 	err = validateReportedVsockCID(indexReport, vsockCID)
 	if err != nil {
 		log.Debugf("Error validating reported vsock CID: %v", err)
-		return nil, err
+		return nil, errors.Wrap(err, "validating reported vsock CID")
 	}
 
 	return indexReport, nil
