@@ -104,3 +104,29 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenameDefaultPolicyCategory() {
 	_, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.GetId(), "new name")
 	s.Error(err)
 }
+
+func (s *PolicyCategoryDatastoreTestSuite) TestFixCaseUtility() {
+	categoryNames := []string{
+		"Category 1",
+		"CATEGORY 2",
+		"Category WITH OKAY NAME",
+		"Category not OKAY",
+		"1234567 891011",
+		"please make me upper case",
+		"ánother çategory",
+	}
+	fixedCategoryNames := []string{
+		"Category 1",
+		"CATEGORY 2",
+		"Category WITH OKAY NAME",
+		"Category Not OKAY",
+		"1234567 891011",
+		"Please Make Me Upper Case",
+		"Ánother Çategory",
+	}
+	for i, categoryName := range categoryNames {
+		s.Run("Category "+categoryName+" Fix Case", func() {
+			s.Equal(fixedCategoryNames[i], fixCase(categoryName))
+		})
+	}
+}
