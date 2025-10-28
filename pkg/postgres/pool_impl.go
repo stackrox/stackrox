@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/IBM/pgxpoolprometheus"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
@@ -45,6 +47,10 @@ func Connect(ctx context.Context, sourceWithDatabase string) (*db, error) {
 		incQueryErrors("connect", err)
 		return nil, err
 	}
+
+	collector := pgxpoolprometheus.NewCollector(pool, nil)
+	prometheus.MustRegister(collector)
+
 	return &db{Pool: pool}, nil
 }
 
