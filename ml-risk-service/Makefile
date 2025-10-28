@@ -236,13 +236,18 @@ monitoring-down: ## Stop monitoring stack
 
 # Cleanup commands
 .PHONY: clean
-clean: ## Clean up temporary files
-	@echo -e "$(YELLOW)Cleaning up...$(NC)"
+clean: ## Clean up temporary files, trained models, and training reports
+	@echo -e "$(YELLOW)Cleaning up temporary files...$(NC)"
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	rm -rf .coverage htmlcov/ .pytest_cache/
 	rm -f src/config/feature_config.expanded.yaml
+	@echo -e "$(YELLOW)Cleaning up models and reports...$(NC)"
+	rm -rf ./models/ ./deploy/models/
+	rm -rf ./reports/ ./deploy/reports/
+	rm -f sample_training_data.json
+	rm -f *.pkl
 	@echo -e "$(GREEN)Cleanup completed!$(NC)"
 
 .PHONY: clean-docker
