@@ -123,10 +123,10 @@ spec:
     type: array
     description: Additional labels to put on the built containers.
   - default:
-    - linux/x86_64
     - linux/arm64
-    - linux/s390x
     - linux/ppc64le
+    - linux/s390x
+    - linux/x86_64
     description: List of platforms to build the container images for. The available
       set of values is determined by the configuration of the multi-platform-controller.
     name: build-platforms
@@ -205,7 +205,9 @@ spec:
     workspaces:
     - name: basic-auth
       workspace: git-auth
-    runAfter: [post-metric-start, init]
+    runAfter:
+    - init
+    - post-metric-start
 
   - name: determine-image-expiration
     params:
@@ -222,7 +224,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    runAfter: [clone-repository]
+    runAfter: [ clone-repository ]
 
   - name: determine-image-tag
     params:
@@ -239,7 +241,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    runAfter: [clone-repository]
+    runAfter: [ clone-repository ]
 
   - name: prefetch-dependencies
     params:
@@ -263,13 +265,14 @@ spec:
     workspaces:
     - name: git-basic-auth
       workspace: git-auth
-    runAfter: [clone-repository]
+    runAfter: [ clone-repository ]
 
   - name: build-images
     matrix:
       params:
       - name: PLATFORM
-        value: $(params.build-platforms)
+        value:
+        - $(params.build-platforms)
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
@@ -313,7 +316,10 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    runAfter: [prefetch-dependencies, determine-image-expiration, determine-image-tag]
+    runAfter:
+    - determine-image-expiration
+    - determine-image-tag
+    - prefetch-dependencies
 
   - name: build-image-index
     params:
@@ -341,7 +347,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    runAfter: [build-images]
+    runAfter: [ build-images ]
 
   - name: apply-index-image-tag
     params:
@@ -365,7 +371,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: build-source-image
     params:
@@ -393,7 +399,7 @@ spec:
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: deprecated-base-image-check
     params:
@@ -414,7 +420,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: clair-scan
     matrix:
@@ -440,7 +446,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: ecosystem-cert-preflight-checks
     matrix:
@@ -464,7 +470,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: sast-shell-check
     params:
@@ -489,7 +495,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: sast-unicode-check
     params:
@@ -514,7 +520,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: sast-snyk-check
     params:
@@ -539,7 +545,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: clamav-scan
     matrix:
@@ -565,7 +571,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: rpms-signature-scan
     params:
@@ -586,7 +592,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
 
   - name: push-dockerfile
     params:
@@ -609,4 +615,4 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    runAfter: [build-image-index]
+    runAfter: [ build-image-index ]
