@@ -101,6 +101,11 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
 }
 
+// IsNodeEventField returns true if the field is a node event field
+func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
+	return f.FieldIsOfType(fieldName, FileAccess)
+}
+
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
 func (f *FieldMetadata) findFieldMetadata(fieldName string, _ *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
