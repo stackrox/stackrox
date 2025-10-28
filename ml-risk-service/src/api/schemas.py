@@ -316,8 +316,8 @@ class BatchDeploymentRiskResponse(BaseModel):
     )
 
 
-class TrainingExample(BaseModel):
-    """Training example for model training."""
+class TrainingSample(BaseModel):
+    """Training sample for model training."""
 
     deployment_features: DeploymentFeatures = Field(description="Deployment features")
     image_features: List[ImageFeatures] = Field(
@@ -334,8 +334,8 @@ class TrainingExample(BaseModel):
 class TrainModelRequest(BaseModel):
     """Request to train a new model."""
 
-    training_data: List[TrainingExample] = Field(
-        description="Training examples"
+    training_data: List[TrainingSample] = Field(
+        description="Training samples"
     )
     config_override: Optional[str] = Field(
         default="",
@@ -414,8 +414,8 @@ class ModelHealthResponse(BaseModel):
         description="Unix timestamp of last training",
         ge=0
     )
-    training_examples_count: int = Field(
-        description="Number of training examples used",
+    training_samples_count: int = Field(
+        description="Number of training samples used",
         ge=0
     )
     current_metrics: ModelMetrics = Field(description="Current performance metrics")
@@ -590,7 +590,7 @@ class QuickTestPipelineResponse(BaseModel):
                         "validation_ndcg": 0.85,
                         "validation_auc": 0.92
                     },
-                    "training_examples": 50
+                    "training_samples": 50
                 },
                 "error_message": "",
                 "execution_time_seconds": 45.2

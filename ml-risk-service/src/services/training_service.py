@@ -15,7 +15,7 @@ from src.api.schemas import (
     TrainModelResponse,
     TrainingMetrics,
     FeatureImportance,
-    TrainingExample,
+    TrainingSample,
     QuickTestPipelineResponse
 )
 
@@ -37,7 +37,7 @@ class TrainingService:
 
         # Training state
         self.last_training_time = 0
-        self.training_examples_count = 0
+        self.training_samples_count = 0
 
         # Thread safety
         self._training_lock = threading.RLock()
@@ -58,19 +58,19 @@ class TrainingService:
                 logger.info(f"Starting model training with {len(request.training_data)} examples")
 
                 # Convert training data to internal format
-                training_examples = []
+                training_samples = []
                 for example in request.training_data:
                     # Convert Pydantic models to dictionary format expected by training pipeline
-                    features = self._extract_features_from_training_example(example)
-                    training_examples.append({
+                    features = self._extract_features_from_training_sample(example)
+                    training_samples.append({
                         'features': features,
                         'risk_score': example.current_risk_score,
                         'deployment_id': example.deployment_id
                     })
 
                 # Create ranking dataset
-                X, y, groups = self.training_pipeline.data_loader.create_ranking_dataset(training_examples)
-                feature_names = sorted(training_examples[0]['features'].keys())
+                X, y, groups = self.training_pipeline.data_loader.create_ranking_dataset(training_samples)
+                feature_names = sorted(training_samples[0]['features'].keys())
 
                 # Train model
                 training_metrics = risk_service.model.train(X, y, groups, feature_names)
@@ -78,7 +78,7 @@ class TrainingService:
                 # Update service state
                 risk_service.model_loaded = True
                 self.last_training_time = int(time.time())
-                self.training_examples_count = len(training_examples)
+                self.training_samples_count = len(training_samples)
 
                 # Convert metrics to response format
                 global_importance = risk_service.model.get_global_feature_importance()
@@ -124,12 +124,12 @@ class TrainingService:
                 error_message=str(e)
             )
 
-    def _extract_features_from_training_example(self, example: TrainingExample) -> Dict[str, float]:
+    def _extract_features_from_training_sample(self, example: TrainingSample) -> Dict[str, float]:
         """
-        Extract features from training example.
+        Extract features from training sample.
 
         Args:
-            example: Training example with deployment and image features
+            example: Training sample with deployment and image features
 
         Returns:
             Dictionary of extracted features
@@ -258,7 +258,7 @@ class TrainingService:
             result = self.training_pipeline.create_sample_training_data(temp_file.name, num_examples)
 
             if result['success']:
-                logger.info(f"Generated {num_examples} sample training examples in {temp_file.name}")
+                logger.info(f"Generated {num_examples} sample training samples in {temp_file.name}")
                 return temp_file.name
             else:
                 # Clean up on failure
@@ -273,7 +273,7 @@ class TrainingService:
         """Get current training status and metrics."""
         return {
             'last_training_time': self.last_training_time,
-            'training_examples_count': self.training_examples_count,
+            'training_samples_count': self.training_samples_count,
             'training_pipeline_ready': True
         }
 
@@ -282,7 +282,7 @@ class TrainingService:
         Run the quick test pipeline to validate the training system.
 
         This method:
-        1. Generates 50 sample training examples
+        1. Generates 50 sample training samples
         2. Runs the complete training pipeline with this data
         3. Returns comprehensive results including metrics and status
         4. Cleans up temporary files automatically
@@ -377,7 +377,7 @@ class TrainingService:
 
         Args:
             filters: Filters for Central API data collection
-            limit: Maximum number of training examples to collect
+            limit: Maximum number of training samples to collect
             config_override: Optional JSON configuration overrides
             risk_service: Risk service instance to update with trained model
 
@@ -401,15 +401,15 @@ class TrainingService:
                 filters=training_filters
             )
 
-            # Convert streaming data to training examples format
-            training_examples = self._convert_central_data_to_training_examples(
+            # Convert streaming data to training samples format
+            training_samples = self._convert_central_data_to_training_samples(
                 data_iterator, limit
             )
 
-            if not training_examples:
+            if not training_samples:
                 return TrainModelResponse(
                     success=False,
-                    error_message="No training examples found with current filters",
+                    error_message="No training samples found with current filters",
                     model_version="",
                     metrics=TrainingMetrics(
                         validation_ndcg=0.0,
@@ -422,7 +422,7 @@ class TrainingService:
 
             # Create training request
             request = TrainModelRequest(
-                training_data=training_examples,
+                training_data=training_samples,
                 config_override=config_override or ""
             )
 
@@ -444,20 +444,20 @@ class TrainingService:
                 )
             )
 
-    def _convert_central_data_to_training_examples(self,
+    def _convert_central_data_to_training_samples(self,
                                                   data_iterator,
-                                                  limit: Optional[int] = None) -> List[TrainingExample]:
+                                                  limit: Optional[int] = None) -> List[TrainingSample]:
         """
-        Convert Central API streaming data to TrainingExample format.
+        Convert Central API streaming data to TrainingSample format.
 
         Args:
-            data_iterator: Iterator yielding Central API training examples
+            data_iterator: Iterator yielding Central API training samples
             limit: Optional limit on number of examples to process
 
         Returns:
-            List of TrainingExample objects ready for training
+            List of TrainingSample objects ready for training
         """
-        training_examples = []
+        training_samples = []
         count = 0
 
         try:
@@ -465,33 +465,33 @@ class TrainingService:
                 if limit and count >= limit:
                     break
 
-                # Convert Central format to TrainingExample format
-                training_example = self._convert_single_central_example(example)
-                if training_example:
-                    training_examples.append(training_example)
+                # Convert Central format to TrainingSample format
+                training_sample = self._convert_single_central_sample(example)
+                if training_sample:
+                    training_samples.append(training_sample)
                     count += 1
 
                     if count % 100 == 0:
-                        logger.info(f"Converted {count} training examples")
+                        logger.info(f"Converted {count} training samples")
 
         except Exception as e:
             logger.error(f"Error converting Central data: {e}")
 
-        logger.info(f"Successfully converted {len(training_examples)} training examples from Central API")
-        return training_examples
+        logger.info(f"Successfully converted {len(training_samples)} training samples from Central API")
+        return training_samples
 
-    def _convert_single_central_example(self, example: Dict[str, Any]) -> Optional[TrainingExample]:
+    def _convert_single_central_sample(self, example: Dict[str, Any]) -> Optional[TrainingSample]:
         """
-        Convert a single Central API example to TrainingExample format.
+        Convert a single Central API sample to TrainingSample format.
 
         Args:
-            example: Central API training example dictionary
+            example: Central API training sample dictionary
 
         Returns:
-            TrainingExample object or None if conversion fails
+            TrainingSample object or None if conversion fails
         """
         try:
-            from src.api.schemas import TrainingExample, DeploymentFeatures, ImageFeatures
+            from src.api.schemas import TrainingSample, DeploymentFeatures, ImageFeatures
 
             # Extract features from the Central format
             features = example.get('features', {})
@@ -527,16 +527,16 @@ class TrainingService:
                     )
                     image_features.append(image_feature)
 
-            # Create training example
-            training_example = TrainingExample(
+            # Create training sample
+            training_sample = TrainingSample(
                 deployment_features=deployment_features,
                 image_features=image_features,
                 current_risk_score=float(example.get('risk_score', 1.0)),
                 deployment_id=example.get('deployment_id', '')
             )
 
-            return training_example
+            return training_sample
 
         except Exception as e:
-            logger.warning(f"Failed to convert Central example: {e}")
+            logger.warning(f"Failed to convert Central sample: {e}")
             return None
