@@ -75,7 +75,7 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 	}
 	containerNameMap[baseline.GetKey().GetContainerName()] = baselineSet
 
-	log.Infof("Successfully added process baseline %s", baseline.GetId())
+	log.Debugf("Successfully added process baseline %s", baseline.GetId())
 }
 
 // IsInBaseline checks if the process indicator is within a locked baseline
