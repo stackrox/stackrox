@@ -337,12 +337,8 @@ func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) 
 func fixCase(s string) string {
 	var newStr string
 	for i, c := range s {
-		if i == 0 || s[i-1] == ' ' {
-			if !upperCaseRegex.MatchString(string(c)) {
-				newStr += strings.ToUpper(string(c))
-			} else {
-				newStr += string(c)
-			}
+		if (i == 0 || s[i-1] == ' ') && !upperCaseRegex.MatchString(string(c)) {
+			newStr += strings.ToUpper(string(c))
 		} else {
 			newStr += string(c)
 		}
