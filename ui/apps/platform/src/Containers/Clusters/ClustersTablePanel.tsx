@@ -28,7 +28,6 @@ import useAnalytics, {
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -70,9 +69,6 @@ export type ClustersTablePanelProps = {
 function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isClustersPageMigrationEnabled = isFeatureFlagEnabled('ROX_CLUSTERS_PAGE_MIGRATION_UI');
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -183,11 +179,11 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
 
     const hasSearchApplied = getHasSearchApplied(searchFilter);
 
-    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
+    // Reconsider whether to factor out minimal common heading.
     //
     // After there is a response, if there are no clusters nor search filter:
-    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
-    if (currentClusters.length === 0 && !hasSearchApplied && !isClustersPageMigrationEnabled) {
+    // Too bad, so sad: flicker because ClustersTable encapsulates spinner.
+    if (currentClusters.length === 0 && !hasSearchApplied) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
