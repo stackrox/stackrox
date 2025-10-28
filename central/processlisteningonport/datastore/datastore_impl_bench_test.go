@@ -119,28 +119,24 @@ func BenchmarkAddPLOPs(b *testing.B) {
 
 func benchmarkAddPLOPs(b *testing.B, nPort int, nProcess int, nPod int) func(*testing.B) {
 	return func(b *testing.B) {
-		ctx, ds := setupBenchmark(b)
-
 		// Generate the data once before the loop
 		plopObjects := makeRandomPlops(nPort, nProcess, nPod, fixtureconsts.Deployment1)
 		b.Logf("Benchmarking processing of %d new PLOP objects...", len(plopObjects))
 
-		// Insert all indicators so lookups hit existing data
-		addIndicators(b, ctx, ds, plopObjects)
-
-		b.ResetTimer()
 		b.ReportAllocs()
 
-		for i := 0; i < b.N; i++ {
-			// Clean the DB state between runs so that the db is not always increasing in size
-			if err := removeAllPlops(ctx, ds, plopObjects); err != nil {
-				require.NoError(b, err)
-			}
+		b.ResetTimer()
 
+		for i := 0; i < b.N; i++ {
+			ctx, ds := setupBenchmark(b)
+			// Insert all indicators so lookups hit existing data
+			addIndicators(b, ctx, ds, plopObjects)
+
+			b.StartTimer()
 			if err := ds.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopObjects...); err != nil {
 				require.NoError(b, err)
 			}
+			b.StopTimer()
 		}
-		b.StopTimer()
 	}
 }
