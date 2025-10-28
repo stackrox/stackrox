@@ -321,6 +321,9 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.WalkByQuery)
+	if query == nil || query.EqualVT(search.EmptyQuery()) {
+		return c.Walk(ctx, fn)
+	}
 	return c.underlyingStore.WalkByQuery(ctx, query, fn)
 }
 
@@ -334,6 +337,9 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 // GetByQueryFn iterates over the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
+	if query == nil || query.EqualVT(search.EmptyQuery()) {
+		return c.Walk(ctx, fn)
+	}
 	return c.underlyingStore.GetByQueryFn(ctx, query, fn)
 }
 
