@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { useFormikContext } from 'formik';
 import {
     Flex,
@@ -16,28 +17,28 @@ import {
     SelectOption,
     SelectList,
     MenuToggle,
-    MenuToggleElement,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
     ChipGroup,
     Chip,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
-import { ClientPolicy } from 'types/policy.proto';
-import { ListImage } from 'types/image.proto';
-import { ListDeployment } from 'types/deployment.proto';
+import type { ClientPolicy } from 'types/policy.proto';
+import type { ListImage } from 'types/image.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { getImages } from 'services/imageService';
 import { fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
-function PolicyScopeForm() {
-    const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
-    const [filterValue, setFilterValue] = React.useState('');
-    const [images, setImages] = React.useState<ListImage[]>([]);
-    const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
+function PolicyScopeForm(): ReactElement {
+    const [isExcludeImagesOpen, setIsExcludeImagesOpen] = useState(false);
+    const [filterValue, setFilterValue] = useState('');
+    const [images, setImages] = useState<ListImage[]>([]);
+    const [deployments, setDeployments] = useState<ListDeployment[]>([]);
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
@@ -77,7 +78,7 @@ function PolicyScopeForm() {
     }
 
     function handleChangeMultiSelect(
-        _event: React.MouseEvent | undefined,
+        _event: ReactMouseEvent | undefined,
         selectedImage: string | number | undefined
     ) {
         if (!selectedImage || typeof selectedImage === 'number') {
@@ -93,7 +94,7 @@ function PolicyScopeForm() {
         setFilterValue('');
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         getImages()
             .then((response) => {
                 setImages(response);
@@ -223,7 +224,7 @@ function PolicyScopeForm() {
                             selected={excludedImageNames}
                             onSelect={handleChangeMultiSelect}
                             onOpenChange={(nextOpen: boolean) => setIsExcludeImagesOpen(nextOpen)}
-                            toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                            toggle={(toggleRef: Ref<MenuToggleElement>) => (
                                 <MenuToggle
                                     variant="typeahead"
                                     aria-label="Typeahead menu toggle"

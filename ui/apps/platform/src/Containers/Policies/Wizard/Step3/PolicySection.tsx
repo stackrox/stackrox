@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormikContext } from 'formik';
 import {
     Card,
@@ -15,8 +15,8 @@ import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useModal from 'hooks/useModal';
-import { Policy } from 'types/policy.proto';
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Policy } from 'types/policy.proto';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyGroupCard from './PolicyGroupCard';
 import PolicySectionDropTarget from './PolicySectionDropTarget';
 import PolicyCriteriaModal from './PolicyCriteriaModal';
@@ -30,7 +30,7 @@ type PolicySectionProps = {
 };
 
 function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
-    const [isEditingName, setIsEditingName] = React.useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
     const { isModalOpen, openModal, closeModal } = useModal();
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];

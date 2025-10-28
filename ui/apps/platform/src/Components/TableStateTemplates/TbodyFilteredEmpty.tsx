@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Text } from '@patternfly/react-core';
 import type { ButtonProps } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';

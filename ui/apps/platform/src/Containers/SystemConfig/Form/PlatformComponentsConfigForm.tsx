@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Button,
@@ -15,8 +15,8 @@ import {
     Modal,
     Stack,
     Tab,
-    Tabs,
     TabTitleText,
+    Tabs,
     Text,
     TextArea,
     TextInput,

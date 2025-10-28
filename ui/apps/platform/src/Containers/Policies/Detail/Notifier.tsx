@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { NotifierIntegration } from 'types/notifier.proto';
+import type { NotifierIntegration } from 'types/notifier.proto';
 
 import { getNotifierTypeLabel } from '../policies.utils';
 

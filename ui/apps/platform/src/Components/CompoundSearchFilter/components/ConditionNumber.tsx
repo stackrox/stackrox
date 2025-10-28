@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FormEvent } from 'react';
 import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Backdrop, Bullseye, Spinner } from '@patternfly/react-core';
 

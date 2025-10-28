@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import PropTypes from 'prop-types';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';

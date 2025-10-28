@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MouseEvent } from 'react';
 import {
     ExpandableSection,
@@ -24,7 +24,7 @@ function ProfileDetailsHeader({
     profileDetails,
     profileName,
 }: ProfileDetailsHeaderProps) {
-    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     function onToggleDescription(_event: MouseEvent, isExpanded: boolean) {
         setIsExpanded(isExpanded);

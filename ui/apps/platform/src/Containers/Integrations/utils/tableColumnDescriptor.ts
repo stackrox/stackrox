@@ -1,8 +1,8 @@
 import type { BaseBackupIntegration } from 'types/externalBackup.proto';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import type {
-    BaseImageIntegration,
     AzureImageIntegration,
+    BaseImageIntegration,
     ClairifyImageIntegration,
     DockerImageIntegration,
     GoogleImageIntegration,

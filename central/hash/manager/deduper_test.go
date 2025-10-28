@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
@@ -269,6 +270,1279 @@ func TestDeduper(t *testing.T) {
 				{
 					event:  getDeploymentEvent(central.ResourceAction_UPDATE_RESOURCE, "1", "dep2", 1),
 					result: false,
+				},
+			},
+		},
+		{
+			testName: "Pod should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "pod1",
+								Resource: &central.SensorEvent_Pod{
+									Pod: &storage.Pod{
+										Id:        "pod1",
+										Name:      "test-pod",
+										Namespace: "default",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "pod1",
+								Resource: &central.SensorEvent_Pod{
+									Pod: &storage.Pod{
+										Id:        "pod1",
+										Name:      "test-pod",
+										Namespace: "default",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "pod1",
+								Resource: &central.SensorEvent_Pod{
+									Pod: &storage.Pod{
+										Id:        "pod1",
+										Name:      "test-pod",
+										Namespace: "default",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Namespace should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "ns1",
+								Resource: &central.SensorEvent_Namespace{
+									Namespace: &storage.NamespaceMetadata{
+										Name:      "default",
+										Id:        "ns1",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "ns1",
+								Resource: &central.SensorEvent_Namespace{
+									Namespace: &storage.NamespaceMetadata{
+										Name:      "default",
+										Id:        "ns1",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "ns1",
+								Resource: &central.SensorEvent_Namespace{
+									Namespace: &storage.NamespaceMetadata{
+										Name:      "default",
+										Id:        "ns1",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "NetworkPolicy should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "np1",
+								Resource: &central.SensorEvent_NetworkPolicy{
+									NetworkPolicy: &storage.NetworkPolicy{
+										Id:        "np1",
+										Name:      "test-policy",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "np1",
+								Resource: &central.SensorEvent_NetworkPolicy{
+									NetworkPolicy: &storage.NetworkPolicy{
+										Id:        "np1",
+										Name:      "test-policy",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "np1",
+								Resource: &central.SensorEvent_NetworkPolicy{
+									NetworkPolicy: &storage.NetworkPolicy{
+										Id:        "np1",
+										Name:      "test-policy",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Secret should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "secret1",
+								Resource: &central.SensorEvent_Secret{
+									Secret: &storage.Secret{
+										Id:        "secret1",
+										Name:      "test-secret",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "secret1",
+								Resource: &central.SensorEvent_Secret{
+									Secret: &storage.Secret{
+										Id:        "secret1",
+										Name:      "test-secret",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "secret1",
+								Resource: &central.SensorEvent_Secret{
+									Secret: &storage.Secret{
+										Id:        "secret1",
+										Name:      "test-secret",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Node should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "node1",
+								Resource: &central.SensorEvent_Node{
+									Node: &storage.Node{
+										Id:        "node1",
+										Name:      "test-node",
+										ClusterId: "cluster1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "node1",
+								Resource: &central.SensorEvent_Node{
+									Node: &storage.Node{
+										Id:        "node1",
+										Name:      "test-node",
+										ClusterId: "cluster1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "NodeInventory should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "ni1",
+								Resource: &central.SensorEvent_NodeInventory{
+									NodeInventory: &storage.NodeInventory{
+										NodeId:   "ni1",
+										NodeName: "test-node",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "ni1",
+								Resource: &central.SensorEvent_NodeInventory{
+									NodeInventory: &storage.NodeInventory{
+										NodeId:   "ni1",
+										NodeName: "test-node",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ServiceAccount should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "sa1",
+								Resource: &central.SensorEvent_ServiceAccount{
+									ServiceAccount: &storage.ServiceAccount{
+										Id:        "sa1",
+										Name:      "test-sa",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "sa1",
+								Resource: &central.SensorEvent_ServiceAccount{
+									ServiceAccount: &storage.ServiceAccount{
+										Id:        "sa1",
+										Name:      "test-sa",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "sa1",
+								Resource: &central.SensorEvent_ServiceAccount{
+									ServiceAccount: &storage.ServiceAccount{
+										Id:        "sa1",
+										Name:      "test-sa",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Role should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "role1",
+								Resource: &central.SensorEvent_Role{
+									Role: &storage.K8SRole{
+										Id:        "role1",
+										Name:      "test-role",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "role1",
+								Resource: &central.SensorEvent_Role{
+									Role: &storage.K8SRole{
+										Id:        "role1",
+										Name:      "test-role",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "role1",
+								Resource: &central.SensorEvent_Role{
+									Role: &storage.K8SRole{
+										Id:        "role1",
+										Name:      "test-role",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Binding should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "binding1",
+								Resource: &central.SensorEvent_Binding{
+									Binding: &storage.K8SRoleBinding{
+										Id:        "binding1",
+										Name:      "test-binding",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "binding1",
+								Resource: &central.SensorEvent_Binding{
+									Binding: &storage.K8SRoleBinding{
+										Id:        "binding1",
+										Name:      "test-binding",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "binding1",
+								Resource: &central.SensorEvent_Binding{
+									Binding: &storage.K8SRoleBinding{
+										Id:        "binding1",
+										Name:      "test-binding",
+										Namespace: "default",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ReprocessDeployment should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "reprocess1",
+								Resource: &central.SensorEvent_ReprocessDeployment{
+									ReprocessDeployment: &central.ReprocessDeploymentRisk{
+										DeploymentId: "dep1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "reprocess1",
+								Resource: &central.SensorEvent_ReprocessDeployment{
+									ReprocessDeployment: &central.ReprocessDeploymentRisk{
+										DeploymentId: "dep1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ProviderMetadata should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "metadata1",
+								Resource: &central.SensorEvent_ProviderMetadata{
+									ProviderMetadata: &storage.ProviderMetadata{
+										Region: "us-east-1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "metadata1",
+								Resource: &central.SensorEvent_ProviderMetadata{
+									ProviderMetadata: &storage.ProviderMetadata{
+										Region: "us-east-1",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "OrchestratorMetadata should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "orch1",
+								Resource: &central.SensorEvent_OrchestratorMetadata{
+									OrchestratorMetadata: &storage.OrchestratorMetadata{
+										Version: "1.24.0",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "orch1",
+								Resource: &central.SensorEvent_OrchestratorMetadata{
+									OrchestratorMetadata: &storage.OrchestratorMetadata{
+										Version: "1.24.0",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ImageIntegration should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "img1",
+								Resource: &central.SensorEvent_ImageIntegration{
+									ImageIntegration: &storage.ImageIntegration{
+										Id:   "img1",
+										Name: "test-integration",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "img1",
+								Resource: &central.SensorEvent_ImageIntegration{
+									ImageIntegration: &storage.ImageIntegration{
+										Id:   "img1",
+										Name: "test-integration",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "VirtualMachine should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "vm1",
+								Resource: &central.SensorEvent_VirtualMachine{
+									VirtualMachine: &v1.VirtualMachine{
+										Id:        "vm1",
+										Name:      "test-vm",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "vm1",
+								Resource: &central.SensorEvent_VirtualMachine{
+									VirtualMachine: &v1.VirtualMachine{
+										Id:        "vm1",
+										Name:      "test-vm",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "vm1",
+								Resource: &central.SensorEvent_VirtualMachine{
+									VirtualMachine: &v1.VirtualMachine{
+										Id:        "vm1",
+										Name:      "test-vm",
+										ClusterId: "cluster1",
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "VirtualMachineIndexReport should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "vmindex1",
+								Resource: &central.SensorEvent_VirtualMachineIndexReport{
+									VirtualMachineIndexReport: &v1.IndexReportEvent{
+										Id: "vm1",
+										Index: &v1.IndexReport{
+											VsockCid: "1",
+											IndexV4: &v4.IndexReport{
+												HashId:   "vmhash1",
+												State:    "7",
+												Success:  true,
+												Contents: nil,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "vmindex1",
+								Resource: &central.SensorEvent_VirtualMachineIndexReport{
+									VirtualMachineIndexReport: &v1.IndexReportEvent{
+										Id: "vm1",
+										Index: &v1.IndexReport{
+											VsockCid: "1",
+											IndexV4: &v4.IndexReport{
+												HashId:   "vmhash1",
+												State:    "7",
+												Success:  true,
+												Contents: nil,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "Deploy AlertResults (not runtime, not resolved, not attempted) should be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "alert1",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										DeploymentId: "dep1",
+										Stage:        storage.LifecycleStage_DEPLOY,
+										Alerts: []*storage.Alert{
+											{
+												State: storage.ViolationState_ACTIVE,
+											},
+										},
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "alert1",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										DeploymentId: "dep1",
+										Stage:        storage.LifecycleStage_DEPLOY,
+										Alerts: []*storage.Alert{
+											{
+												State: storage.ViolationState_ACTIVE,
+											},
+										},
+									},
+								},
+								Action: central.ResourceAction_CREATE_RESOURCE,
+							},
+						},
+					},
+					result: false,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "alert1",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										DeploymentId: "dep1",
+										Stage:        storage.LifecycleStage_DEPLOY,
+										Alerts: []*storage.Alert{
+											{
+												State: storage.ViolationState_ACTIVE,
+											},
+										},
+									},
+								},
+								Action: central.ResourceAction_REMOVE_RESOURCE,
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorResult should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cor1",
+								Resource: &central.SensorEvent_ComplianceOperatorResult{
+									ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
+										CheckId:   "check1",
+										CheckName: "test-check",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cor1",
+								Resource: &central.SensorEvent_ComplianceOperatorResult{
+									ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
+										CheckId:   "check1",
+										CheckName: "test-check",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorProfile should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cop1",
+								Resource: &central.SensorEvent_ComplianceOperatorProfile{
+									ComplianceOperatorProfile: &storage.ComplianceOperatorProfile{
+										Id:   "cop1",
+										Name: "test-profile",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cop1",
+								Resource: &central.SensorEvent_ComplianceOperatorProfile{
+									ComplianceOperatorProfile: &storage.ComplianceOperatorProfile{
+										Id:   "cop1",
+										Name: "test-profile",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorRule should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cor1",
+								Resource: &central.SensorEvent_ComplianceOperatorRule{
+									ComplianceOperatorRule: &storage.ComplianceOperatorRule{
+										Id:   "cor1",
+										Name: "test-rule",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cor1",
+								Resource: &central.SensorEvent_ComplianceOperatorRule{
+									ComplianceOperatorRule: &storage.ComplianceOperatorRule{
+										Id:   "cor1",
+										Name: "test-rule",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorScanSettingBinding should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cossb1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
+									ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{
+										Id:   "cossb1",
+										Name: "test-binding",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cossb1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
+									ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{
+										Id:   "cossb1",
+										Name: "test-binding",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorScan should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cos1",
+								Resource: &central.SensorEvent_ComplianceOperatorScan{
+									ComplianceOperatorScan: &storage.ComplianceOperatorScan{
+										Id:   "cos1",
+										Name: "test-scan",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cos1",
+								Resource: &central.SensorEvent_ComplianceOperatorScan{
+									ComplianceOperatorScan: &storage.ComplianceOperatorScan{
+										Id:   "cos1",
+										Name: "test-scan",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorResultV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "corv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+									ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+										CheckId:   "checkv2_1",
+										CheckName: "test-check-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "corv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+									ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+										CheckId:   "checkv2_1",
+										CheckName: "test-check-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorProfileV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "copv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+									ComplianceOperatorProfileV2: &central.ComplianceOperatorProfileV2{
+										Id:   "copv2_1",
+										Name: "test-profile-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "copv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+									ComplianceOperatorProfileV2: &central.ComplianceOperatorProfileV2{
+										Id:   "copv2_1",
+										Name: "test-profile-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorRuleV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "corulev2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+									ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
+										Id:   "corulev2_1",
+										Name: "test-rule-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "corulev2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+									ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
+										Id:   "corulev2_1",
+										Name: "test-rule-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorScanV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cosv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanV2{
+									ComplianceOperatorScanV2: &central.ComplianceOperatorScanV2{
+										Id:   "cosv2_1",
+										Name: "test-scan-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cosv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanV2{
+									ComplianceOperatorScanV2: &central.ComplianceOperatorScanV2{
+										Id:   "cosv2_1",
+										Name: "test-scan-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorScanSettingBindingV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cossbv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
+									ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
+										Id:   "cossbv2_1",
+										Name: "test-binding-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cossbv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorScanSettingBindingV2{
+									ComplianceOperatorScanSettingBindingV2: &central.ComplianceOperatorScanSettingBindingV2{
+										Id:   "cossbv2_1",
+										Name: "test-binding-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorSuiteV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cosuitv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
+									ComplianceOperatorSuiteV2: &central.ComplianceOperatorSuiteV2{
+										Id:   "cosuitv2_1",
+										Name: "test-suite-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cosuitv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
+									ComplianceOperatorSuiteV2: &central.ComplianceOperatorSuiteV2{
+										Id:   "cosuitv2_1",
+										Name: "test-suite-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "ComplianceOperatorRemediationV2 should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cormedv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorRemediationV2{
+									ComplianceOperatorRemediationV2: &central.ComplianceOperatorRemediationV2{
+										Id:   "cormedv2_1",
+										Name: "test-remediation-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "cormedv2_1",
+								Resource: &central.SensorEvent_ComplianceOperatorRemediationV2{
+									ComplianceOperatorRemediationV2: &central.ComplianceOperatorRemediationV2{
+										Id:   "cormedv2_1",
+										Name: "test-remediation-v2",
+									},
+								},
+							},
+						},
+					},
+					result: true,
 				},
 			},
 		},

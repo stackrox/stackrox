@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import { useField } from 'formik';
 import {
     TextInput,
@@ -11,7 +12,7 @@ import {
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 
-import { Descriptor } from './policyCriteriaDescriptors';
+import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import TableModalFieldInput from './TableModalFieldInput';
 
@@ -25,7 +26,7 @@ function PolicyCriteriaFieldInput({
     descriptor,
     readOnly = false,
     name,
-}: PolicyCriteriaFieldInputProps): React.ReactElement {
+}: PolicyCriteriaFieldInputProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { setValue } = helper;

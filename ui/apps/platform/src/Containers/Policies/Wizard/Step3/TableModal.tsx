@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Button,
@@ -13,10 +14,10 @@ import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import { IntegrationTableColumnDescriptor } from 'Containers/Integrations/utils/tableColumnDescriptor';
+import type { IntegrationTableColumnDescriptor } from 'Containers/Integrations/utils/tableColumnDescriptor';
 import useTableSelection from 'hooks/useTableSelection';
-import { ClientPolicyValue } from 'types/policy.proto';
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
+import type { ClientPolicyValue } from 'types/policy.proto';
+import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 type TableModalProps = {
     setValue: (value: ClientPolicyValue) => void;
@@ -34,7 +35,7 @@ function TableModal({
     rows,
     columns,
     typeText,
-}: TableModalProps): React.ReactElement {
+}: TableModalProps): ReactElement {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const isPreSelected = useCallback(

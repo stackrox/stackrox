@@ -40,7 +40,7 @@ func (r retryT) Logf(format string, args ...interface{}) {
 	r.t.Logf(format, args...)
 }
 
-func runRetry(testFn func(t T)) (success bool) {
+func runRetry(t T, testFn func(t T)) (success bool) {
 	defer func() {
 		if success {
 			return
@@ -53,7 +53,7 @@ func runRetry(testFn func(t T)) (success bool) {
 		}
 	}()
 
-	testFn(retryT{})
+	testFn(retryT{t: t})
 	success = true
 
 	return
@@ -63,7 +63,7 @@ func runRetry(testFn func(t T)) (success bool) {
 func Retry(t T, times int, sleepInterval time.Duration, testFn func(t T)) {
 	for i := 0; i < times-1; i++ {
 		log.Infof("Test attempt: %d", i)
-		if runRetry(testFn) {
+		if runRetry(t, testFn) {
 			return
 		}
 		time.Sleep(sleepInterval)

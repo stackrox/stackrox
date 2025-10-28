@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
 import Select, { defaultSelectStyles } from 'Components/ReactSelect';

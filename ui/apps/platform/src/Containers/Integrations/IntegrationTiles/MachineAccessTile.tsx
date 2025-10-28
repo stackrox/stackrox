@@ -4,8 +4,8 @@ import { useSelector } from 'react-redux';
 import IntegrationTile from './IntegrationTile';
 import {
     authenticationTokensSource as source,
-    machineAccessDescriptor as descriptor,
     getIntegrationsListPath,
+    machineAccessDescriptor as descriptor,
 } from '../utils/integrationsList';
 
 function MachineAccessTile(): ReactElement {

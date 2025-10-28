@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Card, CardBody, CardHeader, CardTitle, Divider, Label } from '@patternfly/react-core';
 

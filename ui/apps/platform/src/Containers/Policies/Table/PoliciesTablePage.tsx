@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { AlertGroup, AlertActionCloseButton, Divider, Button, Alert } from '@patternfly/react-core';
 import pluralize from 'pluralize';
@@ -14,13 +15,14 @@ import {
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
 import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import useURLSort from 'hooks/useURLSort';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { ListPolicy } from 'types/policy.proto';
-import { NotifierIntegration } from 'types/notifier.proto';
-import { ApiSortOption, SearchFilter } from 'types/search';
-import { SortOption } from 'types/table';
+import type { ListPolicy } from 'types/policy.proto';
+import type { NotifierIntegration } from 'types/notifier.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import type { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { applyRegexSearchModifiers, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -46,7 +48,7 @@ function PoliciesTablePage({
     hasWriteAccessForPolicy,
     handleChangeSearchFilter,
     searchFilter,
-}: PoliciesTablePageProps): React.ReactElement {
+}: PoliciesTablePageProps): ReactElement {
     const navigate = useNavigate();
     const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 

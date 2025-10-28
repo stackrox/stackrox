@@ -5,7 +5,7 @@ import { fetchDeploymentWithRisk } from 'services/DeploymentsService';
 import type { DeploymentWithRisk } from 'services/DeploymentsService';
 
 import CloseButton from 'Components/CloseButton';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 
 import RiskSidePanelTabs from './RiskSidePanelTabs';
 

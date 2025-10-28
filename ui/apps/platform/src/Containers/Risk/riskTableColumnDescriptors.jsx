@@ -4,7 +4,7 @@ import find from 'lodash/find';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
-import { sortValue, sortDate } from 'sorters/sorters';
+import { sortDate, sortValue } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
 import { getDateTime } from 'utils/dateUtils';
 

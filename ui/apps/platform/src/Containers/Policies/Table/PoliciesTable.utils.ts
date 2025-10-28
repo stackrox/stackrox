@@ -1,5 +1,5 @@
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
-import { ListPolicy } from 'types/policy.proto';
+import type { ListPolicy } from 'types/policy.proto';
 import { getPolicyOriginLabel } from '../policies.utils';
 
 export const columns = [

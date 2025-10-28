@@ -534,7 +534,7 @@ Go tests annotated with `//go:build sql_integration` require a PostgreSQL server
 Due to how authentication is set up in code, it is the easiest to start Postgres in a container like this:
 
 ```bash
-$ docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:13
+$ docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:15
 ```
 
 With that running in the background, `sql_integration` tests can be triggered from IDE or command-line.

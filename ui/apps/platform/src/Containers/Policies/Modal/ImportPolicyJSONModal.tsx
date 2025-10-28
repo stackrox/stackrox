@@ -1,16 +1,16 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Modal } from '@patternfly/react-core';
 
 import { importPolicies } from 'services/PoliciesService';
-import { Policy } from 'types/policy.proto';
+import type { Policy } from 'types/policy.proto';
 import {
     parsePolicyImportErrors,
     getResolvedPolicies,
     getErrorMessages,
     checkDupeOnlyErrors,
-    PolicyImportError,
-    PolicyResolution,
 } from './PolicyImport.utils';
+import type { PolicyImportError, PolicyResolution } from './PolicyImport.utils';
 import ImportPolicyJSONSuccess from './ImportPolicyJSONSuccess';
 import ImportPolicyJSONModalError from './ImportPolicyJSONModalError';
 import ImportPolicyJSONUpload from './ImportPolicyJSONUpload';

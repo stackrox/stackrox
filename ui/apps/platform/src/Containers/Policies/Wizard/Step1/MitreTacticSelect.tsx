@@ -1,15 +1,16 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Select,
     MenuToggle,
-    MenuToggleElement,
     SelectList,
     SelectOption,
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
-import { MitreAttackVector } from 'types/mitre.proto';
+import type { MitreAttackVector } from 'types/mitre.proto';
 import useSelectToggleState from 'Components/SelectSingle/useSelectToggleState';
 
 type MitreTacticSelectProps = {
@@ -37,7 +38,7 @@ function MitreTacticSelect({
     const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
     const selectedTactic = mitreAttackVectors.find(({ tactic }) => tactic.id === tacticId);
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={onToggle}

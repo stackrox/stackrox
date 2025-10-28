@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
 import { Bullseye, Dropdown, DropdownList, MenuToggle, Spinner } from '@patternfly/react-core';
 import type {

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import ClusteredEventsVisibilityContext from 'Components/TimelineGraph/ClusteredEventsVisibilityContext';

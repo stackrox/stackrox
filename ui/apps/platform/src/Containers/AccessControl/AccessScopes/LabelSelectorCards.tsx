@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 

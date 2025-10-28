@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Button,
     Card,
@@ -7,11 +7,11 @@ import {
     CodeBlock,
     Divider,
     Modal,
-    pluralize,
     Stack,
     StackItem,
     Text,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 
 import type { PlatformComponentRule } from 'types/config.proto';

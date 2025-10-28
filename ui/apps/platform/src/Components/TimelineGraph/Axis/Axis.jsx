@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { scaleLinear } from 'd3-scale';
 import { axisTop, axisBottom } from 'd3-axis';

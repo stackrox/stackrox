@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
-    PageSection,
-    PageSectionVariants,
-    Title,
     Breadcrumb,
     BreadcrumbItem,
     Divider,
     Flex,
+    PageSection,
+    PageSectionVariants,
+    Title,
 } from '@patternfly/react-core';
-import { useParams, useNavigate } from 'react-router-dom-v5-compat';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -29,8 +29,8 @@ import {
     getIsAPIToken,
     getIsCloudSource,
     getIsMachineAccessConfig,
-    getIsSignatureIntegration,
     getIsScannerV4,
+    getIsSignatureIntegration,
 } from '../utils/integrationUtils';
 import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 

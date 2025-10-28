@@ -1,9 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 
-import {
-    ResourceCountByCveSeverityAndStatus,
-    resourceCountByCveSeverityAndStatusFragment,
-} from '../../components/CvesByStatusSummaryCard';
+import { resourceCountByCveSeverityAndStatusFragment } from '../../components/CvesByStatusSummaryCard';
+import type { ResourceCountByCveSeverityAndStatus } from '../../components/CvesByStatusSummaryCard';
 
 const nodeSummaryDataQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}

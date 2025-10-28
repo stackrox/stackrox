@@ -13,8 +13,8 @@ import {
     HelperTextItem,
     PageSection,
     Popover,
-    TextInput,
     SelectOption,
+    TextInput,
 } from '@patternfly/react-core';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';

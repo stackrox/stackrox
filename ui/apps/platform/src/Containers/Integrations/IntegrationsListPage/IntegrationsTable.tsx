@@ -8,8 +8,8 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { useParams, Link } from 'react-router-dom-v5-compat';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Link, useParams } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';

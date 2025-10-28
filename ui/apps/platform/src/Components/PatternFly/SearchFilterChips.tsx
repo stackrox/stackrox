@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Button, ChipGroup, Chip, Flex, FlexItem } from '@patternfly/react-core';
 import type { ToolbarChip } from '@patternfly/react-core';
