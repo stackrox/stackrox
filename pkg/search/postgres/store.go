@@ -81,7 +81,7 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Upsert(ctx context.Context, obj PT) error
 	UpsertMany(ctx context.Context, objs []PT) error
 	// Deprecated: Use with caution it's unsafe but fast 🐉
-	GetAllFromCache() []PT
+	GetAllFromCacheForSAC() []PT
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
@@ -429,7 +429,7 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 }
 
 // GetAllFromCache panics as generic store has no cache.
-func (s *genericStore[T, PT]) GetAllFromCache() []PT {
+func (s *genericStore[T, PT]) GetAllFromCacheForSAC() []PT {
 	panic("generic store has no cache")
 }
 

@@ -89,7 +89,7 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // GetAllFromCache mocks base method.
-func (m *MockStore) GetAllFromCache() []*storage.Cluster {
+func (m *MockStore) GetAllFromCacheForSAC() []*storage.Cluster {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFromCache")
 	ret0, _ := ret[0].([]*storage.Cluster)
@@ -97,7 +97,7 @@ func (m *MockStore) GetAllFromCache() []*storage.Cluster {
 }
 
 // GetAllFromCache indicates an expected call of GetAllFromCache.
-func (mr *MockStoreMockRecorder) GetAllFromCache() *gomock.Call {
+func (mr *MockStoreMockRecorder) GetAllFromCacheForSAC() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFromCache", reflect.TypeOf((*MockStore)(nil).GetAllFromCache))
 }

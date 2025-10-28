@@ -545,7 +545,7 @@ func TestGetAllFromCache(t *testing.T) {
 	require.NotNil(t, store)
 
 	assert.Panics(t, func() {
-		store.GetAllFromCache()
+		store.GetAllFromCacheForSAC()
 	})
 }
 

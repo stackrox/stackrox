@@ -845,7 +845,7 @@ func TestCachedGetAllFromCache(t *testing.T) {
 	testObjects := sampleCachedTestSingleKeyStructArray("GetAllFromCache")
 	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
-	protoassert.ElementsMatch(t, testObjects, store.GetAllFromCache())
+	protoassert.ElementsMatch(t, testObjects, store.GetAllFromCacheForSAC())
 }
 
 // region Helper Functions

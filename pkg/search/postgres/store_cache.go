@@ -337,7 +337,7 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 
 // GetAllFromCache returns all the objects in the store without cloning.
 // Deprecated: It will not clone the object so it should be used only for SAC.
-func (c *cachedStore[T, PT]) GetAllFromCache() []PT {
+func (c *cachedStore[T, PT]) GetAllFromCacheForSAC() []PT {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache))

@@ -84,7 +84,8 @@ type Store interface {
     WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 
 {{- if and .CachedStore .ForSAC }}
-    GetAllFromCache() []*storeType
+    // Deprecated: Use for SAC only
+    GetAllFromCacheForSAC() []*storeType
 {{- end }}
 }
 

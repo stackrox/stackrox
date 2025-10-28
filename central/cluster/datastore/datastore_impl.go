@@ -308,7 +308,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 }
 
 func (ds *datastoreImpl) GetClustersForSAC() ([]*storage.Cluster, error) {
-	return ds.clusterStorage.GetAllFromCache(), nil
+	return ds.clusterStorage.GetAllFromCacheForSAC(), nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {

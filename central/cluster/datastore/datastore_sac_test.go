@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -346,22 +347,14 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 	clusterID2, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster2)
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
-	cluster2.Id = clusterID2
-	otherClusterID := testconsts.Cluster3
 
-	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
-	for _, c := range cases {
-		s.Run(c.Name, func() {
-			clusters, err := s.datastore.GetClustersForSAC()
-			s.NoError(err)
-			clusterNames := make([]string, 0, len(clusters))
-			for _, cluster := range clusters {
-				clusterNames = append(clusterNames, cluster.GetName())
-			}
-			// GetClustersForSAC omits SAC itself
-			s.ElementsMatch(cases[0].ExpectedClusterNames, clusterNames)
-		})
+	clusters, err := s.datastore.GetClustersForSAC()
+	s.NoError(err)
+	clusterNames := make([]string, 0, len(clusters))
+	for _, cluster := range clusters {
+		clusterNames = append(clusterNames, cluster.GetName())
 	}
+	s.ElementsMatch([]string{testconsts.Cluster1, testconsts.Cluster2}, clusterNames)
 }
 
 func (s *clusterDatastoreSACSuite) TestRemoveCluster() {

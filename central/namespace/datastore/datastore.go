@@ -97,7 +97,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 
 // GetNamespacesForSAC retrieves namespaces matching the request
 func (b *datastoreImpl) GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error) {
-	return b.store.GetAllFromCache(), nil
+	return b.store.GetAllFromCacheForSAC(), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {

@@ -162,91 +162,91 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 		},
 		{
 			ScopeKey:          testutils.Cluster1ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster1NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster1NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster2ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster2NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster2NamespaceB, cluster2NamespaceC},
 		},
 		{
 			ScopeKey:          testutils.Cluster3ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster3NamespaceA},
 		},
 		{
 			ScopeKey:          testutils.Cluster3NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{},
 		},
 		{
 			ScopeKey:          testutils.MixedClusterAndNamespaceReadCtx,
-			VisibleNamespaces: testNamespaces,
+			VisibleNamespaces: []*storage.NamespaceMetadata{cluster1NamespaceA, cluster2NamespaceB, cluster2NamespaceC},
 		},
 	}
 
@@ -293,123 +293,17 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespacesForSAC() {
 		s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
 	}
 
-	cases := []struct {
-		ScopeKey          string
-		VisibleNamespaces []*storage.NamespaceMetadata
-	}{
-		{
-			ScopeKey:          testutils.UnrestrictedReadCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.UnrestrictedReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster1NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster2NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3ReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespaceAReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespaceBReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespaceCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespacesABReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespacesACReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.Cluster3NamespacesBCReadWriteCtx,
-			VisibleNamespaces: testNamespaces,
-		},
-		{
-			ScopeKey:          testutils.MixedClusterAndNamespaceReadCtx,
-			VisibleNamespaces: testNamespaces,
-		},
+	res, err := s.datastore.GetNamespacesForSAC()
+	s.Require().NoError(err)
+	expectedNamespaceIDs := make([]string, 0, 3)
+	for _, ix := range testNamespaces {
+		expectedNamespaceIDs = append(expectedNamespaceIDs, ix.GetId())
 	}
-
-	for _, c := range cases {
-		s.Run(c.ScopeKey, func() {
-			res, err := s.datastore.GetNamespacesForSAC()
-			s.Require().NoError(err)
-			expectedNamespaceIDs := make([]string, 0, len(c.VisibleNamespaces))
-			for ix := range c.VisibleNamespaces {
-				expectedNamespaceIDs = append(expectedNamespaceIDs, c.VisibleNamespaces[ix].GetId())
-			}
-			retrievedNamespaceIDs := make([]string, 0, len(res))
-			for ix := range res {
-				retrievedNamespaceIDs = append(retrievedNamespaceIDs, res[ix].GetId())
-			}
-			s.ElementsMatch(retrievedNamespaceIDs, expectedNamespaceIDs)
-		})
+	retrievedNamespaceIDs := make([]string, 0, len(res))
+	for ix := range res {
+		retrievedNamespaceIDs = append(retrievedNamespaceIDs, res[ix].GetId())
 	}
+	s.ElementsMatch(retrievedNamespaceIDs, expectedNamespaceIDs)
 }
 
 func (s *namespaceDatastoreSACSuite) TestRemoveNamespace() {
