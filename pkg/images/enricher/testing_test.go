@@ -178,28 +178,6 @@ func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
 	}
 }
 
-type fakeCVESuppressor struct{}
-
-func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
-			}
-		}
-	}
-}
-
-func (f *fakeCVESuppressor) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
-	for _, c := range image.GetScan().GetComponents() {
-		for _, v := range c.GetVulns() {
-			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
-			}
-		}
-	}
-}
-
 type fakeCVESuppressorV2 struct{}
 
 func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image) {
