@@ -42,6 +42,13 @@ class CentralExportService:
         self._policy_cache = {}
         self._cache_lock = threading.RLock()
 
+        # Risk score tracking for logging
+        self._risk_score_stats = {
+            'scores': [],
+            'total_count': 0,
+            'failed_count': 0
+        }
+
         logger.info("Initialized Central Export Service")
 
     def collect_training_data(self,
@@ -77,6 +84,7 @@ class CentralExportService:
                     logger.info(f"Yielded {examples_yielded} training samples")
 
             logger.info(f"Training data collection completed: {examples_yielded} examples")
+            self._log_final_risk_score_summary()
 
         except Exception as e:
             logger.error(f"Failed to collect training data: {e}")
@@ -192,10 +200,15 @@ class CentralExportService:
                 'collected_at': datetime.now(timezone.utc).isoformat()
             }
 
+            # Log risk score for this deployment
+            self._log_deployment_risk_score(training_sample)
+
             return training_sample
 
         except Exception as e:
             logger.error(f"Failed to create training example from workload: {e}")
+            # Track failed sample creation
+            self._risk_score_stats['failed_count'] += 1
             return None
 
     def _need_additional_data(self, filters: Optional[Dict[str, Any]]) -> bool:
@@ -323,6 +336,96 @@ class CentralExportService:
             self._alert_cache.clear()
             self._policy_cache.clear()
         logger.info("Cleared cached data")
+
+    def _log_deployment_risk_score(self, training_sample: Dict[str, Any]):
+        """
+        Log risk score information for a deployment.
+
+        Args:
+            training_sample: Training sample containing risk score and metadata
+        """
+        try:
+            risk_score = training_sample.get('risk_score', 0.0)
+            baseline_factors = training_sample.get('baseline_factors', {})
+            baseline_score = baseline_factors.get('baseline_score', 0.0)
+            workload_metadata = training_sample.get('workload_metadata', {})
+
+            # Extract deployment info
+            deployment_name = workload_metadata.get('deployment_name', 'unknown')
+            namespace = workload_metadata.get('namespace', 'unknown')
+            cluster_id = workload_metadata.get('cluster_id', 'unknown')
+
+            # Track score statistics
+            self._risk_score_stats['scores'].append(risk_score)
+            self._risk_score_stats['total_count'] += 1
+
+            # Log individual deployment risk score at DEBUG level
+            logger.debug(f"Training sample: deployment={deployment_name} namespace={namespace} "
+                        f"cluster={cluster_id} risk_score={risk_score:.3f} baseline_score={baseline_score:.3f}")
+
+            # Log batch summary periodically at INFO level
+            if self._risk_score_stats['total_count'] % self.batch_size == 0:
+                self._log_batch_risk_score_summary()
+
+        except Exception as e:
+            logger.warning(f"Failed to log risk score for deployment: {e}")
+
+    def _log_batch_risk_score_summary(self):
+        """Log summary statistics for the current batch of risk scores."""
+        try:
+            scores = self._risk_score_stats['scores']
+            if not scores:
+                return
+
+            recent_scores = scores[-self.batch_size:] if len(scores) >= self.batch_size else scores
+
+            avg_risk = sum(recent_scores) / len(recent_scores)
+            min_risk = min(recent_scores)
+            max_risk = max(recent_scores)
+            count = len(recent_scores)
+
+            logger.info(f"Training batch processed: count={count} avg_risk={avg_risk:.3f} "
+                       f"min_risk={min_risk:.3f} max_risk={max_risk:.3f}")
+
+        except Exception as e:
+            logger.warning(f"Failed to log batch risk score summary: {e}")
+
+    def _log_final_risk_score_summary(self):
+        """Log final summary statistics for all collected risk scores."""
+        try:
+            scores = self._risk_score_stats['scores']
+            total_count = self._risk_score_stats['total_count']
+            failed_count = self._risk_score_stats['failed_count']
+
+            if not scores:
+                logger.info(f"Training collection complete: total_processed={total_count} "
+                           f"successful=0 failed={failed_count} - no valid risk scores generated")
+                return
+
+            # Calculate comprehensive statistics
+            avg_risk = sum(scores) / len(scores)
+            min_risk = min(scores)
+            max_risk = max(scores)
+
+            # Calculate variance
+            variance = sum((score - avg_risk) ** 2 for score in scores) / len(scores)
+
+            # Count unique scores for diversity assessment
+            unique_scores = len(set(f"{score:.3f}" for score in scores))
+
+            logger.info(f"Training collection complete: total_processed={total_count} successful={len(scores)} "
+                       f"failed={failed_count} avg_risk={avg_risk:.3f} min_risk={min_risk:.3f} "
+                       f"max_risk={max_risk:.3f} risk_variance={variance:.6f} unique_scores={unique_scores}")
+
+            # Reset statistics for next collection
+            self._risk_score_stats = {
+                'scores': [],
+                'total_count': 0,
+                'failed_count': 0
+            }
+
+        except Exception as e:
+            logger.warning(f"Failed to log final risk score summary: {e}")
 
     def close(self):
         """Clean up resources."""
