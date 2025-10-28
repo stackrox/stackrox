@@ -3,8 +3,6 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { SearchFilter } from 'types/search';
 
-import './FilterDropdowns.css';
-
 type ComponentScannableStatusDropdownProps = {
     searchFilter: SearchFilter;
     onSelect: (filterType: 'SCANNABLE', checked: boolean, selection: string) => void;

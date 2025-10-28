@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectList,
-    MenuToggle,
     Badge,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 
