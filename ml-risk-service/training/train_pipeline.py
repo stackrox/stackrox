@@ -55,7 +55,7 @@ class TrainingPipeline:
                     'max_examples': None
                 },
                 'model': {
-                    'algorithm': 'lightgbm_ranker',
+                    'algorithm': 'sklearn_ranksvm',
                     'validation_split': 0.2,
                     'random_state': 42
                 },
@@ -343,7 +343,7 @@ class TrainingPipeline:
                 metadata = ModelMetadata(
                     model_id=model_id,
                     version=version,
-                    algorithm=model_info.get('algorithm', 'lightgbm_ranker'),
+                    algorithm=model_info.get('algorithm', 'sklearn_ranksvm'),
                     feature_count=int(model_info.get('feature_count', 0)),
                     training_timestamp=datetime.now().isoformat(),
                     model_size_bytes=len(model_data_bytes),

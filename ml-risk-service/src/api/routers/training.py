@@ -214,9 +214,8 @@ async def get_training_info(
                 "Sample data generation"
             ],
             "supported_algorithms": [
-                "LightGBM Ranker",
-                "Random Forest",
-                "Gradient Boosting"
+                "Random Forest Regressor",
+                "Extensible for future algorithms"
             ],
             "training_status": status_info
         }

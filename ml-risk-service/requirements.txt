@@ -6,7 +6,6 @@ scipy==1.11.1
 
 # Ranking algorithms
 scikit-multilearn==0.2.0
-lightgbm==4.0.0
 
 # Explainability
 shap==0.42.1
