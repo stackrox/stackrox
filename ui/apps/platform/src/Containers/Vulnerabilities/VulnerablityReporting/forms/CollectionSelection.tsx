@@ -229,7 +229,7 @@ function CollectionSelection({
                     onFocus={ensureOpen}
                     onBlur={handleBlur}
                     autoComplete="off"
-                    id={id}
+                    id={`${id}-select-typeahead`}
                 />
             </TextInputGroup>
         </MenuToggle>
