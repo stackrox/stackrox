@@ -22,7 +22,6 @@ import {
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import SearchFilterInput from 'Components/SearchFilterInput';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
@@ -40,7 +39,6 @@ import {
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
-import type { SearchCategory } from 'services/SearchService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -67,10 +65,9 @@ const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
-    searchOptions: SearchCategory[];
 };
 
-function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTablePanelProps) {
+function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
 
@@ -407,24 +404,13 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                             className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                {isClustersPageMigrationEnabled ? (
-                                    <CompoundSearchFilter
-                                        config={searchFilterConfig}
-                                        searchFilter={searchFilter}
-                                        onSearch={(payload) =>
-                                            onURLSearch(searchFilter, setSearchFilter, payload)
-                                        }
-                                    />
-                                ) : (
-                                    <SearchFilterInput
-                                        className="w-full"
-                                        searchFilter={searchFilter}
-                                        searchOptions={searchOptions}
-                                        searchCategory="CLUSTERS"
-                                        placeholder="Filter clusters"
-                                        handleChangeSearchFilter={setSearchFilter}
-                                    />
-                                )}
+                                <CompoundSearchFilter
+                                    config={searchFilterConfig}
+                                    searchFilter={searchFilter}
+                                    onSearch={(payload) =>
+                                        onURLSearch(searchFilter, setSearchFilter, payload)
+                                    }
+                                />
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
@@ -460,15 +446,13 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
-                        {isClustersPageMigrationEnabled && (
-                            <ToolbarGroup className="pf-v5-u-w-100">
-                                <SearchFilterChips
-                                    searchFilter={searchFilter}
-                                    onFilterChange={setSearchFilter}
-                                    filterChipGroupDescriptors={filterChipGroupDescriptors}
-                                />
-                            </ToolbarGroup>
-                        )}
+                        <ToolbarGroup className="pf-v5-u-w-100">
+                            <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={setSearchFilter}
+                                filterChipGroupDescriptors={filterChipGroupDescriptors}
+                            />
+                        </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
                 {messages.length > 0 && (
