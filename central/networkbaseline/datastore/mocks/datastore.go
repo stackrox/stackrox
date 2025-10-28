@@ -13,8 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	storage "github.com/stackrox/rox/generated/storage"
-	postgres "github.com/stackrox/rox/pkg/postgres"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -97,11 +97,11 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // Begin mocks base method.
-func (m *MockDataStore) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+func (m *MockDataStore) Begin(ctx context.Context) (context.Context, datastore.Tx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Begin", ctx)
 	ret0, _ := ret[0].(context.Context)
-	ret1, _ := ret[1].(*postgres.Tx)
+	ret1, _ := ret[1].(datastore.Tx)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -182,4 +182,42 @@ func (m *MockDataStore) Walk(ctx context.Context, f func(*storage.NetworkBaselin
 func (mr *MockDataStoreMockRecorder) Walk(ctx, f any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockDataStore)(nil).Walk), ctx, f)
+}
+
+// MockTx is a mock of Tx interface.
+type MockTx struct {
+	ctrl     *gomock.Controller
+	recorder *MockTxMockRecorder
+	isgomock struct{}
+}
+
+// MockTxMockRecorder is the mock recorder for MockTx.
+type MockTxMockRecorder struct {
+	mock *MockTx
+}
+
+// NewMockTx creates a new mock instance.
+func NewMockTx(ctrl *gomock.Controller) *MockTx {
+	mock := &MockTx{ctrl: ctrl}
+	mock.recorder = &MockTxMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTx) EXPECT() *MockTxMockRecorder {
+	return m.recorder
+}
+
+// Commit mocks base method.
+func (m *MockTx) Commit(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Commit", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Commit indicates an expected call of Commit.
+func (mr *MockTxMockRecorder) Commit(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockTx)(nil).Commit), ctx)
 }
