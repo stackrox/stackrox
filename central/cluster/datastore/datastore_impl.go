@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -264,6 +265,9 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 		err = ds.clusterStorage.WalkByQuery(ctx, q, func(cluster *storage.Cluster) error {
 			clusters = append(clusters, cluster)
 			return nil
+		})
+		slices.SortFunc(clusters, func(a, b *storage.Cluster) int {
+			return strings.Compare(a.GetId(), b.GetId())
 		})
 		if err != nil {
 			return nil, err
