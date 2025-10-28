@@ -29,9 +29,9 @@ class CentralConfig:
     def _find_config_file(self) -> str:
         """Find the feature configuration file."""
         possible_paths = [
-            os.path.join(os.path.dirname(__file__), 'feature_config.yaml'),
-            '/app/config/feature_config.yaml',
-            'src/config/feature_config.yaml'
+            '/app/config/feature_config.yaml',  # Template config (production)
+            os.path.join(os.path.dirname(__file__), 'feature_config.yaml'),  # Template config (dev)
+            'src/config/feature_config.yaml'  # Relative path fallback
         ]
 
         for path in possible_paths:
@@ -89,13 +89,18 @@ class CentralConfig:
         """Get API token authentication configuration."""
         token = auth_config.get('api_token', '')
 
-        # Substitute environment variables
+        # Check if token is a placeholder for environment variable substitution
         if token.startswith('${') and token.endswith('}'):
             env_var = token[2:-1]
             token = os.getenv(env_var)
 
+        # If we have a non-empty token that's not a placeholder, use it directly
+        elif token and not token.strip().startswith('${'):
+            # Token value is already provided in configuration
+            pass
+
         # Fallback to direct environment variable lookup if no token found
-        if not token:
+        else:
             token = os.getenv('CENTRAL_API_TOKEN')
 
         if not token:

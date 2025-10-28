@@ -102,7 +102,7 @@ generate-config: ## Generate config with expanded environment variables
 
 # Docker commands
 .PHONY: docker-build
-docker-build: generate-config ## Build Docker image
+docker-build: ## Build Docker image
 	@echo -e "$(GREEN)Building Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 	@echo -e "$(GREEN)Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
@@ -130,6 +130,10 @@ docker-run: docker-build ## Run Docker container locally
 		-e HEALTH_PORT=8081 \
 		-e REST_PORT=8090 \
 		-e ENABLE_REST=true \
+		-e CENTRAL_API_TOKEN="$${CENTRAL_API_TOKEN:-}" \
+		-e CENTRAL_CLIENT_CERT_PATH="$${CENTRAL_CLIENT_CERT_PATH:-}" \
+		-e CENTRAL_CLIENT_KEY_PATH="$${CENTRAL_CLIENT_KEY_PATH:-}" \
+		-e CENTRAL_CA_CERT_PATH="$${CENTRAL_CA_CERT_PATH:-}" \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 	@echo -e "$(GREEN)Container started!$(NC)"
@@ -242,7 +246,6 @@ clean: ## Clean up temporary files, trained models, and training reports
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	rm -rf .coverage htmlcov/ .pytest_cache/
-	rm -f src/config/feature_config.expanded.yaml
 	@echo -e "$(YELLOW)Cleaning up models and reports...$(NC)"
 	rm -rf ./models/ ./deploy/models/
 	rm -rf ./reports/ ./deploy/reports/
