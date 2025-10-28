@@ -72,6 +72,9 @@ func (s *vsockServerImpl) stop() {
 }
 
 func (s *vsockServerImpl) accept() (net.Conn, error) {
+	if s.listener == nil {
+		return nil, errors.New("vsock server has not been started")
+	}
 	return s.listener.Accept()
 }
 
