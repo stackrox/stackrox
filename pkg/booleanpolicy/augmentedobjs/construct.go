@@ -114,9 +114,33 @@ func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, err
 	return augmentedFlow, nil
 }
 
-func ConstructFileAccess(access *storage.FileAccess) (*pathutil.AugmentedObj, error) {
-	augmentedFile := pathutil.NewAugmentedObj(access)
-	return augmentedFile, nil
+func ConstructNode(node *storage.Node) (*pathutil.AugmentedObj, error) {
+	details := NodeDetails{
+		Id:          node.GetId(),
+		Name:        node.GetName(),
+		ClusterName: node.GetClusterName(),
+		ClusterId:   node.GetClusterId(),
+	}
+
+	return pathutil.NewAugmentedObj(&details), nil
+}
+
+func ConstructNodeWithFileAccess(node *storage.Node, access *storage.FileAccess) (*pathutil.AugmentedObj, error) {
+	nodeObj, err := ConstructNode(node)
+	if err != nil {
+		return nil, err
+	}
+
+	err = nodeObj.AddAugmentedObjAt(
+		pathutil.NewAugmentedObj(access),
+		pathutil.FieldStep(fileAccessKey),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nodeObj, nil
 }
 
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.

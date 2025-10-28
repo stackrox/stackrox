@@ -86,5 +86,8 @@ type imageSignatureVerification struct {
 }
 
 type NodeDetails struct {
-	Name string `search:"Node"`
+	Id          string `search:"Node ID"`
+	Name        string `search:"Node"`
+	ClusterId   string `search:"Cluster Id"`
+	ClusterName string `search:"Cluster Name"`
 }

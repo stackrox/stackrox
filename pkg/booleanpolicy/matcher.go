@@ -83,7 +83,7 @@ type DeploymentWithNetworkFlowMatcher interface {
 
 // A NodeEventMatcher matches file events from a node against a policy.
 type NodeEventMatcher interface {
-	MatchNodeWithFileAccess(cache *CacheReceptacle, access *storage.FileAccess) (Violations, error)
+	MatchNodeWithFileAccess(cache *CacheReceptacle, node *storage.Node, access *storage.FileAccess) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

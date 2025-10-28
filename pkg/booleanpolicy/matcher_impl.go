@@ -183,9 +183,9 @@ type nodeEventMatcher struct {
 	matcherImpl
 }
 
-func (m *nodeEventMatcher) MatchNodeWithFileAccess(cache *CacheReceptacle, access *storage.FileAccess) (Violations, error) {
+func (m *nodeEventMatcher) MatchNodeWithFileAccess(cache *CacheReceptacle, node *storage.Node, access *storage.FileAccess) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructFileAccess(access)
+		return augmentedobjs.ConstructNodeWithFileAccess(node, access)
 	}, nil, nil, nil, nil, access)
 	if err != nil || violations == nil {
 		return Violations{}, err
