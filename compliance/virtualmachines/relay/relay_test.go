@@ -125,7 +125,7 @@ func (s *relayTestSuite) TestReadFromConn() {
 		s.Run(name, func() {
 			conn := s.defaultVsockConn().withData(data).withDelay(c.delay)
 
-			readData, err := readFromConn(conn, c.maxSize, c.readTimeout)
+			readData, err := readFromConn(conn, c.maxSize, c.readTimeout, 12345)
 			if c.shouldError {
 				s.Error(err)
 			} else {
