@@ -55,6 +55,7 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
 
 type CheckboxSelectBaseProps = {
     id?: string;
+    className?: string;
     selections: string[];
     onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
@@ -81,6 +82,7 @@ export type CheckboxSelectProps = CheckboxSelectWithArrayCallback | CheckboxSele
 
 function CheckboxSelect({
     id,
+    className,
     selections,
     onChange,
     onItemSelect,
@@ -174,7 +176,7 @@ function CheckboxSelect({
     }, [children, selectionsSet]);
 
     return (
-        <div ref={selectRef} onBlur={handleBlur}>
+        <div ref={selectRef} onBlur={handleBlur} className={className}>
             <Select
                 id={id}
                 aria-label={ariaLabel}

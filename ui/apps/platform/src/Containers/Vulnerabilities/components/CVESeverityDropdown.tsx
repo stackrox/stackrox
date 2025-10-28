@@ -19,12 +19,12 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
 
     return (
         <CheckboxSelect
-            id="vm-filter-toolbar-dropdown cve-severity-select"
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="CVE severity filter menu items"
             toggleAriaLabel="CVE severity filter menu toggle"
             placeholderText="CVE severity"
+            className="vm-filter-toolbar-dropdown cve-severity-select"
         >
             <SelectOption value="Critical">Critical</SelectOption>
             <SelectOption value="Important">Important</SelectOption>

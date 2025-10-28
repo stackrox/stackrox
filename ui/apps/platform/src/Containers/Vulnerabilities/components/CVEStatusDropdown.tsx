@@ -24,12 +24,12 @@ function CVEStatusDropdown<FilterField extends 'FIXABLE' | 'CLUSTER CVE FIXABLE'
 
     return (
         <CheckboxSelect
-            id="vm-filter-toolbar-dropdown"
             selections={selections}
             onItemSelect={handleItemSelect}
             ariaLabel="CVE status filter menu items"
             toggleAriaLabel="CVE status filter menu toggle"
             placeholderText="CVE status"
+            className="vm-filter-toolbar-dropdown"
         >
             <SelectOption value="Fixable">Fixable</SelectOption>
             <SelectOption value="Not fixable">Not fixable</SelectOption>
