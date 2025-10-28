@@ -267,7 +267,7 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 			return nil
 		})
 		slices.SortFunc(clusters, func(a, b *storage.Cluster) int {
-			return strings.Compare(a.GetId(), b.GetId())
+			return strings.Compare(a.GetName(), b.GetName())
 		})
 		if err != nil {
 			return nil, err

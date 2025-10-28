@@ -340,6 +340,17 @@ func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, 
 // GetByQuery returns the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
+	if checkScopeQueries(ctx, query) {
+		var result []*T
+		err := c.Walk(ctx, func(obj PT) error {
+			result = append(result, obj)
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		return result, err
+	}
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
@@ -387,6 +398,9 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetIDsByQuery returns the IDs for the store matching the query.
 func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	if checkScopeQueries(ctx, query) {
+		return c.GetIDs(ctx)
+	}
 	return c.underlyingStore.GetIDsByQuery(ctx, query)
 }
 
