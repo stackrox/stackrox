@@ -168,16 +168,58 @@ class CentralExportService:
             Training example dictionary or None if invalid
         """
         try:
-            deployment_data = workload.get('deployment', {})
-            images_data = workload.get('images', [])
-            vulnerabilities = workload.get('vulnerabilities', [])
+            # Add diagnostic logging for workload structure
+            logger.debug(f"Raw workload structure keys: {list(workload.keys())}")
+
+            # Handle nested 'result' structure from Central API
+            if 'result' in workload:
+                result_data = workload['result']
+                logger.debug(f"Result structure keys: {list(result_data.keys()) if isinstance(result_data, dict) else 'not-dict'}")
+                deployment_data = result_data.get('deployment', {})
+                images_data = result_data.get('images', [])
+                # Vulnerabilities might be nested in images or separate
+                vulnerabilities = result_data.get('vulnerabilities', [])
+            else:
+                # Fallback to flat structure (legacy or different API version)
+                logger.debug("Using flat workload structure (no 'result' key)")
+                deployment_data = workload.get('deployment', {})
+                images_data = workload.get('images', [])
+                vulnerabilities = workload.get('vulnerabilities', [])
+
+            # Log deployment data structure for debugging
+            logger.debug(f"Deployment data keys: {list(deployment_data.keys()) if isinstance(deployment_data, dict) else 'not-dict'}")
+            logger.debug(f"Images data type/count: {type(images_data)} / {len(images_data) if isinstance(images_data, list) else 'not-list'}")
+
+            # Extract deployment metadata with field name fallbacks
+            deployment_id = deployment_data.get('id') or deployment_data.get('deploymentId', '')
+            deployment_name = (deployment_data.get('name') or
+                             deployment_data.get('deploymentName') or
+                             deployment_data.get('metadata', {}).get('name', ''))
+            namespace = (deployment_data.get('namespace') or
+                        deployment_data.get('namespaceName') or
+                        deployment_data.get('metadata', {}).get('namespace', ''))
+            cluster_id = (deployment_data.get('clusterId') or
+                         deployment_data.get('cluster_id') or
+                         deployment_data.get('clusterName', ''))
+
+            # Log extracted metadata values
+            logger.debug(f"Extracted metadata: id='{deployment_id}', name='{deployment_name}', "
+                        f"namespace='{namespace}', cluster='{cluster_id}'")
 
             # Get any cached alerts for this deployment
-            deployment_id = deployment_data.get('id')
             alerts_data = []
             if deployment_id:
                 with self._cache_lock:
                     alerts_data = self._alert_cache.get(deployment_id, [])
+
+            # Check for vulnerabilities in images if not found at workload level
+            if not vulnerabilities and images_data:
+                # Collect vulnerabilities from images
+                for image in images_data:
+                    if isinstance(image, dict) and 'vulnerabilities' in image:
+                        vulnerabilities.extend(image.get('vulnerabilities', []))
+
+            logger.debug(f"Total vulnerabilities found: {len(vulnerabilities)}")
 
             # Direct feature extraction using baseline extractor
             training_sample = self.feature_extractor.create_training_sample(
@@ -190,9 +232,9 @@ class CentralExportService:
             # Add workload-specific metadata
             training_sample['workload_metadata'] = {
                 'deployment_id': deployment_id,
-                'deployment_name': deployment_data.get('name', ''),
-                'namespace': deployment_data.get('namespace', ''),
-                'cluster_id': deployment_data.get('cluster_id', ''),
+                'deployment_name': deployment_name,
+                'namespace': namespace,
+                'cluster_id': cluster_id,
                 'total_vulnerabilities': len(vulnerabilities),
                 'workload_cvss': workload.get('workload_cvss', 0.0),
                 'image_count': len(images_data),
@@ -355,13 +397,27 @@ class CentralExportService:
             namespace = workload_metadata.get('namespace', 'unknown')
             cluster_id = workload_metadata.get('cluster_id', 'unknown')
 
+            # Additional diagnostic data for uniform score investigation
+            vuln_count = workload_metadata.get('total_vulnerabilities', 0)
+            image_count = workload_metadata.get('image_count', 0)
+            alert_count = workload_metadata.get('alert_count', 0)
+
             # Track score statistics
             self._risk_score_stats['scores'].append(risk_score)
             self._risk_score_stats['total_count'] += 1
 
-            # Log individual deployment risk score at DEBUG level
+            # Enhanced logging with diagnostic information
             logger.debug(f"Training sample: deployment={deployment_name} namespace={namespace} "
-                        f"cluster={cluster_id} risk_score={risk_score:.3f} baseline_score={baseline_score:.3f}")
+                        f"cluster={cluster_id} risk_score={risk_score:.3f} baseline_score={baseline_score:.3f} "
+                        f"vulns={vuln_count} images={image_count} alerts={alert_count}")
+
+            # Log baseline factors breakdown for uniform score investigation
+            if baseline_factors:
+                logger.debug(f"Baseline factors for {deployment_name}: "
+                            f"policy_violations={baseline_factors.get('policy_violations', 1.0):.3f} "
+                            f"vulnerabilities={baseline_factors.get('vulnerabilities', 1.0):.3f} "
+                            f"service_config={baseline_factors.get('service_config', 1.0):.3f} "
+                            f"reachability={baseline_factors.get('reachability', 1.0):.3f}")
 
             # Log batch summary periodically at INFO level
             if self._risk_score_stats['total_count'] % self.batch_size == 0:

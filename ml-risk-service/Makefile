@@ -125,7 +125,7 @@ docker-run: docker-build ## Run Docker container locally
 		-p 8090:8090 \
 		-v $(PWD)/deploy/models:/app/models \
 		-v $(PWD)/deploy/reports:/app/reports \
-		-e LOG_LEVEL="${LOG_LEVEL}" \
+		-e LOG_LEVEL="${LOG_LEVEL:-info}" \
 		-e GRPC_PORT=8080 \
 		-e HEALTH_PORT=8081 \
 		-e REST_PORT=8090 \
