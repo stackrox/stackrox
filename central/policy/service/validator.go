@@ -156,7 +156,7 @@ func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage
 
 func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	if policies.AppliesAtRunTime(policy) && policy.GetEventSource() == storage.EventSource_NOT_APPLICABLE {
-		return errors.New("event source must be deployment or audit event for runtime policies")
+		return errors.New("event source must be deployment or audit event or node for runtime policies")
 	}
 
 	if (policies.AppliesAtBuildTime(policy) || policies.AppliesAtDeployTime(policy)) &&
@@ -185,6 +185,13 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 			}
 		}
 	}
+
+	if s.isNodeEventPolicy(policy) {
+		if !booleanpolicy.ContainsAllOf(policy, booleanpolicy.FileAccess) {
+			return errors.New("Node event policies must contain only file event fields")
+		}
+	}
+
 	// TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
 	return nil
 }
@@ -351,6 +358,10 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 
 	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
 		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	}
+
+	if s.isNodeEventPolicy(policy) && !booleanpolicy.ContainsAllOf(policy, booleanpolicy.FileAccess) {
+		return errors.New("Node policies must only contain file access fields")
 	}
 
 	var err error

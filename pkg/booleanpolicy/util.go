@@ -14,6 +14,17 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
+// ContainsOnlyFieldsOf returns whether the policy contains only fields that
+// match the specified type
+func ContainsAllOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
+	for _, section := range policy.GetPolicySections() {
+		if !SectionContainsFieldOfType(section, fieldType) {
+			return false
+		}
+	}
+	return true
+}
+
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||
