@@ -353,7 +353,6 @@ func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
 
 	for _, c := range cases {
 		s.Run(c.Name, func() {
-			ctx := c.Context
 			clusters, err := s.datastore.GetClustersForSAC()
 			s.NoError(err)
 			clusterNames := make([]string, 0, len(clusters))
