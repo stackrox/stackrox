@@ -28,9 +28,8 @@ the instructions below.
 _Before starting, make sure you have the above tools installed on your machine
 and you've run `npm ci` in the `apps/platform` directory to download dependencies._
 
-The front end development environment consists of a CRA-provided dev server to
-serve static UI assets and deployed StackRox Docker containers that provide
-backend API.
+The front end development environment consists of a Vite dev server to serve
+static UI assets and deployed StackRox Docker containers that provide backend API.
 
 Set up your environment as follows:
 
@@ -118,4 +117,4 @@ For better development experience it's recommended to use
 extensions installed:
 
 -   [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi?hl=en)
--   [Redux DevTools](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en)
+-   [Redux DevTools](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en) (for legacy Redux code inspection)
