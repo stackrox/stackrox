@@ -10,8 +10,15 @@ CONFIG_FILE=${CONFIG_FILE:-"/app/config/feature_config.yaml"}
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
 ENABLE_REST=${ENABLE_REST:-"true"}
 
-# Setup logging
+# Setup logging and Python environment
 export PYTHONPATH=/app
+export PATH="/app/.venv/bin:$PATH"
+
+# Verify Python environment
+echo "Python environment check:"
+echo "Python executable: $(which python)"
+echo "Python version: $(python --version)"
+echo "Virtual environment: $(/app/.venv/bin/python -c 'import sys; print(sys.prefix)')"
 
 # Start the service
 echo "Starting ML Risk Service..."
@@ -29,7 +36,8 @@ echo "Ensuring protobuf code is available..."
 # Function to start gRPC server
 start_grpc_server() {
     echo "Starting gRPC server on port $GRPC_PORT..."
-    python -m src.api.grpc_server \
+    echo "Using Python: $(which python)"
+    /app/.venv/bin/python -m src.api.grpc_server \
         --config "$CONFIG_FILE" \
         --port "$GRPC_PORT" \
         --workers 10 \
@@ -41,7 +49,8 @@ start_grpc_server() {
 # Function to start REST server
 start_rest_server() {
     echo "Starting REST API server on port $REST_PORT..."
-    python -m src.api.rest_server \
+    echo "Using Python: $(which python)"
+    /app/.venv/bin/python -m src.api.rest_server \
         --config "$CONFIG_FILE" \
         --host "0.0.0.0" \
         --port "$REST_PORT" \

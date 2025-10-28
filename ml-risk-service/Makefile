@@ -31,42 +31,61 @@ test-colors: ## Test color output in terminal
 
 # Development commands
 .PHONY: setup
-setup: ## Set up development environment
-	@echo -e "$(GREEN)Setting up development environment...$(NC)"
-	python -m pip install --upgrade pip
-	pip install -r requirements.txt
+setup: ## Set up development environment with UV
+	@echo -e "$(GREEN)Setting up development environment with UV...$(NC)"
+	@which uv > /dev/null || (echo -e "$(RED)UV not found. Install with: curl -LsSf https://astral.sh/uv/install.sh | sh$(NC)" && exit 1)
+	uv sync
 	@echo -e "$(GREEN)Development environment ready!$(NC)"
+
+.PHONY: setup-dev
+setup-dev: ## Set up development environment with dev dependencies
+	@echo -e "$(GREEN)Setting up development environment with dev dependencies...$(NC)"
+	@which uv > /dev/null || (echo -e "$(RED)UV not found. Install with: curl -LsSf https://astral.sh/uv/install.sh | sh$(NC)" && exit 1)
+	uv sync --extra dev
+	@echo -e "$(GREEN)Development environment with dev tools ready!$(NC)"
+
+.PHONY: setup-ml
+setup-ml: ## Set up with extended ML dependencies
+	@echo -e "$(GREEN)Setting up with extended ML dependencies...$(NC)"
+	uv sync --extra ml --extra dev
+	@echo -e "$(GREEN)ML environment ready!$(NC)"
 
 .PHONY: test
 test: ## Run tests
 	@echo -e "$(GREEN)Running tests...$(NC)"
-	python -m pytest tests/ -v --cov=src --cov-report=html
+	uv run pytest tests/ -v --cov=src --cov-report=html
 	@echo -e "$(GREEN)Tests completed!$(NC)"
 
 .PHONY: lint
 lint: ## Run linting
 	@echo -e "$(GREEN)Running linting...$(NC)"
-	python -m flake8 src/ training/ --max-line-length=120
-	python -m pylint src/ training/ || true
+	uv run flake8 src/ training/
+	uv run pylint src/ training/ || true
 	@echo -e "$(GREEN)Linting completed!$(NC)"
 
 .PHONY: format
 format: ## Format code
 	@echo -e "$(GREEN)Formatting code...$(NC)"
-	python -m black src/ training/
-	python -m isort src/ training/
+	uv run black src/ training/
+	uv run isort src/ training/
 	@echo -e "$(GREEN)Code formatted!$(NC)"
+
+.PHONY: typecheck
+typecheck: ## Run type checking
+	@echo -e "$(GREEN)Running type checking...$(NC)"
+	uv run mypy src/ training/
+	@echo -e "$(GREEN)Type checking completed!$(NC)"
 
 .PHONY: generate-sample-data
 generate-sample-data: ## Generate sample training data
 	@echo -e "$(GREEN)Generating sample training data...$(NC)"
-	python -c "from training.data_loader import JSONTrainingDataGenerator; g = JSONTrainingDataGenerator(); g.generate_sample_training_data('sample_training_data.json', 1000)"
+	uv run python -c "from training.data_loader import JSONTrainingDataGenerator; g = JSONTrainingDataGenerator(); g.generate_sample_training_data('sample_training_data.json', 1000)"
 	@echo -e "$(GREEN)Sample data generated: sample_training_data.json$(NC)"
 
 .PHONY: train-model
 train-model: ## Train ML model with sample data
 	@echo -e "$(GREEN)Training ML model...$(NC)"
-	python -c "from training.train_pipeline import TrainingPipeline; tp = TrainingPipeline(); tp.quick_test_pipeline()"
+	uv run python -c "from training.train_pipeline import TrainingPipeline; tp = TrainingPipeline(); tp.quick_test_pipeline()"
 	@echo -e "$(GREEN)Model training completed!$(NC)"
 
 # Configuration commands
@@ -235,7 +254,7 @@ clean-docker: ## Clean up Docker resources
 
 # Development workflow
 .PHONY: dev-setup
-dev-setup: setup generate-sample-data ## Complete development setup
+dev-setup: setup-dev generate-sample-data ## Complete development setup
 	@echo -e "$(GREEN)Development setup completed!$(NC)"
 	@echo "Next steps:"
 	@echo "  1. Run 'make train-model' to train a sample model"
@@ -243,8 +262,12 @@ dev-setup: setup generate-sample-data ## Complete development setup
 	@echo "  3. Run 'make k8s-deploy' to deploy to Kubernetes"
 
 .PHONY: ci-pipeline
-ci-pipeline: lint test docker-build ## Run CI pipeline
+ci-pipeline: setup-dev lint typecheck test docker-build ## Run CI pipeline
 	@echo -e "$(GREEN)CI pipeline completed successfully!$(NC)"
+
+.PHONY: check
+check: lint typecheck test ## Run all checks (lint, typecheck, test)
+	@echo -e "$(GREEN)All checks passed!$(NC)"
 
 # Production deployment
 .PHONY: deploy-prod
