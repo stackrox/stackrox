@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/vm-relay-use-generated-mocks",
     "hash": "1b20408afe4d34901040d029ea85ab4135fa64e9"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/vm-relay-semaphore-integration-tests"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17526,
+        "gqlID": "PR_kwDOGd6UEM6wGXZ1"
+      }
+    }
   }
 }
