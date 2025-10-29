@@ -450,35 +450,39 @@ class TrainingService:
             import json
             import os
 
-            # Convert training samples to the format expected by training pipeline
-            pipeline_training_data = []
+            # Convert training samples to deployment record format expected by pipeline
+            deployment_records = []
             for sample in training_samples:
-                # Convert TrainingSample to dictionary format for pipeline
-                sample_dict = {
-                    'deployment_id': sample.deployment_id,
-                    'risk_score': sample.current_risk_score,
-                    'features': self._extract_features_from_training_sample(sample)
-                }
-                pipeline_training_data.append(sample_dict)
+                # Convert TrainingSample back to deployment record format
+                deployment_record = self._convert_training_sample_to_deployment_record(sample)
+                deployment_records.append(deployment_record)
 
-            # Create temporary file for training data
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
-                json.dump(pipeline_training_data, temp_file, indent=2)
-                temp_file_path = temp_file.name
+            # Create pipeline-compatible JSON structure
+            pipeline_data = {
+                "deployments": deployment_records
+            }
+
+            # Create temporary file for training data with explicit path for debugging
+            temp_file_path = "/tmp/central_training_debug.json"
+            with open(temp_file_path, 'w') as temp_file:
+                json.dump(pipeline_data, temp_file, indent=2)
+
+            # Debug: Log what we wrote to the temp file
+            logger.info(f"Created temp file {temp_file_path} with {len(deployment_records)} deployment records")
+            logger.info(f"Pipeline data structure: {list(pipeline_data.keys())}")
+            if deployment_records:
+                logger.info(f"First deployment record keys: {list(deployment_records[0].keys())}")
 
             try:
-                # Set training data in pipeline
-                self.training_pipeline.training_data = pipeline_training_data
-
-                # Run full training pipeline (this will save the model to storage)
-                pipeline_results = self.training_pipeline.run_training_pipeline()
+                # Run full training pipeline with the temporary file (this will save the model to storage)
+                pipeline_results = self.training_pipeline.run_full_pipeline(temp_file_path)
 
                 if pipeline_results.get('success', False):
-                    # Extract model info for response
-                    model_saving_results = pipeline_results.get('pipeline_results', {}).get('model_saving', {})
+                    # Extract model info for response (pipeline returns flat structure)
+                    model_saving_results = pipeline_results.get('model_saving', {})
 
                     # Get model metrics from pipeline results
-                    model_training_results = pipeline_results.get('pipeline_results', {}).get('model_training', {})
+                    model_training_results = pipeline_results.get('model_training', {})
                     training_metrics_dict = model_training_results.get('training_metrics', {})
 
                     # Update risk service with the trained model from storage if available
@@ -529,11 +533,9 @@ class TrainingService:
                     )
 
             finally:
-                # Clean up temporary file
-                try:
-                    os.unlink(temp_file_path)
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to clean up temporary file {temp_file_path}: {cleanup_error}")
+                # Clean up temporary file (disabled for debugging)
+                logger.info(f"Temporary file preserved for debugging: {temp_file_path}")
+                pass  # Don't delete the file so we can examine it
 
         except Exception as e:
             logger.error(f"Central API training failed: {e}")
@@ -792,3 +794,98 @@ class TrainingService:
             logger.debug(f"Updated sample {sample.deployment_id}: {sample.current_risk_score:.6f} -> {synthetic_score:.6f}")
 
         return updated_samples
+
+    def _convert_training_sample_to_deployment_record(self, sample: 'TrainingSample') -> Dict[str, Any]:
+        """
+        Convert a TrainingSample back to deployment record format expected by training pipeline.
+
+        Args:
+            sample: TrainingSample object to convert
+
+        Returns:
+            Deployment record in the format expected by the pipeline
+        """
+        # Create deployment data structure
+        deployment_data = {
+            'id': sample.deployment_id,
+            'name': f'deployment-{sample.deployment_id}',
+            'namespace': 'default',  # Default values since we don't have this info
+            'cluster_id': 'cluster-1',
+            'clusterId': 'cluster-1',
+            'replicas': sample.deployment_features.replica_count,
+            'hostNetwork': sample.deployment_features.host_network,
+            'hostPid': sample.deployment_features.host_pid,
+            'hostIpc': sample.deployment_features.host_ipc,
+            'automountServiceAccountToken': sample.deployment_features.automount_service_account_token,
+            'containers': [],
+            'ports': [],
+            'created': {'seconds': sample.deployment_features.creation_timestamp} if sample.deployment_features.creation_timestamp > 0 else None,
+            'orchestratorComponent': sample.deployment_features.is_orchestrator_component,
+            'inactive': False
+        }
+
+        # Add privileged containers if any
+        for i in range(sample.deployment_features.privileged_container_count):
+            deployment_data['containers'].append({
+                'name': f'container-{i}',
+                'securityContext': {'privileged': True}
+            })
+
+        # Add exposed ports
+        for i in range(sample.deployment_features.exposed_port_count):
+            deployment_data['ports'].append({
+                'name': f'port-{i}',
+                'port': 8080 + i,
+                'exposure': 'EXTERNAL' if sample.deployment_features.has_external_exposure else 'INTERNAL'
+            })
+
+        # Create images data structure
+        images_data = []
+        for img_feature in sample.image_features:
+            image_data = {
+                'id': f'image-{len(images_data)}',
+                'name': {
+                    'registry': 'docker.io',
+                    'remote': f'library/app-{len(images_data)}'
+                },
+                'metadata': {
+                    'layerShas': 10,  # Default layer count
+                    'created': {'seconds': int(time.time()) - img_feature.image_age_days * 86400} if img_feature.image_age_days > 0 else None
+                },
+                'components': img_feature.total_component_count,
+                'cluster_local': False,
+                'scan': {
+                    'criticalVulns': img_feature.critical_vuln_count,
+                    'highVulns': img_feature.high_vuln_count,
+                    'mediumVulns': img_feature.medium_vuln_count,
+                    'lowVulns': img_feature.low_vuln_count
+                }
+            }
+            images_data.append(image_data)
+
+        # Create alerts data structure (simulate policy violations)
+        alerts_data = []
+        for i in range(sample.deployment_features.policy_violation_count):
+            alerts_data.append({
+                'id': f'alert-{i}',
+                'policy': {
+                    'id': f'policy-{i}',
+                    'name': f'Policy Violation {i}',
+                    'severity': 'HIGH_SEVERITY'  # Default severity
+                },
+                'resource': {
+                    'deployment_id': sample.deployment_id
+                },
+                'time': {'seconds': int(time.time())}
+            })
+
+        # Create the complete deployment record
+        deployment_record = {
+            'deployment': deployment_data,
+            'images': images_data,
+            'alerts': alerts_data,
+            'baseline_violations': [],  # Empty for now
+            'current_risk_score': sample.current_risk_score
+        }
+
+        return deployment_record
