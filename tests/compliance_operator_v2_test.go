@@ -138,7 +138,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	log.Info("Waiting for ComplianceSuite to reach DONE phase")
+	t.Logf("Waiting for ComplianceSuite to reach DONE phase")
 	for range ticker.C {
 		var suite complianceoperatorv1.ComplianceSuite
 		mustEventually(t, ctx, func() error {
@@ -147,10 +147,10 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 		}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
 
 		if suite.Status.Phase == "DONE" {
-			log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+			t.Logf("ComplianceSuite %s reached DONE phase", suiteName)
 			return
 		}
-		log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
+		t.Logf("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 	}
 }
 
