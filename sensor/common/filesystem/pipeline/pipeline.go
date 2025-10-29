@@ -168,7 +168,7 @@ func (p *Pipeline) run() {
 		case <-p.stopper.Flow().StopRequested():
 			return
 		case event := <-p.accessChan:
-			// p.detector.ProcessFilesystem(p.msgCtx, event)
+			// TODO: Send event to detector
 			log.Infof("event= %+v", event)
 		}
 	}
