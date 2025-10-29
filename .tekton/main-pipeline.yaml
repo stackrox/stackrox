@@ -461,7 +461,6 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [ build-image-index ]
 
   - name: ecosystem-cert-preflight-checks
     matrix:
@@ -485,7 +484,6 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [ build-image-index ]
 
   - name: sast-shell-check
     params:
@@ -583,7 +581,6 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    runAfter: [ build-image-index ]
 
   - name: rpms-signature-scan
     params:
