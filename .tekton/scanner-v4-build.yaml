@@ -74,7 +74,7 @@ spec:
           cpu: 2
         requests:
           cpu: 2
-  - pipelineTaskName: build-container-amd64
+  - pipelineTaskName: build-images
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
