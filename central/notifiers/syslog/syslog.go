@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -255,10 +256,10 @@ func makeExtensionFromPairs(pairs []string) string {
 	return strings.Join(pairs, " ")
 }
 
-func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, messageID, unstructuredData string) string {
+func (s *syslog) wrapSyslogUnstructuredData(severity int, hostname string, timestamp time.Time, messageID, unstructuredData string) string {
 	priority := s.facility + severity
 
-	return fmt.Sprintf("<%d>%d %s central %s %d %s - %s", priority, syslogVersion, timestamp.Format(time.RFC3339), application, s.pid, messageID, unstructuredData)
+	return fmt.Sprintf("<%d>%d %s %s %s %d %s - %s", priority, syslogVersion, timestamp.Format(time.RFC3339), hostname, application, s.pid, messageID, unstructuredData)
 }
 
 func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
@@ -311,7 +312,7 @@ func (s *syslog) AuditLoggingEnabled() bool {
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
-	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
+	syslog := []byte(s.wrapSyslogUnstructuredData(severity, env.CentralEndpoint.Setting(), timestamp, messageID, unstructuredData))
 	maxSize := s.maxMessageSize
 	if maxSize == 0 {
 		// If maxSize was 0 because user did not configure max size, do not chunk
