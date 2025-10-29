@@ -361,6 +361,15 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 
 	log.Infof("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
 
+	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
+	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
+	// as those are used to test mirroring functionality and should use their own pull behavior.
+	pullPolicy := coreV1.PullIfNotPresent
+	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
+		pullPolicy = coreV1.PullPolicy(policy)
+		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+	}
+
 	// Build deployment object
 	deployment := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
