@@ -145,7 +145,7 @@ func (s *CollectionE2ETestSuite) TearDownSuite() {
 	for _, ns := range collectionNamespaces {
 		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
 		if err != nil {
-			log.Errorf("failed deleting %q testing namespace %q", ns, err)
+			s.T().Logf("failed deleting %q testing namespace %q", ns, err)
 		}
 	}
 
@@ -153,7 +153,7 @@ func (s *CollectionE2ETestSuite) TearDownSuite() {
 	for _, id := range s.collectionIDs {
 		_, err := s.service.DeleteCollection(s.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
-			log.Errorf("failed deleting %q testing collection %q", id, err)
+			s.T().Logf("failed deleting %q testing collection %q", id, err)
 		}
 	}
 }

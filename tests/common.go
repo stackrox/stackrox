@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
@@ -57,8 +56,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	sensorPodLabels = map[string]string{"app": "sensor"}
 )
 
@@ -151,7 +148,7 @@ func waitForDeploymentCountInCentral(t testutils.T, query string, count int) {
 			deploymentCount, err := service.CountDeployments(ctx, &v1.RawQuery{Query: query})
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				t.Logf("Error listing deployments: %s", err)
 				continue
 			}
 			if deploymentCount.GetCount() == int32(count) {
@@ -175,7 +172,7 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 	defer timer.Stop()
 
 	ctx := context.Background()
-	log.Infof("Waiting for deployment %q in namespace %q to be ready in Kubernetes", deploymentName, namespace)
+	t.Logf("Waiting for deployment %q in namespace %q to be ready in Kubernetes", deploymentName, namespace)
 
 	for {
 		select {
@@ -183,7 +180,7 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 			deploy, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
 			if err != nil {
 				if apiErrors.IsNotFound(err) {
-					log.Infof("Deployment %q in namespace %q not found yet, waiting...", deploymentName, namespace)
+					t.Logf("Deployment %q in namespace %q not found yet, waiting...", deploymentName, namespace)
 					continue
 				}
 				require.NoError(t, err, "getting deployment %q from namespace %q", deploymentName, namespace)
@@ -191,21 +188,21 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 
 			// Check if generation matches observed generation
 			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
-				log.Infof("Deployment %q in namespace %q NOT ready: generation %d != observed generation %d",
+				t.Logf("Deployment %q in namespace %q NOT ready: generation %d != observed generation %d",
 					deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
 				continue
 			}
 
 			// Check if all replicas are ready
 			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
-				log.Infof("Deployment %q in namespace %q NOT ready: %d/%d ready replicas",
+				t.Logf("Deployment %q in namespace %q NOT ready: %d/%d ready replicas",
 					deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 				continue
 			}
 
 			// Ensure all pods are from the current generation (no old pods during rollout)
 			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
-				log.Infof("Deployment %q in namespace %q NOT ready: rollout incomplete (%d/%d updated replicas)",
+				t.Logf("Deployment %q in namespace %q NOT ready: rollout incomplete (%d/%d updated replicas)",
 					deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
 				continue
 			}
@@ -213,16 +210,16 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 			// Check conditions for additional insights
 			for _, cond := range deploy.Status.Conditions {
 				if cond.Type == appsV1.DeploymentAvailable && cond.Status != coreV1.ConditionTrue {
-					log.Infof("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
+					t.Logf("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
 						deploymentName, namespace, cond.Status, cond.Message)
 				}
 				if cond.Type == appsV1.DeploymentProgressing && cond.Status != coreV1.ConditionTrue {
-					log.Infof("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
+					t.Logf("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
 						deploymentName, namespace, cond.Status, cond.Message)
 				}
 			}
 
-			log.Infof("Deployment %q in namespace %q READY in Kubernetes (%d/%d ready replicas)",
+			t.Logf("Deployment %q in namespace %q READY in Kubernetes (%d/%d ready replicas)",
 				deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 			return
 		case <-timer.C:
@@ -264,13 +261,13 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 			)
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				t.Logf("Error listing deployments: %s", err)
 				continue
 			}
 
 			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
 			if err != nil {
-				log.Errorf("Error retrieving deployments: %s", err)
+				t.Logf("Error retrieving deployments: %s", err)
 				continue
 			}
 
@@ -309,7 +306,7 @@ func waitForTermination(t testutils.T, deploymentName string) {
 			})
 			cancel()
 			if err != nil {
-				log.Error(err)
+				t.Logf("Error listing deployments: %v", err)
 				continue
 			}
 
@@ -465,7 +462,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	waitForCondition(t, func() bool {
 		deployment, err := retrieveDeployment(service, deploymentID)
 		if err != nil {
-			log.Error(err)
+			t.Logf("Error retrieving deployment: %v", err)
 			return false
 		}
 		containers := deployment.GetContainers()
@@ -474,7 +471,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 				return false
 			}
 		}
-		log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
+		t.Logf("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
 		return true
 	}, "image updated", time.Minute, 5*time.Second)
 }

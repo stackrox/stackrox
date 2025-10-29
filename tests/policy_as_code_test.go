@@ -258,7 +258,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	policyName := "This is a test policy"
-	log.Infof("Adding policy with name \"%s\"", policyName)
+	pc.T().Logf("Adding policy with name \"%s\"", policyName)
 	policy, err := pc.policyClient.PostPolicy(pc.ctx, &v1.PostPolicyRequest{
 		Policy: &storage.Policy{
 			Name:            policyName,
@@ -283,7 +283,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 }
 
 func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
-	log.Infof("Adding cluster with name \"%s\"", clusterName)
+	pc.T().Logf("Adding cluster with name \"%s\"", clusterName)
 	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
 	pc.NoError(err)
 	return cluster.GetCluster()
@@ -291,7 +291,7 @@ func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
 
 func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
 	notifierName := "email-notifier"
-	log.Infof("Adding notifier with name \"%s\"", notifierName)
+	pc.T().Logf("Adding notifier with name \"%s\"", notifierName)
 	notifier, err := pc.notifierClient.PostNotifier(pc.ctx, &storage.Notifier{
 		Name:       notifierName,
 		Type:       notifiers.EmailType,
@@ -474,7 +474,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	// TODO: Don't double delete
 	for _, policy := range pc.policies {
-		log.Infof("Deleting policy with name \"%s\"", policy.GetName())
+		pc.T().Logf("Deleting policy with name \"%s\"", policy.GetName())
 		_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
 			Id: policy.GetId(),
 		})
@@ -482,7 +482,7 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	}
 
 	if pc.notifier != nil {
-		log.Infof("Deleting notifier with name \"%s\"", pc.notifier.GetName())
+		pc.T().Logf("Deleting notifier with name \"%s\"", pc.notifier.GetName())
 		_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
 			Id:    pc.notifier.GetId(),
 			Force: true,
@@ -491,7 +491,7 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	}
 
 	if pc.cluster != nil {
-		log.Infof("Deleting cluster with name \"%s\"", pc.cluster.GetName())
+		pc.T().Logf("Deleting cluster with name \"%s\"", pc.cluster.GetName())
 		_, err := pc.clusterClient.DeleteCluster(pc.ctx, &v1.ResourceByID{
 			Id: pc.cluster.GetId(),
 		})
