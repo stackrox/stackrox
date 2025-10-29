@@ -310,6 +310,9 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	// Save new PLOP objects
 	err = ds.upsertManyBatched(ctx, newPlopObjects)
+	if err != nil {
+		return err
+	}
 
 	// Update existing PLOP objects while using a lock
 	return ds.upsertManyBatchedWithLock(ctx, updatePlopObjects)
