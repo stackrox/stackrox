@@ -35,14 +35,10 @@ dependencies = [
     "pydantic",
     "python-multipart",
 
-    # gRPC and API
-    "grpcio",
-    "grpcio-tools",
-    "protobuf",
-
     # Serialization and data handling
     "pyyaml",
     "jsonschema",
+    "protobuf",
 
     # Monitoring and logging
     "prometheus-client",
@@ -51,6 +47,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+grpc = [
+    # gRPC dependencies (optional - only needed for production gRPC API)
+    "grpcio",
+    "grpcio-tools",
+]
+
 ml = [
     # Extended ML dependencies (install separately if needed)
     "scikit-multilearn",

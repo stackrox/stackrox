@@ -731,8 +731,6 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "grpcio" },
-    { name = "grpcio-tools" },
     { name = "joblib" },
     { name = "jsonschema" },
     { name = "numpy" },
@@ -762,6 +760,10 @@ dev = [
     { name = "types-pyyaml" },
     { name = "types-requests" },
 ]
+grpc = [
+    { name = "grpcio" },
+    { name = "grpcio-tools" },
+]
 ml = [
     { name = "matplotlib" },
     { name = "scikit-multilearn" },
@@ -773,8 +775,8 @@ requires-dist = [
     { name = "black", marker = "extra == 'dev'" },
     { name = "fastapi" },
     { name = "flake8", marker = "extra == 'dev'" },
-    { name = "grpcio" },
-    { name = "grpcio-tools" },
+    { name = "grpcio", marker = "extra == 'grpc'" },
+    { name = "grpcio-tools", marker = "extra == 'grpc'" },
     { name = "isort", marker = "extra == 'dev'" },
     { name = "joblib" },
     { name = "jsonschema" },
@@ -801,7 +803,7 @@ requires-dist = [
     { name = "types-requests", marker = "extra == 'dev'" },
     { name = "uvicorn", extras = ["standard"] },
 ]
-provides-extras = ["ml", "dev"]
+provides-extras = ["grpc", "ml", "dev"]
 
 [[package]]
 name = "mypy"
