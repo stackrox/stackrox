@@ -429,6 +429,12 @@ function launch_central {
           )
       fi
 
+      if [[ -n "$ROX_POSTGRES_MAX_CONNS" ]]; then
+          helm_args+=(
+            --set "central.db.source.maxConns=${ROX_POSTGRES_MAX_CONNS}"
+          )
+      fi
+
       local helm_chart="$unzip_dir/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
