@@ -1,5 +1,4 @@
-import { Divider } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core';
+import { Divider, SelectOption } from '@patternfly/react-core';
 import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 
 import { domains } from 'services/AdministrationEventsService';
