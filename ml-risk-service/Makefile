@@ -104,7 +104,7 @@ generate-config: ## Generate config with expanded environment variables
 .PHONY: docker-build
 docker-build: ## Build Docker image
 	@echo -e "$(GREEN)Building Docker image...$(NC)"
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	DOCKER_BUILDKIT=1 docker build --target production -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 	@echo -e "$(GREEN)Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
 
 .PHONY: docker-run
