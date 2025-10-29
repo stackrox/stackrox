@@ -67,7 +67,7 @@ func (s *postgresConnTestSuite) TestConnBegin() {
 	//// With tx
 	ctxWithTx := postgres.ContextWithTx(context.Background(), &postgres.Tx{})
 	s.PanicsWithValue("it is not allowed to wrap a tx twice", func() {
-		s.conn.Begin(ctxWithTx)
+		_, _, _ = s.conn.Begin(ctxWithTx)
 	})
 
 	// With tx from another context
