@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testImage = "icr.io/ibm/alpine:latest"  # an IBM public image
+	testImage = "icr.io/ibm/alpine:latest" // an IBM public image
 )
 
 func TestIBM(t *testing.T) {
