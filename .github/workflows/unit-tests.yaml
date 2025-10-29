@@ -60,6 +60,8 @@ jobs:
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
+      env:
+        IBMCLOUD_CONTAINER_REGISTRY_APIKEY: ${{ secrets.IBMCLOUD_CONTAINER_REGISTRY_APIKEY }}
 
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
