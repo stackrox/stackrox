@@ -51,7 +51,8 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 	pgStore.Destroy(ctx, suite.pool)
 	gormDB := pgtest.OpenGormDB(suite.T(), source)
 	defer pgtest.CloseGormDB(suite.T(), gormDB)
-	suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
+	pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
+	suite.storage = store.New(suite.pool)
 	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
 
