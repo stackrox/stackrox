@@ -343,6 +343,12 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
+    db_connectionPoolSize_config=""
+    if [[ -n "$ROX_POSTGRES_MAX_CONNS" ]]; then
+        db_connectionPoolSize_config=$'\n      connectionPoolSize:'
+        db_connectionPoolSize_config+=$'\n        maxConnections: '"${ROX_POSTGRES_MAX_CONNS}"
+    fi
+
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
@@ -358,6 +364,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
+      db_connectionPoolSize_config="$db_connectionPoolSize_config" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
