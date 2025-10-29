@@ -6,6 +6,7 @@ This service is shared between gRPC and REST APIs.
 import logging
 import time
 import threading
+import os
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
@@ -13,6 +14,7 @@ from src.models.ranking_model import RiskRankingModel
 from src.models.feature_importance import FeatureImportanceAnalyzer
 from src.monitoring.health_checker import ModelHealthChecker
 from src.monitoring.drift_detector import ModelDriftMonitor
+from src.storage.model_storage import ModelStorageManager, StorageConfig
 from src.api.schemas import (
     DeploymentRiskRequest,
     DeploymentRiskResponse,
@@ -34,6 +36,10 @@ class RiskPredictionService:
         self.model = RiskRankingModel(config)
         self.feature_analyzer = FeatureImportanceAnalyzer()
 
+        # Initialize model storage
+        storage_config = StorageConfig.from_env()
+        self.storage_manager = ModelStorageManager(storage_config)
+
         # Service metrics
         self.predictions_served = 0
         self.total_prediction_time = 0.0
@@ -43,6 +49,9 @@ class RiskPredictionService:
 
         # Thread safety
         self._model_lock = threading.RLock()
+
+        # Try to load default model at startup
+        self._load_default_model()
 
     def predict_deployment_risk(self, request: DeploymentRiskRequest) -> DeploymentRiskResponse:
         """
@@ -310,6 +319,43 @@ class RiskPredictionService:
                 return True
         except Exception as e:
             logger.error(f"Failed to load model from {model_file}: {e}")
+            return False
+
+    def _load_default_model(self):
+        """Load the default model from storage at startup."""
+        try:
+            # Try to find the default model ID from config or environment
+            default_model_id = (
+                self.config.get('default_model_id') or
+                os.environ.get('ROX_ML_DEFAULT_MODEL_ID', 'stackrox-risk-model')
+            )
+
+            # Try to load the latest version of the default model
+            models = self.storage_manager.list_models(default_model_id)
+            if models:
+                latest_model = models[0]  # list_models returns sorted by timestamp desc
+                if self._load_model_from_storage(latest_model.model_id, latest_model.version):
+                    logger.info(f"Auto-loaded default model {latest_model.model_id} v{latest_model.version}")
+                    return
+
+            logger.info(f"No default model found for {default_model_id} - service will start without model loaded")
+
+        except Exception as e:
+            logger.warning(f"Failed to auto-load default model: {e}")
+
+    def _load_model_from_storage(self, model_id: str, version: Optional[str] = None) -> bool:
+        """Load model from storage manager."""
+        try:
+            with self._model_lock:
+                success = self.model.load_model_from_storage(self.storage_manager, model_id, version)
+                if success:
+                    self.model_loaded = True
+                    self.current_model_id = model_id
+                    self.current_model_version = version or "latest"
+                    logger.info(f"Model loaded from storage: {model_id} v{self.current_model_version}")
+                return success
+        except Exception as e:
+            logger.error(f"Failed to load model from storage {model_id} v{version}: {e}")
             return False
 
     def is_model_loaded(self) -> bool:
