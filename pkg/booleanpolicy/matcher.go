@@ -259,6 +259,8 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}, nil
 }
 
+// BuildNodeEventMatcher builds a matcher for nodes against the given policy.
+// It currently only supports runtime fields for node event policies, but may change in the future.
 func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEventMatcher, error) {
 	sectionsAndEvals, err := getSectionsAndEvals(&nodeEvalFactory, p, storage.LifecycleStage_RUNTIME, options...)
 	if err != nil {
