@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"maps"
 	"net"
 	"slices"
 	"sort"
@@ -19,28 +20,28 @@ import (
 )
 
 type graphBuilder struct {
-	namespacesByName    map[string]*storage.NamespaceMetadata
+	namespacesByName    map[string]storage.ImmutableNamespaceMetadata
 	allDeployments      []*node
 	extSrcs             []*node
 	extSrcIDs           set.StringSet
 	internetSrc         *node
 	networkTree         tree.ReadOnlyNetworkTree
-	deploymentsByNS     map[*storage.NamespaceMetadata][]*node
+	deploymentsByNS     map[storage.ImmutableNamespaceMetadata][]*node
 	deploymentPredicate func(string) bool
 }
 
-func newGraphBuilder(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
+func newGraphBuilder(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]storage.ImmutableNamespaceMetadata) *graphBuilder {
 	b := &graphBuilder{}
 	b.init(queryDeploymentIDs, deployments, networkTree, namespacesByID)
 	return b
 }
 
-func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) {
+func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]storage.ImmutableNamespaceMetadata) {
 	b.allDeployments = make([]*node, 0, len(deployments))
 	b.extSrcs = make([]*node, 0)
 	b.extSrcIDs = set.NewStringSet()
-	b.namespacesByName = make(map[string]*storage.NamespaceMetadata)
-	b.deploymentsByNS = make(map[*storage.NamespaceMetadata][]*node)
+	b.namespacesByName = make(map[string]storage.ImmutableNamespaceMetadata)
+	b.deploymentsByNS = make(map[storage.ImmutableNamespaceMetadata][]*node)
 
 	for _, ns := range namespacesByID {
 		b.namespacesByName[ns.GetName()] = ns
@@ -78,7 +79,7 @@ func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*sto
 	b.internetSrc = b.getOrCreateExtSrcNode(networkgraph.InternetEntity().ToProto())
 }
 
-func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers []*storage.NetworkPolicyPeer) ([]*node, bool) {
+func (b *graphBuilder) evaluatePeers(currentNS storage.ImmutableNamespaceMetadata, peers []*storage.NetworkPolicyPeer) ([]*node, bool) {
 	if len(peers) == 0 {
 		// An empty peers list means all possible peers are allowed. We skip adding any known external sources, since
 		// there could be many. Instead only all INTERNET node, which abstracts all the external sources.
@@ -113,7 +114,7 @@ func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers
 	return allPeerSlice, internetAccess
 }
 
-func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *storage.NetworkPolicyPeer) []*node {
+func (b *graphBuilder) evaluatePeer(currentNS storage.ImmutableNamespaceMetadata, peer *storage.NetworkPolicyPeer) []*node {
 	if peer.GetIpBlock() != nil {
 		var allNodes []*node
 		_, ipNet, err := net.ParseCIDR(peer.GetIpBlock().GetCidr())
@@ -154,7 +155,7 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 			deploymentsInNSs = b.allDeployments
 		} else if !nsSel.MatchesNone() {
 			for ns, deployments := range b.deploymentsByNS {
-				if nsSel.Matches(ns.GetLabels()) {
+				if nsSel.Matches(maps.Collect(ns.GetImmutableLabels())) {
 					deploymentsInNSs = append(deploymentsInNSs, deployments...)
 				}
 			}
@@ -261,7 +262,7 @@ func (b *graphBuilder) getOrCreateEdge(src, tgt *node, egress bool) *edge {
 	return e
 }
 
-func (b *graphBuilder) addEdgesForNetworkPolicy(netPol *storage.NetworkPolicy, currNS *storage.NamespaceMetadata, matchedDeployments []*node) {
+func (b *graphBuilder) addEdgesForNetworkPolicy(netPol *storage.NetworkPolicy, currNS storage.ImmutableNamespaceMetadata, matchedDeployments []*node) {
 	ingressPolicy := hasIngress(netPol.GetSpec().GetPolicyTypes())
 	egressPolicy := hasEgress(netPol.GetSpec().GetPolicyTypes())
 
@@ -324,7 +325,7 @@ func (b *graphBuilder) AddEdgesForNetworkPolicies(netPols []*storage.NetworkPoli
 
 func (b *graphBuilder) GetApplyingPoliciesPerDeployment(allNetPols []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy {
 	deploymentsToNetPols := make(map[string][]*storage.NetworkPolicy)
-	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {
+	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ storage.ImmutableNamespaceMetadata, matchedDeployments []*node) {
 		for _, node := range matchedDeployments {
 			if id := node.deployment.GetId(); id != "" {
 				deploymentsToNetPols[id] = append(deploymentsToNetPols[id], netPol)
@@ -336,7 +337,7 @@ func (b *graphBuilder) GetApplyingPoliciesPerDeployment(allNetPols []*storage.Ne
 
 func (b *graphBuilder) GetApplyingPolicies(allNetPols []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	var applyingPolicies []*storage.NetworkPolicy
-	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {
+	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ storage.ImmutableNamespaceMetadata, matchedDeployments []*node) {
 		if len(matchedDeployments) > 0 {
 			applyingPolicies = append(applyingPolicies, netPol)
 		}
@@ -344,7 +345,7 @@ func (b *graphBuilder) GetApplyingPolicies(allNetPols []*storage.NetworkPolicy) 
 	return applyingPolicies
 }
 
-func (b *graphBuilder) forEachNetworkPolicy(netPols []*storage.NetworkPolicy, do func(*storage.NetworkPolicy, *storage.NamespaceMetadata, []*node)) {
+func (b *graphBuilder) forEachNetworkPolicy(netPols []*storage.NetworkPolicy, do func(*storage.NetworkPolicy, storage.ImmutableNamespaceMetadata, []*node)) {
 	for _, netPol := range netPols {
 		currNS := b.namespacesByName[netPol.GetNamespace()]
 		if currNS == nil {

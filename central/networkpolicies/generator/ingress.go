@@ -17,7 +17,7 @@ var allowAllPodsAllNS = &storage.NetworkPolicyIngressRule{
 	},
 }
 
-func generateIngressRules(node *node, namespacesByName map[string]*storage.NamespaceMetadata) []*storage.NetworkPolicyIngressRule {
+func generateIngressRules(node *node, namespacesByName map[string]storage.ImmutableNamespaceMetadata) []*storage.NetworkPolicyIngressRule {
 	var rules []*storage.NetworkPolicyIngressRule
 
 	for port := range node.incoming {
@@ -27,7 +27,7 @@ func generateIngressRules(node *node, namespacesByName map[string]*storage.Names
 	return rules
 }
 
-func generateIngressRule(node *node, port portDesc, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicyIngressRule {
+func generateIngressRule(node *node, port portDesc, namespacesByName map[string]storage.ImmutableNamespaceMetadata) *storage.NetworkPolicyIngressRule {
 	rule := &storage.NetworkPolicyIngressRule{
 		Ports: port.toNetPolPorts(),
 	}

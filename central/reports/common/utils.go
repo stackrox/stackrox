@@ -65,7 +65,7 @@ func WithoutV1ReportConfigs(query *v1.Query) *v1.Query {
 
 // BuildAccessScopeQueryViewBased builds v1 query for given access scope rules
 func BuildAccessScopeQuery(accessScopeRules []*storage.SimpleAccessScope_Rules, clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
+	namespaces []storage.ImmutableNamespaceMetadata) (*v1.Query, error) {
 	if accessScopeRules == nil {
 		return search.EmptyQuery(), nil
 	}
