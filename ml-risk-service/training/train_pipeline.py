@@ -430,38 +430,6 @@ class TrainingPipeline:
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def quick_test_pipeline(self) -> Dict[str, Any]:
-        """
-        Run a quick test of the training pipeline with sample data.
-
-        Returns:
-            Test results
-        """
-        logger.info("Running quick pipeline test")
-
-        try:
-            # Generate small sample dataset
-            sample_file = "/tmp/quick_test_training_data.json"
-            generation_results = self.create_sample_training_data(sample_file, 50)
-
-            if not generation_results['success']:
-                return {'success': False, 'error': f"Sample data generation failed: {generation_results['error']}"}
-
-            # Run pipeline
-            pipeline_results = self.run_full_pipeline(sample_file)
-
-            # Cleanup
-            if os.path.exists(sample_file):
-                os.remove(sample_file)
-
-            return {
-                'success': pipeline_results['success'],
-                'pipeline_results': pipeline_results,
-                'test_completed': True
-            }
-
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
 
     def load_trained_model(self, model_file: str) -> Dict[str, Any]:
         """
