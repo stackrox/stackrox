@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -954,22 +953,6 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
 
-				var id string
-				if !features.FlattenCVEData.Enabled() {
-					id = cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
-					var found bool
-					for _, seenID := range val.GetCVEIDs() {
-						if seenID == id {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						val.CVEIDs = append(val.CVEIDs, id)
-					}
-				}
-
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
 				}
@@ -1010,11 +993,6 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 	expected := make([]*imageCVECoreResponse, 0, len(cveMap))
 	for _, entry := range cveMap {
-		if !features.FlattenCVEData.Enabled() {
-			sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
-				return entry.CVEIDs[i] < entry.CVEIDs[j]
-			})
-		}
 		expected = append(expected, entry)
 	}
 	if options.SkipGetImagesBySeverity {

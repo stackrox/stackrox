@@ -58,11 +58,6 @@ func (s *ImagesStoreSuite) SetupTest() {
 	s.Require().NoError(err)
 }
 
-func (s *ImagesStoreSuite) TearDownSuite() {
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
-}
-
 func (s *ImagesStoreSuite) TestCountCVEs() {
 	image := fixtures.GetImagewithDulicateVulnerabilities()
 	s.NoError(s.store.Upsert(s.ctx, image))
