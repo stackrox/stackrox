@@ -94,11 +94,6 @@ func (s *GraphQLImageComponentV2TestSuite) SetupSuite() {
 	s.componentIDMap = s.getComponentIDMap()
 }
 
-func (s *GraphQLImageComponentV2TestSuite) TearDownSuite() {
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
-}
-
 func (s *GraphQLImageComponentV2TestSuite) TestUnauthorizedImageComponentEndpoint() {
 	_, err := s.resolver.ImageComponent(s.ctx, IDQuery{})
 	assert.Error(s.T(), err, "Unauthorized request got through")
