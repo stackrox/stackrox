@@ -442,14 +442,98 @@ class TrainingService:
                     )
                 )
 
-            # Create training request
-            request = TrainModelRequest(
-                training_data=training_samples,
-                config_override=config_override or ""
-            )
+            # Use training pipeline instead of direct training to ensure model is saved to storage
+            logger.info(f"Using training pipeline for Central data with {len(training_samples)} samples")
 
-            # Use existing training method
-            return self.train_model(request, risk_service)
+            # Create temporary training data file for pipeline
+            import tempfile
+            import json
+            import os
+
+            # Convert training samples to the format expected by training pipeline
+            pipeline_training_data = []
+            for sample in training_samples:
+                # Convert TrainingSample to dictionary format for pipeline
+                sample_dict = {
+                    'deployment_id': sample.deployment_id,
+                    'risk_score': sample.current_risk_score,
+                    'features': self._extract_features_from_training_sample(sample)
+                }
+                pipeline_training_data.append(sample_dict)
+
+            # Create temporary file for training data
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+                json.dump(pipeline_training_data, temp_file, indent=2)
+                temp_file_path = temp_file.name
+
+            try:
+                # Set training data in pipeline
+                self.training_pipeline.training_data = pipeline_training_data
+
+                # Run full training pipeline (this will save the model to storage)
+                pipeline_results = self.training_pipeline.run_training_pipeline()
+
+                if pipeline_results.get('success', False):
+                    # Extract model info for response
+                    model_saving_results = pipeline_results.get('pipeline_results', {}).get('model_saving', {})
+
+                    # Get model metrics from pipeline results
+                    model_training_results = pipeline_results.get('pipeline_results', {}).get('model_training', {})
+                    training_metrics_dict = model_training_results.get('training_metrics', {})
+
+                    # Update risk service with the trained model from storage if available
+                    if risk_service and model_saving_results.get('success', False):
+                        try:
+                            # Load the newly saved model into the risk service
+                            model_id = "stackrox-risk-model"
+                            version = "latest"  # Pipeline saves with timestamp, but we can load latest
+                            if risk_service._load_model_from_storage(model_id, version):
+                                logger.info(f"Successfully loaded trained model into risk service")
+                            else:
+                                logger.warning(f"Failed to load trained model into risk service")
+                        except Exception as load_error:
+                            logger.warning(f"Failed to load trained model into risk service: {load_error}")
+
+                    # Create response with pipeline results
+                    response_metrics = TrainingMetrics(
+                        validation_ndcg=float(training_metrics_dict.get('val_ndcg', 0.0)),
+                        validation_auc=float(training_metrics_dict.get('val_auc', 0.0)),
+                        training_loss=float(training_metrics_dict.get('training_loss', 0.0)),
+                        epochs_completed=int(training_metrics_dict.get('epochs_completed', 0)),
+                        global_feature_importance=[]  # Would need to extract from model if needed
+                    )
+
+                    # Extract model version from saving results
+                    model_version = model_saving_results.get('model_version', 'unknown')
+
+                    return TrainModelResponse(
+                        success=True,
+                        error_message="",
+                        model_version=model_version,
+                        metrics=response_metrics
+                    )
+                else:
+                    error_msg = pipeline_results.get('error', 'Training pipeline failed')
+                    logger.error(f"Training pipeline failed: {error_msg}")
+                    return TrainModelResponse(
+                        success=False,
+                        error_message=f"Training pipeline failed: {error_msg}",
+                        model_version="",
+                        metrics=TrainingMetrics(
+                            validation_ndcg=0.0,
+                            validation_auc=0.0,
+                            training_loss=0.0,
+                            epochs_completed=0,
+                            global_feature_importance=[]
+                        )
+                    )
+
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temporary file {temp_file_path}: {cleanup_error}")
 
         except Exception as e:
             logger.error(f"Central API training failed: {e}")
