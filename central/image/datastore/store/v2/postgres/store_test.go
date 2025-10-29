@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -27,7 +26,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesStoreSuite struct {
@@ -44,10 +42,6 @@ func TestImagesStore(t *testing.T) {
 }
 
 func (s *ImagesStoreSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
@@ -62,10 +56,11 @@ func (s *ImagesStoreSuite) SetupTest() {
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
-	s.Require().NoError(err)
+}
+
+func (s *ImagesStoreSuite) TearDownSuite() {
+
+	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestCountCVEs() {
@@ -166,7 +161,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 }
 
 // TODO(ROX-28123): figure out what to do about this
-//func (s *ImagesStoreSuite) TestUpsertLegacyToNew() {
+// func (s *ImagesStoreSuite) TestUpsertLegacyToNew() {
 //	image := getTestImage("image1")
 //
 //	// Upsert image using legacy store. This will insert CVEs and components into the old tables and set created at and
@@ -226,7 +221,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 //
 //	// Created at and first image occurrence timestamps should not have changed to the future ones.
 //	s.Assert().Equal(expectedTimestamps, actualTimestamps)
-//}
+// }
 
 func (s *ImagesStoreSuite) TestUpsert() {
 	image := getTestImage("image1")

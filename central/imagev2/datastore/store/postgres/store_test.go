@@ -28,7 +28,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesV2StoreSuite struct {
@@ -64,10 +63,6 @@ func (s *ImagesV2StoreSuite) SetupTest() {
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesV2TableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
 	s.Require().NoError(err)
 }
 
@@ -444,16 +439,6 @@ func getTestImageV2(name, sha string) *storage.ImageV2 {
 		},
 		RiskScore: 30,
 		Priority:  1,
-	}
-}
-
-func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
-	return &storage.Image{
-		Id:        imageV2.GetDigest(),
-		Name:      imageV2.GetName(),
-		Scan:      imageV2.GetScan(),
-		RiskScore: imageV2.GetRiskScore(),
-		Priority:  imageV2.GetPriority(),
 	}
 }
 
