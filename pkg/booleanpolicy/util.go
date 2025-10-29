@@ -102,6 +102,8 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		if SectionContainsFieldOfType(section, NetworkFlow) {
 			numRuntimeCategories++
 		}
+		// TODO(ROX-30807): update to support a combination of FileAccess and Process
+		// fields.
 		if SectionContainsFieldOfType(section, FileAccess) {
 			numRuntimeCategories++
 		}
