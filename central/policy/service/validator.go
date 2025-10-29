@@ -187,8 +187,8 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 	}
 
 	if s.isNodeEventPolicy(policy) {
-		if !booleanpolicy.ContainsAllOf(policy, booleanpolicy.FileAccess) {
-			return errors.New("Node event policies must contain only file event fields")
+		if !booleanpolicy.HasDiscreteEventSource(policy, storage.EventSource_NODE_EVENT) {
+			return errors.New("Node event policies must contain only node fields")
 		}
 	}
 
@@ -360,8 +360,10 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
 	}
 
-	if s.isNodeEventPolicy(policy) && !booleanpolicy.ContainsAllOf(policy, booleanpolicy.FileAccess) {
-		return errors.New("Node policies must only contain file access fields")
+	if s.isNodeEventPolicy(policy) {
+		if !booleanpolicy.HasDiscreteEventSource(policy, storage.EventSource_NODE_EVENT) {
+			return errors.New("Node event policies must contain only node fields")
+		}
 	}
 
 	var err error
