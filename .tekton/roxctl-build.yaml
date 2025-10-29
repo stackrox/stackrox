@@ -60,12 +60,6 @@ spec:
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
     - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
-  - name: build-platforms
-    value:
-    - linux/x86_64
-    - linux-d160-m2xlarge/arm64
-    - linux/s390x
-    - linux/ppc64le
 
   pipelineRef:
     name: basic-component-pipeline
