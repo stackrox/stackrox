@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
 
 import type { Container } from 'types/deployment.proto';

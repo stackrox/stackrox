@@ -1,4 +1,3 @@
-import React from 'react';
 import { XYPlot, ArcSeries, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 

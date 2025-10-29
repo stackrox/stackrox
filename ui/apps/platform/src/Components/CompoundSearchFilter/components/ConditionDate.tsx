@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, DatePicker, Flex, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import { format } from 'date-fns';

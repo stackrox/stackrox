@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -22,15 +21,12 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
+import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import {
     getHiddenSeverities,
     getOverviewPagePath,

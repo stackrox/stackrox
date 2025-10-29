@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Button,

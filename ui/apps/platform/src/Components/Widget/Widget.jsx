@@ -1,4 +1,4 @@
-import React, { Children, cloneElement, useState } from 'react';
+import { Children, cloneElement, useState } from 'react';
 import PropTypes from 'prop-types';
 import { PagerButtonGroup } from 'Components/PagerControls';
 

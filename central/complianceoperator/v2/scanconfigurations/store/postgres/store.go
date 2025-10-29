@@ -205,10 +205,6 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			serialized, marshalErr := obj.MarshalVT()
 			if marshalErr != nil {
@@ -273,10 +269,6 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			inputRows = append(inputRows, []interface{}{
 				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
@@ -316,10 +308,6 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			inputRows = append(inputRows, []interface{}{
 				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
@@ -359,10 +347,6 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
-			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-				"to simply use the object.  %s", obj)
 
 			inputRows = append(inputRows, []interface{}{
 				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),

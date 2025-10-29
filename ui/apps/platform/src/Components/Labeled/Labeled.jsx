@@ -1,4 +1,4 @@
-import React, { Children } from 'react';
+import { Children } from 'react';
 import PropTypes from 'prop-types';
 
 /*

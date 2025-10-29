@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkMany(b *testing.B) {
@@ -40,13 +39,15 @@ func BenchmarkMany(b *testing.B) {
 
 	for n := 1; n < alertsNum; n = n * 2 {
 		b.Run(fmt.Sprintf("upsert %d alerts", n), func(b *testing.B) {
-			err := store.UpsertMany(ctx, alerts[:n])
-			if err != nil {
-				b.Fatal(err)
+			for b.Loop() {
+				err := store.UpsertMany(ctx, alerts[:n])
+				if err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 		b.Run(fmt.Sprintf("get %d alerts", n), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_, _, err := store.GetMany(ctx, idx[:n])
 				if err != nil {
 					b.Fatal(err)
@@ -54,14 +55,18 @@ func BenchmarkMany(b *testing.B) {
 			}
 		})
 		b.Run(fmt.Sprintf("walk %d alerts", n), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				count := 0
 				err := store.Walk(ctx, func(obj *storeType) error {
 					count++
 					return nil
 				})
-				assert.NoError(b, err)
-				assert.Equal(b, alertsNum, count)
+				if err != nil {
+					b.Fatal(err)
+				}
+				if alertsNum != count {
+					b.Fatalf("Expected %d alerts, got %d", alertsNum, count)
+				}
 			}
 		})
 	}

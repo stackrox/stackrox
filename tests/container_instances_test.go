@@ -21,8 +21,11 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
-	// TODO(ROX-31331): Collector cannot reliably detect all processes in this test's images.
 	skipIfNoCollection(testT)
+
+	// Wait for Sensor to be healthy to ensure the event collection pipeline is ready
+	// after any previous tests that may have restarted Sensor.
+	waitForSensorHealthy(testT)
 
 	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()

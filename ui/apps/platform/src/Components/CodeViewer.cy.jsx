@@ -1,4 +1,3 @@
-import React from 'react';
 import CodeViewer, { CodeViewerThemeProvider } from './CodeViewer';
 
 const sampleYaml = `apiVersion: networking.k8s.io/v1

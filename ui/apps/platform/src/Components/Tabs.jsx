@@ -1,4 +1,4 @@
-import React, { Children, Component } from 'react';
+import { Children, Component } from 'react';
 import PropTypes from 'prop-types';
 
 import Tab from 'Components/Tab';

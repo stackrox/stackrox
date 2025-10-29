@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
     Alert,
     Card,
@@ -14,8 +14,11 @@ import {
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
+import useMetadata from 'hooks/useMetadata';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -26,25 +29,26 @@ import useAnalytics, {
     NODE_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 import { getHasSearchApplied } from 'utils/searchUtils';
-
-import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
-import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
+import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
+
 import {
     clusterSearchFilterConfig,
     nodeComponentSearchFilterConfig,
     nodeCVESearchFilterConfig,
     nodeSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
+} from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
+import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
+import { parseQuerySearchFilter } from '../../utils/searchUtils';
 
 import CVEsTable, {
     defaultSortOption as cveDefaultSortOption,
@@ -55,10 +59,6 @@ import NodesTable, {
     sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
-import ExternalLink from '../../../../Components/PatternFly/IconText/ExternalLink';
-import { getVersionedDocs } from '../../../../utils/versioning';
-import useMetadata from '../../../../hooks/useMetadata';
-import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 const searchFilterConfig = [
     nodeSearchFilterConfig,

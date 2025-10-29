@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Flex, Text } from '@patternfly/react-core';
 import { FileAltIcon } from '@patternfly/react-icons';

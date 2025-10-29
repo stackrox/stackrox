@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
