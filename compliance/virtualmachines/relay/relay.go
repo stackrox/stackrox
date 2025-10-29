@@ -51,22 +51,24 @@ func (s *VsockServer) Stop() {
 
 type Relay struct {
 	connectionReadTimeout time.Duration
+	ctx                   context.Context
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 	vsockServer           VsockServer
 	waitAfterFailedAccept time.Duration
 }
 
-func NewRelay(conn grpc.ClientConnInterface) *Relay {
+func NewRelay(ctx context.Context, conn grpc.ClientConnInterface) *Relay {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	return &Relay{
 		connectionReadTimeout: 10 * time.Second,
+		ctx:                   ctx,
 		sensorClient:          sensor.NewVirtualMachineIndexReportServiceClient(conn),
 		vsockServer:           VsockServer{port: uint32(port)},
 		waitAfterFailedAccept: time.Second,
 	}
 }
 
-func (r *Relay) Run(ctx context.Context) error {
+func (r *Relay) Run() error {
 	log.Info("Starting virtual machine relay")
 
 	if err := r.vsockServer.Start(); err != nil {
@@ -74,7 +76,7 @@ func (r *Relay) Run(ctx context.Context) error {
 	}
 
 	go func() {
-		<-ctx.Done()
+		<-r.ctx.Done()
 		r.vsockServer.Stop()
 	}()
 
@@ -82,9 +84,9 @@ func (r *Relay) Run(ctx context.Context) error {
 		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.Stop()
 		conn, err := r.vsockServer.listener.Accept()
 		if err != nil {
-			if ctx.Err() != nil {
+			if r.ctx.Err() != nil {
 				log.Info("Stopping virtual machine relay")
-				return ctx.Err()
+				return r.ctx.Err()
 			}
 			// We deliberately not kill the listener on errors. The only way to stop that is to cancel the context.
 			// If we had return here on fatal errors, then compliance would continue working without the relay
@@ -101,28 +103,14 @@ func (r *Relay) Run(ctx context.Context) error {
 				}
 			}(conn)
 
-			if err := handleVsockConnection(ctx, conn, r.sensorClient, r.connectionReadTimeout); err != nil {
+			if err := r.handleVsockConnection(conn); err != nil {
 				log.Errorf("Error handling vsock connection: %v", err)
 			}
 		}(conn)
 	}
 }
 
-func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
-	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
-	if !ok {
-		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
-			conn.RemoteAddr(), conn.RemoteAddr())
-	}
-
-	if remoteAddr.ContextID <= 2 {
-		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
-	}
-
-	return remoteAddr.ContextID, nil
-}
-
-func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sensor.VirtualMachineIndexReportServiceClient, connectionReadTimeout time.Duration) error {
+func (r *Relay) handleVsockConnection(conn net.Conn) error {
 	metrics.VsockConnectionsAccepted.Inc()
 
 	log.Infof("Handling vsock connection from %s", conn.RemoteAddr())
@@ -133,8 +121,8 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, connectionReadTimeout)
-	data, err := readFromConn(conn, maxSizeBytes, connectionReadTimeout)
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s", maxSizeBytes, r.connectionReadTimeout)
+	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout)
 	if err != nil {
 		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}
@@ -153,7 +141,7 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), vsockCID)
 	}
 
-	if err = sendReportToSensor(ctx, indexReport, sensorClient); err != nil {
+	if err = sendReportToSensor(r.ctx, indexReport, r.sensorClient); err != nil {
 		log.Errorf("Error sending index report to sensor (vsock CID: %d): %v", vsockCID, err)
 		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)
 	}
@@ -161,6 +149,20 @@ func handleVsockConnection(ctx context.Context, conn net.Conn, sensorClient sens
 	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
 
 	return nil
+}
+
+func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
+	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
+	if !ok {
+		return 0, fmt.Errorf("failed to extract remote address from vsock connection: unexpected type %T, value: %v",
+			conn.RemoteAddr(), conn.RemoteAddr())
+	}
+
+	if remoteAddr.ContextID <= 2 {
+		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
+	}
+
+	return remoteAddr.ContextID, nil
 }
 
 func isRetryableGRPCError(err error) bool {
