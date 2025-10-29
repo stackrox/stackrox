@@ -561,6 +561,10 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {
+	// Wait for deployment to be fully ready before attempting deletion
+	// This prevents race conditions where deletion is issued during pod startup
+	waitForDeploymentReadyInK8s(t, deploymentName, "default")
+
 	client := createK8sClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -597,7 +601,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(30 * time.Second)
+	timer := time.NewTimer(60 * time.Second)
 	defer timer.Stop()
 
 	attempt := 0
@@ -619,7 +623,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 			}
 			logf(t, "Deployment %q still exists in Kubernetes (attempt %d)", deploymentName, attempt)
 		case <-timer.C:
-			t.Fatalf("Timeout: deployment %s still exists in Kubernetes after 30 seconds", deploymentName)
+			t.Fatalf("Timeout: deployment %s still exists in Kubernetes after 60 seconds", deploymentName)
 		}
 	}
 }
