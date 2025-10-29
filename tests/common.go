@@ -560,48 +560,75 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	waitForTermination(t, pod.GetName())
 }
 
-func teardownDeployment(t *testing.T, deploymentName string) {
-	// Wait for deployment to be fully ready before attempting deletion
-	// This prevents race conditions where deletion is issued during pod startup
-	waitForDeploymentReadyInK8s(t, deploymentName, "default")
-
+// teardownDeploymentInternal handles deployment deletion with configurable verification.
+// When waitForCompletion is true, it retries deletion and waits for both K8s and Central cleanup.
+// When false, it only issues the delete command without waiting or failing on errors.
+func teardownDeploymentInternal(t *testing.T, deploymentName string, waitForCompletion bool) {
 	client := createK8sClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Set explicit propagation policy to ensure ReplicaSets/Pods are deleted
 	deletePolicy := metaV1.DeletePropagationForeground
 	gracePeriod := int64(1)
 
-	logf(t, "Deleting deployment %q via API with propagation policy %s", deploymentName, deletePolicy)
-	err := client.AppsV1().Deployments("default").Delete(ctx, deploymentName, metaV1.DeleteOptions{
-		GracePeriodSeconds: &gracePeriod,
-		PropagationPolicy:  &deletePolicy,
-	})
+	deleteFunc := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			logf(t, "Deployment %q not found in Kubernetes (already deleted)", deploymentName)
-		} else {
-			require.NoError(t, err, "Failed to delete deployment %q", deploymentName)
+		logf(t, "Deleting deployment %q via API with propagation policy %s", deploymentName, deletePolicy)
+		err := client.AppsV1().Deployments("default").Delete(ctx, deploymentName, metaV1.DeleteOptions{
+			GracePeriodSeconds: &gracePeriod,
+			PropagationPolicy:  &deletePolicy,
+		})
+
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				logf(t, "Deployment %q not found in Kubernetes (already deleted)", deploymentName)
+				return nil
+			}
+			return fmt.Errorf("failed to delete deployment %q: %w", deploymentName, err)
 		}
-	} else {
 		logf(t, "Successfully initiated deletion of deployment %q", deploymentName)
+		return nil
 	}
 
-	// Verify deployment is actually deleted from Kubernetes
-	waitForK8sDeploymentDeletion(t, client, deploymentName)
+	if waitForCompletion {
+		// Retry the delete + wait sequence if the deployment doesn't delete within 15 seconds
+		err := retry.WithRetry(
+			func() error {
+				if err := deleteFunc(); err != nil {
+					return err
+				}
+				// Verify deployment is actually deleted from Kubernetes
+				return waitForK8sDeploymentDeletion(t, client, deploymentName, 15*time.Second)
+			},
+			retry.Tries(4),              // Try up to 4 times (1 initial + 3 retries)
+			retry.OnlyRetryableErrors(), // Only retry on retriable errors
+			retry.BetweenAttempts(func(int) {
+				logf(t, "Retrying deployment %q deletion", deploymentName)
+			}),
+		)
+		require.NoError(t, err, "Failed to delete deployment %q after retries", deploymentName)
 
-	// Wait for Central to recognize the deletion
-	waitForTermination(t, deploymentName)
+		// Wait for Central to recognize the deletion
+		waitForTermination(t, deploymentName)
+	} else {
+		// Fire and forget - don't fail the test if deletion fails
+		if err := deleteFunc(); err != nil {
+			logf(t, "Deployment %q deletion failed (non-fatal): %v", deploymentName, err)
+		}
+	}
 }
 
-// waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone
-func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string) {
+func teardownDeployment(t *testing.T, deploymentName string) {
+	teardownDeploymentInternal(t, deploymentName, true)
+}
+
+// waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone.
+// Returns an error if the deployment still exists after the timeout, which triggers a retry
+// of the entire delete operation.
+func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string, timeout time.Duration) error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(60 * time.Second)
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
 	attempt := 0
@@ -615,7 +642,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 
 			if apiErrors.IsNotFound(err) {
 				logf(t, "Verified: deployment %q deleted from Kubernetes after %d attempt(s)", deploymentName, attempt)
-				return
+				return nil
 			}
 			if err != nil {
 				logf(t, "Error checking deployment %q status (attempt %d): %v", deploymentName, attempt, err)
@@ -623,7 +650,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 			}
 			logf(t, "Deployment %q still exists in Kubernetes (attempt %d)", deploymentName, attempt)
 		case <-timer.C:
-			t.Fatalf("Timeout: deployment %s still exists in Kubernetes after 60 seconds", deploymentName)
+			return retry.MakeRetryable(fmt.Errorf("deployment %s still exists in Kubernetes after %v", deploymentName, timeout))
 		}
 	}
 }
@@ -631,10 +658,7 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
-	if err := cmd.Run(); err != nil {
-		logf(t, "Deleting deployment %q failed: %v", deploymentName, err)
-	}
+	teardownDeploymentInternal(t, deploymentName, false)
 }
 
 func getConfig(t testutils.T) *rest.Config {
