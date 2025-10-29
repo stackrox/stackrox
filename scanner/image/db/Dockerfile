@@ -91,7 +91,9 @@ RUN chroot /out /bin/sh -c " \
 RUN chroot /out /bin/sh -c "localedef -f UTF-8 -i en_US en_US.UTF-8"
 
 # Create required directories in /out/
-RUN mkdir -p /out/docker-entrypoint-initdb.d
+RUN mkdir -p /out/docker-entrypoint-initdb.d \
+             /out/var/run/postgresql && \
+    chroot /out /bin/sh -c "chown postgres:postgres /var/run/postgresql && chmod 03775 /var/run/postgresql"
 
 # ============================================================================
 # Stage 3: FINAL - ubi8-micro runtime image
