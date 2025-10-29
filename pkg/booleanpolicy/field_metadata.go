@@ -891,7 +891,9 @@ func initializeFieldMetadata() FieldMetadata {
 	f.registerFieldMetadata(fieldnames.FilePath,
 		querybuilders.ForFieldLabel(search.FilePath), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return absolutePathRegex
+			// TODO(ROX-31449): change to an absolute path regex when arbitrary
+			// paths are supported
+			return allowedFilePathRegex
 		},
 		[]storage.EventSource{storage.EventSource_NODE_EVENT},
 		[]RuntimeFieldType{FileAccess}, negationForbidden,

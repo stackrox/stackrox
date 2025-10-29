@@ -106,10 +106,10 @@ func (s *PolicyValueValidator) TestRegex() {
 			r:       portExposureValueRegex,
 		},
 		{
-			name:    "absolute path",
-			valid:   []string{"/", "/bin", "/usr/bin", "/etc/passwd", "/var/log/app.log", "/home/user/documents", "/a", "/a/b/c/d/e"},
-			invalid: []string{"", " ", "bin", "usr/bin", "./relative", "../relative", "~/home", "C:\\Windows", "relative/path"},
-			r:       absolutePathRegex,
+			name:    "allowed file path",
+			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/sshd/sshd_config"},
+			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
+			r:       allowedFilePathRegex,
 		},
 	}
 
