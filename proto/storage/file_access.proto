@@ -25,8 +25,8 @@ message FileAccess {
   }
 
   message File {
-    string path = 1; // @gotags: search:"File Path"
-    string host_path = 2; // @gotags: search: "File Host Path"
+    string path = 1; // @gotags: search:"Mounted File Path"
+    string host_path = 2; // @gotags: search:"Node File Path"
     FileMetadata meta = 3;
   }
 

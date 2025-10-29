@@ -248,8 +248,8 @@ func (x *FileAccess_FileMetadata) GetGroup() string {
 
 type FileAccess_File struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Path          string                   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty" search:"File Path"`                         // @gotags: search:"File Path"
-	HostPath      string                   `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty"` // @gotags: search: "File Host Path"
+	Path          string                   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty" search:"Mounted File Path"`                         // @gotags: search:"Mounted File Path"
+	HostPath      string                   `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty" search:"Node File Path"` // @gotags: search:"Node File Path"
 	Meta          *FileAccess_FileMetadata `protobuf:"bytes,3,opt,name=meta,proto3" json:"meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
