@@ -355,11 +355,13 @@ func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string
 	createDeploymentViaAPI(t, image, deploymentName, replicas, namespace)
 }
 
-// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client with extensive logging.
+// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
+// Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
+// to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
 func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) {
 	client := createK8sClient(t)
 
-	log.Infof("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
+	t.Logf("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
 
 	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
 	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
@@ -367,7 +369,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 	pullPolicy := coreV1.PullIfNotPresent
 	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
 		pullPolicy = coreV1.PullPolicy(policy)
-		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+		t.Logf("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
 	}
 
 	// Build deployment object
@@ -400,41 +402,41 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		},
 	}
 
-	log.Infof("Deployment object created: name=%s, namespace=%s, replicas=%d, image=%s, labels=%v",
+	t.Logf("Deployment object created: name=%s, namespace=%s, replicas=%d, image=%s, labels=%v",
 		deployment.Name, deployment.Namespace, *deployment.Spec.Replicas, image, deployment.Labels)
 
 	// Create the deployment with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	log.Infof("Calling K8s API to create deployment %q in namespace %q...", deploymentName, namespace)
+	t.Logf("Calling K8s API to create deployment %q in namespace %q...", deploymentName, namespace)
 	createdDeployment, err := client.AppsV1().Deployments(namespace).Create(ctx, deployment, metaV1.CreateOptions{})
 
 	if err != nil {
 		// Detailed error logging
 		if apiErrors.IsAlreadyExists(err) {
-			log.Errorf("Deployment %q already exists in namespace %q: %v", deploymentName, namespace, err)
+			t.Logf("ERROR: Deployment %q already exists in namespace %q: %v", deploymentName, namespace, err)
 		} else if apiErrors.IsInvalid(err) {
-			log.Errorf("Deployment %q spec is invalid: %v", deploymentName, err)
+			t.Logf("ERROR: Deployment %q spec is invalid: %v", deploymentName, err)
 		} else if apiErrors.IsForbidden(err) {
-			log.Errorf("Permission denied creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+			t.Logf("ERROR: Permission denied creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
 		} else if apiErrors.IsTimeout(err) {
-			log.Errorf("Timeout creating deployment %q in namespace %q after 30s: %v", deploymentName, namespace, err)
+			t.Logf("ERROR: Timeout creating deployment %q in namespace %q after 30s: %v", deploymentName, namespace, err)
 		} else if apiErrors.IsServerTimeout(err) {
-			log.Errorf("Server timeout creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+			t.Logf("ERROR: Server timeout creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
 		} else if apiErrors.IsServiceUnavailable(err) {
-			log.Errorf("K8s API service unavailable when creating deployment %q: %v", deploymentName, err)
+			t.Logf("ERROR: K8s API service unavailable when creating deployment %q: %v", deploymentName, err)
 		} else {
-			log.Errorf("Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
+			t.Logf("ERROR: Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
 		}
 		require.NoError(t, err, "Failed to create deployment %q: %v", deploymentName, err)
 		return
 	}
 
-	log.Infof("Deployment %q successfully created in namespace %q", deploymentName, namespace)
-	log.Infof("Deployment UID: %s, ResourceVersion: %s, Generation: %d",
+	t.Logf("Deployment %q successfully created in namespace %q", deploymentName, namespace)
+	t.Logf("Deployment UID: %s, ResourceVersion: %s, Generation: %d",
 		createdDeployment.UID, createdDeployment.ResourceVersion, createdDeployment.Generation)
-	log.Infof("Deployment status: Replicas=%d, UpdatedReplicas=%d, ReadyReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d",
+	t.Logf("Deployment status: Replicas=%d, UpdatedReplicas=%d, ReadyReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d",
 		createdDeployment.Status.Replicas,
 		createdDeployment.Status.UpdatedReplicas,
 		createdDeployment.Status.ReadyReplicas,
@@ -443,14 +445,14 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 
 	// Log all conditions if any
 	if len(createdDeployment.Status.Conditions) > 0 {
-		log.Infof("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
+		t.Logf("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
 		for i, cond := range createdDeployment.Status.Conditions {
-			log.Infof("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
+			t.Logf("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
 				i, cond.Type, cond.Status, cond.Reason, cond.Message, cond.LastUpdateTime)
 		}
 	}
 
-	log.Infof("Deployment %q creation completed successfully", deploymentName)
+	t.Logf("Deployment %q creation completed successfully", deploymentName)
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
