@@ -51,7 +51,7 @@ func TestResultsToSearchResultProtos(t *testing.T) {
 			Matches: map[string][]string{
 				"Deployment Name": {"test-deployment"},
 			},
-			FieldValues: map[string]interface{}{
+			FieldValues: map[string]string{
 				"Deployment Name": "test-deployment",
 				"Cluster":         "cluster1",
 			},
@@ -64,7 +64,7 @@ func TestResultsToSearchResultProtos(t *testing.T) {
 			Matches: map[string][]string{
 				"Deployment Name": {"prod-deployment"},
 			},
-			FieldValues: map[string]interface{}{
+			FieldValues: map[string]string{
 				"Deployment Name": "prod-deployment",
 				"Cluster":         "cluster2",
 			},
@@ -117,18 +117,18 @@ func TestDefaultSearchResultConverter(t *testing.T) {
 func TestResultsWithFieldValues(t *testing.T) {
 	result := Result{
 		ID: "test-id",
-		FieldValues: map[string]interface{}{
+		FieldValues: map[string]string{
 			"Name":      "test-name",
 			"Registry":  "docker.io",
-			"Count":     42,
-			"IsScanned": true,
+			"Count":     "42",
+			"IsScanned": "true",
 		},
 	}
 
 	// Verify field values are accessible
 	assert.Equal(t, "test-name", result.FieldValues["Name"])
 	assert.Equal(t, "docker.io", result.FieldValues["Registry"])
-	assert.Equal(t, 42, result.FieldValues["Count"])
-	assert.Equal(t, true, result.FieldValues["IsScanned"])
+	assert.Equal(t, "42", result.FieldValues["Count"])
+	assert.Equal(t, "true", result.FieldValues["IsScanned"])
 	assert.Equal(t, "test-id", result.ID)
 }
