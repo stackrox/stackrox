@@ -9,7 +9,6 @@ from fastapi import APIRouter, HTTPException, Depends, status, Query
 from src.api.schemas import (
     TrainModelRequest,
     TrainModelResponse,
-    QuickTestPipelineResponse,
     ErrorResponse
 )
 from src.services.training_service import TrainingService
@@ -410,66 +409,6 @@ async def collect_sample_from_central(
         )
 
 
-@router.post(
-    "/quick-test",
-    response_model=QuickTestPipelineResponse,
-    responses={
-        500: {"model": ErrorResponse, "description": "Test pipeline execution failed"}
-    },
-    summary="Run quick test pipeline",
-    description="Execute a complete test of the ML training pipeline with sample data"
-)
-async def run_quick_test_pipeline(
-    training_service: TrainingService = Depends(get_training_service)
-) -> QuickTestPipelineResponse:
-    """
-    Run a quick test of the complete ML training pipeline.
-
-    This endpoint performs a comprehensive test of the training system by:
-
-    1. **Sample Data Generation**: Creates 50 synthetic training samples with realistic patterns
-    2. **Full Pipeline Execution**: Runs complete training workflow including:
-       - Data loading and validation
-       - Feature extraction from deployments and images
-       - Model training with cross-validation
-       - Performance evaluation and metrics calculation
-       - Feature importance analysis
-    3. **Automatic Cleanup**: Removes temporary files after completion
-    4. **Comprehensive Results**: Returns detailed metrics and execution status
-
-    **Use Cases:**
-    - Validate training system functionality after deployment
-    - Test new training configurations before production use
-    - Verify pipeline performance and identify potential issues
-    - Generate sample metrics for monitoring setup
-
-    **Note:** This operation may take 30-60 seconds to complete as it runs
-    the full training workflow. The endpoint will return detailed results
-    including training metrics, execution time, and any errors encountered.
-
-    Returns comprehensive test results including pipeline status, metrics,
-    and execution time. If any stage fails, detailed error information is provided.
-    """
-    try:
-        logger.info("Quick test pipeline requested via REST API")
-
-        # Execute the quick test pipeline
-        response = training_service.run_quick_test_pipeline()
-
-        # Log the result
-        if response.success:
-            logger.info(f"Quick test pipeline completed successfully in {response.execution_time_seconds:.2f}s")
-        else:
-            logger.error(f"Quick test pipeline failed: {response.error_message}")
-
-        return response
-
-    except Exception as e:
-        logger.error(f"Quick test pipeline request failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to execute quick test pipeline: {str(e)}"
-        )
 
 
 @router.post(
@@ -490,6 +429,7 @@ async def train_full_from_central(
     clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
     namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
     config_override: Optional[str] = Query("", description="JSON configuration overrides"),
+    test_mode: bool = Query(False, description="Use optimized settings for quick testing (7 days, 50 samples)"),
     training_service: TrainingService = Depends(get_training_service),
     risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> TrainModelResponse:
@@ -511,11 +451,13 @@ async def train_full_from_central(
     - **clusters**: Optional comma-separated list of cluster IDs to filter
     - **namespaces**: Optional comma-separated list of namespaces to filter
     - **config_override**: Optional JSON string with training configuration overrides
+    - **test_mode**: Enable quick testing mode (overrides days_back=7, limit=50 for fast validation)
 
     **Use Cases:**
     - **Production Training**: Train models with real enterprise workload data
     - **Scheduled Retraining**: Periodic model updates with latest security data
     - **Custom Model Training**: Train models for specific environments or use cases
+    - **Quick Testing**: Use test_mode=true for rapid validation of training pipeline
 
     **Note:** This operation may take several minutes for large datasets. The endpoint
     will return detailed training metrics, model version, and feature importance analysis.
@@ -547,6 +489,12 @@ async def train_full_from_central(
             'include_inactive': include_inactive,
             'severity_threshold': severity_threshold
         }
+
+        # Override parameters for test mode
+        if test_mode:
+            logger.info("Test mode enabled - using optimized settings for quick validation")
+            filters['days_back'] = 7  # Use recent data for faster processing
+            limit = 50  # Small sample for quick testing
 
         # Add optional filters
         if clusters:
