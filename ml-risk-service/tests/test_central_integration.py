@@ -2,10 +2,13 @@
 Integration test for Central API training data collection and prediction validation.
 
 This test validates the entire ML pipeline end-to-end:
-1. Pull real training data from Central
+1. Pull real training data from Central (pre-extracted features and risk scores)
 2. Train ML model on subset of data
 3. Make predictions on held-out deployments
 4. Compare predicted vs actual risk scores
+
+Note: Central service returns training samples with pre-computed features via
+create_training_sample(), not raw deployment data.
 
 Requires:
 - CENTRAL_API_TOKEN environment variable
@@ -75,41 +78,40 @@ def feature_extractor() -> BaselineFeatureExtractor:
 
 
 def extract_features_and_score(
-    sample: Dict[str, Any],
-    feature_extractor: BaselineFeatureExtractor
+    sample: Dict[str, Any]
 ) -> Tuple[Dict[str, float], float]:
     """
-    Extract features and risk score from a deployment sample.
+    Extract features and risk score from a training sample.
 
     Args:
-        sample: Training sample from Central
-        feature_extractor: Feature extractor instance
+        sample: Training sample from Central (already contains extracted features)
 
     Returns:
         Tuple of (features dict, risk score)
     """
-    # Extract baseline features
-    baseline_features = feature_extractor.extract_baseline_features(
-        sample.get('deployment', {}),
-        sample.get('images', []),
-        sample.get('alerts', []),
-        sample.get('baseline_violations', [])
-    )
+    # Sample structure from create_training_sample():
+    # {
+    #   'features': {...},           # Normalized features for ML
+    #   'risk_score': 2.139,        # Final computed risk score
+    #   'baseline_factors': {...}   # Individual risk multipliers
+    # }
 
-    # Convert to feature dict
+    baseline_factors = sample.get('baseline_factors', {})
+
+    # Extract feature dict (use baseline_factors which match our model's expected features)
     features = {
-        'policy_violations': baseline_features.policy_violations_multiplier,
-        'process_baseline': baseline_features.process_baseline_multiplier,
-        'vulnerabilities': baseline_features.vulnerabilities_multiplier,
-        'risky_components': baseline_features.risky_component_multiplier,
-        'component_count': baseline_features.component_count_multiplier,
-        'image_age': baseline_features.image_age_multiplier,
-        'service_config': baseline_features.service_config_multiplier,
-        'reachability': baseline_features.reachability_multiplier,
+        'policy_violations': baseline_factors.get('policy_violations', 1.0),
+        'process_baseline': baseline_factors.get('process_baseline', 1.0),
+        'vulnerabilities': baseline_factors.get('vulnerabilities', 1.0),
+        'risky_components': baseline_factors.get('risky_components', 1.0),
+        'component_count': baseline_factors.get('component_count', 1.0),
+        'image_age': baseline_factors.get('image_age', 1.0),
+        'service_config': baseline_factors.get('service_config', 1.0),
+        'reachability': baseline_factors.get('reachability', 1.0),
     }
 
-    # Extract actual risk score
-    risk_score = baseline_features.overall_score
+    # Use pre-computed risk score
+    risk_score = sample.get('risk_score', 1.0)
 
     return features, risk_score
 
@@ -143,8 +145,7 @@ def test_central_connection(central_client: CentralExportClient) -> None:
 @pytest.mark.integration
 @pytest.mark.slow
 def test_train_and_predict_with_central_data(
-    central_export_service: CentralExportService,
-    feature_extractor: BaselineFeatureExtractor
+    central_export_service: CentralExportService
 ) -> None:
     """
     End-to-end integration test: Train model on Central data and validate predictions.
@@ -195,7 +196,7 @@ def test_train_and_predict_with_central_data(
 
     for i, sample in enumerate(training_samples):
         try:
-            features, score = extract_features_and_score(sample, feature_extractor)
+            features, score = extract_features_and_score(sample)
             training_features.append(features)
             training_scores.append(score)
         except Exception as e:
@@ -243,7 +244,7 @@ def test_train_and_predict_with_central_data(
 
     for i, sample in enumerate(test_samples):
         try:
-            features, actual_score = extract_features_and_score(sample, feature_extractor)
+            features, actual_score = extract_features_and_score(sample)
             test_features.append(features)
             actual_scores.append(actual_score)
         except Exception as e:
