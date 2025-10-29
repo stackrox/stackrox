@@ -69,10 +69,15 @@ func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
 	metrics.VsockSemaphoreQueueSize.Inc()
 	defer metrics.VsockSemaphoreQueueSize.Dec()
 	if err := s.semaphore.Acquire(semCtx, 1); err != nil {
+		reason := "unknown"
 		if errors.Is(err, context.DeadlineExceeded) {
-			metrics.VsockConnectionsRejected.Inc()
-			log.Warnf("Could not acquire semaphore, too many concurrent vsock connections")
+			log.Warn("Could not acquire semaphore, too many concurrent vsock connections")
+			reason = "concurrency_limit"
+		} else if errors.Is(err, context.Canceled) {
+			log.Debug("Could not acquire semaphore, the context was canceled")
+			reason = "context_canceled"
 		}
+		metrics.VsockSemaphoreAcquisitionFailures.With(prometheus.Labels{"reason": reason}).Inc()
 		return errors.Wrap(err, "failed to acquire semaphore")
 	}
 	metrics.VsockSemaphoreHoldingSize.Inc()
