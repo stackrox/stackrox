@@ -56,10 +56,6 @@ func (s *ImagesStoreSuite) SetupTest() {
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+imageCVEsLegacyTable+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+imageCVEEdgesLegacyTable+" CASCADE")
-	s.Require().NoError(err)
 }
 
 func (s *ImagesStoreSuite) TearDownSuite() {
