@@ -83,6 +83,7 @@ var (
 	KubeUserGroups                 = newFieldName("Kubernetes User Groups")
 	SourceIPAddress                = newFieldName("Source IP Address")
 	FilePath                       = newFieldName("File Path")
+	FileOperation                  = newFieldName("File Operation")
 )
 
 func newFieldName(field string) string {

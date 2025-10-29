@@ -910,5 +910,14 @@ func initializeFieldMetadata() FieldMetadata {
 		)
 	}
 
+	f.registerFieldMetadata(fieldnames.FileOperation,
+		querybuilders.ForFieldLabel(search.FileOperation), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return fileOperationRegex
+		},
+		[]storage.EventSource{storage.EventSource_NODE_EVENT},
+		[]RuntimeFieldType{FileAccess}, negationForbidden,
+	)
+
 	return f
 }
