@@ -31,7 +31,7 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	setupDeploymentInNamespace(t, "nginx", deploymentName, "default")
+	setupDeploymentInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1", deploymentName)
 	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeploymentInCentral(t, deploymentName)
 
