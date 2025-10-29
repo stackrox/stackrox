@@ -21,7 +21,7 @@ type Pipeline struct {
 	detector detector.Detector
 	stopper  concurrency.Stopper
 
-	activityChan    chan *storage.FileAccess
+	accessChan    chan *storage.FileAccess
 	clusterEntities *clusterentities.Store
 
 	msgCtx context.Context
@@ -32,7 +32,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 	p := &Pipeline{
 		detector:        detector,
-		activityChan:    make(chan *storage.FileAccess),
+		accessChan:    make(chan *storage.FileAccess),
 		clusterEntities: clusterEntities,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
@@ -44,44 +44,44 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
-	activity := &storage.FileAccess{
+	access := &storage.FileAccess{
 		Process: p.getIndicator(fs.GetProcess()),
 	}
 
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetCreation().GetActivity().GetPath(),
 			HostPath: fs.GetCreation().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileAccess_CREATE
+		access.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetUnlink().GetActivity().GetPath(),
 			HostPath: fs.GetUnlink().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileAccess_UNLINK
+		access.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetRename().GetOld().GetPath(),
 			HostPath: fs.GetRename().GetOld().GetHostPath(),
 		}
-		activity.Moved = &storage.FileAccess_File{
+		access.Moved = &storage.FileAccess_File{
 			Path:     fs.GetRename().GetNew().GetPath(),
 			HostPath: fs.GetRename().GetNew().GetHostPath(),
 		}
-		activity.Operation = storage.FileAccess_RENAME
+		access.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetPermission().GetActivity().GetPath(),
 			HostPath: fs.GetPermission().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
 		}
-		activity.Operation = storage.FileAccess_PERMISSION_CHANGE
+		access.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetOwnership().GetActivity().GetPath(),
 			HostPath: fs.GetOwnership().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
@@ -91,25 +91,25 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 				Group:    fs.GetOwnership().GetGroup(),
 			},
 		}
-		activity.Operation = storage.FileAccess_OWNERSHIP_CHANGE
+		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
 	case *sensorAPI.FileActivity_Write:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetWrite().GetActivity().GetPath(),
 			HostPath: fs.GetWrite().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileAccess_WRITE
+		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
-		activity.File = &storage.FileAccess_File{
+		access.File = &storage.FileAccess_File{
 			Path:     fs.GetOpen().GetActivity().GetPath(),
 			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileAccess_OPEN
+		access.Operation = storage.FileAccess_OPEN
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
 	}
 
-	return activity
+	return access
 }
 
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
@@ -153,10 +153,10 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 
 func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 
-	activity := p.translate(fs)
+	access := p.translate(fs)
 
-	if activity != nil {
-		p.activityChan <- activity
+	if access != nil {
+		p.accessChan <- access
 	}
 }
 
@@ -165,7 +165,7 @@ func (p *Pipeline) run() {
 		select {
 		case <-p.stopper.Flow().StopRequested():
 			return
-		case event := <-p.activityChan:
+		case event := <-p.accessChan:
 			// p.detector.ProcessFilesystem(p.msgCtx, event)
 			log.Infof("event= %+v", event)
 		}
