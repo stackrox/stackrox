@@ -230,7 +230,6 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			newElem := bfsQueueElem{
 				schema: rel.OtherSchema,
 			}
-			log.Infof("SHREWS -- %v+", newElem.schema)
 			newElem.pathFromRoot = make([]joinPathElem, len(currElem.pathFromRoot)+1)
 			copy(newElem.pathFromRoot, currElem.pathFromRoot)
 			newElem.pathFromRoot[len(newElem.pathFromRoot)-1] = joinPathElem{
