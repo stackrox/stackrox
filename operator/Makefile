@@ -23,6 +23,9 @@ NAMESPACE ?= stackrox
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
 # - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+# This channels value goes into bundle/metadata/annotations.yaml and does not play any role in our upstream builds or
+# FBC releases but there's a team that depends on it, see ROX-31301.
+CHANNELS ?= stable
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
