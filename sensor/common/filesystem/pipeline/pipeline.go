@@ -21,7 +21,7 @@ type Pipeline struct {
 	detector detector.Detector
 	stopper  concurrency.Stopper
 
-	activityChan    chan *storage.FileActivity
+	activityChan    chan *storage.FileAccess
 	clusterEntities *clusterentities.Store
 
 	msgCtx context.Context
@@ -32,7 +32,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 	p := &Pipeline{
 		detector:        detector,
-		activityChan:    make(chan *storage.FileActivity),
+		activityChan:    make(chan *storage.FileAccess),
 		clusterEntities: clusterEntities,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
@@ -42,68 +42,68 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	return p
 }
 
-func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileActivity {
+func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
-	activity := &storage.FileActivity{
+	activity := &storage.FileAccess{
 		Process: p.getIndicator(fs.GetProcess()),
 	}
 
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetCreation().GetActivity().GetPath(),
 			HostPath: fs.GetCreation().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_CREATE
+		activity.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetUnlink().GetActivity().GetPath(),
 			HostPath: fs.GetUnlink().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_UNLINK
+		activity.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetRename().GetOld().GetPath(),
 			HostPath: fs.GetRename().GetOld().GetHostPath(),
 		}
-		activity.Moved = &storage.FileActivity_File{
+		activity.Moved = &storage.FileAccess_File{
 			Path:     fs.GetRename().GetNew().GetPath(),
 			HostPath: fs.GetRename().GetNew().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_RENAME
+		activity.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetPermission().GetActivity().GetPath(),
 			HostPath: fs.GetPermission().GetActivity().GetHostPath(),
-			Meta: &storage.FileActivity_FileMetadata{
+			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
 		}
-		activity.Operation = storage.FileActivity_PERMISSION_CHANGE
+		activity.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetOwnership().GetActivity().GetPath(),
 			HostPath: fs.GetOwnership().GetActivity().GetHostPath(),
-			Meta: &storage.FileActivity_FileMetadata{
+			Meta: &storage.FileAccess_FileMetadata{
 				Uid:      fs.GetOwnership().GetUid(),
 				Gid:      fs.GetOwnership().GetGid(),
 				Username: fs.GetOwnership().GetUsername(),
 				Group:    fs.GetOwnership().GetGroup(),
 			},
 		}
-		activity.Operation = storage.FileActivity_OWNERSHIP_CHANGE
+		activity.Operation = storage.FileAccess_OWNERSHIP_CHANGE
 	case *sensorAPI.FileActivity_Write:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetWrite().GetActivity().GetPath(),
 			HostPath: fs.GetWrite().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_WRITE
+		activity.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
-		activity.File = &storage.FileActivity_File{
+		activity.File = &storage.FileAccess_File{
 			Path:     fs.GetOpen().GetActivity().GetPath(),
 			HostPath: fs.GetOpen().GetActivity().GetHostPath(),
 		}
-		activity.Operation = storage.FileActivity_OPEN
+		activity.Operation = storage.FileAccess_OPEN
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
