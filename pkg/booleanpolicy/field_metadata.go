@@ -888,5 +888,14 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.FilePath,
+		querybuilders.ForFieldLabel(search.FilePath), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return absolutePathRegex
+		},
+		[]storage.EventSource{storage.EventSource_NODE_EVENT},
+		[]RuntimeFieldType{FileAccess}, negationForbidden,
+	)
+
 	return f
 }

@@ -105,6 +105,12 @@ func (s *PolicyValueValidator) TestRegex() {
 			invalid: []string{"", " "},
 			r:       portExposureValueRegex,
 		},
+		{
+			name:    "absolute path",
+			valid:   []string{"/", "/bin", "/usr/bin", "/etc/passwd", "/var/log/app.log", "/home/user/documents", "/a", "/a/b/c/d/e"},
+			invalid: []string{"", " ", "bin", "usr/bin", "./relative", "../relative", "~/home", "C:\\Windows", "relative/path"},
+			r:       absolutePathRegex,
+		},
 	}
 
 	for _, c := range cases {
