@@ -1,4 +1,10 @@
 apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    never: testing
+---
+apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 delete:
 - apiVersion: platform.stackrox.io/v1alpha1
