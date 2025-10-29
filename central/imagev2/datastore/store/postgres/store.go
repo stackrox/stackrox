@@ -44,6 +44,9 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
+
+	// Assume it exists
+	legacyCVEExists = true
 )
 
 type imagePartsAsSlice struct {
@@ -734,6 +737,22 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 // in the returned vulns as that information is not necessary for migrating the timestamps.
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageSha string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+
+	if !legacyCVEExists {
+		return nil, nil
+	}
+
+	existenceRow := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE "+
+		"table_name = $1 AND table_schema = ANY(current_schemas(FALSE)))", imageCVEsLegacyTable)
+	var exists bool
+	if err := existenceRow.Scan(&exists); err != nil {
+		return nil, err
+	}
+	// Old tables do not exist so newer installation.  Set global var  so we skip these checks.
+	if !exists {
+		legacyCVEExists = false
+		return nil, nil
+	}
 
 	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
 	// would not be initialized when the new data model is enabled
