@@ -1,5 +1,5 @@
 import { Divider, SelectOption } from '@patternfly/react-core';
-import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { resourceTypes } from 'services/AdministrationEventsService';
 
@@ -16,8 +16,8 @@ function SearchFilterResourceType({
     resourceType,
     setResourceType,
 }: SearchFilterResourceTypeProps) {
-    function onSelect(selection: string | number | undefined) {
-        setResourceType(selection === optionAll ? undefined : (selection as string | undefined));
+    function onSelect(_id: string, selection: string) {
+        setResourceType(selection === optionAll ? undefined : selection);
     }
 
     const options = resourceTypes.map((resourceTypeArg) => (
@@ -33,15 +33,16 @@ function SearchFilterResourceType({
     );
 
     return (
-        <SimpleSelect
+        <SelectSingle
+            id="resource-type-filter"
             value={resourceType ?? optionAll}
-            onChange={onSelect}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            ariaLabelMenu="Resource type filter menu items"
-            ariaLabelToggle="Resource type filter menu toggle"
+            placeholderText="Select resource type"
+            toggleAriaLabel="Resource type filter menu toggle"
         >
             {options}
-        </SimpleSelect>
+        </SelectSingle>
     );
 }
 

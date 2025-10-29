@@ -1,5 +1,5 @@
 import { Divider, SelectOption } from '@patternfly/react-core';
-import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { domains } from 'services/AdministrationEventsService';
 
@@ -12,8 +12,8 @@ type SearchFilterDomainProps = {
 };
 
 function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomainProps) {
-    function onSelect(selection: string | number | undefined) {
-        setDomain(selection === optionAll ? undefined : (selection as string | undefined));
+    function onSelect(_id: string, selection: string) {
+        setDomain(selection === optionAll ? undefined : selection);
     }
 
     const options = domains.map((domainArg) => (
@@ -29,15 +29,16 @@ function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomai
     );
 
     return (
-        <SimpleSelect
+        <SelectSingle
+            id="domain-filter"
             value={domain ?? optionAll}
-            onChange={onSelect}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            ariaLabelMenu="Domain filter menu items"
-            ariaLabelToggle="Domain filter menu toggle"
+            placeholderText="Select domain"
+            toggleAriaLabel="Domain filter menu toggle"
         >
             {options}
-        </SimpleSelect>
+        </SelectSingle>
     );
 }
 

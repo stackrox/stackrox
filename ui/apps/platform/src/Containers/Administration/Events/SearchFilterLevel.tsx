@@ -1,5 +1,5 @@
 import { Divider, SelectOption } from '@patternfly/react-core';
-import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { levels } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
@@ -17,9 +17,13 @@ type SearchFilterLevelProps = {
 function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelProps) {
     const displayValue = level ? getLevelText(level) : optionAll;
 
-    function onSelect(selection: string | number | undefined) {
-        const selectedLevel = levels.find((lv) => getLevelText(lv) === selection);
-        setLevel(selectedLevel || undefined);
+    function onSelect(_id: string, selection: string) {
+        if (selection === optionAll) {
+            setLevel(undefined);
+        } else {
+            const selectedLevel = levels.find((lv) => getLevelText(lv) === selection);
+            setLevel(selectedLevel || undefined);
+        }
     }
 
     const options = levels.map((levelArg) => (
@@ -35,15 +39,16 @@ function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelPro
     );
 
     return (
-        <SimpleSelect
+        <SelectSingle
+            id="level-filter"
             value={displayValue}
-            onChange={onSelect}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            ariaLabelMenu="Level filter menu items"
-            ariaLabelToggle="Level filter menu toggle"
+            placeholderText="Select level"
+            toggleAriaLabel="Level filter menu toggle"
         >
             {options}
-        </SimpleSelect>
+        </SelectSingle>
     );
 }
 
