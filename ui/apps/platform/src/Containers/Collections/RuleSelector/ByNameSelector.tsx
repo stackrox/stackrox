@@ -15,13 +15,13 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import type { FormikErrors } from 'formik';
 import useIndexKey from 'hooks/useIndexKey';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import type {
     ByNameMatchType,
     ByNameResourceSelector,
     ScopedResourceSelector,
     SelectorEntityType,
 } from '../types';
-import { NameMatchTypeSelect } from './MatchTypeSelect';
 
 function parseInlineRuleError(
     errors: ByNameSelectorProps['validationErrors'],
@@ -67,9 +67,9 @@ function ByNameSelector({
     }
 
     function onChangeMatchType(resourceSelector: ByNameResourceSelector, valueIndex: number) {
-        return (value: ByNameMatchType) => {
+        return (_id: string, value: string) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rule.values[valueIndex].matchType = value;
+            newSelector.rule.values[valueIndex].matchType = value as ByNameMatchType;
             handleChange(entityType, newSelector);
         };
     }
@@ -113,15 +113,15 @@ function ByNameSelector({
                     return (
                         <div className="rule-selector-list-item" key={keyFor(index)}>
                             <div className="rule-selector-match-type-select">
-                                <NameMatchTypeSelect
+                                <SelectSingle
                                     id={`${entityType}-name-match-type-${index}`}
-                                    selected={matchType}
+                                    value={matchType}
                                     isDisabled={isDisabled}
-                                    onChange={onChangeMatchType(scopedResourceSelector, index)}
+                                    handleSelect={onChangeMatchType(scopedResourceSelector, index)}
                                 >
                                     <SelectOption value="EXACT">An exact value of</SelectOption>
                                     <SelectOption value="REGEX">A regex value of</SelectOption>
-                                </NameMatchTypeSelect>
+                                </SelectSingle>
                             </div>
                             <div className="rule-selector-name-value-input">
                                 <FormGroup
