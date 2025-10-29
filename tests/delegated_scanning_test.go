@@ -862,6 +862,9 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 			// Only perform teardown on success so that logs can be captured on failure.
 			logf(t, "Tearing down deployment %q", tc.deployName)
+			// Wait for deployment to be fully ready before deletion to avoid race conditions
+			// where deletion is issued while pods are still starting up.
+			waitForDeploymentReadyInK8s(t, tc.deployName, "default")
 			teardownDeployment(t, tc.deployName)
 		})
 	}
