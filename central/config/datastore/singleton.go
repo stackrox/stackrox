@@ -161,11 +161,9 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
-	if features.UnifiedCVEDeferral.Enabled() {
-		if privateConfig.GetVulnerabilityExceptionConfig() == nil {
-			privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
-			needsUpsert = true
-		}
+	if privateConfig.GetVulnerabilityExceptionConfig() == nil {
+		privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
+		needsUpsert = true
 	}
 
 	if privateConfig.GetAdministrationEventsConfig() == nil {

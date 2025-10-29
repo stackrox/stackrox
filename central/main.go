@@ -178,7 +178,6 @@ import (
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
-	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -462,9 +461,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnMgmtService.Singleton(),
-		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
-		// This cannot be now because the frontend is not ready with the feature flag checks.
-		vulnRequestService.Singleton(),
 	}
 
 	// The scheduled backup service is not applicable when using an external database
@@ -487,9 +483,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		v2ComplianceBenchmark.Singleton()
 	}
 
-	if features.UnifiedCVEDeferral.Enabled() {
-		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 
 	if features.VirtualMachines.Enabled() {
 		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())

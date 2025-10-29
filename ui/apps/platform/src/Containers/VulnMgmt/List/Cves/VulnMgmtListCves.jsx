@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import { Archive, Bell, BellOff, Plus, Zap } from 'react-feather';
+import { Plus } from 'react-feather';
 import { connect } from 'react-redux';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
@@ -11,11 +11,9 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
-import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import Menu from 'Components/Menu';
 import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
@@ -23,17 +21,14 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
+import useAnalytics from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
-import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
 import queryService from 'utils/queryService';
 import removeEntityContextColumns from 'utils/tableUtils';
-import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
-import { snoozeDurations, durations } from 'constants/timeWindows';
 import {
     IMAGE_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
@@ -269,7 +264,6 @@ const VulnMgmtCves = ({
         hasReadWriteAccess('VulnerabilityManagementRequests');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isLegacySnoozeEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_LEGACY_SNOOZE');
 
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
@@ -277,15 +271,6 @@ const VulnMgmtCves = ({
     const workflowState = useContext(workflowStateContext);
 
     const cveType = workflowState.getCurrentEntityType();
-
-    // Only allow snooze mutations when:
-    // Legacy snooze is enabled, and the CVE is a Node or Platform CVE
-    const shouldRenderGlobalSnoozeAction =
-        isLegacySnoozeEnabled && cveType !== entityTypes.IMAGE_CVE;
-
-    // Allow the ability to toggle the snoozed/unsnoozed view when:
-    // Always when the CVE is a Node or Platform CVE
-    const shouldRenderGlobalSnoozeView = cveType !== entityTypes.IMAGE_CVE;
 
     let cveQuery = '';
 
@@ -329,8 +314,6 @@ const VulnMgmtCves = ({
         }
     }
 
-    const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
-
     const tableSort = sort || defaultCveSort;
     const queryOptions = {
         variables: {
@@ -357,112 +340,13 @@ const VulnMgmtCves = ({
         }
     };
 
-    function trackGlobalSnooze(cveNames, entityType, duration) {
-        let type;
-
-        if (entityType === resourceTypes.NODE_CVE) {
-            type = 'NODE';
-        } else if (entityType === resourceTypes.CLUSTER_CVE) {
-            type = 'PLATFORM';
-        } else {
-            // The entity type is IMAGE_CVE or something unexpected, so we don't want to track it
-            return;
-        }
-
-        analyticsTrack({
-            event: GLOBAL_SNOOZE_CVE,
-            properties: { type, duration },
-        });
-    }
-
-    const suppressCves = (cve, duration) => (e) => {
-        e.stopPropagation();
-
-        const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
-
-        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
-
-        suppressVulns(cveType, selectedCveNames, duration)
-            .then(() => {
-                setSelectedCveIds([]);
-
-                // changing this param value on the query vars, to force the query to refetch
-                setRefreshTrigger(Math.random());
-
-                addToast(
-                    `Successfully deferred and approved ${entityCountNounOrdinaryCase(
-                        selectedCveNames.length,
-                        currentEntityType
-                    )} globally`
-                );
-                setTimeout(removeToast, 2000);
-
-                trackGlobalSnooze(selectedCveNames, currentEntityType, duration);
-            })
-            .catch((evt) => {
-                addToast(`Could not defer and approve all of the selected CVEs: ${evt.message}`);
-                setTimeout(removeToast, 2000);
-            });
-    };
-
-    const unsuppressCves = (cve) => (e) => {
-        e.stopPropagation();
-
-        const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
-
-        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
-
-        unsuppressVulns(cveType, selectedCveNames)
-            .then(() => {
-                setSelectedCveIds([]);
-
-                // changing this param value on the query vars, to force the query to refetch
-                setRefreshTrigger(Math.random());
-
-                addToast(
-                    `Successfully reobserved ${entityCountNounOrdinaryCase(
-                        selectedCveNames.length,
-                        currentEntityType
-                    )} globally`
-                );
-                setTimeout(removeToast, 2000);
-            })
-            .catch((evt) => {
-                addToast(`Could not reobserve all of the selected CVEs: ${evt.message}`);
-                setTimeout(removeToast, 2000);
-            });
-    };
-
-    const toggleSuppressedView = () => {
-        const currentSearchState = workflowState.getCurrentSearchState();
-
-        const targetSearchState = { ...currentSearchState };
-        if (viewingSuppressed) {
-            targetSearchState[cveSortFields.SUPPRESSED] = false;
-        } else {
-            targetSearchState[cveSortFields.SUPPRESSED] = true;
-        }
-
-        const newWorkflowState = workflowState.setSearch(targetSearchState);
-        const newUrl = newWorkflowState.toUrl();
-        navigate(newUrl);
-    };
-
     function closeDialog(idsToStaySelected = []) {
         setBulkActionCveIds([]);
         setSelectedCveIds(idsToStaySelected);
     }
 
-    const snoozeOptions = (cve) => {
-        return Object.keys(snoozeDurations).map((d) => {
-            return { label: snoozeDurations[d], onClick: suppressCves(cve, durations[d]) };
-        });
-    };
-
     const renderRowActionButtons =
-        hasWriteAccessForAddToPolicy || hasWriteAccessForRiskAcceptance
+        hasWriteAccessForAddToPolicy
             ? ({ cve }) => (
                   <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
                       {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
@@ -472,32 +356,9 @@ const VulnMgmtCves = ({
                               icon={<Plus className="my-1 h-4 w-4" />}
                           />
                       )}
-                      {hasWriteAccessForRiskAcceptance &&
-                          !viewingSuppressed &&
-                          shouldRenderGlobalSnoozeAction && (
-                              <RowActionMenu
-                                  className="h-full min-w-30"
-                                  border="border-l-2 border-base-400"
-                                  icon={<BellOff className="h-4 w-4" />}
-                                  options={snoozeOptions(cve)}
-                                  text="Defer and approve CVE"
-                              />
-                          )}
-                      {hasWriteAccessForRiskAcceptance &&
-                          viewingSuppressed &&
-                          shouldRenderGlobalSnoozeAction && (
-                              <RowActionButton
-                                  text="Reobserve CVE"
-                                  border="border-l-2 border-base-400"
-                                  onClick={unsuppressCves(cve)}
-                                  icon={<Bell className="my-1 h-4 w-4" />}
-                              />
-                          )}
                   </div>
               )
             : null;
-
-    const viewButtonText = viewingSuppressed ? 'View observed' : 'View deferred';
 
     const tableHeaderComponents = (
         <>
@@ -510,52 +371,6 @@ const VulnMgmtCves = ({
                     tooltip="Add Selected CVEs to Policy"
                 >
                     Add to policy
-                </PanelButton>
-            )}
-            {hasWriteAccessForRiskAcceptance &&
-                !viewingSuppressed &&
-                shouldRenderGlobalSnoozeAction && (
-                    <Menu
-                        className="h-full min-w-30 ml-2"
-                        menuClassName="bg-base-100 min-w-28"
-                        buttonClass="btn-icon btn-tertiary"
-                        buttonText="Defer and approve"
-                        buttonIcon={<BellOff className="h-4 w-4 mr-2" />}
-                        options={snoozeOptions()}
-                        disabled={selectedCveIds.length === 0}
-                        tooltip="Defer and approve selected CVEs"
-                    />
-                )}
-
-            {hasWriteAccessForRiskAcceptance &&
-                viewingSuppressed &&
-                shouldRenderGlobalSnoozeAction && (
-                    <PanelButton
-                        icon={<Bell className="h-4 w-4" />}
-                        className="btn-icon btn-tertiary ml-2"
-                        onClick={unsuppressCves()}
-                        disabled={selectedCveIds.length === 0}
-                        tooltip="Reobserve selected CVEs"
-                    >
-                        Reobserve
-                    </PanelButton>
-                )}
-
-            <span className="w-px bg-base-400 ml-2" />
-            {shouldRenderGlobalSnoozeView && (
-                <PanelButton
-                    icon={
-                        viewingSuppressed ? (
-                            <Zap className="h-4 w-4" />
-                        ) : (
-                            <Archive className="h-4 w-4" />
-                        )
-                    }
-                    className="btn-icon btn-tertiary ml-2"
-                    onClick={toggleSuppressedView}
-                    tooltip={`${viewButtonText} CVEs`}
-                >
-                    {viewButtonText}
                 </PanelButton>
             )}
         </>
