@@ -11,6 +11,7 @@ import (
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/scanners/storagewrappers"
 	"github.com/stackrox/rox/pkg/scans"
 )
 
@@ -132,7 +133,10 @@ func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 		return nil, errors.New("Missing CVSS Version 2 data")
 	}
 
-	cvssV2, err := pkgCVSSV2.ParseCVSSV2(baseMetricV2.CVSSV2.VectorString)
+	cvssV2Wrapper := &storagewrappers.CVSSV2Wrapper{
+		CVSSV2: &storage.CVSSV2{},
+	}
+	err := pkgCVSSV2.ParseCVSSV2(cvssV2Wrapper, baseMetricV2.CVSSV2.VectorString)
 	if err != nil {
 		return nil, err
 	}
@@ -143,14 +147,14 @@ func nvdCvssv2ToProtoCvssv2(baseMetricV2 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 		if err != nil {
 			return nil, err
 		}
-		cvssV2.Severity = sv
+		cvssV2Wrapper.SetSeverity(sv)
 	}
 
-	cvssV2.Score = float32(baseMetricV2.CVSSV2.BaseScore)
-	cvssV2.ExploitabilityScore = float32(baseMetricV2.ExploitabilityScore)
-	cvssV2.ImpactScore = float32(baseMetricV2.ImpactScore)
+	cvssV2Wrapper.SetScore(float32(baseMetricV2.CVSSV2.BaseScore))
+	cvssV2Wrapper.SetExploitabilityScore(float32(baseMetricV2.ExploitabilityScore))
+	cvssV2Wrapper.SetImpactScore(float32(baseMetricV2.ImpactScore))
 
-	return cvssV2, nil
+	return cvssV2Wrapper.AsCVSSV2(), nil
 }
 
 func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMetricV3) (*storage.CVSSV3, error) {
@@ -158,7 +162,10 @@ func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 		return nil, errors.New("Missing CVSS Version 3 data")
 	}
 
-	cvssV3, err := pkgCVSSV3.ParseCVSSV3(baseMetricV3.CVSSV3.VectorString)
+	cvssV3Wrapper := &storagewrappers.CVSSV3Wrapper{
+		CVSSV3: &storage.CVSSV3{},
+	}
+	err := pkgCVSSV3.ParseCVSSV3(cvssV3Wrapper, baseMetricV3.CVSSV3.VectorString)
 	if err != nil {
 		return nil, err
 	}
@@ -168,14 +175,14 @@ func nvdCvssv3ToProtoCvssv3(baseMetricV3 *schema.NVDCVEFeedJSON10DefImpactBaseMe
 		if err != nil {
 			return nil, err
 		}
-		cvssV3.Severity = sv
+		cvssV3Wrapper.SetSeverity(sv)
 	}
 
-	cvssV3.Score = float32(baseMetricV3.CVSSV3.BaseScore)
-	cvssV3.ExploitabilityScore = float32(baseMetricV3.ExploitabilityScore)
-	cvssV3.ImpactScore = float32(baseMetricV3.ImpactScore)
+	cvssV3Wrapper.SetScore(float32(baseMetricV3.CVSSV3.BaseScore))
+	cvssV3Wrapper.SetExploitabilityScore(float32(baseMetricV3.ExploitabilityScore))
+	cvssV3Wrapper.SetImpactScore(float32(baseMetricV3.ImpactScore))
 
-	return cvssV3, nil
+	return cvssV3Wrapper.AsCVSSV3(), nil
 }
 
 // NVDCVEsToEmbeddedCVEs converts *schema.NVDCVEFeedJSON10DefCVEItem CVEs to *storage.EmbeddedVulnerability objects.

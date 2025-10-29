@@ -8,6 +8,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scanners/storagewrappers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -96,8 +97,9 @@ func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.Embe
 		Link:              link(v.GetLink()),
 		PublishedOn:       v.GetIssued(),
 	}
+	vulnerabilityWriter := &storagewrappers.EmbeddedVulnerabilityWrapper{EmbeddedVulnerability: converted}
 
-	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics()); err != nil {
+	if err := setScoresAndScoreVersions(vulnerabilityWriter, v.GetCvssMetrics()); err != nil {
 		utils.Should(err)
 	}
 	maybeOverwriteSeverity(converted)
