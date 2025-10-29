@@ -1,53 +1,50 @@
-import { useState } from 'react';
 import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
+import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 
 import { levels } from 'services/AdministrationEventsService';
 import type { AdministrationEventLevel } from 'services/AdministrationEventsService';
 
 import { getLevelText } from './AdministrationEvent';
 
-const optionAll = 'All';
+const optionAll = 'All levels';
 
 type SearchFilterLevelProps = {
     isDisabled: boolean;
     level: AdministrationEventLevel | undefined;
-    setLevel: (level: AdministrationEventLevel) => void;
+    setLevel: (level: AdministrationEventLevel | undefined) => void;
 };
 
 function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const displayValue = level ? getLevelText(level) : optionAll;
 
-    function onSelect(_event, selection) {
-        setLevel(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
+    function onSelect(selection: string | number | undefined) {
+        const selectedLevel = levels.find((lv) => getLevelText(lv) === selection);
+        setLevel(selectedLevel || undefined);
     }
 
     const options = levels.map((levelArg) => (
-        <SelectOption key={levelArg} value={levelArg}>
+        <SelectOption key={levelArg} value={getLevelText(levelArg)}>
             {getLevelText(levelArg)}
         </SelectOption>
     ));
     options.push(
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All levels
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
         </SelectOption>
     );
 
     return (
-        <Select
-            variant="single"
-            aria-label="Level filter menu items"
-            toggleAriaLabel="Level filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={level ?? optionAll}
+        <SimpleSelect
+            value={displayValue}
+            onChange={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            ariaLabelMenu="Level filter menu items"
+            ariaLabelToggle="Level filter menu toggle"
         >
             {options}
-        </Select>
+        </SimpleSelect>
     );
 }
 

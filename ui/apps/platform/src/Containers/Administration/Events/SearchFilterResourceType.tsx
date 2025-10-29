@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
+import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 
 import { resourceTypes } from 'services/AdministrationEventsService';
 
-const optionAll = 'All';
+const optionAll = 'All resource types';
 
 type SearchFilterResourceTypeProps = {
     isDisabled: boolean;
@@ -17,11 +17,8 @@ function SearchFilterResourceType({
     resourceType,
     setResourceType,
 }: SearchFilterResourceTypeProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(_event, selection) {
-        setResourceType(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
+    function onSelect(selection: string | number | undefined) {
+        setResourceType(selection === optionAll ? undefined : (selection as string | undefined));
     }
 
     const options = resourceTypes.map((resourceTypeArg) => (
@@ -31,24 +28,21 @@ function SearchFilterResourceType({
     ));
     options.push(
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All resource types
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
         </SelectOption>
     );
 
     return (
-        <Select
-            variant="single"
-            aria-label="Resource type filter menu items"
-            toggleAriaLabel="Resource type filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={resourceType ?? optionAll}
+        <SimpleSelect
+            value={resourceType ?? optionAll}
+            onChange={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            ariaLabelMenu="Resource type filter menu items"
+            ariaLabelToggle="Resource type filter menu toggle"
         >
             {options}
-        </Select>
+        </SimpleSelect>
     );
 }
 

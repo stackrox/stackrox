@@ -1,10 +1,10 @@
-import { useState } from 'react';
 import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
+import SimpleSelect from 'Components/CompoundSearchFilter/components/SimpleSelect';
 
 import { domains } from 'services/AdministrationEventsService';
 
-const optionAll = 'All';
+const optionAll = 'All domains';
 
 type SearchFilterDomainProps = {
     domain: string | undefined;
@@ -13,11 +13,8 @@ type SearchFilterDomainProps = {
 };
 
 function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomainProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(_event, selection) {
-        setDomain(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
+    function onSelect(selection: string | number | undefined) {
+        setDomain(selection === optionAll ? undefined : (selection as string | undefined));
     }
 
     const options = domains.map((domainArg) => (
@@ -27,24 +24,21 @@ function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomai
     ));
     options.push(
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All domains
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
         </SelectOption>
     );
 
     return (
-        <Select
-            variant="single"
-            aria-label="Domain filter menu items"
-            toggleAriaLabel="Domain filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={domain ?? optionAll}
+        <SimpleSelect
+            value={domain ?? optionAll}
+            onChange={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            ariaLabelMenu="Domain filter menu items"
+            ariaLabelToggle="Domain filter menu toggle"
         >
             {options}
-        </Select>
+        </SimpleSelect>
     );
 }
 
