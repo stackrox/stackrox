@@ -129,24 +129,26 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 		},
 	}
 
-	if process.GetContainerId() != "" {
-		// TODO(ROX-30798): Enrich file system events with deployment details
-		metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
-		if !ok {
-			// unexpected - process should exist before file activity is
-			// reported
-			log.Debug("Container ID:", process.GetContainerId(), "not found for file activity")
-		} else {
-			pi.DeploymentId = metadata.DeploymentID
-			pi.ContainerName = metadata.ContainerName
-			pi.PodId = metadata.PodID
-			pi.PodUid = metadata.PodUID
-			pi.Namespace = metadata.Namespace
-			pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
-			pi.ImageId = metadata.ImageID
-		}
+	if process.GetContainerId() == "" {
+		// TODO(ROX-31434): populate node info and return otherwise
+		return pi
 	}
-	// TODO(ROX-31434): populate node info otherwise
+
+	// TODO(ROX-30798): Enrich file system events with deployment details
+	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
+	if !ok {
+		// unexpected - process should exist before file activity is
+		// reported
+		log.Warnf("Container ID: %s not found for file activity", process.GetContainerId())
+	} else {
+		pi.DeploymentId = metadata.DeploymentID
+		pi.ContainerName = metadata.ContainerName
+		pi.PodId = metadata.PodID
+		pi.PodUid = metadata.PodUID
+		pi.Namespace = metadata.Namespace
+		pi.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(metadata.StartTime)
+		pi.ImageId = metadata.ImageID
+	}
 
 	return pi
 }
