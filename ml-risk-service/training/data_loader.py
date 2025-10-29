@@ -51,6 +51,17 @@ class TrainingDataLoader:
             with open(json_file_path, 'r') as f:
                 data = json.load(f)
 
+            # Debug: Log what we loaded
+            logger.debug(f"Loaded data type: {type(data)}")
+            if isinstance(data, dict):
+                logger.debug(f"Data keys: {list(data.keys())}")
+            elif isinstance(data, list):
+                logger.debug(f"Data is a list with {len(data)} items")
+                if data:
+                    logger.debug(f"First item type: {type(data[0])}")
+                    if isinstance(data[0], dict):
+                        logger.debug(f"First item keys: {list(data[0].keys())}")
+
             training_samples = []
             deployments = data.get('deployments', [])
 
