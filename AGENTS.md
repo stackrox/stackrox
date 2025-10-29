@@ -176,3 +176,108 @@ When working on specific areas, refer to these detailed guides:
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
+
+## ML Risk Service
+
+The ML Risk Service is a Python-based machine learning service for deployment risk ranking with explainable AI.
+
+### Technology Stack
+- **Language**: Python 3.11
+- **Frameworks**: FastAPI (REST), gRPC
+- **ML Libraries**: scikit-learn, SHAP
+- **Package Manager**: `uv` (NOT pip or poetry)
+- **Containerization**: Docker
+
+### Working Directory
+Always work from the `ml-risk-service/` subdirectory.
+
+### Essential Commands
+
+**Development Setup:**
+```bash
+make setup           # Set up development environment with uv
+make setup-dev       # Set up with dev dependencies
+make setup-ml        # Set up with extended ML dependencies
+```
+
+**Testing & Quality:**
+```bash
+make test            # Run tests (ALWAYS run after code changes)
+make lint            # Run linting
+make format          # Format code with black and isort
+make typecheck       # Run mypy type checking
+make check           # Run all checks (lint, typecheck, test)
+```
+
+**Docker Operations:**
+```bash
+make docker-build    # Build Docker image
+make docker-run      # Run container locally
+make docker-stop     # Stop and remove container
+make docker-logs     # View container logs
+```
+
+**Training & Validation:**
+```bash
+make test-train-central    # Full training workflow with Central data
+make generate-sample-data  # Generate sample training data
+```
+
+### Code Organization
+
+```
+ml-risk-service/
+├── src/
+│   ├── api/routers/        # FastAPI route handlers
+│   ├── feature_extraction/ # Feature extraction from deployments/images
+│   ├── models/             # ML model implementations
+│   ├── services/           # Business logic services
+│   ├── storage/            # Model storage backends
+│   ├── monitoring/         # Health checks, drift detection
+│   └── config/             # Configuration files
+├── training/               # Training pipeline and data loaders
+├── proto/                  # gRPC protocol definitions
+└── tests/                  # Test files
+```
+
+### Development Guidelines
+
+**Code Style:**
+- Always use type hints for function signatures
+- Follow existing patterns in the codebase
+- Add docstrings to new functions and classes
+- Use the logging module, not print statements
+
+**Testing Requirements:**
+- Run `make test` before completing any task
+- Ensure no test regressions
+- Add tests for new features
+- Validate with `make test-train-central` for training-related changes
+
+**Common Patterns:**
+- API Routes: Add new endpoints in `src/api/routers/`
+- Feature Extraction: Extend `src/feature_extraction/extractors.py`
+- Models: Implement new models in `src/models/`
+- Services: Business logic goes in `src/services/`
+
+### Integration Points
+
+**Central API Client:**
+- Located in `src/clients/central_client.py`
+- Requires `CENTRAL_API_TOKEN` environment variable
+
+**APIs:**
+- gRPC: Port 8080 (production interface)
+- REST: Port 8090 (management and training)
+- Health: Port 8081 (health checks)
+
+**Model Storage:**
+- Default: Local filesystem at `./models/`
+- Cloud: Google Cloud Storage (configurable)
+- Configuration: `src/config/feature_config.yaml`
+
+### Important Notes
+- ONLY use `uv` commands for package management (not pip)
+- Python 3.11 required
+- Use `.envrc` for environment variables (direnv)
+- Always run `make test-train-central` for training workflow changes

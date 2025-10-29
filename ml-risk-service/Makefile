@@ -208,8 +208,8 @@ test-prediction: ## Test prediction endpoint (requires grpcurl)
 	@which grpcurl > /dev/null || (echo -e "$(RED)grpcurl not found. Install with: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest$(NC)" && exit 1)
 	grpcurl -plaintext localhost:8080 ml_risk.MLRiskService/GetModelHealth
 
-.PHONY: train-central-full
-train-central-full: docker-run ## Train model with Central data and reload it
+.PHONY: test-train-central
+test-train-central: docker-run ## Train model with Central data and reload it
 	@echo -e "$(GREEN)Starting full Central training workflow...$(NC)"
 	@echo -e "$(BLUE)Waiting for service to be ready...$(NC)"
 	@# Wait for service to be ready (max 60 seconds)
