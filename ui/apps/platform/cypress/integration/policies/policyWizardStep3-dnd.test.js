@@ -383,7 +383,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 clearPolicyCriteriaCards();
                 clickPolicyKeyGroup('Image registry');
                 dragFieldIntoSection(
-                    `${selectors.step3.policyCriteria.key}:contains('Image signature')`
+                    `${selectors.step3.policyCriteria.key}:contains('Require image signature')`
                 );
                 cy.wait('@getSignatureIntegrations');
             });

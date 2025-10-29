@@ -3,7 +3,6 @@ This file provides guidance when working with code in this repository.
 ## Repository Information
 
 **Upstream Repository**: https://github.com/stackrox/stackrox
-**Legacy Upstream Repository**: https://github.com/stackrox/rox - archived, but may contain valuable past information
 
 ## Workflow
 

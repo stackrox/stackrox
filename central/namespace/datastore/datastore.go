@@ -24,7 +24,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -96,30 +96,8 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	ok, err := namespaceSAC.ReadAllowed(ctx)
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return b.SearchNamespaces(ctx, search.EmptyQuery())
-	}
-	var allowedNamespaces []*storage.NamespaceMetadata
-	walkFn := func() error {
-		allowedNamespaces = allowedNamespaces[:0]
-		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-				IsAllowed() {
-				return nil
-			}
-			allowedNamespaces = append(allowedNamespaces, namespace)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
-		return nil, err
-	}
-	return allowedNamespaces, nil
+func (b *datastoreImpl) GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error) {
+	return b.store.GetAllFromCacheForSAC(), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
