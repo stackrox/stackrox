@@ -17,8 +17,8 @@ const (
 )
 
 func TestIBM(t *testing.T) {
-	if os.Getenv("IBM_CR_READONLY") == "" {
-		t.Skip("IBM_CR_READONLY env variable required")
+	if os.Getenv("IBMCLOUD_CONTAINER_REGISTRY_APIKEY") == "" {
+		t.Skip("IBMCLOUD_CONTAINER_REGISTRY_APIKEY env variable required to enable IBMCLOUD CR test")
 		return
 	}
 	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
@@ -28,7 +28,7 @@ func TestIBM(t *testing.T) {
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{
 				Endpoint: "icr.io",
-				ApiKey:   os.Getenv("IBM_CR_READONLY"),
+				ApiKey:   os.Getenv("IBMCLOUD_CONTAINER_REGISTRY_APIKEY"),
 			},
 		},
 	}, false, nil)
