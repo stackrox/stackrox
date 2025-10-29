@@ -50,7 +50,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 	for _, alert := range alerts {
 		alertStrings = fmt.Sprintf("%s%s\n", alertStrings, protocompat.MarshalTextString(alert))
 	}
-	log.Infof("Received alerts:\n%s", alertStrings)
+	t.Logf("Received alerts:\n%s", alertStrings)
 	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 

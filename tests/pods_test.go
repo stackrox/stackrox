@@ -183,7 +183,7 @@ func getDeploymentID(t testutils.T, deploymentName string) string {
 	`, map[string]interface{}{
 		"query": fmt.Sprintf("Deployment: %s", deploymentName),
 	}, &respData, timeout)
-	log.Info(respData)
+	t.Logf("%+v", respData)
 	require.Len(t, respData.Deployments, 1)
 
 	return string(respData.Deployments[0].ID)
@@ -223,7 +223,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		"podsQuery":  fmt.Sprintf("Deployment ID: %s", deploymentID),
 		"pagination": pagination,
 	}, &respData, timeout)
-	log.Infof("%+v", respData)
+	t.Logf("%+v", respData)
 
 	return respData.Pods
 }
@@ -242,7 +242,7 @@ func getPodCountInCentral(t testutils.T, deploymentID string) int {
 	`, map[string]interface{}{
 		"podsQuery": fmt.Sprintf("Deployment ID: %s", deploymentID),
 	}, &respData, timeout)
-	log.Infof("Pod count in Central for deployment %s: %d", deploymentID, respData.PodCount)
+	t.Logf("Pod count in Central for deployment %s: %d", deploymentID, respData.PodCount)
 
 	return int(respData.PodCount)
 }
@@ -269,7 +269,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 	`, map[string]interface{}{
 		"podId": pod.ID,
 	}, &respData, timeout)
-	log.Infof("Get Events: %+v", respData)
+	t.Logf("Get Events: %+v", respData)
 
 	return respData.Pod.Events
 }
