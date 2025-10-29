@@ -21,7 +21,7 @@ type Pipeline struct {
 	detector detector.Detector
 	stopper  concurrency.Stopper
 
-	accessChan    chan *storage.FileAccess
+	accessChan      chan *storage.FileAccess
 	clusterEntities *clusterentities.Store
 
 	msgCtx context.Context
@@ -32,7 +32,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 	p := &Pipeline{
 		detector:        detector,
-		accessChan:    make(chan *storage.FileAccess),
+		accessChan:      make(chan *storage.FileAccess),
 		clusterEntities: clusterEntities,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
