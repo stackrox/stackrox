@@ -102,7 +102,7 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
 }
 
-// IsNodeEventField returns true if the field is a node event field
+// IsFileEventField returns true if the field is a node event field
 func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, FileAccess)
 }

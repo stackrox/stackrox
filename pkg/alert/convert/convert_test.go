@@ -16,7 +16,6 @@ func TestAlertAndListAlertResourceTypesAreInSync(t *testing.T) {
 		if r := storage.Alert_Resource_ResourceType(i); r == storage.Alert_Resource_UNKNOWN {
 			continue
 		}
-
 		assert.Contains(t, storage.ListAlert_ResourceType_value, at)
 		assert.Equal(t, at, storage.ListAlert_ResourceType_name[i])
 	}

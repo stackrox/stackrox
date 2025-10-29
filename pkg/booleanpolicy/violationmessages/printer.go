@@ -181,7 +181,7 @@ func Render(
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
 	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
-	fileActivity *storage.FileAccess,
+	fileAccess *storage.FileAccess,
 ) ([]*storage.Alert_Violation, bool, bool, bool, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
@@ -204,7 +204,7 @@ func Render(
 	isKubeOrAuditEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
 	isNetworkPolicyViolation := networkPolicy != nil && checkForNetworkPolicyViolation(result)
-	isFileAccessViolation := fileActivity != nil && checkForFileAccessViolation(result)
+	isFileAccessViolation := fileAccess != nil && checkForFileAccessViolation(result)
 	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation && !isFileAccessViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}

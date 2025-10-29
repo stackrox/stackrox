@@ -125,14 +125,14 @@ func ConstructNode(node *storage.Node) (*pathutil.AugmentedObj, error) {
 	return pathutil.NewAugmentedObj(&details), nil
 }
 
-func ConstructNodeWithFileAccess(node *storage.Node, access *storage.FileAccess) (*pathutil.AugmentedObj, error) {
+func ConstructNodeWithFileAccess(node *storage.Node, fileAccess *storage.FileAccess) (*pathutil.AugmentedObj, error) {
 	nodeObj, err := ConstructNode(node)
 	if err != nil {
 		return nil, err
 	}
 
 	err = nodeObj.AddAugmentedObjAt(
-		pathutil.NewAugmentedObj(access),
+		pathutil.NewAugmentedObj(fileAccess),
 		pathutil.FieldStep(fileAccessKey),
 	)
 
