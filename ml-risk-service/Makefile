@@ -82,24 +82,6 @@ generate-sample-data: ## Generate sample training data
 	uv run python -c "from training.data_loader import JSONTrainingDataGenerator; g = JSONTrainingDataGenerator(); g.generate_sample_training_data('sample_training_data.json', 1000)"
 	@echo -e "$(GREEN)Sample data generated: sample_training_data.json$(NC)"
 
-.PHONY: train-model
-train-model: ## Train ML model with sample data
-	@echo -e "$(GREEN)Training ML model...$(NC)"
-	uv run python -c "from training.train_pipeline import TrainingPipeline; tp = TrainingPipeline(); tp.quick_test_pipeline()"
-	@echo -e "$(GREEN)Model training completed!$(NC)"
-
-# Configuration commands
-.PHONY: generate-config
-generate-config: ## Generate config with expanded environment variables
-	@echo -e "$(GREEN)Generating expanded configuration...$(NC)"
-	@# Set defaults for missing variables to prevent envsubst errors
-	@export CENTRAL_API_TOKEN="$${CENTRAL_API_TOKEN:-}" && \
-	export CENTRAL_CLIENT_CERT_PATH="$${CENTRAL_CLIENT_CERT_PATH:-}" && \
-	export CENTRAL_CLIENT_KEY_PATH="$${CENTRAL_CLIENT_KEY_PATH:-}" && \
-	export CENTRAL_CA_CERT_PATH="$${CENTRAL_CA_CERT_PATH:-}" && \
-	envsubst < src/config/feature_config.yaml > src/config/feature_config.expanded.yaml
-	@echo -e "$(GREEN)Configuration expanded: src/config/feature_config.expanded.yaml$(NC)"
-
 # Docker commands
 .PHONY: docker-build
 docker-build: ## Build Docker image
@@ -225,6 +207,119 @@ test-prediction: ## Test prediction endpoint (requires grpcurl)
 	@echo -e "$(BLUE)Testing prediction endpoint...$(NC)"
 	@which grpcurl > /dev/null || (echo -e "$(RED)grpcurl not found. Install with: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest$(NC)" && exit 1)
 	grpcurl -plaintext localhost:8080 ml_risk.MLRiskService/GetModelHealth
+
+.PHONY: train-central-full
+train-central-full: docker-run ## Train model with Central data and reload it
+	@echo -e "$(GREEN)Starting full Central training workflow...$(NC)"
+	@echo -e "$(BLUE)Waiting for service to be ready...$(NC)"
+	@# Wait for service to be ready (max 60 seconds)
+	@MAX_WAIT=60; \
+	ELAPSED=0; \
+	while [ $$ELAPSED -lt $$MAX_WAIT ]; do \
+		if curl -s -f http://localhost:8090/api/v1/health > /dev/null 2>&1; then \
+			echo -e "$(GREEN)✓ Service is ready (waited $$ELAPSED seconds)$(NC)"; \
+			break; \
+		fi; \
+		sleep 1; \
+		ELAPSED=$$((ELAPSED + 1)); \
+		if [ $$ELAPSED -eq $$MAX_WAIT ]; then \
+			echo -e "$(RED)Service failed to start within $$MAX_WAIT seconds$(NC)"; \
+			docker logs ml-risk-service; \
+			exit 1; \
+		fi; \
+	done && \
+	echo -e "$(BLUE)Pre-flight: Checking Central API configuration...$(NC)" && \
+	if [ -z "$$CENTRAL_API_TOKEN" ]; then \
+		echo -e "$(YELLOW)Warning: CENTRAL_API_TOKEN environment variable is not set$(NC)"; \
+		echo -e "$(YELLOW)The Central API may use default configuration or fail$(NC)"; \
+	else \
+		echo -e "$(GREEN)✓ CENTRAL_API_TOKEN is configured$(NC)"; \
+	fi && \
+	echo -e "$(BLUE)Testing Central API connection...$(NC)" && \
+	CONNECTION_RESPONSE=$$(curl -s -X POST "http://localhost:8090/api/v1/training/central/test-connection" \
+		-H "Content-Type: application/json" \
+		-w "\n%{http_code}") && \
+	CONNECTION_HTTP_CODE=$$(echo "$$CONNECTION_RESPONSE" | tail -n 1) && \
+	CONNECTION_BODY=$$(echo "$$CONNECTION_RESPONSE" | sed '$$d') && \
+	if [ "$$CONNECTION_HTTP_CODE" != "200" ]; then \
+		echo -e "$(RED)Central API connection test failed with HTTP $$CONNECTION_HTTP_CODE$(NC)"; \
+		echo "$$CONNECTION_BODY" | python3 -m json.tool 2>/dev/null || echo "$$CONNECTION_BODY"; \
+		echo -e "$(YELLOW)Configuration help:$(NC)"; \
+		echo -e "$(YELLOW)  1. Set CENTRAL_API_TOKEN environment variable$(NC)"; \
+		echo -e "$(YELLOW)  2. Ensure Central endpoint is accessible$(NC)"; \
+		echo -e "$(YELLOW)  3. Check src/config/feature_config.yaml settings$(NC)"; \
+		exit 1; \
+	fi && \
+	CONNECTION_SUCCESS=$$(echo "$$CONNECTION_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('success', False))" 2>/dev/null || echo "false") && \
+	if [ "$$CONNECTION_SUCCESS" != "True" ]; then \
+		echo -e "$(RED)Central API connection test reported failure$(NC)"; \
+		echo "$$CONNECTION_BODY" | python3 -m json.tool 2>/dev/null || echo "$$CONNECTION_BODY"; \
+		CONNECTION_MESSAGE=$$(echo "$$CONNECTION_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('message', 'Unknown error'))" 2>/dev/null || echo "Unknown error"); \
+		echo -e "$(RED)Error: $$CONNECTION_MESSAGE$(NC)"; \
+		echo -e "$(YELLOW)Configuration help:$(NC)"; \
+		echo -e "$(YELLOW)  1. Set CENTRAL_API_TOKEN: export CENTRAL_API_TOKEN='your-token'$(NC)"; \
+		echo -e "$(YELLOW)  2. Verify Central endpoint in src/config/feature_config.yaml$(NC)"; \
+		echo -e "$(YELLOW)  3. Check authentication and network connectivity$(NC)"; \
+		exit 1; \
+	fi && \
+	echo -e "$(GREEN)✓ Central API connection successful$(NC)" && \
+	echo -e "$(BLUE)Step 1: Training model with Central data...$(NC)" && \
+	TRAIN_RESPONSE=$$(curl -s -X POST "http://localhost:8090/api/v1/training/central/train-full?test_mode=true" \
+		-H "Content-Type: application/json" \
+		-w "\n%{http_code}") && \
+	TRAIN_HTTP_CODE=$$(echo "$$TRAIN_RESPONSE" | tail -n 1) && \
+	TRAIN_BODY=$$(echo "$$TRAIN_RESPONSE" | sed '$$d') && \
+	if [ "$$TRAIN_HTTP_CODE" != "200" ]; then \
+		echo -e "$(RED)Training failed with HTTP $$TRAIN_HTTP_CODE$(NC)"; \
+		echo "$$TRAIN_BODY" | python3 -m json.tool 2>/dev/null || echo "$$TRAIN_BODY"; \
+		exit 1; \
+	fi && \
+	TRAIN_SUCCESS=$$(echo "$$TRAIN_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('success', False))" 2>/dev/null || echo "false") && \
+	if [ "$$TRAIN_SUCCESS" != "True" ]; then \
+		echo -e "$(RED)Training reported failure$(NC)"; \
+		echo "$$TRAIN_BODY" | python3 -m json.tool 2>/dev/null || echo "$$TRAIN_BODY"; \
+		exit 1; \
+	fi && \
+	MODEL_VERSION=$$(echo "$$TRAIN_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('model_version', ''))" 2>/dev/null || echo "") && \
+	echo -e "$(GREEN)✓ Training completed successfully! Model version: $$MODEL_VERSION$(NC)" && \
+	echo -e "$(BLUE)Step 2: Confirming model exists in API...$(NC)" && \
+	MODELS_RESPONSE=$$(curl -s -X GET "http://localhost:8090/api/v1/models" \
+		-H "Content-Type: application/json" \
+		-w "\n%{http_code}") && \
+	MODELS_HTTP_CODE=$$(echo "$$MODELS_RESPONSE" | tail -n 1) && \
+	MODELS_BODY=$$(echo "$$MODELS_RESPONSE" | sed '$$d') && \
+	if [ "$$MODELS_HTTP_CODE" != "200" ]; then \
+		echo -e "$(RED)Failed to list models with HTTP $$MODELS_HTTP_CODE$(NC)"; \
+		echo "$$MODELS_BODY" | python3 -m json.tool 2>/dev/null || echo "$$MODELS_BODY"; \
+		exit 1; \
+	fi && \
+	MODEL_COUNT=$$(echo "$$MODELS_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(len(data.get('models', [])))" 2>/dev/null || echo "0") && \
+	if [ "$$MODEL_COUNT" = "0" ]; then \
+		echo -e "$(RED)No models found in API$(NC)"; \
+		echo "$$MODELS_BODY" | python3 -m json.tool 2>/dev/null || echo "$$MODELS_BODY"; \
+		exit 1; \
+	fi && \
+	echo -e "$(GREEN)✓ Model confirmed in API ($$MODEL_COUNT models found)$(NC)" && \
+	echo -e "$(BLUE)Step 3: Reloading model...$(NC)" && \
+	RELOAD_RESPONSE=$$(curl -s -X POST "http://localhost:8090/api/v1/models/stackrox-risk-model/reload" \
+		-H "Content-Type: application/json" \
+		-d '{"force_reload": true}' \
+		-w "\n%{http_code}") && \
+	RELOAD_HTTP_CODE=$$(echo "$$RELOAD_RESPONSE" | tail -n 1) && \
+	RELOAD_BODY=$$(echo "$$RELOAD_RESPONSE" | sed '$$d') && \
+	if [ "$$RELOAD_HTTP_CODE" != "200" ]; then \
+		echo -e "$(RED)Model reload failed with HTTP $$RELOAD_HTTP_CODE$(NC)"; \
+		echo "$$RELOAD_BODY" | python3 -m json.tool 2>/dev/null || echo "$$RELOAD_BODY"; \
+		exit 1; \
+	fi && \
+	RELOAD_SUCCESS=$$(echo "$$RELOAD_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('success', False))" 2>/dev/null || echo "false") && \
+	if [ "$$RELOAD_SUCCESS" != "True" ]; then \
+		echo -e "$(RED)Model reload reported failure$(NC)"; \
+		echo "$$RELOAD_BODY" | python3 -m json.tool 2>/dev/null || echo "$$RELOAD_BODY"; \
+		exit 1; \
+	fi && \
+	echo -e "$(GREEN)✓ Model reload completed successfully!$(NC)" && \
+	echo -e "$(GREEN)🎉 Full Central training workflow completed successfully!$(NC)"
 
 # Monitoring commands
 .PHONY: monitoring-up
