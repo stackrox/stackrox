@@ -57,7 +57,7 @@ func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.G
 	var integrationSlice []*storage.ImageIntegration
 	err := ds.storage.Walk(ctx, func(integration *storage.ImageIntegration) error {
 		if request.GetName() == "" || request.GetName() == integration.GetName() {
-			integrationSlice = append(integrationSlice, integration)
+			integrationSlice = append(integrationSlice, integration.CloneVT())
 		}
 		return nil
 	})

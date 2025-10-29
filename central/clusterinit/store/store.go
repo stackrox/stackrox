@@ -57,7 +57,7 @@ func (w *storeImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, erro
 		if obj.GetIsRevoked() {
 			return nil
 		}
-		result = append(result, obj)
+		result = append(result, obj.CloneVT())
 		return nil
 	}); err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (w *storeImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, e
 		if obj.GetIsRevoked() {
 			return nil
 		}
-		result = append(result, obj)
+		result = append(result, obj.CloneVT())
 		return nil
 	}); err != nil {
 		return nil, err

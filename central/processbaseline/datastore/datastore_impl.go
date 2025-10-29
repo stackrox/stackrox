@@ -423,7 +423,10 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.
 		return sac.ErrResourceAccessDenied
 	}
 	// Postgres retries in the caller.
-	return ds.storage.Walk(ctx, fn)
+	wrappedFn := func(obj *storage.ProcessBaseline) error {
+		return fn(obj.CloneVT())
+	}
+	return ds.storage.Walk(ctx, wrappedFn)
 }
 
 func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []string) error {
