@@ -48,14 +48,17 @@ var VsockConnectionsAccepted = prometheus.NewCounter(
 	},
 )
 
-// VsockConnectionsRejected is a counter for the number of vsock connections rejected due to concurrency limits.
-var VsockConnectionsRejected = prometheus.NewCounter(
+// VsockSemaphoreAcquisitionFailures is a counter for the number of times the connection-handling semaphore that limits
+// concurrency could not be acquired. A likely and significant reason for that is that the maximum parallel connections
+// were reached.
+var VsockSemaphoreAcquisitionFailures = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
-		Name:      "virtual_machine_relay_vsock_connections_rejected_total",
-		Help:      "Total number of vsock connections rejected due to concurrency limits",
+		Name:      "virtual_machine_relay_vsock_sem_acquisition_failures_total",
+		Help:      "Number of failed attempts to acquire vsock connection-handling semaphore",
 	},
+	[]string{"reason"},
 )
 
 var VsockSemaphoreHoldingSize = prometheus.NewGauge(
@@ -80,7 +83,7 @@ func init() {
 		IndexReportsReceived,
 		IndexReportsSentToSensor,
 		VsockConnectionsAccepted,
-		VsockConnectionsRejected,
+		VsockSemaphoreAcquisitionFailures,
 		VsockSemaphoreHoldingSize,
 		VsockSemaphoreQueueSize,
 	)
