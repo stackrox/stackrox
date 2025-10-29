@@ -1,10 +1,12 @@
-# Multi-stage Dockerfile for ML Risk Service with UV
+# Multi-stage Dockerfile for ML Risk Service with UV optimizations
 FROM python:3.11-slim AS builder
 
-# Set environment variables
+# Set environment variables for UV optimization
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    UV_CACHE_DIR=/tmp/uv-cache
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_CACHE_DIR=/root/.cache/python
 
 # Install system dependencies needed for building
 RUN apt-get update && apt-get install -y \
@@ -15,35 +17,58 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install UV
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    /root/.local/bin/uv --version
-ENV PATH="/root/.local/bin:$PATH"
+# Install specific UV version for reproducibility
+ENV UV_VERSION=0.4.18
+RUN curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh && \
+    /root/.cargo/bin/uv --version
+ENV PATH="/root/.cargo/bin:$PATH"
 
 # Create app directory
 WORKDIR /app
 
-# Copy Python project files
-COPY pyproject.toml uv.lock README.md ./
+# Copy only dependency files first for better layer caching
+COPY pyproject.toml uv.lock ./
 
-# Copy source code needed for project installation
+# Install dependencies first (separate from project code for better caching)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/root/.cache/python \
+    uv sync --frozen --no-dev --extra ml --no-install-project --no-editable
+
+# Copy source code after dependencies are cached
 COPY src/ ./src/
 COPY training/ ./training/
 COPY proto/ ./proto/
+COPY README.md ./
 
-# Install dependencies including ML dependencies and the project itself with UV
-RUN uv sync --frozen --no-dev --extra ml
+# Install the project itself with bytecode compilation
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --extra ml --no-editable --compile-bytecode
+
+# Development stage (includes dev dependencies and editable install)
+FROM builder AS development
+
+# Install with dev dependencies for development
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/root/.cache/python \
+    uv sync --frozen --extra dev --extra ml
+
+# Set up development environment
+WORKDIR /app
+ENV PYTHONPATH=/app/src
+EXPOSE 8080 8081 8090
+
+# Development entrypoint
+CMD ["uv", "run", "python", "-m", "src.api.rest_server", "--host", "0.0.0.0", "--port", "8090", "--reload"]
 
 # Production stage
 FROM python:3.11-slim AS production
 
-# Set environment variables
+# Set production environment variables (no UV cache needed in production)
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src \
-    UV_CACHE_DIR=/tmp/uv-cache
+    PYTHONPATH=/app
 
-# Install runtime dependencies
+# Install runtime dependencies and create user
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     curl \
@@ -51,7 +76,7 @@ RUN apt-get update && apt-get install -y \
     && groupadd -r mlrisk \
     && useradd -r -g mlrisk -s /bin/false mlrisk
 
-# Copy virtual environment from builder
+# Copy optimized virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
 # Add virtual environment to PATH
