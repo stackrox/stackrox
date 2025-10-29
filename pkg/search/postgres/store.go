@@ -412,7 +412,7 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
-		if len(objs) < batchAfter {
+		if len(objs) < batchAfter || s.copyFromObj == nil {
 			s.mutex.RLock()
 			defer s.mutex.RUnlock()
 
@@ -420,11 +420,6 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
-
-		if s.copyFromObj == nil {
-			return s.upsert(ctx, objs...)
-		}
-
 		return s.copyFrom(ctx, objs...)
 	})
 }
@@ -462,11 +457,6 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	if s.insertInto == nil {
 		return utils.ShouldErr(errInvalidOperation)
 	}
-	conn, err := s.acquireConn(ctx, ops.Upsert)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
 
 	batch := &pgx.Batch{}
 	for _, obj := range objs {
@@ -474,6 +464,21 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 			return errors.Wrap(err, "error on insertInto")
 		}
 	}
+
+	if tx, ok := postgres.TxFromContext(ctx); ok {
+		batchResults := postgres.BatchResultsFromPgx(tx.SendBatch(ctx, batch))
+		if err := batchResults.Close(); err != nil {
+			return errors.Wrap(err, "closing batch on transaction")
+		}
+		return nil
+	}
+
+	conn, err := s.acquireConn(ctx, ops.Upsert)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
 	batchResults := conn.SendBatch(ctx, batch)
 	if err := batchResults.Close(); err != nil {
 		return errors.Wrap(err, "closing batch")
@@ -486,25 +491,34 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return utils.ShouldErr(errInvalidOperation)
 	}
 
-	conn, err := s.acquireConn(ctx, ops.UpsertAll)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
+	tx, ok := postgres.TxFromContext(ctx)
+	if !ok {
+		conn, err := s.acquireConn(ctx, ops.UpsertAll)
+		if err != nil {
+			return err
+		}
+		defer conn.Release()
+		tx, ctx, err = conn.Begin(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not begin transaction")
+		}
 	}
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return errors.Wrap(rollbackErr, "could not rollback transaction")
+		// Only rollback if we created the transaction
+		if !ok {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrap(rollbackErr, "could not rollback transaction")
+			}
 		}
 		return errors.Wrap(err, "copy from objects failed")
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
+
+	// Only commit if we created the transaction
+	if !ok {
+		if err := tx.Commit(ctx); err != nil {
+			return errors.Wrap(err, "could not commit transaction")
+		}
 	}
 	return nil
 }
