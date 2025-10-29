@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { pluralize } from '@patternfly/react-core';
@@ -7,27 +6,25 @@ import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternf
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import useSet from 'hooks/useSet';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import {
-    CVE_SEVERITY_SORT_FIELD,
-    CVE_SORT_FIELD,
-    CVE_STATUS_SORT_FIELD,
-    CVSS_SORT_FIELD,
-} from 'Containers/Vulnerabilities/utils/sortFields';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
 } from '../../utils/vulnerabilityUtils';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
-import NodeComponentsTable, {
-    NodeComponent,
-    nodeComponentFragment,
-} from '../components/NodeComponentsTable';
+import {
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
+import NodeComponentsTable, { nodeComponentFragment } from '../components/NodeComponentsTable';
+import type { NodeComponent } from '../components/NodeComponentsTable';
 
 export const sortFields = [
     CVE_SORT_FIELD,

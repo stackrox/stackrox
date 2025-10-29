@@ -1,5 +1,3 @@
-import React from 'react';
-
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';

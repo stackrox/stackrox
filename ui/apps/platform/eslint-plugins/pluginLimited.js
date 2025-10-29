@@ -161,7 +161,9 @@ const rules = {
                         const ancestors = context.sourceCode.getAncestors(node);
                         if (
                             ancestors.length >= 1 &&
-                            ancestors[ancestors.length - 1].source?.value === 'react'
+                            typeof ancestors[ancestors.length - 1].source?.value === 'string' &&
+                            // endsWith for edge case: '@testing-library/react' instead of 'react'
+                            ancestors[ancestors.length - 1].source.value.endsWith('react')
                         ) {
                             const parent = ancestors[ancestors.length - 1];
                             context.report({
@@ -216,8 +218,17 @@ const rules = {
         },
         create(context) {
             return {
+                JSXMemberExpression(node) {
+                    // For example, React.Fragment
+                    if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.property.name}`,
+                        });
+                    }
+                },
                 MemberExpression(node) {
-                    // For example, React.Fragment or React.useState
+                    // For example, React.useState
                     if (node.object?.name === 'React' && typeof node.property?.name === 'string') {
                         context.report({
                             node,

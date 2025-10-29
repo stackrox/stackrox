@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import { cancelVulnerabilityException } from 'services/VulnerabilityExceptionService';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { SelectList, SelectOption } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 

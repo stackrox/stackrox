@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { BreadcrumbItem } from '@patternfly/react-core';
 import type { BreadcrumbItemProps } from '@patternfly/react-core';

@@ -783,8 +783,6 @@ module.exports = [
             'src/Containers/NetworkGraph/**',
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
-            'src/Containers/Risk/**',
-            'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
@@ -808,7 +806,10 @@ module.exports = [
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
 
@@ -829,13 +830,9 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Components/**',
             'src/ConsolePlugin/**',
-            'src/Containers/AccessControl/**',
-            'src/Containers/Administration/**',
             'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
-            'src/Containers/Collections/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
@@ -847,7 +844,10 @@ module.exports = [
             'src/Containers/Policies/**',
             'src/Containers/Search/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
             'src/Containers/*.{js,jsx,ts,tsx}',
             'src/constants/**',

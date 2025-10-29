@@ -22,7 +22,7 @@ type nginxImage struct {
 }
 
 func (i *nginxImage) getImage() string {
-	return fmt.Sprintf("docker.io/library/nginx:%s@%s", i.version, i.SHA)
+	return fmt.Sprintf("quay.io/rhacs-eng/qa-multi-arch:nginx-%s@%s", i.version, i.SHA)
 }
 
 var (

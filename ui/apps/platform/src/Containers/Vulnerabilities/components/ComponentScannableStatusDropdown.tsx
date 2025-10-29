@@ -31,7 +31,7 @@ function ComponentScannableStatusDropdown({
             }}
             selections={searchFilter.SCANNABLE}
             isOpen={componentScannableStatusIsOpen}
-            placeholderText="Scannable status"
+            placeholderText="Scan status"
             className="vm-filter-toolbar-dropdown"
         >
             <SelectOption key="Scanned" value="Scanned" />

@@ -1,14 +1,12 @@
 import intersection from 'lodash/intersection';
 import sortBy from 'lodash/sortBy';
-import { ensureExhaustive, isNonEmptyArray, NonEmptyArray } from 'utils/type.utils';
-import { SortAggregate, SortOption } from 'types/table';
-import { FieldOption } from 'hooks/useURLSort';
-import { ApiSortOption, SearchFilter } from 'types/search';
-import {
-    vulnerabilitySeverityLabels,
-    VulnerabilitySeverityLabel,
-    WorkloadEntityTab,
-} from '../types';
+import { ensureExhaustive, isNonEmptyArray } from 'utils/type.utils';
+import type { NonEmptyArray } from 'utils/type.utils';
+import type { SortAggregate, SortOption } from 'types/table';
+import type { FieldOption } from 'hooks/useURLSort';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { vulnerabilitySeverityLabels } from '../types';
+import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../types';
 import { getAppliedSeverities } from './searchUtils';
 
 // ROX-27906 Image CVEs view cannot use search fields as sort options without providing aggregates

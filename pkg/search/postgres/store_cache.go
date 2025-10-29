@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -246,13 +248,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 
 // Count returns the number of objects in the store matching the query.
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
-	// Check scope queries
-	scopeQuery, err := scoped.GetQueryForAllScopes(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	if scopeQuery == nil && (q == nil || q.EqualVT(search.EmptyQuery())) {
+	if checkScopeQueries(ctx, q) {
 		return c.countFromCache(ctx)
 	}
 	return c.underlyingStore.Count(ctx, q)
@@ -321,6 +317,9 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.WalkByQuery)
+	if checkScopeQueries(ctx, query) {
+		return c.Walk(ctx, fn)
+	}
 	return c.underlyingStore.WalkByQuery(ctx, query, fn)
 }
 
@@ -328,18 +327,42 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	return c.walkCacheNoLock(ctx, fn)
+	return c.walkCacheNoLock(ctx, func(obj PT) error {
+		return fn(obj.CloneVT())
+	})
+}
+
+// GetAllFromCache returns all the objects in the store without cloning.
+// Deprecated: It will not clone the object so it should be used only for SAC.
+func (c *cachedStore[T, PT]) GetAllFromCacheForSAC() []PT {
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	return slices.AppendSeq(make([]PT, 0, len(c.cache)), maps.Values(c.cache))
 }
 
 // GetByQueryFn iterates over the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
+	if checkScopeQueries(ctx, query) {
+		return c.Walk(ctx, fn)
+	}
 	return c.underlyingStore.GetByQueryFn(ctx, query, fn)
 }
 
 // GetByQuery returns the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
+	if checkScopeQueries(ctx, query) {
+		var result []*T
+		err := c.Walk(ctx, func(obj PT) error {
+			result = append(result, obj)
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		return result, err
+	}
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
@@ -387,6 +410,9 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 
 // GetIDsByQuery returns the IDs for the store matching the query.
 func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+	if checkScopeQueries(ctx, query) {
+		return c.GetIDs(ctx)
+	}
 	return c.underlyingStore.GetIDsByQuery(ctx, query)
 }
 
@@ -398,12 +424,25 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		err := fn(obj.CloneVT())
+		err := fn(obj)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func checkScopeQueries(ctx context.Context, query *v1.Query) bool {
+	scopeQuery, err := scoped.GetQueryForAllScopes(ctx)
+	if err != nil {
+		return false
+	}
+
+	if scopeQuery == nil && (query == nil || query.EqualVT(search.EmptyQuery())) {
+		return true
+	}
+
+	return false
 }
 
 func (c *cachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
