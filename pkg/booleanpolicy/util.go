@@ -14,12 +14,14 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
-// ContainsOnlyFieldsOf returns whether the policy contains only fields that
-// match the specified type
-func ContainsAllOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
+// HasDiscreteEventSource returns whether the policy contains only fields that
+// match the specified event source
+func HasDiscreteEventSource(policy *storage.Policy, eventSource storage.EventSource) bool {
 	for _, section := range policy.GetPolicySections() {
-		if !SectionContainsFieldOfType(section, fieldType) {
-			return false
+		for _, group := range section.GetPolicyGroups() {
+			if !FieldMetadataSingleton().IsFromEventSource(group.GetFieldName(), eventSource) {
+				return false
+			}
 		}
 	}
 	return true
