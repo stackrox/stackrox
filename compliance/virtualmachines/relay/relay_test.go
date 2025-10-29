@@ -119,15 +119,21 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMalformedData() {
 
 func (s *relayTestSuite) TestHandleVsockConnection_HandlesContextCancellation() {
 	conn := s.defaultVsockConn()
+
+	// Set up a sensor client that only returns after 500 ms
 	client := newMockSensorClient().withDelay(500 * time.Millisecond)
+
+	// Set up a context that will be canceled after 100 ms
 	cancellableCtx, cancel := context.WithCancel(s.ctx)
 	relay := s.defaultRelay(cancellableCtx, client)
-
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		cancel()
 	}()
 
+	// When the connection is handled, sending the index report to sensor will hang for 500 ms.
+	// The context will be canceled after 100 ms, that is, while the sensor response is awaited.
+	// Therefore we expect a "context canceled" error
 	err := relay.handleVsockConnection(conn)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
