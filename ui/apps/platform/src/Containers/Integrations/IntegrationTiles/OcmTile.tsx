@@ -1,18 +1,22 @@
 import type { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
+
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
+
 import {
     cloudSourcesSource as source,
     getIntegrationsListPath,
     ocmDescriptor as descriptor,
 } from '../utils/integrationsList';
-import { selectors } from '../../../reducers';
 import IntegrationTile from './IntegrationTile';
 import { integrationTypeCounter } from './integrationTiles.utils';
 
 const { image, label, type } = descriptor;
 
-function OcmTile(): ReactElement {
-    const integrations = useSelector(selectors.getCloudSources);
+export type OcmTileProps = {
+    integrations: CloudSourceIntegration[];
+};
+
+function OcmTile({ integrations }: OcmTileProps): ReactElement {
     const countIntegrations = integrationTypeCounter(integrations);
 
     return (
