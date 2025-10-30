@@ -52,6 +52,8 @@ type PolicyPostgresDataStoreTestSuite struct {
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.ctx = context.Background()
+	s.T().Setenv("CI", "true")
+	s.T().Setenv("POSTGRES_PASSWORD", "postgres")
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := postgres.ParseConfig(source)
@@ -74,14 +76,14 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 
 	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-
-	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
+	s.categoryDS = policyCategoryDS.New(categoryStorage, edgeDS)
 
 	policyStorage := policyStore.New(s.db)
-	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS, edgeDS)
 
 	s.mockCategoryDS = policyCategoryMocks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
+	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS, edgeDS)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {

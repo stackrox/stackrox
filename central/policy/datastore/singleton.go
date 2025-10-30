@@ -31,7 +31,7 @@ func initialize() {
 	notifierDatastore := notifierDS.Singleton()
 	categoriesDatastore := categoriesDS.Singleton()
 
-	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
+	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore, nil)
 	addDefaults(storage, categoriesDatastore)
 }
 

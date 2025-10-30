@@ -37,7 +37,7 @@ func BenchmarkGetAllPolcies(b *testing.B) {
 	categoryDS := policyCategoryDS.New(categoryStore, edgeDS)
 
 	storage := policyStore.New(db)
-	policyDS := New(storage, nil, nil, categoryDS)
+	policyDS := New(storage, nil, nil, categoryDS, edgeDS)
 	seedPolicies(b, ctx, 100, policyDS)
 
 	for i := 0; i < b.N; i++ {
