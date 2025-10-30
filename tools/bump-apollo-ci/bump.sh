@@ -4,8 +4,8 @@ set -euo pipefail
 GIT_REPO_TOP="$(git rev-parse --show-toplevel)"
 
 pull_latest_master() {
-    git fetch origin tm/bump-all-apollo-ci-references
-    git merge --ff-only origin/tm/bump-all-apollo-ci-references
+    git fetch origin master
+    git merge --ff-only origin/master
 }
 
 find_references() {
