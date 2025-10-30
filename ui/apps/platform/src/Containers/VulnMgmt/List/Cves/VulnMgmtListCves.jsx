@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import { Plus } from 'react-feather';
 import { connect } from 'react-redux';
-import { useNavigate } from 'react-router-dom-v5-compat';
 
 import {
     defaultHeaderClassName,
@@ -18,11 +17,9 @@ import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
-import entityTypes, { resourceTypes } from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import useAnalytics from 'hooks/useAnalytics';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -39,10 +36,9 @@ import CveType from 'Components/CveType';
 
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
-import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
-import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
+import { getFilteredCVEColumns } from './ListCVEs.utils';
 import TableCountLinks from '../../TableCountLinks';
 
 export const defaultCveSort = [
@@ -242,13 +238,8 @@ const VulnMgmtCves = ({
     page,
     data,
     totalResults,
-    addToast,
-    removeToast,
     refreshTrigger,
-    setRefreshTrigger,
 }) => {
-    const navigate = useNavigate();
-    const { analyticsTrack } = useAnalytics();
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
 
@@ -256,14 +247,6 @@ const VulnMgmtCves = ({
     // also require require resources for Policies route.
     const hasWriteAccessForAddToPolicy =
         hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
-
-    // Forbidden failures are explicit for Approvals and Requests but only implicit for Image.
-    const hasWriteAccessForRiskAcceptance =
-        hasReadWriteAccess('Image') &&
-        hasReadWriteAccess('VulnerabilityManagementApprovals') &&
-        hasReadWriteAccess('VulnerabilityManagementRequests');
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
@@ -348,16 +331,16 @@ const VulnMgmtCves = ({
     const renderRowActionButtons =
         hasWriteAccessForAddToPolicy
             ? ({ cve }) => (
-                  <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-                      {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
-                          <RowActionButton
-                              text="Add to policy"
-                              onClick={addToPolicy(cve)}
-                              icon={<Plus className="my-1 h-4 w-4" />}
-                          />
-                      )}
-                  </div>
-              )
+                <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+                    {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                        <RowActionButton
+                            text="Add to policy"
+                            onClick={addToPolicy(cve)}
+                            icon={<Plus className="my-1 h-4 w-4" />}
+                        />
+                    )}
+                </div>
+            )
             : null;
 
     const tableHeaderComponents = (

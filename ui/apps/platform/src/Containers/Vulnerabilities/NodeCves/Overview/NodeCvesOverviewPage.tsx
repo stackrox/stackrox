@@ -9,7 +9,6 @@ import {
     PageSection,
     Title,
 } from '@patternfly/react-core';
-import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -59,7 +58,6 @@ const searchFilterConfig = [
 ];
 
 function NodeCvesOverviewPage() {
-    const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { isFeatureFlagEnabled } = useFeatureFlags();
