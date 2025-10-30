@@ -45,6 +45,8 @@ export function getIntegrationsPath(
     return path;
 }
 
+const basePathRedirect = getIntegrationsPath('imageIntegrations');
+
 // endpoint path
 
 function getIntegrationsEndpointAddress(integrationSource, integrationType) {
@@ -284,7 +286,7 @@ export function visitIntegrationsDashboardFromLeftNav(staticResponseMap) {
         staticResponseMap
     );
 
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', basePathRedirect);
     cy.get(`h1:contains("${integrationsTitle}")`);
 }
 
@@ -299,7 +301,7 @@ export function visitIntegrationsTab(integrationSource, staticResponseMap) {
         staticResponseMap
     );
 
-    cy.location('pathname').should('eq', `${basePath}/${integrationSource}`);
+    cy.location('pathname').should('eq', getIntegrationsPath(integrationSource));
     cy.get(
         `a.pf-v5-c-nav__link.pf-m-current:contains("${integrationSourceTitleMap[integrationSource]}")`
     );
@@ -354,7 +356,7 @@ export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilit
         getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
         staticResponseForCapabilities
     );
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', basePathRedirect);
 }
 
 // interact on dashboard
