@@ -42,9 +42,9 @@ update_direct_references() {
 
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        sed -i.bak -E "s|(quay\.io/stackrox-io/apollo-ci:stackrox-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
-        sed -i.bak -E "s|(quay\.io/stackrox-io/apollo-ci:scanner-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
-        sed -i.bak -E "s|(quay\.io/stackrox-io/apollo-ci:stackrox-ui-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
+        sed -i.bak -E "/^\s*#/! s|(quay\.io/stackrox-io/apollo-ci:stackrox-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
+        sed -i.bak -E "/^\s*#/! s|(quay\.io/stackrox-io/apollo-ci:scanner-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
+        sed -i.bak -E "/^\s*#/! s|(quay\.io/stackrox-io/apollo-ci:stackrox-ui-test-)[^ \"']+|\1$version|g" "$GIT_REPO_TOP/$file"
         rm -f "$GIT_REPO_TOP/$file.bak"
     done <<< "$files"
 }
