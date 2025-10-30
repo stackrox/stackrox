@@ -571,16 +571,27 @@ class CentralExportService:
                     else:
                         X = np.array([[features[k] for k in sorted(features.keys())]])
 
-                    # Make prediction
-                    predictions = model.predict(X, explain=False)
+                    # Make prediction with explanations enabled for debugging
+                    predictions = model.predict(X, explain=True)
                     predicted_score = predictions[0].risk_score
+                    feature_importance = predictions[0].feature_importance
+
+                    # Log feature importance for this deployment
+                    workload_metadata = sample.get('workload_metadata', {})
+                    deployment_name = workload_metadata.get('deployment_name', 'unknown')
+                    namespace = workload_metadata.get('namespace', 'unknown')
+
+                    logger.debug(f"Feature importance for {deployment_name} (namespace={namespace}):")
+                    logger.debug(f"  Predicted score: {predicted_score:.4f}, Actual score: {actual_score:.4f}")
+                    logger.debug(f"  Top features contributing to risk:")
+                    for feature_name, importance_value in feature_importance.items():
+                        logger.debug(f"    {feature_name:30s}: {importance_value:+.6f}")
 
                     # Track scores
                     actual_scores.append(actual_score)
                     predicted_scores.append(predicted_score)
 
                     # Store prediction result
-                    workload_metadata = sample.get('workload_metadata', {})
                     validation_results['predictions'].append({
                         'deployment_name': workload_metadata.get('deployment_name', 'unknown'),
                         'namespace': workload_metadata.get('namespace', 'unknown'),
