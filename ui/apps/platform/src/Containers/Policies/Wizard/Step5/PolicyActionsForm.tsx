@@ -1,5 +1,4 @@
-import React from 'react';
-import { Flex, FlexItem, Title, Divider, Form, FormGroup, Radio } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Form, FormGroup, Radio, Title } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 

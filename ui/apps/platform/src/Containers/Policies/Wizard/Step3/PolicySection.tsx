@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useFormikContext } from 'formik';
 import {
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
-    Button,
     Divider,
     Flex,
     FlexItem,
     TextInput,
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
+import { CheckIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useModal from 'hooks/useModal';

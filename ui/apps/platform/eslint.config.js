@@ -781,7 +781,6 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/Violations/**',
@@ -841,7 +840,6 @@ module.exports = [
             'src/Containers/Images/**',
             'src/Containers/Login/**',
             'src/Containers/MitreAttackVectors/**',
-            'src/Containers/Policies/**',
             'src/Containers/Search/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',

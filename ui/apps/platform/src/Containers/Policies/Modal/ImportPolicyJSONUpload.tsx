@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import {
     Button,
     FileUpload,
-    Title,
     Flex,
     FlexItem,
-    ModalBoxFooter,
     ModalBoxBody,
+    ModalBoxFooter,
+    Title,
 } from '@patternfly/react-core';
 
 import type { ListPolicy } from 'types/policy.proto';

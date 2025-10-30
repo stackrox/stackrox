@@ -1,12 +1,11 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useField } from 'formik';
 import {
+    FormGroup,
+    SelectOption,
     TextInput,
     ToggleGroup,
     ToggleGroupItem,
-    FormGroup,
-    SelectOption,
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
