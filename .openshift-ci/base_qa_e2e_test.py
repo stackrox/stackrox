@@ -3,8 +3,6 @@
 """
 Run QA e2e tests against a given cluster.
 """
-import os
-
 from pre_tests import PreSystemTests
 from ci_tests import (
     QaE2eTestPart1,
@@ -14,9 +12,6 @@ from ci_tests import (
 )
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner, TestSet
-
-# Configure database connection pool for QA E2E tests
-os.environ["ROX_POSTGRES_MAX_CONNS"] = "1"
 
 
 def make_qa_e2e_test_runner(cluster):
