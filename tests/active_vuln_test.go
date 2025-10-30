@@ -81,7 +81,7 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 	t.Logf("test case %v", testCase)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
 	setupDeploymentInNamespace(t, testCase.getImage(), deploymentName, "default")
-	defer teardownDeployment(t, deploymentName)
+	defer teardownDeployment(t, deploymentName, "default")
 	fmt.Println(idx, testCase, deploymentName)
 	deploymentID := getDeploymentID(t, deploymentName)
 	checkActiveVulnerability(t, testCase, deploymentID)
@@ -91,7 +91,7 @@ func TestActiveVulnerability_SetImage(t *testing.T) {
 	t.Skipf("Active Vunerability feature has been disabled for rebuilt later")
 	waitForImageScanned(t)
 	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
-	defer teardownDeployment(t, avmDeploymentName)
+	defer teardownDeployment(t, avmDeploymentName, "default")
 	deploymentID := getDeploymentID(t, avmDeploymentName)
 
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
