@@ -59,16 +59,43 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:951ee3cabb74246821ae31c2b808b7789310f5509882c153b7b178aaaeefa2d3
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:2741982b4f3eb0dc24f8a6e1cdbf3694ebacc2575f31fc9c97bf85d44d86a670 AS dependency_builder
 
 ARG PG_VERSION
 
-RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    # find is used in /stackrox/import-additional-cas \
-    microdnf -y install findutils postgresql && \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+RUN dnf -y module enable postgresql:${PG_VERSION} && \
+    dnf install \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=0 \
+    --nodocs \
+    -y \
+    findutils \
+    postgresql \
+    util-linux \
+    ca-certificates \
+    curl \
+    bash \
+    coreutils && \
+    dnf --installroot=/out/ clean all && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
+
+# The contents of paths mounted as emptyDir volumes in Kubernetes are saved
+# by the script `save-dir-contents` during the image build. The directory
+# contents are then restored by the script `restore-all-dir-contents`
+# during the container start.
+RUN mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
+    chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl && \
+    chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+    mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
+    chown -R 4000:4000 /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
+
+
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:25c9b68db2e23ca6552d21e09714a1c987438e03f0ca64a5cf291e6bfd831ad8
+
+COPY --from=dependency_builder /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
@@ -123,12 +150,5 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 
 COPY LICENSE /licenses/LICENSE
-
-# The following paths are written to in Central.
-RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
 
 USER 4000:4000
