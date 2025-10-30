@@ -61,7 +61,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 
 	s.categories = policyCategoryDatastore.New(categoryStorage, edgeDatastore)
 
-	s.policies = policyDatastore.New(policyStorage, s.clusters, notifierDS, s.categories)
+	s.policies = policyDatastore.New(policyStorage, s.clusters, notifierDS, s.categories, nil)
 
 	var err error
 	s.clusters, err = clusterDatastore.GetTestPostgresDataStore(s.T(), s.db)
