@@ -49,44 +49,15 @@ export function getComponentTableColumns(workflowState, isFeatureFlagEnabled) {
             sortField: componentSortFields.COMPONENT,
         },
         {
-            Header: `CVEs`,
-            entityType: entityTypes.CVE,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { vulnCounter, id } = original;
-                if (!vulnCounter || vulnCounter.all.total === 0) {
-                    return 'No CVEs';
-                }
-
-                const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
-                const url = newState.toUrl();
-                const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
-
-                return (
-                    <CVEStackedPill
-                        vulnCounter={vulnCounter}
-                        url={url}
-                        fixableUrl={fixableUrl}
-                        hideLink={pdf}
-                    />
-                );
+            Header: `CVE Count`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                return original.vulnCounter.all.total;
             },
             id: componentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: componentSortFields.CVE_COUNT,
-        },
-        {
-            Header: `Active`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: componentSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: componentSortFields.ACTIVE,
-            sortable: false,
         },
         {
             Header: `Fixed In`,

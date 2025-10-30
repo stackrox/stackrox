@@ -100,32 +100,47 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             id: cveSortFields.CVE_TYPE,
             accessor: 'vulnerabilityTypes',
             sortField: cveSortFields.CVE_TYPE,
-            sortable: true,
+            sortable: false,
+        },
+        {
+            Header: `Severity`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                return (
+                    <VulnerabilitySeverityIconText
+                        severity={original.severity}
+                        cvss={original.cvss}
+                    />
+                );
+            },
+            id: cveSortFields.SEVERITY,
+            accessor: 'severity',
+            sortField: cveSortFields.SEVERITY,
+        },
+        {
+            Header: `CVSS`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => original.cvss || '-',
+            id: cveSortFields.SCORE,
+            accessor: 'cvss',
+            sortField: cveSortFields.SCORE,
         },
         {
             Header: `Fixable`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                return (
-                    <VulnerabilityFixableIconText isFixable={original.isFixable} isTextOnly={pdf} />
-                );
-            },
+            Cell: ({ original }) => (
+                <VulnerabilityFixableIconText
+                    isFixable={original.isFixable}
+                    cvss={original.cvss}
+                    cveFixes={original.cveFixes}
+                />
+            ),
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
             sortField: cveSortFields.FIXABLE,
-            sortable: false,
-        },
-        {
-            Header: `Active`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: cveSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: cveSortFields.ACTIVE,
             sortable: false,
         },
         {
@@ -136,60 +151,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             id: cveSortFields.FIXEDIN,
             accessor: 'fixedByVersion',
             sortField: cveSortFields.FIXEDIN,
-        },
-        {
-            Header: `Severity`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 text-center ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                return (
-                    <VulnerabilitySeverityIconText severity={original.severity} isTextOnly={pdf} />
-                );
-            },
-            id: cveSortFields.SEVERITY,
-            accessor: 'severity',
-            sortField: cveSortFields.SEVERITY,
-        },
-        {
-            Header: `CVSS Score`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { cvss, scoreVersion } = original;
-                return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
-            },
-            id: cveSortFields.CVSS_SCORE,
-            accessor: 'cvss',
-            sortField: cveSortFields.CVSS_SCORE,
-        },
-        {
-            Header: `Env. Impact`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { envImpact } = original;
-                // eslint-disable-next-line eqeqeq
-                return envImpact == Number(envImpact)
-                    ? `${(envImpact * 100).toFixed(0)}% affected`
-                    : '-';
-            },
-            id: cveSortFields.ENV_IMPACT,
-            accessor: 'envImpact',
-            sortField: cveSortFields.ENV_IMPACT,
-            sortable: false,
-        },
-        {
-            Header: `Impact Score`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { impactScore } = original;
-                // eslint-disable-next-line eqeqeq
-                return impactScore == Number(impactScore) ? impactScore.toFixed(1) : '-';
-            },
-            id: cveSortFields.IMPACT_SCORE,
-            accessor: 'impactScore',
-            sortField: cveSortFields.IMPACT_SCORE,
         },
         {
             Header: `Entities`,

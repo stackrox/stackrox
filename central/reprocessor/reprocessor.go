@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	administrationEvents "github.com/stackrox/rox/central/administration/events"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
@@ -84,7 +83,7 @@ func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
+			watchedImageDataStore.Singleton())
 	})
 	return loop
 }
@@ -104,11 +103,11 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk,
 		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(),
-		env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
+		env.ActiveVulnRefreshInterval.DurationSetting())
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -117,7 +116,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration,
-	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater) *loopImpl {
+	activeComponentTickerDuration time.Duration) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
@@ -133,7 +132,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		activeComponentTickerDuration: activeComponentTickerDuration,
 		activeComponentStopped:        concurrency.NewSignal(),
-		acUpdater:                     acUpdater,
 
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
@@ -175,7 +173,6 @@ type loopImpl struct {
 	activeComponentStopped        concurrency.Signal
 	activeComponentTicker         *time.Ticker
 	activeComponentTickerDuration time.Duration
-	acUpdater                     activeComponentsUpdater.Updater
 
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
@@ -208,9 +205,6 @@ func (l *loopImpl) Start() {
 
 	go l.riskLoop()
 	go l.enrichLoop()
-
-	l.activeComponentTicker = time.NewTicker(l.activeComponentTickerDuration)
-	go l.activeComponentLoop()
 }
 
 // Stop stops the enrich and detect loop.
@@ -658,20 +652,6 @@ func (l *loopImpl) riskLoop() {
 					l.deploymentRiskSet.Clear()
 				}
 			})
-		}
-	}
-}
-
-func (l *loopImpl) activeComponentLoop() {
-	defer l.activeComponentStopped.Signal()
-	defer l.activeComponentTicker.Stop()
-
-	for !l.stopSig.IsDone() {
-		select {
-		case <-l.stopSig.Done():
-			return
-		case <-l.activeComponentTicker.C:
-			l.acUpdater.Update()
 		}
 	}
 }
