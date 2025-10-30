@@ -63,7 +63,6 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 	}
 
 	if features.FlattenImageData.Enabled() && image.GetId() != "" {
-		log.Infof("[chsheth] Setting imagev2 id for name %s and digest %s", image.GetName().GetFullName(), image.GetId())
 		image.IdV2 = NewImageV2ID(image.GetName(), image.GetId())
 	}
 
@@ -100,7 +99,6 @@ func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference
 		name.Tag = namedTagged.Tag()
 	}
 
-	log.Infof("[chsheth] setting image name fullname from %s to %s", name.GetFullName(), ref.String())
 	name.FullName = ref.String()
 
 	return name, ref, nil
@@ -117,7 +115,6 @@ func SetImageTagNoSha(name *storage.ImageName, tag string) *storage.ImageName {
 // NormalizeImageFullNameNoSha sets the ImageName.FullName correctly based on the parts of the name and should be part of a
 // wrapper instead of a util function.
 func NormalizeImageFullNameNoSha(name *storage.ImageName) *storage.ImageName {
-	log.Infof("[chsheth] setting image name fullname from %s to %s", name.GetFullName(), fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag()))
 	name.FullName = fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
 	return name
 }
@@ -139,7 +136,6 @@ func NormalizeImageFullName(name *storage.ImageName, digest string) *storage.Ima
 		tag = fmt.Sprintf(":%s", tag)
 	}
 
-	log.Infof("[chsheth] setting image name fullname from %s to %s", name.GetFullName(), fmt.Sprintf("%s/%s%s%s", name.GetRegistry(), name.GetRemote(), tag, digest))
 	name.FullName = fmt.Sprintf("%s/%s%s%s", name.GetRegistry(), name.GetRemote(), tag, digest)
 	return name
 }
@@ -166,7 +162,6 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 		image.Name.Registry = registryOverride
 
 		trimmedFullName := strings.TrimPrefix(image.GetName().GetFullName(), defaultDockerRegistry)
-		log.Infof("[chsheth] setting image name fullname from %s to %s", image.GetName().GetFullName(), fmt.Sprintf("%s%s", registryOverride, trimmedFullName))
 		image.Name.FullName = fmt.Sprintf("%s%s", registryOverride, trimmedFullName)
 	}
 	return image, nil
