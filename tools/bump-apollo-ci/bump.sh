@@ -101,7 +101,7 @@ push_and_create_pr() {
     local existing_pr
     existing_pr=$(gh pr list --head "$current_branch" --json number,url --jq '.[0] | "\(.number)|\(.url)"' 2>/dev/null || true)
 
-    if [[ -n "$existing_pr" ]]; then
+    if [[ -n "$existing_pr" ]] && [[ "$existing_pr" != "null|null" ]] && [[ "$existing_pr" != "|" ]]; then
         local pr_number="${existing_pr%%|*}"
         local pr_url="${existing_pr#*|}"
 
