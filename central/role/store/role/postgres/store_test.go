@@ -93,6 +93,11 @@ func (s *RolesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, roles))
 
+	foundRoles, missing, err := store.GetMany(ctx, roleIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), roles, foundRoles)
+
 	roleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, roleCount)

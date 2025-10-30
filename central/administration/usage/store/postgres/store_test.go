@@ -93,6 +93,11 @@ func (s *SecuredUnitsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, securedUnitss))
 
+	foundSecuredUnitss, missing, err := store.GetMany(ctx, securedUnitsIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), securedUnitss, foundSecuredUnitss)
+
 	securedUnitsCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, securedUnitsCount)
