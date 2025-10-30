@@ -4,8 +4,8 @@ set -euo pipefail
 GIT_REPO_TOP="$(git rev-parse --show-toplevel)"
 
 pull_latest_master() {
-    git fetch origin master
-    git merge --ff-only origin/master
+    git fetch origin tm/bump-all-apollo-ci-references
+    git merge --ff-only origin/tm/bump-all-apollo-ci-references
 }
 
 find_references() {
@@ -111,7 +111,7 @@ push_and_create_pr() {
         local pr_url
         pr_url=$(gh pr create \
             --draft \
-            --base master \
+            --base tm/bump-all-apollo-ci-references \
             --title "chore: bump apollo-ci to $version" \
             --body "This PR updates all apollo-ci image references to version $version.
 
