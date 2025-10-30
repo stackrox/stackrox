@@ -122,6 +122,17 @@ spec:
   - name: extra-labels
     type: array
     description: Additional labels to put on the built containers.
+  - default:
+    - linux/arm64
+    - linux/ppc64le
+    - linux/s390x
+    - linux/x86_64
+    description: >
+      List of platforms to build the container images for. The available
+      set of values is determined by the configuration of the multi-platform-controller
+      on the cluster: https://konflux.pages.redhat.com/docs/users/getting-started/multi-platform-builds.html
+    name: build-platforms
+    type: array
 
   results:
   - description: ""
@@ -252,53 +263,15 @@ spec:
     - name: git-basic-auth
       workspace: git-auth
 
-  - name: build-container-amd64
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: BUILDAH_FORMAT
-      value: $(params.buildah-format)
-    - name: LABELS
-      value: ["$(params.extra-labels[*])"]
-    - name: BUILD_TIMESTAMP
-      value: "$(tasks.clone-repository.results.commit-timestamp)"
-    taskRef:
+  - name: build-images
+    matrix:
       params:
-      - name: name
-        value: buildah-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.6@sha256:b990178b6bf21c353e1567fe1a66d1472f7f4a862f003cf8d5b31d1caa3c43d6
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-
-  - name: build-container-s390x
+      - name: PLATFORM
+        value:
+        - $(params.build-platforms)
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -318,104 +291,14 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/s390x
     - name: BUILDAH_FORMAT
       value: $(params.buildah-format)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
     - name: BUILD_TIMESTAMP
       value: "$(tasks.clone-repository.results.commit-timestamp)"
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.6@sha256:3832edaec1aae546c225c86ada53611e42717c784e2068e0536831a99cb1922d
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-
-  - name: build-container-ppc64le
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/ppc64le
-    - name: BUILDAH_FORMAT
-      value: $(params.buildah-format)
-    - name: LABELS
-      value: ["$(params.extra-labels[*])"]
-    - name: BUILD_TIMESTAMP
-      value: "$(tasks.clone-repository.results.commit-timestamp)"
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.6@sha256:3832edaec1aae546c225c86ada53611e42717c784e2068e0536831a99cb1922d
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-
-  - name: build-container-arm64
-    params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - BUILD_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/arm64
-    - name: BUILDAH_FORMAT
-      value: $(params.buildah-format)
-    - name: LABELS
-      value: ["$(params.extra-labels[*])"]
-    - name: BUILD_TIMESTAMP
-      value: "$(tasks.clone-repository.results.commit-timestamp)"
+    - name: IMAGE_APPEND_PLATFORM
+      value: "true"
     taskRef:
       params:
       - name: name
@@ -438,10 +321,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-      - $(tasks.build-container-amd64.results.IMAGE_REF)
-      - $(tasks.build-container-s390x.results.IMAGE_REF)
-      - $(tasks.build-container-ppc64le.results.IMAGE_REF)
-      - $(tasks.build-container-arm64.results.IMAGE_REF)
+      - $(tasks.build-images.results.IMAGE_REF[*])
     - name: IMAGE_EXPIRES_AFTER
       value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
     - name: BUILDAH_FORMAT
@@ -459,6 +339,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
+    runAfter: [ build-images ]
 
   - name: apply-index-image-tag
     params:
@@ -531,6 +412,11 @@ spec:
       values: [ "false" ]
 
   - name: clair-scan
+    matrix:
+      params:
+      - name: image-platform
+        value:
+        - $(params.build-platforms)
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -551,6 +437,11 @@ spec:
       values: [ "false" ]
 
   - name: ecosystem-cert-preflight-checks
+    matrix:
+      params:
+      - name: platform
+        value:
+        - $(params.build-platforms)
     params:
     - name: image-url
       value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -641,6 +532,11 @@ spec:
       values: [ "false" ]
 
   - name: clamav-scan
+    matrix:
+      params:
+      - name: image-arch
+        value:
+        - $(params.build-platforms)
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)

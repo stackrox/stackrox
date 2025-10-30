@@ -1,0 +1,11 @@
+---
+description: Secure coding rules for Containers 🐳
+globs:
+  - "**/Containerfile"
+  - "**/Dockerfile"
+alwaysApply: false
+---
+
+- Use minimal, up-to-date base images from trusted sources.
+- Remove non-essential software and keep essential ones updated.
+- Run containers as non-root and use read-only filesystems when possible.

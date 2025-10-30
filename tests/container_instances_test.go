@@ -63,10 +63,7 @@ func TestContainerInstances(testT *testing.T) {
 		retryEventsT.Logf("Second container (%s) events: %+v", groupedContainers[1].Name, secondContainerEvents)
 
 		// Second container: ubuntu running a loop with date and sleep
-		// TODO(ROX-31331): Collector cannot reliably detect /bin/sh /bin/date or /bin/sleep in ubuntu image,
-		// thus not including it in the required processes.
-		// If this flakes again, see ROX-31331 and follow-up on the discussion in the ticket.
-		requiredSecondContainer := []string{"/bin/sh"}
+		requiredSecondContainer := []string{"/bin/sh", "/bin/date", "/bin/sleep"}
 		require.Subsetf(retryEventsT, secondContainerEvents, requiredSecondContainer,
 			"Second container: required processes: %v not found in events: %v", requiredSecondContainer, secondContainerEvents)
 

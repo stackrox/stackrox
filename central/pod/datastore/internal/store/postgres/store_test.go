@@ -96,6 +96,11 @@ func (s *PodsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, pods))
 
+	foundPods, missing, err := store.GetMany(ctx, podIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), pods, foundPods)
+
 	podCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, podCount)
