@@ -138,22 +138,10 @@ func (f *FieldMetadata) ensureFieldIsUnique(fieldName string) {
 
 func (f *FieldMetadata) registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder,
 	contextFields violationmessages.ContextQueryFields,
-	valueRegex func(configuration *validateConfiguration) *regexp.Regexp,
+	regex func(configuration *validateConfiguration) *regexp.Regexp,
 	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
 	f.ensureFieldIsUnique(fieldName)
-
-	m := newFieldMetadata(qb, contextFields, valueRegex, source, fieldTypes, options...)
-	f.fieldsToQB[fieldName] = m
-}
-
-func (f *FieldMetadata) registerFieldMetadataConditionally(
-	fieldName string,
-	qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields,
-	conditionalRegexp func(*validateConfiguration) *regexp.Regexp,
-	source []storage.EventSource, fieldTypes []RuntimeFieldType, options ...option) {
-	f.ensureFieldIsUnique(fieldName)
-	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, conditionalRegexp, source, fieldTypes, options...)
-
+	f.fieldsToQB[fieldName] = newFieldMetadata(qb, contextFields, regex, source, fieldTypes, options...)
 }
 
 func initializeFieldMetadata() FieldMetadata {
@@ -330,8 +318,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)
 
-	f.registerFieldMetadataConditionally(
-		fieldnames.EnvironmentVariable,
+	f.registerFieldMetadata(fieldnames.EnvironmentVariable,
 		querybuilders.ForCompound(augmentedobjs.EnvironmentVarCustomTag, 3),
 		violationmessages.EnvVarContextFields,
 		func(c *validateConfiguration) *regexp.Regexp {
@@ -739,7 +726,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	f.registerFieldMetadataConditionally(fieldnames.KubeAPIVerb,
+	f.registerFieldMetadata(fieldnames.KubeAPIVerb,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
@@ -749,7 +736,7 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 	)
 
-	f.registerFieldMetadataConditionally(fieldnames.KubeResource,
+	f.registerFieldMetadata(fieldnames.KubeResource,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
