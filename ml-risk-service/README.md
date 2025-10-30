@@ -208,6 +208,33 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 | `ROX_ML_MODEL_DRIFT_DETECTION_ENABLED` | `false` | Enable drift detection |
 | `ROX_ML_MODEL_DRIFT_THRESHOLD` | `0.1` | Drift alert threshold |
 
+#### Central API Integration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TRAINING_CENTRAL_ENDPOINT` | - | Central endpoint for training data collection |
+| `TRAINING_CENTRAL_API_TOKEN` | - | API token for training Central authentication |
+| `PREDICTION_CENTRAL_ENDPOINT` | - | Central endpoint for prediction validation |
+| `PREDICTION_CENTRAL_API_TOKEN` | - | API token for prediction Central authentication |
+
+**Note:** The ML Risk Service can connect to two separate Central instances:
+- **Training Central**: Used to collect deployment data for model training
+- **Prediction Central**: Used to validate model predictions against real risk scores
+
+Both use the same authentication configuration format (API token or mTLS). Configuration is managed via environment variables or `src/config/feature_config.yaml`.
+
+**Example usage:**
+```bash
+# Training Central (for model training)
+export TRAINING_CENTRAL_ENDPOINT="https://central.training.example.com"
+export TRAINING_CENTRAL_API_TOKEN="your-training-api-token"
+
+# Prediction Central (for validation)
+export PREDICTION_CENTRAL_ENDPOINT="https://central.production.example.com"
+export PREDICTION_CENTRAL_API_TOKEN="your-prediction-api-token"
+```
+
+**Breaking Change:** Previous versions used `CENTRAL_API_TOKEN` and `CENTRAL_ENDPOINT`. These have been renamed to `TRAINING_CENTRAL_*` for consistency with the dual-Central architecture.
+
 ### Feature Configuration
 
 Edit `src/config/feature_config.yaml` to configure:

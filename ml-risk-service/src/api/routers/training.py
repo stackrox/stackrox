@@ -535,3 +535,182 @@ async def train_full_from_central(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Training failed: {str(e)}"
         )
+
+
+@router.post(
+    "/central/validate-predictions",
+    response_model=Dict[str, Any],
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid parameters or prediction Central not configured"},
+        500: {"model": ErrorResponse, "description": "Validation failed"}
+    },
+    summary="Validate predictions against prediction Central",
+    description="Validate model predictions by comparing against actual risk scores from a prediction Central instance"
+)
+async def validate_predictions_from_central(
+    model_id: str = Query("stackrox-risk-model", description="Model ID to validate"),
+    model_version: Optional[str] = Query(None, description="Model version (defaults to latest)"),
+    days_back: int = Query(7, ge=1, le=90, description="Number of days back to collect validation data"),
+    limit: int = Query(50, ge=10, le=500, description="Number of deployments to validate"),
+    include_inactive: bool = Query(False, description="Include inactive deployments"),
+    severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold"),
+    clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
+    namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
+    risk_service: RiskPredictionService = Depends(get_risk_service)
+) -> Dict[str, Any]:
+    """
+    Validate model predictions against actual risk scores from prediction Central.
+
+    This endpoint performs prediction validation by:
+
+    1. **Load Model**: Loads the specified trained model from storage
+    2. **Connect to Prediction Central**: Uses PREDICTION_CENTRAL_* environment variables
+    3. **Collect Deployments**: Pulls deployments from prediction Central
+    4. **Run Predictions**: Generates risk score predictions for each deployment
+    5. **Compare Scores**: Compares predicted vs actual risk scores from Central
+    6. **Calculate Metrics**: Computes MAE, RMSE, correlation, and accuracy metrics
+
+    **Parameters:**
+    - **model_id**: Model identifier to validate
+    - **model_version**: Specific model version (defaults to latest if not specified)
+    - **days_back**: Number of days back to collect validation data (1-90)
+    - **limit**: Maximum number of deployments to validate (10-500)
+    - **include_inactive**: Whether to include inactive/stopped deployments
+    - **severity_threshold**: Minimum vulnerability severity to include
+    - **clusters**: Optional comma-separated list of cluster IDs to filter
+    - **namespaces**: Optional comma-separated list of namespaces to filter
+
+    **Use Cases:**
+    - **Model Validation**: Evaluate model performance on production data
+    - **A/B Testing**: Compare different model versions
+    - **Monitoring**: Track model accuracy over time
+    - **Pre-Deployment**: Validate models before production deployment
+
+    **Note:** This requires separate configuration for prediction Central instance using
+    PREDICTION_CENTRAL_ENDPOINT and PREDICTION_CENTRAL_API_TOKEN environment variables.
+
+    Returns validation metrics including MAE, RMSE, correlation, and detailed prediction results.
+    """
+    try:
+        from src.config.central_config import CentralConfig
+        from src.clients.central_export_client import CentralExportClient
+        from src.services.central_export_service import CentralExportService
+
+        # Validate prediction Central configuration
+        prediction_config = CentralConfig.from_prediction_env()
+
+        if not prediction_config.is_enabled():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Prediction Central API integration is not enabled. "
+                       "Set PREDICTION_CENTRAL_ENDPOINT and PREDICTION_CENTRAL_API_TOKEN environment variables."
+            )
+
+        # Validate configuration
+        is_valid, issues = prediction_config.validate_configuration()
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Prediction Central API configuration invalid: {'; '.join(issues)}"
+            )
+
+        # Get the current model
+        model = risk_service.model
+        if model is None or model.model is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No trained model available. Train a model first using /training/central/train-full"
+            )
+
+        # Create prediction Central client
+        client_config = prediction_config.get_client_config()
+        auth_config = client_config.pop('authentication')
+        endpoint = client_config.pop('endpoint')
+
+        prediction_client = CentralExportClient(
+            endpoint=endpoint,
+            auth_token=auth_config.get('token', ''),
+            config=client_config
+        )
+
+        # Build filters for validation data collection
+        filters = {
+            'days_back': days_back,
+            'include_inactive': include_inactive,
+            'severity_threshold': severity_threshold
+        }
+
+        # Add optional filters
+        if clusters:
+            filters['clusters'] = [c.strip() for c in clusters.split(',') if c.strip()]
+        if namespaces:
+            filters['namespaces'] = [n.strip() for n in namespaces.split(',') if n.strip()]
+
+        logger.info(f"Starting prediction validation against prediction Central")
+        logger.info(f"Model: {model_id} version: {model_version or 'latest'}")
+        logger.info(f"Filters: {filters}")
+        logger.info(f"Limit: {limit}")
+
+        # Create a temporary Central export service for training Central (to access validate_predictions method)
+        # We don't actually use the training Central client - just need the service class
+        from src.config.central_config import create_central_client_from_config
+        training_client = create_central_client_from_config()
+        training_service = CentralExportService(client=training_client, config={})
+
+        # Run validation
+        validation_results = training_service.validate_predictions(
+            model=model,
+            prediction_client=prediction_client,
+            filters=filters,
+            limit=limit
+        )
+
+        # Clean up
+        prediction_client.close()
+        training_client.close()
+
+        # Prepare response
+        response = {
+            "success": True,
+            "model_id": model_id,
+            "model_version": model.model_version or "unknown",
+            "validation_summary": {
+                "total_samples": validation_results['total_samples'],
+                "successful_predictions": validation_results['successful_predictions'],
+                "failed_predictions": validation_results['failed_predictions'],
+                "success_rate": round(
+                    validation_results['successful_predictions'] / validation_results['total_samples'] * 100, 2
+                ) if validation_results['total_samples'] > 0 else 0
+            },
+            "metrics": {
+                "mae": round(validation_results.get('mae', 0.0), 4),
+                "rmse": round(validation_results.get('rmse', 0.0), 4),
+                "correlation": round(validation_results.get('correlation', 0.0), 4),
+                "within_30_percent": round(validation_results.get('within_30_percent', 0.0), 2),
+                "mean_actual_score": round(validation_results.get('mean_actual_score', 0.0), 4),
+                "mean_predicted_score": round(validation_results.get('mean_predicted_score', 0.0), 4)
+            },
+            "filters_used": filters,
+            "prediction_central_endpoint": prediction_config.get_endpoint(),
+            "predictions": validation_results.get('predictions', [])[:20]  # Return first 20 for brevity
+        }
+
+        logger.info(f"Validation complete: MAE={response['metrics']['mae']:.4f}, "
+                   f"Correlation={response['metrics']['correlation']:.4f}")
+
+        return response
+
+    except HTTPException:
+        raise
+    except ImportError as e:
+        logger.error(f"Central API components not available: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Central API integration components not available"
+        )
+    except Exception as e:
+        logger.error(f"Prediction validation request failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Validation failed: {str(e)}"
+        )

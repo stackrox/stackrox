@@ -62,6 +62,32 @@ spec:
               value: "INFO"
             - name: PYTHONPATH
               value: "/app"
+            # Training Central API configuration
+            - name: TRAINING_CENTRAL_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: ml-risk-service-secrets
+                  key: training-central-endpoint
+                  optional: true
+            - name: TRAINING_CENTRAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ml-risk-service-secrets
+                  key: training-central-api-token
+                  optional: true
+            # Prediction Central API configuration
+            - name: PREDICTION_CENTRAL_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: ml-risk-service-secrets
+                  key: prediction-central-endpoint
+                  optional: true
+            - name: PREDICTION_CENTRAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ml-risk-service-secrets
+                  key: prediction-central-api-token
+                  optional: true
           # Optional: Load pre-trained model
           # - name: MODEL_FILE
           #   value: "/app/models/pretrained_model.pkl"

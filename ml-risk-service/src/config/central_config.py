@@ -16,15 +16,34 @@ logger = logging.getLogger(__name__)
 class CentralConfig:
     """Configuration manager for Central API integration."""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, use_prediction_env: bool = False):
         """
         Initialize Central configuration.
 
         Args:
             config_path: Optional path to configuration file
+            use_prediction_env: If True, use PREDICTION_CENTRAL_* environment variables
+                              instead of TRAINING_CENTRAL_* variables
         """
+        self.use_prediction_env = use_prediction_env
         self.config_path = config_path or self._find_config_file()
         self.config = self._load_config()
+
+    @classmethod
+    def from_prediction_env(cls, config_path: Optional[str] = None) -> 'CentralConfig':
+        """
+        Create a CentralConfig instance for prediction Central.
+
+        This will use PREDICTION_CENTRAL_* environment variables instead of
+        TRAINING_CENTRAL_* variables.
+
+        Args:
+            config_path: Optional path to configuration file
+
+        Returns:
+            CentralConfig instance configured for prediction Central
+        """
+        return cls(config_path=config_path, use_prediction_env=True)
 
     def _find_config_file(self) -> str:
         """Find the feature configuration file."""
@@ -45,7 +64,22 @@ class CentralConfig:
         try:
             with open(self.config_path, 'r') as f:
                 config = yaml.safe_load(f)
-            return config.get('central_api', {})
+
+            # Load appropriate section based on prediction flag
+            if self.use_prediction_env:
+                section = config.get('prediction_central_api', {})
+                logger.debug("Loading prediction_central_api configuration section")
+            else:
+                section = config.get('training_central_api', {})
+                logger.debug("Loading training_central_api configuration section")
+
+            # Fallback to legacy 'central_api' section if new sections don't exist
+            if not section:
+                section = config.get('central_api', {})
+                logger.warning("Using legacy 'central_api' section - consider migrating to "
+                             "'training_central_api' and 'prediction_central_api' sections")
+
+            return section
         except Exception as e:
             logger.warning(f"Failed to load config from {self.config_path}: {e}")
             return {}
@@ -59,12 +93,14 @@ class CentralConfig:
         endpoint = self.config.get('endpoint', '')
 
         # Allow environment variable override
-        env_endpoint = os.getenv('CENTRAL_ENDPOINT')
+        env_var = 'PREDICTION_CENTRAL_ENDPOINT' if self.use_prediction_env else 'TRAINING_CENTRAL_ENDPOINT'
+        env_endpoint = os.getenv(env_var)
         if env_endpoint:
             endpoint = env_endpoint
 
         if not endpoint:
-            raise ValueError("Central API endpoint not configured")
+            central_type = "Prediction" if self.use_prediction_env else "Training"
+            raise ValueError(f"{central_type} Central API endpoint not configured")
 
         return endpoint.rstrip('/')
 
@@ -90,21 +126,23 @@ class CentralConfig:
         token = auth_config.get('api_token', '')
 
         # Check if token is a placeholder for environment variable substitution
-        if token.startswith('${') and token.endswith('}'):
+        if token and token.startswith('${') and token.endswith('}'):
             env_var = token[2:-1]
             token = os.getenv(env_var)
+            # If the placeholder env var doesn't exist, fall through to default behavior
 
         # If we have a non-empty token that's not a placeholder, use it directly
-        elif token and not token.strip().startswith('${'):
+        if token and not token.strip().startswith('${'):
             # Token value is already provided in configuration
             pass
-
-        # Fallback to direct environment variable lookup if no token found
         else:
-            token = os.getenv('CENTRAL_API_TOKEN')
+            # Fallback to direct environment variable lookup if no token found
+            env_var = 'PREDICTION_CENTRAL_API_TOKEN' if self.use_prediction_env else 'TRAINING_CENTRAL_API_TOKEN'
+            token = os.getenv(env_var)
 
         if not token:
-            raise ValueError("API token not configured or found in environment")
+            central_type = "Prediction" if self.use_prediction_env else "Training"
+            raise ValueError(f"{central_type} Central API token not configured or found in environment")
 
         return {
             'method': 'api_token',

@@ -483,6 +483,179 @@ class CentralExportService:
         except Exception as e:
             logger.warning(f"Failed to log final risk score summary: {e}")
 
+    def validate_predictions(self,
+                           model,
+                           prediction_client: CentralExportClient,
+                           filters: Optional[Dict[str, Any]] = None,
+                           limit: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Validate model predictions against actual risk scores from a prediction Central instance.
+
+        This method:
+        1. Pulls deployments from a prediction Central (different from training Central)
+        2. Runs predictions on those deployments using the provided model
+        3. Compares predicted risk scores with actual Central risk scores
+        4. Returns validation metrics
+
+        Args:
+            model: Trained RiskRankingModel instance to validate
+            prediction_client: CentralExportClient for prediction Central instance
+            filters: Optional filters for data collection
+            limit: Maximum number of deployments to validate
+
+        Returns:
+            Dictionary with validation results:
+            {
+                'total_samples': int,
+                'successful_predictions': int,
+                'failed_predictions': int,
+                'mae': float,  # Mean Absolute Error
+                'rmse': float,  # Root Mean Squared Error
+                'correlation': float,  # Correlation coefficient
+                'within_30_percent': float,  # Percentage within ±30%
+                'predictions': List[Dict]  # Individual prediction results
+            }
+        """
+        import numpy as np
+
+        logger.info("Starting prediction validation")
+        logger.info(f"Validation filters: {filters}, limit: {limit}")
+
+        # Create temporary service for prediction Central
+        prediction_service = CentralExportService(
+            client=prediction_client,
+            config=self.config
+        )
+
+        validation_results = {
+            'total_samples': 0,
+            'successful_predictions': 0,
+            'failed_predictions': 0,
+            'predictions': []
+        }
+
+        actual_scores = []
+        predicted_scores = []
+
+        try:
+            # Collect samples from prediction Central
+            for i, sample in enumerate(prediction_service.collect_training_data(filters, limit)):
+                validation_results['total_samples'] += 1
+
+                try:
+                    # Extract features and actual risk score
+                    baseline_factors = sample.get('baseline_factors', {})
+                    actual_score = sample.get('risk_score', 0.0)
+
+                    # Get feature names from model
+                    feature_names = model.feature_names if hasattr(model, 'feature_names') else []
+
+                    # Build feature vector matching model's expected features
+                    features = {
+                        'policy_violations': baseline_factors.get('policy_violations', 1.0),
+                        'process_baseline': baseline_factors.get('process_baseline', 1.0),
+                        'vulnerabilities': baseline_factors.get('vulnerabilities', 1.0),
+                        'risky_components': baseline_factors.get('risky_components', 1.0),
+                        'component_count': baseline_factors.get('component_count', 1.0),
+                        'image_age': baseline_factors.get('image_age', 1.0),
+                        'service_config': baseline_factors.get('service_config', 1.0),
+                        'reachability': baseline_factors.get('reachability', 1.0),
+                    }
+
+                    # Convert to numpy array in correct order
+                    if feature_names:
+                        X = np.array([[features.get(name, 1.0) for name in feature_names]])
+                    else:
+                        X = np.array([[features[k] for k in sorted(features.keys())]])
+
+                    # Make prediction
+                    predictions = model.predict(X, explain=False)
+                    predicted_score = predictions[0].risk_score
+
+                    # Track scores
+                    actual_scores.append(actual_score)
+                    predicted_scores.append(predicted_score)
+
+                    # Store prediction result
+                    workload_metadata = sample.get('workload_metadata', {})
+                    validation_results['predictions'].append({
+                        'deployment_name': workload_metadata.get('deployment_name', 'unknown'),
+                        'namespace': workload_metadata.get('namespace', 'unknown'),
+                        'cluster_id': workload_metadata.get('cluster_id', 'unknown'),
+                        'actual_score': float(actual_score),
+                        'predicted_score': float(predicted_score),
+                        'absolute_error': float(abs(predicted_score - actual_score)),
+                        'percent_error': float(abs(predicted_score - actual_score) / (actual_score + 1e-10) * 100)
+                    })
+
+                    validation_results['successful_predictions'] += 1
+
+                    # Log progress
+                    if validation_results['successful_predictions'] % 10 == 0:
+                        logger.info(f"Validated {validation_results['successful_predictions']} predictions")
+
+                except Exception as e:
+                    logger.warning(f"Failed to validate prediction for sample {i}: {e}")
+                    validation_results['failed_predictions'] += 1
+                    continue
+
+            # Calculate validation metrics
+            if actual_scores and predicted_scores:
+                actual_array = np.array(actual_scores)
+                predicted_array = np.array(predicted_scores)
+
+                # Mean Absolute Error
+                mae = float(np.mean(np.abs(predicted_array - actual_array)))
+
+                # Root Mean Squared Error
+                rmse = float(np.sqrt(np.mean((predicted_array - actual_array) ** 2)))
+
+                # Correlation
+                if np.std(actual_array) > 0 and np.std(predicted_array) > 0:
+                    correlation = float(np.corrcoef(actual_array, predicted_array)[0, 1])
+                else:
+                    correlation = 0.0
+
+                # Percentage within ±30%
+                within_range = float(np.mean(
+                    np.abs(predicted_array - actual_array) / (actual_array + 1e-10) <= 0.3
+                ) * 100)
+
+                validation_results.update({
+                    'mae': mae,
+                    'rmse': rmse,
+                    'correlation': correlation,
+                    'within_30_percent': within_range,
+                    'mean_actual_score': float(np.mean(actual_array)),
+                    'mean_predicted_score': float(np.mean(predicted_array)),
+                    'score_variance_actual': float(np.var(actual_array)),
+                    'score_variance_predicted': float(np.var(predicted_array))
+                })
+
+                logger.info(f"Validation complete: {validation_results['successful_predictions']} samples")
+                logger.info(f"  MAE: {mae:.4f}, RMSE: {rmse:.4f}")
+                logger.info(f"  Correlation: {correlation:.4f}")
+                logger.info(f"  Within ±30%: {within_range:.1f}%")
+            else:
+                logger.warning("No valid predictions to calculate metrics")
+                validation_results.update({
+                    'mae': 0.0,
+                    'rmse': 0.0,
+                    'correlation': 0.0,
+                    'within_30_percent': 0.0
+                })
+
+        except Exception as e:
+            logger.error(f"Validation failed: {e}")
+            validation_results['error'] = str(e)
+            raise
+
+        finally:
+            # Clean up prediction service
+            prediction_service.close()
+
+        return validation_results
+
     def close(self):
         """Clean up resources."""
         self.clear_cache()
