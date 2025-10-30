@@ -93,6 +93,11 @@ func (s *GroupsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, groups))
 
+	foundGroups, missing, err := store.GetMany(ctx, groupIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), groups, foundGroups)
+
 	groupCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, groupCount)

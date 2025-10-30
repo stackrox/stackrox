@@ -93,6 +93,11 @@ func (s *DeclarativeConfigHealthsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, declarativeConfigHealths))
 
+	foundDeclarativeConfigHealths, missing, err := store.GetMany(ctx, declarativeConfigHealthIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), declarativeConfigHealths, foundDeclarativeConfigHealths)
+
 	declarativeConfigHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, declarativeConfigHealthCount)

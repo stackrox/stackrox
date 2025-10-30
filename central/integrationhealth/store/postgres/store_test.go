@@ -93,6 +93,11 @@ func (s *IntegrationHealthsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
 
+	foundIntegrationHealths, missing, err := store.GetMany(ctx, integrationHealthIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), integrationHealths, foundIntegrationHealths)
+
 	integrationHealthCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, integrationHealthCount)
