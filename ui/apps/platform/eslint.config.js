@@ -775,7 +775,6 @@ module.exports = [
         ignores: [
             'cypress/integration/**',
             'src/Components/**',
-            'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
