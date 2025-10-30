@@ -187,6 +187,26 @@ main() {
 
     pull_latest_master
 
+    if [[ "$dry_run" == true ]]; then
+        local all_refs
+        all_refs=$(find_references)
+
+        local categorized
+        categorized=$(categorize_references "$all_refs")
+        local direct_refs="${categorized%%$'\x1E'*}"
+        local comment_refs="${categorized#*$'\x1E'}"
+
+        update_build_image_version "$new_version"
+        update_direct_references "$new_version"
+
+        echo "> Dry-run mode: stopping before branch creation"
+        echo "> Changes made but not committed. Review with: git diff"
+        print_comment_references "$comment_refs"
+        exit 0
+    fi
+
+    create_or_switch_branch "$branch_name"
+
     local all_refs
     all_refs=$(find_references)
 
@@ -198,14 +218,6 @@ main() {
     update_build_image_version "$new_version"
     update_direct_references "$new_version"
 
-    if [[ "$dry_run" == true ]]; then
-        echo "> Dry-run mode: stopping before branch creation"
-        echo "> Changes made but not committed. Review with: git diff"
-        print_comment_references "$comment_refs"
-        exit 0
-    fi
-
-    create_or_switch_branch "$branch_name"
     stage_and_commit "$new_version"
     push_and_create_pr "$new_version"
 
