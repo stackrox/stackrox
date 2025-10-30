@@ -1,14 +1,14 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
-    Select,
-    MenuToggle,
-    SelectList,
-    SelectOption,
-    SelectGroup,
     Divider,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectGroup,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 

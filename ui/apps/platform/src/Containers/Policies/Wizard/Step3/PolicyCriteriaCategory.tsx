@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ExpandableSection } from '@patternfly/react-core';
 
 import type { Descriptor } from './policyCriteriaDescriptors';

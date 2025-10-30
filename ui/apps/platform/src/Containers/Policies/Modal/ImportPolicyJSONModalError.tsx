@@ -1,15 +1,14 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { Button, ModalBoxBody, ModalBoxFooter, Alert } from '@patternfly/react-core';
+import { Alert, Button, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 
 import type { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
+    checkForBlockedSubmit,
     hasDuplicateIdOnly,
     policyOverwriteAllowed,
-    checkForBlockedSubmit,
 } from './PolicyImport.utils';
 import type { PolicyImportError, PolicyResolution } from './PolicyImport.utils';
 import DuplicatePolicyForm from './DuplicatePolicyForm';
