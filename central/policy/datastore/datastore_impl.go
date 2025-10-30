@@ -12,6 +12,8 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
+	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -71,9 +73,10 @@ type datastoreImpl struct {
 	storage     store.Store
 	policyMutex sync.Mutex
 
-	clusterDatastore    clusterDS.DataStore
-	notifierDatastore   notifierDS.DataStore
-	categoriesDatastore categoriesDataStore.DataStore
+	clusterDatastore            clusterDS.DataStore
+	notifierDatastore           notifierDS.DataStore
+	categoriesDatastore         categoriesDataStore.DataStore
+	policyCategoryEdgeDatastore policyCategoryEdgeDS.DataStore
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -198,18 +201,55 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	}
 
 	var policies []*storage.Policy
+	var ids []string
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
+		ids = append(ids, policy.Id)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies...)
+	q := searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, ids...).ProtoQuery()
+	edges, err := ds.policyCategoryEdgeDatastore.SearchRawEdges(ctx, q)
 	if err != nil {
-		return nil, errorsPkg.Wrap(err, "failed to fill category names")
+		return nil, err
 	}
+
+	categoryIDSet := set.NewStringSet()
+	for _, edge := range edges {
+		categoryIDSet.Add(edge.GetCategoryId())
+	}
+
+	categories, err := ds.categoriesDatastore.GetAllPolicyCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	categoryIDToName := make(map[string]string, len(categories))
+	for _, c := range categories {
+		categoryIDToName[c.GetId()] = c.GetName()
+	}
+
+	policyIDToCategories := make(map[string][]string)
+	for _, edge := range edges {
+		categoryName := categoryIDToName[edge.GetCategoryId()]
+		if categoryName != "" {
+			policyIDToCategories[edge.GetPolicyId()] = append(
+				policyIDToCategories[edge.GetPolicyId()],
+				categoryName,
+			)
+		}
+	}
+
+	for _, p := range policies {
+		p.Categories = policyIDToCategories[p.GetId()]
+	}
+	// err = ds.fillCategoryNames(ctx, policies...)
+	// if err != nil {
+	// 	return nil, errorsPkg.Wrap(err, "failed to fill category names")
+	// }
 
 	return policies, err
 }

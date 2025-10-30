@@ -61,14 +61,15 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	categoryStorage := categoryPostgres.New(s.db)
 
 	edgeStorage := edgePostgres.New(s.db)
+	edgeDS := policyCategoryEdgeDS.New(edgeStorage)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, edgeDS)
 
 	policyStorage := policyStore.New(s.db)
-	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS, edgeDS)
 
 	s.mockCategoryDS = policyCategoryMocks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
+	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS, edgeDS)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TearDownTest() {
