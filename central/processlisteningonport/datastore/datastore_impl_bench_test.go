@@ -19,33 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getUniquePodsFromPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
-	pods := make([]string, 0, len(plops))
-	podSet := make(map[string]struct{})
-
-	for _, plop := range plops {
-		if _, exists := podSet[plop.GetPodUid()]; !exists {
-			pods = append(pods, plop.GetPodUid())
-			podSet[plop.GetPodUid()] = struct{}{}
-		}
-	}
-
-	return pods
-}
-
-func removeAllPlops(ctx context.Context, ds DataStore, plops []*storage.ProcessListeningOnPortFromSensor) error {
-	pods := getUniquePodsFromPlops(plops)
-
-	for _, pod := range pods {
-		err := ds.RemovePlopsByPod(ctx, pod)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // addIndicators inserts all unique process indicators corresponding to the PLOPs.
 func addIndicators(b *testing.B, ctx context.Context, ds DataStore, plops []*storage.ProcessListeningOnPortFromSensor) {
 	indicatorMap := make(map[string]struct{})
