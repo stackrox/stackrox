@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -195,63 +196,67 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 	return policies, missingIndices, nil
 }
 
+const getAllPoliciesWithCategoriesStmt = `
+  SELECT 
+      p.serialized,
+      COALESCE(
+          array_agg(pc.name ORDER BY pc.name) FILTER (WHERE pc.name IS NOT NULL), 
+          '{}'
+      ) as category_names
+  FROM policies p
+  LEFT JOIN policy_category_edges pce ON p.id = pce.policyid
+  LEFT JOIN policy_categories pc ON pce.categoryid = pc.id
+  GROUP BY p.id, p.serialized
+  `
+
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
+	// the tx.begin is only to get easy access to a raw DB object for now
+	// refactor this to be a function of the store, which would remove the transaction overhead
+	// leading to even better performance
+	_, tx, err := ds.storage.Begin(ctx)
+	defer tx.Commit(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.Query(ctx, getAllPoliciesWithCategoriesStmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
 	var policies []*storage.Policy
-	var ids []string
-	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
-		policies = append(policies, policy)
-		ids = append(ids, policy.Id)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
+	for rows.Next() {
+		var serialized []byte
+		var categoryNames []string
 
-	q := searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, ids...).ProtoQuery()
-	edges, err := ds.policyCategoryEdgeDatastore.SearchRawEdges(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	categoryIDSet := set.NewStringSet()
-	for _, edge := range edges {
-		categoryIDSet.Add(edge.GetCategoryId())
-	}
-
-	categories, err := ds.categoriesDatastore.GetAllPolicyCategories(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	categoryIDToName := make(map[string]string, len(categories))
-	for _, c := range categories {
-		categoryIDToName[c.GetId()] = c.GetName()
-	}
-
-	policyIDToCategories := make(map[string][]string)
-	for _, edge := range edges {
-		categoryName := categoryIDToName[edge.GetCategoryId()]
-		if categoryName != "" {
-			policyIDToCategories[edge.GetPolicyId()] = append(
-				policyIDToCategories[edge.GetPolicyId()],
-				categoryName,
-			)
+		if err := rows.Scan(&serialized, &categoryNames); err != nil {
+			return nil, err
 		}
+
+		policy := &storage.Policy{}
+		if err := proto.Unmarshal(serialized, policy); err != nil {
+			return nil, err
+		}
+
+		// Fill the categories array
+		policy.Categories = categoryNames
+
+		policies = append(policies, policy)
 	}
 
-	for _, p := range policies {
-		p.Categories = policyIDToCategories[p.GetId()]
-	}
+	return policies, rows.Err()
 	// err = ds.fillCategoryNames(ctx, policies...)
 	// if err != nil {
 	// 	return nil, errorsPkg.Wrap(err, "failed to fill category names")
 	// }
 
-	return policies, err
+	// return policies, err
 }
 
 // GetPolicyByName returns policy with given name.
