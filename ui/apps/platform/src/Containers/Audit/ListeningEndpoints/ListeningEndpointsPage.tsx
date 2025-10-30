@@ -127,8 +127,13 @@ function ListeningEndpointsPage() {
         const newValue = oldValue.includes(value)
             ? oldValue.filter((f) => f !== value)
             : [...oldValue, value];
+        onSearchFilterChange({ ...searchFilter, [entity]: newValue });
+    }
+
+    function onSearchFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
+        setPage(1);
         setSearchValue('');
-        setSearchFilter({ ...searchFilter, [entity]: newValue });
     }
 
     return (
@@ -214,7 +219,7 @@ function ListeningEndpointsPage() {
                         <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
-                                onFilterChange={setSearchFilter}
+                                onFilterChange={onSearchFilterChange}
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
                                     { displayName: 'Namespace', searchFilterName: 'Namespace' },
