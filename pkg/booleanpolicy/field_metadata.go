@@ -898,7 +898,7 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	if features.SensitiveFileActivity.Enabled() {
-		f.registerFieldMetadataConditionally(fieldnames.FilePath,
+		f.registerFieldMetadata(fieldnames.FilePath,
 			querybuilders.ForFieldLabel(search.FilePath), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				// TODO(ROX-31449): change to an absolute path regex when arbitrary
