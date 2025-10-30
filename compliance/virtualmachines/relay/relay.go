@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strconv"
 	"time"
 
@@ -25,6 +26,22 @@ import (
 )
 
 var log = logging.LoggerForModule()
+
+// waitForFileTouchAndDelete waits for a file to exist at the specified path, then deletes it.
+// This is used for debugging/testing to manually control execution flow.
+func waitForFileTouchAndDelete(filePath string) {
+	log.Debugf("Waiting for file touch: %s", filePath)
+	for {
+		if _, err := os.Stat(filePath); err == nil {
+			log.Debugf("File detected: %s, deleting...", filePath)
+			if err := os.Remove(filePath); err != nil {
+				log.Warnf("Failed to delete file %s: %v", filePath, err)
+			}
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
 
 type VsockServer struct {
 	listener         *vsock.Listener
@@ -121,6 +138,9 @@ func (r *Relay) Run() error {
 	}()
 
 	for {
+		// Wait for manual trigger before accepting connection
+		waitForFileTouchAndDelete("/tmp/accept")
+
 		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.Stop()
 		conn, err := r.vsockServer.listener.Accept()
 		if err != nil {
@@ -138,6 +158,9 @@ func (r *Relay) Run() error {
 			continue
 		}
 		metrics.VsockConnectionsAccepted.Inc()
+
+		// Wait for manual trigger before acquiring semaphore
+		waitForFileTouchAndDelete("/tmp/acquire")
 
 		if err := r.vsockServer.acquireSemaphore(r.ctx); err != nil {
 			if r.ctx.Err() != nil {
@@ -165,6 +188,9 @@ func (r *Relay) Run() error {
 					log.Errorf("Failed to close connection: %v", err)
 				}
 			}(conn)
+
+			// Wait for manual trigger before handling connection
+			waitForFileTouchAndDelete("/tmp/handle")
 
 			if err := r.handleVsockConnection(conn); err != nil {
 				log.Errorf("Error handling vsock connection from %v: %v", conn.RemoteAddr(), err)
