@@ -120,24 +120,9 @@ func (r *Relay) Run() error {
 	}()
 
 	for {
-		if err := r.vsockServer.acquireSemaphore(r.ctx); err != nil {
-			if r.ctx.Err() != nil {
-				log.Info("Stopping virtual machine relay")
-				return r.ctx.Err()
-			}
-
-			log.Warnf("Failed to acquire semaphore to handle connection after %v: %v",
-				r.vsockServer.maxSemaphoreWaitTime, err,
-			)
-
-			continue
-		}
-
 		// Accept() is blocking, but it will return when ctx is cancelled and the above goroutine calls r.vsockServer.Stop()
 		conn, err := r.vsockServer.listener.Accept()
 		if err != nil {
-			r.vsockServer.releaseSemaphore()
-
 			if r.ctx.Err() != nil {
 				log.Info("Stopping virtual machine relay")
 				return r.ctx.Err()
@@ -152,6 +137,24 @@ func (r *Relay) Run() error {
 			continue
 		}
 		metrics.VsockConnectionsAccepted.Inc()
+
+		if err := r.vsockServer.acquireSemaphore(r.ctx); err != nil {
+			if r.ctx.Err() != nil {
+				log.Info("Stopping virtual machine relay")
+				return r.ctx.Err()
+			}
+
+			log.Warnf("Failed to acquire semaphore to handle connection: %v", err)
+
+			// When the concurrency limit is reached, the semaphore cannot be acquired. We close the connection and
+			// continue to listen. In this case, there is no need to add an extra wait to prevent a busy loop, because
+			// we already waited maxSemaphoreWaitTime
+			if err := conn.Close(); err != nil {
+				log.Warnf("Failed to close connection after failing to acquire semaphore: %v", err)
+			}
+
+			continue
+		}
 
 		go func(conn net.Conn) {
 			defer r.vsockServer.releaseSemaphore()
