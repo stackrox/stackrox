@@ -328,20 +328,19 @@ const VulnMgmtCves = ({
         setSelectedCveIds(idsToStaySelected);
     }
 
-    const renderRowActionButtons =
-        hasWriteAccessForAddToPolicy
-            ? ({ cve }) => (
-                  <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-                      {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
-                          <RowActionButton
-                              text="Add to policy"
-                              onClick={addToPolicy(cve)}
-                              icon={<Plus className="my-1 h-4 w-4" />}
-                          />
-                      )}
-                  </div>
-              )
-            : null;
+    const renderRowActionButtons = hasWriteAccessForAddToPolicy
+        ? ({ cve }) => (
+              <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+                  {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                      <RowActionButton
+                          text="Add to policy"
+                          onClick={addToPolicy(cve)}
+                          icon={<Plus className="my-1 h-4 w-4" />}
+                      />
+                  )}
+              </div>
+          )
+        : null;
 
     const tableHeaderComponents = (
         <>
