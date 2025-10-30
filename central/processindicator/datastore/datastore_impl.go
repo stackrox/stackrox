@@ -26,7 +26,7 @@ import (
 
 const (
 	deleteBatchSize = 5000
-	getBatchSize    = 10000
+	getBatchSize    = 1000
 )
 
 var (

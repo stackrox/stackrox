@@ -38,7 +38,7 @@ var (
 )
 
 const (
-	getBatchSize = 10000
+	getBatchSize = 1000
 )
 
 func newDatastoreImpl(
