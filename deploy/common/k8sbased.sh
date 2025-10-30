@@ -429,7 +429,7 @@ function launch_central {
           )
       fi
 
-      if [[ -n "$ROX_POSTGRES_MAX_CONNS" ]]; then
+      if [[ -n "${ROX_POSTGRES_MAX_CONNS:-}" ]]; then
           helm_args+=(
             --set "central.db.source.maxConns=${ROX_POSTGRES_MAX_CONNS}"
           )
