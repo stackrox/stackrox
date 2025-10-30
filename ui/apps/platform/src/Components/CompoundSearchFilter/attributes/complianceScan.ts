@@ -1,6 +1,6 @@
 // If you're adding a new attribute, make sure to add it to "complianceScanAttributes" as well
 
-import { CompoundSearchFilterAttribute } from '../types';
+import type { CompoundSearchFilterAttribute } from '../types';
 
 export const ConfigID: CompoundSearchFilterAttribute = {
     displayName: 'Config ID',

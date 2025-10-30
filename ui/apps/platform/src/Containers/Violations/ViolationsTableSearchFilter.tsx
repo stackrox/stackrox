@@ -1,4 +1,3 @@
-import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';

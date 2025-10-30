@@ -74,6 +74,7 @@ const (
 	EventSource_NOT_APPLICABLE   EventSource = 0
 	EventSource_DEPLOYMENT_EVENT EventSource = 1
 	EventSource_AUDIT_LOG_EVENT  EventSource = 2
+	EventSource_NODE_EVENT       EventSource = 3
 )
 
 // Enum value maps for EventSource.
@@ -82,11 +83,13 @@ var (
 		0: "NOT_APPLICABLE",
 		1: "DEPLOYMENT_EVENT",
 		2: "AUDIT_LOG_EVENT",
+		3: "NODE_EVENT",
 	}
 	EventSource_value = map[string]int32{
 		"NOT_APPLICABLE":   0,
 		"DEPLOYMENT_EVENT": 1,
 		"AUDIT_LOG_EVENT":  2,
+		"NODE_EVENT":       3,
 	}
 )
 
@@ -1385,11 +1388,13 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\fPolicySource\x12\x0e\n" +
 	"\n" +
 	"IMPERATIVE\x10\x00\x12\x0f\n" +
-	"\vDECLARATIVE\x10\x01*L\n" +
+	"\vDECLARATIVE\x10\x01*\\\n" +
 	"\vEventSource\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x00\x12\x14\n" +
 	"\x10DEPLOYMENT_EVENT\x10\x01\x12\x13\n" +
-	"\x0fAUDIT_LOG_EVENT\x10\x02*\"\n" +
+	"\x0fAUDIT_LOG_EVENT\x10\x02\x12\x0e\n" +
+	"\n" +
+	"NODE_EVENT\x10\x03*\"\n" +
 	"\x0fBooleanOperator\x12\x06\n" +
 	"\x02OR\x10\x00\x12\a\n" +
 	"\x03AND\x10\x01*\xa1\x02\n" +

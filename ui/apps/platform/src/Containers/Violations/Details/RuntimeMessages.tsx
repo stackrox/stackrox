@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 
 import type { ProcessViolation, Violation } from 'types/alert.proto';

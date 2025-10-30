@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Button, Flex, FlexItem, Popover } from '@patternfly/react-core';
 import { Th } from '@patternfly/react-table';

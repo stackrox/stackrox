@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import type { FunctionComponent, PropsWithChildren, ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 

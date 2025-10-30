@@ -9,9 +9,14 @@ import static util.Helpers.withRetry
 import com.google.protobuf.Timestamp
 import orchestratormanager.OrchestratorTypes
 
+import io.fabric8.kubernetes.api.model.Container
+import io.fabric8.kubernetes.api.model.ContainerPort
+import io.fabric8.kubernetes.api.model.Pod
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
@@ -24,6 +29,7 @@ import services.DeploymentService
 import services.ImageService
 import services.NamespaceService
 import services.NetworkGraphService
+import services.PolicyService
 import services.RoleService
 import services.SearchService
 import services.SecretService
@@ -98,10 +104,29 @@ class SACTest extends BaseSpecification {
         def img = ImageService.scanImage(TEST_IMAGE, false)
         assert img.hasScan()
 
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deployment : DEPLOYMENTS) {
-            assert Services.waitForDeployment(deployment)
+        withRetry(30, 5) {
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT_QA1, DEPLOYMENT_QA2)
+            orchestrator.batchCreateDeployments(DEPLOYMENTS)
+            for (Deployment deployment : DEPLOYMENTS) {
+                assert Services.waitForDeployment(deployment)
+            }
+
+            // Ensure sensor is up and running (source of alerts)
+            orchestrator.waitForSensor()
+
+            // Check the "Secure Shell (ssh) Port Exposed" policy is active
+            def policyQuery = RawQuery.newBuilder().
+                setQuery("Policy ID:3bf3cec3-d3e8-4512-86ca-b306697d4b75").
+                build()
+            def policies = PolicyService.getPolicies(policyQuery)
+            assert policies.size() == 1
+            assert policies.first().disabled == false
+
+            // Check both pods are created and expose port 22
+            ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA1, "test")
+            ensurePodsExposeOnlyTCPPort22(NAMESPACE_QA2, "test")
         }
+
         // Make sure each deployment has caused at least one alert
         assert waitForViolation(DEPLOYMENT_QA1.name, "Secure Shell (ssh) Port Exposed",
                 WAIT_FOR_VIOLATION_TIMEOUT)
@@ -234,6 +259,52 @@ class SACTest extends BaseSpecification {
                                 .setClusterName(clusterName)
                                 .setNamespaceName(namespaceName)))
                 .build())
+    }
+
+    boolean containerExposesTCPPort22(Container container) {
+        for (ContainerPort port: container.getPorts()) {
+            if (port.getProtocol() == "TCP" && port.getContainerPort() == 22) {
+                return true
+            }
+        }
+        return false
+    }
+
+    boolean containerExposesNonTCP22Ports(Container container) {
+        for (ContainerPort port: container.getPorts()) {
+            if (port.getProtocol() != "TCP" || port.getContainerPort() != 22) {
+                return true
+            }
+        }
+        return false
+    }
+
+    boolean podExposesTCPPort22(Pod pod) {
+        return pod.getSpec().getContainers().stream().any {
+            containerExposesTCPPort22(it)
+        }
+    }
+
+    boolean podExposesNonTCP22Ports(Pod pod) {
+        return pod.getSpec().getContainers().stream().any {
+            containerExposesNonTCP22Ports(it)
+        }
+    }
+
+    def ensurePodsExposeOnlyTCPPort22(String namespace, String app) {
+        def exposesPortTCP22 = false
+        def exposesOtherPorts = false
+        def pods = orchestrator.getPods(namespace, app)
+        for (Pod pod: pods) {
+            if (podExposesTCPPort22(pod)) {
+                exposesPortTCP22 = true
+            }
+            if (podExposesNonTCP22Ports(pod)) {
+                exposesOtherPorts = true
+            }
+        }
+        assert exposesPortTCP22 == true
+        assert exposesOtherPorts == false
     }
 
     @Unroll

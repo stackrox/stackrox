@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { PageSection, Pagination, ToolbarItem } from '@patternfly/react-core';
 import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 

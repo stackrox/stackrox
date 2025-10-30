@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardHeader,
@@ -15,9 +16,10 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import TypeaheadSelect, { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
-import { ClusterScopeObject } from 'services/RolesService';
-import { ListDeployment } from 'types/deployment.proto';
+import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { ListDeployment } from 'types/deployment.proto';
 
 type PolicyScopeCardProps = {
     type: 'exclusion' | 'inclusion';
@@ -35,7 +37,7 @@ function PolicyScopeCard({
     deployments = [],
     onDelete,
     hasAuditLogEventSource = false,
-}: PolicyScopeCardProps): React.ReactElement {
+}: PolicyScopeCardProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { scope } = value || {};

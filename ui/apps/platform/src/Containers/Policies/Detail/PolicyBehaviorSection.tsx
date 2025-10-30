@@ -1,7 +1,8 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList, Card, CardBody } from '@patternfly/react-core';
 
-import { LifecycleStage, PolicyEventSource, EnforcementAction } from 'types/policy.proto';
+import type { LifecycleStage, PolicyEventSource, EnforcementAction } from 'types/policy.proto';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import {
     formatEventSource,
@@ -20,7 +21,7 @@ function PolicyBehaviorSection({
     lifecycleStages,
     eventSource,
     enforcementActions,
-}: PolicyBehaviorSectionProps): React.ReactElement {
+}: PolicyBehaviorSectionProps): ReactElement {
     const enforcementLifecycleStages = getEnforcementLifecycleStages(
         lifecycleStages,
         enforcementActions

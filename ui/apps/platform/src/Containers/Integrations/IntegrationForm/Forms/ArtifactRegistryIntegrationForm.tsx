@@ -1,6 +1,5 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Checkbox, TextArea } from '@patternfly/react-core';
+import { Checkbox, Form, PageSection, TextArea, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 

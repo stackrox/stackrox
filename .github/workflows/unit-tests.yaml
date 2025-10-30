@@ -89,7 +89,7 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '13', '15' ]
+        pg: [ '15' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}

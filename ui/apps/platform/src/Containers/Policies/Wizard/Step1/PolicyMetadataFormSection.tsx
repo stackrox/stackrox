@@ -1,9 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Flex, TextInput, Radio, TextArea, Form } from '@patternfly/react-core';
-import { FormikContextType, useFormikContext } from 'formik';
+import { useFormikContext } from 'formik';
+import type { FormikContextType } from 'formik';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 
 import PolicyCategoriesSelectField from './PolicyCategoriesSelectField';
 

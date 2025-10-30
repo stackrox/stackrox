@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';

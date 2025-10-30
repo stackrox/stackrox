@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import * as yup from 'yup';
 import { Checkbox, Flex, FlexItem, Form, PageSection, TextInput } from '@patternfly/react-core';

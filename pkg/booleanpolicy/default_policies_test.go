@@ -3231,7 +3231,6 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
-	createVerbGroup := policyGroupWithSingleKeyValue(fieldnames.KubeAPIVerb, "CREATE", false)
 	podExecGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_EXEC", false)
 
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
@@ -3245,7 +3244,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 	}{
 		{
 			event:              podExecEvent("p1", "c1", "cmd"),
-			groups:             []*storage.PolicyGroup{createVerbGroup, podExecGroup},
+			groups:             []*storage.PolicyGroup{podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "cmd")},
 		},
 		{
@@ -3253,13 +3252,9 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 			groups:             []*storage.PolicyGroup{podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
+
 		{
-			event:              podExecEvent("p1", "c1", ""),
-			groups:             []*storage.PolicyGroup{createVerbGroup},
-			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
-		},
-		{
-			groups: []*storage.PolicyGroup{createVerbGroup, podExecGroup},
+			groups: []*storage.PolicyGroup{podExecGroup},
 		},
 		{
 			event:  podPortForwardEvent("p1", 8000),
@@ -3272,7 +3267,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		},
 		{
 			event:              podExecEvent("p1", "c1", ""),
-			groups:             []*storage.PolicyGroup{createVerbGroup},
+			groups:             []*storage.PolicyGroup{podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 			withProcessSection: true,
 		},
@@ -4007,7 +4002,6 @@ func podExecEvent(pod, container, command string) *storage.KubernetesEvent {
 			Name:     pod,
 			Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 		},
-		ApiVerb: storage.KubernetesEvent_CREATE,
 		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
 			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
 				Container: container,
@@ -4023,7 +4017,6 @@ func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 			Name:     pod,
 			Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 		},
-		ApiVerb: storage.KubernetesEvent_CREATE,
 		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
 			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
 				Ports: []int32{port},

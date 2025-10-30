@@ -1,4 +1,3 @@
-import React from 'react';
 import { HashLink as Link } from 'react-router-hash-link';
 import { Tooltip, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';

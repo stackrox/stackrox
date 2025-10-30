@@ -1,0 +1,17 @@
+---
+description: Common secure coding rules for all languages
+alwaysApply: false
+---
+
+# Secure coding rules common to all languages
+
+- Validate and sanitize all input from external sources (user input, APIs, files).
+- Never hardcode secrets, passwords, or API keys. Use secure configuration management or vaults.
+- Use strong encryption (AES-256, RSA-2048+). Avoid deprecated algorithms (DES, MD5, SHA-1).
+- Implement proper authentication and authorization. Verify permissions before granting access.
+- Handle exceptions securely. Never expose stack traces or internal details to users.
+- Validate file paths to prevent traversal attacks. Check canonical paths before operations.
+- Use HTTPS/TLS for all network communications. Validate certificates.
+- Keep dependencies current. Pin specific versions and audit for vulnerabilities.
+- Apply least privilege. Grant minimal permissions.
+- Log security events but never log sensitive data (passwords, tokens, PII).

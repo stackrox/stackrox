@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import { Policy } from 'types/policy.proto';
+import type { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
+import { getPolicyDescriptors } from '../../policies.utils';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
@@ -28,7 +28,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
             {values.policySections?.map((_, sectionIndex) =>
                 readOnly ? (
                     // eslint-disable-next-line react/no-array-index-key
-                    <React.Fragment key={sectionIndex}>
+                    <Fragment key={sectionIndex}>
                         {/* this grid item takes up the default 5 columns specified in the Grid component in PolicyDetailContent */}
                         <GridItem>
                             <PolicySection
@@ -54,10 +54,10 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 </Flex>
                             )}
                         </GridItem>
-                    </React.Fragment>
+                    </Fragment>
                 ) : (
                     // eslint-disable-next-line react/no-array-index-key
-                    <React.Fragment key={sectionIndex}>
+                    <Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
                             descriptors={filteredDescriptors}
@@ -77,7 +77,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 <div className="or-divider" />
                             </Flex>
                         )}
-                    </React.Fragment>
+                    </Fragment>
                 )
             )}
         </>

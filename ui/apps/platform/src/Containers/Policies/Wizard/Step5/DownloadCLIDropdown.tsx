@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DropdownItem } from '@patternfly/react-core';
 
 import downloadCLI from 'services/CLIService';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 function DownloadCLIDropdown({ hasBuild }) {
-    const [isCLIDownloading, setIsCLIDownloading] = React.useState(false);
+    const [isCLIDownloading, setIsCLIDownloading] = useState(false);
 
     // TODO: Show a success and error message
     async function handleDownloadCLI(_, value) {

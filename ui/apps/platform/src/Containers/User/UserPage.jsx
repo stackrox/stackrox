@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';

@@ -5,10 +5,10 @@
  * add it to the viewBasedReportFilterChipDescriptors array at the bottom of this file.
  */
 
-import React from 'react';
+import type { ReactNode } from 'react';
 import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
-function renderFixableStatus(value: string): React.ReactNode {
+function renderFixableStatus(value: string): ReactNode {
     if (value === 'true') {
         return 'Fixable';
     }

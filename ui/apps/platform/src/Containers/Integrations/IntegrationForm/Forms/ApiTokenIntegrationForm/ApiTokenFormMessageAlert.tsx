@@ -1,12 +1,11 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
     DescriptionList,
-    DescriptionListTerm,
-    DescriptionListGroup,
     DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
 } from '@patternfly/react-core';
 import CopyIcon from '@patternfly/react-icons/dist/js/icons/copy-icon';
 import { CopyToClipboard } from 'react-copy-to-clipboard';

@@ -18,7 +18,7 @@ import {
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
+import type { ClientPolicy, LifecycleStage } from 'types/policy.proto';
 
 import DownloadCLIDropdown from './DownloadCLIDropdown';
 import {

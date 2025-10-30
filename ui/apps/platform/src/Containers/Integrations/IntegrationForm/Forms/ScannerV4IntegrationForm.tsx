@@ -1,6 +1,5 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { TextInput, PageSection, Form, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+import { Form, PageSection, TextInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 

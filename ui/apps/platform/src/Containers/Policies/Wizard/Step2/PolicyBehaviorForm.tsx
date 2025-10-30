@@ -19,8 +19,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
-import { ClientPolicy } from 'types/policy.proto';
-import type { PolicyEventSource } from 'types/policy.proto';
+import type { ClientPolicy, PolicyEventSource } from 'types/policy.proto';
 import { getVersionedDocs } from 'utils/versioning';
 
 import {

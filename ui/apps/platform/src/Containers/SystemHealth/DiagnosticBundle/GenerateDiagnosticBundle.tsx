@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
 import { Button, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';

@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -21,11 +22,12 @@ import {
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
 import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
-import { ClientPolicy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';

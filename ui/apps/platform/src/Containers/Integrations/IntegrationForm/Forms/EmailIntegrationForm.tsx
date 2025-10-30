@@ -1,14 +1,14 @@
 /* eslint-disable no-void */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
     Form,
     PageSection,
-    TextInput,
     Popover,
     SelectOption,
+    TextInput,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';

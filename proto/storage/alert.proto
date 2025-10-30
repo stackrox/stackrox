@@ -4,6 +4,7 @@ package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
+import "storage/file_access.proto";
 import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
@@ -11,7 +12,7 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 24
+// Next available tag: 26
 message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index=hash,type(uuid)"
@@ -50,6 +51,11 @@ message Alert {
     string cluster_name = 4; // This field has to be duplicated in Alert for scope management and search.
     string namespace = 5; // This field has to be duplicated in Alert for scope management and search.
     string namespace_id = 6; // This field has to be duplicated in Alert for scope management and search.
+  }
+
+  message Node {
+    string id = 1; // @gotags: search:"Node ID"
+    string name = 2; // @gotags: search:"Node"
   }
 
   message Violation {
@@ -99,6 +105,11 @@ message Alert {
     repeated ProcessIndicator processes = 2; // @gotags: sql:"ignore-fks"
   }
 
+  message FileAccessViolation {
+    string message = 1;
+    repeated FileAccess accesses = 2; // @gotags: sql:"ignore-fks"
+  }
+
   message Enforcement {
     storage.EnforcementAction action = 1; // @gotags: search:"Enforcement"
     string message = 2;
@@ -120,6 +131,7 @@ message Alert {
     DEPLOYMENT = 1;
     CONTAINER_IMAGE = 2;
     RESOURCE = 3;
+    NODE = 4;
   }
 
   oneof Entity {
@@ -132,11 +144,15 @@ message Alert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     Resource resource = 16;
+    // Represents an alert on a node.
+    // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+    Node node = 24;
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
   repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
+  FileAccessViolation file_access_violation = 25; // @gotags: search:"-"
 
   Enforcement enforcement = 6;
 
@@ -182,6 +198,10 @@ message ListAlert {
     string name = 1;
   }
 
+  message NodeEntity {
+    string name = 1;
+  }
+
   string id = 1;
   LifecycleStage lifecycle_stage = 2;
   google.protobuf.Timestamp time = 3;
@@ -200,6 +220,9 @@ message ListAlert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     ResourceEntity resource = 11;
+    // Represents an alert on a node
+    // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+    NodeEntity node = 12;
   }
 
   // Next available tag: 16

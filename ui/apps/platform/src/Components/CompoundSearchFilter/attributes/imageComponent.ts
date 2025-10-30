@@ -1,7 +1,7 @@
 // If you're adding a new attribute, make sure to add it to "imageComponentAttributes" as well
 
 import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
-import { CompoundSearchFilterAttribute } from '../types';
+import type { CompoundSearchFilterAttribute } from '../types';
 
 export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',

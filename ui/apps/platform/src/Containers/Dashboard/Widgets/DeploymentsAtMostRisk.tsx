@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';

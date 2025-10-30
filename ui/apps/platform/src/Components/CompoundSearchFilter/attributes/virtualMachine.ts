@@ -1,4 +1,4 @@
-import { CompoundSearchFilterAttribute } from '../types';
+import type { CompoundSearchFilterAttribute } from '../types';
 
 export const VirtualMachineCVEName: CompoundSearchFilterAttribute = {
     displayName: 'Name',

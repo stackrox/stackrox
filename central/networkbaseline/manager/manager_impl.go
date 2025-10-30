@@ -761,7 +761,7 @@ func (m *manager) initFromStore() error {
 				}
 				for _, policy := range policies {
 					// On start treat all policies as have just been created.
-					hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+					hash, err := getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
 					if err != nil {
 						return err
 					}

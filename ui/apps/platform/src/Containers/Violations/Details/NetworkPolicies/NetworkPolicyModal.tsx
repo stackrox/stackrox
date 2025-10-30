@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Flex, Modal } from '@patternfly/react-core';
 
 import type { NetworkPolicy } from 'types/networkPolicy.proto';

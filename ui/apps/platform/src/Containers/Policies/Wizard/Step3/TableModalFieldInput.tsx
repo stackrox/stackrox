@@ -1,13 +1,9 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 
 import ImageSigningTableModal from './ImageSigningTableModal';
 
-function TableModalFieldInput({
-    setValue,
-    value,
-    readOnly = false,
-    tableType,
-}): React.ReactElement {
+function TableModalFieldInput({ setValue, value, readOnly = false, tableType }): ReactElement {
     if (tableType === 'imageSigning') {
         return <ImageSigningTableModal setValue={setValue} value={value} readOnly={readOnly} />;
     }

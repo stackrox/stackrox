@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql } from '@apollo/client';
 import { Card, CardTitle, CardBody, Grid, GridItem } from '@patternfly/react-core';
 

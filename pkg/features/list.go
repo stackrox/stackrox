@@ -53,9 +53,6 @@ var (
 	// on the delegated scanning config.
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", enabled)
 
-	// CollectorRuntimeConfig enables filtering of runtime events.
-	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG")
-
 	// SensorSingleScanPerImage when set to enabled forces Sensor to allow only a single scan per image to be active at any given
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
@@ -77,6 +74,9 @@ var (
 	// registry host.
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
+	// OptimizedBaselineMemory enables optimized memory usage for baseline detector through process set deduplication
+	OptimizedBaselineMemory = registerFeature("Enable optimized memory usage for baseline detector through process set deduplication", "ROX_OPTIMIZED_BASELINE_MEMORY")
+
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
@@ -86,12 +86,6 @@ var (
 	// NetworkGraphAggregateExternalIPs enable aggressive aggregation of external flows in the network graph.
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
-
-	// Display Exploit Prediction Scoring System (EPSS) score.
-	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE", enabled)
-
-	// Add the ability to generate an SBOM from an image
-	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
 
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
@@ -156,6 +150,5 @@ var (
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
-	// Both ScannerV4StoreExternalIndexReports and SBOMGeneration features must be enabled to store the index reports.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
 )

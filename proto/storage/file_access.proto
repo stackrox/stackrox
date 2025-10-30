@@ -8,14 +8,14 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// FileActivity contains fields related to arbitrary file activity
+// FileAccess contains fields related to arbitrary file accesses
 // performed by a given process. This activity can come from k8s, or
 // directly on a node.
 //
 // It is currently intended to be used in Sensor and for detection,
 // but will only be stored embedded in an Alert. As a result, it
 // does not currently define a primary key.
-message FileActivity {
+message FileAccess {
   message FileMetadata {
     uint32 uid = 1;
     uint32 gid = 2;
@@ -44,7 +44,7 @@ message FileActivity {
   Operation operation = 2; // @gotags: search:"File Operation"
 
   // specific to `RENAME` activity, the new location / metadata of the file.
-  optional File moved = 3; // @gotags: search:"-"
+  File moved = 3; // @gotags: search:"-"
 
   // When the file activity happened
   google.protobuf.Timestamp timestamp = 4;

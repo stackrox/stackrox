@@ -5,9 +5,9 @@ import capitalize from 'lodash/capitalize';
 
 import { enableDisableNotificationsForPolicies } from 'services/PoliciesService';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import { AlertVariantType } from 'hooks/patternfly/useToasts';
+import type { AlertVariantType } from 'hooks/patternfly/useToasts';
 import useTableSelection from 'hooks/useTableSelection';
-import { NotifierIntegration } from 'types/notifier.proto';
+import type { NotifierIntegration } from 'types/notifier.proto';
 
 export type EnableDisableType = 'enable' | 'disable';
 

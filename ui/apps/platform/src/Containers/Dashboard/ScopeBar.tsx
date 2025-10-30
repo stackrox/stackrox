@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import omit from 'lodash/omit';

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 

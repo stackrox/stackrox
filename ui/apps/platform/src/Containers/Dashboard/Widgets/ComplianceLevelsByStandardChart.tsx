@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { Chart, ChartAxis, ChartBar, ChartContainer, ChartGroup } from '@patternfly/react-charts';
 import type { ChartLabelProps } from '@patternfly/react-charts';

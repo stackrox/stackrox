@@ -743,12 +743,9 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag),
 		nil,
 		func(c *validateConfiguration) *regexp.Regexp {
-			if c != nil && c.sourceIsAuditLogEvents {
-				return auditEventAPIVerbValueRegex
-			}
-			return kubernetesAPIVerbValueRegex
-		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent, KubeEvent},
+			return auditEventAPIVerbValueRegex
+		}, []storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{AuditLogEvent},
 		negationForbidden,
 	)
 
@@ -761,7 +758,7 @@ func initializeFieldMetadata() FieldMetadata {
 			}
 			return kubernetesResourceValueRegex
 		}, []storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent, KubeEvent},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 		negationForbidden,
 	)
 
@@ -771,8 +768,8 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return kubernetesNameRegex
 		},
-		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 	)
 
 	f.registerFieldMetadata(
@@ -781,8 +778,8 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return kubernetesNameRegex
 		},
-		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
-		[]RuntimeFieldType{AuditLogEvent},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_AUDIT_LOG_EVENT},
+		[]RuntimeFieldType{KubeEvent, AuditLogEvent},
 	)
 
 	f.registerFieldMetadata(

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSection, Divider, Title, Flex, FlexItem, TextInput } from '@patternfly/react-core';
 
 import type { PolicyCategory } from 'types/policy.proto';

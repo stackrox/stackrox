@@ -1,6 +1,6 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
-import { PrivateConfig, PrometheusMetricsCategory } from 'types/config.proto';
+import type { PrivateConfig, PrometheusMetricsCategory } from 'types/config.proto';
 import { PrometheusMetricsCard } from './components/PrometheusMetricsCard';
 
 export type PrivateConfigPrometheusMetricsDetailsProps = {
