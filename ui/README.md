@@ -21,7 +21,7 @@ the instructions below.
     recommended to use the latest LTS version. If you're managing multiple versions of
     Node.js on your machine, consider using
     [nvm](https://github.com/creationix/nvm))
--   [npm](https://npmjs.com/) v9.x
+-   [npm](https://npmjs.com/) (will be installed with Node.js, or use the version compatible with your Node.js version)
 
 ### Dev Env Setup
 
