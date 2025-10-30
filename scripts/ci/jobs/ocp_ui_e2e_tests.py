@@ -14,6 +14,8 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["INSTALL_COMPLIANCE_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+# Configure database connection pool
+os.environ["ROX_POSTGRES_MAX_CONNS"] = "1"
 
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),

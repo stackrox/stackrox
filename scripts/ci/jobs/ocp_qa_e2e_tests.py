@@ -11,6 +11,8 @@ from clusters import AutomationFlavorsCluster
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+# Configure database connection pool
+os.environ["ROX_POSTGRES_MAX_CONNS"] = "1"
 # Workload identities are only set up for `openshift-4` infra clusters.
 if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
     os.environ["SETUP_WORKLOAD_IDENTITIES"] = "true"
