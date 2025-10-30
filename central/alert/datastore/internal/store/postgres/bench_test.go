@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -39,12 +41,28 @@ func BenchmarkMany(b *testing.B) {
 
 	for n := 1; n < alertsNum; n = n * 2 {
 		b.Run(fmt.Sprintf("upsert %d alerts", n), func(b *testing.B) {
+			var maxHeap uint64
+			var maxHeapObj uint64
+			ticker := time.NewTicker(10 * time.Millisecond)
+			go func() {
+				var m runtime.MemStats
+				for range ticker.C {
+					runtime.GC()
+					runtime.ReadMemStats(&m)
+					maxHeap = max(maxHeap, m.HeapAlloc)
+					maxHeapObj = max(maxHeap, m.HeapObjects)
+				}
+			}()
+
 			for b.Loop() {
 				err := store.UpsertMany(ctx, alerts[:n])
 				if err != nil {
 					b.Fatal(err)
 				}
 			}
+			ticker.Stop()
+			b.ReportMetric(float64(maxHeap), "max_heap_bytes")
+			b.ReportMetric(float64(maxHeapObj), "max_heap_objects")
 		})
 		b.Run(fmt.Sprintf("get %d alerts", n), func(b *testing.B) {
 			for b.Loop() {
