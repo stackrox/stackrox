@@ -337,28 +337,6 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 	}
 }
 
-func convertMany(images []*storage.ImageV2, results []search.Result) ([]*v1.SearchResult, error) {
-	if len(images) != len(results) {
-		return nil, errors.New("mismatch between search results and retrieved images")
-	}
-
-	searchResults := make([]*v1.SearchResult, 0, len(images))
-	for i, image := range images {
-		searchResults = append(searchResults, convertOne(image, &results[i]))
-	}
-	return searchResults, nil
-}
-
-func convertOne(image *storage.ImageV2, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             image.GetId(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
-}
-
 // ImageSearchResultConverter implements search.SearchResultConverter for image search results.
 // This enables single-pass query construction for SearchResult protos.
 type ImageSearchResultConverter struct{}
