@@ -86,19 +86,19 @@ api:
   health_port: 8081
   max_workers: 10
 
-# Central API configuration for training data collection
-central_api:
-  enabled: true  # Set to true to enable Central API integration
+# Training Central API configuration - for collecting training data
+training_central_api:
+  enabled: true  # Set to true to enable Training Central API integration
   endpoint: "https://central-stackrox.apps.sh-10-17-5.ocp.infra.rox.systems"
   use_streaming_exports: true
 
   authentication:
     method: "api_token"  # Options: "api_token", "mtls"
-    api_token: "${CENTRAL_API_TOKEN}"
+    api_token: "${TRAINING_CENTRAL_API_TOKEN}"
     # For mTLS authentication:
-    client_cert_path: "${CENTRAL_CLIENT_CERT_PATH}"
-    client_key_path: "${CENTRAL_CLIENT_KEY_PATH}"
-    ca_cert_path: "${CENTRAL_CA_CERT_PATH}"
+    client_cert_path: "${TRAINING_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${TRAINING_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${TRAINING_CENTRAL_CA_CERT_PATH}"
 
   # SSL/TLS Configuration
   ssl:
@@ -149,3 +149,54 @@ central_api:
     default_filters:
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
+
+# Prediction Central API configuration - for validating model predictions
+prediction_central_api:
+  enabled: false  # Set to true to enable Prediction Central API integration
+  endpoint: ""  # Production Central endpoint for prediction validation
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"  # Options: "api_token", "mtls"
+    api_token: "${PREDICTION_CENTRAL_API_TOKEN}"
+    # For mTLS authentication:
+    client_cert_path: "${PREDICTION_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${PREDICTION_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${PREDICTION_CENTRAL_CA_CERT_PATH}"
+
+  # SSL/TLS Configuration
+  ssl:
+    verify_certificates: false  # Set to false for self-signed certs in dev/test
+    ca_bundle_path: ""  # Optional custom CA bundle path
+
+  export_settings:
+    # Settings for validation data collection
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2
+
+    # Workload-specific settings
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    # Default filters for validation data collection
+    filters:
+      deployment_age_days: 7  # Recent data for validation
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  # Performance tuning
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2
+    memory_limit_mb: 512

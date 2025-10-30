@@ -16,6 +16,12 @@ services:
       - HEALTH_PORT=8081
       - LOG_LEVEL=INFO
       - CONFIG_FILE=/app/config/feature_config.yaml
+      # Training Central API configuration
+      - TRAINING_CENTRAL_ENDPOINT=${TRAINING_CENTRAL_ENDPOINT:-}
+      - TRAINING_CENTRAL_API_TOKEN=${TRAINING_CENTRAL_API_TOKEN:-}
+      # Prediction Central API configuration
+      - PREDICTION_CENTRAL_ENDPOINT=${PREDICTION_CENTRAL_ENDPOINT:-}
+      - PREDICTION_CENTRAL_API_TOKEN=${PREDICTION_CENTRAL_API_TOKEN:-}
     volumes:
       - ./models:/app/models
       - ./training_data:/app/training_data

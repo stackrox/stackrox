@@ -11,7 +11,7 @@ Note: Central service returns training samples with pre-computed features via
 create_training_sample(), not raw deployment data.
 
 Requires:
-- CENTRAL_API_TOKEN environment variable
+- TRAINING_CENTRAL_API_TOKEN environment variable
 - Access to a running StackRox Central instance
 """
 
@@ -29,13 +29,13 @@ from src.models.ranking_model import RiskRankingModel, ModelMetrics
 
 logger = logging.getLogger(__name__)
 
-# Skip all tests in this module if CENTRAL_API_TOKEN is not set
+# Skip all tests in this module if TRAINING_CENTRAL_API_TOKEN is not set
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.slow,
     pytest.mark.skipif(
-        not os.getenv('CENTRAL_API_TOKEN'),
-        reason="Requires CENTRAL_API_TOKEN environment variable"
+        not os.getenv('TRAINING_CENTRAL_API_TOKEN'),
+        reason="Requires TRAINING_CENTRAL_API_TOKEN environment variable"
     )
 ]
 
@@ -46,10 +46,10 @@ def central_client() -> CentralExportClient:
     config = CentralConfig()
 
     endpoint = config.get_endpoint()
-    token = os.getenv('CENTRAL_API_TOKEN')
+    token = os.getenv('TRAINING_CENTRAL_API_TOKEN')
 
     if not token:
-        pytest.skip("CENTRAL_API_TOKEN not set")
+        pytest.skip("TRAINING_CENTRAL_API_TOKEN not set")
 
     client_config = {
         'chunk_size': 100,

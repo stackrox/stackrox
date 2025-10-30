@@ -112,10 +112,10 @@ docker-run: docker-build ## Run Docker container locally
 		-e HEALTH_PORT=8081 \
 		-e REST_PORT=8090 \
 		-e ENABLE_REST=true \
-		-e CENTRAL_API_TOKEN="$${CENTRAL_API_TOKEN:-}" \
-		-e CENTRAL_CLIENT_CERT_PATH="$${CENTRAL_CLIENT_CERT_PATH:-}" \
-		-e CENTRAL_CLIENT_KEY_PATH="$${CENTRAL_CLIENT_KEY_PATH:-}" \
-		-e CENTRAL_CA_CERT_PATH="$${CENTRAL_CA_CERT_PATH:-}" \
+		-e TRAINING_CENTRAL_API_TOKEN="$${TRAINING_CENTRAL_API_TOKEN:-}" \
+		-e TRAINING_CENTRAL_ENDPOINT="$${TRAINING_CENTRAL_ENDPOINT:-}" \
+		-e PREDICTION_CENTRAL_API_TOKEN="$${PREDICTION_CENTRAL_API_TOKEN:-}" \
+		-e PREDICTION_CENTRAL_ENDPOINT="$${PREDICTION_CENTRAL_ENDPOINT:-}" \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 	@echo -e "$(GREEN)Container started!$(NC)"
@@ -229,11 +229,11 @@ test-train-central: docker-run ## Train model with Central data and reload it
 		fi; \
 	done && \
 	echo -e "$(BLUE)Pre-flight: Checking Central API configuration...$(NC)" && \
-	if [ -z "$$CENTRAL_API_TOKEN" ]; then \
-		echo -e "$(YELLOW)Warning: CENTRAL_API_TOKEN environment variable is not set$(NC)"; \
+	if [ -z "$$TRAINING_CENTRAL_API_TOKEN" ]; then \
+		echo -e "$(YELLOW)Warning: TRAINING_CENTRAL_API_TOKEN environment variable is not set$(NC)"; \
 		echo -e "$(YELLOW)The Central API may use default configuration or fail$(NC)"; \
 	else \
-		echo -e "$(GREEN)✓ CENTRAL_API_TOKEN is configured$(NC)"; \
+		echo -e "$(GREEN)✓ TRAINING_CENTRAL_API_TOKEN is configured$(NC)"; \
 	fi && \
 	echo -e "$(BLUE)Testing Central API connection...$(NC)" && \
 	CONNECTION_RESPONSE=$$(curl -s -X POST "http://localhost:8090/api/v1/training/central/test-connection" \
@@ -245,7 +245,7 @@ test-train-central: docker-run ## Train model with Central data and reload it
 		echo -e "$(RED)Central API connection test failed with HTTP $$CONNECTION_HTTP_CODE$(NC)"; \
 		echo "$$CONNECTION_BODY" | python3 -m json.tool 2>/dev/null || echo "$$CONNECTION_BODY"; \
 		echo -e "$(YELLOW)Configuration help:$(NC)"; \
-		echo -e "$(YELLOW)  1. Set CENTRAL_API_TOKEN environment variable$(NC)"; \
+		echo -e "$(YELLOW)  1. Set TRAINING_CENTRAL_API_TOKEN environment variable$(NC)"; \
 		echo -e "$(YELLOW)  2. Ensure Central endpoint is accessible$(NC)"; \
 		echo -e "$(YELLOW)  3. Check src/config/feature_config.yaml settings$(NC)"; \
 		exit 1; \
@@ -257,7 +257,7 @@ test-train-central: docker-run ## Train model with Central data and reload it
 		CONNECTION_MESSAGE=$$(echo "$$CONNECTION_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('message', 'Unknown error'))" 2>/dev/null || echo "Unknown error"); \
 		echo -e "$(RED)Error: $$CONNECTION_MESSAGE$(NC)"; \
 		echo -e "$(YELLOW)Configuration help:$(NC)"; \
-		echo -e "$(YELLOW)  1. Set CENTRAL_API_TOKEN: export CENTRAL_API_TOKEN='your-token'$(NC)"; \
+		echo -e "$(YELLOW)  1. Set TRAINING_CENTRAL_API_TOKEN: export TRAINING_CENTRAL_API_TOKEN='your-token'$(NC)"; \
 		echo -e "$(YELLOW)  2. Verify Central endpoint in src/config/feature_config.yaml$(NC)"; \
 		echo -e "$(YELLOW)  3. Check authentication and network connectivity$(NC)"; \
 		exit 1; \
