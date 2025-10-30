@@ -8,7 +8,6 @@ import {
     Card,
     CardBody,
 } from '@patternfly/react-core';
-import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -45,7 +44,6 @@ import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 const searchFilterConfig = [clusterSearchFilterConfig, platformCVESearchFilterConfig];
 
 function PlatformCvesOverviewPage() {
-    const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
