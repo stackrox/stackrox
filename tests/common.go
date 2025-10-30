@@ -183,10 +183,15 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 					t.Logf("Deployment %q in namespace %q not found yet, waiting...", deploymentName, namespace)
 					continue
 				}
-				require.NoError(t, err, "getting deployment %q from namespace %q", deploymentName, namespace)
+				t.Logf("Error getting deployment %q from namespace %q: %v", deploymentName, namespace, err)
+				continue
 			}
 
-			// Check if generation matches observed generation
+			// Check if generation matches observed generation.
+			// Practical Example: generation: 5, observedGeneration: 4
+			// This tells you: "Someone just updated the deployment (5th change),
+			// but the controller is still working on the 4th revision—be patient, reconciliation is in progress."
+			// Without these numbers, you'd just see repeated "NOT ready" messages without understanding the root cause.
 			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
 				t.Logf("Deployment %q in namespace %q NOT ready: generation %d != observed generation %d",
 					deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
@@ -208,16 +213,7 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 			}
 
 			// Check conditions for additional insights
-			for _, cond := range deploy.Status.Conditions {
-				if cond.Type == appsV1.DeploymentAvailable && cond.Status != coreV1.ConditionTrue {
-					t.Logf("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
-						deploymentName, namespace, cond.Status, cond.Message)
-				}
-				if cond.Type == appsV1.DeploymentProgressing && cond.Status != coreV1.ConditionTrue {
-					t.Logf("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
-						deploymentName, namespace, cond.Status, cond.Message)
-				}
-			}
+			printDeploymentConditions(t, deploy.Status.Conditions, deploymentName, namespace)
 
 			t.Logf("Deployment %q in namespace %q READY in Kubernetes (%d/%d ready replicas)",
 				deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
@@ -234,6 +230,19 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 				deploy.Status.Replicas, deploy.Status.ReadyReplicas, deploy.Status.UpdatedReplicas,
 				deploy.Status.AvailableReplicas, deploy.Status.UnavailableReplicas,
 				deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+		}
+	}
+}
+
+func printDeploymentConditions(t testutils.T, conditions []appsV1.DeploymentCondition, deploymentName, namespace string) {
+	for _, cond := range conditions {
+		if cond.Type == appsV1.DeploymentAvailable && cond.Status != coreV1.ConditionTrue {
+			t.Logf("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
+				deploymentName, namespace, cond.Status, cond.Message)
+		}
+		if cond.Type == appsV1.DeploymentProgressing && cond.Status != coreV1.ConditionTrue {
+			t.Logf("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
+				deploymentName, namespace, cond.Status, cond.Message)
 		}
 	}
 }
