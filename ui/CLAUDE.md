@@ -40,6 +40,26 @@ npm run tsc                # TypeScript type checking
 
 ## Code Guidelines
 
+### Coding Patterns
+
+#### Conditional Rendering
+
+Process data before JSX to avoid unnecessary renders:
+
+```tsx
+// Process first, then render
+const validItems = rawData ? normalizeArray(rawData).filter(isValid) : [];
+return validItems.length > 0 ? (
+  <Stack>
+    {validItems.map((item) => (
+      <Component key={item} />
+    ))}
+  </Stack>
+) : (
+  "Fallback"
+);
+```
+
 ### Data Fetching
 
 Use custom hooks for data fetching with built-in state management:
@@ -91,24 +111,6 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 - **No CSS-in-JS:** Avoid styled-components
 - **No Tailwind:** Use PatternFly utilities
 - **Custom CSS:** CSS modules or plain CSS when PatternFly doesn't provide what you need
-
-### Conditional Rendering
-
-Process data before JSX to avoid unnecessary renders:
-
-```tsx
-// Process first, then render
-const validItems = rawData ? normalizeArray(rawData).filter(isValid) : [];
-return validItems.length > 0 ? (
-  <Stack>
-    {validItems.map((item) => (
-      <Component key={item} />
-    ))}
-  </Stack>
-) : (
-  "Fallback"
-);
-```
 
 ### Refactoring & Pattern Changes
 
