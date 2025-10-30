@@ -551,28 +551,23 @@ class CentralExportService:
                 validation_results['total_samples'] += 1
 
                 try:
-                    # Extract features and actual risk score
-                    baseline_factors = sample.get('baseline_factors', {})
+                    # Extract actual normalized features and risk score
+                    # Use 'features' dict instead of 'baseline_factors' for better variance
+                    features = sample.get('features', {})
                     actual_score = sample.get('risk_score', 0.0)
+
+                    # Validate features exist
+                    if not features:
+                        logger.warning(f"Sample {i} missing 'features' dictionary, skipping")
+                        validation_results['failed_predictions'] += 1
+                        continue
 
                     # Get feature names from model
                     feature_names = model.feature_names if hasattr(model, 'feature_names') else []
 
-                    # Build feature vector matching model's expected features
-                    features = {
-                        'policy_violations': baseline_factors.get('policy_violations', 1.0),
-                        'process_baseline': baseline_factors.get('process_baseline', 1.0),
-                        'vulnerabilities': baseline_factors.get('vulnerabilities', 1.0),
-                        'risky_components': baseline_factors.get('risky_components', 1.0),
-                        'component_count': baseline_factors.get('component_count', 1.0),
-                        'image_age': baseline_factors.get('image_age', 1.0),
-                        'service_config': baseline_factors.get('service_config', 1.0),
-                        'reachability': baseline_factors.get('reachability', 1.0),
-                    }
-
                     # Convert to numpy array in correct order
                     if feature_names:
-                        X = np.array([[features.get(name, 1.0) for name in feature_names]])
+                        X = np.array([[features.get(name, 0.0) for name in feature_names]])
                     else:
                         X = np.array([[features[k] for k in sorted(features.keys())]])
 
