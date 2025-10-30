@@ -39,7 +39,7 @@ The `--branch <branch_name>` parameter is required. If the branch exists remotel
    ./tools/bump-apollo-ci/bump.sh --branch chore-bump-apollo-ci-0.4.12-6-gf8cb14d205 0.4.13
    ```
 
-   This checks out the existing branch, updates all references to `0.4.13`, pushes to the same branch, and updates the PR title to match the new version.
+   This checks out the existing branch, updates all references to `0.4.13`, pushes to the same branch, and updates the PR title and body to match the new version.
 
 ## What it does
 
@@ -50,7 +50,7 @@ The `--branch <branch_name>` parameter is required. If the branch exists remotel
 5. Lists comment-only references (not updated automatically)
 6. Creates the specified branch (if it doesn't exist) or checks out the existing branch (if it exists remotely)
 7. Commits and pushes changes
-8. Opens a draft Pull Request (or updates existing PR title if branch already has one)
+8. Opens a draft Pull Request (or updates existing PR title and body if branch already has one)
 
 ## Prerequisites
 
