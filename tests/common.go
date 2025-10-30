@@ -358,13 +358,13 @@ func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas 
 }
 
 func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
-	createDeploymentViaAPI(t, image, deploymentName, replicas, namespace)
+	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace))
 }
 
 // createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
 // Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
 // to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
-func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) error {
 	client := createK8sClient(t)
 
 	t.Logf("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
@@ -435,8 +435,15 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		} else {
 			t.Logf("ERROR: Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
 		}
-		require.NoError(t, err, "Failed to create deployment %q: %v", deploymentName, err)
-		return
+		// Log all conditions if any
+		if len(createdDeployment.Status.Conditions) > 0 {
+			t.Logf("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
+			for i, cond := range createdDeployment.Status.Conditions {
+				t.Logf("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
+					i, cond.Type, cond.Status, cond.Reason, cond.Message, cond.LastUpdateTime)
+			}
+		}
+		return fmt.Errorf("failed to create deployment %q: %w", deploymentName, err)
 	}
 
 	t.Logf("Deployment %q successfully created in namespace %q", deploymentName, namespace)
@@ -449,16 +456,8 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		createdDeployment.Status.AvailableReplicas,
 		createdDeployment.Status.UnavailableReplicas)
 
-	// Log all conditions if any
-	if len(createdDeployment.Status.Conditions) > 0 {
-		t.Logf("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
-		for i, cond := range createdDeployment.Status.Conditions {
-			t.Logf("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
-				i, cond.Type, cond.Status, cond.Reason, cond.Message, cond.LastUpdateTime)
-		}
-	}
-
 	t.Logf("Deployment %q creation completed successfully", deploymentName)
+	return nil
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
