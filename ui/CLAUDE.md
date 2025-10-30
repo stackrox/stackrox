@@ -173,3 +173,9 @@ const shouldShowFeature = isFeatureEnabled && hasResourceAccess;
 - **Routes & API patterns** → See [apps/platform/README.md](./apps/platform/README.md#routes) and [API section](./apps/platform/README.md#api)
 - **Feature flags** → See [apps/platform/README.md](./apps/platform/README.md#feature-flags)
 - **Plugin development** → See [apps/platform/README.md](./apps/platform/README.md#running-as-an-openshift-console-plugin)
+
+---
+
+## Output Style
+
+- Be extremely concise. Sacrifice grammar for the sake of concision.
