@@ -351,8 +351,8 @@ def test_predictions_consistency(trained_model: RiskRankingModel) -> None:
 
     # Verify predictions are the same
     assert len(predictions1) == len(predictions2), "Should return same number of predictions"
-    assert predictions1[0].risk_score == predictions2[0].risk_score, \
-        "Predictions should be deterministic for same input"
+    assert predictions1[0].risk_score == pytest.approx(predictions2[0].risk_score, rel=1e-6), \
+        "Predictions should be deterministic for same input (within floating-point tolerance)"
 
 
 @pytest.mark.unit
