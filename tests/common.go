@@ -572,7 +572,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 // teardownDeploymentInternal handles deployment deletion with configurable verification.
 // When waitForCompletion is true, it retries deletion and waits for both K8s and Central cleanup.
 // When false, it only issues the delete command without waiting or failing on errors.
-func teardownDeploymentInternal(t *testing.T, deploymentName string, waitForCompletion bool) {
+func teardownDeploymentInternal(t *testing.T, deploymentName string, namespace string, waitForCompletion bool) {
 	client := createK8sClient(t)
 	deletePolicy := metaV1.DeletePropagationForeground
 	gracePeriod := int64(1)
@@ -581,20 +581,20 @@ func teardownDeploymentInternal(t *testing.T, deploymentName string, waitForComp
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		logf(t, "Deleting deployment %q via API with propagation policy %s", deploymentName, deletePolicy)
-		err := client.AppsV1().Deployments("default").Delete(ctx, deploymentName, metaV1.DeleteOptions{
+		logf(t, "Deleting deployment %q in namespace %q via API with propagation policy %s", deploymentName, namespace, deletePolicy)
+		err := client.AppsV1().Deployments(namespace).Delete(ctx, deploymentName, metaV1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriod,
 			PropagationPolicy:  &deletePolicy,
 		})
 
 		if err != nil {
 			if apiErrors.IsNotFound(err) {
-				logf(t, "Deployment %q not found in Kubernetes (already deleted)", deploymentName)
+				logf(t, "Deployment %q not found in namespace %q (already deleted)", deploymentName, namespace)
 				return nil
 			}
-			return fmt.Errorf("failed to delete deployment %q: %w", deploymentName, err)
+			return fmt.Errorf("failed to delete deployment %q in namespace %q: %w", deploymentName, namespace, err)
 		}
-		logf(t, "Successfully initiated deletion of deployment %q", deploymentName)
+		logf(t, "Successfully initiated deletion of deployment %q in namespace %q", deploymentName, namespace)
 		return nil
 	}
 
@@ -606,34 +606,34 @@ func teardownDeploymentInternal(t *testing.T, deploymentName string, waitForComp
 					return err
 				}
 				// Verify deployment is actually deleted from Kubernetes
-				return waitForK8sDeploymentDeletion(t, client, deploymentName, 15*time.Second)
+				return waitForK8sDeploymentDeletion(t, client, deploymentName, namespace, 15*time.Second)
 			},
 			retry.Tries(4),              // Try up to 4 times (1 initial + 3 retries)
 			retry.OnlyRetryableErrors(), // Only retry on retriable errors
 			retry.BetweenAttempts(func(int) {
-				logf(t, "Retrying deployment %q deletion", deploymentName)
+				logf(t, "Retrying deployment %q deletion in namespace %q", deploymentName, namespace)
 			}),
 		)
-		require.NoError(t, err, "Failed to delete deployment %q after retries", deploymentName)
+		require.NoError(t, err, "Failed to delete deployment %q in namespace %q after retries", deploymentName, namespace)
 
 		// Wait for Central to recognize the deletion
 		waitForTermination(t, deploymentName)
 	} else {
 		// Fire and forget - don't fail the test if deletion fails
 		if err := deleteFunc(); err != nil {
-			logf(t, "Deployment %q deletion failed (non-fatal): %v", deploymentName, err)
+			logf(t, "Deployment %q deletion in namespace %q failed (non-fatal): %v", deploymentName, namespace, err)
 		}
 	}
 }
 
-func teardownDeployment(t *testing.T, deploymentName string) {
-	teardownDeploymentInternal(t, deploymentName, true)
+func teardownDeployment(t *testing.T, deploymentName string, namespace string) {
+	teardownDeploymentInternal(t, deploymentName, namespace, true)
 }
 
 // waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone.
 // Returns an error if the deployment still exists after the timeout, which triggers a retry
 // of the entire delete operation.
-func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string, timeout time.Duration) error {
+func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string, namespace string, timeout time.Duration) error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -646,28 +646,28 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 		case <-ticker.C:
 			attempt++
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			_, err := client.AppsV1().Deployments("default").Get(ctx, deploymentName, metaV1.GetOptions{})
+			_, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
 			cancel()
 
 			if apiErrors.IsNotFound(err) {
-				logf(t, "Verified: deployment %q deleted from Kubernetes after %d attempt(s)", deploymentName, attempt)
+				logf(t, "Verified: deployment %q deleted from namespace %q after %d attempt(s)", deploymentName, namespace, attempt)
 				return nil
 			}
 			if err != nil {
-				logf(t, "Error checking deployment %q status (attempt %d): %v", deploymentName, attempt, err)
+				logf(t, "Error checking deployment %q status in namespace %q (attempt %d): %v", deploymentName, namespace, attempt, err)
 				continue
 			}
-			logf(t, "Deployment %q still exists in Kubernetes (attempt %d)", deploymentName, attempt)
+			logf(t, "Deployment %q still exists in namespace %q (attempt %d)", deploymentName, namespace, attempt)
 		case <-timer.C:
-			return retry.MakeRetryable(fmt.Errorf("deployment %s still exists in Kubernetes after %v", deploymentName, timeout))
+			return retry.MakeRetryable(fmt.Errorf("deployment %s in namespace %s still exists in Kubernetes after %v", deploymentName, namespace, timeout))
 		}
 	}
 }
 
-func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
+func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string, namespace string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
-	teardownDeploymentInternal(t, deploymentName, false)
+	teardownDeploymentInternal(t, deploymentName, namespace, false)
 }
 
 func getConfig(t testutils.T) *rest.Config {
