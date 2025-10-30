@@ -15,4 +15,5 @@ fi
 echo >&2 "## Found multiple image versions:"
 cat >&2 "$tmpfile"
 echo >&2 "## See $0 for the command which finds them."
+echo >&2 "## Please update the image versions to be the same."
 exit 1
