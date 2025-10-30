@@ -26,7 +26,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Policy{}, resourceType: globallyScoped},
 		{typ: &storage.Email{}, resourceType: joinTable, joinTable: true},
 		// Evaluate types of the various stores
-		{typ: &storage.ActiveComponent{}, resourceType: indirectlyScoped},
 		{typ: &storage.Alert{}, resourceType: directlyScoped},
 		{typ: &storage.AuthProvider{}, resourceType: globallyScoped},
 		{typ: &storage.Blob{}, resourceType: globallyScoped},

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 
-	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken/backend"
 	"github.com/stackrox/rox/central/audit"
@@ -77,7 +76,6 @@ import (
 
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	ActiveComponent               activeComponent.DataStore
 	ComplianceAggregator          aggregation.Aggregator
 	APITokenBackend               backend.Backend
 	ClusterDataStore              clusterDatastore.DataStore
@@ -140,7 +138,6 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	resolver := &Resolver{
-		ActiveComponent:               activeComponent.Singleton(),
 		ComplianceAggregator:          aggregation.Singleton(),
 		APITokenBackend:               backend.Singleton(),
 		ComplianceDataStore:           complianceDS.Singleton(),

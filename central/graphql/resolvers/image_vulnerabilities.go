@@ -62,7 +62,6 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
-				"activeState(query: String): ActiveState",
 				"advisory: Advisory",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
@@ -90,7 +89,6 @@ func init() {
 type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
-	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	Advisory(ctx context.Context) (*advisoryResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
@@ -1200,11 +1198,6 @@ func (resolver *imageCVEV2Resolver) VulnerabilityState(ctx context.Context) stri
 		return resolver.flatData.GetState().String()
 	}
 	return resolver.data.GetState().String()
-}
-
-func (resolver *imageCVEV2Resolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {
-	// TODO:  Verify Active Vuln Management is no more
-	return nil, nil
 }
 
 func (resolver *imageCVEV2Resolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {

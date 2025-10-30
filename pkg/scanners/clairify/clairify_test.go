@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -43,8 +42,6 @@ func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) 
 }
 
 func TestConvertLayerToImageScan(t *testing.T) {
-	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
-
 	layer, protoScan, image := getTestScan()
 	actualScan := convertLayerToImageScan(image, layer)
 	// Ignore Scan time in the test, as it is defined as the time we retrieve the scan.

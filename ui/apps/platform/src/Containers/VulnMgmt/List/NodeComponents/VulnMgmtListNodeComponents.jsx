@@ -92,18 +92,6 @@ export function getComponentTableColumns() {
                 sortField: componentSortFields.CVE_COUNT,
             },
             {
-                Header: `Active`,
-                headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original }) => {
-                    return original.activeState?.state || 'Undetermined';
-                },
-                id: componentSortFields.ACTIVE,
-                accessor: 'isActive',
-                sortField: componentSortFields.ACTIVE,
-                sortable: false,
-            },
-            {
                 Header: `Top CVSS`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
