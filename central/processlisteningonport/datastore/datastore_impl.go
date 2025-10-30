@@ -153,11 +153,11 @@ func (ds *datastoreImpl) upsertManyBatched(
 	return nil
 }
 
-func (ds *datastoreImpl) upsertManyBatchedWithLock(ctx context.Context,plops []*storage.ProcessListeningOnPortStorage) error {
+func (ds *datastoreImpl) upsertManyBatchedWithLock(ctx context.Context, plops []*storage.ProcessListeningOnPortStorage) error {
 	return ds.upsertManyBatched(ctx, plops, ds.upsertManyWithLock)
 }
 
-func (ds *datastoreImpl) upsertManyBatchedWithoutLock(ctx context.Context,plops []*storage.ProcessListeningOnPortStorage) error {
+func (ds *datastoreImpl) upsertManyBatchedWithoutLock(ctx context.Context, plops []*storage.ProcessListeningOnPortStorage) error {
 	return ds.upsertManyBatched(ctx, plops, ds.storage.UpsertMany)
 }
 
