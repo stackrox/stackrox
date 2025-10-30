@@ -238,8 +238,8 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 
 func (s *relayTestSuite) TestSemaphore() {
 	vsockServer := &VsockServer{
-		semaphore:            semaphore.NewWeighted(1),
-		maxSemaphoreWaitTime: 5 * time.Millisecond,
+		semaphore:        semaphore.NewWeighted(1),
+		semaphoreTimeout: 5 * time.Millisecond,
 	}
 
 	// First should succeed
