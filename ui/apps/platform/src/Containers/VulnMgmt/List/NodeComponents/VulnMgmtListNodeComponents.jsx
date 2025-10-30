@@ -4,7 +4,6 @@ import { gql } from '@apollo/client';
 import {
     defaultHeaderClassName,
     defaultColumnClassName,
-    nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
