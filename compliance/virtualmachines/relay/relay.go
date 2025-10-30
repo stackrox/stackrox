@@ -36,10 +36,11 @@ type VsockServer struct {
 func newVsockServer() *VsockServer {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
+	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
 	return &VsockServer{
 		port:             uint32(port),
 		semaphore:        semaphore.NewWeighted(int64(maxConcurrentConnections)),
-		semaphoreTimeout: 5 * time.Second,
+		semaphoreTimeout: semaphoreTimeout,
 	}
 }
 
