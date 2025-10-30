@@ -12,7 +12,7 @@ metadata:
 # 6. kubectl get "${kinds}" -n kuttl-ns -o yaml > resources_after.yaml
 # 7. ./operator/bin/yq-* --null-input  '[load("resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] | .[] | select(.kind != "PersistentVolumeClaim" and .kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "EndpointSlice") | split_doc' sed 's,kuttl-ns,{{ .Namespace }},g'
 # 8. Massage the output to omit those few Secrets and PersistentVolume whose names are unpredictable
-# 9. Move the openshift-specific resources to delete-central-errors-openshift.yaml
+# 9. Move the openshift-specific resources to delete-central-errors-openshift.gotmpl.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
