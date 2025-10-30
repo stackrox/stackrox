@@ -162,7 +162,7 @@ func (r *Relay) Run() error {
 				}
 			}(conn)
 
-			if err = r.handleVsockConnection(conn); err != nil {
+			if err := r.handleVsockConnection(conn); err != nil {
 				log.Errorf("Error handling vsock connection from %v: %v", conn.RemoteAddr(), err)
 			}
 		}(conn)
