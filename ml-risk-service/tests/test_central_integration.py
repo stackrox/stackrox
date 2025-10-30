@@ -96,19 +96,14 @@ def extract_features_and_score(
     #   'baseline_factors': {...}   # Individual risk multipliers
     # }
 
-    baseline_factors = sample.get('baseline_factors', {})
+    # Use actual normalized features instead of baseline_factors for better variance
+    # The 'features' dict contains deployment and image characteristics that are
+    # normalized to 0-1 range and provide much more variance than baseline_factors
+    features = sample.get('features', {})
 
-    # Extract feature dict (use baseline_factors which match our model's expected features)
-    features = {
-        'policy_violations': baseline_factors.get('policy_violations', 1.0),
-        'process_baseline': baseline_factors.get('process_baseline', 1.0),
-        'vulnerabilities': baseline_factors.get('vulnerabilities', 1.0),
-        'risky_components': baseline_factors.get('risky_components', 1.0),
-        'component_count': baseline_factors.get('component_count', 1.0),
-        'image_age': baseline_factors.get('image_age', 1.0),
-        'service_config': baseline_factors.get('service_config', 1.0),
-        'reachability': baseline_factors.get('reachability', 1.0),
-    }
+    # If features dict is empty, this sample is invalid
+    if not features:
+        raise ValueError("Training sample missing 'features' dictionary")
 
     # Use pre-computed risk score
     risk_score = sample.get('risk_score', 1.0)
