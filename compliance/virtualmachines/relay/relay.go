@@ -27,19 +27,19 @@ import (
 var log = logging.LoggerForModule()
 
 type VsockServer struct {
-	listener             *vsock.Listener
-	port                 uint32
-	semaphore            *semaphore.Weighted
-	maxSemaphoreWaitTime time.Duration
+	listener         *vsock.Listener
+	port             uint32
+	semaphore        *semaphore.Weighted
+	semaphoreTimeout time.Duration
 }
 
 func newVsockServer() *VsockServer {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	return &VsockServer{
-		port:                 uint32(port),
-		semaphore:            semaphore.NewWeighted(int64(maxConcurrentConnections)),
-		maxSemaphoreWaitTime: 5 * time.Second,
+		port:             uint32(port),
+		semaphore:        semaphore.NewWeighted(int64(maxConcurrentConnections)),
+		semaphoreTimeout: 5 * time.Second,
 	}
 }
 
@@ -63,7 +63,7 @@ func (s *VsockServer) Stop() {
 }
 
 func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
-	semCtx, cancel := context.WithTimeout(parentCtx, s.maxSemaphoreWaitTime)
+	semCtx, cancel := context.WithTimeout(parentCtx, s.semaphoreTimeout)
 	defer cancel()
 
 	metrics.VsockSemaphoreQueueSize.Inc()
@@ -148,7 +148,7 @@ func (r *Relay) Run() error {
 
 			// When the concurrency limit is reached, the semaphore cannot be acquired. We close the connection and
 			// continue to listen. In this case, there is no need to add an extra wait to prevent a busy loop, because
-			// we already waited maxSemaphoreWaitTime
+			// we already waited semaphoreTimeout
 			if err := conn.Close(); err != nil {
 				log.Warnf("Failed to close connection after failing to acquire semaphore: %v", err)
 			}
