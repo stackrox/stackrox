@@ -153,7 +153,7 @@ training_central_api:
 # Prediction Central API configuration - for validating model predictions
 prediction_central_api:
   enabled: true  # Set to true to enable Prediction Central API integration
-  endpoint: "https://staging.demo.stackrox.com/main/integrations"
+  endpoint: "https://staging.demo.stackrox.com"
   use_streaming_exports: true
 
   authentication:

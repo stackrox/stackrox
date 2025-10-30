@@ -305,14 +305,22 @@ class CentralExportService:
         filters = {'format': 'json'}
 
         if base_filters:
+            # Convert days_back to start_date if provided
+            if 'days_back' in base_filters:
+                from datetime import datetime, timezone, timedelta
+                start_date = datetime.now(timezone.utc) - timedelta(days=base_filters['days_back'])
+                filters.update(ExportFilters.by_date_range(start_date, None))
+                logger.debug(f"Converted days_back={base_filters['days_back']} to start_date={start_date}")
+            # Use explicit start_date if provided (takes precedence over days_back)
+            elif 'start_date' in base_filters:
+                end_date = base_filters.get('end_date')
+                filters.update(ExportFilters.by_date_range(base_filters['start_date'], end_date))
+
             # Common filters
             if 'clusters' in base_filters:
                 filters.update(ExportFilters.by_clusters(base_filters['clusters']))
             if 'namespaces' in base_filters:
                 filters.update(ExportFilters.by_namespaces(base_filters['namespaces']))
-            if 'start_date' in base_filters:
-                end_date = base_filters.get('end_date')
-                filters.update(ExportFilters.by_date_range(base_filters['start_date'], end_date))
 
             # Workload-specific filters
             if 'severity_threshold' in base_filters:
