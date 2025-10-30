@@ -61,6 +61,7 @@ scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
+tests/common.go
 tests/e2e/lib.sh
 tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
