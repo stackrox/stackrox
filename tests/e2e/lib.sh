@@ -344,7 +344,7 @@ deploy_central_via_operator() {
     esac
 
     db_connectionPoolSize_config=""
-    if [[ -n "$ROX_POSTGRES_MAX_CONNS" ]]; then
+    if [[ -n "${ROX_POSTGRES_MAX_CONNS:-}" ]]; then
         db_connectionPoolSize_config=$'\n      connectionPoolSize:'
         db_connectionPoolSize_config+=$'\n        maxConnections: '"${ROX_POSTGRES_MAX_CONNS}"
     fi
