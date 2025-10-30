@@ -106,8 +106,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk,
-		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting(),
-		env.ActiveVulnRefreshInterval.DurationSetting())
+		watchedImages, env.ReprocessInterval.DurationSetting(), env.RiskReprocessInterval.DurationSetting())
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -115,8 +114,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration,
-	activeComponentTickerDuration time.Duration) *loopImpl {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
@@ -129,9 +127,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
-
-		activeComponentTickerDuration: activeComponentTickerDuration,
-		activeComponentStopped:        concurrency.NewSignal(),
 
 		nodeEnricher: nodeEnricher,
 		nodes:        nodes,
@@ -169,10 +164,6 @@ type loopImpl struct {
 	deploymentRiskLock           sync.Mutex
 	deploymentRiskTicker         *time.Ticker
 	deploymentRiskTickerDuration time.Duration
-
-	activeComponentStopped        concurrency.Signal
-	activeComponentTicker         *time.Ticker
-	activeComponentTickerDuration time.Duration
 
 	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
@@ -212,7 +203,6 @@ func (l *loopImpl) Stop() {
 	l.stopSig.Signal()
 	l.riskStopped.Wait()
 	l.enrichmentStopped.Wait()
-	l.activeComponentStopped.Wait()
 }
 
 func (l *loopImpl) ShortCircuit() {
