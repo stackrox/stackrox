@@ -1,9 +1,9 @@
 import {
-    portExposureLabels,
     envVarSrcLabels,
-    rbacPermissionLabels,
-    policyCriteriaCategories,
     mountPropagationLabels,
+    policyCriteriaCategories,
+    portExposureLabels,
+    rbacPermissionLabels,
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';

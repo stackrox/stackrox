@@ -3,10 +3,10 @@ import * as yup from 'yup';
 import type { Policy } from 'types/policy.proto';
 
 import {
+    POLICY_BEHAVIOR_SCOPE_ID,
     POLICY_DEFINITION_DETAILS_ID,
     POLICY_DEFINITION_LIFECYCLE_ID,
     POLICY_DEFINITION_RULES_ID,
-    POLICY_BEHAVIOR_SCOPE_ID,
 } from '../policies.constants';
 import type { WizardPolicyStep4, WizardScope } from '../policies.utils';
 import {

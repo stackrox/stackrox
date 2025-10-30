@@ -1,0 +1,102 @@
+---
+description: Secure coding rules for Stackrox Helm charts
+globs:
+  - "image/templates/helm/**"
+alwaysApply: false
+---
+
+# Secure coding rules for Helm charts
+
+The directory "image/templates/helm" contains files that are used to generate the Stackrox helm charts. Many of them have the ".htpl" extension, which indicates they are templates from which helm charts will be rendered. When working with any files in that directory always follow these instructions:
+
+## General Security
+
+- Check for vulnerable dependencies and validate chart provenance.
+- Manage secrets outside of values.yaml. Use Kubernetes Secrets or external secret management solutions.
+- Use tools like checkov or kubesec for security scanning.
+- Never hardcode credentials, API keys, or sensitive data in chart templates or values files.
+
+## RBAC and Access Control
+
+- Define minimal RBAC permissions. Use Role/RoleBinding for namespace-scoped access.
+- Avoid ClusterRole/ClusterRoleBinding unless absolutely necessary.
+- Never grant wildcard permissions (`*`) on resources or verbs.
+- Create dedicated ServiceAccounts for each component rather than using default.
+
+## Pod Security
+
+- Set securityContext for all pods and containers.
+- Run containers as non-root user (runAsNonRoot: true).
+- Drop all capabilities and add only those required (drop: [ALL]).
+- Use read-only root filesystem where possible (readOnlyRootFilesystem: true).
+- Set allowPrivilegeEscalation: false.
+- Apply Pod Security Standards (restricted profile preferred).
+
+## Resource Management
+
+- Define resource requests and limits for all containers.
+- Set appropriate memory and CPU limits to prevent resource exhaustion.
+- Configure liveness and readiness probes for all deployments.
+- Use PodDisruptionBudgets for high-availability workloads.
+
+## Network Security
+
+- Define NetworkPolicies to restrict pod-to-pod communication.
+- Use least privilege network access (deny by default, allow specific).
+- Ensure services use ClusterIP unless external access is required.
+- Use TLS/mTLS for inter-service communication.
+
+## Meta-Templating Security (`.htpl` files)
+
+Stackrox uses a custom meta-templating system that processes `.htpl` files with build-time values (MetaValues) before standard Helm rendering. Meta-templates use `[<` and `>]` delimiters and Go text/template syntax.
+
+### Input Validation and Injection Prevention
+
+- **Validate all MetaValues**: Even though MetaValues come from the build process, validate image references, registry URLs, version strings, and other inputs before use.
+- **Use `required` function**: Always use `required` for critical MetaValues that must be present (e.g., `[< required "" .Versions.ChartVersion >]`).
+- **Sanitize string interpolation**: When injecting MetaValues into YAML/templates, ensure proper quoting and escaping to prevent injection attacks.
+- **Avoid dynamic code execution**: Never use meta-templating to generate executable code or shell commands from MetaValues without strict validation.
+
+### Feature Flag Security
+
+- **Validate feature flag behavior**: Feature flags (e.g., `.FeatureFlags.ROX_SCANNER_V4`) can dramatically alter chart behavior. Ensure all code paths (enabled/disabled) maintain security properties.
+- **Test all combinations**: Critical security features (RBAC, NetworkPolicies, Pod Security) must be tested with different feature flag combinations.
+- **Document security implications**: When using feature flags in meta-templates, document how they affect security posture.
+- **Never use feature flags for security controls**: Feature flags should control features, not bypass security mechanisms.
+
+### Image Reference Security
+
+- **Validate image references**: Image names, tags, and registries injected via MetaValues (.ImageRemote, .ImageTag, .MainRegistry, etc.) must be validated.
+- **Use immutable tags or digests**: Prefer image digests over mutable tags where possible for reproducible builds.
+- **Restrict image sources**: Only allow images from trusted registries. Never construct image references from untrusted input.
+- **Avoid latest tags**: Never use `latest` or other mutable tags in production configurations.
+
+### Secrets and Sensitive Data
+
+- **Never embed secrets in MetaValues**: MetaValues may be embedded in compiled binaries (roxctl, operator). Never include passwords, API keys, or certificates.
+- **No credentials in .htpl files**: Meta-templates should never contain hardcoded credentials or sensitive data.
+- **Validate secret references**: If meta-templates reference Kubernetes secrets, ensure the references (names, keys) are validated.
+
+### Template Function Safety
+
+- **Limit use of dangerous functions**: Avoid functions that can access filesystem, execute commands, or perform network operations in meta-templates.
+- **Validate sprig function usage**: When using sprig functions (like `randAlphaNum`, `b64enc`), ensure they don't introduce security issues.
+- **No arbitrary code execution**: Never use meta-templating to evaluate arbitrary expressions from external input.
+
+### Build-Time Security
+
+- **Audit meta-template changes**: Changes to `.htpl` files affect all chart instantiations. Require security review for these changes.
+- **Version compatibility**: Ensure meta-template changes maintain backward compatibility and don't weaken security in older versions.
+- **Reproducible builds**: Meta-templating should produce deterministic output for the same MetaValues to enable security auditing.
+
+### Conditional Logic Security
+
+- **Secure all branches**: When using conditionals (e.g., `[< if .FeatureFlags.X >]`), ensure both branches maintain security properties.
+- **Avoid security by obscurity**: Don't rely on feature flags or conditional logic to hide security issues.
+- **Test negative cases**: Test that disabled features don't leave security holes (e.g., disabled admission controller doesn't bypass policy enforcement).
+
+### File Inclusion and Templating
+
+- **Validate file paths**: If meta-templates load files (.helmtplignore.htpl, config files), validate paths to prevent directory traversal.
+- **Secure .helmtplignore.htpl**: This file can exclude resources based on meta-values. Ensure it doesn't exclude critical security resources.
+- **No arbitrary file inclusion**: Never include files based on untrusted MetaValues or user input.

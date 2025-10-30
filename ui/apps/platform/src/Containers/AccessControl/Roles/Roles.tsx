@@ -13,7 +13,7 @@ import {
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
-import { fetchAccessScopes, defaultAccessScopeIds } from 'services/AccessScopesService';
+import { defaultAccessScopeIds, fetchAccessScopes } from 'services/AccessScopesService';
 import type { AccessScope } from 'services/AccessScopesService';
 import { fetchAuthProviders } from 'services/AuthService';
 import type { Group } from 'services/AuthService';

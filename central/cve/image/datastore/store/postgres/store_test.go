@@ -93,6 +93,11 @@ func (s *ImageCvesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, imageCVEs))
 
+	foundImageCVEs, missing, err := store.GetMany(ctx, imageCVEIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), imageCVEs, foundImageCVEs)
+
 	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageCVECount)

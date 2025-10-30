@@ -1,0 +1,19 @@
+---
+description: Secure coding rules for Java projects
+globs:
+  - "**/*.java"
+  - "**/pom.xml"
+  - "**/build.gradle"
+  - "**/build.gradle.kts"
+alwaysApply: false
+---
+
+# Secure coding rules for Java
+
+- Use parameterized queries (PreparedStatement) to prevent SQL injection. Never concatenate user input into SQL.
+- Avoid `Runtime.exec()` or `ProcessBuilder` with untrusted input. Sanitize command arguments.
+- Never deserialize untrusted data. Avoid `ObjectInputStream` with external sources.
+- Use `SecureRandom` for cryptographic operations, not `Random`.
+- Set secure HTTP headers (Content-Security-Policy, X-Frame-Options, etc.).
+- Disable DTD/external entity processing in XML parsers to prevent XXE.
+- Validate data before using in reflection or class loading.

@@ -775,16 +775,12 @@ module.exports = [
         ignores: [
             'cypress/integration/**',
             'src/Components/**',
-            'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
-            'src/Containers/MainPage/**',
             'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
         ],
@@ -841,7 +837,6 @@ module.exports = [
             'src/Containers/Images/**',
             'src/Containers/Login/**',
             'src/Containers/MitreAttackVectors/**',
-            'src/Containers/Policies/**',
             'src/Containers/Search/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',

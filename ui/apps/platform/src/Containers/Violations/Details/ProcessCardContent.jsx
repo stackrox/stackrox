@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { DescriptionList, Flex, Divider } from '@patternfly/react-core';
+import { DescriptionList, Divider, Flex } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import KeyValue from 'Components/KeyValue';
