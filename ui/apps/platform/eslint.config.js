@@ -782,7 +782,6 @@ module.exports = [
             'src/Containers/NetworkGraph/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
         ],

@@ -5,20 +5,20 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     Divider,
-    Title,
+    MenuToggle,
     PageSection,
     Pagination,
-    pluralize,
+    Select,
+    SelectList,
+    SelectOption,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Select,
-    SelectOption,
-    SelectList,
-    MenuToggle,
+    pluralize,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
-import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { VIOLATION_STATES } from 'constants/violationStates';
