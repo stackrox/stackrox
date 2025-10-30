@@ -9,7 +9,6 @@ import {
 import TopCvssLabel from 'Components/TopCvssLabel';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import CVEStackedPill from 'Components/CVEStackedPill';
 import queryService from 'utils/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
