@@ -331,16 +331,16 @@ const VulnMgmtCves = ({
     const renderRowActionButtons =
         hasWriteAccessForAddToPolicy
             ? ({ cve }) => (
-                <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-                    {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
-                        <RowActionButton
-                            text="Add to policy"
-                            onClick={addToPolicy(cve)}
-                            icon={<Plus className="my-1 h-4 w-4" />}
-                        />
-                    )}
-                </div>
-            )
+                  <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+                      {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                          <RowActionButton
+                              text="Add to policy"
+                              onClick={addToPolicy(cve)}
+                              icon={<Plus className="my-1 h-4 w-4" />}
+                          />
+                      )}
+                  </div>
+              )
             : null;
 
     const tableHeaderComponents = (
@@ -395,12 +395,10 @@ const VulnMgmtCves = ({
 VulnMgmtCves.propTypes = {
     ...workflowListPropTypes,
     refreshTrigger: PropTypes.number,
-    setRefreshTrigger: PropTypes.func,
 };
 VulnMgmtCves.defaultProps = {
     ...workflowListDefaultProps,
     refreshTrigger: 0,
-    setRefreshTrigger: null,
 };
 
 const mapDispatchToProps = {
