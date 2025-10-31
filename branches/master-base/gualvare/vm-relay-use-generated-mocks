@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/vm-relay-extract-handle-vsock-connection",
-    "hash": "999f4b1882922c1734c8fdc91cd47ab1f7fb172a"
+    "hash": "958a8764dc5ab59fc466483a576e8be413a2d490"
   },
   "upstream": {
     "branch": "master-base/gualvare/vm-relay-use-generated-mocks"
