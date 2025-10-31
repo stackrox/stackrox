@@ -408,5 +408,5 @@ func (s *SearchMapperTestSuite) TestConvertVolumeType() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertFilePath() {
-	s.testDirectMapSearchString(search.FilePath, fieldnames.FilePath)
+	s.testDirectMapSearchString(search.NodeFilePath, fieldnames.NodeFilePath)
 }

@@ -395,51 +395,51 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with valid FilePath field",
+			description: "Node policy with valid NodeFilePath field",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath: "/etc/passwd",
+					fieldnames.NodeFilePath: "/etc/passwd",
 				}),
 		},
 		{
-			description: "Node policy with FilePath and invalid process fields",
+			description: "Node policy with NodeFilePath and invalid process fields",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath:    "/var/log/audit.log",
+					fieldnames.NodeFilePath:    "/var/log/audit.log",
 					fieldnames.ProcessName: "suspicious-binary",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FilePath and invalid container fields",
+			description: "Node policy with NodeFilePath and invalid container fields",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath:      "/etc/shadow",
+					fieldnames.NodeFilePath:      "/etc/shadow",
 					fieldnames.ContainerName: "malicious-container",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FilePath in wrong lifecycle stage (build)",
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (build)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath: "/etc/hosts",
+					fieldnames.NodeFilePath: "/etc/hosts",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FilePath in wrong lifecycle stage (deploy)",
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (deploy)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath: "/tmp/malicious.sh",
+					fieldnames.NodeFilePath: "/tmp/malicious.sh",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy invalid FilePath",
+			description: "Node policy invalid NodeFilePath",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.FilePath: "relative/path.sh",
+					fieldnames.NodeFilePath: "relative/path.sh",
 				}),
 			errExpected: true,
 		},
