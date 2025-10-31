@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
     Card,
     CardBody,
-    ToolbarItem,
+    Divider,
     DropdownItem,
+    Flex,
+    FlexItem,
+    PageSection,
+    Title,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
