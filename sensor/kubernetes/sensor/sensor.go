@@ -232,7 +232,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.SensitiveFileActivity.Enabled() {
-		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities())
+		accessChan := make(chan *storage.FileAccess)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), accessChan)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline)
 		apiServices = append(apiServices, fileSystemService)
 	}

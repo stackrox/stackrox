@@ -27,12 +27,12 @@ type Pipeline struct {
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, accessChan chan *storage.FileAccess) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
-		accessChan:      make(chan *storage.FileAccess),
+		accessChan:      accessChan,
 		clusterEntities: clusterEntities,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
@@ -40,6 +40,10 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 
 	go p.run()
 	return p
+}
+
+func (p *Pipeline) Shutdown() {
+	close(p.accessChan)
 }
 
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {

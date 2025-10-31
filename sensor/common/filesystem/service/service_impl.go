@@ -30,6 +30,10 @@ type serviceImpl struct {
 	pipeline *pipeline.Pipeline
 }
 
+func (s *serviceImpl) Stop() {
+	s.pipeline.Shutdown()
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensor.RegisterFileActivityServiceServer(grpcServer, s)
