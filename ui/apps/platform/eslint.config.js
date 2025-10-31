@@ -782,7 +782,10 @@ module.exports = [
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
 
         // languageOptions from previous configuration object

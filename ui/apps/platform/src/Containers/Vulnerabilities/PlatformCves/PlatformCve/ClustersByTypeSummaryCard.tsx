@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { Card, CardTitle, CardBody, Grid, GridItem } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Grid, GridItem } from '@patternfly/react-core';
 
 export const clustersByTypeFragment = gql`
     fragment ClustersByType on PlatformCVECore {
