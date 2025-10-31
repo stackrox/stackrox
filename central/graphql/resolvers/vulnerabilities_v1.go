@@ -494,11 +494,6 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 	return evr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, query))
 }
 
-// ActiveState shows the activeness of a vulnerability in a deployment context.
-func (evr *EmbeddedVulnerabilityResolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {
-	return &activeStateResolver{}, nil
-}
-
 // VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
 func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(_ context.Context) string {
 	return evr.data.GetState().String()

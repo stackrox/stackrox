@@ -50,7 +50,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
-		v1.SearchCategory_ACTIVE_COMPONENT:        schema.ActiveComponentsSchema.OptionsMap,
 		v1.SearchCategory_ALERTS:                  alertSearchOptions,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
@@ -48,50 +47,6 @@ func TestPruning(t *testing.T) {
 func (s *PostgresPruningSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
-}
-
-func (s *PostgresPruningSuite) TestPruneActiveComponents() {
-	depStore, _ := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	acDS := activeComponent.NewForTestOnly(s.T(), s.testDB.DB)
-
-	// Create and save a deployment
-	deployment := &storage.Deployment{
-		Id:   fixtureconsts.Deployment1,
-		Name: "TestDeployment",
-	}
-	s.NoError(depStore.UpsertDeployment(s.ctx, deployment))
-
-	activeComponents := []*storage.ActiveComponent{
-		{
-			Id:           "test1",
-			DeploymentId: fixtureconsts.Deployment1,
-		},
-		{
-			Id:           "test2",
-			DeploymentId: fixtureconsts.Deployment2,
-		},
-		{
-			Id:           "test3",
-			DeploymentId: fixtureconsts.Deployment2,
-		},
-	}
-	s.NoError(acDS.UpsertBatch(s.ctx, activeComponents))
-
-	exists, err := acDS.Exists(s.ctx, "test1")
-	s.Nil(err)
-	s.True(exists)
-	exists, err = acDS.Exists(s.ctx, "test2")
-	s.Nil(err)
-	s.True(exists)
-
-	PruneActiveComponents(s.ctx, s.testDB.DB)
-
-	exists, err = acDS.Exists(s.ctx, "test1")
-	s.Nil(err)
-	s.True(exists)
-	exists, err = acDS.Exists(s.ctx, "test2")
-	s.Nil(err)
-	s.False(exists)
 }
 
 func (s *PostgresPruningSuite) TestPruneClusterHealthStatuses() {
