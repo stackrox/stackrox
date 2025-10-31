@@ -105,6 +105,12 @@ func (s *PolicyValueValidator) TestRegex() {
 			invalid: []string{"", " "},
 			r:       portExposureValueRegex,
 		},
+		{
+			name:    "allowed file path",
+			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/sshd/sshd_config"},
+			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
+			r:       allowedFilePathRegex,
+		},
 	}
 
 	for _, c := range cases {

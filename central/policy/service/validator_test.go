@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -359,38 +361,6 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 				map[string]string{
 					fieldnames.ProcessName: "PROCESS",
 				}),
-		},
-		{
-			description: "Node policy with no fields",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
-			errExpected: true,
-		},
-		{
-			description: "Node policy with deploy-time fields only",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
-				map[string]string{
-					fieldnames.ImageTag:   "latest",
-					fieldnames.VolumeName: "BLAH",
-				}),
-			errExpected: true,
-		},
-		{
-			description: "Node policy with process field (should be invalid)",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
-				map[string]string{
-					fieldnames.ProcessName: "malicious-process",
-				}),
-			errExpected: true,
-		},
-		{
-			description: "Node policy with wrong lifecycle stage (build)",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT, nil),
-			errExpected: true,
-		},
-		{
-			description: "Node policy with wrong lifecycle stage (deploy)",
-			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
-			errExpected: true,
 		},
 	}
 
@@ -1017,6 +987,117 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 				assert.Equal(t, c.expectedError, err.Error())
 			} else {
 				assert.Truef(t, err == nil, "Error not expected")
+			}
+		})
+	}
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
+	testCases := []struct {
+		description string
+		p           *storage.Policy
+		errExpected bool
+	}{
+		{
+			description: "Node policy with no fields",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with deploy-time fields only",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ImageTag:   "latest",
+					fieldnames.VolumeName: "BLAH",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with process field (should be invalid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ProcessName: "malicious-process",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with wrong lifecycle stage (build)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with wrong lifecycle stage (deploy)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with valid NodeFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/etc/passwd",
+				}),
+		},
+		{
+			description: "Node policy with NodeFilePath and invalid process fields",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/var/log/audit.log",
+					fieldnames.ProcessName:  "suspicious-binary",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath and invalid container fields",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath:  "/etc/shadow",
+					fieldnames.ContainerName: "malicious-container",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/etc/hosts",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with NodeFilePath in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/tmp/malicious.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy invalid NodeFilePath",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "relative/path.sh",
+				}),
+			errExpected: true,
+		},
+	}
+
+	// reset once for these tests, and then reset on return after the feature flag has been disabled
+	// again to ensure consistent state in other tests
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	for _, c := range testCases {
+		s.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+
+			err := s.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
