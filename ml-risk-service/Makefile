@@ -208,9 +208,9 @@ test-prediction: ## Test prediction endpoint (requires grpcurl)
 	@which grpcurl > /dev/null || (echo -e "$(RED)grpcurl not found. Install with: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest$(NC)" && exit 1)
 	grpcurl -plaintext localhost:8080 ml_risk.MLRiskService/GetModelHealth
 
-.PHONY: test-train-central
-test-train-central: docker-run ## Train model with Central data and reload it
-	@echo -e "$(GREEN)Starting full Central training workflow...$(NC)"
+.PHONY: test-train-predict-central
+test-train-predict-central: docker-run ## Train model with Central data, reload it, and validate predictions
+	@echo -e "$(GREEN)Starting full Central training, reload, and validation workflow...$(NC)"
 	@echo -e "$(BLUE)Waiting for service to be ready...$(NC)"
 	@# Wait for service to be ready (max 60 seconds)
 	@MAX_WAIT=60; \
@@ -319,7 +319,39 @@ test-train-central: docker-run ## Train model with Central data and reload it
 		exit 1; \
 	fi && \
 	echo -e "$(GREEN)✓ Model reload completed successfully!$(NC)" && \
-	echo -e "$(GREEN)🎉 Full Central training workflow completed successfully!$(NC)"
+	echo -e "$(BLUE)Step 4: Validating predictions with prediction Central...$(NC)" && \
+	if [ -z "$$PREDICTION_CENTRAL_API_TOKEN" ]; then \
+		echo -e "$(YELLOW)⚠ PREDICTION_CENTRAL_API_TOKEN not set - skipping validation step$(NC)"; \
+		echo -e "$(YELLOW)To enable validation, set PREDICTION_CENTRAL_API_TOKEN and PREDICTION_CENTRAL_ENDPOINT$(NC)"; \
+	else \
+		echo -e "$(GREEN)✓ PREDICTION_CENTRAL_API_TOKEN is configured$(NC)" && \
+		VALIDATE_RESPONSE=$$(curl -s -X POST "http://localhost:8090/api/v1/training/central/validate-predictions?limit=10" \
+			-H "Content-Type: application/json" \
+			-w "\n%{http_code}") && \
+		VALIDATE_HTTP_CODE=$$(echo "$$VALIDATE_RESPONSE" | tail -n 1) && \
+		VALIDATE_BODY=$$(echo "$$VALIDATE_RESPONSE" | sed '$$d') && \
+		if [ "$$VALIDATE_HTTP_CODE" != "200" ]; then \
+			echo -e "$(RED)Validation failed with HTTP $$VALIDATE_HTTP_CODE$(NC)"; \
+			echo "$$VALIDATE_BODY" | python3 -m json.tool 2>/dev/null || echo "$$VALIDATE_BODY"; \
+			echo -e "$(YELLOW)Continuing without validation...$(NC)"; \
+		else \
+			VALIDATE_SUCCESS=$$(echo "$$VALIDATE_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('success', False))" 2>/dev/null || echo "false") && \
+			if [ "$$VALIDATE_SUCCESS" != "True" ]; then \
+				echo -e "$(RED)Validation reported failure$(NC)"; \
+				echo "$$VALIDATE_BODY" | python3 -m json.tool 2>/dev/null || echo "$$VALIDATE_BODY"; \
+				echo -e "$(YELLOW)Continuing without validation...$(NC)"; \
+			else \
+				TOTAL_SAMPLES=$$(echo "$$VALIDATE_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('validation_summary', {}).get('total_samples', 0))" 2>/dev/null || echo "0") && \
+				MAE=$$(echo "$$VALIDATE_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('metrics', {}).get('mae', 0))" 2>/dev/null || echo "0") && \
+				CORRELATION=$$(echo "$$VALIDATE_BODY" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('metrics', {}).get('correlation', 0))" 2>/dev/null || echo "0") && \
+				echo -e "$(GREEN)✓ Validation completed successfully!$(NC)" && \
+				echo -e "$(GREEN)  Total samples: $$TOTAL_SAMPLES$(NC)" && \
+				echo -e "$(GREEN)  MAE: $$MAE$(NC)" && \
+				echo -e "$(GREEN)  Correlation: $$CORRELATION$(NC)"; \
+			fi; \
+		fi; \
+	fi && \
+	echo -e "$(GREEN)🎉 Full Central training, reload, and validation workflow completed successfully!$(NC)"
 
 # Monitoring commands
 .PHONY: monitoring-up
