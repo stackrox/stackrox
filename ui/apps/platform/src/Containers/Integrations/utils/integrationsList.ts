@@ -50,6 +50,8 @@ import type {
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
+// import { allEnabled } from 'utils/featureFlagUtils'; // uncomment when needed
+import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
 
 export type AuthProviderDescriptor = {
     type: AuthProviderType;
@@ -345,7 +347,7 @@ export function getIntegrationLabel(source: string, type: string): string {
 
 type IntegrationRouteRequirements = {
     centralCapabilityRequirement?: CentralCapabilitiesFlags;
-    featureFlagRequirement?: FeatureFlagEnvVar;
+    featureFlagRequirements?: FeatureFlagPredicate;
 };
 
 const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationRouteRequirements> = {
@@ -357,7 +359,7 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationRou
     authProviders: {},
 };
 
-type CentralCapabilityFeatureFlagArg = {
+type IntegrationRoutePredicates = {
     isCentralCapabilityAvailable: IsCentralCapabilityAvailable;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
@@ -365,9 +367,9 @@ type CentralCapabilityFeatureFlagArg = {
 export function getSourcesEnabled({
     isCentralCapabilityAvailable,
     isFeatureFlagEnabled,
-}: CentralCapabilityFeatureFlagArg): IntegrationSource[] {
+}: IntegrationRoutePredicates): IntegrationSource[] {
     return integrationSources.filter((source) => {
-        const { centralCapabilityRequirement, featureFlagRequirement } =
+        const { centralCapabilityRequirement, featureFlagRequirements } =
             integrationSourceRequirementsMap[source];
 
         if (
@@ -377,7 +379,7 @@ export function getSourcesEnabled({
             return false;
         }
 
-        if (featureFlagRequirement && !isFeatureFlagEnabled(featureFlagRequirement)) {
+        if (featureFlagRequirements && !featureFlagRequirements(isFeatureFlagEnabled)) {
             return false;
         }
 
