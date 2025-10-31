@@ -12,7 +12,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';

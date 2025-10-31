@@ -1,6 +1,6 @@
 import { FieldArray, useFormikContext } from 'formik';
 import { PlusCircleIcon } from '@patternfly/react-icons';
-import { Flex, FlexItem, Form, Button } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Form } from '@patternfly/react-core';
 
 import CIDRFormRow from './CIDRFormRow';
 

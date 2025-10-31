@@ -1,10 +1,10 @@
 import {
-    ForceLayout,
+    BreadthFirstLayout,
     ColaLayout,
     ConcentricLayout,
     DagreLayout,
+    ForceLayout,
     GridLayout,
-    BreadthFirstLayout,
 } from '@patternfly/react-topology';
 import type { Graph, Layout, LayoutFactory } from '@patternfly/react-topology';
 import { ColaGroupsLayout } from '@patternfly/react-topology/dist/esm/layouts/ColaGroupsLayout';
