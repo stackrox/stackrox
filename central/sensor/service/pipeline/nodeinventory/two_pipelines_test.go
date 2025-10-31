@@ -164,7 +164,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Return(clusterID, true, nil),
 					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(2).Return(nil),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
 
 					// check what got stored in the DB
