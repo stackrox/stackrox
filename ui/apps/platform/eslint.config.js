@@ -826,7 +826,6 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/ConsolePlugin/**',
             'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
