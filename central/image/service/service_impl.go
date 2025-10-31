@@ -435,6 +435,11 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
+		log.Errorw("Enriching image",
+			logging.ImageName(request.GetImageName()),
+			logging.Err(err),
+			logging.Bool("ad_hoc", true),
+		)
 		return nil, err
 	}
 
@@ -837,6 +842,11 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
+		log.Errorw("Enriching image",
+			logging.ImageName(request.GetName()),
+			logging.Err(err),
+			logging.Bool("ad_hoc", true),
+		)
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,

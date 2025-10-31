@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -47,7 +48,11 @@ func (e *enricherImpl) EnrichDeployment(ctx context.Context, enrichCtx enricher.
 		}
 		enrichmentResult, err := e.imageEnricher.EnrichImage(ctx, enrichCtx, imgToProcess)
 		if err != nil {
-			log.Error(err)
+			log.Errorw("Enriching image",
+				logging.ImageName(imgToProcess.GetName().GetFullName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
 		}
 		if enrichmentResult.ImageUpdated {
 			updatedIndices = append(updatedIndices, i)
