@@ -1,8 +1,8 @@
 import { Flex, FlexItem, Title } from '@patternfly/react-core';
 import {
-    PficonNetworkRangeIcon,
     BuilderImageIcon,
     ExclamationCircleIcon,
+    PficonNetworkRangeIcon,
 } from '@patternfly/react-icons';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
