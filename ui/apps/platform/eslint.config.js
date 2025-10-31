@@ -844,13 +844,6 @@ module.exports = [
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
-            'src/Containers/*.{js,jsx,ts,tsx}',
-            'src/constants/**',
-            'src/hooks/**',
-            'src/providers/**',
-            'src/test-utils/**',
-            'src/utils/**',
-            'src/*.{js,jsx,ts,tsx}',
         ],
 
         // After deprecated folders have been deleted:
