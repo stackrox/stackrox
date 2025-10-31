@@ -42,7 +42,7 @@ const IntegrationsPage = (): ReactElement => {
 
     return (
         <Routes>
-            <Route index element={<Navigate to={sourcesEnabled[0]} />} />
+            <Route index element={<Navigate to={sourcesEnabled[0]} replace />} />
             {sourcesEnabled.map((source) => {
                 const Element = integrationsTabElementMap[source];
                 return (
