@@ -13,7 +13,7 @@ This service implements a machine learning-based approach to risk assessment tha
 - **Reproduces existing risk scores** initially for seamless migration
 - **Runs as separate pod** for independent scaling and updates
 - **Manages model lifecycle** with versioning, deployment, and drift monitoring
-- **Integrates seamlessly** with StackRox Central via gRPC and REST APIs
+- **Integrates seamlessly** with StackRox Central via REST API
 
 ## Architecture
 
@@ -25,18 +25,17 @@ This service implements a machine learning-based approach to risk assessment tha
 │ - Deployments   │    │ - Feature        │    │ - Google Cloud  │
 │ - Images        │    │   Extraction     │    │ - Versioning    │
 │ - Policies      │    │ - ML Model       │    │ - Metadata      │
-│ - Risk Manager  │    │ - gRPC API       │    └─────────────────┘
-│ - ML Scorer     │    │ - REST API       │              │
-└─────────────────┘    │ - Explanations   │    ┌─────────────────┐
-         │              │ - Model Registry │    │   Training      │
-         │              │ - Drift Monitor  │◄──►│   Pipeline      │
-         │              └──────────────────┘    │                 │
-         │                        │             │ - Data Loader   │
-         │              ┌──────────────────┐    │ - Model Trainer │
-         └─────────────►│   Management     │    │ - Validation    │
-                        │   API            │    │ - Auto Deploy   │
-                        │ - Model Deploy   │    └─────────────────┘
-                        │ - Health Check   │
+│ - Risk Manager  │    │ - REST API       │    └─────────────────┘
+│ - ML Scorer     │    │ - Explanations   │              │
+└─────────────────┘    │ - Model Registry │    ┌─────────────────┐
+         │              │ - Drift Monitor  │◄──►│   Training      │
+         │              └──────────────────┘    │   Pipeline      │
+         │                        │             │                 │
+         │              ┌──────────────────┐    │ - Data Loader   │
+         │              │   Management     │    │ - Model Trainer │
+         └─────────────►│   API            │    │ - Validation    │
+                        │ - Model Deploy   │    │ - Auto Deploy   │
+                        │ - Health Check   │    └─────────────────┘
                         │ - Drift Reports  │
                         └──────────────────┘
 ```
@@ -144,9 +143,10 @@ The service extracts features that mirror StackRox's existing risk multipliers:
    ```
 
 2. **Access services:**
-   - ML Service gRPC: `localhost:8080`
-   - Health/Metrics: `localhost:8081`
-   - Grafana Dashboard: `localhost:3000` (admin/admin)
+   - REST API: `http://localhost:8090`
+   - API Docs: `http://localhost:8090/docs`
+   - Health/Metrics: `http://localhost:8081`
+   - Grafana Dashboard: `http://localhost:3000` (admin/admin)
 
 ### Using Kubernetes
 
@@ -172,7 +172,7 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 #### Core Service Configuration
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GRPC_PORT` | 8080 | gRPC service port |
+| `REST_PORT` | 8090 | REST API service port |
 | `HEALTH_PORT` | 8081 | Health check port |
 | `LOG_LEVEL` | INFO | Logging level |
 | `CONFIG_FILE` | `/app/config/feature_config.yaml` | Feature configuration |
@@ -260,32 +260,9 @@ features:
 
 ## API Reference
 
-### gRPC Service
-
-The service provides the following gRPC methods:
-
-#### GetDeploymentRisk
-Get risk score for a single deployment with feature explanations.
-
-#### GetBatchDeploymentRisk
-Get risk scores for multiple deployments efficiently.
-
-#### TrainModel
-Train the model with new data.
-
-#### GetModelHealth
-Get model health and performance metrics.
-
-#### GetDetailedHealth
-Get comprehensive health information with trends and recommendations.
-
-#### ReloadModel
-Hot-reload a specific model version.
-
-#### ListModels
-List available models in storage.
-
 ### REST API Endpoints
+
+The service provides a comprehensive REST API for all operations. Access the interactive API documentation at `http://localhost:8090/docs` when the service is running.
 
 #### Model Registry
 - `GET /api/v1/ml/models` - List all models
@@ -619,10 +596,10 @@ The service provides comprehensive health checks:
    - Monitor drift detection alerts
    - Compare with previous model versions
 
-6. **gRPC connection failures**
-   - Verify network policies allow traffic
+6. **REST API connection failures**
+   - Verify network policies allow HTTP traffic
    - Check service discovery configuration
-   - Validate TLS settings
+   - Validate TLS/SSL settings
    - Review timeout configurations
    - Check Central to ML service connectivity
 
@@ -650,7 +627,7 @@ make k8s-shell
 # Check service status
 curl http://localhost:8081/status
 
-# Test prediction (requires grpcurl)
+# Test prediction via REST API
 make test-prediction
 ```
 
@@ -681,7 +658,7 @@ make test-prediction
 
 #### Data Security
 - Model encryption at rest (configurable)
-- TLS for all gRPC and HTTP communications
+- TLS for all HTTP communications
 - Service account authentication for GCS
 - Secrets management for credentials
 - Audit logging for model access
@@ -760,8 +737,8 @@ make test-prediction
 - Monitor storage I/O patterns
 
 #### Network Performance
-- Optimize gRPC connection pooling
-- Use efficient serialization formats
+- Optimize HTTP connection pooling
+- Use efficient serialization formats (JSON)
 - Implement request caching where appropriate
 - Monitor network latency and throughput
 
