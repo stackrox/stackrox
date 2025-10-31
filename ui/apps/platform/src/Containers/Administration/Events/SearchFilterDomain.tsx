@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { Divider } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { Divider, SelectOption } from '@patternfly/react-core';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { domains } from 'services/AdministrationEventsService';
 
-const optionAll = 'All';
+const optionAll = 'All domains';
 
 type SearchFilterDomainProps = {
     domain: string | undefined;
@@ -13,11 +12,8 @@ type SearchFilterDomainProps = {
 };
 
 function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomainProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(_event, selection) {
+    function onSelect(_id: string, selection: string) {
         setDomain(selection === optionAll ? undefined : selection);
-        setIsOpen(false);
     }
 
     const options = domains.map((domainArg) => (
@@ -27,24 +23,22 @@ function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomai
     ));
     options.push(
         <Divider key="Divider" />,
-        <SelectOption key="All" value={optionAll} isPlaceholder>
-            All domains
+        <SelectOption key="All" value={optionAll}>
+            {optionAll}
         </SelectOption>
     );
 
     return (
-        <Select
-            variant="single"
-            aria-label="Domain filter menu items"
-            toggleAriaLabel="Domain filter menu toggle"
-            onToggle={(_event, val) => setIsOpen(val)}
-            onSelect={onSelect}
-            selections={domain ?? optionAll}
+        <SelectSingle
+            id="domain-filter"
+            value={domain ?? optionAll}
+            handleSelect={onSelect}
             isDisabled={isDisabled}
-            isOpen={isOpen}
+            placeholderText="Select domain"
+            toggleAriaLabel="Domain filter menu toggle"
         >
             {options}
-        </Select>
+        </SelectSingle>
     );
 }
 
