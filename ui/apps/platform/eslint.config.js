@@ -830,12 +830,6 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Docs/**',
-            'src/Containers/ExceptionConfiguration/**',
-            'src/Containers/Images/**',
-            'src/Containers/Login/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/Search/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/VirtualMachineCves/**',
