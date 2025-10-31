@@ -191,40 +191,47 @@ func (r *Relay) Run() error {
 func (r *Relay) handleVsockConnection(conn net.Conn) error {
 	log.Infof("Handling vsock connection from %s", conn.RemoteAddr())
 
-	vsockCID, err := extractVsockCIDFromConnection(conn)
+	indexReport, err := r.receiveAndValidateIndexReport(conn)
 	if err != nil {
-		return errors.Wrap(err, "extracting vsock CID")
-	}
-
-	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSizeBytes, r.connectionReadTimeout)
-	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout)
-	if err != nil {
-		return errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
-	}
-
-	log.Debugf("Parsing index report (vsock CID: %d)", vsockCID)
-	indexReport, err := parseIndexReport(data)
-	if err != nil {
-		return errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
-	}
-	metrics.IndexReportsReceived.Inc()
-
-	// Ensure the reported vsock CID is correct, to prevent spoofing
-	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(vsockCID), 10) {
-		metrics.IndexReportsMismatchingVsockCID.Inc()
-		log.Errorf("Received index report with invalid vsock CID: %d", vsockCID)
-		return fmt.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), vsockCID)
+		return err
 	}
 
 	if err = sendReportToSensor(r.ctx, indexReport, r.sensorClient); err != nil {
-		log.Errorf("Error sending index report to sensor (vsock CID: %d): %v", vsockCID, err)
-		return errors.Wrapf(err, "sending report to sensor (vsock CID: %d)", vsockCID)
+		log.Debugf("Error sending index report to sensor (vsock CID: %s): %v", indexReport.GetVsockCid(), err)
+		return errors.Wrapf(err, "sending report to sensor (vsock CID: %s)", indexReport.GetVsockCid())
 	}
 
 	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
 
 	return nil
+}
+
+func (r *Relay) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
+	vsockCID, err := extractVsockCIDFromConnection(conn)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting vsock CID")
+	}
+
+	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
+	data, err := readFromConn(conn, maxSizeBytes, r.connectionReadTimeout, vsockCID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
+	}
+
+	log.Debugf("Parsing index report (vsock CID: %d)", vsockCID)
+	indexReport, err := parseIndexReport(data)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing index report data (vsock CID: %d)", vsockCID)
+	}
+	metrics.IndexReportsReceived.Inc()
+
+	err = validateReportedVsockCID(indexReport, vsockCID)
+	if err != nil {
+		log.Debugf("Error validating reported vsock CID: %v", err)
+		return nil, errors.Wrap(err, "validating reported vsock CID")
+	}
+
+	return indexReport, nil
 }
 
 func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
@@ -234,6 +241,7 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 			conn.RemoteAddr(), conn.RemoteAddr())
 	}
 
+	// Reject invalid values according to the vsock spec (https://www.man7.org/linux/man-pages/man7/vsock.7.html)
 	if remoteAddr.ContextID <= 2 {
 		return 0, fmt.Errorf("received an invalid vsock context ID: %d (values <=2 are reserved)", remoteAddr.ContextID)
 	}
@@ -266,9 +274,11 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
+func readFromConn(conn net.Conn, maxSize int, timeout time.Duration, vsockCID uint32) ([]byte, error) {
+	log.Debugf("Reading from connection (max bytes: %d, timeout: %s, vsockCID: %d)", maxSize, timeout, vsockCID)
+
 	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-		return nil, errors.Wrap(err, "setting read deadline on connection")
+		return nil, errors.Wrapf(err, "setting read deadline on connection (vsockCID: %d)", vsockCID)
 	}
 
 	// Even if not strictly required, we limit the amount of data to be read to protect Sensor against large workloads.
@@ -278,11 +288,11 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 	limitedReader := io.LimitReader(conn, int64(maxSize+1))
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading data from vsock connection")
+		return nil, errors.Wrapf(err, "reading data from vsock connection (vsockCID: %d)", vsockCID)
 	}
 
 	if len(data) > maxSize {
-		return nil, errors.Errorf("data size exceeds the limit (%d bytes)", maxSize)
+		return nil, errors.Errorf("data size exceeds the limit (%d bytes, vsockCID: %d)", maxSize, vsockCID)
 	}
 
 	return data, nil
@@ -329,4 +339,14 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 	metrics.IndexReportsSentToSensor.With(prometheus.Labels{"failed": strconv.FormatBool(err != nil)}).Inc()
 
 	return err
+}
+
+// validateReportedVsockCID checks the vsock CID in the indexReport against the one extracted from the vsock connection
+func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
+	// Ensure the reported vsock CID is correct, to prevent spoofing
+	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
+		metrics.IndexReportsMismatchingVsockCID.Inc()
+		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
+	}
+	return nil
 }
