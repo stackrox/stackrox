@@ -170,14 +170,15 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 	var policies []*storage.Policy
 	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
-		err := ds.fillCategoryNames(ctx, policy)
-		if err != nil {
-			return errorsPkg.Wrap(err, "failed to fill category names")
-		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, "failed to fill category names")
 	}
 
 	return policies, err
