@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -18,12 +18,12 @@ import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 import {
-    fetchDelegatedRegistryConfig,
     fetchDelegatedRegistryClusters,
+    fetchDelegatedRegistryConfig,
 } from 'services/DelegatedRegistryConfigService';
 import type {
-    DelegatedRegistryConfig,
     DelegatedRegistryCluster,
+    DelegatedRegistryConfig,
 } from 'services/DelegatedRegistryConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

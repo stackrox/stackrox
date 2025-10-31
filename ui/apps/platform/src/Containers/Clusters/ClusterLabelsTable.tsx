@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { PlusCircleIcon, TimesCircleIcon } from '@patternfly/react-icons';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ClusterLabels } from 'services/ClustersService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';

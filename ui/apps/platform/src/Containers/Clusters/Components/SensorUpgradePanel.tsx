@@ -1,15 +1,14 @@
-import React from 'react';
 import {
+    Button,
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     Divider,
     Panel,
     PanelHeader,
     PanelMain,
     PanelMainBody,
-    Button,
 } from '@patternfly/react-core';
 import upperFirst from 'lodash/upperFirst';
 

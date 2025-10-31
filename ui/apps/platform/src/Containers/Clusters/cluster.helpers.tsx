@@ -1,4 +1,3 @@
-import React from 'react';
 import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
@@ -7,8 +6,8 @@ import {
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
-    InfoCircleIcon,
     InProgressIcon,
+    InfoCircleIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
     UnknownIcon,

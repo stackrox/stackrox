@@ -1,4 +1,3 @@
-import React from 'react';
 import { noop } from 'lodash';
 
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
