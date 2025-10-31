@@ -1,16 +1,16 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
-    useEventListener,
+    TopologyControlBar,
     TopologySideBar,
     TopologyView,
+    VisualizationSurface,
     createTopologyControlButtons,
     defaultControlButtonsOptions,
-    TopologyControlBar,
+    useEventListener,
     useVisualizationController,
-    VisualizationSurface,
 } from '@patternfly/react-topology';
 import type { SelectionEventListener } from '@patternfly/react-topology';
 

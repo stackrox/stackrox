@@ -51,6 +51,7 @@ function SearchFilterTypes({
             selections={typesSelected ?? [optionAll]}
             onChange={onSelect}
             ariaLabel="Type filter menu items"
+            toggleAriaLabel="Type filter menu toggle"
             placeholderText="Filter by type"
             isDisabled={isDisabled}
         >

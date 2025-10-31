@@ -1,5 +1,5 @@
 import type { ComponentType, PropsWithChildren } from 'react';
-import { GraphComponent, DefaultNode, DefaultEdge, DefaultGroup } from '@patternfly/react-topology';
+import { DefaultEdge, DefaultGroup, DefaultNode, GraphComponent } from '@patternfly/react-topology';
 import type { ComponentFactory, GraphElement } from '@patternfly/react-topology';
 
 enum CustomModelKind {
