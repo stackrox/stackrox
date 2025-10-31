@@ -13,24 +13,14 @@ from src.api.schemas import (
     ModelHealthResponse,
     ErrorResponse
 )
-from src.services.model_service import ModelManagementService
 from src.services.risk_service import RiskPredictionService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/models", tags=["models"])
 
-# Global service instances (in production, use dependency injection)
-_model_service = None
+# Global service instance (in production, use dependency injection)
 _risk_service = None
-
-
-def get_model_service() -> ModelManagementService:
-    """Get model management service instance."""
-    global _model_service
-    if _model_service is None:
-        _model_service = ModelManagementService()
-    return _model_service
 
 
 def get_risk_service() -> RiskPredictionService:
@@ -49,7 +39,7 @@ def get_risk_service() -> RiskPredictionService:
 )
 async def list_models(
     model_id: Optional[str] = Query(None, description="Filter by specific model ID"),
-    model_service: ModelManagementService = Depends(get_model_service)
+    risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> ListModelsResponse:
     """
     List available models in storage.
@@ -60,7 +50,7 @@ async def list_models(
     training timestamp, and performance metrics.
     """
     try:
-        response = model_service.list_models(model_id)
+        response = risk_service.list_models(model_id)
         return response
 
     except Exception as e:
@@ -82,7 +72,7 @@ async def list_models(
 )
 async def get_model_info(
     model_id: str,
-    model_service: ModelManagementService = Depends(get_model_service)
+    risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> Dict[str, Any]:
     """
     Get detailed information about a specific model.
@@ -93,7 +83,7 @@ async def get_model_info(
     and training information.
     """
     try:
-        response = model_service.list_models(model_id)
+        response = risk_service.list_models(model_id)
 
         if not response.models:
             raise HTTPException(
@@ -139,7 +129,6 @@ async def reload_model(
     model_id: str,
     version: Optional[str] = Query("", description="Model version (empty for latest)"),
     force_reload: bool = Query(False, description="Force reload even if already loaded"),
-    model_service: ModelManagementService = Depends(get_model_service),
     risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> ReloadModelResponse:
     """
@@ -164,7 +153,7 @@ async def reload_model(
             force_reload=force_reload
         )
 
-        response = model_service.reload_model(request, risk_service)
+        response = risk_service.reload_model(request)
         return response
 
     except Exception as e:
@@ -186,8 +175,7 @@ async def reload_model(
 )
 async def get_model_health(
     model_id: str,
-    risk_service: RiskPredictionService = Depends(get_risk_service),
-    model_service: ModelManagementService = Depends(get_model_service)
+    risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> ModelHealthResponse:
     """
     Get health status and metrics for a model.
@@ -198,7 +186,7 @@ async def get_model_health(
     """
     try:
         # Check if this is the currently loaded model
-        current_info = model_service.get_current_model_info()
+        current_info = risk_service.get_current_model_info()
 
         if current_info.get('model_id') != model_id:
             # Model is not currently loaded
@@ -234,7 +222,6 @@ async def get_model_health(
     description="Get information about the currently loaded model"
 )
 async def get_current_model_info(
-    model_service: ModelManagementService = Depends(get_model_service),
     risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> Dict[str, Any]:
     """
@@ -243,7 +230,7 @@ async def get_current_model_info(
     Returns details about which model is currently active and serving predictions.
     """
     try:
-        current_info = model_service.get_current_model_info()
+        current_info = risk_service.get_current_model_info()
         model_info = risk_service.get_model_info()
 
         return {
