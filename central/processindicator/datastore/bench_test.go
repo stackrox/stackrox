@@ -31,8 +31,8 @@ func BenchmarkAddIndicator(b *testing.B) {
 	datastore := New(db, store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		err := datastore.AddProcessIndicators(ctx, indicators...)
 		require.NoError(b, err)
 	}
@@ -67,9 +67,8 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	err := datastore.AddProcessIndicators(ctx, indicators...)
 	require.NoError(b, err)
 
-	b.ResetTimer()
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		results, err := datastore.SearchRawProcessIndicators(ctx, query)
 		require.NoError(b, err)
 		require.True(b, len(results) > 0)
