@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';

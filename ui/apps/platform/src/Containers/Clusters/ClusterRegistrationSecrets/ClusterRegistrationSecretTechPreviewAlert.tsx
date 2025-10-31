@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert } from '@patternfly/react-core';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
@@ -33,10 +33,10 @@ import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchClustersWithRetentionInfo,
     deleteClusters,
-    upgradeClusters,
+    fetchClustersWithRetentionInfo,
     upgradeCluster,
+    upgradeClusters,
 } from 'services/ClustersService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
@@ -45,12 +45,12 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
     clustersBasePath,
+    clustersClusterRegistrationSecretsPath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
     clustersInitBundlesPath,
-    clustersSecureClusterPath,
     clustersSecureClusterCrsPath,
-    clustersClusterRegistrationSecretsPath,
+    clustersSecureClusterPath,
 } from 'routePaths';
 
 import ClustersTable from './ClustersTable';

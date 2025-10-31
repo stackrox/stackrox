@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 
 type HealthStatusNotApplicableProps = { testId: string; isList?: boolean };

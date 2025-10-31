@@ -775,7 +775,6 @@ module.exports = [
         ignores: [
             'cypress/integration/**',
             'src/Components/**',
-            'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
             'src/Containers/PolicyCategories/**',
@@ -826,7 +825,6 @@ module.exports = [
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Containers/Audit/**',
-            'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
