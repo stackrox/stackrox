@@ -163,7 +163,7 @@ func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
 }
 
 func (p *Pipeline) run() {
-    defer p.stopper.Flow().ReportStopped()
+	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-p.stopper.Flow().StopRequested():
