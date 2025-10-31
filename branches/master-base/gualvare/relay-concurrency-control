@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "master-base/gualvare/chore-make-handleVsockConnection-relay-method",
-    "hash": "9eff2dc5b35b8ebf80d83051b969eab948befaa9"
+    "name": "master",
+    "hash": "8ee8e377980ec5aba6399ed89d0b2e49dc593505"
   },
   "upstream": {
     "branch": "master-base/gualvare/relay-concurrency-control"
