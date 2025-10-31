@@ -171,6 +171,15 @@ func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstanc
 	return nil
 }
 
+var copyColsPods = []string{
+	"id",
+	"name",
+	"deploymentid",
+	"namespace",
+	"clusterid",
+	"serialized",
+}
+
 func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Pod) error {
 	if len(objs) == 0 {
 		return nil
@@ -181,15 +190,6 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"deploymentid",
-		"namespace",
-		"clusterid",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -221,7 +221,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyColsPods, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -237,18 +237,18 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 	return nil
 }
 
+var copyColsPodsLiveInstances = []string{
+	"pods_id",
+	"idx",
+	"imagedigest",
+}
+
 func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"pods_id",
-		"idx",
-		"imagedigest",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -266,7 +266,7 @@ func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *post
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods_live_instances"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods_live_instances"}, copyColsPodsLiveInstances, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

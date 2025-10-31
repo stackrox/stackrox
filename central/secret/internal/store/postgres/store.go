@@ -191,6 +191,16 @@ func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSe
 	return nil
 }
 
+var copyColsSecrets = []string{
+	"id",
+	"name",
+	"clusterid",
+	"clustername",
+	"namespace",
+	"createdat",
+	"serialized",
+}
+
 func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Secret) error {
 	if len(objs) == 0 {
 		return nil
@@ -201,16 +211,6 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"clustername",
-		"namespace",
-		"createdat",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -243,7 +243,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyColsSecrets, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -259,19 +259,19 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 	return nil
 }
 
+var copyColsSecretsFiles = []string{
+	"secrets_id",
+	"idx",
+	"type",
+	"cert_enddate",
+}
+
 func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, secretID string, objs ...*storage.SecretDataFile) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"secrets_id",
-		"idx",
-		"type",
-		"cert_enddate",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -290,7 +290,7 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyColsSecretsFiles, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -306,19 +306,19 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	return nil
 }
 
+var copyColsSecretsFilesRegistries = []string{
+	"secrets_id",
+	"secrets_files_idx",
+	"idx",
+	"name",
+}
+
 func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, secretID string, secretFileIdx int, objs ...*storage.ImagePullSecret_Registry) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"secrets_id",
-		"secrets_files_idx",
-		"idx",
-		"name",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -337,7 +337,7 @@ func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx 
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyColsSecretsFilesRegistries, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

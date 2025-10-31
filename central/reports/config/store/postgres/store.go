@@ -141,6 +141,16 @@ func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.Noti
 	return nil
 }
 
+var copyColsReportConfigurations = []string{
+	"id",
+	"name",
+	"type",
+	"scopeid",
+	"resourcescope_collectionid",
+	"creator_name",
+	"serialized",
+}
+
 func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportConfiguration) error {
 	if len(objs) == 0 {
 		return nil
@@ -151,16 +161,6 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"type",
-		"scopeid",
-		"resourcescope_collectionid",
-		"creator_name",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -193,7 +193,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyColsReportConfigurations, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -209,18 +209,18 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 	return nil
 }
 
+var copyColsReportConfigurationsNotifiers = []string{
+	"report_configurations_id",
+	"idx",
+	"id",
+}
+
 func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, reportConfigurationID string, objs ...*storage.NotifierConfiguration) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"report_configurations_id",
-		"idx",
-		"id",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -238,7 +238,7 @@ func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Delet
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations_notifiers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations_notifiers"}, copyColsReportConfigurationsNotifiers, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

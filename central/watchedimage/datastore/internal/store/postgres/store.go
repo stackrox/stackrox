@@ -108,6 +108,11 @@ func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error 
 	return nil
 }
 
+var copyColsWatchedImages = []string{
+	"name",
+	"serialized",
+}
+
 func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.WatchedImage) error {
 	if len(objs) == 0 {
 		return nil
@@ -118,11 +123,6 @@ func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"name",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -150,7 +150,7 @@ func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"watched_images"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"watched_images"}, copyColsWatchedImages, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

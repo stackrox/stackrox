@@ -156,6 +156,24 @@ func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nest
 	return nil
 }
 
+var copyColsTestStructs = []string{
+	"key1",
+	"key2",
+	"stringslice",
+	"bool",
+	"uint64",
+	"int64",
+	"float",
+	"labels",
+	"timestamp",
+	"enum",
+	"enums",
+	"string_",
+	"int32slice",
+	"oneofnested_nested",
+	"serialized",
+}
+
 func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
 	if len(objs) == 0 {
 		return nil
@@ -166,24 +184,6 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"key1",
-		"key2",
-		"stringslice",
-		"bool",
-		"uint64",
-		"int64",
-		"float",
-		"labels",
-		"timestamp",
-		"enum",
-		"enums",
-		"string_",
-		"int32slice",
-		"oneofnested_nested",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -224,7 +224,7 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyColsTestStructs, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -240,23 +240,23 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsTestStructsNesteds = []string{
+	"test_structs_key1",
+	"idx",
+	"nested",
+	"isnested",
+	"int64",
+	"nested2_nested2",
+	"nested2_isnested",
+	"nested2_int64",
+}
+
 func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"test_structs_key1",
-		"idx",
-		"nested",
-		"isnested",
-		"int64",
-		"nested2_nested2",
-		"nested2_isnested",
-		"nested2_int64",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -279,7 +279,7 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyColsTestStructsNesteds, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

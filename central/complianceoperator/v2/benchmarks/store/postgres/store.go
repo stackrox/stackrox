@@ -141,6 +141,14 @@ func insertIntoComplianceOperatorBenchmarkV2Profiles(batch *pgx.Batch, obj *stor
 	return nil
 }
 
+var copyColsComplianceOperatorBenchmarkV2 = []string{
+	"id",
+	"name",
+	"version",
+	"shortname",
+	"serialized",
+}
+
 func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorBenchmarkV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -151,14 +159,6 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"version",
-		"shortname",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -189,7 +189,7 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2"}, copyColsComplianceOperatorBenchmarkV2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -205,19 +205,19 @@ func copyFromComplianceOperatorBenchmarkV2(ctx context.Context, s pgSearch.Delet
 	return nil
 }
 
+var copyColsComplianceOperatorBenchmarkV2Profiles = []string{
+	"compliance_operator_benchmark_v2_id",
+	"idx",
+	"profilename",
+	"profileversion",
+}
+
 func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorBenchmarkV2ID string, objs ...*storage.ComplianceOperatorBenchmarkV2_Profile) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"compliance_operator_benchmark_v2_id",
-		"idx",
-		"profilename",
-		"profileversion",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -236,7 +236,7 @@ func copyFromComplianceOperatorBenchmarkV2Profiles(ctx context.Context, s pgSear
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2_profiles"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_benchmark_v2_profiles"}, copyColsComplianceOperatorBenchmarkV2Profiles, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

@@ -123,6 +123,21 @@ func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingl
 	return nil
 }
 
+var copyColsTestSingleUUIDKeyStructs = []string{
+	"key",
+	"name",
+	"stringslice",
+	"bool",
+	"uint64",
+	"int64",
+	"float",
+	"labels",
+	"timestamp",
+	"enum",
+	"enums",
+	"serialized",
+}
+
 func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestSingleUUIDKeyStruct) error {
 	if len(objs) == 0 {
 		return nil
@@ -133,21 +148,6 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"key",
-		"name",
-		"stringslice",
-		"bool",
-		"uint64",
-		"int64",
-		"float",
-		"labels",
-		"timestamp",
-		"enum",
-		"enums",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -185,7 +185,7 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_single_uuid_key_structs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_single_uuid_key_structs"}, copyColsTestSingleUUIDKeyStructs, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

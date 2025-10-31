@@ -115,6 +115,14 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 	return nil
 }
 
+var copyColsNetworkEntities = []string{
+	"info_id",
+	"info_externalsource_cidr",
+	"info_externalsource_default",
+	"info_externalsource_discovered",
+	"serialized",
+}
+
 func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkEntity) error {
 	if len(objs) == 0 {
 		return nil
@@ -125,14 +133,6 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"info_id",
-		"info_externalsource_cidr",
-		"info_externalsource_default",
-		"info_externalsource_discovered",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -163,7 +163,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_entities"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_entities"}, copyColsNetworkEntities, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

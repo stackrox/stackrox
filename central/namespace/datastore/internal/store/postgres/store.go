@@ -149,6 +149,16 @@ func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) erro
 	return nil
 }
 
+var copyColsNamespaces = []string{
+	"id",
+	"name",
+	"clusterid",
+	"clustername",
+	"labels",
+	"annotations",
+	"serialized",
+}
+
 func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
 	if len(objs) == 0 {
 		return nil
@@ -159,16 +169,6 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"clustername",
-		"labels",
-		"annotations",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -201,7 +201,7 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"namespaces"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"namespaces"}, copyColsNamespaces, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
