@@ -21,6 +21,7 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -48,6 +49,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.Cluster)).
 			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
 	}
@@ -56,6 +59,8 @@ var (
 		Schema:  selectSchema(),
 		Selects: getSelectsWatchedImages(),
 		Pagination: search.NewPagination().
+			Limit(int32(env.ReportMaxRows.IntegerSetting())).
+			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 )

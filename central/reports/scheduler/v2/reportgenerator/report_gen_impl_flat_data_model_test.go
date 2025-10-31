@@ -68,7 +68,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
-
+	
 	// set up tables
 	imageDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
