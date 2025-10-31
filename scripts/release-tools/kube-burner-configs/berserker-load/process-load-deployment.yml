@@ -1,9 +1,10 @@
 ---
-kind: DaemonSet
+kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: process-load-{{.Replica}}
 spec:
+  replicas: {{.podReplicas}}
   selector:
     matchLabels:
       app: process-load-{{.Replica}}
@@ -21,15 +22,11 @@ spec:
         image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
         resources:
           requests:
-            memory: "10Mi"
-            cpu: "15m"
+            memory: "100Mi"
+            cpu: "25m"
           limits:
-            memory: "10Mi"
-            cpu: "15m"
-        volumeMounts:
-        - name: config
-          mountPath: "/etc/berserker"
-          readOnly: true
+            memory: "100Mi"
+            cpu: "25m"
         imagePullPolicy: IfNotPresent
         name: berserker
         env:
@@ -42,13 +39,6 @@ spec:
             - path: "labels"
               fieldRef:
                 fieldPath: metadata.labels
-      volumes:
-      - name: config
-        configMap:
-          name: {{.JobName}}-berserker-process-config
-          items:
-          - key: workload.toml
-            path: workload.toml
       # Add not-ready/unreachable tolerations for 15 minutes so that node
       # failure doesn't trigger pod deletion.
       tolerations:
