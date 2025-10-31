@@ -132,7 +132,10 @@ function ImagePage({
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<{
+        fullName: string;
+        id: string;
+    }>();
 
     // Report-specific functionality
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -222,7 +225,12 @@ function ImagePage({
                                             <Button
                                                 variant="secondary"
                                                 onClick={() => {
-                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                    if (imageData.name?.fullName) {
+                                                        setSbomTargetImage({
+                                                            fullName: imageData.name.fullName,
+                                                            id: imageData.id,
+                                                        });
+                                                    }
                                                 }}
                                                 isAriaDisabled={
                                                     !isScannerV4Enabled || hasScanMessage
@@ -234,7 +242,7 @@ function ImagePage({
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
-                                                imageName={sbomTargetImage}
+                                                image={sbomTargetImage}
                                             />
                                         )}
                                     </FlexItem>

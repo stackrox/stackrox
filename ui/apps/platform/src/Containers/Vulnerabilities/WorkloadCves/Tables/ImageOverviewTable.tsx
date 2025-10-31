@@ -179,7 +179,10 @@ function ImageOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<{
+        fullName: string;
+        id: string;
+    }>();
 
     return (
         <Table borders={false} variant="compact">
@@ -284,7 +287,12 @@ function ImageOverviewTable({
                                 isAriaDisabled,
                                 description,
                                 onClick: () => {
-                                    setSbomTargetImage(name?.fullName);
+                                    if (name?.fullName) {
+                                        setSbomTargetImage({
+                                            fullName: name.fullName,
+                                            id,
+                                        });
+                                    }
                                 },
                             });
                         }
@@ -418,7 +426,7 @@ function ImageOverviewTable({
             {sbomTargetImage && (
                 <GenerateSbomModal
                     onClose={() => setSbomTargetImage(undefined)}
-                    imageName={sbomTargetImage}
+                    image={sbomTargetImage}
                 />
             )}
         </Table>
