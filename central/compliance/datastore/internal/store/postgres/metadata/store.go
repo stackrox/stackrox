@@ -135,6 +135,14 @@ func insertIntoComplianceRunMetadata(batch *pgx.Batch, obj *storage.ComplianceRu
 	return nil
 }
 
+var copyColsComplianceRunMetadata = []string{
+	"runid",
+	"standardid",
+	"clusterid",
+	"finishtimestamp",
+	"serialized",
+}
+
 func copyFromComplianceRunMetadata(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceRunMetadata) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,14 +158,6 @@ func copyFromComplianceRunMetadata(ctx context.Context, s pgSearch.Deleter, tx *
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"runid",
-		"standardid",
-		"clusterid",
-		"finishtimestamp",
-		"serialized",
 	}
 
 	idx := 0
@@ -182,7 +182,7 @@ func copyFromComplianceRunMetadata(ctx context.Context, s pgSearch.Deleter, tx *
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_run_metadata"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_run_metadata"}, copyColsComplianceRunMetadata, inputRows); err != nil {
 		return err
 	}
 

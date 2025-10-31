@@ -115,6 +115,17 @@ func insertIntoNodeComponents(batch *pgx.Batch, obj *storage.NodeComponent) erro
 	return nil
 }
 
+var copyColsNodeComponents = []string{
+	"id",
+	"name",
+	"version",
+	"priority",
+	"riskscore",
+	"topcvss",
+	"operatingsystem",
+	"serialized",
+}
+
 func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	if len(objs) == 0 {
 		return nil
@@ -130,17 +141,6 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"version",
-		"priority",
-		"riskscore",
-		"topcvss",
-		"operatingsystem",
-		"serialized",
 	}
 
 	idx := 0
@@ -168,7 +168,7 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_components"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_components"}, copyColsNodeComponents, inputRows); err != nil {
 		return err
 	}
 
