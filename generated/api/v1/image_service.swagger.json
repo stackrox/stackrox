@@ -1476,6 +1476,10 @@
           "type": "string",
           "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
         },
+        "verifierName": {
+          "type": "string",
+          "description": "verifier_name is the name of the signature integration associated with `verifier_id`."
+        },
         "status": {
           "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
         },
@@ -1491,7 +1495,7 @@
           "description": "The full image names that are verified by this specific signature integration ID."
         }
       },
-      "title": "Next Tag: 6"
+      "title": "Next Tag: 7"
     },
     "storageImageSignatureVerificationResultStatus": {
       "type": "string",

@@ -48,6 +48,7 @@ export const imageDetailsFragment = gql`
                 verificationTime
                 verifiedImageReferences
                 verifierId
+                verifierName
             }
         }
     }

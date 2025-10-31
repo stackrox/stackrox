@@ -779,6 +779,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"verificationTime: Time",
 		"verifiedImageReferences: [String!]!",
 		"verifierId: String!",
+		"verifierName: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	utils.Must(builder.AddType("ImageV2", []string{
@@ -9279,6 +9280,11 @@ func (resolver *imageSignatureVerificationResultResolver) VerifiedImageReference
 
 func (resolver *imageSignatureVerificationResultResolver) VerifierId(ctx context.Context) string {
 	value := resolver.data.GetVerifierId()
+	return value
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerifierName(ctx context.Context) string {
+	value := resolver.data.GetVerifierName()
 	return value
 }
 
