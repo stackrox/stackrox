@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
@@ -8,7 +8,7 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 
 import EntityList from '../List/EntityList';

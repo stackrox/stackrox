@@ -1,17 +1,17 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import capitalize from 'lodash/capitalize';
 
 import NotApplicableIconText from 'Components/PatternFly/IconText/NotApplicableIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import searchContext from 'Containers/searchContext';
 import COMPLIANCE_STATES from 'constants/complianceStates';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
-import { sortVersion, sortStatus } from 'sorters/sorters';
+import { sortStatus, sortVersion } from 'sorters/sorters';
 import queryService from 'utils/queryService';
 import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import ListFrontendPaginated from './ListFrontendPaginated';

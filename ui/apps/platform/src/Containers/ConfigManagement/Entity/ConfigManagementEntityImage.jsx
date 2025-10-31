@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -10,7 +10,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import { entityToColumns } from 'constants/listColumns';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import CVETable from 'Containers/Images/CVETable';
 import searchContext from 'Containers/searchContext';
 import { getDateTime } from 'utils/dateUtils';

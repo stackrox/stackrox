@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';

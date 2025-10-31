@@ -777,7 +777,6 @@ module.exports = [
             'src/Components/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ConfigManagement/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
             'src/Containers/VulnMgmt/**', // deprecated
@@ -829,7 +828,6 @@ module.exports = [
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
-            'src/Containers/ConfigManagement/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/VirtualMachineCves/**',
