@@ -158,11 +158,34 @@ const shouldShowFeature = isFeatureEnabled && hasResourceAccess;
 
 ## Git Workflow
 
-- Write commit messages explaining **why**, not just **what**
-- Keep messages **concise and focused** — only include relevant information for a reviewer (no need to list every change)
-- Use conventional commit format
+### Commit Message Format
+
+- Use conventional commit format: `type: description` (e.g., `feat:`, `fix:`, `chore:`, `test:`)
+- Default to `chore:` if unsure of the type
+- Write messages explaining **why**, not just **what**
+- Keep messages **concise and focused** — only include relevant information for a reviewer
+
+**Example:**
+
+```
+feat: add dark mode toggle to settings
+
+Users requested the ability to switch themes. This implementation
+uses PatternFly's theme variables for consistency.
+```
+
+**Required:**
+
 - Sign off commits with `-s` flag
-- Don't add Claude as a co-author—only include human team members
+
+**Prohibited:**
+
+- Do NOT include "🤖 Generated with Claude Code" or similar markers
+- Do NOT add any co-author lines
+- Do NOT mention Claude as a contributor
+
+### General Workflow
+
 - Don't push changes or create PRs — let the developer handle that
 
 ---
@@ -173,9 +196,3 @@ const shouldShowFeature = isFeatureEnabled && hasResourceAccess;
 - **Routes & API patterns** → See [apps/platform/README.md](./apps/platform/README.md#routes) and [API section](./apps/platform/README.md#api)
 - **Feature flags** → See [apps/platform/README.md](./apps/platform/README.md#feature-flags)
 - **Plugin development** → See [apps/platform/README.md](./apps/platform/README.md#running-as-an-openshift-console-plugin)
-
----
-
-## Output Style
-
-- Be extremely concise. Sacrifice grammar for the sake of concision.
