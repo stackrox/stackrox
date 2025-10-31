@@ -27,7 +27,7 @@ function ImageIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactEl
     return (
         <IntegrationsTabPage source={source} sourcesEnabled={sourcesEnabled}>
             {error && (
-                <Alert variant="warning" title="Unable to get integratons" isInline component="p">
+                <Alert variant="danger" title="Unable to get integrations" isInline component="p">
                     {getAxiosErrorMessage(error)}
                 </Alert>
             )}
