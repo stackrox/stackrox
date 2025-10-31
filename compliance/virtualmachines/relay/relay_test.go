@@ -1,14 +1,24 @@
 package relay
 
+//go:generate mockgen-wrapper Conn net
+//go:generate mockgen-wrapper VirtualMachineIndexReportServiceClient github.com/stackrox/rox/generated/internalapi/sensor
+
 import (
 	"context"
+	"io"
 	"net"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/mdlayher/vsock"
+	sensormocks "github.com/stackrox/rox/compliance/virtualmachines/relay/mocks/github.com/stackrox/rox/generated/internalapi/sensor/mocks"
+	netmocks "github.com/stackrox/rox/compliance/virtualmachines/relay/mocks/net/mocks"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,35 +32,51 @@ func TestVMRelay(t *testing.T) {
 type relayTestSuite struct {
 	suite.Suite
 
-	ctx context.Context
+	ctx      context.Context
+	mockCtrl *gomock.Controller
 }
 
 func (s *relayTestSuite) SetupTest() {
 	s.ctx = context.Background()
+	s.mockCtrl = gomock.NewController(s.T())
+}
+
+func (s *relayTestSuite) TearDownTest() {
+	if s.mockCtrl != nil {
+		s.mockCtrl.Finish()
+	}
 }
 
 func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
-
-	connWrongAddrType := s.defaultVsockConn()
-	connWrongAddrType.remoteAddr = &net.TCPAddr{}
-
 	cases := map[string]struct {
-		conn             net.Conn
+		setupConn        func() net.Conn
 		shouldError      bool
 		expectedVsockCID uint32
 	}{
 		"wrong type fails": {
-			conn:             connWrongAddrType,
+			setupConn: func() net.Conn {
+				conn := netmocks.NewMockConn(s.mockCtrl)
+				conn.EXPECT().RemoteAddr().Return(&net.TCPAddr{}).AnyTimes()
+				return conn
+			},
 			shouldError:      true,
 			expectedVsockCID: 0,
 		},
 		"reserved vsock CID fails": {
-			conn:             s.defaultVsockConn().withVsockCID(2),
+			setupConn: func() net.Conn {
+				conn := netmocks.NewMockConn(s.mockCtrl)
+				conn.EXPECT().RemoteAddr().Return(&vsock.Addr{ContextID: 2}).AnyTimes()
+				return conn
+			},
 			shouldError:      true,
 			expectedVsockCID: 0,
 		},
 		"valid vsock CID succeeds": {
-			conn:             s.defaultVsockConn().withVsockCID(42),
+			setupConn: func() net.Conn {
+				conn := netmocks.NewMockConn(s.mockCtrl)
+				conn.EXPECT().RemoteAddr().Return(&vsock.Addr{ContextID: 42}).AnyTimes()
+				return conn
+			},
 			shouldError:      false,
 			expectedVsockCID: 42,
 		},
@@ -58,7 +84,8 @@ func (s *relayTestSuite) TestExtractVsockCIDFromConnection() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			vsockCID, err := extractVsockCIDFromConnection(c.conn)
+			conn := c.setupConn()
+			vsockCID, err := extractVsockCIDFromConnection(conn)
 			if c.shouldError {
 				s.Require().Error(err)
 			} else {
@@ -123,7 +150,25 @@ func (s *relayTestSuite) TestReadFromConn() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			conn := s.defaultVsockConn().withData(data).withDelay(c.delay)
+			conn := netmocks.NewMockConn(s.mockCtrl)
+
+			var readDeadline time.Time
+			conn.EXPECT().SetReadDeadline(gomock.Any()).DoAndReturn(func(t time.Time) error {
+				readDeadline = t
+				return nil
+			})
+
+			conn.EXPECT().Read(gomock.Any()).DoAndReturn(func(b []byte) (int, error) {
+				time.Sleep(c.delay)
+				if !readDeadline.IsZero() && time.Now().After(readDeadline) {
+					return 0, os.ErrDeadlineExceeded
+				}
+				n := copy(b, data)
+				if n == len(data) {
+					return n, io.EOF
+				}
+				return n, nil
+			}).AnyTimes()
 
 			readData, err := readFromConn(conn, c.maxSize, c.readTimeout, 12345)
 			if c.shouldError {
@@ -158,8 +203,18 @@ func (s *relayTestSuite) TestSemaphore() {
 }
 
 func (s *relayTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
-	client := newMockSensorClient().withDelay(500 * time.Millisecond)
+	client := sensormocks.NewMockVirtualMachineIndexReportServiceClient(s.mockCtrl)
 	ctx, cancel := context.WithCancel(s.ctx)
+
+	client.EXPECT().UpsertVirtualMachineIndexReport(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, opts ...interface{}) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+			select {
+			case <-time.After(500 * time.Millisecond):
+				return &sensor.UpsertVirtualMachineIndexReportResponse{Success: true}, nil
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}).AnyTimes()
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)
@@ -195,10 +250,14 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 	for name, c := range cases {
 		s.Run(name, func() {
-			client := newMockSensorClient().withError(c.err)
-			if !c.respSuccess {
-				client = client.withUnsuccessfulResponse()
-			}
+			client := sensormocks.NewMockVirtualMachineIndexReportServiceClient(s.mockCtrl)
+
+			var callCount int
+			client.EXPECT().UpsertVirtualMachineIndexReport(gomock.Any(), gomock.Any(), gomock.Any()).
+				DoAndReturn(func(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, opts ...interface{}) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+					callCount++
+					return &sensor.UpsertVirtualMachineIndexReportResponse{Success: c.respSuccess}, c.err
+				}).AnyTimes()
 
 			// The retry logic uses withExponentialBackoff, which currently has an initial delay between retries of
 			// 100 ms, therefore after 500 ms the failing call has been retried already
@@ -208,7 +267,7 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
 			s.Require().Error(err)
 
-			retried := len(client.capturedRequests) > 1
+			retried := callCount > 1
 			s.Equal(c.shouldRetry, retried)
 		})
 	}
@@ -227,11 +286,4 @@ func (s *relayTestSuite) TestValidateVsockCID() {
 	connVsockCID = uint32(42)
 	err = validateReportedVsockCID(&indexReport, connVsockCID)
 	s.Require().NoError(err)
-}
-
-func (s *relayTestSuite) defaultVsockConn() *mockVsockConn {
-	c := newMockVsockConn().withVsockCID(1234)
-	c, err := c.withIndexReport(&v1.IndexReport{VsockCid: "1234"})
-	s.Require().NoError(err)
-	return c
 }
