@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileText, List } from 'react-feather';
 
 import exportPDF from 'services/PDFExportService';
