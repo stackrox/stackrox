@@ -45,13 +45,13 @@ const IntegrationsPage = (): ReactElement => {
             <Route index element={<Navigate to={sourcesEnabled[0]} replace />} />
             {sourcesEnabled.map((source) => {
                 const Element = integrationsTabElementMap[source];
-                return (
+                return Element ? (
                     <Route
                         key={source}
                         path={source}
                         element={<Element sourcesEnabled={sourcesEnabled} />}
                     />
-                );
+                ) : null; // just in case
             })}
             <Route path=":source/:type" element={<IntegrationsListPage />} />
             <Route path=":source/:type/create" element={<CreateIntegrationPage />} />
