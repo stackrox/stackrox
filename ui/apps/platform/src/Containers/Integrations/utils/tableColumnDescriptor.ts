@@ -103,12 +103,12 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
-            { 
+            {
                 accessor: (config) => {
                     const objectConfig = <ApiToken>config;
                     return objectConfig.expiration ? getDateTime(objectConfig.expiration) : '';
                 },
-                Header: 'Expiration' ,
+                Header: 'Expiration',
             },
         ],
         machineAccess: [
