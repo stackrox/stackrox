@@ -55,7 +55,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType st
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

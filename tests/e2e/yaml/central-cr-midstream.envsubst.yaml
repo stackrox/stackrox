@@ -23,7 +23,7 @@ spec:
       isEnabled: Enabled
       persistence:
         persistentVolumeClaim:
-          claimName: central-db
+          claimName: central-db$db_connectionPoolSize_config
       resources:
         limits:
           cpu: 8
