@@ -1,10 +1,7 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 
-import {
-    defaultHeaderClassName,
-    defaultColumnClassName,
-} from 'Components/Table';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import entityTypes from 'constants/entityTypes';
