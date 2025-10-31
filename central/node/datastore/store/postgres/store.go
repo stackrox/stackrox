@@ -562,7 +562,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 		}
 		defer release()
 
-		tx, err := conn.Begin(ctx)
+		tx, ctx, err := conn.Begin(ctx)
 		if err != nil {
 			return err
 		}
@@ -648,7 +648,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -830,7 +830,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -878,7 +878,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -929,7 +929,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
