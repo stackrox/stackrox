@@ -2,11 +2,7 @@
 # used for performance reasons. See the build_root: in:
 # https://github.com/openshift/release/blob/master/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
 
-# However this file can be used to validate proposed changes to
-# stackrox/rox-ci-image. And this is why the automation in that repo will update
-# this file when it creates dependent PRs and
-# `stackrox-update-ci-image-from-<rox-ci-image PR>` branches e.g.
-# https://github.com/stackrox/stackrox/pull/2762
+# However this file can be used to validate proposed changes to stackrox/rox-ci-image.
 
 # In order to validate a new version of the test environment:
 # - open a PR in openshift/release (this is just for test. mark the PR with `/hold` and
@@ -27,4 +23,4 @@
 # For an example, see https://github.com/stackrox/stackrox/pull/2762 and its counterpart
 # https://github.com/openshift/release/pull/31561
 
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.12-6-gf8cb14d205
