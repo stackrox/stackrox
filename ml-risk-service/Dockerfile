@@ -37,7 +37,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy source code after dependencies are cached
 COPY src/ ./src/
 COPY training/ ./training/
-COPY proto/ ./proto/
 COPY README.md ./
 
 # Install the project itself with bytecode compilation
@@ -55,7 +54,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Set up development environment
 WORKDIR /app
 ENV PYTHONPATH=/app/src
-EXPOSE 8080 8081 8090
+EXPOSE 8081 8090
 
 # Development entrypoint
 CMD ["uv", "run", "python", "-m", "src.api.rest_server", "--host", "0.0.0.0", "--port", "8090", "--reload"]
@@ -90,7 +89,6 @@ RUN mkdir -p /app/models /app/training /app/reports /app/logs \
 # Copy application code from builder (where it was installed as a package)
 COPY --from=builder /app/src/ /app/src/
 COPY --from=builder /app/training/ /app/training/
-COPY --from=builder /app/proto/ /app/proto/
 
 # Copy configuration files
 # Use template config with environment variable placeholders
@@ -108,7 +106,7 @@ RUN chmod +x /app/entrypoint.sh /app/healthcheck.sh && \
 USER mlrisk
 
 # Expose ports
-EXPOSE 8080 8081 8090
+EXPOSE 8081 8090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

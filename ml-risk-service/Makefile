@@ -203,10 +203,11 @@ health-check: ## Check service health
 	curl -f http://localhost:8081/ready || echo -e "$(RED)Readiness check failed$(NC)"
 
 .PHONY: test-prediction
-test-prediction: ## Test prediction endpoint (requires grpcurl)
+test-prediction: ## Test prediction endpoint via REST API
 	@echo -e "$(BLUE)Testing prediction endpoint...$(NC)"
-	@which grpcurl > /dev/null || (echo -e "$(RED)grpcurl not found. Install with: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest$(NC)" && exit 1)
-	grpcurl -plaintext localhost:8080 ml_risk.MLRiskService/GetModelHealth
+	@echo -e "$(BLUE)Checking model health...$(NC)"
+	curl -s http://localhost:8090/api/v1/models/stackrox-risk-model/health | python3 -m json.tool
+	@echo -e "$(GREEN)Prediction endpoint test completed!$(NC)"
 
 .PHONY: test-train-predict-central
 test-train-predict-central: docker-run ## Train model with Central data, reload it, and validate predictions
