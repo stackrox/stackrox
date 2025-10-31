@@ -72,7 +72,7 @@ func (s *VsockServer) acquireSemaphore(parentCtx context.Context) error {
 	if err := s.semaphore.Acquire(semCtx, 1); err != nil {
 		reason := "unknown"
 		if errors.Is(err, context.DeadlineExceeded) {
-			log.Warn("Could not acquire semaphore, too many concurrent vsock connections")
+			log.Debug("Could not acquire semaphore, too many concurrent vsock connections")
 			reason = "concurrency_limit"
 		} else if errors.Is(err, context.Canceled) {
 			log.Debug("Could not acquire semaphore, the context was canceled")
