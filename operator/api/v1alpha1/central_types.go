@@ -649,7 +649,13 @@ type CentralStatus struct {
 	// The deployed version of the product.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1
 	ProductVersion string `json:"productVersion,omitempty"`
+	// The version of the reconciled release.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
+	ReconciledVersion string `json:"reconciledVersion,omitempty"`
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=3
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
 	Central *CentralComponentStatus `json:"central,omitempty"`
 }
 
@@ -672,6 +678,11 @@ type CentralComponentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.reconciledVersion`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecret.name`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
 //+genclient
 
