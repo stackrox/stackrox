@@ -237,7 +237,7 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 }
 
 func (s *relayTestSuite) TestSemaphore() {
-	vsockServer := &VsockServer{
+	vsockServer := &vsockServerImpl{
 		semaphore:        semaphore.NewWeighted(1),
 		semaphoreTimeout: 5 * time.Millisecond,
 	}
@@ -262,7 +262,7 @@ func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.V
 		connectionReadTimeout: 10 * time.Second,
 		ctx:                   ctx,
 		sensorClient:          sensorClient,
-		vsockServer:           &VsockServer{port: 12345},
+		vsockServer:           &vsockServerImpl{port: 12345},
 		waitAfterFailedAccept: time.Second,
 	}
 }
