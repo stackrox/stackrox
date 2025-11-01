@@ -119,6 +119,17 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 	return nil
 }
 
+var copyColsDiscoveredClusters = []string{
+	"id",
+	"metadata_name",
+	"metadata_type",
+	"metadata_firstdiscoveredat",
+	"status",
+	"sourceid",
+	"lastupdatedat",
+	"serialized",
+}
+
 func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.DiscoveredCluster) error {
 	if len(objs) == 0 {
 		return nil
@@ -129,17 +140,6 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"metadata_name",
-		"metadata_type",
-		"metadata_firstdiscoveredat",
-		"status",
-		"sourceid",
-		"lastupdatedat",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -173,7 +173,7 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"discovered_clusters"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"discovered_clusters"}, copyColsDiscoveredClusters, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

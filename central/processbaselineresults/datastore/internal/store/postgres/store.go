@@ -135,6 +135,13 @@ func insertIntoProcessBaselineResults(batch *pgx.Batch, obj *storage.ProcessBase
 	return nil
 }
 
+var copyColsProcessBaselineResults = []string{
+	"deploymentid",
+	"clusterid",
+	"namespace",
+	"serialized",
+}
+
 func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessBaselineResults) error {
 	if len(objs) == 0 {
 		return nil
@@ -145,13 +152,6 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"deploymentid",
-		"clusterid",
-		"namespace",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -181,7 +181,7 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyColsProcessBaselineResults, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

@@ -168,6 +168,45 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 	return nil
 }
 
+var copyColsAlerts = []string{
+	"id",
+	"policy_id",
+	"policy_name",
+	"policy_description",
+	"policy_disabled",
+	"policy_categories",
+	"policy_severity",
+	"policy_enforcementactions",
+	"policy_lastupdated",
+	"policy_sortname",
+	"policy_sortlifecyclestage",
+	"policy_sortenforcement",
+	"lifecyclestage",
+	"clusterid",
+	"clustername",
+	"namespace",
+	"namespaceid",
+	"deployment_id",
+	"deployment_name",
+	"deployment_inactive",
+	"image_id",
+	"image_name_registry",
+	"image_name_remote",
+	"image_name_tag",
+	"image_name_fullname",
+	"image_idv2",
+	"node_id",
+	"node_name",
+	"resource_resourcetype",
+	"resource_name",
+	"enforcement_action",
+	"time",
+	"state",
+	"platformcomponent",
+	"entitytype",
+	"serialized",
+}
+
 func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Alert) error {
 	if len(objs) == 0 {
 		return nil
@@ -178,45 +217,6 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"policy_id",
-		"policy_name",
-		"policy_description",
-		"policy_disabled",
-		"policy_categories",
-		"policy_severity",
-		"policy_enforcementactions",
-		"policy_lastupdated",
-		"policy_sortname",
-		"policy_sortlifecyclestage",
-		"policy_sortenforcement",
-		"lifecyclestage",
-		"clusterid",
-		"clustername",
-		"namespace",
-		"namespaceid",
-		"deployment_id",
-		"deployment_name",
-		"deployment_inactive",
-		"image_id",
-		"image_name_registry",
-		"image_name_remote",
-		"image_name_tag",
-		"image_name_fullname",
-		"image_idv2",
-		"node_id",
-		"node_name",
-		"resource_resourcetype",
-		"resource_name",
-		"enforcement_action",
-		"time",
-		"state",
-		"platformcomponent",
-		"entitytype",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -278,7 +278,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyColsAlerts, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

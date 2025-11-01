@@ -113,6 +113,13 @@ func insertIntoTestShortCircuits(batch *pgx.Batch, obj *storage.TestShortCircuit
 	return nil
 }
 
+var copyColsTestShortCircuits = []string{
+	"id",
+	"childid",
+	"g2grandchildid",
+	"serialized",
+}
+
 func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestShortCircuit) error {
 	if len(objs) == 0 {
 		return nil
@@ -123,13 +130,6 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"childid",
-		"g2grandchildid",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -159,7 +159,7 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_short_circuits"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_short_circuits"}, copyColsTestShortCircuits, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

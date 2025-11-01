@@ -140,6 +140,18 @@ func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
 	return nil
 }
 
+var copyColsK8sRoles = []string{
+	"id",
+	"name",
+	"namespace",
+	"clusterid",
+	"clustername",
+	"clusterrole",
+	"labels",
+	"annotations",
+	"serialized",
+}
+
 func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRole) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,18 +162,6 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"namespace",
-		"clusterid",
-		"clustername",
-		"clusterrole",
-		"labels",
-		"annotations",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -196,7 +196,7 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"k8s_roles"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"k8s_roles"}, copyColsK8sRoles, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

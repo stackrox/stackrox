@@ -165,6 +165,14 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage
 	return nil
 }
 
+var copyColsTestGrandparents = []string{
+	"id",
+	"val",
+	"priority",
+	"riskscore",
+	"serialized",
+}
+
 func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
 	if len(objs) == 0 {
 		return nil
@@ -175,14 +183,6 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"val",
-		"priority",
-		"riskscore",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -213,7 +213,7 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents"}, copyColsTestGrandparents, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -229,18 +229,18 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	return nil
 }
 
+var copyColsTestGrandparentsEmbeddeds = []string{
+	"test_grandparents_id",
+	"idx",
+	"val",
+}
+
 func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, objs ...*storage.TestGrandparent_Embedded) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"test_grandparents_id",
-		"idx",
-		"val",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -258,7 +258,7 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds"}, copyColsTestGrandparentsEmbeddeds, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -274,19 +274,19 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 	return nil
 }
 
+var copyColsTestGrandparentsEmbeddedsEmbedded2 = []string{
+	"test_grandparents_id",
+	"test_grandparents_embeddeds_idx",
+	"idx",
+	"val",
+}
+
 func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, testGrandparentEmbeddedIdx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"test_grandparents_id",
-		"test_grandparents_embeddeds_idx",
-		"idx",
-		"val",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -305,7 +305,7 @@ func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds_embedded2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds_embedded2"}, copyColsTestGrandparentsEmbeddedsEmbedded2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

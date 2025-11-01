@@ -122,6 +122,21 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 	return nil
 }
 
+var copyColsImageComponentV2 = []string{
+	"id",
+	"name",
+	"version",
+	"priority",
+	"source",
+	"riskscore",
+	"topcvss",
+	"operatingsystem",
+	"imageid",
+	"location",
+	"imageidv2",
+	"serialized",
+}
+
 func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -132,21 +147,6 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"version",
-		"priority",
-		"source",
-		"riskscore",
-		"topcvss",
-		"operatingsystem",
-		"imageid",
-		"location",
-		"imageidv2",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -184,7 +184,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_component_v2"}, copyColsImageComponentV2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

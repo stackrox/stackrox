@@ -122,6 +122,13 @@ func insertIntoCloudSources(batch *pgx.Batch, obj *storage.CloudSource) error {
 	return nil
 }
 
+var copyColsCloudSources = []string{
+	"id",
+	"name",
+	"type",
+	"serialized",
+}
+
 func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.CloudSource) error {
 	if len(objs) == 0 {
 		return nil
@@ -132,13 +139,6 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"type",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -168,7 +168,7 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cloud_sources"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cloud_sources"}, copyColsCloudSources, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

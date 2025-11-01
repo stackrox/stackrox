@@ -167,6 +167,19 @@ func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, role
 	return nil
 }
 
+var copyColsRoleBindings = []string{
+	"id",
+	"name",
+	"namespace",
+	"clusterid",
+	"clustername",
+	"clusterrole",
+	"labels",
+	"annotations",
+	"roleid",
+	"serialized",
+}
+
 func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
 	if len(objs) == 0 {
 		return nil
@@ -177,19 +190,6 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"namespace",
-		"clusterid",
-		"clustername",
-		"clusterrole",
-		"labels",
-		"annotations",
-		"roleid",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -225,7 +225,7 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyColsRoleBindings, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -241,19 +241,19 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	return nil
 }
 
+var copyColsRoleBindingsSubjects = []string{
+	"role_bindings_id",
+	"idx",
+	"kind",
+	"name",
+}
+
 func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"role_bindings_id",
-		"idx",
-		"kind",
-		"name",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -272,7 +272,7 @@ func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *p
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyColsRoleBindingsSubjects, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

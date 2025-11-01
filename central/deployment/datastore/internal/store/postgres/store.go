@@ -335,6 +335,28 @@ func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.Port
 	return nil
 }
 
+var copyColsDeployments = []string{
+	"id",
+	"name",
+	"type",
+	"namespace",
+	"namespaceid",
+	"orchestratorcomponent",
+	"labels",
+	"podlabels",
+	"created",
+	"clusterid",
+	"clustername",
+	"annotations",
+	"priority",
+	"imagepullsecrets",
+	"serviceaccount",
+	"serviceaccountpermissionlevel",
+	"riskscore",
+	"platformcomponent",
+	"serialized",
+}
+
 func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
 	if len(objs) == 0 {
 		return nil
@@ -345,28 +367,6 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"type",
-		"namespace",
-		"namespaceid",
-		"orchestratorcomponent",
-		"labels",
-		"podlabels",
-		"created",
-		"clusterid",
-		"clustername",
-		"annotations",
-		"priority",
-		"imagepullsecrets",
-		"serviceaccount",
-		"serviceaccountpermissionlevel",
-		"riskscore",
-		"platformcomponent",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -411,7 +411,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyColsDeployments, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -430,31 +430,31 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsDeploymentsContainers = []string{
+	"deployments_id",
+	"idx",
+	"image_id",
+	"image_name_registry",
+	"image_name_remote",
+	"image_name_tag",
+	"image_name_fullname",
+	"image_idv2",
+	"securitycontext_privileged",
+	"securitycontext_dropcapabilities",
+	"securitycontext_addcapabilities",
+	"securitycontext_readonlyrootfilesystem",
+	"resources_cpucoresrequest",
+	"resources_cpucoreslimit",
+	"resources_memorymbrequest",
+	"resources_memorymblimit",
+}
+
 func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"idx",
-		"image_id",
-		"image_name_registry",
-		"image_name_remote",
-		"image_name_tag",
-		"image_name_fullname",
-		"image_idv2",
-		"securitycontext_privileged",
-		"securitycontext_dropcapabilities",
-		"securitycontext_addcapabilities",
-		"securitycontext_readonlyrootfilesystem",
-		"resources_cpucoresrequest",
-		"resources_cpucoreslimit",
-		"resources_memorymbrequest",
-		"resources_memorymblimit",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -485,7 +485,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyColsDeploymentsContainers, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -507,21 +507,21 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 	return nil
 }
 
+var copyColsDeploymentsContainersEnvs = []string{
+	"deployments_id",
+	"deployments_containers_idx",
+	"idx",
+	"key",
+	"value",
+	"envvarsource",
+}
+
 func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"deployments_containers_idx",
-		"idx",
-		"key",
-		"value",
-		"envvarsource",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -542,7 +542,7 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyColsDeploymentsContainersEnvs, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -552,23 +552,23 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 	return nil
 }
 
+var copyColsDeploymentsContainersVolumes = []string{
+	"deployments_id",
+	"deployments_containers_idx",
+	"idx",
+	"name",
+	"source",
+	"destination",
+	"readonly",
+	"type",
+}
+
 func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"deployments_containers_idx",
-		"idx",
-		"name",
-		"source",
-		"destination",
-		"readonly",
-		"type",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -591,7 +591,7 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyColsDeploymentsContainersVolumes, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -601,20 +601,20 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 	return nil
 }
 
+var copyColsDeploymentsContainersSecrets = []string{
+	"deployments_id",
+	"deployments_containers_idx",
+	"idx",
+	"name",
+	"path",
+}
+
 func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"deployments_containers_idx",
-		"idx",
-		"name",
-		"path",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -634,7 +634,7 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyColsDeploymentsContainersSecrets, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -644,20 +644,20 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 	return nil
 }
 
+var copyColsDeploymentsPorts = []string{
+	"deployments_id",
+	"idx",
+	"containerport",
+	"protocol",
+	"exposure",
+}
+
 func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"idx",
-		"containerport",
-		"protocol",
-		"exposure",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -677,7 +677,7 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyColsDeploymentsPorts, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -693,24 +693,24 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 	return nil
 }
 
+var copyColsDeploymentsPortsExposureInfos = []string{
+	"deployments_id",
+	"deployments_ports_idx",
+	"idx",
+	"level",
+	"servicename",
+	"serviceport",
+	"nodeport",
+	"externalips",
+	"externalhostnames",
+}
+
 func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"deployments_id",
-		"deployments_ports_idx",
-		"idx",
-		"level",
-		"servicename",
-		"serviceport",
-		"nodeport",
-		"externalips",
-		"externalhostnames",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -734,7 +734,7 @@ func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Delet
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyColsDeploymentsPortsExposureInfos, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

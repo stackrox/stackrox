@@ -135,6 +135,12 @@ func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storag
 	return nil
 }
 
+var copyColsAuthMachineToMachineConfigs = []string{
+	"id",
+	"issuer",
+	"serialized",
+}
+
 func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AuthMachineToMachineConfig) error {
 	if len(objs) == 0 {
 		return nil
@@ -145,12 +151,6 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"issuer",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -179,7 +179,7 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs"}, copyColsAuthMachineToMachineConfigs, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -195,18 +195,18 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 	return nil
 }
 
+var copyColsAuthMachineToMachineConfigsMappings = []string{
+	"auth_machine_to_machine_configs_id",
+	"idx",
+	"role",
+}
+
 func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, authMachineToMachineConfigID string, objs ...*storage.AuthMachineToMachineConfig_Mapping) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"auth_machine_to_machine_configs_id",
-		"idx",
-		"role",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -224,7 +224,7 @@ func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs_mappings"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs_mappings"}, copyColsAuthMachineToMachineConfigsMappings, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
