@@ -582,7 +582,7 @@ function launch_central {
         echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
-        "${central_scripts_dir}/port-forward.sh" 8000
+        "${central_scripts_dir}/port-forward.sh" "${LOCAL_PORT:-8000}"
     fi
 
     if [[ "${needs_monitoring}" == "true" ]]; then
