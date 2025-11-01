@@ -124,11 +124,13 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
+func insertIntoDeployments(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Deployment) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -161,7 +163,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 
 	for childIndex, child := range obj.GetContainers() {
 		if err := insertIntoDeploymentsContainers(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
@@ -169,13 +171,13 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
 	for childIndex, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from deployments_ports where deployments_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetPorts()))
-	return nil
+	return buf, nil
 }
 
 func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
@@ -335,7 +337,7 @@ func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.Port
 	return nil
 }
 
-func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
+func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Deployment) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -345,6 +347,12 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"id",
@@ -371,7 +379,10 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -416,6 +427,9 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	for _, obj := range objs {

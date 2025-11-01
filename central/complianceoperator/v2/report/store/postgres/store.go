@@ -94,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2) error {
+func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.ComplianceOperatorReportSnapshotV2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -123,13 +125,13 @@ func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage
 
 	for childIndex, child := range obj.GetScans() {
 		if err := insertIntoComplianceOperatorReportSnapshotV2Scans(batch, child, obj.GetReportId(), childIndex); err != nil {
-			return err
+			return buf, err
 		}
 	}
 
 	query = "delete from compliance_operator_report_snapshot_v2_scans where compliance_operator_report_snapshot_v2_ReportId = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetReportId()), len(obj.GetScans()))
-	return nil
+	return buf, nil
 }
 
 func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
@@ -148,7 +150,7 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 	return nil
 }
 
-func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
+func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -158,6 +160,12 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"reportid",
@@ -176,7 +184,10 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -213,6 +224,9 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	for _, obj := range objs {

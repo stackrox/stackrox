@@ -97,11 +97,13 @@ func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
 	metrics.SetCacheOperationDurationTime(start, op, storeName)
 }
 
-func insertIntoSignatureIntegrations(batch *pgx.Batch, obj *storage.SignatureIntegration) error {
+func insertIntoSignatureIntegrations(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.SignatureIntegration) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -114,10 +116,10 @@ func insertIntoSignatureIntegrations(batch *pgx.Batch, obj *storage.SignatureInt
 	finalStr := "INSERT INTO signature_integrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SignatureIntegration) error {
+func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.SignatureIntegration) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -128,6 +130,12 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"id",
 		"name",
@@ -137,7 +145,10 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -166,6 +177,9 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

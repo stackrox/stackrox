@@ -93,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) error {
+func insertIntoNetworkEntities(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NetworkEntity) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -112,10 +114,10 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Info_ExternalSource_Discovered, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Cidr = EXCLUDED.Info_ExternalSource_Cidr, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Info_ExternalSource_Discovered = EXCLUDED.Info_ExternalSource_Discovered, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkEntity) error {
+func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NetworkEntity) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -125,6 +127,12 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"info_id",
@@ -137,7 +145,10 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -168,6 +179,9 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

@@ -89,11 +89,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
+func insertIntoHashes(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.Hash) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -105,10 +107,10 @@ func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
 	finalStr := "INSERT INTO hashes (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Hash) error {
+func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.Hash) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -119,6 +121,12 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"clusterid",
 		"serialized",
@@ -127,7 +135,10 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -155,6 +166,9 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

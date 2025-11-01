@@ -94,11 +94,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.AdministrationEvent) error {
+func insertIntoAdministrationEvents(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.AdministrationEvent) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -117,10 +119,10 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, NumOccurrences, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, NumOccurrences = EXCLUDED.NumOccurrences, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AdministrationEvent) error {
+func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.AdministrationEvent) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -130,6 +132,12 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"id",
@@ -146,7 +154,10 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -181,6 +192,9 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil
