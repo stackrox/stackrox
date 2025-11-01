@@ -3,11 +3,9 @@ package resolvers
 import (
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -77,27 +75,14 @@ const (
 func BenchmarkImageResolver(b *testing.B) {
 	mockCtrl := gomock.NewController(b)
 	testDB := SetupTestPostgresConn(b)
-	var resolver *Resolver
-	var schema *graphql.Schema
-
-	if features.FlattenCVEData.Enabled() {
-		resolver, schema = SetupTestResolver(b,
-			imagesView.NewImageView(testDB.DB),
-			CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
-			CreateTestImageCVEV2Datastore(b, testDB),
-			CreateTestImageV2Datastore(b, testDB, mockCtrl),
-			imagecveflat.NewCVEFlatView(testDB.DB),
-			imagecomponentflat.NewComponentFlatView(testDB.DB),
-		)
-	} else {
-		resolver, schema = SetupTestResolver(b,
-			imagesView.NewImageView(testDB.DB),
-			CreateTestImageDatastore(b, testDB, mockCtrl),
-			CreateTestImageComponentDatastore(b, testDB, mockCtrl),
-			CreateTestImageCVEDatastore(b, testDB),
-			CreateTestImageComponentCVEEdgeDatastore(b, testDB),
-		)
-	}
+	resolver, schema := SetupTestResolver(b,
+		imagesView.NewImageView(testDB.DB),
+		CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
+		CreateTestImageCVEV2Datastore(b, testDB),
+		CreateTestImageV2Datastore(b, testDB, mockCtrl),
+		imagecveflat.NewCVEFlatView(testDB.DB),
+		imagecomponentflat.NewComponentFlatView(testDB.DB),
+	)
 	ctx := contextWithImagePerm(b, mockCtrl)
 
 	images := getTestImages(100)

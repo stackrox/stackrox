@@ -8,7 +8,6 @@ import (
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -19,9 +18,6 @@ import (
 )
 
 func TestNodeComponentDataStoreSAC(t *testing.T) {
-	if features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData enabled.  Test is obsolete.")
-	}
 	suite.Run(t, new(cveDataStoreSACTestSuite))
 }
 

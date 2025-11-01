@@ -3,7 +3,6 @@ package datastore
 import (
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -21,9 +20,6 @@ func initialize() {
 
 // Singleton returns a singleton instance of cve datastore
 func Singleton() DataStore {
-	if !features.FlattenCVEData.Enabled() {
-		return nil
-	}
 	once.Do(initialize)
 	return ds
 }
