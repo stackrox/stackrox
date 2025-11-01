@@ -4,6 +4,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // GenericImage is an interface that implements the common functions of Image and ContainerImage
@@ -27,6 +32,7 @@ func ToImage(ci *storage.ContainerImage) *storage.Image {
 func ToImageV2(ci *storage.ContainerImage) *storage.ImageV2 {
 	return &storage.ImageV2{
 		Id:             ci.GetIdV2(),
+		Digest:         ci.GetId(),
 		Name:           ci.GetName(),
 		NotPullable:    ci.GetNotPullable(),
 		IsClusterLocal: ci.GetIsClusterLocal(),
@@ -41,6 +47,7 @@ func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 		NotPullable: ci.GetNotPullable(),
 	}
 	if features.FlattenImageData.Enabled() && ci.GetId() != "" {
+		log.Infof("Setting imagev2 id for name %s and digest %s", ci.GetName().GetFullName(), ci.GetId())
 		res.IdV2 = utils.NewImageV2ID(ci.GetName(), ci.GetId())
 	}
 	return res
