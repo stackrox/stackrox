@@ -1,13 +1,12 @@
-import React from 'react';
 import {
     FlexibleWidthXYPlot,
+    GradientDefs,
+    HorizontalBarSeries,
+    LabelSeries,
+    MarkSeries,
+    VerticalGridLines,
     XAxis,
     YAxis,
-    VerticalGridLines,
-    HorizontalBarSeries,
-    MarkSeries,
-    LabelSeries,
-    GradientDefs,
 } from 'react-vis';
 import max from 'lodash/max';
 import { useNavigate } from 'react-router-dom-v5-compat';

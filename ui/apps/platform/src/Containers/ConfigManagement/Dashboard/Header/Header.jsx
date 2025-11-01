@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import ExportButton from 'Components/ExportButton';
 import useCaseTypes from 'constants/useCaseTypes';

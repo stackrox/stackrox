@@ -1,4 +1,3 @@
-import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';

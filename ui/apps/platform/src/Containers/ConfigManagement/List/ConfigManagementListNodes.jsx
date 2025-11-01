@@ -1,15 +1,14 @@
-import React from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
 import {
-    defaultHeaderClassName,
     defaultColumnClassName,
+    defaultHeaderClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { nodeSortFields } from 'constants/sortFields';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { getDateTime } from 'utils/dateUtils';

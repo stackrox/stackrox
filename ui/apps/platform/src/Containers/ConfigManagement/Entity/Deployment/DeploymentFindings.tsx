@@ -1,4 +1,3 @@
-import React from 'react';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import entityTypes from 'constants/entityTypes';
 
