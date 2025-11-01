@@ -130,6 +130,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				continue
 			}
 
+			if msg.MsgFromSensor.GetNetworkFlowUpdate() != nil {
+				log.Info("Sending a NetworkFlowUpdate")
+			}
+
 			if msg.GetEvent().GetSynced() != nil {
 				log.Infof("Sending synced signal to Central")
 			}
