@@ -1,0 +1,202 @@
+# Feature configuration for ML risk ranking
+features:
+  deployment:
+    policy_violations:
+      enabled: true
+      weight: 1.0
+      normalize_saturation: 50
+      max_value: 4.0
+
+    process_baseline_violations:
+      enabled: true
+      weight: 0.8
+
+    host_network:
+      enabled: true
+      weight: 0.7
+
+    host_pid:
+      enabled: true
+      weight: 0.6
+
+    host_ipc:
+      enabled: true
+      weight: 0.6
+
+    privileged_containers:
+      enabled: true
+      weight: 0.9
+
+    port_exposure:
+      enabled: true
+      weight: 0.5
+
+    service_account_permissions:
+      enabled: true
+      weight: 0.6
+
+    replicas:
+      enabled: true
+      weight: 0.3
+
+  image:
+    vulnerabilities:
+      enabled: true
+      weight: 1.0
+      severity_weights:
+        critical: 10.0
+        high: 4.0
+        medium: 1.0
+        low: 0.25
+
+    risky_components:
+      enabled: true
+      weight: 0.7
+
+    component_count:
+      enabled: true
+      weight: 0.4
+
+    image_age:
+      enabled: true
+      weight: 0.5
+      age_threshold_days: 365
+
+model:
+  algorithm: "sklearn_ranksvm"  # Current algorithm: sklearn_ranksvm (extensible for future algorithms)
+  validation_split: 0.2
+  random_state: 42
+
+  # Algorithm-specific parameters (extensible for future implementations)
+  sklearn_params:
+    n_estimators: 100
+    n_jobs: -1
+
+  explainability:
+    shap_enabled: true
+    top_features: 10
+
+training:
+  batch_size: 1000
+  max_iterations: 100
+  early_stopping_rounds: 10
+
+api:
+  grpc_port: 8080
+  health_port: 8081
+  max_workers: 10
+
+# Training Central API configuration - for collecting training data
+training_central_api:
+  enabled: true  # Set to true to enable Training Central API integration
+  endpoint: "https://central-stackrox.apps.sh-10-17-5.ocp.infra.rox.systems"
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"  # Options: "api_token", "mtls"
+    api_token: "${TRAINING_CENTRAL_API_TOKEN}"
+    # For mTLS authentication:
+    client_cert_path: "${TRAINING_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${TRAINING_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${TRAINING_CENTRAL_CA_CERT_PATH}"
+
+  # SSL/TLS Configuration
+  ssl:
+    verify_certificates: false  # Set to false for self-signed certs in dev/test
+    ca_bundle_path: ""  # Optional custom CA bundle path
+
+  export_settings:
+    # Simplified settings for workloads endpoint
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2  # Only workloads + optional alerts/policies
+
+    # Workload-specific settings
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    # Default filters for training data collection
+    filters:
+      deployment_age_days: 90
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+      # clusters: ["prod-cluster-1", "staging-cluster"]
+      # namespaces: ["default", "kube-system"]
+      # vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  # Performance tuning
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2  # Simplified for workloads + alerts
+    memory_limit_mb: 512  # Reduced due to simplified processing
+
+  # Training-specific settings for full model training
+  training:
+    default_days_back: 30  # Default days back for data collection
+    default_limit: 1000  # Default maximum training samples
+    min_training_samples: 50  # Minimum samples required for training
+    max_training_samples: 5000  # Maximum samples to prevent memory issues
+    default_filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+
+# Prediction Central API configuration - for validating model predictions
+prediction_central_api:
+  enabled: true  # Set to true to enable Prediction Central API integration
+  endpoint: "https://staging.demo.stackrox.com"
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"  # Options: "api_token", "mtls"
+    api_token: "${PREDICTION_CENTRAL_API_TOKEN}"
+    # For mTLS authentication:
+    client_cert_path: "${PREDICTION_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${PREDICTION_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${PREDICTION_CENTRAL_CA_CERT_PATH}"
+
+  # SSL/TLS Configuration
+  ssl:
+    verify_certificates: false  # Set to false for self-signed certs in dev/test
+    ca_bundle_path: ""  # Optional custom CA bundle path
+
+  export_settings:
+    # Settings for validation data collection
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2
+
+    # Workload-specific settings
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    # Default filters for validation data collection
+    filters:
+      deployment_age_days: 7  # Recent data for validation
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  # Performance tuning
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2
+    memory_limit_mb: 512
