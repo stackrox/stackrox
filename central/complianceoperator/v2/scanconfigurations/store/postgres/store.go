@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -189,12 +188,18 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetId())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
 
 	copyCols := []string{
 		"id",
@@ -203,39 +208,29 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 		"serialized",
 	}
 
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(obj.GetId()),
-				obj.GetScanConfigName(),
-				obj.GetModifiedBy().GetName(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
-			deletes = append(deletes, obj.GetId())
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
 		}
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetScanConfigName(),
+			obj.GetModifiedBy().GetName(),
+			serialized,
+		}, nil
+	})
 
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
-
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	for _, obj := range objs {
@@ -257,8 +252,6 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"compliance_operator_scan_configuration_v2_id",
@@ -267,26 +260,22 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 	}
 
 	idx := 0
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
-				idx,
-				obj.GetProfileName(),
-			})
-
-			idx++
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
+		obj := objs[idx]
+		idx++
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
+			idx,
+			obj.GetProfileName(),
+		}, nil
+	})
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_profiles"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_profiles"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil
@@ -296,8 +285,6 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"compliance_operator_scan_configuration_v2_id",
@@ -306,26 +293,22 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 	}
 
 	idx := 0
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
-				idx,
-				pgutils.NilOrUUID(obj.GetClusterId()),
-			})
-
-			idx++
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
+		obj := objs[idx]
+		idx++
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
+			idx,
+			pgutils.NilOrUUID(obj.GetClusterId()),
+		}, nil
+	})
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_clusters"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_clusters"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil
@@ -335,8 +318,6 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"compliance_operator_scan_configuration_v2_id",
@@ -345,26 +326,22 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 	}
 
 	idx := 0
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
-				idx,
-				obj.GetId(),
-			})
-
-			idx++
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
+		obj := objs[idx]
+		idx++
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
+			idx,
+			obj.GetId(),
+		}, nil
+	})
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_notifiers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_configuration_v2_notifiers"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil
