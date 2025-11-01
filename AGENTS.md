@@ -92,6 +92,12 @@ When creating pull requests, you must follow these requirements:
 ### Single Test Examples
 - Run specific Go test: `go test -v ./central/path/to/package -run TestSpecificFunction`
 - Run PostgreSQL integration tests: `go test -v -tags sql_integration ./central/path/to/package`
+- **Testify Suite Pattern**: Many tests use `github.com/stretchr/testify/suite`:
+  - Suite tests have a top-level function like `TestClient` that runs the entire suite
+  - Individual test methods are on a struct (e.g., `func (s *ClientTestSuite) TestSomething()`)
+  - To run the entire suite: `go test ./package -run TestClient`
+  - To run specific subtest: `go test ./package -run TestClient/TestSomething`
+  - **WRONG**: `go test ./package -run TestSomething` (won't find it - it's not a top-level function)
 
 ## Architecture Overview
 
