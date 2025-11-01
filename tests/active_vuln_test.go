@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 )
@@ -77,10 +78,10 @@ func TestActiveVulnerability(t *testing.T) {
 }
 
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
-	log.Infof("test case %v", testCase)
+	t.Logf("test case %v", testCase)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
-	setupDeployment(t, testCase.getImage(), deploymentName)
-	defer teardownDeployment(t, deploymentName)
+	setupDeploymentInNamespace(t, testCase.getImage(), deploymentName, "default")
+	defer teardownDeployment(t, deploymentName, "default")
 	fmt.Println(idx, testCase, deploymentName)
 	deploymentID := getDeploymentID(t, deploymentName)
 	checkActiveVulnerability(t, testCase, deploymentID)
@@ -90,7 +91,7 @@ func TestActiveVulnerability_SetImage(t *testing.T) {
 	t.Skipf("Active Vunerability feature has been disabled for rebuilt later")
 	waitForImageScanned(t)
 	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
-	defer teardownDeployment(t, avmDeploymentName)
+	defer teardownDeployment(t, avmDeploymentName, "default")
 	deploymentID := getDeploymentID(t, avmDeploymentName)
 
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
@@ -109,12 +110,12 @@ func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID strin
 	imageQuery := fmt.Sprintf("IMAGE SHA:%q", image.SHA)
 	waitForCondition(t, func() bool {
 		fromDeployment := getImageComponents(t, deploymentQuery, deploymentQuery)
-		return image.activeComponents <= getActiveComponentCount(fromDeployment, deploymentQuery)
+		return image.activeComponents <= getActiveComponentCount(t, fromDeployment, deploymentQuery)
 	}, "active components for the deployment populated", 5*time.Minute, 30*time.Second)
 
 	waitForCondition(t, func() bool {
 		fromImage := getImageComponents(t, imageQuery, deploymentQuery)
-		return image.activeComponents <= getActiveComponentCount(fromImage, fmt.Sprintf("%v+%v", deploymentQuery, imageQuery))
+		return image.activeComponents <= getActiveComponentCount(t, fromImage, fmt.Sprintf("%v+%v", deploymentQuery, imageQuery))
 	}, "active components for the image populated", 3*time.Minute, 20*time.Second)
 
 	// The active vulns are not stable over time. But at least one vuln should exist and the same
@@ -122,12 +123,12 @@ func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID strin
 	waitForCondition(t, func() bool {
 		fromDeployment := getImageVulnerabilities(t, deploymentQuery, deploymentQuery)
 		fromImage := getImageVulnerabilities(t, imageQuery, deploymentQuery)
-		numVulnFromDeployment := getActiveVulnCount(fromDeployment, deploymentQuery)
-		return numVulnFromDeployment > 0 && numVulnFromDeployment == getActiveVulnCount(fromImage, fmt.Sprintf("%q+%q", deploymentQuery, imageQuery))
+		numVulnFromDeployment := getActiveVulnCount(t, fromDeployment, deploymentQuery)
+		return numVulnFromDeployment > 0 && numVulnFromDeployment == getActiveVulnCount(t, fromImage, fmt.Sprintf("%q+%q", deploymentQuery, imageQuery))
 	}, "the same number of active vulns from the deployment and the image", 2*time.Minute, 10*time.Second)
 }
 
-func getActiveComponentCount(entities []ActiveComponent, from string) int {
+func getActiveComponentCount(t testutils.T, entities []ActiveComponent, from string) int {
 	var count int
 	var activeComponents []string
 	for _, component := range entities {
@@ -136,11 +137,11 @@ func getActiveComponentCount(entities []ActiveComponent, from string) int {
 			count++
 		}
 	}
-	log.Infof("Found %d active components(s) for %s: %v", count, from, activeComponents)
+	t.Logf("Found %d active components(s) for %s: %v", count, from, activeComponents)
 	return count
 }
 
-func getActiveVulnCount(vulnerabilities []ActiveVulnerability, from string) int {
+func getActiveVulnCount(t testutils.T, vulnerabilities []ActiveVulnerability, from string) int {
 	var count int
 	var activeVulns []string
 	for _, vuln := range vulnerabilities {
@@ -149,7 +150,7 @@ func getActiveVulnCount(vulnerabilities []ActiveVulnerability, from string) int 
 			count++
 		}
 	}
-	log.Infof("Found %d active vuln(s) for %s: %v", count, from, activeVulns)
+	t.Logf("Found %d active vuln(s) for %s: %v", count, from, activeVulns)
 	return count
 }
 
@@ -206,7 +207,7 @@ func waitForImageScanned(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
 		for _, image := range nginxImages {
-			log.Infof("wait for image %s scanned ...", image.getImage())
+			t.Logf("wait for image %s scanned ...", image.getImage())
 			err := retry.WithRetry(func() error {
 				_, err := imageService.ScanImage(ctx, &v1.ScanImageRequest{
 					ImageName: image.getImage(),

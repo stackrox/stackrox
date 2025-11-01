@@ -24,9 +24,9 @@ func TestExcludedScopes(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
-	setupDeployment(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName)
-	defer teardownDeploymentWithoutCheck(t, deploymentName)
-	waitForDeployment(t, deploymentName)
+	setupDeploymentInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName, "default")
+	defer teardownDeploymentWithoutCheck(t, deploymentName, "default")
+	waitForDeploymentInCentral(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
 	verifyAlertForExcludedScopesRemoval(t, deploymentName)
@@ -50,7 +50,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 	for _, alert := range alerts {
 		alertStrings = fmt.Sprintf("%s%s\n", alertStrings, protocompat.MarshalTextString(alert))
 	}
-	log.Infof("Received alerts:\n%s", alertStrings)
+	t.Logf("Received alerts:\n%s", alertStrings)
 	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 

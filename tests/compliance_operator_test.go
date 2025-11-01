@@ -87,7 +87,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 		for _, run := range statusRunResp.GetRuns() {
 			if run.GetState() != v1.ComplianceRun_FINISHED {
 				finished = false
-				log.Infof("Run for %v is in state %v", run.GetStandardId(), run.GetState())
+				t.Logf("Run for %v is in state %v", run.GetStandardId(), run.GetState())
 			}
 		}
 		if finished {
