@@ -7,6 +7,16 @@ testRunSelector:
 ---
 # The following resources are obtained by following the instructions in delete-central-errors.yaml
 apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-{{ .Namespace }}-central-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-{{ .Namespace }}-scanner-psp
+---
+apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
   name: central-db-use-scc
