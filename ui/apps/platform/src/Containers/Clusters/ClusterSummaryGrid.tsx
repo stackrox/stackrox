@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Grid, GridItem } from '@patternfly/react-core';
 
 import type { Cluster } from 'types/cluster.proto';

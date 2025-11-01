@@ -1,8 +1,8 @@
 import {
     findUpgradeState,
     formatBuildDate,
-    formatKubernetesVersion,
     formatCloudProvider,
+    formatKubernetesVersion,
     getCredentialExpirationStatus,
     getUpgradeableClusters,
 } from './cluster.helpers';

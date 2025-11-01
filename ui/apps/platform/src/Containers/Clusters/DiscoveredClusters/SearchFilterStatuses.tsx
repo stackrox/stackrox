@@ -1,4 +1,3 @@
-import React from 'react';
 import { Divider, SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
