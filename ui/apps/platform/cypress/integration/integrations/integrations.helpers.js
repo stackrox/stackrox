@@ -45,6 +45,8 @@ export function getIntegrationsPath(
     return path;
 }
 
+const basePathRedirect = getIntegrationsPath('imageIntegrations');
+
 // endpoint path
 
 function getIntegrationsEndpointAddress(integrationSource, integrationType) {
@@ -120,6 +122,50 @@ function getIntegrationEndpointAddress(integrationSource, integrationType, integ
 }
 
 // Please forgive such an abstract definition.
+
+const routeMatcherMapForIntegrationsTab = {
+    imageIntegrations: {
+        [getIntegrationsEndpointAlias('imageIntegrations')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('imageIntegrations'),
+        },
+    },
+    signatureIntegrations: {
+        [getIntegrationsEndpointAlias('signatureIntegrations')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('signatureIntegrations'),
+        },
+    },
+    notifiers: {
+        [getIntegrationsEndpointAlias('notifiers')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('notifiers'),
+        },
+    },
+    backups: {
+        [getIntegrationsEndpointAlias('backups')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('backups'),
+        },
+    },
+    cloudSources: {
+        [getIntegrationsEndpointAlias('cloudSources')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('cloudSources'),
+        },
+    },
+    authProviders: {
+        [getIntegrationsEndpointAlias('authProviders', 'apitoken')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('authProviders', 'apitoken'),
+        },
+        [getIntegrationsEndpointAlias('authProviders', 'machineAccess')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('authProviders', 'machineAccess'),
+        },
+    },
+};
+
 const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
     [
         ['authProviders', 'apitoken'],
@@ -142,11 +188,12 @@ const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
 const integrationsTitle = 'Integrations';
 
 const integrationSourceTitleMap = {
-    authProviders: 'Authentication Tokens',
-    backups: 'Backup Integrations',
-    imageIntegrations: 'Image Integrations',
-    notifiers: 'Notifier Integrations',
-    signatureIntegrations: '',
+    authProviders: 'Authentication',
+    backups: 'Backup',
+    cloudSources: 'Cloud source',
+    imageIntegrations: 'Image',
+    notifiers: 'Notifier',
+    signatureIntegrations: 'Signature',
 };
 
 const integrationTitleMap = {
@@ -239,8 +286,25 @@ export function visitIntegrationsDashboardFromLeftNav(staticResponseMap) {
         staticResponseMap
     );
 
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', basePathRedirect);
     cy.get(`h1:contains("${integrationsTitle}")`);
+}
+
+/**
+ * @param {string} integrationSource
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitIntegrationsTab(integrationSource, staticResponseMap) {
+    visit(
+        getIntegrationsPath(integrationSource),
+        routeMatcherMapForIntegrationsTab[integrationSource],
+        staticResponseMap
+    );
+
+    cy.location('pathname').should('eq', getIntegrationsPath(integrationSource));
+    cy.get(
+        `a.pf-v5-c-nav__link.pf-m-current:contains("${integrationSourceTitleMap[integrationSource]}")`
+    );
 }
 
 /**
@@ -292,16 +356,14 @@ export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilit
         getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
         staticResponseForCapabilities
     );
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', basePathRedirect);
 }
 
 // interact on dashboard
 
-export function clickIntegrationTileOnDashboard(integrationSource, integrationType) {
-    const integrationSourceTitle = integrationSourceTitleMap[integrationSource];
+export function clickIntegrationTileOnTab(integrationSource, integrationType) {
     const integrationTitle = integrationTitleMap[integrationSource][integrationType];
 
-    cy.get(`h2:contains("${integrationSourceTitle}")`);
     cy.get(`a .pf-v5-c-card__title:contains("${integrationTitle}")`).click();
 }
 
