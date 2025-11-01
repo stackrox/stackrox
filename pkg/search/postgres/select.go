@@ -251,6 +251,7 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 		SelectPath:   selectPath,
 		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
 		FieldType:    dataType,
+		FieldPath:    strings.ToLower(searchField), // Store the search field name for FieldValues mapping
 		DerivedField: aggrFunc != aggregatefunc.Unset,
 	}
 }

@@ -576,6 +576,13 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, err
 	}
 
+	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
+	if len(q.GetSelects()) > 0 && queryType == SEARCH {
+		if err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
+		}
+	}
+
 	// Populate primary key select fields once so that we do not have to evaluate multiple times.
 	parsedQuery.populatePrimaryKeySelectFields()
 
@@ -833,8 +840,18 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 	return nil, nil
 }
 
-func valueFromStringPtrInterface(value interface{}) string {
-	return *(value.(*string))
+func valueFromStringPtrInterface(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	strPtr, ok := val.(*string)
+	if !ok {
+		return ""
+	}
+	if strPtr == nil {
+		return ""
+	}
+	return *strPtr
 }
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
@@ -966,8 +983,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 			idx = len(searchResults)
 			recordIDIdxMap[id] = idx
 			searchResults = append(searchResults, searchPkg.Result{
-				ID:      IDFromPks(idParts), // TODO: figure out what separator to use
-				Matches: make(map[string][]string),
+				ID:          IDFromPks(idParts), // TODO: figure out what separator to use
+				Matches:     make(map[string][]string),
+				FieldValues: make(map[string]string),
 			})
 		}
 		result := searchResults[idx]
@@ -978,8 +996,16 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
-				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
-					result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], matches...)
+				if printedValues := mustPrintForDataType(field.FieldType, returnedValue); len(printedValues) > 0 {
+					// Only add to Matches if this field is from a query constraint (not just a selected field)
+					// Fields selected only for SearchResult proto construction (ROX-29943) should not affect Matches
+					if field.IncludeInMatches {
+						result.Matches[field.FieldPath] = append(result.Matches[field.FieldPath], printedValues...)
+					}
+					// Always populate FieldValues for SearchResult proto construction
+					if len(printedValues) > 0 {
+						result.FieldValues[field.FieldPath] = printedValues[0]
+					}
 				}
 			}
 		}
