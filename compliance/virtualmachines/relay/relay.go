@@ -145,7 +145,13 @@ func (r *Relay) Run() error {
 				return r.ctx.Err()
 			}
 
-			log.Warnf("Failed to acquire semaphore to handle connection: %v", err)
+			// This log is rate-limited because when the concurrency limit is reached it is emitted every
+			// semaphoreTimeout, which is user-configurable (min: 1 second).
+			logging.GetRateLimitedLogger().WarnL(
+				"relay semaphore timeout",
+				"Failed to acquire semaphore to handle connection: %v",
+				err,
+			)
 
 			// When the concurrency limit is reached, the semaphore cannot be acquired. We close the connection and
 			// continue to listen. In this case, there is no need to add an extra wait to prevent a busy loop, because
