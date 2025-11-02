@@ -322,71 +322,37 @@ class CentralExportService:
             logger.error(f"Error collecting policies: {e}")
             return {'type': 'policies', 'count': count, 'error': str(e)}
 
-    def _normalize_filter_keys(self, filters: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Normalize filter keys to handle legacy or inconsistent naming.
-
-        Args:
-            filters: Input filters dictionary
-
-        Returns:
-            Normalized filters dictionary
-        """
-        normalized = filters.copy()
-
-        # Convert legacy deployment_age_days to days_back
-        if 'deployment_age_days' in normalized:
-            if 'days_back' not in normalized:
-                normalized['days_back'] = normalized['deployment_age_days']
-                logger.debug(f"Normalized 'deployment_age_days' to 'days_back': {normalized['days_back']}")
-            else:
-                logger.warning(f"Both 'deployment_age_days' and 'days_back' present in filters. "
-                             f"Using 'days_back'={normalized['days_back']}, ignoring 'deployment_age_days'={normalized['deployment_age_days']}")
-            # Remove the legacy key
-            del normalized['deployment_age_days']
-
-        return normalized
-
     def _build_workload_filters(self, base_filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        """Build filters specific to workload export endpoint."""
+        """
+        Build filters specific to workload export endpoint.
+
+        Note: No date-based filtering is applied - collects all deployments.
+        Use cluster/namespace filters to focus on specific environments.
+        """
         filters = {'format': 'json'}
 
         if base_filters:
-            # Normalize filter keys first to handle legacy/inconsistent naming
-            normalized_filters = self._normalize_filter_keys(base_filters)
+            # Log input filters for debugging
+            logger.debug(f"Input filters: {base_filters}")
 
-            # Log normalized filters for debugging
-            logger.debug(f"Normalized filters: {normalized_filters}")
-
-            # Convert days_back to start_date if provided
-            if 'days_back' in normalized_filters:
-                from datetime import datetime, timezone, timedelta
-                start_date = datetime.now(timezone.utc) - timedelta(days=normalized_filters['days_back'])
-                filters.update(ExportFilters.by_date_range(start_date, None))
-                logger.debug(f"Converted days_back={normalized_filters['days_back']} to start_date={start_date}")
-            # Use explicit start_date if provided (takes precedence over days_back)
-            elif 'start_date' in normalized_filters:
-                end_date = normalized_filters.get('end_date')
-                filters.update(ExportFilters.by_date_range(normalized_filters['start_date'], end_date))
-
-            # Common filters
-            if 'clusters' in normalized_filters:
-                filters.update(ExportFilters.by_clusters(normalized_filters['clusters']))
-            if 'namespaces' in normalized_filters:
-                filters.update(ExportFilters.by_namespaces(normalized_filters['namespaces']))
+            # Cluster/namespace filters (primary filtering mechanism)
+            if 'clusters' in base_filters:
+                filters.update(ExportFilters.by_clusters(base_filters['clusters']))
+            if 'namespaces' in base_filters:
+                filters.update(ExportFilters.by_namespaces(base_filters['namespaces']))
 
             # Workload-specific filters
-            if 'severity_threshold' in normalized_filters:
-                filters['min_cvss'] = self._severity_to_cvss(normalized_filters['severity_threshold'])
-            if 'include_inactive' in normalized_filters and not normalized_filters['include_inactive']:
+            if 'severity_threshold' in base_filters:
+                filters['min_cvss'] = self._severity_to_cvss(base_filters['severity_threshold'])
+            if 'include_inactive' in base_filters and not base_filters['include_inactive']:
                 filters['active'] = 'true'
-            if 'vulnerability_states' in normalized_filters:
-                filters['vuln_state'] = ','.join(normalized_filters['vulnerability_states'])
-            if 'include_vulnerabilities' in normalized_filters:
-                filters['include_vulns'] = str(normalized_filters['include_vulnerabilities']).lower()
+            if 'vulnerability_states' in base_filters:
+                filters['vuln_state'] = ','.join(base_filters['vulnerability_states'])
+            if 'include_vulnerabilities' in base_filters:
+                filters['include_vulns'] = str(base_filters['include_vulnerabilities']).lower()
 
         # Log final filters for debugging
-        logger.info(f"Built workload filters: {filters}")
+        logger.info(f"Built workload filters (no date filtering): {filters}")
         return filters
 
     def _severity_to_cvss(self, severity: str) -> float:

@@ -422,14 +422,13 @@ async def collect_sample_from_central(
     description="Perform complete model training using data collected from Central's workloads API"
 )
 async def train_full_from_central(
-    days_back: int = Query(30, ge=1, le=365, description="Number of days back to collect data"),
     limit: Optional[int] = Query(None, ge=10, le=10000, description="Maximum training samples to collect"),
     include_inactive: bool = Query(False, description="Include inactive deployments"),
     severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold"),
     clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
     namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
     config_override: Optional[str] = Query("", description="JSON configuration overrides"),
-    test_mode: bool = Query(False, description="Use optimized settings for quick testing (7 days, 50 samples)"),
+    test_mode: bool = Query(False, description="Use optimized settings for quick testing (limit=50)"),
     training_service: TrainingService = Depends(get_training_service),
     risk_service: RiskPredictionService = Depends(get_risk_service)
 ) -> TrainModelResponse:
@@ -438,25 +437,29 @@ async def train_full_from_central(
 
     This endpoint performs a comprehensive training workflow:
 
-    1. **Data Collection**: Streams workload data from Central's `/v1/export/vuln-mgmt/workloads` endpoint
+    1. **Data Collection**: Streams ALL workload data from Central's `/v1/export/vuln-mgmt/workloads` endpoint
     2. **Data Processing**: Converts Central API format to training format with feature extraction
     3. **Model Training**: Uses existing training pipeline with cross-validation and evaluation
     4. **Model Storage**: Saves trained model with version management and metadata
 
     **Parameters:**
-    - **days_back**: Number of days back to collect workload data (1-365)
     - **limit**: Optional limit on training samples to prevent memory issues
     - **include_inactive**: Whether to include inactive/stopped deployments
     - **severity_threshold**: Minimum vulnerability severity to include (LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, CRITICAL_SEVERITY)
-    - **clusters**: Optional comma-separated list of cluster IDs to filter
-    - **namespaces**: Optional comma-separated list of namespaces to filter
+    - **clusters**: Optional comma-separated list of cluster IDs to filter (default: all clusters)
+    - **namespaces**: Optional comma-separated list of namespaces to filter (default: all namespaces)
     - **config_override**: Optional JSON string with training configuration overrides
-    - **test_mode**: Enable quick testing mode (overrides days_back=7, limit=50 for fast validation)
+    - **test_mode**: Enable quick testing mode (sets limit=50 for fast validation)
+
+    **Data Collection:**
+    - Collects ALL deployments from Central (no time-based filtering)
+    - Filter by cluster/namespace to focus on specific environments
+    - Use limit parameter to cap the number of training samples
 
     **Use Cases:**
-    - **Production Training**: Train models with real enterprise workload data
-    - **Scheduled Retraining**: Periodic model updates with latest security data
-    - **Custom Model Training**: Train models for specific environments or use cases
+    - **Production Training**: Train models with complete enterprise workload data
+    - **Scheduled Retraining**: Periodic model updates with all available data
+    - **Environment-Specific Training**: Train models for specific clusters or namespaces
     - **Quick Testing**: Use test_mode=true for rapid validation of training pipeline
 
     **Note:** This operation may take several minutes for large datasets. The endpoint
@@ -483,9 +486,8 @@ async def train_full_from_central(
                 detail=f"Central API configuration invalid: {'; '.join(issues)}"
             )
 
-        # Build filters for data collection
+        # Build filters for data collection (no date filtering - collect all deployments)
         filters = {
-            'days_back': days_back,
             'include_inactive': include_inactive,
             'severity_threshold': severity_threshold
         }
@@ -493,7 +495,6 @@ async def train_full_from_central(
         # Override parameters for test mode
         if test_mode:
             logger.info("Test mode enabled - using optimized settings for quick validation")
-            filters['days_back'] = 7  # Use recent data for faster processing
             limit = 50  # Small sample for quick testing
 
         # Add optional filters

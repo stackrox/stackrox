@@ -119,14 +119,15 @@ training_central_api:
       vulnerability_states: ["ACTIVE", "OBSERVED"]
 
     # Default filters for training data collection
+    # Training collects ALL deployments regardless of age
+    # Use clusters/namespaces to filter by environment
     filters:
-      days_back: 90  # Changed from deployment_age_days for consistency with API
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
       include_alerts: true
       include_policies: false
-      # clusters: ["prod-cluster-1", "staging-cluster"]
-      # namespaces: ["default", "kube-system"]
+      # clusters: ["prod-cluster-1", "staging-cluster"]  # Optional: filter by specific clusters
+      # namespaces: ["default", "kube-system"]  # Optional: filter by specific namespaces
       # vulnerability_states: ["ACTIVE", "OBSERVED"]
 
   retry:
@@ -142,7 +143,6 @@ training_central_api:
 
   # Training-specific settings for full model training
   training:
-    default_days_back: 30  # Default days back for data collection
     default_limit: 1000  # Default maximum training samples
     min_training_samples: 50  # Minimum samples required for training
     max_training_samples: 5000  # Maximum samples to prevent memory issues
