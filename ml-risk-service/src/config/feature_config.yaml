@@ -120,7 +120,7 @@ training_central_api:
 
     # Default filters for training data collection
     filters:
-      deployment_age_days: 90
+      days_back: 90  # Changed from deployment_age_days for consistency with API
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
       include_alerts: true
@@ -184,7 +184,7 @@ prediction_central_api:
 
     # Default filters for validation data collection
     filters:
-      deployment_age_days: 7  # Recent data for validation
+      days_back: 7  # Changed from deployment_age_days for consistency with API
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
       include_alerts: true

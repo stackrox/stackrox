@@ -87,6 +87,31 @@ class TrainingDataLoader:
             raise
 
 
+    def _normalize_filter_keys(self, filters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize filter keys to handle legacy or inconsistent naming.
+
+        Args:
+            filters: Input filters dictionary
+
+        Returns:
+            Normalized filters dictionary
+        """
+        normalized = filters.copy()
+
+        # Convert legacy deployment_age_days to days_back
+        if 'deployment_age_days' in normalized:
+            if 'days_back' not in normalized:
+                normalized['days_back'] = normalized['deployment_age_days']
+                logger.debug(f"Normalized 'deployment_age_days' to 'days_back': {normalized['days_back']}")
+            else:
+                logger.warning(f"Both 'deployment_age_days' and 'days_back' present. "
+                             f"Using 'days_back'={normalized['days_back']}")
+            # Remove the legacy key
+            del normalized['deployment_age_days']
+
+        return normalized
+
     def load_from_central_api_streaming_with_config(self,
                                                   config_path: Optional[str] = None,
                                                   filters: Optional[Dict[str, Any]] = None) -> Iterator[Dict[str, Any]]:
@@ -126,12 +151,18 @@ class TrainingDataLoader:
                 config=export_settings
             )
 
-            # Prepare filters
+            # Prepare filters with normalization
             default_filters = config.get_default_filters()
-            if filters:
-                export_filters = {**default_filters, **filters}
-            else:
-                export_filters = default_filters
+            logger.debug(f"Default filters from config: {default_filters}")
+            logger.debug(f"Override filters provided: {filters}")
+
+            # Normalize both sets of filters before merging
+            normalized_defaults = self._normalize_filter_keys(default_filters) if default_filters else {}
+            normalized_overrides = self._normalize_filter_keys(filters) if filters else {}
+
+            # Merge normalized filters (overrides take precedence)
+            export_filters = {**normalized_defaults, **normalized_overrides}
+            logger.info(f"Final merged filters after normalization: {export_filters}")
 
             # Stream training data
             examples_yielded = 0

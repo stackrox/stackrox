@@ -104,12 +104,15 @@ class CentralExportService:
         Yields:
             Training examples from workload data
         """
+        # Log input filters for debugging
+        logger.info(f"_stream_workload_data called with filters: {filters}, limit: {limit}")
+
         # Build filters for workloads
         workload_filters = self._build_workload_filters(filters)
         alert_filters = self._build_alert_filters(filters)
         policy_filters = self._build_policy_filters(filters)
 
-        logger.info("Starting workload data streaming")
+        logger.info(f"Starting workload data streaming with workload_filters: {workload_filters}")
 
         # Optional: collect alerts and policies in parallel if needed
         alert_future = None
@@ -122,8 +125,16 @@ class CentralExportService:
 
         # Stream workloads directly - no correlation needed
         examples_yielded = 0
+        workloads_received = 0
         try:
+            logger.info("Calling client.stream_workloads()...")
             for workload in self.client.stream_workloads(workload_filters):
+                workloads_received += 1
+
+                # Log first workload to verify we're getting data
+                if workloads_received == 1:
+                    logger.info(f"Received first workload from Central API: {list(workload.keys()) if isinstance(workload, dict) else 'invalid format'}")
+
                 # Direct processing - no correlation needed
                 training_sample = self._create_training_sample_from_workload(workload)
 
@@ -137,6 +148,8 @@ class CentralExportService:
 
                     if examples_yielded % self.batch_size == 0:
                         logger.info(f"Processed {examples_yielded} workloads")
+                else:
+                    logger.debug(f"Skipped workload {workloads_received} (failed to create training sample)")
 
             # Wait for alerts/policies if needed
             if alert_future:
@@ -147,6 +160,15 @@ class CentralExportService:
                 except Exception as e:
                     logger.warning(f"Failed to collect additional data: {e}")
 
+            # Log summary of what was received
+            if workloads_received == 0:
+                logger.warning(f"No workloads received from Central API. "
+                             f"Filters may be too restrictive or Central has no matching data. "
+                             f"Workload filters used: {workload_filters}")
+            else:
+                logger.info(f"Received {workloads_received} workloads from Central API, "
+                          f"created {examples_yielded} valid training samples")
+
         except Exception as e:
             logger.error(f"Error during workload streaming: {e}")
             if alert_future:
@@ -154,7 +176,7 @@ class CentralExportService:
                 policy_future.cancel()
             raise
 
-        logger.info(f"Workload streaming completed: {examples_yielded} examples")
+        logger.info(f"Workload streaming completed: {examples_yielded} examples from {workloads_received} workloads")
 
     def _create_training_sample_from_workload(self, workload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -300,38 +322,71 @@ class CentralExportService:
             logger.error(f"Error collecting policies: {e}")
             return {'type': 'policies', 'count': count, 'error': str(e)}
 
+    def _normalize_filter_keys(self, filters: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize filter keys to handle legacy or inconsistent naming.
+
+        Args:
+            filters: Input filters dictionary
+
+        Returns:
+            Normalized filters dictionary
+        """
+        normalized = filters.copy()
+
+        # Convert legacy deployment_age_days to days_back
+        if 'deployment_age_days' in normalized:
+            if 'days_back' not in normalized:
+                normalized['days_back'] = normalized['deployment_age_days']
+                logger.debug(f"Normalized 'deployment_age_days' to 'days_back': {normalized['days_back']}")
+            else:
+                logger.warning(f"Both 'deployment_age_days' and 'days_back' present in filters. "
+                             f"Using 'days_back'={normalized['days_back']}, ignoring 'deployment_age_days'={normalized['deployment_age_days']}")
+            # Remove the legacy key
+            del normalized['deployment_age_days']
+
+        return normalized
+
     def _build_workload_filters(self, base_filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Build filters specific to workload export endpoint."""
         filters = {'format': 'json'}
 
         if base_filters:
+            # Normalize filter keys first to handle legacy/inconsistent naming
+            normalized_filters = self._normalize_filter_keys(base_filters)
+
+            # Log normalized filters for debugging
+            logger.debug(f"Normalized filters: {normalized_filters}")
+
             # Convert days_back to start_date if provided
-            if 'days_back' in base_filters:
+            if 'days_back' in normalized_filters:
                 from datetime import datetime, timezone, timedelta
-                start_date = datetime.now(timezone.utc) - timedelta(days=base_filters['days_back'])
+                start_date = datetime.now(timezone.utc) - timedelta(days=normalized_filters['days_back'])
                 filters.update(ExportFilters.by_date_range(start_date, None))
-                logger.debug(f"Converted days_back={base_filters['days_back']} to start_date={start_date}")
+                logger.debug(f"Converted days_back={normalized_filters['days_back']} to start_date={start_date}")
             # Use explicit start_date if provided (takes precedence over days_back)
-            elif 'start_date' in base_filters:
-                end_date = base_filters.get('end_date')
-                filters.update(ExportFilters.by_date_range(base_filters['start_date'], end_date))
+            elif 'start_date' in normalized_filters:
+                end_date = normalized_filters.get('end_date')
+                filters.update(ExportFilters.by_date_range(normalized_filters['start_date'], end_date))
 
             # Common filters
-            if 'clusters' in base_filters:
-                filters.update(ExportFilters.by_clusters(base_filters['clusters']))
-            if 'namespaces' in base_filters:
-                filters.update(ExportFilters.by_namespaces(base_filters['namespaces']))
+            if 'clusters' in normalized_filters:
+                filters.update(ExportFilters.by_clusters(normalized_filters['clusters']))
+            if 'namespaces' in normalized_filters:
+                filters.update(ExportFilters.by_namespaces(normalized_filters['namespaces']))
 
             # Workload-specific filters
-            if 'severity_threshold' in base_filters:
-                filters['min_cvss'] = self._severity_to_cvss(base_filters['severity_threshold'])
-            if 'include_inactive' in base_filters and not base_filters['include_inactive']:
+            if 'severity_threshold' in normalized_filters:
+                filters['min_cvss'] = self._severity_to_cvss(normalized_filters['severity_threshold'])
+            if 'include_inactive' in normalized_filters and not normalized_filters['include_inactive']:
                 filters['active'] = 'true'
-            if 'vulnerability_states' in base_filters:
-                filters['vuln_state'] = ','.join(base_filters['vulnerability_states'])
-            if 'include_vulnerabilities' in base_filters:
-                filters['include_vulns'] = str(base_filters['include_vulnerabilities']).lower()
+            if 'vulnerability_states' in normalized_filters:
+                filters['vuln_state'] = ','.join(normalized_filters['vulnerability_states'])
+            if 'include_vulnerabilities' in normalized_filters:
+                filters['include_vulns'] = str(normalized_filters['include_vulnerabilities']).lower()
 
+        # Log final filters for debugging
+        logger.info(f"Built workload filters: {filters}")
         return filters
 
     def _severity_to_cvss(self, severity: str) -> float:
