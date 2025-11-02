@@ -444,7 +444,19 @@ class CentralExportService:
                 'rmse': float,  # Root Mean Squared Error
                 'correlation': float,  # Correlation coefficient
                 'within_30_percent': float,  # Percentage within ±30%
-                'predictions': List[Dict]  # Individual prediction results
+                'predictions': List[Dict]  # Individual prediction results with top_features
+            }
+
+            Each prediction includes:
+            {
+                'deployment_name': str,
+                'namespace': str,
+                'cluster_id': str,
+                'actual_score': float,
+                'predicted_score': float,
+                'absolute_error': float,
+                'percent_error': float,
+                'top_features': [{'name': str, 'importance': float}, ...]  # Top 5 features
             }
         """
         import numpy as np
@@ -499,22 +511,24 @@ class CentralExportService:
                     predicted_score = predictions[0].risk_score
                     feature_importance = predictions[0].feature_importance
 
-                    # Log feature importance for this deployment
+                    # Extract top 5 features by importance
                     workload_metadata = sample.get('workload_metadata', {})
-                    deployment_name = workload_metadata.get('deployment_name', 'unknown')
-                    namespace = workload_metadata.get('namespace', 'unknown')
+                    sorted_features = sorted(
+                        feature_importance.items(),
+                        key=lambda x: abs(x[1]),
+                        reverse=True
+                    )[:5]
 
-                    logger.debug(f"Feature importance for {deployment_name} (namespace={namespace}):")
-                    logger.debug(f"  Predicted score: {predicted_score:.4f}, Actual score: {actual_score:.4f}")
-                    logger.debug(f"  Top features contributing to risk:")
-                    for feature_name, importance_value in feature_importance.items():
-                        logger.debug(f"    {feature_name:30s}: {importance_value:+.6f}")
+                    top_features = [
+                        {'name': name, 'importance': float(importance)}
+                        for name, importance in sorted_features
+                    ]
 
                     # Track scores
                     actual_scores.append(actual_score)
                     predicted_scores.append(predicted_score)
 
-                    # Store prediction result
+                    # Store prediction result with top features
                     validation_results['predictions'].append({
                         'deployment_name': workload_metadata.get('deployment_name', 'unknown'),
                         'namespace': workload_metadata.get('namespace', 'unknown'),
@@ -522,7 +536,8 @@ class CentralExportService:
                         'actual_score': float(actual_score),
                         'predicted_score': float(predicted_score),
                         'absolute_error': float(abs(predicted_score - actual_score)),
-                        'percent_error': float(abs(predicted_score - actual_score) / (actual_score + 1e-10) * 100)
+                        'percent_error': float(abs(predicted_score - actual_score) / (actual_score + 1e-10) * 100),
+                        'top_features': top_features
                     })
 
                     validation_results['successful_predictions'] += 1
