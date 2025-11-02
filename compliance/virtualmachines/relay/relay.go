@@ -35,9 +35,9 @@ type vsockServer interface {
 }
 
 type vsockServerImpl struct {
-	listener             *vsock.Listener
-	port                 uint32
-	semaphore            *semaphore.Weighted
+	listener         *vsock.Listener
+	port             uint32
+	semaphore        *semaphore.Weighted
 	semaphoreTimeout time.Duration
 }
 
@@ -46,8 +46,8 @@ func newVsockServer() *vsockServerImpl {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
 	return &vsockServerImpl{
-		port:                 uint32(port),
-		semaphore:            semaphore.NewWeighted(int64(maxConcurrentConnections)),
+		port:             uint32(port),
+		semaphore:        semaphore.NewWeighted(int64(maxConcurrentConnections)),
 		semaphoreTimeout: semaphoreTimeout,
 	}
 }
@@ -73,7 +73,7 @@ func (s *vsockServerImpl) stop() {
 
 func (s *vsockServerImpl) accept() (net.Conn, error) {
 	if s.listener == nil {
-		return nil, errors.New("vsock server has not been started")
+		return nil, fmt.Errorf("vsock server has not been started on port %d", s.port)
 	}
 	return s.listener.Accept()
 }
