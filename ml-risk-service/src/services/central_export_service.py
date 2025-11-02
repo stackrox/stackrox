@@ -95,7 +95,6 @@ class CentralExportService:
                             limit: Optional[int] = None) -> Iterator[Dict[str, Any]]:
         """
         Stream and process workload data directly from Central.
-        Much simpler than the previous correlation approach.
 
         Args:
             filters: Export filters to apply
@@ -104,15 +103,12 @@ class CentralExportService:
         Yields:
             Training examples from workload data
         """
-        # Log input filters for debugging
-        logger.info(f"_stream_workload_data called with filters: {filters}, limit: {limit}")
-
         # Build filters for workloads
         workload_filters = self._build_workload_filters(filters)
         alert_filters = self._build_alert_filters(filters)
         policy_filters = self._build_policy_filters(filters)
 
-        logger.info(f"Starting workload data streaming with workload_filters: {workload_filters}")
+        logger.info(f"Starting workload data streaming (limit: {limit})")
 
         # Optional: collect alerts and policies in parallel if needed
         alert_future = None
@@ -127,13 +123,8 @@ class CentralExportService:
         examples_yielded = 0
         workloads_received = 0
         try:
-            logger.info("Calling client.stream_workloads()...")
             for workload in self.client.stream_workloads(workload_filters):
                 workloads_received += 1
-
-                # Log first workload to verify we're getting data
-                if workloads_received == 1:
-                    logger.info(f"Received first workload from Central API: {list(workload.keys()) if isinstance(workload, dict) else 'invalid format'}")
 
                 # Direct processing - no correlation needed
                 training_sample = self._create_training_sample_from_workload(workload)
@@ -143,13 +134,11 @@ class CentralExportService:
                     examples_yielded += 1
 
                     if limit and examples_yielded >= limit:
-                        logger.info(f"Reached workload processing limit: {limit}")
+                        logger.info(f"Reached limit: {limit} training samples")
                         break
 
                     if examples_yielded % self.batch_size == 0:
                         logger.info(f"Processed {examples_yielded} workloads")
-                else:
-                    logger.debug(f"Skipped workload {workloads_received} (failed to create training sample)")
 
             # Wait for alerts/policies if needed
             if alert_future:
@@ -190,27 +179,16 @@ class CentralExportService:
             Training example dictionary or None if invalid
         """
         try:
-            # Add diagnostic logging for workload structure
-            logger.debug(f"Raw workload structure keys: {list(workload.keys())}")
-
             # Handle nested 'result' structure from Central API
             if 'result' in workload:
                 result_data = workload['result']
-                logger.debug(f"Result structure keys: {list(result_data.keys()) if isinstance(result_data, dict) else 'not-dict'}")
                 deployment_data = result_data.get('deployment', {})
                 images_data = result_data.get('images', [])
-                # Vulnerabilities might be nested in images or separate
                 vulnerabilities = result_data.get('vulnerabilities', [])
             else:
-                # Fallback to flat structure (legacy or different API version)
-                logger.debug("Using flat workload structure (no 'result' key)")
                 deployment_data = workload.get('deployment', {})
                 images_data = workload.get('images', [])
                 vulnerabilities = workload.get('vulnerabilities', [])
-
-            # Log deployment data structure for debugging
-            logger.debug(f"Deployment data keys: {list(deployment_data.keys()) if isinstance(deployment_data, dict) else 'not-dict'}")
-            logger.debug(f"Images data type/count: {type(images_data)} / {len(images_data) if isinstance(images_data, list) else 'not-list'}")
 
             # Extract deployment metadata with field name fallbacks
             deployment_id = deployment_data.get('id') or deployment_data.get('deploymentId', '')
@@ -224,10 +202,6 @@ class CentralExportService:
                          deployment_data.get('cluster_id') or
                          deployment_data.get('clusterName', ''))
 
-            # Log extracted metadata values
-            logger.debug(f"Extracted metadata: id='{deployment_id}', name='{deployment_name}', "
-                        f"namespace='{namespace}', cluster='{cluster_id}'")
-
             # Get any cached alerts for this deployment
             alerts_data = []
             if deployment_id:
@@ -236,12 +210,9 @@ class CentralExportService:
 
             # Check for vulnerabilities in images if not found at workload level
             if not vulnerabilities and images_data:
-                # Collect vulnerabilities from images
                 for image in images_data:
                     if isinstance(image, dict) and 'vulnerabilities' in image:
                         vulnerabilities.extend(image.get('vulnerabilities', []))
-
-            logger.debug(f"Total vulnerabilities found: {len(vulnerabilities)}")
 
             # Direct feature extraction using baseline extractor
             training_sample = self.feature_extractor.create_training_sample(
@@ -326,15 +297,12 @@ class CentralExportService:
         """
         Build filters specific to workload export endpoint.
 
-        Note: No date-based filtering is applied - collects all deployments.
+        Note: No date-based filtering - collects all deployments.
         Use cluster/namespace filters to focus on specific environments.
         """
         filters = {'format': 'json'}
 
         if base_filters:
-            # Log input filters for debugging
-            logger.debug(f"Input filters: {base_filters}")
-
             # Cluster/namespace filters (primary filtering mechanism)
             if 'clusters' in base_filters:
                 filters.update(ExportFilters.by_clusters(base_filters['clusters']))
@@ -351,8 +319,6 @@ class CentralExportService:
             if 'include_vulnerabilities' in base_filters:
                 filters['include_vulns'] = str(base_filters['include_vulnerabilities']).lower()
 
-        # Log final filters for debugging
-        logger.info(f"Built workload filters (no date filtering): {filters}")
         return filters
 
     def _severity_to_cvss(self, severity: str) -> float:
@@ -409,71 +375,20 @@ class CentralExportService:
         logger.info("Cleared cached data")
 
     def _log_deployment_risk_score(self, training_sample: Dict[str, Any]):
-        """
-        Log risk score information for a deployment.
-
-        Args:
-            training_sample: Training sample containing risk score and metadata
-        """
+        """Track risk score statistics."""
         try:
             risk_score = training_sample.get('risk_score', 0.0)
-            baseline_factors = training_sample.get('baseline_factors', {})
-            baseline_score = baseline_factors.get('baseline_score', 0.0)
-            workload_metadata = training_sample.get('workload_metadata', {})
-
-            # Extract deployment info
-            deployment_name = workload_metadata.get('deployment_name', 'unknown')
-            namespace = workload_metadata.get('namespace', 'unknown')
-            cluster_id = workload_metadata.get('cluster_id', 'unknown')
-
-            # Additional diagnostic data for uniform score investigation
-            vuln_count = workload_metadata.get('total_vulnerabilities', 0)
-            image_count = workload_metadata.get('image_count', 0)
-            alert_count = workload_metadata.get('alert_count', 0)
-
-            # Track score statistics
             self._risk_score_stats['scores'].append(risk_score)
             self._risk_score_stats['total_count'] += 1
 
-            # Enhanced logging with diagnostic information
-            logger.debug(f"Training sample: deployment={deployment_name} namespace={namespace} "
-                        f"cluster={cluster_id} risk_score={risk_score:.3f} baseline_score={baseline_score:.3f} "
-                        f"vulns={vuln_count} images={image_count} alerts={alert_count}")
-
-            # Log baseline factors breakdown for uniform score investigation
-            if baseline_factors:
-                logger.debug(f"Baseline factors for {deployment_name}: "
-                            f"policy_violations={baseline_factors.get('policy_violations', 1.0):.3f} "
-                            f"vulnerabilities={baseline_factors.get('vulnerabilities', 1.0):.3f} "
-                            f"service_config={baseline_factors.get('service_config', 1.0):.3f} "
-                            f"reachability={baseline_factors.get('reachability', 1.0):.3f}")
-
-            # Log batch summary periodically at INFO level
+            # Log batch summary periodically
             if self._risk_score_stats['total_count'] % self.batch_size == 0:
-                self._log_batch_risk_score_summary()
-
+                scores = self._risk_score_stats['scores']
+                recent = scores[-self.batch_size:]
+                avg = sum(recent) / len(recent)
+                logger.info(f"Processed {self._risk_score_stats['total_count']} samples, avg_risk={avg:.2f}")
         except Exception as e:
-            logger.warning(f"Failed to log risk score for deployment: {e}")
-
-    def _log_batch_risk_score_summary(self):
-        """Log summary statistics for the current batch of risk scores."""
-        try:
-            scores = self._risk_score_stats['scores']
-            if not scores:
-                return
-
-            recent_scores = scores[-self.batch_size:] if len(scores) >= self.batch_size else scores
-
-            avg_risk = sum(recent_scores) / len(recent_scores)
-            min_risk = min(recent_scores)
-            max_risk = max(recent_scores)
-            count = len(recent_scores)
-
-            logger.info(f"Training batch processed: count={count} avg_risk={avg_risk:.3f} "
-                       f"min_risk={min_risk:.3f} max_risk={max_risk:.3f}")
-
-        except Exception as e:
-            logger.warning(f"Failed to log batch risk score summary: {e}")
+            logger.warning(f"Failed to track risk score: {e}")
 
     def _log_final_risk_score_summary(self):
         """Log final summary statistics for all collected risk scores."""
@@ -482,25 +397,12 @@ class CentralExportService:
             total_count = self._risk_score_stats['total_count']
             failed_count = self._risk_score_stats['failed_count']
 
-            if not scores:
-                logger.info(f"Training collection complete: total_processed={total_count} "
-                           f"successful=0 failed={failed_count} - no valid risk scores generated")
-                return
-
-            # Calculate comprehensive statistics
-            avg_risk = sum(scores) / len(scores)
-            min_risk = min(scores)
-            max_risk = max(scores)
-
-            # Calculate variance
-            variance = sum((score - avg_risk) ** 2 for score in scores) / len(scores)
-
-            # Count unique scores for diversity assessment
-            unique_scores = len(set(f"{score:.3f}" for score in scores))
-
-            logger.info(f"Training collection complete: total_processed={total_count} successful={len(scores)} "
-                       f"failed={failed_count} avg_risk={avg_risk:.3f} min_risk={min_risk:.3f} "
-                       f"max_risk={max_risk:.3f} risk_variance={variance:.6f} unique_scores={unique_scores}")
+            if scores:
+                avg_risk = sum(scores) / len(scores)
+                logger.info(f"Training collection complete: total={total_count} successful={len(scores)} "
+                           f"failed={failed_count} avg_risk={avg_risk:.3f}")
+            else:
+                logger.info(f"Training collection complete: total={total_count} successful=0 failed={failed_count}")
 
             # Reset statistics for next collection
             self._risk_score_stats = {
