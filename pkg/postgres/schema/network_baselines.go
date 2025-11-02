@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), "network_baselines")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_BASELINE, "networkbaseline", (*storage.NetworkBaseline)(nil)))
+		schema = getNetworkBaselineSchema()
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_BASELINE, schema)
@@ -47,4 +43,70 @@ type NetworkBaselines struct {
 	ClusterID    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:networkbaselines_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	networkBaselineSearchFields = map[search.FieldLabel]*search.Field{}
+
+	networkBaselineSchema = &walker.Schema{
+		Table:    "network_baselines",
+		Type:     "*storage.NetworkBaseline",
+		TypeName: "NetworkBaseline",
+		Fields: []walker.Field{
+			{
+				Name:       "DeploymentId",
+				ColumnName: "DeploymentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNetworkBaselineSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if networkBaselineSchema.OptionsMap == nil {
+		networkBaselineSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_BASELINE, networkBaselineSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range networkBaselineSchema.Fields {
+		networkBaselineSchema.Fields[i].Schema = networkBaselineSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(networkBaselineSchema)
+	return networkBaselineSchema
 }

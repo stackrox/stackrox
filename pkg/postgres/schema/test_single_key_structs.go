@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -29,8 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), "test_single_key_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(100), "testsinglekeystruct", (*storage.TestSingleKeyStruct)(nil)))
+		schema = getTestSingleKeyStructSchema()
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(100), schema)
@@ -57,4 +55,126 @@ type TestSingleKeyStructs struct {
 	Enum        storage.TestSingleKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums       *pq.Int32Array                   `gorm:"column:enums;type:int[]"`
 	Serialized  []byte                           `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	testSingleKeyStructSearchFields = map[search.FieldLabel]*search.Field{}
+
+	testSingleKeyStructSchema = &walker.Schema{
+		Table:    "test_single_key_structs",
+		Type:     "*storage.TestSingleKeyStruct",
+		TypeName: "TestSingleKeyStruct",
+		Fields: []walker.Field{
+			{
+				Name:       "Key",
+				ColumnName: "Key",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "StringSlice",
+				ColumnName: "StringSlice",
+				Type:       "[]string",
+				SQLType:    "text[]",
+				DataType:   postgres.StringArray,
+			},
+			{
+				Name:       "Bool",
+				ColumnName: "Bool",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "Uint64",
+				ColumnName: "Uint64",
+				Type:       "uint64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Int64",
+				ColumnName: "Int64",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "Float",
+				ColumnName: "Float",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "Timestamp",
+				ColumnName: "Timestamp",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Enum",
+				ColumnName: "Enum",
+				Type:       "storage.TestSingleKeyStruct_Enum",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Enums",
+				ColumnName: "Enums",
+				Type:       "[]storage.TestSingleKeyStruct_Enum",
+				SQLType:    "int[]",
+				DataType:   postgres.EnumArray,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTestSingleKeyStructSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if testSingleKeyStructSchema.OptionsMap == nil {
+		testSingleKeyStructSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(100), testSingleKeyStructSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testSingleKeyStructSchema.Fields {
+		testSingleKeyStructSchema.Fields[i].Schema = testSingleKeyStructSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testSingleKeyStructSchema)
+	return testSingleKeyStructSchema
 }

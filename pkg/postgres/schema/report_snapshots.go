@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ReportSnapshot)(nil)), "report_snapshots")
+		schema = getReportSnapshotSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ReportConfiguration": ReportConfigurationsSchema,
 		}
@@ -37,7 +36,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_SNAPSHOT, "reportsnapshot", (*storage.ReportSnapshot)(nil)))
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableReportSnapshotsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_SNAPSHOT, schema)
@@ -65,4 +63,126 @@ type ReportSnapshots struct {
 	AreaOfConcern                        string                                  `gorm:"column:areaofconcern;type:varchar"`
 	Serialized                           []byte                                  `gorm:"column:serialized;type:bytea"`
 	ReportConfigurationsRef              ReportConfigurations                    `gorm:"foreignKey:reportconfigurationid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	reportSnapshotSearchFields = map[search.FieldLabel]*search.Field{}
+
+	reportSnapshotSchema = &walker.Schema{
+		Table:    "report_snapshots",
+		Type:     "*storage.ReportSnapshot",
+		TypeName: "ReportSnapshot",
+		Fields: []walker.Field{
+			{
+				Name:       "ReportId",
+				ColumnName: "ReportId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ReportConfigurationId",
+				ColumnName: "ReportConfigurationId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "RunState",
+				ColumnName: "ReportStatus_RunState",
+				Type:       "storage.ReportStatus_RunState",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "QueuedAt",
+				ColumnName: "ReportStatus_QueuedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CompletedAt",
+				ColumnName: "ReportStatus_CompletedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ReportRequestType",
+				ColumnName: "ReportStatus_ReportRequestType",
+				Type:       "storage.ReportStatus_RunMethod",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ReportNotificationMethod",
+				ColumnName: "ReportStatus_ReportNotificationMethod",
+				Type:       "storage.ReportStatus_NotificationMethod",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Id",
+				ColumnName: "Requester_Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Requester_Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "AreaOfConcern",
+				ColumnName: "AreaOfConcern",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getReportSnapshotSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if reportSnapshotSchema.OptionsMap == nil {
+		reportSnapshotSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_REPORT_SNAPSHOT, reportSnapshotSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range reportSnapshotSchema.Fields {
+		reportSnapshotSchema.Fields[i].Schema = reportSnapshotSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(reportSnapshotSchema)
+	return reportSnapshotSchema
 }

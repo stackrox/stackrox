@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceIntegration)(nil)), "compliance_integrations")
+		schema = getComplianceIntegrationSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -36,7 +35,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, "complianceintegration", (*storage.ComplianceIntegration)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTERS,
 		}...)
@@ -60,4 +58,84 @@ type ComplianceIntegrations struct {
 	OperatorInstalled bool             `gorm:"column:operatorinstalled;type:bool"`
 	OperatorStatus    storage.COStatus `gorm:"column:operatorstatus;type:integer"`
 	Serialized        []byte           `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceIntegrationSearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceIntegrationSchema = &walker.Schema{
+		Table:    "compliance_integrations",
+		Type:     "*storage.ComplianceIntegration",
+		TypeName: "ComplianceIntegration",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Version",
+				ColumnName: "Version",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "OperatorInstalled",
+				ColumnName: "OperatorInstalled",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "OperatorStatus",
+				ColumnName: "OperatorStatus",
+				Type:       "storage.COStatus",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceIntegrationSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceIntegrationSchema.OptionsMap == nil {
+		complianceIntegrationSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, complianceIntegrationSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceIntegrationSchema.Fields {
+		complianceIntegrationSchema.Fields[i].Schema = complianceIntegrationSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceIntegrationSchema)
+	return complianceIntegrationSchema
 }

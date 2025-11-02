@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,7 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentCVEEdge)(nil)), "node_components_cves_edges")
+		schema = getNodeComponentCVEEdgeSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.NodeComponent": NodeComponentsSchema,
 			"storage.NodeCVE":       NodeCvesSchema,
@@ -37,7 +35,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "nodecomponentcveedge", (*storage.NodeComponentCVEEdge)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_NODE_VULNERABILITIES,
 			v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
@@ -67,4 +64,84 @@ type NodeComponentsCvesEdges struct {
 	NodeCveID         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	nodeComponentCVEEdgeSearchFields = map[search.FieldLabel]*search.Field{}
+
+	nodeComponentCVEEdgeSchema = &walker.Schema{
+		Table:    "node_components_cves_edges",
+		Type:     "*storage.NodeComponentCVEEdge",
+		TypeName: "NodeComponentCVEEdge",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "IsFixable",
+				ColumnName: "IsFixable",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "FixedBy",
+				ColumnName: "FixedBy",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "NodeComponentId",
+				ColumnName: "NodeComponentId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "NodeCveId",
+				ColumnName: "NodeCveId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNodeComponentCVEEdgeSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if nodeComponentCVEEdgeSchema.OptionsMap == nil {
+		nodeComponentCVEEdgeSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, nodeComponentCVEEdgeSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range nodeComponentCVEEdgeSchema.Fields {
+		nodeComponentCVEEdgeSchema.Fields[i].Schema = nodeComponentCVEEdgeSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(nodeComponentCVEEdgeSchema)
+	return nodeComponentCVEEdgeSchema
 }

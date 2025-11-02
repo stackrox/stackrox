@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,8 +27,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVE)(nil)), "cluster_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULNERABILITIES, "clustercve", (*storage.ClusterCVE)(nil)))
+		schema = getClusterCVESchema()
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_CLUSTER_VULNERABILITIES,
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
@@ -61,4 +59,126 @@ type ClusterCves struct {
 	SnoozeExpiry                   *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
 	Type                           storage.CVE_CVEType           `gorm:"column:type;type:integer"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	clusterCVESearchFields = map[search.FieldLabel]*search.Field{}
+
+	clusterCVESchema = &walker.Schema{
+		Table:    "cluster_cves",
+		Type:     "*storage.ClusterCVE",
+		TypeName: "ClusterCVE",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Cve",
+				ColumnName: "CveBaseInfo_Cve",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "PublishedOn",
+				ColumnName: "CveBaseInfo_PublishedOn",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "CreatedAt",
+				ColumnName: "CveBaseInfo_CreatedAt",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "EpssProbability",
+				ColumnName: "CveBaseInfo_Epss_EpssProbability",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Cvss",
+				ColumnName: "Cvss",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.VulnerabilitySeverity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "ImpactScore",
+				ColumnName: "ImpactScore",
+				Type:       "float32",
+				SQLType:    "numeric",
+				DataType:   postgres.Numeric,
+			},
+			{
+				Name:       "Snoozed",
+				ColumnName: "Snoozed",
+				Type:       "bool",
+				SQLType:    "bool",
+				DataType:   postgres.Bool,
+			},
+			{
+				Name:       "SnoozeExpiry",
+				ColumnName: "SnoozeExpiry",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "Type",
+				ColumnName: "Type",
+				Type:       "storage.CVE_CVEType",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getClusterCVESchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if clusterCVESchema.OptionsMap == nil {
+		clusterCVESchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_CLUSTER_VULNERABILITIES, clusterCVESearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range clusterCVESchema.Fields {
+		clusterCVESchema.Fields[i].Schema = clusterCVESchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(clusterCVESchema)
+	return clusterCVESchema
 }

@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -30,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanV2)(nil)), "compliance_operator_scan_v2")
+		schema = getComplianceOperatorScanV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema,
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
@@ -39,7 +37,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN, "complianceoperatorscanv2", (*storage.ComplianceOperatorScanV2)(nil)))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorScanV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN, schema)
@@ -64,4 +61,112 @@ type ComplianceOperatorScanV2 struct {
 	ScanRefID           string     `gorm:"column:scanrefid;type:uuid"`
 	LastStartedTime     *time.Time `gorm:"column:laststartedtime;type:timestamp"`
 	Serialized          []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceOperatorScanV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorScanV2Schema = &walker.Schema{
+		Table:    "compliance_operator_scan_v2",
+		Type:     "*storage.ComplianceOperatorScanV2",
+		TypeName: "ComplianceOperatorScanV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ScanConfigName",
+				ColumnName: "ScanConfigName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ProfileRefId",
+				ColumnName: "Profile_ProfileRefId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Result",
+				ColumnName: "Status_Result",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "LastExecutedTime",
+				ColumnName: "LastExecutedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ScanName",
+				ColumnName: "ScanName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ScanRefId",
+				ColumnName: "ScanRefId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "LastStartedTime",
+				ColumnName: "LastStartedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceOperatorScanV2Schema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceOperatorScanV2Schema.OptionsMap == nil {
+		complianceOperatorScanV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN, complianceOperatorScanV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorScanV2Schema.Fields {
+		complianceOperatorScanV2Schema.Fields[i].Schema = complianceOperatorScanV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorScanV2Schema)
+	return complianceOperatorScanV2Schema
 }

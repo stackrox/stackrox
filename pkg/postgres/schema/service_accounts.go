@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), "service_accounts")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SERVICE_ACCOUNTS, "serviceaccount", (*storage.ServiceAccount)(nil)))
+		schema = getServiceAccountSchema()
 		schema.ScopingResource = resources.ServiceAccount
 		RegisterTable(schema, CreateTableServiceAccountsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)
@@ -51,4 +47,98 @@ type ServiceAccounts struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	serviceAccountSearchFields = map[search.FieldLabel]*search.Field{}
+
+	serviceAccountSchema = &walker.Schema{
+		Table:    "service_accounts",
+		Type:     "*storage.ServiceAccount",
+		TypeName: "ServiceAccount",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterName",
+				ColumnName: "ClusterName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Labels",
+				ColumnName: "Labels",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "Annotations",
+				ColumnName: "Annotations",
+				Type:       "map[string]string",
+				SQLType:    "jsonb",
+				DataType:   postgres.Map,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getServiceAccountSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if serviceAccountSchema.OptionsMap == nil {
+		serviceAccountSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SERVICE_ACCOUNTS, serviceAccountSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range serviceAccountSchema.Fields {
+		serviceAccountSchema.Fields[i].Schema = serviceAccountSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(serviceAccountSchema)
+	return serviceAccountSchema
 }

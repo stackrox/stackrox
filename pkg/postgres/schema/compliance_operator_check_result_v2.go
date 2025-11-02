@@ -4,7 +4,6 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -30,7 +29,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorCheckResultV2)(nil)), "compliance_operator_check_result_v2")
+		schema = getComplianceOperatorCheckResultV2Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster":                               ClustersSchema,
 			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
@@ -42,7 +41,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, "complianceoperatorcheckresultv2", (*storage.ComplianceOperatorCheckResultV2)(nil)))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, schema)
@@ -70,4 +68,133 @@ type ComplianceOperatorCheckResultV2 struct {
 	RuleRefID       string                                              `gorm:"column:rulerefid;type:uuid"`
 	LastStartedTime *time.Time                                          `gorm:"column:laststartedtime;type:timestamp"`
 	Serialized      []byte                                              `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceOperatorCheckResultV2SearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorCheckResultV2Schema = &walker.Schema{
+		Table:    "compliance_operator_check_result_v2",
+		Type:     "*storage.ComplianceOperatorCheckResultV2",
+		TypeName: "ComplianceOperatorCheckResultV2",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "CheckId",
+				ColumnName: "CheckId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "CheckName",
+				ColumnName: "CheckName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Status",
+				ColumnName: "Status",
+				Type:       "storage.ComplianceOperatorCheckResultV2_CheckStatus",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "Severity",
+				ColumnName: "Severity",
+				Type:       "storage.RuleSeverity",
+				SQLType:    "integer",
+				DataType:   postgres.Enum,
+			},
+			{
+				Name:       "CreatedTime",
+				ColumnName: "CreatedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "ScanConfigName",
+				ColumnName: "ScanConfigName",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Rationale",
+				ColumnName: "Rationale",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ScanRefId",
+				ColumnName: "ScanRefId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "RuleRefId",
+				ColumnName: "RuleRefId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "LastStartedTime",
+				ColumnName: "LastStartedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceOperatorCheckResultV2Schema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceOperatorCheckResultV2Schema.OptionsMap == nil {
+		complianceOperatorCheckResultV2Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, complianceOperatorCheckResultV2SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorCheckResultV2Schema.Fields {
+		complianceOperatorCheckResultV2Schema.Fields[i].Schema = complianceOperatorCheckResultV2Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorCheckResultV2Schema)
+	return complianceOperatorCheckResultV2Schema
 }

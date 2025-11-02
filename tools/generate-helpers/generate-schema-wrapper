@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+SCRIPT="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
+
+# Build the tool first, then run from project root
+PROJECT_ROOT="$(dirname "${SCRIPT}")/../.."
+cd "${PROJECT_ROOT}/tools/generate-schema" && go build -o "${PROJECT_ROOT}/generate-schema" .
+cd "${PROJECT_ROOT}" && "./generate-schema" -output "pkg/postgres/schema" -verbose "$@"

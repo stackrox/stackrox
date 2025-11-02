@@ -5,12 +5,12 @@ import (
 	"context"
 	"embed"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	"github.com/stackrox/rox/migrator/types"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5/schema"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
+	"github.com/stackrox/rox/migrator/types"
 	"gorm.io/gorm"
 )
 
@@ -23,12 +23,12 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
 		Run: func(databases *types.Databases) error {
-			   err := updatePolicies(databases.GormDB)
-		      if err != nil {
-		      return errors.Wrap(err, "updating policies")
-	    }
-		return nil
-	},
+			err := updatePolicies(databases.GormDB)
+			if err != nil {
+				return errors.Wrap(err, "updating policies")
+			}
+			return nil
+		},
 	}
 	//go:embed policies_before_and_after
 	policyDiffFS embed.FS

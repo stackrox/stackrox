@@ -36,6 +36,11 @@ func RenderFile(templateMap any, temp func(s string) *template.Template, templat
 		fileLines := strings.Split(string(file), "\n")
 		fmt.Printf("There is an error in following snippet: %s\n", e.Msg)
 		fmt.Println(strings.Join(fileLines[max(0, e.Pos.Line-2):min(len(fileLines), e.Pos.Line+1)], "\n"))
+
+		// Debug: save full generated file for inspection
+		debugFile := templateFileName + ".debug"
+		os.WriteFile(debugFile, file, 0644)
+		fmt.Printf("Full generated file saved to: %s\n", debugFile)
 		return err
 	}
 	if err := os.WriteFile(templateFileName, formatted, 0644); err != nil {

@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicy)(nil)), "networkpolicies")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_POLICIES, "networkpolicy", (*storage.NetworkPolicy)(nil)))
+		schema = getNetworkPolicySchema()
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_POLICIES, schema)
@@ -47,4 +43,70 @@ type Networkpolicies struct {
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:networkpolicies_sac_filter,type:btree"`
 	Namespace  string `gorm:"column:namespace;type:varchar;index:networkpolicies_sac_filter,type:btree"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	networkPolicySearchFields = map[search.FieldLabel]*search.Field{}
+
+	networkPolicySchema = &walker.Schema{
+		Table:    "networkpolicies",
+		Type:     "*storage.NetworkPolicy",
+		TypeName: "NetworkPolicy",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Namespace",
+				ColumnName: "Namespace",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getNetworkPolicySchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if networkPolicySchema.OptionsMap == nil {
+		networkPolicySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_NETWORK_POLICIES, networkPolicySearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range networkPolicySchema.Fields {
+		networkPolicySchema.Fields[i].Schema = networkPolicySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(networkPolicySchema)
+	return networkPolicySchema
 }

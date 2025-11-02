@@ -3,12 +3,11 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceConfig)(nil)), "compliance_configs")
+		schema = getComplianceConfigSchema()
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceConfigsStmt)
 		return schema
@@ -40,4 +39,56 @@ const (
 type ComplianceConfigs struct {
 	StandardID string `gorm:"column:standardid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceConfigSearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceConfigSchema = &walker.Schema{
+		Table:    "compliance_configs",
+		Type:     "*storage.ComplianceConfig",
+		TypeName: "ComplianceConfig",
+		Fields: []walker.Field{
+			{
+				Name:       "StandardId",
+				ColumnName: "StandardId",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceConfigSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceConfigSchema.OptionsMap == nil {
+		complianceConfigSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, complianceConfigSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceConfigSchema.Fields {
+		complianceConfigSchema.Fields[i].Schema = complianceConfigSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceConfigSchema)
+	return complianceConfigSchema
 }

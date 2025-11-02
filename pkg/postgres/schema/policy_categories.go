@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
+		schema = getPolicyCategorySchema()
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)
@@ -46,4 +42,63 @@ type PolicyCategories struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	policyCategorySearchFields = map[search.FieldLabel]*search.Field{}
+
+	policyCategorySchema = &walker.Schema{
+		Table:    "policy_categories",
+		Type:     "*storage.PolicyCategory",
+		TypeName: "PolicyCategory",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Name",
+				ColumnName: "Name",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getPolicyCategorySchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if policyCategorySchema.OptionsMap == nil {
+		policyCategorySchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICY_CATEGORIES, policyCategorySearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range policyCategorySchema.Fields {
+		policyCategorySchema.Fields[i].Schema = policyCategorySchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(policyCategorySchema)
+	return policyCategorySchema
 }

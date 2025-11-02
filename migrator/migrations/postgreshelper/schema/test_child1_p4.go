@@ -4,10 +4,8 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -23,7 +21,7 @@ var (
 
 	// TestChild1P4Schema is the go schema for table `test_child1_p4`.
 	TestChild1P4Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestChild1P4)(nil)), "test_child1_p4")
+		schema := getTestChild1P4Schema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestParent4": TestParent4Schema,
 		}
@@ -31,7 +29,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(74), "testchild1p4", (*storage.TestChild1P4)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory(74),
 		}...)
@@ -52,4 +49,70 @@ type TestChild1P4 struct {
 	Val            string      `gorm:"column:val;type:varchar"`
 	Serialized     []byte      `gorm:"column:serialized;type:bytea"`
 	TestParent4Ref TestParent4 `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+var (
+	testChild1P4SearchFields = map[search.FieldLabel]*search.Field{}
+
+	testChild1P4Schema = &walker.Schema{
+		Table:    "test_child1_p4",
+		Type:     "*storage.TestChild1P4",
+		TypeName: "TestChild1P4",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ParentId",
+				ColumnName: "ParentId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "Val",
+				ColumnName: "Val",
+				Type:       "string",
+				SQLType:    "varchar",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getTestChild1P4Schema() *walker.Schema {
+	// Set up search options if not already done
+	if testChild1P4Schema.OptionsMap == nil {
+		testChild1P4Schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(74), testChild1P4SearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range testChild1P4Schema.Fields {
+		testChild1P4Schema.Fields[i].Schema = testChild1P4Schema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(testChild1P4Schema)
+	return testChild1P4Schema
 }

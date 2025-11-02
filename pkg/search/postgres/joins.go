@@ -196,6 +196,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	}
 	reachableFields := make(map[string]searchFieldMetadata)
 	queue := []bfsQueueElem{{schema: src}}
+
 	visited := set.NewStringSet()
 
 	imageCveEdgesSchemaInQueue := false
@@ -206,6 +207,28 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 	for len(queue) > 0 && len(unreachedFields) > 0 {
 		currElem := queue[0]
 		queue = queue[1:]
+
+		// If this is the first iteration and we have search scope, add search scope schemas to queue
+		// This ensures cross-schema field resolution works
+		if len(visited) == 0 && src.SearchScope != nil {
+			for searchCategory := range src.SearchScope {
+				if searchCategory.String() == "IMAGE_VULNERABILITIES_V2" {
+					if imageCVEV2Schema := schema.ImageCvesV2Schema; imageCVEV2Schema != nil {
+						queue = append(queue, bfsQueueElem{schema: imageCVEV2Schema})
+					}
+				}
+				if searchCategory.String() == "IMAGE_VULNERABILITIES" {
+					if imageCVESchema := schema.ImageCvesSchema; imageCVESchema != nil {
+						queue = append(queue, bfsQueueElem{schema: imageCVESchema})
+					}
+				}
+				if searchCategory.String() == "IMAGE_VULN_EDGE" {
+					if imageCVEEdgeSchema := schema.ImageCveEdgesSchema; imageCVEEdgeSchema != nil {
+						queue = append(queue, bfsQueueElem{schema: imageCVEEdgeSchema})
+					}
+				}
+			}
+		}
 
 		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
@@ -298,6 +321,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			}
 		}
 	}
+
 
 	joinTreeRoot.removeUnnecessaryRelations(reachableFields)
 

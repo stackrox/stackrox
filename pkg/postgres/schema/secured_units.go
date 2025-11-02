@@ -3,11 +3,9 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,8 +26,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.SecuredUnits)(nil)), "secured_units")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_USAGE, "securedunits", (*storage.SecuredUnits)(nil)))
+		schema = getSecuredUnitsSchema()
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSecuredUnitsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_USAGE, schema)
@@ -49,4 +46,77 @@ type SecuredUnits struct {
 	NumNodes    int64      `gorm:"column:numnodes;type:bigint"`
 	NumCPUUnits int64      `gorm:"column:numcpuunits;type:bigint"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	securedUnitsSearchFields = map[search.FieldLabel]*search.Field{}
+
+	securedUnitsSchema = &walker.Schema{
+		Table:    "secured_units",
+		Type:     "*storage.SecuredUnits",
+		TypeName: "SecuredUnits",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "Timestamp",
+				ColumnName: "Timestamp",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "NumNodes",
+				ColumnName: "NumNodes",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "NumCpuUnits",
+				ColumnName: "NumCpuUnits",
+				Type:       "int64",
+				SQLType:    "bigint",
+				DataType:   postgres.BigInteger,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getSecuredUnitsSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if securedUnitsSchema.OptionsMap == nil {
+		securedUnitsSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_USAGE, securedUnitsSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range securedUnitsSchema.Fields {
+		securedUnitsSchema.Fields[i].Schema = securedUnitsSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(securedUnitsSchema)
+	return securedUnitsSchema
 }

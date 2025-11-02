@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -30,7 +28,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorClusterScanConfigStatus)(nil)), "compliance_operator_cluster_scan_config_statuses")
+		schema = getComplianceOperatorClusterScanConfigStatusSchema()
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
@@ -39,7 +37,6 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, "complianceoperatorclusterscanconfigstatus", (*storage.ComplianceOperatorClusterScanConfigStatus)(nil)))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorClusterScanConfigStatusesStmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, schema)
@@ -59,4 +56,77 @@ type ComplianceOperatorClusterScanConfigStatuses struct {
 	ScanConfigID    string     `gorm:"column:scanconfigid;type:uuid"`
 	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	complianceOperatorClusterScanConfigStatusSearchFields = map[search.FieldLabel]*search.Field{}
+
+	complianceOperatorClusterScanConfigStatusSchema = &walker.Schema{
+		Table:    "compliance_operator_cluster_scan_config_statuses",
+		Type:     "*storage.ComplianceOperatorClusterScanConfigStatus",
+		TypeName: "ComplianceOperatorClusterScanConfigStatus",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "ClusterId",
+				ColumnName: "ClusterId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "ScanConfigId",
+				ColumnName: "ScanConfigId",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+			},
+			{
+				Name:       "LastUpdatedTime",
+				ColumnName: "LastUpdatedTime",
+				Type:       "*timestamppb.Timestamp",
+				SQLType:    "timestamp",
+				DataType:   postgres.DateTime,
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getComplianceOperatorClusterScanConfigStatusSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if complianceOperatorClusterScanConfigStatusSchema.OptionsMap == nil {
+		complianceOperatorClusterScanConfigStatusSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, complianceOperatorClusterScanConfigStatusSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range complianceOperatorClusterScanConfigStatusSchema.Fields {
+		complianceOperatorClusterScanConfigStatusSchema.Fields[i].Schema = complianceOperatorClusterScanConfigStatusSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(complianceOperatorClusterScanConfigStatusSchema)
+	return complianceOperatorClusterScanConfigStatusSchema
 }

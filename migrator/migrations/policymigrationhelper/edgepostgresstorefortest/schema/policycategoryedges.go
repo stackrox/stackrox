@@ -36,9 +36,9 @@ const (
 
 // PolicyCategoryEdges holds the Gorm model for Postgres table `policy_category_edges`.
 type PolicyCategoryEdges struct {
-	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
-	PolicyID            string           `gorm:"column:policyid;type:varchar"`
-	CategoryID          string           `gorm:"column:categoryid;type:varchar"`
+	ID                  string                  `gorm:"column:id;type:varchar;primaryKey"`
+	PolicyID            string                  `gorm:"column:policyid;type:varchar"`
+	CategoryID          string                  `gorm:"column:categoryid;type:varchar"`
 	Serialized          []byte                  `gorm:"column:serialized;type:bytea"`
 	PoliciesRef         schema2.Policies        `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef schema.PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

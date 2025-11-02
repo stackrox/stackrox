@@ -13,10 +13,10 @@ func ConvertPolicyCategoryEdgeFromProto(obj *storage.PolicyCategoryEdge) (*schem
 		return nil, err
 	}
 	model := &schema.PolicyCategoryEdges{
-		ID:                 obj.GetId(),
-		PolicyID:           obj.GetPolicyId(),
-		CategoryID:         obj.GetCategoryId(),
-		Serialized:         serialized,
+		ID:         obj.GetId(),
+		PolicyID:   obj.GetPolicyId(),
+		CategoryID: obj.GetCategoryId(),
+		Serialized: serialized,
 	}
 	return model, nil
 }

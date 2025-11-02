@@ -3,12 +3,11 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.DeclarativeConfigHealth)(nil)), "declarative_config_healths")
+		schema = getDeclarativeConfigHealthSchema()
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableDeclarativeConfigHealthsStmt)
 		return schema
@@ -40,4 +39,56 @@ const (
 type DeclarativeConfigHealths struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+var (
+	declarativeConfigHealthSearchFields = map[search.FieldLabel]*search.Field{}
+
+	declarativeConfigHealthSchema = &walker.Schema{
+		Table:    "declarative_config_healths",
+		Type:     "*storage.DeclarativeConfigHealth",
+		TypeName: "DeclarativeConfigHealth",
+		Fields: []walker.Field{
+			{
+				Name:       "Id",
+				ColumnName: "Id",
+				Type:       "string",
+				SQLType:    "uuid",
+				DataType:   postgres.String,
+				Options: walker.PostgresOptions{
+					PrimaryKey: true,
+				},
+			},
+			{
+				Name:       "serialized",
+				ColumnName: "serialized",
+				Type:       "[]byte",
+				SQLType:    "bytea",
+			},
+		},
+		Children: []*walker.Schema{},
+	}
+)
+
+func getDeclarativeConfigHealthSchema() *walker.Schema {
+	// Set up search options using pre-computed search fields (no runtime reflection)
+	if declarativeConfigHealthSchema.OptionsMap == nil {
+		declarativeConfigHealthSchema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, declarativeConfigHealthSearchFields))
+	}
+	// Set Schema back-reference on all fields
+	for i := range declarativeConfigHealthSchema.Fields {
+		declarativeConfigHealthSchema.Fields[i].Schema = declarativeConfigHealthSchema
+	}
+	// Set Schema back-reference on all child schema fields
+	var setChildSchemaReferences func(*walker.Schema)
+	setChildSchemaReferences = func(schema *walker.Schema) {
+		for _, child := range schema.Children {
+			for i := range child.Fields {
+				child.Fields[i].Schema = child
+			}
+			setChildSchemaReferences(child)
+		}
+	}
+	setChildSchemaReferences(declarativeConfigHealthSchema)
+	return declarativeConfigHealthSchema
 }
