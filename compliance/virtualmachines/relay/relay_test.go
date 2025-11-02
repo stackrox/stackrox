@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/sync/semaphore"
@@ -258,11 +259,12 @@ func (s *relayTestSuite) TestSemaphore() {
 }
 
 func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) *Relay {
+	s.T().Setenv(env.VirtualMachinesVsockPort.EnvVar(), "12345")
 	return &Relay{
 		connectionReadTimeout: 10 * time.Second,
 		ctx:                   ctx,
 		sensorClient:          sensorClient,
-		vsockServer:           &vsockServerImpl{port: 12345},
+		vsockServer:           newVsockServer(),
 		waitAfterFailedAccept: time.Second,
 	}
 }
