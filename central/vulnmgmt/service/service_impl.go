@@ -9,11 +9,13 @@ import (
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -44,6 +46,7 @@ type serviceImpl struct {
 	deployments deploymentDS.DataStore
 	pods        podDS.DataStore
 	images      imageDS.DataStore
+	imagesV2    imageV2DS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -73,6 +76,60 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
+	}
+	if features.FlattenImageData.Enabled() {
+		imageCache, err := lru.New[string, *storage.ImageV2](cacheSize)
+		if err != nil {
+			return errors.Wrap(errox.ServerError, err.Error())
+		}
+
+		return s.deployments.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
+			containers := d.GetContainers()
+			images := make([]*storage.ImageV2, 0, len(containers))
+			imageIDs := set.NewStringSet()
+			for _, container := range containers {
+				imgID := container.GetImage().GetId()
+				// Deduplicate images by their ID.
+				if imageIDs.Contains(imgID) {
+					continue
+				}
+				imageIDs.Add(imgID)
+
+				if img, found := imageCache.Get(imgID); found {
+					images = append(images, img)
+					continue
+				}
+
+				img, found, err := s.imagesV2.GetImage(ctx, imgID)
+				if err != nil {
+					log.Errorf("Error getting image for container %q (SHA: %s): %v", d.GetName(), container.GetId(), err)
+					continue
+				}
+				if found {
+					images = append(images, img)
+					imageCache.Add(imgID, img)
+				} else {
+					log.Warnf("Image %q for container %q (SHA: %s) not found", imgID, d.GetName(), container.GetId())
+				}
+			}
+
+			// Container Image Digest is a field in pods_live_instances table which is connected to pods table via FK.
+			// So the below query should return the number of pods that have live instances.
+			livePodsQ := search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentID, d.GetId()).
+				AddRegexes(search.ContainerImageDigest, ".*").
+				ProtoQuery()
+
+			livePods, err := s.pods.Count(ctx, livePodsQ)
+			if err != nil {
+				log.Errorf("Error getting live pod count for deployment ID '%s'", d.GetId())
+			}
+
+			if err := srv.Send(&v1.VulnMgmtExportWorkloadsResponse{Deployment: d, ImagesV2: images, LivePods: int32(livePods)}); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
 	imageCache, err := lru.New[string, *storage.Image](cacheSize)
 	if err != nil {

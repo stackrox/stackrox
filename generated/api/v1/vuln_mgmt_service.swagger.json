@@ -1213,6 +1213,137 @@
       "default": "UNSET",
       "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.\n - GENERIC_ERROR: GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific\nstatus."
     },
+    "storageImageV2": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "sha": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "metadata": {
+          "$ref": "#/definitions/storageImageMetadata"
+        },
+        "scan": {
+          "$ref": "#/definitions/storageImageScan"
+        },
+        "signatureVerificationData": {
+          "$ref": "#/definitions/storageImageSignatureVerificationData"
+        },
+        "signature": {
+          "$ref": "#/definitions/storageImageSignature"
+        },
+        "componentCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching component count to avoid re-calculating it by joining on the component table."
+        },
+        "cveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "unknownCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching unknown cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableUnknownCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "criticalCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching critical cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableCriticalCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable critical cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "importantCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching important cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableImportantCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable important cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "moderateCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching moderate cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableModerateCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "lowCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching low cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "fixableLowCveCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Caching fixable low cve count to avoid re-calculating it by joining on the cve table."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float",
+          "description": "Caching top cvss to avoid re-calculating it by joining on the cve table."
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageV2Note"
+          }
+        }
+      },
+      "title": "Next tag: 28"
+    },
+    "storageImageV2Note": {
+      "type": "string",
+      "enum": [
+        "MISSING_METADATA",
+        "MISSING_SCAN_DATA",
+        "MISSING_SIGNATURE",
+        "MISSING_SIGNATURE_VERIFICATION_DATA"
+      ],
+      "default": "MISSING_METADATA"
+    },
     "storageLabelSelector": {
       "type": "object",
       "properties": {
@@ -1569,6 +1700,13 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageImage"
+          }
+        },
+        "imagesV2": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImageV2"
           }
         },
         "livePods": {

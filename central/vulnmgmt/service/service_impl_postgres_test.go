@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/central/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -34,7 +36,7 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.helper = &testutils.ExportServicePostgresTestHelper{}
 	err := s.helper.SetupTest(s.T())
 	s.Require().NoError(err)
-	s.service = New(s.helper.Deployments, s.helper.Images, s.helper.Pods)
+	s.service = New(s.helper.Deployments, s.helper.Images, s.helper.ImagesV2, s.helper.Pods)
 }
 
 func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployment, id string) *storage.Deployment {
@@ -63,7 +65,12 @@ func (s *servicePostgresTestSuite) upsertDeployments(deploymentsByID map[string]
 		s.Require().NoError(err)
 	}
 	for _, image := range fixtures.DeploymentImages() {
-		err := s.helper.Images.UpsertImage(upsertCtx, image)
+		var err error
+		if features.FlattenImageData.Enabled() {
+			err = s.helper.ImagesV2.UpsertImage(upsertCtx, imageUtils.ConvertToV2(image))
+		} else {
+			err = s.helper.Images.UpsertImage(upsertCtx, image)
+		}
 		s.Require().NoError(err)
 	}
 }

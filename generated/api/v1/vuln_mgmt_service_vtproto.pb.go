@@ -63,6 +63,17 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneVT() *VulnMgmtExportWorkloadsResp
 		}
 		r.Images = tmpContainer
 	}
+	if rhs := m.ImagesV2; rhs != nil {
+		tmpContainer := make([]*storage.ImageV2, len(rhs))
+		for k, v := range rhs {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.ImageV2 }); ok {
+				tmpContainer[k] = vtpb.CloneVT()
+			} else {
+				tmpContainer[k] = proto.Clone(v).(*storage.ImageV2)
+			}
+		}
+		r.ImagesV2 = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -134,6 +145,27 @@ func (this *VulnMgmtExportWorkloadsResponse) EqualVT(that *VulnMgmtExportWorkloa
 	}
 	if this.LivePods != that.LivePods {
 		return false
+	}
+	if len(this.ImagesV2) != len(that.ImagesV2) {
+		return false
+	}
+	for i, vx := range this.ImagesV2 {
+		vy := that.ImagesV2[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &storage.ImageV2{}
+			}
+			if q == nil {
+				q = &storage.ImageV2{}
+			}
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.ImageV2) bool }); ok {
+				if !equal.EqualVT(q) {
+					return false
+				}
+			} else if !proto.Equal(p, q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -219,6 +251,30 @@ func (m *VulnMgmtExportWorkloadsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ImagesV2) > 0 {
+		for iNdEx := len(m.ImagesV2) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.ImagesV2[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.ImagesV2[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
 	}
 	if m.LivePods != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LivePods))
@@ -321,6 +377,18 @@ func (m *VulnMgmtExportWorkloadsResponse) SizeVT() (n int) {
 	}
 	if m.LivePods != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.LivePods))
+	}
+	if len(m.ImagesV2) > 0 {
+		for _, e := range m.ImagesV2 {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -562,6 +630,48 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImagesV2", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImagesV2 = append(m.ImagesV2, &storage.ImageV2{})
+			if unmarshal, ok := interface{}(m.ImagesV2[len(m.ImagesV2)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ImagesV2[len(m.ImagesV2)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -824,6 +934,48 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImagesV2", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImagesV2 = append(m.ImagesV2, &storage.ImageV2{})
+			if unmarshal, ok := interface{}(m.ImagesV2[len(m.ImagesV2)-1]).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.ImagesV2[len(m.ImagesV2)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

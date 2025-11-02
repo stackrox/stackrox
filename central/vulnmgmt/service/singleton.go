@@ -2,6 +2,7 @@ package service
 
 import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	imageDS "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,7 +15,7 @@ var (
 )
 
 func initialize() {
-	as = New(deploymentDS.Singleton(), imageDS.Singleton(), podDS.Singleton())
+	as = New(deploymentDS.Singleton(), imageDS.Singleton(), imageV2DS.Singleton(), podDS.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
