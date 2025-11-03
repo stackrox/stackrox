@@ -32,13 +32,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ModelMetrics:
-    """Model performance metrics."""
+    """Model performance metrics for RandomForest training."""
     train_ndcg: float = 0.0
     val_ndcg: float = 0.0
-    train_auc: float = 0.0
-    val_auc: float = 0.0
-    training_loss: float = 0.0
-    epochs_completed: int = 0
     feature_importance: Dict[str, float] = None
 
 
@@ -85,11 +81,6 @@ class RiskRankingModel:
                     'shap_enabled': True,
                     'top_features': 10
                 }
-            },
-            'training': {
-                'batch_size': 1000,
-                'max_iterations': 100,
-                'early_stopping_rounds': 10
             }
         }
 
@@ -126,10 +117,6 @@ class RiskRankingModel:
             return ModelMetrics(
                 train_ndcg=0.0,
                 val_ndcg=0.0,
-                train_auc=0.0,
-                val_auc=0.0,
-                training_loss=0.0,
-                epochs_completed=0,
                 feature_importance={name: 0.0 for name in self.feature_names}
             )
 
@@ -300,7 +287,6 @@ class RiskRankingModel:
         return ModelMetrics(
             train_ndcg=train_ndcg,
             val_ndcg=val_ndcg,
-            epochs_completed=100,
             feature_importance=importance_dict
         )
 
@@ -633,11 +619,7 @@ class RiskRankingModel:
         if self.training_metrics:
             performance_metrics = {
                 'train_ndcg': getattr(self.training_metrics, 'train_ndcg', 0.0),
-                'val_ndcg': getattr(self.training_metrics, 'val_ndcg', 0.0),
-                'train_auc': getattr(self.training_metrics, 'train_auc', 0.0),
-                'val_auc': getattr(self.training_metrics, 'val_auc', 0.0),
-                'training_loss': getattr(self.training_metrics, 'training_loss', 0.0),
-                'epochs_completed': getattr(self.training_metrics, 'epochs_completed', 0)
+                'val_ndcg': getattr(self.training_metrics, 'val_ndcg', 0.0)
             }
 
         metadata = ModelMetadata(

@@ -93,9 +93,6 @@ class TrainingService:
 
                 response_metrics = TrainingMetrics(
                     validation_ndcg=training_metrics.val_ndcg,
-                    validation_auc=training_metrics.val_auc,
-                    training_loss=training_metrics.training_loss,
-                    epochs_completed=training_metrics.epochs_completed,
                     global_feature_importance=feature_importances
                 )
 
@@ -115,9 +112,6 @@ class TrainingService:
                 model_version="",
                 metrics=TrainingMetrics(
                     validation_ndcg=0.0,
-                    validation_auc=0.0,
-                    training_loss=0.0,
-                    epochs_completed=0,
                     global_feature_importance=[]
                 ),
                 error_message=str(e)
@@ -348,9 +342,6 @@ class TrainingService:
                     model_version="",
                     metrics=TrainingMetrics(
                         validation_ndcg=0.0,
-                        validation_auc=0.0,
-                        training_loss=0.0,
-                        epochs_completed=0,
                         global_feature_importance=[]
                     )
                 )
@@ -414,9 +405,6 @@ class TrainingService:
                     # Create response with pipeline results
                     response_metrics = TrainingMetrics(
                         validation_ndcg=float(training_metrics_dict.get('val_ndcg', 0.0)),
-                        validation_auc=float(training_metrics_dict.get('val_auc', 0.0)),
-                        training_loss=float(training_metrics_dict.get('training_loss', 0.0)),
-                        epochs_completed=int(training_metrics_dict.get('epochs_completed', 0)),
                         global_feature_importance=[]  # Would need to extract from model if needed
                     )
 
@@ -438,9 +426,6 @@ class TrainingService:
                         model_version="",
                         metrics=TrainingMetrics(
                             validation_ndcg=0.0,
-                            validation_auc=0.0,
-                            training_loss=0.0,
-                            epochs_completed=0,
                             global_feature_importance=[]
                         )
                     )
@@ -458,9 +443,6 @@ class TrainingService:
                 model_version="",
                 metrics=TrainingMetrics(
                     validation_ndcg=0.0,
-                    validation_auc=0.0,
-                    training_loss=0.0,
-                    epochs_completed=0,
                     global_feature_importance=[]
                 )
             )

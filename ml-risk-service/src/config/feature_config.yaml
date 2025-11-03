@@ -83,11 +83,6 @@ model:
     shap_enabled: true
     top_features: 10
 
-training:
-  batch_size: 1000
-  max_iterations: 100
-  early_stopping_rounds: 10
-
 api:
   grpc_port: 8080
   health_port: 8081

@@ -344,25 +344,12 @@ class TrainModelRequest(BaseModel):
 
 
 class TrainingMetrics(BaseModel):
-    """Training metrics and performance indicators."""
+    """Training metrics and performance indicators for RandomForest model."""
 
     validation_ndcg: float = Field(
         description="Validation NDCG score",
         ge=0.0,
         le=1.0
-    )
-    validation_auc: float = Field(
-        description="Validation AUC score",
-        ge=0.0,
-        le=1.0
-    )
-    training_loss: float = Field(
-        description="Training loss",
-        ge=0.0
-    )
-    epochs_completed: int = Field(
-        description="Number of training epochs completed",
-        ge=0
     )
     global_feature_importance: List[FeatureImportance] = Field(
         default=[],
