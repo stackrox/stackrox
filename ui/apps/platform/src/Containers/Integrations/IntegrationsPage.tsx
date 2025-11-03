@@ -19,7 +19,8 @@ import NotifierIntegrationsTab from './IntegrationTiles/NotifierIntegrationsTab'
 import SignatureIntegrationsTab from './IntegrationTiles/SignatureIntegrationsTab';
 import type { IntegrationsTabElement } from './IntegrationTiles/IntegrationsTab.types';
 
-import { getSourcesEnabled } from './utils/integrationsList';
+import { getSourcesEnabled, getTypesEnabled } from './utils/integrationsList';
+import type { IntegrationsRoutePredicates } from './utils/integrationsList';
 
 // Adapted from routeComponentMap from Body.tsx file.
 
@@ -35,28 +36,54 @@ const integrationsTabElementMap: Record<IntegrationSource, IntegrationsTabElemen
 const IntegrationsPage = (): ReactElement => {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const sourcesEnabled = getSourcesEnabled({
+    const predicates: IntegrationsRoutePredicates = {
         isCentralCapabilityAvailable,
         isFeatureFlagEnabled,
-    });
+    };
+    const sourcesEnabled = getSourcesEnabled(predicates);
 
     return (
         <Routes>
             <Route index element={<Navigate to={sourcesEnabled[0]} replace />} />
-            {sourcesEnabled.map((source) => {
+            {sourcesEnabled.flatMap((source) => {
                 const Element = integrationsTabElementMap[source];
-                return Element ? (
+                const sourceRoute = Element ? (
                     <Route
                         key={source}
                         path={source}
                         element={<Element sourcesEnabled={sourcesEnabled} />}
                     />
                 ) : null; // just in case
+                const typeRoutes = getTypesEnabled(predicates, source).flatMap((type) => {
+                    const pathSourceType = `${source}/${type}`;
+                    const pathSourceTypeCreate = `${pathSourceType}/create`;
+                    const pathSourceTypeEdit = `${pathSourceType}/edit/:id`;
+                    const pathSourceTypeView = `${pathSourceType}/view/:id`;
+                    return [
+                        <Route
+                            key={pathSourceType}
+                            path={pathSourceType}
+                            element={<IntegrationsListPage source={source} type={type} />}
+                        />,
+                        <Route
+                            key={pathSourceTypeCreate}
+                            path={pathSourceTypeCreate}
+                            element={<CreateIntegrationPage source={source} type={type} />}
+                        />,
+                        <Route
+                            key={pathSourceTypeEdit}
+                            path={pathSourceTypeEdit}
+                            element={<EditIntegrationPage source={source} type={type} />}
+                        />,
+                        <Route
+                            key={pathSourceTypeView}
+                            path={pathSourceTypeView}
+                            element={<IntegrationDetailsPage source={source} type={type} />}
+                        />,
+                    ];
+                });
+                return [sourceRoute, ...typeRoutes];
             })}
-            <Route path=":source/:type" element={<IntegrationsListPage />} />
-            <Route path=":source/:type/create" element={<CreateIntegrationPage />} />
-            <Route path=":source/:type/edit/:id" element={<EditIntegrationPage />} />
-            <Route path=":source/:type/view/:id" element={<IntegrationDetailsPage />} />
             <Route path="*" element={<IntegrationsNotFoundPage />} />
         </Routes>
     );

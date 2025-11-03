@@ -47,6 +47,7 @@ import type {
     CloudSourceIntegrationType,
     ImageIntegrationType,
     IntegrationSource,
+    IntegrationType,
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
@@ -88,6 +89,7 @@ export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
     image: string;
+    centralCapabilityRequirement?: CentralCapabilitiesFlags;
     featureFlagDependency?: FeatureFlagEnvVar[];
 };
 
@@ -345,12 +347,12 @@ export function getIntegrationLabel(source: string, type: string): string {
 
 // Adapted from RouteRequirements and routeRequirementsMap from routePaths.ts file.
 
-type IntegrationRouteRequirements = {
+type IntegrationsRouteRequirements = {
     centralCapabilityRequirement?: CentralCapabilitiesFlags;
     featureFlagRequirements?: FeatureFlagPredicate;
 };
 
-const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationRouteRequirements> = {
+const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRouteRequirements> = {
     imageIntegrations: {},
     signatureIntegrations: {},
     notifiers: {},
@@ -359,32 +361,42 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationRou
     authProviders: {},
 };
 
-type IntegrationRoutePredicates = {
+export type IntegrationsRoutePredicates = {
     isCentralCapabilityAvailable: IsCentralCapabilityAvailable;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-export function getSourcesEnabled({
-    isCentralCapabilityAvailable,
-    isFeatureFlagEnabled,
-}: IntegrationRoutePredicates): IntegrationSource[] {
-    return integrationSources.filter((source) => {
-        const { centralCapabilityRequirement, featureFlagRequirements } =
-            integrationSourceRequirementsMap[source];
+function isIntegrationsRouteEnabled(
+    { isCentralCapabilityAvailable, isFeatureFlagEnabled }: IntegrationsRoutePredicates,
+    { centralCapabilityRequirement, featureFlagRequirements }: IntegrationsRouteRequirements
+) {
+    if (
+        centralCapabilityRequirement &&
+        !isCentralCapabilityAvailable(centralCapabilityRequirement)
+    ) {
+        return false;
+    }
 
-        if (
-            centralCapabilityRequirement &&
-            !isCentralCapabilityAvailable(centralCapabilityRequirement)
-        ) {
-            return false;
-        }
+    if (featureFlagRequirements && !featureFlagRequirements(isFeatureFlagEnabled)) {
+        return false;
+    }
 
-        if (featureFlagRequirements && !featureFlagRequirements(isFeatureFlagEnabled)) {
-            return false;
-        }
+    return true;
+}
 
-        return true;
-    });
+export function getSourcesEnabled(predicates: IntegrationsRoutePredicates): IntegrationSource[] {
+    return integrationSources.filter((source) =>
+        isIntegrationsRouteEnabled(predicates, integrationSourceRequirementsMap[source])
+    );
+}
+
+export function getTypesEnabled(
+    predicates: IntegrationsRoutePredicates,
+    source: IntegrationSource
+): IntegrationType[] {
+    return getDescriptors(source)
+        .filter((descriptor) => isIntegrationsRouteEnabled(predicates, descriptor))
+        .map(({ type }) => type as IntegrationType);
 }
 
 export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
