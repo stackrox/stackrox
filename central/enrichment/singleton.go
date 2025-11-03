@@ -28,7 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/cache"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
-	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
+	pkgNodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -38,13 +38,13 @@ import (
 var (
 	once sync.Once
 
-	ie                    imageEnricher.ImageEnricher
-	ieV2                  imageEnricher.ImageEnricherV2
-	ne                    nodeEnricher.NodeEnricher
-	en                    Enricher
-	cf                    fetcher.OrchestratorIstioCVEManager
-	manager               Manager
-	imageIntegrationStore imageIntegrationDS.DataStore
+	imgEnricher            imageEnricher.ImageEnricher
+	imgEnricherV2          imageEnricher.ImageEnricherV2
+	nodeEnricher           pkgNodeEnricher.NodeEnricher
+	depEnricher            Enricher
+	orchestratorCVEManager fetcher.OrchestratorIstioCVEManager
+	manager                Manager
+	imageIntegrationStore  imageIntegrationDS.DataStore
 )
 
 func initialize() {
@@ -58,24 +58,24 @@ func initialize() {
 	)
 
 	if !features.FlattenImageData.Enabled() {
-		ie = imageEnricher.New(suppressor.Singleton(), imageintegration.Set(),
+		imgEnricher = imageEnricher.New(suppressor.Singleton(), imageintegration.Set(),
 			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
 			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	} else {
-		ieV2 = imageEnricher.NewV2(suppressor.Singleton(), imageintegration.Set(),
+		imgEnricherV2 = imageEnricher.NewV2(suppressor.Singleton(), imageintegration.Set(),
 			metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), imageV2DataStore.Singleton().GetImage, reporter.Singleton(),
 			signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	}
 
-	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
-	en = New(datastore.Singleton(), ie, imageV2DataStore.Singleton(), ieV2)
-	cf = fetcher.SingletonManager()
+	nodeEnricher = pkgNodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
+	depEnricher = New(datastore.Singleton(), imgEnricher, imageV2DataStore.Singleton(), imgEnricherV2)
+	orchestratorCVEManager = fetcher.SingletonManager()
 	initializeManager()
 }
 
 func initializeManager() {
 	ctx := sac.WithAllAccess(context.Background())
-	manager = newManager(imageintegration.Set(), ne, cf)
+	manager = newManager(imageintegration.Set(), nodeEnricher, orchestratorCVEManager)
 
 	imageIntegrationStore = imageIntegrationDS.Singleton()
 	integrations, err := imageIntegrationStore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
@@ -126,25 +126,25 @@ func shouldUpsert(ii *storage.ImageIntegration) bool {
 // Singleton provides the singleton Enricher to use.
 func Singleton() Enricher {
 	once.Do(initialize)
-	return en
+	return depEnricher
 }
 
 // ImageEnricherSingleton provides the singleton ImageEnricher to use.
 func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
-	return ie
+	return imgEnricher
 }
 
 // ImageEnricherV2Singleton provides the singleton ImageEnricherV2 to use.
 func ImageEnricherV2Singleton() imageEnricher.ImageEnricherV2 {
 	once.Do(initialize)
-	return ieV2
+	return imgEnricherV2
 }
 
 // NodeEnricherSingleton provides the singleton NodeEnricher to use.
-func NodeEnricherSingleton() nodeEnricher.NodeEnricher {
+func NodeEnricherSingleton() pkgNodeEnricher.NodeEnricher {
 	once.Do(initialize)
-	return ne
+	return nodeEnricher
 }
 
 // ManagerSingleton returns the multiplexing manager

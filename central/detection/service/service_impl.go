@@ -300,7 +300,8 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	if enrichmentContext.ClusterID != "" {
-		appliedNetpols, err := s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+		var err error
+		appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
 		if err != nil {
 			log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
 		} else {
