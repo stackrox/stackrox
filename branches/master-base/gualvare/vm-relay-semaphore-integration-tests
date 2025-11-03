@@ -2,5 +2,20 @@
   "base": {
     "name": "master-base/gualvare/vm-relay-split-relay-go",
     "hash": "934205850bd2751244403a63aec85662ad0dee66"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/vm-relay-semaphore-integration-tests"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17526,
+        "gqlID": "PR_kwDOGd6UEM6wGXZ1"
+      },
+      "comment": {
+        "gqlID": "IC_kwDOGd6UEM7N99Ge",
+        "url": "https://github.com/stackrox/stackrox/pull/17526#issuecomment-3455570334"
+      }
+    }
   }
 }
