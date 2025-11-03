@@ -70,20 +70,20 @@ class CentralExportService:
             # Process workloads directly - much simpler than correlation approach
             training_samples = self._stream_workload_data(filters, limit)
 
-            examples_yielded = 0
-            for example in training_samples:
-                yield example
-                examples_yielded += 1
+            samples_yielded = 0
+            for sample in training_samples:
+                yield sample
+                samples_yielded += 1
 
-                if limit and examples_yielded >= limit:
+                if limit and samples_yielded >= limit:
                     logger.info(f"Reached limit of {limit} training samples")
                     break
 
                 # Log progress periodically
-                if examples_yielded % self.batch_size == 0:
-                    logger.info(f"Yielded {examples_yielded} training samples")
+                if samples_yielded % self.batch_size == 0:
+                    logger.info(f"Yielded {samples_yielded} training samples")
 
-            logger.info(f"Training data collection completed: {examples_yielded} examples")
+            logger.info(f"Training data collection completed: {samples_yielded} examples")
             self._log_final_risk_score_summary()
 
         except Exception as e:
