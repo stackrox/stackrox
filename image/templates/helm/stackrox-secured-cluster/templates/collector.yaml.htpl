@@ -133,7 +133,7 @@ spec:
           value: "/host"
         {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
         resources:
-          {{- ._rox.fact._resources | nindent 10 }}
+          {{- ._rox.collector._sfaResources | nindent 10 }}
         securityContext:
           capabilities:
             drop:
