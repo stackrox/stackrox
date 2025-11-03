@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -23,6 +24,9 @@ var (
 // string if the issuer could not be identified.
 func GetKubernetesIssuerOrEmpty() string {
 	getIssuerOnce.Do(func() {
+		if serviceAccountIssuer != "" {
+			return
+		}
 		issuer, err := GetKubernetesIssuer()
 		if err != nil {
 			log.Errorf("could not read service account issuer: %v", err)
@@ -31,6 +35,12 @@ func GetKubernetesIssuerOrEmpty() string {
 		serviceAccountIssuer = issuer
 	})
 	return serviceAccountIssuer
+}
+
+// SetKubernetesIssuerForTest is used for testing the datastore without reading
+// a Kubernetes configuration.
+func SetKubernetesIssuerForTest(_ *testing.T, issuer string) {
+	serviceAccountIssuer = issuer
 }
 
 // GetKubernetesIssuer discovers the kubernetes token issuer.
