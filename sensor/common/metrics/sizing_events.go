@@ -19,7 +19,7 @@ type sizingEventStream struct {
 func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
 	messageType := reflectutils.Type(msg.GetMsg())
 	var eventType string
-	if msg.GetEvent() != nil && msg.GetEvent().GetResource() != nil {
+	if msg.GetEvent() != nil {
 		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
 	}
 	messageType = s.metricKey(messageType, eventType)
