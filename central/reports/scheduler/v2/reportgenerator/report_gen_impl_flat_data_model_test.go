@@ -123,7 +123,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, resolver.DeploymentDataStore,
 		s.watchedImageDatastore, collectionQueryResolver, nil, blobStore, s.clusterDatastore,
-		s.namespaceDatastore, resolver.ImageCVEDataStore, resolver.ImageCVEV2DataStore, schema)
+		s.namespaceDatastore, nil, resolver.ImageCVEV2DataStore, schema)
 }
 func (s *NewDataModelEnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
