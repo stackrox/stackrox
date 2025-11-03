@@ -92,20 +92,23 @@ def extract_features_and_score(
     # Sample structure from create_training_sample():
     # {
     #   'features': {...},           # Normalized features for ML
-    #   'risk_score': 2.139,        # Final computed risk score
-    #   'baseline_factors': {...}   # Individual risk multipliers
+    #   'risk_score': 2.139,        # Risk score from Central's ground truth
+    #   'baseline_factors': {...}   # (Optional) Only present for synthetic data
     # }
+    #
+    # Note: When collecting from Central, risk_score is Central's riskScore field.
+    # When generating synthetic data, risk_score is computed from baseline factors.
 
-    # Use actual normalized features instead of baseline_factors for better variance
+    # Use actual normalized features for ML model
     # The 'features' dict contains deployment and image characteristics that are
-    # normalized to 0-1 range and provide much more variance than baseline_factors
+    # normalized to 0-1 range
     features = sample.get('features', {})
 
     # If features dict is empty, this sample is invalid
     if not features:
         raise ValueError("Training sample missing 'features' dictionary")
 
-    # Use pre-computed risk score
+    # Use Central's ground truth risk score
     risk_score = sample.get('risk_score', 1.0)
 
     return features, risk_score

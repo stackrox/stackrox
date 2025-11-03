@@ -95,9 +95,9 @@ The service extracts features that mirror StackRox's existing risk multipliers:
 
 ### 6. Training Pipeline
 
-- **Baseline Reproduction**: Recreates existing StackRox scores
-- **JSON Data Input**: Flexible training data format
-- **Validation Framework**: Ensures model quality
+- **Central Integration**: Uses Central's ground truth risk scores for training
+- **JSON Data Input**: Flexible training data format with optional risk scores
+- **Validation Framework**: Ensures model quality against Central's scores
 - **Incremental Learning**: Updates with new data
 - **Auto-Deployment**: Automatic model deployment based on quality metrics
 
@@ -337,11 +337,13 @@ Training data should be provided as JSON:
           "policy": {"name": "High Risk Policy", "severity": "HIGH_SEVERITY"}
         }
       ],
-      "current_risk_score": 2.5
+      "current_risk_score": 2.5  // Optional: Risk score from Central (if omitted, computed from features)
     }
   ]
 }
 ```
+
+**Note:** When collecting data from Central via the export API, `current_risk_score` will be automatically populated from Central's `riskScore` field. For synthetic or manually created training data, you can omit this field and it will be computed from deployment features.
 
 ## Development
 
@@ -590,9 +592,9 @@ The service provides comprehensive health checks:
    - Review model versioning retention settings
 
 5. **Poor prediction accuracy**
-   - Validate training data quality
+   - Validate training data quality from Central
    - Check feature normalization
-   - Review baseline reproduction metrics
+   - Review validation metrics against Central's risk scores
    - Monitor drift detection alerts
    - Compare with previous model versions
 

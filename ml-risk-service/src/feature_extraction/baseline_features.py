@@ -376,9 +376,17 @@ class BaselineFeatureExtractor:
                                deployment_data: Dict[str, Any],
                                image_data_list: List[Dict[str, Any]],
                                alert_data: List[Dict[str, Any]] = None,
-                               baseline_violations: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+                               baseline_violations: List[Dict[str, Any]] = None,
+                               risk_score: Optional[float] = None) -> Dict[str, Any]:
         """
-        Create a training sample with features and baseline risk score.
+        Create a training sample with features and risk score.
+
+        Args:
+            deployment_data: Deployment information
+            image_data_list: List of image data
+            alert_data: Optional alert/violation data
+            baseline_violations: Optional baseline violation data
+            risk_score: Optional risk score from Central (if None, will compute from baseline)
 
         Returns:
             Dict with 'features' and 'risk_score' keys for ML training
@@ -393,10 +401,6 @@ class BaselineFeatureExtractor:
             normalized_image = self.image_extractor.normalize_features(image_features)
             image_features_list.append(normalized_image)
 
-        # Calculate baseline risk score
-        baseline_factors = self.extract_baseline_features(
-            deployment_data, image_data_list, alert_data, baseline_violations)
-
         # Combine all features
         combined_features = normalized_deployment.copy()
 
@@ -408,15 +412,41 @@ class BaselineFeatureExtractor:
                 combined_features[f'avg_{key}'] = sum(values) / len(values)
                 combined_features[f'max_{key}'] = max(values)
                 combined_features[f'sum_{key}'] = sum(values)
+        else:
+            # No images - add default zero values for consistency
+            # These are the features from ImageFeatureExtractor.normalize_features()
+            default_image_features = [
+                'vulnerability_score', 'avg_cvss_score', 'max_cvss_score',
+                'component_count_score', 'risky_component_ratio', 'age_score',
+                'is_cluster_local', 'log_layer_count'
+            ]
+            for key in default_image_features:
+                combined_features[f'avg_{key}'] = 0.0
+                combined_features[f'max_{key}'] = 0.0
+                combined_features[f'sum_{key}'] = 0.0
 
-        # Use synthetic scoring if baseline calculation produces no variance
-        final_risk_score = self._ensure_risk_score_variance(
-            baseline_factors.overall_score, combined_features, baseline_factors)
+        # Determine final risk score
+        if risk_score is not None:
+            # Use Central's provided risk score (ground truth)
+            final_risk_score = risk_score
+            baseline_factors = None  # No need to compute baseline when using Central's score
+        else:
+            # Fallback: compute from baseline (used for synthetic data generation)
+            baseline_factors = self.extract_baseline_features(
+                deployment_data, image_data_list, alert_data, baseline_violations)
+            # Use synthetic scoring if baseline calculation produces no variance
+            final_risk_score = self._ensure_risk_score_variance(
+                baseline_factors.overall_score, combined_features, baseline_factors)
 
-        return {
+        # Build return dictionary
+        result = {
             'features': combined_features,
-            'risk_score': final_risk_score,
-            'baseline_factors': {
+            'risk_score': final_risk_score
+        }
+
+        # Include baseline_factors only when computed (for synthetic data)
+        if baseline_factors is not None:
+            result['baseline_factors'] = {
                 'policy_violations': baseline_factors.policy_violations_multiplier,
                 'process_baseline': baseline_factors.process_baseline_multiplier,
                 'vulnerabilities': baseline_factors.vulnerabilities_multiplier,
@@ -428,4 +458,5 @@ class BaselineFeatureExtractor:
                 'final_score': final_risk_score,
                 'baseline_score': baseline_factors.overall_score
             }
-        }
+
+        return result

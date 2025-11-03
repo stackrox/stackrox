@@ -223,11 +223,13 @@ class TrainingDataLoader:
         existing_risk_score = record.get('current_risk_score')
 
         # Create training sample using baseline feature extractor
+        # Pass existing_risk_score if available (e.g., from Central), otherwise compute from baseline
         example = self.baseline_extractor.create_training_sample(
             deployment_data=deployment_data,
             image_data_list=images_data,
             alert_data=alerts_data,
-            baseline_violations=baseline_violations
+            baseline_violations=baseline_violations,
+            risk_score=existing_risk_score  # Use provided score or None to compute
         )
 
         # Add metadata

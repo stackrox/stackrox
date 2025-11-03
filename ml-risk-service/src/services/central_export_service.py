@@ -222,12 +222,19 @@ class CentralExportService:
                     if isinstance(image, dict) and 'vulnerabilities' in image:
                         vulnerabilities.extend(image.get('vulnerabilities', []))
 
+            # Extract Central's risk score (ground truth from Central)
+            central_risk_score = deployment_data.get('riskScore')
+            if central_risk_score is None:
+                logger.warning(f"No riskScore found for deployment {deployment_id}, will compute from baseline")
+
             # Direct feature extraction using baseline extractor
+            # Pass Central's riskScore to use as ground truth instead of computing locally
             training_sample = self.feature_extractor.create_training_sample(
                 deployment_data=deployment_data,
                 image_data_list=images_data,
                 alert_data=alerts_data,
-                baseline_violations=[]  # Could extract from workload if available
+                baseline_violations=[],  # Could extract from workload if available
+                risk_score=central_risk_score  # Use Central's riskScore directly
             )
 
             # Add workload-specific metadata
@@ -502,8 +509,8 @@ class CentralExportService:
                 validation_results['total_samples'] += 1
 
                 try:
-                    # Extract actual normalized features and risk score
-                    # Use 'features' dict instead of 'baseline_factors' for better variance
+                    # Extract actual normalized features and risk score from Central
+                    # The risk_score is now Central's ground truth riskScore (not computed baseline)
                     features = sample.get('features', {})
                     actual_score = sample.get('risk_score', 0.0)
 
