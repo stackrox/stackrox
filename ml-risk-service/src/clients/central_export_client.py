@@ -116,56 +116,111 @@ class CentralExportClient:
 
     def stream_alerts(self, filters: Optional[Dict[str, Any]] = None) -> Iterator[Dict[str, Any]]:
         """
-        Stream alert/violation data from Central's export API.
+        Stream alert/violation data from Central's standard API.
+
+        Note: Uses /v1/alerts (paginated) instead of /v1/export/alerts (which doesn't exist).
 
         Args:
-            filters: Optional filters for the export query
+            filters: Optional filters for the query
 
         Yields:
             Individual alert records as dictionaries
         """
-        endpoint = f"{self.endpoint}/v1/export/alerts"
+        endpoint = f"{self.endpoint}/v1/alerts"
 
-        default_filters = {
-            'format': 'json'
-        }
-
-        if filters:
-            default_filters.update(filters)
-
-        logger.info(f"Starting alert export stream with filters: {default_filters}")
+        logger.info(f"Starting alert collection from standard API with filters: {filters}")
 
         try:
-            yield from self._stream_export_data(endpoint, default_filters, "alerts")
+            yield from self._fetch_paginated_data(endpoint, filters, "alerts")
         except Exception as e:
-            logger.error(f"Failed to stream alerts: {e}")
+            logger.error(f"Failed to fetch alerts: {e}")
             raise
 
     def stream_policies(self, filters: Optional[Dict[str, Any]] = None) -> Iterator[Dict[str, Any]]:
         """
-        Stream policy data from Central's export API.
+        Stream policy data from Central's standard API.
+
+        Note: Uses /v1/policies (paginated) instead of /v1/export/policies (which doesn't exist).
 
         Args:
-            filters: Optional filters for the export query
+            filters: Optional filters for the query
 
         Yields:
             Individual policy records as dictionaries
         """
-        endpoint = f"{self.endpoint}/v1/export/policies"
+        endpoint = f"{self.endpoint}/v1/policies"
 
-        default_filters = {
-            'format': 'json'
-        }
-
-        if filters:
-            default_filters.update(filters)
-
-        logger.info(f"Starting policy export stream with filters: {default_filters}")
+        logger.info(f"Starting policy collection from standard API with filters: {filters}")
 
         try:
-            yield from self._stream_export_data(endpoint, default_filters, "policies")
+            yield from self._fetch_paginated_data(endpoint, filters, "policies")
         except Exception as e:
-            logger.error(f"Failed to stream policies: {e}")
+            logger.error(f"Failed to fetch policies: {e}")
+            raise
+
+    def _fetch_paginated_data(self, url: str, filters: Optional[Dict[str, Any]], data_type: str) -> Iterator[Dict[str, Any]]:
+        """
+        Fetch data from paginated standard API endpoints (like /v1/alerts, /v1/policies).
+
+        Args:
+            url: API endpoint URL
+            filters: Query parameters for filtering
+            data_type: Type of data being fetched (for logging)
+
+        Yields:
+            Individual records from the paginated response
+        """
+        logger.debug(f"Fetching paginated data from: {url}")
+
+        try:
+            # Build query parameters
+            query_params = filters.copy() if filters else {}
+
+            # Remove 'format' if present (not used in standard APIs)
+            query_params.pop('format', None)
+            query_params.pop('severity', None)  # Handle differently for alerts
+
+            # Make request to standard API
+            if filters:
+                query_string = urlencode(query_params, doseq=True)
+                full_url = f"{url}?{query_string}"
+            else:
+                full_url = url
+
+            response = self.session.get(full_url, timeout=self.timeout)
+            response.raise_for_status()
+
+            # Parse JSON response
+            data = response.json()
+
+            # Handle different response structures
+            records_processed = 0
+            start_time = time.time()
+
+            # Standard APIs return {"alerts": [...]} or {"policies": [...]}
+            if data_type in data:
+                items = data[data_type]
+            elif isinstance(data, list):
+                items = data
+            else:
+                logger.warning(f"Unexpected response structure for {data_type}: {list(data.keys())}")
+                items = []
+
+            for record in items:
+                if self._validate_record(record, data_type):
+                    yield record
+                    records_processed += 1
+
+            # Log completion
+            elapsed = time.time() - start_time
+            rate = records_processed / elapsed if elapsed > 0 else 0
+            logger.info(f"Fetched {records_processed} {data_type} records in {elapsed:.1f}s ({rate:.1f} records/sec)")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HTTP error during {data_type} fetch: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during {data_type} fetch: {e}")
             raise
 
     def _stream_export_data(self, url: str, filters: Dict[str, Any], data_type: str) -> Iterator[Dict[str, Any]]:
@@ -350,24 +405,24 @@ class CentralExportClient:
         capabilities = {
             'endpoints': {
                 'workloads': f"{self.endpoint}/v1/export/vuln-mgmt/workloads",
-                'alerts': f"{self.endpoint}/v1/export/alerts",
-                'policies': f"{self.endpoint}/v1/export/policies"
+                'alerts': f"{self.endpoint}/v1/alerts",  # Standard API (paginated)
+                'policies': f"{self.endpoint}/v1/policies"  # Standard API (paginated)
             },
             'primary_endpoint': 'workloads',
             'supported_formats': ['json'],
-            'streaming_supported': True,
+            'streaming_supported': True,  # Workloads endpoint supports streaming
             'max_timeout': self.timeout,
             'chunk_size': self.chunk_size
         }
 
-        # Test workloads endpoint availability
+        # Test workloads endpoint availability (streaming export)
         try:
             response = self.session.head(capabilities['endpoints']['workloads'], timeout=5)
             capabilities['workloads_available'] = response.status_code in [200, 404]  # 404 is OK for HEAD
         except:
             capabilities['workloads_available'] = False
 
-        # Test other endpoints
+        # Test other endpoints (standard paginated APIs)
         for name in ['alerts', 'policies']:
             try:
                 response = self.session.head(capabilities['endpoints'][name], timeout=5)
