@@ -9,12 +9,33 @@ import (
 )
 
 func TestGetEventTypeWithoutPrefix(t *testing.T) {
+	var nilDeployment *central.SensorEvent_Deployment = nil
+	var nilMap map[string]string = nil
+	var nilSlice []string = nil
+	var nilStruct any = nil
+
 	tests := map[string]struct {
 		input    interface{}
 		expected string
 	}{
 		"should return UnknownEventType for nil input": {
 			input:    nil,
+			expected: UnknownEventType,
+		},
+		"should extract type even for typed nil pointer": {
+			input:    nilDeployment,
+			expected: "Deployment",
+		},
+		"should extract type even for map nil pointer": {
+			input:    nilMap,
+			expected: "map[string]string",
+		},
+		"should extract type even for slice nil pointer": {
+			input:    nilSlice,
+			expected: "[]string",
+		},
+		"should return UnknownEventType for any nil pointer": {
+			input:    nilStruct,
 			expected: UnknownEventType,
 		},
 		"should extract type for Deployment resource": {
