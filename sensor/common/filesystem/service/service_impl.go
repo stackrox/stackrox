@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/filesystem/pipeline"
@@ -17,9 +18,10 @@ var (
 )
 
 // NewService creates a new streaming service with the fact agent. It should only be called once.
-func NewService(pipeline *pipeline.Pipeline) Service {
+func NewService(pipeline *pipeline.Pipeline, activityChan chan *sensorAPI.FileActivity) Service {
 	srv := &serviceImpl{
-		pipeline: pipeline,
+		pipeline:     pipeline,
+		activityChan: activityChan,
 	}
 
 	return srv
@@ -27,11 +29,13 @@ func NewService(pipeline *pipeline.Pipeline) Service {
 
 type serviceImpl struct {
 	sensor.UnimplementedFileActivityServiceServer
-	pipeline *pipeline.Pipeline
+	pipeline     *pipeline.Pipeline
+	activityChan chan *sensorAPI.FileActivity
 }
 
 func (s *serviceImpl) Stop() {
 	s.pipeline.Shutdown()
+	close(s.activityChan)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -62,6 +66,6 @@ func (s *serviceImpl) receiveMessages(stream sensor.FileActivityService_Communic
 		}
 
 		log.Debug("Got file activity: ", msg)
-		s.pipeline.Process(msg)
+		s.activityChan <- msg
 	}
 }

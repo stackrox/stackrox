@@ -22,17 +22,19 @@ type Pipeline struct {
 	stopper  concurrency.Stopper
 
 	accessChan      chan *storage.FileAccess
+	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, accessChan chan *storage.FileAccess) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, accessChan chan *storage.FileAccess, activityChan chan *sensorAPI.FileActivity) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
 		accessChan:      accessChan,
+		activityChan:    activityChan,
 		clusterEntities: clusterEntities,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
@@ -157,22 +159,14 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	return pi
 }
 
-func (p *Pipeline) Process(fs *sensorAPI.FileActivity) {
-
-	access := p.translate(fs)
-
-	if access != nil {
-		p.accessChan <- access
-	}
-}
-
 func (p *Pipeline) run() {
 	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-p.stopper.Flow().StopRequested():
 			return
-		case event := <-p.accessChan:
+		case fs := <-p.activityChan:
+			event := p.translate(fs)
 			// TODO: Send event to detector
 			log.Infof("event= %+v", event)
 		}
