@@ -353,7 +353,8 @@ class RiskPredictionService:
                 if success:
                     self.model_loaded = True
                     self.current_model_id = model_id
-                    self.current_model_version = version or "latest"
+                    # Store the actual version that was loaded (not "latest")
+                    self.current_model_version = self.model.model_version or version or "latest"
                     logger.info(f"Model loaded from storage: {model_id} v{self.current_model_version}")
                 return success
         except Exception as e:
@@ -399,9 +400,11 @@ class RiskPredictionService:
                 )
 
             # Check if the model is already loaded (unless force reload)
+            # Only skip reload if we explicitly know we have the exact version requested
             if (not request.force_reload and
                 self.current_model_id == request.model_id and
-                (not request.version or self.current_model_version == request.version)):
+                request.version and  # Only skip if explicit version requested
+                self.current_model_version == request.version):
                 reload_time = (time.time() - start_time) * 1000
                 return ReloadModelResponse(
                     success=True,
