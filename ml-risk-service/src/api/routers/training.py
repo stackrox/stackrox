@@ -569,7 +569,7 @@ async def validate_predictions_from_central(
     3. **Collect Deployments**: Pulls deployments from prediction Central
     4. **Run Predictions**: Generates risk score predictions for each deployment
     5. **Compare Scores**: Compares predicted vs actual risk scores from Central
-    6. **Calculate Metrics**: Computes MAE, RMSE, correlation, and accuracy metrics
+    6. **Calculate Metrics**: Computes MAE, RMSE, correlation, NDCG, and accuracy metrics
 
     **Parameters:**
     - **model_id**: Model identifier to validate
@@ -590,7 +590,7 @@ async def validate_predictions_from_central(
     **Note:** This requires separate configuration for prediction Central instance using
     PREDICTION_CENTRAL_ENDPOINT and PREDICTION_CENTRAL_API_TOKEN environment variables.
 
-    Returns validation metrics including MAE, RMSE, correlation, and detailed prediction results.
+    Returns validation metrics including MAE, RMSE, correlation, NDCG, and detailed prediction results.
     """
     try:
         from src.config.central_config import CentralConfig
@@ -687,6 +687,7 @@ async def validate_predictions_from_central(
                 "mae": round(validation_results.get('mae', 0.0), 4),
                 "rmse": round(validation_results.get('rmse', 0.0), 4),
                 "correlation": round(validation_results.get('correlation', 0.0), 4),
+                "ndcg": round(validation_results.get('ndcg', 0.0), 4),
                 "within_30_percent": round(validation_results.get('within_30_percent', 0.0), 2),
                 "mean_actual_score": round(validation_results.get('mean_actual_score', 0.0), 4),
                 "mean_predicted_score": round(validation_results.get('mean_predicted_score', 0.0), 4)
@@ -697,7 +698,8 @@ async def validate_predictions_from_central(
         }
 
         logger.info(f"Validation complete: MAE={response['metrics']['mae']:.4f}, "
-                   f"Correlation={response['metrics']['correlation']:.4f}")
+                   f"Correlation={response['metrics']['correlation']:.4f}, "
+                   f"NDCG={response['metrics']['ndcg']:.4f}")
 
         return response
 

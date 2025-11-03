@@ -443,6 +443,7 @@ class CentralExportService:
                 'mae': float,  # Mean Absolute Error
                 'rmse': float,  # Root Mean Squared Error
                 'correlation': float,  # Correlation coefficient
+                'ndcg': float,  # Normalized Discounted Cumulative Gain (ranking quality)
                 'within_30_percent': float,  # Percentage within ±30%
                 'predictions': List[Dict]  # Individual prediction results with top_features
             }
@@ -553,6 +554,8 @@ class CentralExportService:
 
             # Calculate validation metrics
             if actual_scores and predicted_scores:
+                from sklearn.metrics import ndcg_score
+
                 actual_array = np.array(actual_scores)
                 predicted_array = np.array(predicted_scores)
 
@@ -568,6 +571,12 @@ class CentralExportService:
                 else:
                     correlation = 0.0
 
+                # NDCG (Normalized Discounted Cumulative Gain) - ranking quality metric
+                if len(np.unique(actual_array)) > 1:
+                    ndcg = float(ndcg_score([actual_array], [predicted_array]))
+                else:
+                    ndcg = 0.0
+
                 # Percentage within ±30%
                 within_range = float(np.mean(
                     np.abs(predicted_array - actual_array) / (actual_array + 1e-10) <= 0.3
@@ -577,6 +586,7 @@ class CentralExportService:
                     'mae': mae,
                     'rmse': rmse,
                     'correlation': correlation,
+                    'ndcg': ndcg,
                     'within_30_percent': within_range,
                     'mean_actual_score': float(np.mean(actual_array)),
                     'mean_predicted_score': float(np.mean(predicted_array)),
@@ -586,7 +596,7 @@ class CentralExportService:
 
                 logger.info(f"Validation complete: {validation_results['successful_predictions']} samples")
                 logger.info(f"  MAE: {mae:.4f}, RMSE: {rmse:.4f}")
-                logger.info(f"  Correlation: {correlation:.4f}")
+                logger.info(f"  Correlation: {correlation:.4f}, NDCG: {ndcg:.4f}")
                 logger.info(f"  Within ±30%: {within_range:.1f}%")
             else:
                 logger.warning("No valid predictions to calculate metrics")
@@ -594,6 +604,7 @@ class CentralExportService:
                     'mae': 0.0,
                     'rmse': 0.0,
                     'correlation': 0.0,
+                    'ndcg': 0.0,
                     'within_30_percent': 0.0
                 })
 
