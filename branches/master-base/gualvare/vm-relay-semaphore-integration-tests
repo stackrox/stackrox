@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/vm-relay-use-generated-mocks",
-    "hash": "fdcbe4c092d08c8166469a06b3c0dcfbf21957b2"
+    "hash": "b6b589a57eb8e6443bed890c235b0faffd52f6a0"
   },
   "upstream": {
     "branch": "master-base/gualvare/vm-relay-semaphore-integration-tests"
