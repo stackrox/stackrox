@@ -1,66 +1,20 @@
 # Feature configuration for ML risk ranking
+# Only contains values actually used by the code - feature weights are learned by RandomForest
 features:
   deployment:
     policy_violations:
       enabled: true
-      weight: 1.0
-      normalize_saturation: 50
-      max_value: 4.0
-
-    process_baseline_violations:
-      enabled: true
-      weight: 0.8
-
-    host_network:
-      enabled: true
-      weight: 0.7
-
-    host_pid:
-      enabled: true
-      weight: 0.6
-
-    host_ipc:
-      enabled: true
-      weight: 0.6
-
-    privileged_containers:
-      enabled: true
-      weight: 0.9
-
-    port_exposure:
-      enabled: true
-      weight: 0.5
-
-    service_account_permissions:
-      enabled: true
-      weight: 0.6
-
-    replicas:
-      enabled: true
-      weight: 0.3
+      normalize_saturation: 50  # Saturation point for policy violation score normalization
+      max_value: 4.0  # Maximum multiplier for policy violations
 
   image:
-    vulnerabilities:
-      enabled: true
-      weight: 1.0
-      severity_weights:
-        critical: 10.0
-        high: 4.0
-        medium: 1.0
-        low: 0.25
-
-    risky_components:
-      enabled: true
-      weight: 0.7
-
     component_count:
-      enabled: true
-      weight: 0.4
+      saturation: 500  # Saturation point for component count normalization
+      max_value: 1.5  # Maximum multiplier for component count
 
     image_age:
-      enabled: true
-      weight: 0.5
-      age_threshold_days: 365
+      age_threshold_days: 365  # Age threshold in days (1 year)
+      max_multiplier: 1.3  # Maximum age multiplier
 
 model:
   algorithm: "sklearn_ranksvm"  # Current algorithm: sklearn_ranksvm (extensible for future algorithms)
