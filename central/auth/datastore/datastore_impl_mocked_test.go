@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/central/auth/store"
 	mockAuthStore "github.com/stackrox/rox/central/auth/store/mocks"
@@ -27,7 +26,7 @@ const (
 	testRole2        = "Super-Admin"
 	testRole3        = "Super Continuous Integration"
 	configController = "Configuration Controller"
-	testIssuer       = m2m.LegacyServiceAccountIssuer
+	testIssuer       = "https://localhost"
 
 	missingRoleName = "missing role"
 )
@@ -195,7 +194,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 			),
 			expectedError: errox.InvalidArgs,
 			expectedErrorText: "imperative roles [existing imperative role] and missing roles [missing declarative role] can't be referenced by non-imperative " +
-				"auth machine to machine configuration \"test ID\" for issuer \"kubernetes/serviceaccount\"",
+				"auth machine to machine configuration \"test ID\" for issuer \"https://localhost\"",
 		},
 		"machine to machine declarative config referencing at least one imperative role triggers error": {
 			prepare: func() {

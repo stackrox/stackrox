@@ -219,10 +219,15 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
+	kubeSAIssuer, err := m2m.GetKubernetesIssuer()
+	if err != nil {
+		return pkgErrors.Wrap(err, "failed to get service account issuer")
+	}
+
 	var tokenExchangerErrors []error
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
 	upsertTokenExchanger := func(config *storage.AuthMachineToMachineConfig) error {
-		if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+		if config.GetIssuer() == kubeSAIssuer {
 			kubeSAConfig = config
 			return nil
 		}
@@ -235,11 +240,24 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	if err := d.forEachAuthM2MConfigNoLock(ctx, upsertTokenExchanger); err != nil {
 		return pkgErrors.Wrap(err, "Failed to list auth m2m configs")
 	}
+	if kubeSAConfig == nil {
+		kubeSAConfig = newKubeM2MConfig(kubeSAIssuer)
+	}
 	if err := d.configureConfigControllerAccess(kubeSAConfig); err != nil {
 		return pkgErrors.Wrap(err, "failed to configure config controller access")
 	}
 
 	return errors.Join(tokenExchangerErrors...)
+}
+
+func newKubeM2MConfig(kubeSAIssuer string) *storage.AuthMachineToMachineConfig {
+	return &storage.AuthMachineToMachineConfig{
+		Id:                      uuid.NewV4().String(),
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1h",
+		Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
+		Issuer:                  kubeSAIssuer,
+	}
 }
 
 // configureConfigControllerAccess ensures the config-controller has access to Central APIs via k8s service account token m2m auth
@@ -253,20 +271,6 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 // This allows customers to add their own role mappings for this config.
 // If a customer breaks config-controller auth, they can simply restart Central to get it back to a working state.
 func (d *datastoreImpl) configureConfigControllerAccess(kubeSAConfig *storage.AuthMachineToMachineConfig) error {
-	kubeSAIssuer := m2m.GetKubernetesIssuerOrEmpty()
-	if kubeSAIssuer == "" {
-		return pkgErrors.New("could not identify service account issuer")
-	}
-	if kubeSAConfig == nil {
-		kubeSAConfig = &storage.AuthMachineToMachineConfig{
-			Id:                      uuid.NewV4().String(),
-			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-			TokenExpirationDuration: "1h",
-			Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
-			Issuer:                  kubeSAIssuer,
-		}
-	}
-
 	var mappingFound bool
 	for _, mapping := range kubeSAConfig.GetMappings() {
 		if mapping.GetKey() == "sub" && mapping.GetValueExpression() == configControllerServiceAccountName && mapping.GetRole() == "Configuration Controller" {

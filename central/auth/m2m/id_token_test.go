@@ -18,15 +18,6 @@ func TestIssuerFromRawIDToken(t *testing.T) {
 		assert.Equal(t, "test", issuer)
 	})
 
-	t.Run("kubernetes opaque token", func(t *testing.T) {
-		//#nosec G101 -- This is a static example Kubernetes opaque token for testing purposes.
-		rawIDToken := "sha256~98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4"
-
-		issuer, err := IssuerFromRawIDToken(rawIDToken)
-		assert.NoError(t, err)
-		assert.Equal(t, LegacyServiceAccountIssuer, issuer)
-	})
-
 	t.Run("error", func(t *testing.T) {
 		//#nosec G101 -- This is an invalid token for testing purposes.
 		rawIDToken := "notavalidtoken"
