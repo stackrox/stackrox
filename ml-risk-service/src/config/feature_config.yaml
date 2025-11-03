@@ -68,9 +68,16 @@ model:
   random_state: 42
 
   # Algorithm-specific parameters (extensible for future implementations)
+  # Improved hyperparameters for better precision and generalization
   sklearn_params:
-    n_estimators: 100
-    n_jobs: -1
+    n_estimators: 500  # Increased from 100 for better precision (more trees = more accurate predictions)
+    max_depth: 20  # Limit tree depth to prevent overfitting
+    min_samples_split: 10  # Minimum samples required to split node (prevents overfitting)
+    min_samples_leaf: 4  # Minimum samples in leaf node (smoother decision boundaries)
+    max_features: "sqrt"  # Use sqrt of features for each split (reduces overfitting)
+    bootstrap: true  # Use bootstrap samples (enabled by default, explicit for clarity)
+    oob_score: false  # Out-of-bag score (can be enabled for additional validation)
+    n_jobs: -1  # Use all available CPU cores
 
   explainability:
     shap_enabled: true
