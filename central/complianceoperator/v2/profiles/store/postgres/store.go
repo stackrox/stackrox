@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -266,29 +265,3 @@ func copyFromComplianceOperatorProfileV2Rules(ctx context.Context, s pgSearch.De
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorProfileV2(ctx, db)
-}
-
-func dropTableComplianceOperatorProfileV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_profile_v2 CASCADE")
-	dropTableComplianceOperatorProfileV2Rules(ctx, db)
-
-}
-
-func dropTableComplianceOperatorProfileV2Rules(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_profile_v2_rules CASCADE")
-
-}
-
-// endregion Used for testing
