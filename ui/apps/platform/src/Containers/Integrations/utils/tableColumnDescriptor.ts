@@ -1,3 +1,5 @@
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 import type { ApiToken } from 'types/apiToken.proto';
 import type { BaseBackupIntegration } from 'types/externalBackup.proto';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
@@ -24,12 +26,10 @@ import type {
     SyslogNotifierIntegration,
 } from 'types/notifier.proto';
 import type { SignatureIntegration } from 'types/signatureIntegration.proto';
-
+import { formatRecurringSchedule } from 'utils/dateUtils';
 import { getOriginLabel } from 'utils/traits.utils';
-import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
-import type { CloudSourceIntegration } from 'services/CloudSourceService';
+
 import {
-    backupScheduleDescriptor,
     categoriesUtilsForClairifyScanner,
     categoriesUtilsForRegistryScanner,
     transformDurationLongForm,
@@ -348,17 +348,17 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         s3: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
         s3compatible: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3compatible.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
         gcs: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'gcs.bucket', Header: 'Bucket' },
-            backupScheduleDescriptor(),
+            { accessor: ({ schedule }) => formatRecurringSchedule(schedule), Header: 'Schedule' },
         ],
     },
     cloudSources: {
