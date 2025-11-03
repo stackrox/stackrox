@@ -91,7 +91,7 @@ api:
 # Training Central API configuration - for collecting training data
 training_central_api:
   enabled: true  # Set to true to enable Training Central API integration
-  endpoint: "https://central-stackrox.apps.sh-10-31-1.ocp.infra.rox.systems"
+  endpoint: "https://staging.demo.stackrox.com"
   use_streaming_exports: true
 
   authentication:
@@ -155,7 +155,7 @@ training_central_api:
 # Prediction Central API configuration - for validating model predictions
 prediction_central_api:
   enabled: true  # Set to true to enable Prediction Central API integration
-  endpoint: "https://staging.demo.stackrox.com"
+  endpoint: "https://central-stackrox.apps.sh-10-31-1.ocp.infra.rox.systems"
   use_streaming_exports: true
 
   authentication:
