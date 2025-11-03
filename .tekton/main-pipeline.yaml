@@ -123,6 +123,7 @@ spec:
     type: array
     description: Additional labels to put on the built containers.
   - default:
+    # 4 cpus and 7GB of ram should be enough for amd64 builds, but we have to use the next "smallest" available size.
     - linux-d160-m2xlarge/amd64
     - linux-d160-m2xlarge/arm64
     - linux/ppc64le
