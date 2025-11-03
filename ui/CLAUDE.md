@@ -1,5 +1,11 @@
 # CLAUDE.md - StackRox UI Development Quick Reference
 
+## Communication Style
+
+- Be extremely concise. Sacrifice grammar for the sake of concision.
+
+---
+
 ## Commands
 
 ### Development
