@@ -127,8 +127,8 @@ func (c *Compliance) Start() {
 		defer wg.Add(-1)
 		if features.VirtualMachines.Enabled() {
 			log.Infof("Virtual machine relay enabled")
-			vmRelay := relay.NewRelay(conn)
-			if err := vmRelay.Run(ctx); err != nil {
+			vmRelay := relay.NewRelay(ctx, conn)
+			if err := vmRelay.Run(); err != nil {
 				log.Errorf("Error running virtual machine relay: %v", err)
 			}
 		}

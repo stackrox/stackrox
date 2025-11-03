@@ -1,17 +1,16 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
     Divider,
-    Button,
-    TextInput,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    TextInput,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';

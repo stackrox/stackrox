@@ -1,0 +1,26 @@
+---
+description: Secure coding rules for JavaScript projects
+globs:
+  - "**/*.js"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "**/package.json"
+  - "**/package-lock.json"
+alwaysApply: false
+---
+
+# Secure coding rules for JavaScript
+
+- Use parameterized queries or ORMs to prevent SQL injection. Never concatenate user input into queries.
+- Avoid `eval()`, `Function()` constructor, or `setTimeout(string)` with untrusted data.
+- Sanitize HTML to prevent XSS. Use DOMPurify or similar for user-generated HTML.
+- Implement Content Security Policy (CSP) headers to mitigate XSS and injection attacks.
+- Validate and sanitize URLs before redirects to prevent open redirects.
+- Implement proper authentication and session management. Use secure, httpOnly cookies.
+- Use `crypto.randomBytes()` or Web Crypto API for secure random generation.
+- Use `npm audit` regularly to check for vulnerabilities.
+- Pin exact versions in package-lock.json. Avoid `^` or `~` for critical dependencies.
+- Implement rate limiting and input validation to prevent DoS.
+- Prevent prototype pollution by validating object keys and using `Object.create(null)` when appropriate.
+- Use strict mode (`'use strict'`) to catch common mistakes and unsafe actions.
+- Implement proper CORS policies. Never use wildcard (`*`) origins in production.

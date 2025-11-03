@@ -34,8 +34,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 
 import {
     clusterSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
     nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
     nodeSearchFilterConfig,
 } from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';

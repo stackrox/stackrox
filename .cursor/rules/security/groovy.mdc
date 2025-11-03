@@ -1,0 +1,18 @@
+---
+description: Secure coding rules for Groovy projects
+globs:
+  - "**/*.groovy"
+  - "**/*.gradle"
+  - "**/*.gvy"
+alwaysApply: false
+---
+
+# Secure coding rules for Groovy
+
+- Use parameterized queries (Groovy Sql with parameters) to prevent SQL injection. Never use GString interpolation in SQL.
+- Avoid `execute()` or `Process.start()` with untrusted input. Sanitize shell command arguments.
+- Avoid `Eval.me()` and `GroovyShell.evaluate()` with untrusted code.
+- Use `SecureRandom` for cryptographic operations, not `Random`.
+- Validate dynamic method calls when using ExpandoMetaClass, methodMissing, or other meta-programming.
+- Disable external entity processing in XML parsers (XmlSlurper/XmlParser) to prevent XXE.
+- Sanitize data before using in closures or meta-programming.

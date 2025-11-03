@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import { DefaultGroup, observer, ScaleDetailsLevel } from '@patternfly/react-topology';
+import { DefaultGroup, ScaleDetailsLevel, observer } from '@patternfly/react-topology';
 import type {
     Node,
     ShapeProps,

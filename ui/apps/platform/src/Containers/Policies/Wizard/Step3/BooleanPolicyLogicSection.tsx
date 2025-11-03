@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 

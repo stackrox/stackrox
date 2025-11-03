@@ -96,6 +96,11 @@ func (s *ServiceAccountsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, serviceAccounts))
 
+	foundServiceAccounts, missing, err := store.GetMany(ctx, serviceAccountIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), serviceAccounts, foundServiceAccounts)
+
 	serviceAccountCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)

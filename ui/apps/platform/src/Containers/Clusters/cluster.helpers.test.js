@@ -1,6 +1,5 @@
 import {
     findUpgradeState,
-    formatSensorVersion,
     formatBuildDate,
     formatKubernetesVersion,
     formatCloudProvider,
@@ -198,43 +197,6 @@ describe('cluster helpers', () => {
             const displayValue = formatCloudProvider(providerMetadata);
 
             expect(displayValue).toEqual('Not available');
-        });
-    });
-
-    describe('formatSensorVersion', () => {
-        it('should return sensor version string if passed a status object with a sensorVersion field', () => {
-            const sensorVersion = 'sensorVersion';
-            const testCluster = {
-                status: {
-                    sensorVersion,
-                },
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual(sensorVersion);
-        });
-
-        it('should return a "Not Running" if passed a status object with null sensorVersion field', () => {
-            const testCluster = {
-                status: {
-                    sensorVersion: null,
-                },
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual('Not Running');
-        });
-
-        it('should return a "Not Running" if passed a status object with null status field', () => {
-            const testCluster = {
-                status: null,
-            };
-
-            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
-
-            expect(displayValue).toEqual('Not Running');
         });
     });
 

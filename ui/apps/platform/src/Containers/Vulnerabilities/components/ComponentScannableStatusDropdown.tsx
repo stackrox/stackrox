@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import React from 'react';
+import { SelectOption } from '@patternfly/react-core';
 
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import { searchValueAsArray } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-
-import './FilterDropdowns.css';
 
 type ComponentScannableStatusDropdownProps = {
     searchFilter: SearchFilter;
@@ -14,29 +14,24 @@ function ComponentScannableStatusDropdown({
     searchFilter,
     onSelect,
 }: ComponentScannableStatusDropdownProps) {
-    const [componentScannableStatusIsOpen, setComponentScannableStatusIsOpen] = useState(false);
+    const selections = searchValueAsArray(searchFilter.SCANNABLE);
 
-    function onComponentScannableStatusToggle(isOpen: boolean) {
-        setComponentScannableStatusIsOpen(isOpen);
+    function handleItemSelect(selection: string, checked: boolean) {
+        onSelect('SCANNABLE', checked, selection);
     }
 
     return (
-        <Select
-            variant="checkbox"
-            aria-label="Component scannable status filter menu items"
+        <CheckboxSelect
+            id="vm-filter-toolbar-dropdown"
+            selections={selections}
+            onItemSelect={handleItemSelect}
+            ariaLabel="Component scannable status filter menu items"
             toggleAriaLabel="Component scannable status filter menu toggle"
-            onToggle={(_event, isOpen: boolean) => onComponentScannableStatusToggle(isOpen)}
-            onSelect={(e, selection) => {
-                onSelect('SCANNABLE', (e.target as HTMLInputElement).checked, selection as string);
-            }}
-            selections={searchFilter.SCANNABLE}
-            isOpen={componentScannableStatusIsOpen}
             placeholderText="Scan status"
-            className="vm-filter-toolbar-dropdown"
         >
-            <SelectOption key="Scanned" value="Scanned" />
-            <SelectOption key="NotScanned" value="Not scanned" />
-        </Select>
+            <SelectOption value="Scanned">Scanned</SelectOption>
+            <SelectOption value="Not scanned">Not scanned</SelectOption>
+        </CheckboxSelect>
     );
 }
 

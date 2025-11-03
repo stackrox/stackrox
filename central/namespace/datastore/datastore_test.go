@@ -589,7 +589,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases(
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			namespaces, err := s.datastore.GetNamespacesForSAC(s.testContexts[tc.contextKey])
+			namespaces, err := s.datastore.GetNamespacesForSAC()
 			s.NoError(err)
 			s.GreaterOrEqual(len(namespaces), tc.expectMinResults)
 

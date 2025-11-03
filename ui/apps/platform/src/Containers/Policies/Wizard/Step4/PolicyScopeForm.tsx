@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { useFormikContext } from 'formik';
 import {
+    Button,
+    Chip,
+    ChipGroup,
+    Divider,
     Flex,
     FlexItem,
-    Title,
-    Button,
-    Divider,
-    Grid,
-    GridItem,
     FormGroup,
     FormHelperText,
+    Grid,
+    GridItem,
     HelperText,
     HelperTextItem,
-    Select,
-    SelectOption,
-    SelectList,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    ChipGroup,
-    Chip,
+    Title,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
