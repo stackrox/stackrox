@@ -11,7 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
@@ -37,6 +36,9 @@ import (
 )
 
 func TestReportingWithCollections(t *testing.T) {
+	if !features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is not enabled")
+	}
 	suite.Run(t, new(ReportingWithCollectionsTestSuite))
 }
 
@@ -66,34 +68,18 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
 
-	var imgDataStore imageDataStore.DataStore
-
-	if features.FlattenCVEData.Enabled() {
-		imgDataStore = resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-			imgDataStore,
-			imagesView.NewImageView(s.testDB.DB),
-			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-			imagecve.NewCVEView(s.testDB.DB),
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-		)
-	} else {
-		imgDataStore = resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
-		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-			imgDataStore,
-			imagesView.NewImageView(s.testDB.DB),
-			resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
-			resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
-			resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
-			resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
-			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-		)
-	}
+	imgDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+		imgDataStore,
+		imagesView.NewImageView(s.testDB.DB),
+		resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+		resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+		imagecve.NewCVEView(s.testDB.DB),
+		imagecveflat.NewCVEFlatView(s.testDB.DB),
+		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		deploymentsView.NewDeploymentView(s.testDB.DB),
+	)
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
