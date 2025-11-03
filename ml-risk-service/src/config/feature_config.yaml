@@ -70,8 +70,8 @@ model:
   # Algorithm-specific parameters (extensible for future implementations)
   # Improved hyperparameters for better precision and generalization
   sklearn_params:
-    n_estimators: 500  # Increased from 100 for better precision (more trees = more accurate predictions)
-    max_depth: 20  # Limit tree depth to prevent overfitting
+    n_estimators: 1000  # Increased to 1000 for maximum accuracy (more trees = more robust predictions)
+    max_depth: 25  # Increased depth to capture complex patterns with larger datasets
     min_samples_split: 10  # Minimum samples required to split node (prevents overfitting)
     min_samples_leaf: 4  # Minimum samples in leaf node (smoother decision boundaries)
     max_features: "sqrt"  # Use sqrt of features for each split (reduces overfitting)
@@ -150,9 +150,9 @@ training_central_api:
 
   # Training-specific settings for full model training
   training:
-    default_limit: 1000  # Default maximum training samples
+    default_limit: 2000  # Default maximum training samples (increased for better model training)
     min_training_samples: 50  # Minimum samples required for training
-    max_training_samples: 5000  # Maximum samples to prevent memory issues
+    max_training_samples: 10000  # Maximum samples increased to allow learning from more diverse data
     default_filters:
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
