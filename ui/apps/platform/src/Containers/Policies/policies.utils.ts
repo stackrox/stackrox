@@ -29,9 +29,9 @@ import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
 
 import {
-    auditLogDescriptor,
+    auditLogDescriptorMap,
     imageSigningCriteriaName,
-    policyCriteriaDescriptors,
+    policyCriteriaDescriptorMap,
 } from './Wizard/Step3/policyCriteriaDescriptors';
 import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
@@ -694,15 +694,21 @@ export function getPolicyDescriptors(
     lifecycleStages: LifecycleStage[]
 ) {
     const unfilteredDescriptors =
-        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyCriteriaDescriptors;
+        eventSource === 'AUDIT_LOG_EVENT'
+            ? Object.values(auditLogDescriptorMap)
+            : Object.values(policyCriteriaDescriptorMap);
 
-    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
-        const { featureFlagDependency } = unfilteredDescriptor;
-        if (featureFlagDependency && featureFlagDependency.length > 0) {
-            return allEnabled(featureFlagDependency)(isFeatureFlagEnabled);
-        }
-        return true;
-    });
+    const descriptors = unfilteredDescriptors
+        .filter((unfilteredDescriptor): unfilteredDescriptor is Descriptor => {
+            return unfilteredDescriptor !== undefined;
+        })
+        .filter((unfilteredDescriptor) => {
+            const { featureFlagDependency } = unfilteredDescriptor;
+            if (featureFlagDependency && featureFlagDependency.length > 0) {
+                return allEnabled(featureFlagDependency)(isFeatureFlagEnabled);
+            }
+            return true;
+        });
 
     const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
         descriptors,

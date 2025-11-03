@@ -317,7 +317,7 @@ export type TextDescriptor = {
     DescriptorCanBoolean &
     DescriptorCanNegate;
 
-export const policyCriteriaDescriptors: Descriptor[] = [
+const policyCriteriaDescriptors: Descriptor[] = [
     {
         label: 'Image registry',
         name: 'Image Registry',
@@ -1477,7 +1477,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
     },
 ];
 
-export const auditLogDescriptor: Descriptor[] = [
+const auditLogDescriptor: Descriptor[] = [
     {
         label: 'Kubernetes API verb',
         name: 'Kubernetes API Verb',
@@ -1595,3 +1595,11 @@ export const auditLogDescriptor: Descriptor[] = [
         lifecycleStages: ['RUNTIME'],
     },
 ];
+
+export const policyCriteriaDescriptorMap: Partial<Record<string, Descriptor>> = Object.fromEntries(
+    policyCriteriaDescriptors.map((descriptor) => [descriptor.name, descriptor])
+);
+
+export const auditLogDescriptorMap: Partial<Record<string, Descriptor>> = Object.fromEntries(
+    auditLogDescriptor.map((descriptor) => [descriptor.name, descriptor])
+);
