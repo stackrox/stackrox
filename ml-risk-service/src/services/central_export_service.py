@@ -62,7 +62,7 @@ class CentralExportService:
             limit: Maximum number of training samples to collect
 
         Yields:
-            Training examples as dictionaries
+            Training samples as dictionaries
         """
         logger.info(f"Starting training data collection with filters: {filters}")
 
@@ -101,7 +101,7 @@ class CentralExportService:
             limit: Maximum number of training samples
 
         Yields:
-            Training examples from workload data
+            Training samples from workload data
         """
         # Build filters for workloads
         workload_filters = self._build_workload_filters(filters)
@@ -176,12 +176,15 @@ class CentralExportService:
             workload: Workload record containing deployment, images, and vulnerabilities
 
         Returns:
-            Training example dictionary or None if invalid
+            Training sample dictionary or None if invalid
         """
         try:
             # Handle nested 'result' structure from Central API
-            if 'result' in workload:
+            if 'result' in workload and workload['result'] is not None:
                 result_data = workload['result']
+                if not isinstance(result_data, dict):
+                    logger.warning(f"Invalid result type in workload: {type(result_data)}")
+                    return None
                 deployment_data = result_data.get('deployment', {})
                 images_data = result_data.get('images', [])
                 vulnerabilities = result_data.get('vulnerabilities', [])
@@ -189,6 +192,11 @@ class CentralExportService:
                 deployment_data = workload.get('deployment', {})
                 images_data = workload.get('images', [])
                 vulnerabilities = workload.get('vulnerabilities', [])
+
+            # Validate deployment_data
+            if not deployment_data or not isinstance(deployment_data, dict):
+                logger.warning(f"Invalid or missing deployment_data: {type(deployment_data)}")
+                return None
 
             # Extract deployment metadata with field name fallbacks
             deployment_id = deployment_data.get('id') or deployment_data.get('deploymentId', '')
@@ -241,7 +249,14 @@ class CentralExportService:
             return training_sample
 
         except Exception as e:
-            logger.error(f"Failed to create training example from workload: {e}")
+            # Get deployment info for better error reporting
+            try:
+                workload_id = workload.get('result', {}).get('deployment', {}).get('id', 'unknown') if isinstance(workload.get('result'), dict) else workload.get('deployment', {}).get('id', 'unknown')
+            except:
+                workload_id = 'unknown'
+
+            logger.error(f"Failed to create training sample from workload {workload_id}: {type(e).__name__}: {e}")
+            logger.debug(f"Workload structure: keys={list(workload.keys())}, result_type={type(workload.get('result'))}")
             # Track failed sample creation
             self._risk_score_stats['failed_count'] += 1
             return None
