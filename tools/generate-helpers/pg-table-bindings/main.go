@@ -114,6 +114,9 @@ type properties struct {
 
 	// Provides options map for sort option transforms
 	TransformSortOptions string
+
+	// Generates helper functions to create/destroy tables and store
+	GenerateDataModelHelpers bool
 }
 
 type parsedReference struct {
@@ -153,6 +156,8 @@ func main() {
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
+
+	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
@@ -230,6 +235,8 @@ func main() {
 			"TransformSortOptions": props.TransformSortOptions,
 			"DefaultTransform":     props.TransformSortOptions != "",
 			"Singleton":            props.SingletonStore,
+
+			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
