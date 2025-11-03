@@ -34,7 +34,6 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) Stop() {
-	s.pipeline.Shutdown()
 	close(s.activityChan)
 }
 
