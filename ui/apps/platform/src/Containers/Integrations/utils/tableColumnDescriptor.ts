@@ -106,7 +106,9 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             {
                 accessor: (config) => {
                     const objectConfig = <ApiToken>config;
-                    return objectConfig.expiration ? getDateTime(objectConfig.expiration) : 'Unknown';
+                    return objectConfig.expiration
+                        ? getDateTime(objectConfig.expiration)
+                        : 'Unknown';
                 },
                 Header: 'Expiration',
             },
