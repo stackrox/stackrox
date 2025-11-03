@@ -6,6 +6,7 @@ import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 
 import { policiesBasePath } from 'routePaths';
+import PageTitle from 'Components/PageTitle';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import {
     deletePolicies,
@@ -206,6 +207,7 @@ function PoliciesTablePage({
 
     return (
         <>
+            <PageTitle title="Policy Management - Policies" />
             <PolicyManagementHeader currentTabTitle="Policies" />
             <Divider component="div" />
             <TabNavSubHeader
