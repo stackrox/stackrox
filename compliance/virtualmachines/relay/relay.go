@@ -41,6 +41,8 @@ type vsockServerImpl struct {
 	semaphoreTimeout time.Duration
 }
 
+var _ vsockServer = (*vsockServerImpl)(nil)
+
 func newVsockServer() *vsockServerImpl {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
