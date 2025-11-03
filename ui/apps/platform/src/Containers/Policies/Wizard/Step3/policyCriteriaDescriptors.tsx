@@ -8,7 +8,7 @@ import {
     severityRatings,
 } from 'messages/common';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
-import type { LifecycleStage } from 'types/policy.proto';
+import type { ClientPolicyGroup, LifecycleStage } from 'types/policy.proto';
 
 import ImageSigningTableModal from './ImageSigningTableModal';
 
@@ -226,6 +226,7 @@ type BaseDescriptor = {
     type: DescriptorType;
     disabled?: boolean;
     featureFlagDependency?: FeatureFlagEnvVar[];
+    codependentCriteriaValidator?: (groups: ClientPolicyGroup[]) => string | undefined;
     lifecycleStages: LifecycleStage[];
 };
 
@@ -1600,6 +1601,20 @@ export const policyCriteriaDescriptorMap: Partial<Record<string, Descriptor>> = 
     policyCriteriaDescriptors.map((descriptor) => [descriptor.name, descriptor])
 );
 
+const auditLogCodependentCriteriaValidator = (groups: ClientPolicyGroup[]) => {
+    if (!groups.some((group) => group.fieldName === 'Kubernetes Resource')) {
+        return 'The [Kubernetes resource type] criterion must be present for audit log policies.';
+    }
+    if (!groups.some((group) => group.fieldName === 'Kubernetes API Verb')) {
+        return 'The [Kubernetes API verb] criterion must be present for audit log policies.';
+    }
+    return undefined;
+};
+
 export const auditLogDescriptorMap: Partial<Record<string, Descriptor>> = Object.fromEntries(
-    auditLogDescriptor.map((descriptor) => [descriptor.name, descriptor])
+    auditLogDescriptor.map((descriptor) => [
+        descriptor.name,
+        // All audit log descriptors have a codependent criteria validator that depends on other criteria being present
+        { ...descriptor, codependentCriteriaValidator: auditLogCodependentCriteriaValidator },
+    ])
 );

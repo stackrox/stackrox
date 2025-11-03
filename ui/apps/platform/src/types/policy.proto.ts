@@ -113,7 +113,7 @@ type ClientPolicySection = {
     policyGroups: ClientPolicyGroup[];
 };
 
-type ClientPolicyGroup = {
+export type ClientPolicyGroup = {
     fieldName: string;
     booleanOperator: PolicyBooleanOperator;
     negate: boolean;

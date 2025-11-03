@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import type { Policy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 
 import {
     POLICY_BEHAVIOR_SCOPE_ID,
@@ -10,11 +10,13 @@ import {
 } from '../policies.constants';
 import type { WizardPolicyStep4, WizardScope } from '../policies.utils';
 import {
+    auditLogDescriptorMap,
     imageSigningCriteriaName,
     mountPropagationCriteriaName,
+    policyCriteriaDescriptorMap,
 } from './Step3/policyCriteriaDescriptors';
 
-type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
+type PolicyStep1 = Pick<ClientPolicy, 'name' | 'severity' | 'categories'>;
 
 const validationSchemaStep1: yup.ObjectSchema<PolicyStep1> = yup.object().shape({
     name: yup.string().trim().required('Policy name is required'),
@@ -29,7 +31,7 @@ const validationSchemaStep1: yup.ObjectSchema<PolicyStep1> = yup.object().shape(
         .required(),
 });
 
-type PolicyStep2 = Pick<Policy, 'eventSource' | 'lifecycleStages'>;
+type PolicyStep2 = Pick<ClientPolicy, 'eventSource' | 'lifecycleStages'>;
 
 const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape({
     eventSource: yup
@@ -51,76 +53,106 @@ const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape(
     // Schema omits enforcementActions, because code (not user) changes the value.
 });
 
-// TODO validation apparently fails when sectionName is empty string, but why?
-/*
-type PolicyStep3 = Pick<Policy, 'policySections'>;
+type PolicyStep3 = Pick<ClientPolicy, 'policySections'>;
 
-const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape({
-*/
-const validationSchemaStep3 = yup.object().shape(
+const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
     {
         policySections: yup
             .array()
             .of(
-                yup.object().shape({
-                    /*
-                sectionName: yup.string().defined(),
-                */
-                    policyGroups: yup
-                        .array()
-                        .of(
-                            yup.object().shape({
-                                fieldName: yup.string().trim().required(),
-                                booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
-                                negate: yup.boolean().required(),
-                                values: yup
-                                    .array()
-                                    .of(
-                                        yup.object().shape({
-                                            // value: yup.string(), // dryrun validates whether value is required
-                                            arrayValue: yup
-                                                .array(yup.string().required())
-                                                .test(
-                                                    'policy-criteria',
-                                                    'Please enter a valid value',
-                                                    (value, context: yup.TestContext) => {
-                                                        if (
-                                                            // from[1] means one level up in the object
-                                                            context.from &&
-                                                            context.from[1]?.value?.fieldName ===
-                                                                imageSigningCriteriaName
-                                                        ) {
-                                                            return (
-                                                                Array.isArray(value) &&
-                                                                value.length !== 0
-                                                            );
-                                                        }
-                                                        if (
-                                                            // from[1] means one level up in the object
-                                                            context.from &&
-                                                            context.from[1]?.value?.fieldName ===
-                                                                mountPropagationCriteriaName
-                                                        ) {
-                                                            const currentValue =
-                                                                context.from[0]?.value?.value;
-                                                            return (
-                                                                typeof currentValue === 'string' &&
-                                                                currentValue.trim().length > 0
-                                                            );
-                                                        }
+                yup
+                    .object()
+                    .shape({
+                        sectionName: yup.string().trim().required(),
+                        policyGroups: yup
+                            .array()
+                            .of(
+                                yup.object().shape({
+                                    fieldName: yup.string().trim().required(),
+                                    booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
+                                    negate: yup.boolean().required(),
+                                    values: yup
+                                        .array()
+                                        .of(
+                                            yup.object().shape({
+                                                // value: yup.string(), // dryrun validates whether value is required
+                                                arrayValue: yup
+                                                    .array(yup.string().required())
+                                                    .test(
+                                                        'policy-criteria',
+                                                        'Please enter a valid value',
+                                                        (value, context: yup.TestContext) => {
+                                                            if (
+                                                                // from[1] means one level up in the object
+                                                                context.from &&
+                                                                context.from[1]?.value
+                                                                    ?.fieldName ===
+                                                                    imageSigningCriteriaName
+                                                            ) {
+                                                                return (
+                                                                    Array.isArray(value) &&
+                                                                    value.length !== 0
+                                                                );
+                                                            }
+                                                            if (
+                                                                // from[1] means one level up in the object
+                                                                context.from &&
+                                                                context.from[1]?.value
+                                                                    ?.fieldName ===
+                                                                    mountPropagationCriteriaName
+                                                            ) {
+                                                                const currentValue =
+                                                                    context.from[0]?.value?.value;
+                                                                return (
+                                                                    typeof currentValue ===
+                                                                        'string' &&
+                                                                    currentValue.trim().length > 0
+                                                                );
+                                                            }
 
-                                                        return true;
-                                                    }
-                                                ),
-                                        })
-                                    )
-                                    .min(1)
-                                    .required(),
-                            })
-                        )
-                        .min(1)
-                        .required(),
-                })
+                                                            return true;
+                                                        }
+                                                    ),
+                                            })
+                                        )
+                                        .min(1)
+                                        .required(),
+                                })
+                            )
+                            .min(1)
+                            .required(),
+                    })
+                    .test(
+                        'policy-section',
+                        'Invalid policy section',
+                        (value, context: yup.TestContext) => {
+                            // @ts-expect-error: `yup` hard codes the `context.from.value` type here as `any`, so this is not a safe cast.
+                            // We will assert as `unknown` and then cast to `PolicyStep2` with a comment so this unsafe cast is visible..
+                            const topLevelContext: PolicyStep2 = context.from?.[
+                                context.from.length - 1
+                            ].value as unknown;
+
+                            const descriptorMap =
+                                topLevelContext.eventSource === 'AUDIT_LOG_EVENT'
+                                    ? auditLogDescriptorMap
+                                    : policyCriteriaDescriptorMap;
+
+                            const errors = value.policyGroups.map((policyGroup) => {
+                                const descriptor = descriptorMap[policyGroup.fieldName];
+                                if (!descriptor || !descriptor.codependentCriteriaValidator) {
+                                    return undefined;
+                                }
+                                const validationError = descriptor.codependentCriteriaValidator(
+                                    value.policyGroups
+                                );
+                                return validationError
+                                    ? context.createError({ message: validationError })
+                                    : undefined;
+                            });
+
+                            return errors.find((error) => error !== undefined) ?? true;
+                        }
+                    )
             )
             .min(1)
             .required(),
