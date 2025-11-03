@@ -95,8 +95,8 @@ docker-run: docker-build ## Run Docker container locally
 	@# Stop and remove existing container if it exists
 	@docker stop ml-risk-service 2>/dev/null || true
 	@docker rm ml-risk-service 2>/dev/null || true
-	@# Ensure directories exist
-	@mkdir -p $(PWD)/deploy/models $(PWD)/deploy/reports
+	@# Ensure directories exist (including models/ subdirectory for storage)
+	@mkdir -p $(PWD)/deploy/models/models $(PWD)/deploy/reports
 	@# Fix permissions for container user
 	@chmod 777 $(PWD)/deploy/models $(PWD)/deploy/reports
 	@# Run the container

@@ -319,6 +319,9 @@ class LocalModelStorage(ModelStorage):
         super().__init__(config)
         self.base_path = Path(config.base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
+        # Ensure models subdirectory exists for model storage
+        models_dir = self.base_path / "models"
+        models_dir.mkdir(parents=True, exist_ok=True)
 
     def save_model(self, model_data: bytes, metadata: ModelMetadata) -> bool:
         """Save model to local filesystem."""
