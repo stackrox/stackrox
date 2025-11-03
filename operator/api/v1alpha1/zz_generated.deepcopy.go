@@ -1252,6 +1252,11 @@ func (in *PerNodeSpec) DeepCopyInto(out *PerNodeSpec) {
 		*out = new(ContainerSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.SFA != nil {
+		in, out := &in.SFA, &out.SFA
+		*out = new(ContainerSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.TaintToleration != nil {
 		in, out := &in.TaintToleration, &out.TaintToleration
 		*out = new(TaintTolerationPolicy)

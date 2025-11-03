@@ -1078,6 +1078,10 @@ spec:
         path: perNode.collector.forceCollection
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Settings for the SFA container, which is responsible for file
+          activity monitoring on the Node.
+        displayName: SFA
+        path: perNode.fact
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
@@ -1241,6 +1245,13 @@ spec:
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: perNode.compliance.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
+        displayName: Resources
+        path: perNode.fact.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: |-
