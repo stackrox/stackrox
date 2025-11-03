@@ -345,7 +345,7 @@ export function visitIntegrationsWithStaticResponseForCapabilities(
         staticResponseForCapabilities
     );
 }
-export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+export function visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
     staticResponseForCapabilities,
     integrationSource,
     integrationType,
@@ -356,7 +356,7 @@ export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilit
         getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
         staticResponseForCapabilities
     );
-    cy.location('pathname').should('eq', basePathRedirect);
+    cy.get(`h1:contains("We couldn't find that page")`);
 }
 
 // interact on dashboard

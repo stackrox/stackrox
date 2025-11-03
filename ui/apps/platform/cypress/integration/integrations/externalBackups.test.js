@@ -13,7 +13,7 @@ import {
     testIntegrationInFormWithStoredCredentials,
     visitIntegrationsTable,
     visitIntegrationsWithStaticResponseForCapabilities,
-    visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities,
+    visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
 
@@ -228,12 +228,10 @@ describe('Backup Integrations', () => {
             visitIntegrationsWithStaticResponseForCapabilities({
                 body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
             });
-            cy.get('h2:contains("Backup Integrations")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("Amazon S3")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("S3 Compatible API")').should('not.exist');
-            cy.get('a .pf-v5-c-card__title:contains("Google Cloud Storage")').should('not.exist');
+            cy.get('nav.pf-m-tertiary a:contains("Notifier")').should('exist'); // preceding tab
+            cy.get('nav.pf-m-tertiary a:contains("Backup")').should('not.exist');
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },
@@ -241,7 +239,7 @@ describe('Backup Integrations', () => {
                 's3'
             );
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },
@@ -249,7 +247,7 @@ describe('Backup Integrations', () => {
                 's3compatible'
             );
 
-            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+            visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
                     body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
                 },
