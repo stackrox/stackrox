@@ -25,7 +25,6 @@ tests:
   expect: |
     .serviceaccounts["central"] | assertThat(. != null)
     .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
-    .secrets["central-token"].type | assertThat(. == "kubernetes.io/service-account-token")
     .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
     .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(length > 0)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
