@@ -1,21 +1,16 @@
 package m2m
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	v1 "k8s.io/api/authentication/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -23,23 +18,6 @@ var (
 	serviceAccountIssuer string
 	getIssuerOnce        sync.Once
 )
-
-// kubeTokenVerifier verifies tokens using the Kubernetes TokenReview API.
-type kubeTokenVerifier struct {
-	clientset kubernetes.Interface
-}
-
-func newKubeTokenVerifier() (*kubeTokenVerifier, error) {
-	cfg, err := k8sutil.GetK8sInClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	c, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &kubeTokenVerifier{c}, nil
-}
 
 // GetKubernetesIssuerOrEmpty returns the kubernetes token issuer or an empty
 // string if the issuer could not be identified.
@@ -90,36 +68,4 @@ func getKubernetesIssuer() (string, error) {
 	}
 
 	return discovery.Issuer, nil
-}
-
-func (k *kubeTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
-	tr := &v1.TokenReview{
-		Spec: v1.TokenReviewSpec{
-			Token: rawIDToken,
-		},
-	}
-	trResp, err := k.clientset.AuthenticationV1().TokenReviews().
-		Create(ctx, tr, metaV1.CreateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "performing TokenReview request")
-	}
-	if !trResp.Status.Authenticated {
-		return nil, errors.Errorf("token not authenticated: %s", trResp.Status.Error)
-	}
-	return tokenFromReview(&trResp.Status), nil
-}
-
-func tokenFromReview(trs *v1.TokenReviewStatus) *IDToken {
-	return &IDToken{
-		Subject: trs.User.Username,
-		Claims: func(v any) error {
-			trsPtr, ok := (v).(*v1.TokenReviewStatus)
-			if !ok {
-				return errox.InvariantViolation.New("unexpected claims unmarshalling request")
-			}
-			*trsPtr = *trs
-			return nil
-		},
-		Audience: trs.Audiences,
-	}
 }

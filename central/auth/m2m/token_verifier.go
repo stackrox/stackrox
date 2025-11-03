@@ -22,10 +22,6 @@ type tokenVerifier interface {
 }
 
 func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
-	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		return newKubeTokenVerifier()
-	}
-
 	tlsConfig, err := tlsConfigWithCustomCertPool()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating TLS config for token verification")
