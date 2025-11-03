@@ -23,7 +23,7 @@ var (
 // string if the issuer could not be identified.
 func GetKubernetesIssuerOrEmpty() string {
 	getIssuerOnce.Do(func() {
-		issuer, err := getKubernetesIssuer()
+		issuer, err := GetKubernetesIssuer()
 		if err != nil {
 			log.Errorf("could not read service account issuer: %v", err)
 			return
@@ -33,8 +33,8 @@ func GetKubernetesIssuerOrEmpty() string {
 	return serviceAccountIssuer
 }
 
-// getKubernetesIssuer discovers the kubernetes token issuer.
-func getKubernetesIssuer() (string, error) {
+// GetKubernetesIssuer discovers the kubernetes token issuer.
+func GetKubernetesIssuer() (string, error) {
 	cfg, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "could not get k8s in cluster configuration")
