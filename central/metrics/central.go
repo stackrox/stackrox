@@ -475,9 +475,6 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 	if msg.GetEvent() == nil {
 		return
 	}
-	if msg.GetEvent().GetResource() == nil {
-		return
-	}
 	label := "passed"
 	if deduped {
 		label = "deduped"

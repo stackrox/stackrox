@@ -184,7 +184,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
 	messageType := reflectutils.Type(msg.GetMsg())
 	var eventType string
-	if msg.GetEvent() != nil && msg.GetEvent().GetResource() != nil {
+	if msg.GetEvent() != nil {
 		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
 	}
 	return fmt.Sprintf("%s_%s", messageType, eventType)

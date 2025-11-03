@@ -233,12 +233,10 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// evaluated as objects come into the queue and an object may have been successfully processed after
 	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.successfullyProcessed, key)
-		if msg.GetEvent().GetResource() != nil {
-			dedupingHashCounterVec.With(prometheus.Labels{
-				"cluster":      d.clusterID,
-				"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
-				"Operation":    ops.Remove.String()}).Inc()
-		}
+		dedupingHashCounterVec.With(prometheus.Labels{
+			"cluster":      d.clusterID,
+			"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+			"Operation":    ops.Remove.String()}).Inc()
 		return
 	}
 
@@ -248,12 +246,10 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 		delete(d.received, key)
 	}
 
-	if msg.GetEvent().GetResource() != nil {
-		dedupingHashCounterVec.With(prometheus.Labels{
-			"cluster":      d.clusterID,
-			"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
-			"Operation":    ops.Add.String()}).Inc()
-	}
+	dedupingHashCounterVec.With(prometheus.Labels{
+		"cluster":      d.clusterID,
+		"ResourceType": eventPkg.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource()),
+		"Operation":    ops.Add.String()}).Inc()
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),
 		processed: true,

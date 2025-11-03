@@ -10,6 +10,9 @@ import (
 
 // GetEventTypeWithoutPrefix trims the *central.SensorEvent_ from the event type
 func GetEventTypeWithoutPrefix(i interface{}) string {
+	if i == nil {
+		return ""
+	}
 	return stringutils.GetAfter(reflectutils.Type(i), "_")
 }
 
