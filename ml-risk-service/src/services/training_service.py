@@ -8,7 +8,7 @@ import threading
 import time
 from typing import Dict, Any, List, Optional
 
-from training.train_pipeline import TrainingPipeline
+from src.training.train_pipeline import TrainingPipeline
 from src.storage.model_storage import ModelStorageManager, StorageConfig
 from src.api.schemas import (
     TrainModelRequest,
@@ -292,7 +292,7 @@ class TrainingService:
             TrainModelResponse with training results
         """
         try:
-            from training.data_loader import TrainingDataLoader
+            from src.training.data_loader import TrainingDataLoader
 
             logger.info(f"Starting model training from Central API with filters: {filters}")
 

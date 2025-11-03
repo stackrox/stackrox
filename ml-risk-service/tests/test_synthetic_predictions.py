@@ -17,7 +17,7 @@ from typing import Dict, Any, List
 
 from src.models.ranking_model import RiskRankingModel, PredictionResult, ModelMetrics
 from src.feature_extraction.baseline_features import BaselineFeatureExtractor, BaselineRiskFactors
-from training.data_loader import JSONTrainingDataGenerator, TrainingDataLoader
+from src.training.data_loader import JSONTrainingDataGenerator, TrainingDataLoader
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@ from src.api.schemas import (
 )
 from src.services.training_service import TrainingService
 from src.services.risk_service import RiskPredictionService
-from training.data_loader import TrainingDataLoader
+from src.training.data_loader import TrainingDataLoader
 
 logger = logging.getLogger(__name__)
 

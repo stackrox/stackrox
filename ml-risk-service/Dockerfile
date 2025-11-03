@@ -36,7 +36,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Copy source code after dependencies are cached
 COPY src/ ./src/
-COPY training/ ./training/
 COPY README.md ./
 
 # Install the project itself with bytecode compilation
@@ -83,12 +82,11 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Create app directory structure
 WORKDIR /app
-RUN mkdir -p /app/models /app/training /app/reports /app/logs \
+RUN mkdir -p /app/models /app/reports /app/logs \
     && chown -R mlrisk:mlrisk /app
 
 # Copy application code from builder (where it was installed as a package)
 COPY --from=builder /app/src/ /app/src/
-COPY --from=builder /app/training/ /app/training/
 
 # Copy configuration files
 # Use template config with environment variable placeholders
