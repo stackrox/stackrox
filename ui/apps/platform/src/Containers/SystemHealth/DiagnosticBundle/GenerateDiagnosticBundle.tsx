@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
@@ -8,13 +7,13 @@ import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useModal from 'hooks/useModal';
 import useMetadata from 'hooks/useMetadata';
 import downloadDiagnostics from 'services/DebugService';
-import type { DiagnosticBundleRequest } from 'services/DebugService';
 import { getVersionedDocs } from 'utils/versioning';
 
 import DiagnosticBundleForm from './DiagnosticBundleForm';
+import type { DiagnosticBundleFormValues } from './DiagnosticBundleForm';
 import { getQueryString } from './diagnosticBundleUtils';
 
-const initialValues: DiagnosticBundleRequest = {
+const initialValues: DiagnosticBundleFormValues = {
     filterByClusters: [],
     isDatabaseDiagnosticsOnly: false,
     includeComplianceOperatorResources: false,
@@ -32,15 +31,11 @@ function GenerateDiagnosticBundle(): ReactElement {
             onSubmit: triggerDownload,
         });
 
-    const startingTimeIso: string | null = useMemo(() => {
-        if (!values.startingDate) {
-            return null;
-        }
-        const time = values.startingTime || '00:00';
-        return `${values.startingDate}T${time}:00.000Z`;
-    }, [values.startingDate, values.startingTime]);
-
     function triggerDownload(): void {
+        const startingTimeIso = values.startingDate
+            ? `${values.startingDate}T${values.startingTime || '00:00'}:00.000Z`
+            : null;
+
         const queryString = getQueryString({
             selectedClusterNames: values.filterByClusters,
             startingTimeIso,

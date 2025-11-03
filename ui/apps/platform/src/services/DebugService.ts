@@ -1,13 +1,5 @@
 import { saveFile } from 'services/DownloadService';
 
-export type DiagnosticBundleRequest = {
-    startingDate: string;
-    startingTime: string;
-    filterByClusters: string[];
-    isDatabaseDiagnosticsOnly: boolean;
-    includeComplianceOperatorResources: boolean;
-};
-
 /**
  * Downloads diagnostic zip.
  * @param {string} queryString (assume it includes initial ? if non-empty)

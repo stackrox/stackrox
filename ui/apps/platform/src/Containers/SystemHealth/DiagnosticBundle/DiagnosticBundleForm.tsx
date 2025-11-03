@@ -16,10 +16,17 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
-import type { DiagnosticBundleRequest } from 'services/DebugService';
+
+export type DiagnosticBundleFormValues = {
+    startingDate: string; // YYYY-MM-DD or empty string, derived from patternfly date picker
+    startingTime: string; // HH:MM or empty string, derived from patternfly time picker
+    filterByClusters: string[];
+    isDatabaseDiagnosticsOnly: boolean;
+    includeComplianceOperatorResources: boolean;
+};
 
 export type DiagnosticBundleFormProps = {
-    values: DiagnosticBundleRequest;
+    values: DiagnosticBundleFormValues;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
