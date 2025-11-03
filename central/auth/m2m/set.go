@@ -85,7 +85,7 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 	}
 
 	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		if serviceAccountIssuer := GetKubernetesIssuerOrEmpty(); serviceAccountIssuer != "" {
+		if serviceAccountIssuer, _ := GetKubernetesIssuer(); serviceAccountIssuer != "" {
 			t.tokenExchangers[serviceAccountIssuer] = tokenExchanger
 		}
 	}

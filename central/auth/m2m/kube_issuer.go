@@ -16,35 +16,32 @@ import (
 )
 
 var (
-	serviceAccountIssuer string
-	getIssuerOnce        sync.Once
+	serviceAccountIssuer      string
+	serviceAccountIssuerError error
+	getIssuerOnce             sync.Once
 )
 
-// GetKubernetesIssuerOrEmpty returns the kubernetes token issuer or an empty
-// string if the issuer could not be identified.
-func GetKubernetesIssuerOrEmpty() string {
+// SetKubernetesIssuerForTest is used for testing the datastore without reading
+// the in-cluster Kubernetes configuration.
+func SetKubernetesIssuerForTest(_ *testing.T, issuer string) {
 	getIssuerOnce.Do(func() {
-		if serviceAccountIssuer != "" {
-			return
-		}
-		issuer, err := GetKubernetesIssuer()
-		if err != nil {
-			log.Errorf("could not read service account issuer: %v", err)
-			return
-		}
 		serviceAccountIssuer = issuer
 	})
-	return serviceAccountIssuer
-}
-
-// SetKubernetesIssuerForTest is used for testing the datastore without reading
-// a Kubernetes configuration.
-func SetKubernetesIssuerForTest(_ *testing.T, issuer string) {
-	serviceAccountIssuer = issuer
 }
 
 // GetKubernetesIssuer discovers the kubernetes token issuer.
 func GetKubernetesIssuer() (string, error) {
+	getIssuerOnce.Do(func() {
+		serviceAccountIssuer, serviceAccountIssuerError = getKubernetesIssuer()
+		if serviceAccountIssuerError != nil {
+			log.Errorf("could not read service account issuer: %v",
+				serviceAccountIssuerError)
+		}
+	})
+	return serviceAccountIssuer, serviceAccountIssuerError
+}
+
+func getKubernetesIssuer() (string, error) {
 	cfg, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "could not get k8s in cluster configuration")
