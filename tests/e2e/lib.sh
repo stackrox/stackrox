@@ -331,6 +331,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_SCANNER_V4_MATCHER_READINESS'
+    customize_envVars+=$'\n        value: "vulnerability"'
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
