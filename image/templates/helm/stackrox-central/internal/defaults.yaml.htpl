@@ -66,8 +66,10 @@ defaults:
         enabled: false
       route:
         enabled: false
+        redirectInsecure: true
         reencrypt:
           enabled: false
+          redirectInsecure: true
     db:
       external: false
 

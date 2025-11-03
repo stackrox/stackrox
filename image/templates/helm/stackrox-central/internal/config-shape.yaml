@@ -73,9 +73,11 @@ central:
     route:
       enabled: null # bool
       host: null # string
+      redirectInsecure: null # bool
       reencrypt:
         enabled: null # bool
         host: null # string
+        redirectInsecure: null # bool
         tls:
           caCertificate: null # string
           certificate: null # string
