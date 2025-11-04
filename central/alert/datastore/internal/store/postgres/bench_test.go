@@ -60,6 +60,8 @@ func BenchmarkMany(b *testing.B) {
 			ticker.Stop()
 			b.ReportMetric(float64(maxHeap-startHeap), "max_heap_bytes")
 			b.ReportMetric(float64(maxHeapObj-startHeapObj), "max_heap_objects")
+			b.ReportMetric(float64(startHeap), "start_heap_bytes")
+			b.ReportMetric(float64(startHeapObj), "start_heap_objects")
 		})
 		b.Run(fmt.Sprintf("get %d alerts", n), func(b *testing.B) {
 			for b.Loop() {
