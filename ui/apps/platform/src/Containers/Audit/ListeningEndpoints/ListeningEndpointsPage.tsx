@@ -131,28 +131,10 @@ function ListeningEndpointsPage() {
         setEntity(selection);
     }
 
-<<<<<<< HEAD
-    const updateSearchValue = useMemo(
-        () => debounce((value: string) => setSearchValue(value), 800),
-        []
-    );
-
-    function onSelectAutocompleteValue(value) {
-        const oldValue = searchValueAsArray(searchFilter[entity]);
-        const newValue = oldValue.includes(value)
-            ? oldValue.filter((f) => f !== value)
-            : [...oldValue, value];
-        onSearchFilterChange({ ...searchFilter, [entity]: newValue });
-    }
-
     function onSearchFilterChange(searchFilter: SearchFilter) {
         setSearchFilter(searchFilter);
         setPage(1);
-        setSearchValue('');
-=======
-    function toggleAutocomplete() {
-        setAutocompleteOpen(!autocompleteOpen);
->>>>>>> f994540640 (Migrate ListeningEndpointPage Select components)
+        setAutocompleteInputValue('');
     }
 
     function onSelectAutocompleteValue(
@@ -180,14 +162,14 @@ function ListeningEndpointsPage() {
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"
-            onClick={toggleAutocomplete}
+            onClick={() => setAutocompleteOpen(!autocompleteOpen)}
             isExpanded={autocompleteOpen}
             isFullWidth
         >
             <TextInputGroup isPlain>
                 <TextInputGroupMain
                     value={autocompleteInputValue}
-                    onClick={toggleAutocomplete}
+                    onClick={() => setAutocompleteOpen(!autocompleteOpen)}
                     onChange={(_event, value) => setAutocompleteInputValue(value)}
                     id="autocomplete-input"
                     placeholder={`Filter results by ${entity}`}
