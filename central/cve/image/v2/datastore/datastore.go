@@ -25,8 +25,6 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
-
-	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
 // New returns a new instance of a DataStore.
