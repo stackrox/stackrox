@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -32,7 +31,6 @@ var (
 		user.With(permissions.View(resources.Integration)): {
 			v1.APITokenService_GetAPIToken_FullMethodName,
 			v1.APITokenService_GetAPITokens_FullMethodName,
-			v1.APITokenService_ListAllowedTokenRoles_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
 			v1.APITokenService_RevokeToken_FullMethodName,

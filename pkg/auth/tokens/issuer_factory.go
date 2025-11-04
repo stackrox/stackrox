@@ -51,6 +51,10 @@ func (f *issuerFactory) CreateIssuer(source Source, options ...Option) (Issuer, 
 }
 
 func (f *issuerFactory) createClaims(sourceID string, roxClaims RoxClaims) *Claims {
+	var expiry *jwt.NumericDate
+	if roxClaims.ExpireAt != nil {
+		expiry = jwt.NewNumericDate(*roxClaims.ExpireAt)
+	}
 	return &Claims{
 		Claims: jwt.Claims{
 			IssuedAt: jwt.NewNumericDate(time.Now()),

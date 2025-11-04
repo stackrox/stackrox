@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/go-jose/go-jose/v4/jwt"
 )
@@ -27,7 +28,8 @@ type RoxClaims struct {
 	// ExternalUser represents the claim that this token identifies a user from an external identity provider.
 	ExternalUser *ExternalUserClaim `json:"external_user,omitempty"`
 	// Name represents the name of the token assigned by the creator.
-	Name string `json:"name,omitempty"`
+	Name     string `json:"name,omitempty"`
+	ExpireAt *time.Time
 }
 
 // Claims are the claims contained in a token.
