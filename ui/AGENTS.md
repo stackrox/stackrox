@@ -64,7 +64,7 @@ return validItems.length > 0 ? (
     ))}
   </Stack>
 ) : (
-  "Fallback"
+  'Fallback'
 );
 ```
 
@@ -88,7 +88,9 @@ const { mutate, isLoading, isSuccess } = useRestMutation(createMyResource, {
 
 ```typescript
 export function fetchMyResource(id: string): Promise<MyResource> {
-  return axios.get<MyResource>(`/v1/resources/${id}`).then((r) => r.data);
+  return axios
+    .get<MyResource>(`/v1/resources/${id}`)
+    .then((resource) => resource.data);
 }
 ```
 
@@ -140,8 +142,7 @@ Always check permissions when:
 
 ```typescript
 const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-const hasResourceAccess = hasReadAccess("ResourceName");
-const shouldShowFeature = isFeatureEnabled && hasResourceAccess;
+const hasReadAccessForResourceName = hasReadAccess('ResourceName');
 ```
 
 **Cross-link validation:** When Component A links to Page B, ensure users have access to both.
