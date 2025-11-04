@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import type Ref from 'react';
 import {
     Badge,
     Button,
@@ -13,10 +14,10 @@ import {
     MenuSearch,
     MenuSearchInput,
     MenuToggle,
-    MenuToggleElement,
     SearchInput,
     Select,
 } from '@patternfly/react-core';
+import type MenuToggleElement from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type RoleSelectorProps = {
@@ -39,7 +40,7 @@ function RoleSelector({
     onRoleSelectionClear,
 }: RoleSelectorProps) {
     const { isOpen: isRoleOpen, toggleSelect: toggleIsRoleOpen } = useSelectToggle();
-    const [input, setInput] = React.useState('');
+    const [input, setInput] = useState('');
 
     const handleTextInputChange = (value: string) => {
         setInput(value);
@@ -101,21 +102,21 @@ function RoleSelector({
         </Menu>
     );
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={() => toggleIsRoleOpen(!isRoleOpen)}
             isExpanded={isRoleOpen}
             isDisabled={selectedRoles.length === 0 || !isEditable || isGenerated}
-            aria-label={"Select roles"}
-            className={"role-select"}
-            variant={"plainText"}
+            aria-label={'Select roles'}
+            className={'role-select'}
+            variant={'plainText'}
         >
             <Flex alignSelf={{ default: 'alignSelfCenter' }}>
                 <FlexItem spacer={{ default: 'spacerSm' }}>
-                        <span style={{ position: 'relative', top: '1px' }}>
-                            {roles.length === 0 ? 'No roles' : 'Roles'}
-                        </span>
+                    <span style={{ position: 'relative', top: '1px' }}>
+                        {roles.length === 0 ? 'No roles' : 'Roles'}
+                    </span>
                 </FlexItem>
                 {selectedRoles.length !== 0 && (
                     <FlexItem spacer={{ default: 'spacerSm' }}>
