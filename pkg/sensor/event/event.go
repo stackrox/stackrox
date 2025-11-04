@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+const UnknownEventType = "UnknownEventType"
+
 // GetEventTypeWithoutPrefix trims the *central.SensorEvent_ from the event type
 func GetEventTypeWithoutPrefix(i interface{}) string {
+	if i == nil {
+		return UnknownEventType
+	}
 	return stringutils.GetAfter(reflectutils.Type(i), "_")
 }
 
