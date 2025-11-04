@@ -239,9 +239,7 @@ func isRetryableGRPCError(err error) bool {
 	}
 	code := grpcErr.Code()
 	switch code {
-	case codes.DeadlineExceeded:
-		return !errors.Is(err, context.Canceled)
-	case codes.Unavailable, codes.ResourceExhausted, codes.Internal:
+	case codes.DeadlineExceeded, codes.Unavailable, codes.ResourceExhausted:
 		return true
 	default:
 		return false
