@@ -105,6 +105,11 @@ var (
 	// Locks process baselines when their deployments leave the observation period
 	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTO_LOCK_PROCESS_BASELINES", enabled)
 
+	// CISAKEV enables support for CISA Known Exploited Vulnerabilities (KEV) data.
+	//
+	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
+	CISAKEV = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
+
 	// SFA enables monitoring of sensitive files.
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
 )
