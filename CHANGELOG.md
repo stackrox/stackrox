@@ -13,6 +13,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- Automatic HTTP to HTTPS redirection is now enabled by default for Central OpenShift routes (both passthrough and reencrypt). This can be disabled via Helm values `central.exposure.route.redirectInsecure` and `central.exposure.route.reencrypt.redirectInsecure`.
+
 ### Removed Features
 
 ### Deprecated Features
