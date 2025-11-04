@@ -54,7 +54,7 @@ class TrainingService:
         """
         try:
             with self._training_lock:
-                logger.info(f"Starting model training with {len(request.training_data)} examples")
+                logger.info(f"Starting model training with {len(request.training_data)} samples")
 
                 # Convert training data to internal format
                 training_samples = []
@@ -229,12 +229,12 @@ class TrainingService:
         import math
         return math.log1p(value) / math.log1p(100)
 
-    def generate_sample_training_data(self, num_examples: int = 100) -> str:
+    def generate_sample_training_data(self, num_samples: int = 100) -> str:
         """
         Generate sample training data for testing.
 
         Args:
-            num_examples: Number of examples to generate
+            num_samples: Number of samples to generate
 
         Returns:
             Path to generated training data file
@@ -248,10 +248,10 @@ class TrainingService:
             temp_file.close()
 
             # Generate sample data
-            result = self.training_pipeline.create_sample_training_data(temp_file.name, num_examples)
+            result = self.training_pipeline.create_sample_training_data(temp_file.name, num_samples)
 
             if result['success']:
-                logger.info(f"Generated {num_examples} sample training samples in {temp_file.name}")
+                logger.info(f"Generated {num_samples} sample training samples in {temp_file.name}")
                 return temp_file.name
             else:
                 # Clean up on failure
@@ -455,7 +455,7 @@ class TrainingService:
 
         Args:
             data_iterator: Iterator yielding Central API training samples
-            limit: Optional limit on number of examples to process
+            limit: Optional limit on number of samples to process
 
         Returns:
             List of TrainingSample objects ready for training

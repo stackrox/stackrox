@@ -52,7 +52,7 @@ class TrainingPipeline:
                 'data': {
                     'train_file': None,
                     'validation_split': 0.2,
-                    'max_examples': None
+                    'max_samples': None
                 },
                 'model': {
                     'algorithm': 'sklearn_ranksvm',
@@ -145,18 +145,18 @@ class TrainingPipeline:
             # Load training data
             self.training_data = self.data_loader.load_from_json(data_file)
 
-            # Limit examples if configured
-            max_examples = self.config.get('data', {}).get('max_examples')
-            if max_examples and len(self.training_data) > max_examples:
-                logger.info(f"Limiting training data to {max_examples} examples")
-                self.training_data = self.training_data[:max_examples]
+            # Limit samples if configured
+            max_samples = self.config.get('data', {}).get('max_samples')
+            if max_samples and len(self.training_data) > max_samples:
+                logger.info(f"Limiting training data to {max_samples} samples")
+                self.training_data = self.training_data[:max_samples]
 
             # Validate data quality
             validation_report = self.data_loader.validate_training_data(self.training_data)
 
             return {
                 'valid': validation_report['valid'],
-                'total_examples': len(self.training_data),
+                'total_samples': len(self.training_data),
                 'validation_report': validation_report
             }
 
@@ -222,7 +222,7 @@ class TrainingPipeline:
                     'epochs_completed': training_metrics.epochs_completed
                 },
                 'dataset_info': {
-                    'total_examples': len(self.training_data),
+                    'total_samples': len(self.training_data),
                     'feature_count': X.shape[1],
                     'groups_count': len(groups) if groups is not None else 0
                 }
@@ -379,7 +379,7 @@ class TrainingPipeline:
                 'model_info': self.model.get_model_info(),
                 'training_config': self.config,
                 'data_stats': {
-                    'total_examples': len(self.training_data) if self.training_data else 0
+                    'total_samples': len(self.training_data) if self.training_data else 0
                 },
                 'timestamp': datetime.now().isoformat()
             }
@@ -401,20 +401,20 @@ class TrainingPipeline:
             logger.error(f"Failed to save model and reports: {e}")
             return {'success': False, 'error': str(e)}
 
-    def create_sample_training_data(self, output_file: str, num_examples: int = 1000) -> Dict[str, Any]:
+    def create_sample_training_data(self, output_file: str, num_samples: int = 1000) -> Dict[str, Any]:
         """
         Create sample training data for testing the pipeline.
 
         Args:
             output_file: Path to output JSON file
-            num_examples: Number of examples to generate
+            num_samples: Number of samples to generate
 
         Returns:
             Generation results
         """
         try:
             generator = JSONTrainingDataGenerator()
-            generator.generate_sample_training_data(output_file, num_examples)
+            generator.generate_sample_training_data(output_file, num_samples)
 
             # Validate generated data
             test_data = self.data_loader.load_from_json(output_file)
@@ -423,7 +423,7 @@ class TrainingPipeline:
             return {
                 'success': True,
                 'output_file': output_file,
-                'examples_generated': num_examples,
+                'samples_generated': num_samples,
                 'validation_passed': validation_report['valid']
             }
 

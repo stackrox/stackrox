@@ -83,7 +83,7 @@ class CentralExportService:
                 if samples_yielded % self.batch_size == 0:
                     logger.info(f"Yielded {samples_yielded} training samples")
 
-            logger.info(f"Training data collection completed: {samples_yielded} examples")
+            logger.info(f"Training data collection completed: {samples_yielded} samples")
             self._log_final_risk_score_summary()
 
         except Exception as e:
@@ -120,7 +120,7 @@ class CentralExportService:
                 policy_future = executor.submit(self._collect_policies, policy_filters)
 
         # Stream workloads directly - no correlation needed
-        examples_yielded = 0
+        samples_yielded = 0
         workloads_received = 0
         try:
             for workload in self.client.stream_workloads(workload_filters):
@@ -131,14 +131,14 @@ class CentralExportService:
 
                 if training_sample:
                     yield training_sample
-                    examples_yielded += 1
+                    samples_yielded += 1
 
-                    if limit and examples_yielded >= limit:
+                    if limit and samples_yielded >= limit:
                         logger.info(f"Reached limit: {limit} training samples")
                         break
 
-                    if examples_yielded % self.batch_size == 0:
-                        logger.info(f"Processed {examples_yielded} workloads")
+                    if samples_yielded % self.batch_size == 0:
+                        logger.info(f"Processed {samples_yielded} workloads")
 
             # Wait for alerts/policies if needed
             if alert_future:
@@ -156,7 +156,7 @@ class CentralExportService:
                              f"Workload filters used: {workload_filters}")
             else:
                 logger.info(f"Received {workloads_received} workloads from Central API, "
-                          f"created {examples_yielded} valid training samples")
+                          f"created {samples_yielded} valid training samples")
 
         except Exception as e:
             logger.error(f"Error during workload streaming: {e}")
@@ -165,7 +165,7 @@ class CentralExportService:
                 policy_future.cancel()
             raise
 
-        logger.info(f"Workload streaming completed: {examples_yielded} examples from {workloads_received} workloads")
+        logger.info(f"Workload streaming completed: {samples_yielded} samples from {workloads_received} workloads")
 
     def _create_training_sample_from_workload(self, workload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """

@@ -35,7 +35,7 @@ class BaselineReproducer:
         Returns:
             Validation report with accuracy metrics
         """
-        logger.info(f"Validating baseline reproduction on {len(test_data)} examples")
+        logger.info(f"Validating baseline reproduction on {len(test_data)} samples")
 
         actual_scores = []
         predicted_scores = []
@@ -83,7 +83,7 @@ class BaselineReproducer:
                 })
 
                 if (i + 1) % 50 == 0:
-                    logger.info(f"Processed {i + 1} examples")
+                    logger.info(f"Processed {i + 1} samples")
 
             except Exception as e:
                 logger.warning(f"Failed to process example {i}: {e}")
@@ -91,7 +91,7 @@ class BaselineReproducer:
 
         # Calculate validation metrics
         if not actual_scores:
-            return {'valid': False, 'error': 'No valid examples to validate'}
+            return {'valid': False, 'error': 'No valid samples to validate'}
 
         actual_scores = np.array(actual_scores)
         predicted_scores = np.array(predicted_scores)
@@ -115,7 +115,7 @@ class BaselineReproducer:
 
         validation_report = {
             'valid': True,
-            'total_examples': len(actual_scores),
+            'total_samples': len(actual_scores),
             'metrics': {
                 'mse': float(mse),
                 'mae': float(mae),
@@ -240,7 +240,7 @@ class BaselineReproducer:
         analysis_report = {
             'multiplier_statistics': analysis,
             'impact_ranking': impact_ranking,
-            'total_examples': len(overall_scores),
+            'total_samples': len(overall_scores),
             'overall_score_stats': {
                 'mean': float(np.mean(overall_scores)),
                 'std': float(np.std(overall_scores)),
@@ -277,7 +277,7 @@ class BaselineReproducer:
             'multiplier_analysis': multiplier_analysis,
             'metadata': {
                 'test_data_file': test_data_file,
-                'total_examples': len(test_data),
+                'total_samples': len(test_data),
                 'timestamp': pd.Timestamp.now().isoformat()
             }
         }
@@ -359,7 +359,7 @@ class BaselineReproducer:
             generator = JSONTrainingDataGenerator()
 
             sample_file = "/tmp/sample_test_data.json"
-            generator.generate_sample_training_data(sample_file, num_examples=10)
+            generator.generate_sample_training_data(sample_file, num_samples=10)
 
             # Load and process the sample data
             test_data = self.data_loader.load_from_json(sample_file)
@@ -372,7 +372,7 @@ class BaselineReproducer:
 
             test_results = {
                 'success': True,
-                'sample_examples': len(test_data),
+                'sample_samples': len(test_data),
                 'feature_matrix_shape': X.shape,
                 'risk_score_range': (float(np.min(y)), float(np.max(y))),
                 'num_groups': len(groups),

@@ -165,7 +165,7 @@ class RiskPredictionService:
                     healthy=self.model_loaded,
                     model_version=self.model.model_version or "none",
                     last_training_time=0,  # Would track actual training time
-                    training_examples_count=0,  # Would track training data size
+                    training_samples_count=0,  # Would track training data size
                     current_metrics=current_metrics
                 )
 
@@ -175,7 +175,7 @@ class RiskPredictionService:
                 healthy=False,
                 model_version="error",
                 last_training_time=0,
-                training_examples_count=0,
+                training_samples_count=0,
                 current_metrics=ModelMetrics(
                     current_ndcg=0.0,
                     current_auc=0.0,

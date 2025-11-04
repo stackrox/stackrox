@@ -440,7 +440,7 @@ class FeatureImportanceAnalyzer:
                     ],
                     'category_contributions': exp.category_contributions
                 }
-                for exp in sample_explanations[:10]  # Include first 10 as examples
+                for exp in sample_explanations[:10]  # Include first 10 as samples
             ],
             'summary_statistics': self._calculate_explanation_statistics(sample_explanations),
             'metadata': {

@@ -65,7 +65,7 @@ class TrainingDataLoader:
             training_samples = []
             deployments = data.get('deployments', [])
 
-            logger.info(f"Loading {len(deployments)} deployment examples from {json_file_path}")
+            logger.info(f"Loading {len(deployments)} deployment samples from {json_file_path}")
 
             for i, deployment_record in enumerate(deployments):
                 try:
@@ -73,7 +73,7 @@ class TrainingDataLoader:
                     training_samples.append(example)
 
                     if (i + 1) % 100 == 0:
-                        logger.info(f"Processed {i + 1} examples")
+                        logger.info(f"Processed {i + 1} samples")
 
                 except Exception as e:
                     logger.warning(f"Failed to process deployment record {i}: {e}")
@@ -139,18 +139,18 @@ class TrainingDataLoader:
             logger.info(f"Final merged filters: {export_filters}")
 
             # Stream training data
-            examples_yielded = 0
+            samples_yielded = 0
             for example in export_service.collect_training_data(export_filters):
                 yield example
-                examples_yielded += 1
+                samples_yielded += 1
 
-                if examples_yielded % 100 == 0:
-                    logger.info(f"Streamed {examples_yielded} training samples")
+                if samples_yielded % 100 == 0:
+                    logger.info(f"Streamed {samples_yielded} training samples")
 
             # Clean up
             export_service.close()
 
-            logger.info(f"Completed streaming: {examples_yielded} training samples")
+            logger.info(f"Completed streaming: {samples_yielded} training samples")
 
         except ImportError as e:
             logger.error(f"Central API components not available: {e}")
@@ -295,7 +295,7 @@ class TrainingDataLoader:
         y_float = np.array(risk_scores, dtype=np.float32)
         groups = np.array(group_sizes, dtype=np.int32)
 
-        logger.info(f"Created ranking dataset: {X.shape[0]} examples, {X.shape[1]} features, {len(groups)} groups")
+        logger.info(f"Created ranking dataset: {X.shape[0]} samples, {X.shape[1]} features, {len(groups)} groups")
         logger.info(f"Risk score range: {y_float.min():.6f} - {y_float.max():.6f}, unique values: {len(np.unique(y_float))}")
 
         # Return float scores - ranking transformation will be done in the model after data splitting
@@ -370,7 +370,7 @@ class TrainingDataLoader:
 
         validation_report = {
             'valid': True,
-            'total_examples': len(training_samples),
+            'total_samples': len(training_samples),
             'feature_consistency': True,
             'risk_score_stats': {},
             'issues': []
@@ -432,21 +432,21 @@ class JSONTrainingDataGenerator:
     def __init__(self):
         self.baseline_extractor = BaselineFeatureExtractor()
 
-    def generate_sample_training_data(self, output_file: str, num_examples: int = 100) -> None:
+    def generate_sample_training_data(self, output_file: str, num_samples: int = 100) -> None:
         """
         Generate sample training data for testing.
         Creates synthetic deployment data with realistic risk patterns.
 
         Args:
             output_file: Path to output JSON file
-            num_examples: Number of examples to generate
+            num_samples: Number of samples to generate
         """
         import random
         import uuid
 
         deployments = []
 
-        for i in range(num_examples):
+        for i in range(num_samples):
             deployment_data = self._generate_sample_deployment(i)
             images_data = self._generate_sample_images(random.randint(1, 3))
             alerts_data = self._generate_sample_alerts(random.randint(0, 5))
@@ -462,7 +462,7 @@ class JSONTrainingDataGenerator:
             'deployments': deployments,
             'metadata': {
                 'generated_at': datetime.now().isoformat(),
-                'num_examples': num_examples,
+                'num_samples': num_samples,
                 'generator': 'JSONTrainingDataGenerator'
             }
         }
@@ -470,7 +470,7 @@ class JSONTrainingDataGenerator:
         with open(output_file, 'w') as f:
             json.dump(training_data, f, indent=2, default=str)
 
-        logger.info(f"Generated {num_examples} sample training samples in {output_file}")
+        logger.info(f"Generated {num_samples} sample training samples in {output_file}")
 
     def _generate_sample_deployment(self, index: int) -> Dict[str, Any]:
         """Generate sample deployment data."""
