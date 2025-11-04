@@ -7,7 +7,6 @@ import {
     DescriptionListTerm,
     Form,
     PageSection,
-    SelectOption,
     TextInput,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
@@ -16,7 +15,6 @@ import * as yup from 'yup';
 
 import type { ApiToken } from 'types/apiToken.proto';
 
-import SelectSingle from 'Components/SelectSingle';
 import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
