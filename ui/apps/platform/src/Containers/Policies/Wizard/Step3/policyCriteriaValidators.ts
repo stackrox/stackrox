@@ -2,7 +2,7 @@ import type { ClientPolicy, ClientPolicySection } from 'types/policy.proto';
 
 export type PolicyContext = Pick<ClientPolicy, 'eventSource' | 'lifecycleStages'>;
 
-export type SectionValidator = {
+export type PolicySectionValidator = {
     name: string;
     appliesTo: (context: PolicyContext) => boolean;
     validate: (section: ClientPolicySection, context: PolicyContext) => string | undefined;
@@ -13,11 +13,11 @@ export type SectionValidator = {
  * Each validator:
  * - Has a descriptive name for debugging
  * - Defines which contexts it applies to (based on event source, lifecycle stages, etc.)
- * - Validates a policy section and returns an error message or undefined
+ * - Validates a policy section and returns an error message upon failure, or undefined if successful
  */
-export const policySectionValidators: SectionValidator[] = [
+export const policySectionValidators: PolicySectionValidator[] = [
     {
-        name: 'audit-log-required-fields',
+        name: 'Audit log required fields',
         appliesTo: (context) => context.eventSource === 'AUDIT_LOG_EVENT',
         validate: (section) => {
             const hasResource = section.policyGroups.some(
@@ -25,6 +25,9 @@ export const policySectionValidators: SectionValidator[] = [
             );
             const hasVerb = section.policyGroups.some((g) => g.fieldName === 'Kubernetes API Verb');
 
+            if (!hasResource && !hasVerb) {
+                return 'The [Kubernetes resource type] and [Kubernetes API verb] criteria must be present for audit log policies.';
+            }
             if (!hasResource) {
                 return 'The [Kubernetes resource type] criterion must be present for audit log policies.';
             }
