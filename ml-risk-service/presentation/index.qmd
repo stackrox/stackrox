@@ -29,16 +29,43 @@ format:
 
 ## What Is Risk?
 
+::: columns
+::: {.column width="50%"}
 ::: incremental
 - **ACS monitors thousands of deployments** across customer clusters
 - Each deployment has **dozens of security characteristics**:
   - Policy violations
   - CVE vulnerabilities
   - Privileged containers
+:::
+:::
+
+::: {.column width="50%"}
+::: incremental
+-
   - Network exposure
   - Process anomalies
   - ... and many more
+
 - **Question:** Which deployments should security teams focus on first?
+:::
+:::
+:::
+
+## The Existing Risk Feature
+
+![Current risk assessment in ACS](diagrams/current-risk.png){width="80%"}
+
+## Shortcomings of Current Approach
+
+::: incremental
+- **🔒 Intransparent**
+  - The risk score is baked into ACS with a hidden and complex formula.
+  - Customers cannot understand or validate how scores are calculated.
+
+- **⚙️ Inflexible**
+  - Does not adapt to individual customer needs or emerging trends.
+  - One-size-fits-all approach across all environments.
 :::
 
 ## Current Approach: Rule-Based Multipliers
@@ -48,18 +75,11 @@ Risk Score =
   Policy Violations ×
   Process Baseline ×
   Vulnerabilities ×
-  Service Config ×
-  Reachability ×
   Risky Components ×
   Component Count ×
-  Image Age
+  Image Age ×
+  ...
 ```
-
-::: incremental
-- **Pros:** Deterministic, explainable
-- **Cons:** Manually tuned, doesn't learn from data
-- **Gap:** Can't adapt to changing threat landscape
-:::
 
 ## The ML Solution
 

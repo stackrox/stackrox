@@ -228,6 +228,8 @@ Stephan Heßelmann
 </section>
 <section id="what-is-risk" class="slide level2">
 <h2>What Is Risk?</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
 <ul>
 <li class="fragment"><strong>ACS monitors thousands of deployments</strong> across customer clusters</li>
 <li class="fragment">Each deployment has <strong>dozens of security characteristics</strong>:
@@ -235,11 +237,36 @@ Stephan Heßelmann
 <li class="fragment">Policy violations</li>
 <li class="fragment">CVE vulnerabilities</li>
 <li class="fragment">Privileged containers</li>
+</ul></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<ul>
+<li class="fragment"><ul>
 <li class="fragment">Network exposure</li>
 <li class="fragment">Process anomalies</li>
 <li class="fragment">… and many more</li>
 </ul></li>
 <li class="fragment"><strong>Question:</strong> Which deployments should security teams focus on first?</li>
+</ul>
+</div></div>
+</section>
+<section id="the-existing-risk-feature" class="slide level2">
+<h2>The Existing Risk Feature</h2>
+
+<img data-src="diagrams/current-risk.png" style="width:80.0%" class="r-stretch quarto-figure-center"><p class="caption">Current risk assessment in ACS</p></section>
+<section id="shortcomings-of-current-approach" class="slide level2">
+<h2>Shortcomings of Current Approach</h2>
+<ul>
+<li class="fragment"><strong>🔒 Intransparent</strong>
+<ul>
+<li class="fragment">The risk score is baked into ACS with a hidden and complex formula.</li>
+<li class="fragment">Customers cannot understand or validate how scores are calculated.</li>
+</ul></li>
+<li class="fragment"><strong>⚙️ Inflexible</strong>
+<ul>
+<li class="fragment">Does not adapt to individual customer needs or emerging trends.</li>
+<li class="fragment">One-size-fits-all approach across all environments.</li>
+</ul></li>
 </ul>
 </section>
 <section id="current-approach-rule-based-multipliers" class="slide level2">
@@ -248,16 +275,10 @@ Stephan Heßelmann
   Policy Violations ×
   Process Baseline ×
   Vulnerabilities ×
-  Service Config ×
-  Reachability ×
   Risky Components ×
   Component Count ×
-  Image Age</code></pre>
-<ul>
-<li class="fragment"><strong>Pros:</strong> Deterministic, explainable</li>
-<li class="fragment"><strong>Cons:</strong> Manually tuned, doesn’t learn from data</li>
-<li class="fragment"><strong>Gap:</strong> Can’t adapt to changing threat landscape</li>
-</ul>
+  Image Age ×
+  ...</code></pre>
 </section>
 <section id="the-ml-solution" class="slide level2">
 <h2>The ML Solution</h2>
