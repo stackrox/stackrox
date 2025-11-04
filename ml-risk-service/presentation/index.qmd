@@ -22,7 +22,6 @@ format:
 3. **Training Pipeline**: From Central data to trained model
 4. **Predictions**: How to rank deployments in production
 5. **Vibe Coding**: Current prototype status
-6. **Roadmap**: Possible improvements
 :::
 
 # The Challenge {background-color="#2d2d2d"}
@@ -123,22 +122,22 @@ if riskScore > maxMultiplier {
 ## The Machine Learning Solution
 
 ::: incremental
-- **Learn** from historical deployment data
-- **Identify** which security features matter most
-- **Rank** deployments by learned feature weight
-- **Explain** what features contribute to high risk scores
-- **Improve** continuously as new data arrives
+- **Learn** from real or synthetic training data.
+- **Identify** which security features matter most.
+- **Rank** deployments by learned feature weights.
+- **Explain** what features contribute to high risk scores.
+- **Improve** continuously as new data arrives.
 :::
 
 # The Algorithm {background-color="#2d2d2d"}
 
 ## Random Forest: The Committee Approach
 
-**Analogy:** Assessing fire risk for a house
+**Analogy:** Assessing fire risks for a house.
 
 ::: incremental
 - Instead of **1 inspector** with a rigid checklist...
-  - ... ask **1000 inspectors**
+  - ... ask **1000 inspectors**.
 - Each inspector looks at different factors:
   - Electrical wiring + smoke detectors
   - Flammable materials + escape routes
@@ -154,26 +153,26 @@ if riskScore > maxMultiplier {
 
 ::: incremental
 1. ✅ **Robust against outliers**
-   - If one tree makes a mistake, 999 others can correct it
+   - If one tree makes a mistake, 999 others can correct it.
 
 2. ✅ **Handles complexity**
-   - Learns non-linear relationships automatically
+   - Learns non-linear relationships automatically.
 
 3. ✅ **Provides Explanations**
-   - Feature importance: which security issues matter most
+   - Feature importance: which security issues matter most.
 
 4. ✅ **Simple Training**
-   - No epochs, no backpropagation, no GPUs required
+   - No epochs, no backpropagation, no GPUs required.
 :::
 
 ## Why **not** Random Forest?
 
 ::: incremental
 1. ❌ **Just a regression algorithm**
-   - No actual AI. Not in the training data -> it won't be learned.
+   - No actual AI. Not in the training data -> won't be learned.
 
 2. ❌ **Supervised learning**
-   - Predictions are only as good the training input.
+   - Predictions are only as good the training input. Feature engineering matters.
 
 3. ❌ **Retraining**
    - Learning new things requires new training data + model retraining.
@@ -203,47 +202,6 @@ Is vulnerability_score > 7.5?
 
 ![](diagrams/training-pipeline.svg){fig-align="center" width="100%"}
 
-## Performance Metric: NDCG
-
-**NDCG = Normalized Discounted Cumulative Gain**
-
-::: incremental
-- Measures **ranking quality** on 0-1 scale
-- Values closer to **1.0** = better ranking
-
-**Example:**
-```
-True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
-                                     ↑ Small error at top
-NDCG ≈ 0.98  (98% as good as perfect ranking)
-```
-:::
-
-## Typical Performance
-
-:::: {.columns}
-::: {.column width="50%"}
-**Training Metrics**
-
-- NDCG: **0.75-0.95**
-- Training time: **~60 sec**
-:::
-
-::: {.column width="50%"}
-**Model Characteristics**
-
-- Feature count: **~20**
-- Training samples: **100-1000**
-- Model size: **~20 MB**
-- Trees: **1000**
-:::
-::::
-
-::: {.fragment}
-**Validation NDCG > 0.85** means model ranks deployments very well!
-:::
-
 # Predictions {background-color="#2d2d2d"}
 
 ## Prediction Flow
@@ -269,68 +227,89 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)
 :::
 ::::::
 
-# Vibe Coding {background-color="#2d2d2d"}
+## Performance Metric: NDCG
 
-## Current Status
+**NDCG = Normalized Discounted Cumulative Gain**
 
 ::: incremental
-🤖 **Model:**
+- Measures **ranking quality** on 0-1 scale
+- **1.0**: perfect ranking, **0.0**: worst ranking
 
-- Full training pipeline with Central integration
-- Feature extraction for deployments + images
-- RandomForest model (1000 trees, NDCG-optimized)
-- REST API endpoints for training and prediction
-- Model storage and versioning
-- Validation framework with NDCG tracking
-
-📦 **Deployment:**
-
-- Docker container with FastAPI service
-- Model persistence to local/GCS storage
-- gRPC and REST interfaces
+::: {.fragment}
+**Example:**
+```
+True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
+                                     ↑ Small error at bottom
+NDCG ≈ 0.98  (98% as good as perfect ranking)
+```
+:::
 :::
 
-## API Endpoints
+## Typical Performance
 
-```bash
-# Train model with Central data
-POST /api/v1/training/central/train-full
-  → Returns: model_version, validation_ndcg
+:::: {.columns}
+::: {.column width="50%"}
+**Training Metrics**
 
-# Predict risk for deployment
-POST /api/v1/predictions
-  → Returns: risk_score, feature_importance
+- NDCG: **0.75-0.95**
+- Training time: **~60 sec**
+:::
 
-# Validate model predictions
-POST /api/v1/training/central/validate-predictions
-  → Returns: mae, rmse, correlation, ndcg
+::: {.column width="50%"}
+**Model Characteristics**
 
-# List available models
-GET /api/v1/models
-  → Returns: model metadata, versions
-```
+- Feature count: **~20**
+- Training samples: **100-1000**
+- Model size: **~20 MB**
+- Trees: **1000**
+:::
+::::
 
-## Key Takeaways
+::: {.fragment}
+Validation **NDCG > 0.75** means model ranks deployments reasonably well!
+:::
 
+# Vibe Coding {background-color="#2d2d2d"}
+
+## Current Prototype
+
+::: columns
+::: {.column width="50%"}
 ::: incremental
-1. **RandomForest** is simple, robust, and explainable for risk ranking
+🤖 **Model**
 
-2. **NDCG > 0.85** proves model ranks deployments effectively
+- Training pipeline with Central integration
+- Feature extraction for deployments + images
+- RandomForest model with versioning
+- Validation with NDCG tracking
+:::
+:::
 
-3. **Feature importance** reveals which security issues matter most
+::: {.column width="50%"}
+::: incremental
+📦 **Deployment**
 
-4. **Synthetic scoring** enables bootstrap training without historical data
-
-5. **Production-ready** with full API, storage, and validation
+- Python container with FastAPI REST service
+- Model persistence to local/remote storage
+:::
+:::
 :::
 
 ## Questions?
 
-::: {.r-stack}
-![](diagrams/randomforest-architecture.svg){fig-align="center" width="100%"}
+**Future Improvements**
+
+::: incremental
+- Fine-tune different models and improve feature extraction.
+- Use LLMs to generate advanced training data.
+- Implement back propagation of user driven risk decisions.
+- Integrate prototype with ACS UI.
 :::
 
-**Resources:**
+::: {.fragment}
+**Resources**
 
-- Code: `stackrox/ml-risk-service`
+- Code: [`stackrox/ml-risk-service`](https://github.com/stackrox/stackrox/pull/17467)
 - Docs: `learning.md` (comprehensive technical guide)
+:::

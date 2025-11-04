@@ -218,7 +218,6 @@ Stephan Heßelmann
 <li class="fragment"><strong>Training Pipeline</strong>: From Central data to trained model</li>
 <li class="fragment"><strong>Predictions</strong>: How to rank deployments in production</li>
 <li class="fragment"><strong>Vibe Coding</strong>: Current prototype status</li>
-<li class="fragment"><strong>Roadmap</strong>: Possible improvements</li>
 </ol>
 </section>
 <section>
@@ -317,11 +316,11 @@ Stephan Heßelmann
 <section id="the-machine-learning-solution" class="slide level2">
 <h2>The Machine Learning Solution</h2>
 <ul>
-<li class="fragment"><strong>Learn</strong> from historical deployment data</li>
-<li class="fragment"><strong>Identify</strong> which security features matter most</li>
-<li class="fragment"><strong>Rank</strong> deployments by learned feature weight</li>
-<li class="fragment"><strong>Explain</strong> what features contribute to high risk scores</li>
-<li class="fragment"><strong>Improve</strong> continuously as new data arrives</li>
+<li class="fragment"><strong>Learn</strong> from real or synthetic training data.</li>
+<li class="fragment"><strong>Identify</strong> which security features matter most.</li>
+<li class="fragment"><strong>Rank</strong> deployments by learned feature weights.</li>
+<li class="fragment"><strong>Explain</strong> what features contribute to high risk scores.</li>
+<li class="fragment"><strong>Improve</strong> continuously as new data arrives.</li>
 </ul>
 </section></section>
 <section>
@@ -331,11 +330,11 @@ Stephan Heßelmann
 </section>
 <section id="random-forest-the-committee-approach" class="slide level2">
 <h2>Random Forest: The Committee Approach</h2>
-<p><strong>Analogy:</strong> Assessing fire risk for a house</p>
+<p><strong>Analogy:</strong> Assessing fire risks for a house.</p>
 <ul>
 <li class="fragment">Instead of <strong>1 inspector</strong> with a rigid checklist…
 <ul>
-<li class="fragment">… ask <strong>1000 inspectors</strong></li>
+<li class="fragment">… ask <strong>1000 inspectors</strong>.</li>
 </ul></li>
 <li class="fragment">Each inspector looks at different factors:
 <ul>
@@ -355,19 +354,19 @@ Stephan Heßelmann
 <ol type="1">
 <li class="fragment">✅ <strong>Robust against outliers</strong>
 <ul>
-<li class="fragment">If one tree makes a mistake, 999 others can correct it</li>
+<li class="fragment">If one tree makes a mistake, 999 others can correct it.</li>
 </ul></li>
 <li class="fragment">✅ <strong>Handles complexity</strong>
 <ul>
-<li class="fragment">Learns non-linear relationships automatically</li>
+<li class="fragment">Learns non-linear relationships automatically.</li>
 </ul></li>
 <li class="fragment">✅ <strong>Provides Explanations</strong>
 <ul>
-<li class="fragment">Feature importance: which security issues matter most</li>
+<li class="fragment">Feature importance: which security issues matter most.</li>
 </ul></li>
 <li class="fragment">✅ <strong>Simple Training</strong>
 <ul>
-<li class="fragment">No epochs, no backpropagation, no GPUs required</li>
+<li class="fragment">No epochs, no backpropagation, no GPUs required.</li>
 </ul></li>
 </ol>
 </section>
@@ -376,11 +375,11 @@ Stephan Heßelmann
 <ol type="1">
 <li class="fragment">❌ <strong>Just a regression algorithm</strong>
 <ul>
-<li class="fragment">No actual AI. Not in the training data -&gt; it won’t be learned.</li>
+<li class="fragment">No actual AI. Not in the training data -&gt; won’t be learned.</li>
 </ul></li>
 <li class="fragment">❌ <strong>Supervised learning</strong>
 <ul>
-<li class="fragment">Predictions are only as good the training input.</li>
+<li class="fragment">Predictions are only as good the training input. Feature engineering matters.</li>
 </ul></li>
 <li class="fragment">❌ <strong>Retraining</strong>
 <ul>
@@ -411,42 +410,7 @@ Stephan Heßelmann
 <section id="end-to-end-training-flow" class="slide level2">
 <h2>End-to-End Training Flow</h2>
 
-<img data-src="diagrams/training-pipeline.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section>
-<section id="performance-metric-ndcg" class="slide level2">
-<h2>Performance Metric: NDCG</h2>
-<p><strong>NDCG = Normalized Discounted Cumulative Gain</strong></p>
-<ul>
-<li class="fragment">Measures <strong>ranking quality</strong> on 0-1 scale</li>
-<li class="fragment">Values closer to <strong>1.0</strong> = better ranking</li>
-</ul>
-<p><strong>Example:</strong></p>
-<pre><code>True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
-                                     ↑ Small error at top
-NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
-</section>
-<section id="typical-performance" class="slide level2">
-<h2>Typical Performance</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Training Metrics</strong></p>
-<ul>
-<li>NDCG: <strong>0.75-0.95</strong></li>
-<li>Training time: <strong>~60 sec</strong></li>
-</ul>
-</div><div class="column" style="width:50%;">
-<p><strong>Model Characteristics</strong></p>
-<ul>
-<li>Feature count: <strong>~20</strong></li>
-<li>Training samples: <strong>100-1000</strong></li>
-<li>Model size: <strong>~20 MB</strong></li>
-<li>Trees: <strong>1000</strong></li>
-</ul>
-</div></div>
-<div class="fragment">
-<p><strong>Validation NDCG &gt; 0.85</strong> means model ranks deployments very well!</p>
-</div>
-</section></section>
+<img data-src="diagrams/training-pipeline.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section></section>
 <section>
 <section id="predictions" class="title-slide slide level1 center" data-background-color="#2d2d2d">
 <h1>Predictions</h1>
@@ -470,72 +434,84 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <li class="fragment"><strong>Detail:</strong> Calculated for training data and each prediction.</li>
 </ul>
 </div>
+</section>
+<section id="performance-metric-ndcg" class="slide level2">
+<h2>Performance Metric: NDCG</h2>
+<p><strong>NDCG = Normalized Discounted Cumulative Gain</strong></p>
+<ul>
+<li class="fragment">Measures <strong>ranking quality</strong> on 0-1 scale</li>
+<li class="fragment"><strong>1.0</strong>: perfect ranking, <strong>0.0</strong>: worst ranking</li>
+</ul>
+<div class="fragment">
+<p><strong>Example:</strong></p>
+<pre><code>True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
+                                     ↑ Small error at bottom
+NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
+</div>
+</section>
+<section id="typical-performance" class="slide level2">
+<h2>Typical Performance</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Training Metrics</strong></p>
+<ul>
+<li>NDCG: <strong>0.75-0.95</strong></li>
+<li>Training time: <strong>~60 sec</strong></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Model Characteristics</strong></p>
+<ul>
+<li>Feature count: <strong>~20</strong></li>
+<li>Training samples: <strong>100-1000</strong></li>
+<li>Model size: <strong>~20 MB</strong></li>
+<li>Trees: <strong>1000</strong></li>
+</ul>
+</div></div>
+<div class="fragment">
+<p>Validation <strong>NDCG &gt; 0.75</strong> means model ranks deployments reasonably well!</p>
+</div>
 </section></section>
 <section>
 <section id="vibe-coding" class="title-slide slide level1 center" data-background-color="#2d2d2d">
 <h1>Vibe Coding</h1>
 
 </section>
-<section id="current-status" class="slide level2">
-<h2>Current Status</h2>
-<p>🤖 <strong>Model:</strong></p>
+<section id="current-prototype" class="slide level2">
+<h2>Current Prototype</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p>🤖 <strong>Model</strong></p>
 <ul>
-<li class="fragment">Full training pipeline with Central integration</li>
+<li class="fragment">Training pipeline with Central integration</li>
 <li class="fragment">Feature extraction for deployments + images</li>
-<li class="fragment">RandomForest model (1000 trees, NDCG-optimized)</li>
-<li class="fragment">REST API endpoints for training and prediction</li>
-<li class="fragment">Model storage and versioning</li>
-<li class="fragment">Validation framework with NDCG tracking</li>
+<li class="fragment">RandomForest model with versioning</li>
+<li class="fragment">Validation with NDCG tracking</li>
 </ul>
-<p>📦 <strong>Deployment:</strong></p>
+</div><div class="column" style="width:50%;">
+<p>📦 <strong>Deployment</strong></p>
 <ul>
-<li class="fragment">Docker container with FastAPI service</li>
-<li class="fragment">Model persistence to local/GCS storage</li>
-<li class="fragment">gRPC and REST interfaces</li>
+<li class="fragment">Python container with FastAPI REST service</li>
+<li class="fragment">Model persistence to local/remote storage</li>
 </ul>
-</section>
-<section id="api-endpoints" class="slide level2">
-<h2>API Endpoints</h2>
-<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
-<span id="cb6-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
-<span id="cb6-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
-<span id="cb6-4"><a href=""></a></span>
-<span id="cb6-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
-<span id="cb6-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
-<span id="cb6-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
-<span id="cb6-8"><a href=""></a></span>
-<span id="cb6-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
-<span id="cb6-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
-<span id="cb6-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
-<span id="cb6-12"><a href=""></a></span>
-<span id="cb6-13"><a href=""></a><span class="co"># List available models</span></span>
-<span id="cb6-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
-<span id="cb6-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-<section id="key-takeaways" class="slide level2">
-<h2>Key Takeaways</h2>
-<ol type="1">
-<li class="fragment"><p><strong>RandomForest</strong> is simple, robust, and explainable for risk ranking</p></li>
-<li class="fragment"><p><strong>NDCG &gt; 0.85</strong> proves model ranks deployments effectively</p></li>
-<li class="fragment"><p><strong>Feature importance</strong> reveals which security issues matter most</p></li>
-<li class="fragment"><p><strong>Synthetic scoring</strong> enables bootstrap training without historical data</p></li>
-<li class="fragment"><p><strong>Production-ready</strong> with full API, storage, and validation</p></li>
-</ol>
+</div></div>
 </section>
 <section id="questions" class="slide level2">
 <h2>Questions?</h2>
-<div class="r-stack">
-<div class="quarto-figure quarto-figure-center">
-<figure>
-<p><img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center" style="width:100.0%"></p>
-</figure>
-</div>
-</div>
-<p><strong>Resources:</strong></p>
+<p><strong>Future Improvements</strong></p>
 <ul>
-<li>Code: <code>stackrox/ml-risk-service</code></li>
+<li class="fragment">Fine-tune different models and improve feature extraction.</li>
+<li class="fragment">Use LLMs to generate advanced training data.</li>
+<li class="fragment">Implement back propagation of user driven risk decisions.</li>
+<li class="fragment">Integrate prototype with ACS UI.</li>
+</ul>
+<div class="fragment">
+<p><strong>Resources</strong></p>
+<ul>
+<li>Code: <a href="https://github.com/stackrox/stackrox/pull/17467"><code>stackrox/ml-risk-service</code></a></li>
 <li>Docs: <code>learning.md</code> (comprehensive technical guide)</li>
 </ul>
+</div>
 
 </section></section>
     </div>
