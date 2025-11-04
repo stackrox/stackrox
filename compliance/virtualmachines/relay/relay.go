@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
@@ -232,20 +231,6 @@ func extractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-func isRetryableGRPCError(err error) bool {
-	grpcErr, ok := status.FromError(err)
-	if !ok {
-		return false
-	}
-	code := grpcErr.Code()
-	switch code {
-	case codes.DeadlineExceeded, codes.Unavailable, codes.ResourceExhausted:
-		return true
-	default:
-		return false
-	}
-}
-
 func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	report := &v1.IndexReport{}
 
@@ -301,8 +286,11 @@ func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 			}
 		}
 
-		if isRetryableGRPCError(err) {
-			err = retry.MakeRetryable(err)
+		grpcStatus, ok := status.FromError(err)
+		if ok {
+			if retry.ShouldRetryGrpcStatus(grpcStatus) {
+				err = retry.MakeRetryable(err)
+			}
 		}
 
 		return err
