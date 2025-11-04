@@ -214,7 +214,7 @@ Stephan Heßelmann
 <h2>Agenda</h2>
 <ol type="1">
 <li class="fragment"><strong>The Challenge</strong>: Why we need machine learning for risk ranking</li>
-<li class="fragment"><strong>The Algorithm</strong>: How random forests work (simple explanation)</li>
+<li class="fragment"><strong>The Algorithm</strong>: How a random forest works</li>
 <li class="fragment"><strong>Training Pipeline</strong>: From Central data to trained model</li>
 <li class="fragment"><strong>Predictions</strong>: How to rank deployments in production</li>
 <li class="fragment"><strong>Vibe Coding</strong>: Current prototype status</li>
@@ -259,18 +259,21 @@ Stephan Heßelmann
 <ul>
 <li class="fragment"><strong>🔒 Intransparent</strong>
 <ul>
-<li class="fragment">The risk score is baked into ACS with a hidden and complex formula.</li>
+<li class="fragment">The risk score is baked into ACS with a complex formula.</li>
 <li class="fragment">Customers cannot understand or validate how scores are calculated.</li>
 </ul></li>
 <li class="fragment"><strong>⚙️ Inflexible</strong>
 <ul>
-<li class="fragment">Does not adapt to individual customer needs or emerging trends.</li>
+<li class="fragment">Does not adapt to customer needs or emerging trends.</li>
 <li class="fragment">One-size-fits-all approach across all environments.</li>
 </ul></li>
 </ul>
 </section>
 <section id="current-approach-rule-based-multipliers" class="slide level2">
 <h2>Current Approach: Rule-Based Multipliers</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Feature multiplication</strong>:</p>
 <pre><code>Risk Score =
   Policy Violations ×
   Process Baseline ×
@@ -279,27 +282,55 @@ Stephan Heßelmann
   Component Count ×
   Image Age ×
   ...</code></pre>
+</div><div class="column" style="width:50%;">
+<p><strong>Drawbacks:</strong></p>
+<ul>
+<li class="fragment"><strong>Hardcoded formulas</strong>
+<ul>
+<li class="fragment">Manually tuned thresholds and weights</li>
+</ul></li>
+<li class="fragment"><strong>Cannot reverse the calculation</strong>
+<ul>
+<li class="fragment">Multiplied scores lose individual feature information</li>
+</ul></li>
+</ul>
+</div></div>
 </section>
-<section id="the-ml-solution" class="slide level2">
-<h2>The ML Solution</h2>
+<section id="example-image-age-calculation" class="slide level2">
+<h2>Example: Image Age Calculation</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource go number-lines code-with-copy"><code class="sourceCode go"><span id="cb2-1"><a href=""></a><span class="co">// Creates a score that is:</span></span>
+<span id="cb2-2"><a href=""></a><span class="co">// A) No risk when daysSinceCreated is &lt; penalizeDaysFloor</span></span>
+<span id="cb2-3"><a href=""></a><span class="cf">if</span> imageAgeInDays <span class="op">&lt;</span> penalizeDaysFloor <span class="op">{</span></span>
+<span id="cb2-4"><a href=""></a>    <span class="cf">return</span></span>
+<span id="cb2-5"><a href=""></a><span class="op">}</span></span>
+<span id="cb2-6"><a href=""></a></span>
+<span id="cb2-7"><a href=""></a><span class="co">// B) Increases linearly between penalizeDaysFloor and penalizeDaysCeil</span></span>
+<span id="cb2-8"><a href=""></a>daysSincePenalized <span class="op">:=</span> imageAgeInDays <span class="op">-</span> penalizeDaysFloor</span>
+<span id="cb2-9"><a href=""></a>scaledDays <span class="op">:=</span> <span class="dt">float32</span><span class="op">(</span>daysSincePenalized<span class="op">)</span> <span class="op">/</span> <span class="dt">float32</span><span class="op">(</span>penalizeDaysCeil<span class="op">-</span>penalizeDaysFloor<span class="op">)</span></span>
+<span id="cb2-10"><a href=""></a>riskScore <span class="op">=</span> <span class="dt">float32</span><span class="op">(</span><span class="dv">1</span><span class="op">)</span> <span class="op">+</span> <span class="dt">float32</span><span class="op">(</span>scaledDays<span class="op">*(</span>maxMultiplier<span class="op">-</span><span class="dv">1</span><span class="op">))</span></span>
+<span id="cb2-11"><a href=""></a></span>
+<span id="cb2-12"><a href=""></a><span class="co">// C) Is 1.5 when duration is &gt; penalizeDaysCeil</span></span>
+<span id="cb2-13"><a href=""></a><span class="cf">if</span> riskScore <span class="op">&gt;</span> maxMultiplier <span class="op">{</span></span>
+<span id="cb2-14"><a href=""></a>    riskScore <span class="op">=</span> maxMultiplier</span>
+<span id="cb2-15"><a href=""></a><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="the-machine-learning-solution" class="slide level2">
+<h2>The Machine Learning Solution</h2>
 <ul>
 <li class="fragment"><strong>Learn</strong> from historical deployment data</li>
 <li class="fragment"><strong>Identify</strong> which security features matter most</li>
-<li class="fragment"><strong>Rank</strong> deployments by actual risk, not just rules</li>
-<li class="fragment"><strong>Explain</strong> why a deployment is high-risk</li>
+<li class="fragment"><strong>Rank</strong> deployments by learned feature weight</li>
+<li class="fragment"><strong>Explain</strong> what features contribute to high risk scores</li>
 <li class="fragment"><strong>Improve</strong> continuously as new data arrives</li>
 </ul>
-<div class="fragment">
-<p><strong>Key Innovation:</strong> Model learns to reproduce StackRox risk logic, then improves beyond it</p>
-</div>
 </section></section>
 <section>
 <section id="the-algorithm" class="title-slide slide level1 center" data-background-color="#2d2d2d">
 <h1>The Algorithm</h1>
 
 </section>
-<section id="randomforest-the-committee-approach" class="slide level2">
-<h2>RandomForest: The Committee Approach</h2>
+<section id="random-forest-the-committee-approach" class="slide level2">
+<h2>Random Forest: The Committee Approach</h2>
 <p><strong>Analogy:</strong> Assessing fire risk for a house</p>
 <ul>
 <li class="fragment">Instead of <strong>1 inspector</strong> with a rigid checklist…</li>
@@ -436,16 +467,16 @@ Stephan Heßelmann
 </section>
 <section id="model-configuration" class="slide level2">
 <h2>Model Configuration</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb3-1"><a href=""></a><span class="fu">model</span><span class="kw">:</span></span>
-<span id="cb3-2"><a href=""></a><span class="at">  </span><span class="fu">algorithm</span><span class="kw">:</span><span class="at"> sklearn_ranksvm</span></span>
-<span id="cb3-3"><a href=""></a></span>
-<span id="cb3-4"><a href=""></a><span class="at">  </span><span class="fu">sklearn_params</span><span class="kw">:</span></span>
-<span id="cb3-5"><a href=""></a><span class="at">    </span><span class="fu">n_estimators</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span><span class="co">      # 1000 decision trees</span></span>
-<span id="cb3-6"><a href=""></a><span class="at">    </span><span class="fu">max_depth</span><span class="kw">:</span><span class="at"> </span><span class="dv">25</span><span class="co">           # Tree depth</span></span>
-<span id="cb3-7"><a href=""></a><span class="at">    </span><span class="fu">min_samples_split</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span><span class="co">   # Minimum samples to split</span></span>
-<span id="cb3-8"><a href=""></a><span class="at">    </span><span class="fu">min_samples_leaf</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span><span class="co">     # Minimum samples in leaf</span></span>
-<span id="cb3-9"><a href=""></a><span class="at">    </span><span class="fu">max_features</span><span class="kw">:</span><span class="at"> </span><span class="st">"sqrt"</span><span class="co">    # Features per split</span></span>
-<span id="cb3-10"><a href=""></a><span class="at">    </span><span class="fu">n_jobs</span><span class="kw">:</span><span class="at"> </span><span class="dv">-1</span><span class="co">              # Use all CPU cores</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href=""></a><span class="fu">model</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href=""></a><span class="at">  </span><span class="fu">algorithm</span><span class="kw">:</span><span class="at"> sklearn_ranksvm</span></span>
+<span id="cb4-3"><a href=""></a></span>
+<span id="cb4-4"><a href=""></a><span class="at">  </span><span class="fu">sklearn_params</span><span class="kw">:</span></span>
+<span id="cb4-5"><a href=""></a><span class="at">    </span><span class="fu">n_estimators</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span><span class="co">      # 1000 decision trees</span></span>
+<span id="cb4-6"><a href=""></a><span class="at">    </span><span class="fu">max_depth</span><span class="kw">:</span><span class="at"> </span><span class="dv">25</span><span class="co">           # Tree depth</span></span>
+<span id="cb4-7"><a href=""></a><span class="at">    </span><span class="fu">min_samples_split</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span><span class="co">   # Minimum samples to split</span></span>
+<span id="cb4-8"><a href=""></a><span class="at">    </span><span class="fu">min_samples_leaf</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span><span class="co">     # Minimum samples in leaf</span></span>
+<span id="cb4-9"><a href=""></a><span class="at">    </span><span class="fu">max_features</span><span class="kw">:</span><span class="at"> </span><span class="st">"sqrt"</span><span class="co">    # Features per split</span></span>
+<span id="cb4-10"><a href=""></a><span class="at">    </span><span class="fu">n_jobs</span><span class="kw">:</span><span class="at"> </span><span class="dv">-1</span><span class="co">              # Use all CPU cores</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
 <p><strong>Training Time:</strong> ~30 seconds for 1000 deployments</p>
 </div>
@@ -538,13 +569,13 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <section id="validation-predicted-vs-actual" class="slide level2">
 <h2>Validation: Predicted vs Actual</h2>
 <p><strong>Validation Metrics (on production data):</strong></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb6-1"><a href=""></a><span class="fu">{</span></span>
-<span id="cb6-2"><a href=""></a>  <span class="dt">"mae"</span><span class="fu">:</span> <span class="fl">0.34</span><span class="fu">,</span>           <span class="er">//</span> <span class="er">Mean</span> <span class="er">absolute</span> <span class="er">error</span></span>
-<span id="cb6-3"><a href=""></a>  <span class="dt">"rmse"</span><span class="fu">:</span> <span class="fl">0.49</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Root</span> <span class="er">mean</span> <span class="er">squared</span> <span class="er">error</span></span>
-<span id="cb6-4"><a href=""></a>  <span class="dt">"correlation"</span><span class="fu">:</span> <span class="fl">0.87</span><span class="fu">,</span>   <span class="er">//</span> <span class="er">Linear</span> <span class="er">correlation</span></span>
-<span id="cb6-5"><a href=""></a>  <span class="dt">"ndcg"</span><span class="fu">:</span> <span class="fl">0.92</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Ranking</span> <span class="er">quality</span> <span class="er">⭐</span></span>
-<span id="cb6-6"><a href=""></a>  <span class="dt">"within_30_percent"</span><span class="fu">:</span> <span class="fl">87.5</span><span class="er">%</span></span>
-<span id="cb6-7"><a href=""></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href=""></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href=""></a>  <span class="dt">"mae"</span><span class="fu">:</span> <span class="fl">0.34</span><span class="fu">,</span>           <span class="er">//</span> <span class="er">Mean</span> <span class="er">absolute</span> <span class="er">error</span></span>
+<span id="cb7-3"><a href=""></a>  <span class="dt">"rmse"</span><span class="fu">:</span> <span class="fl">0.49</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Root</span> <span class="er">mean</span> <span class="er">squared</span> <span class="er">error</span></span>
+<span id="cb7-4"><a href=""></a>  <span class="dt">"correlation"</span><span class="fu">:</span> <span class="fl">0.87</span><span class="fu">,</span>   <span class="er">//</span> <span class="er">Linear</span> <span class="er">correlation</span></span>
+<span id="cb7-5"><a href=""></a>  <span class="dt">"ndcg"</span><span class="fu">:</span> <span class="fl">0.92</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Ranking</span> <span class="er">quality</span> <span class="er">⭐</span></span>
+<span id="cb7-6"><a href=""></a>  <span class="dt">"within_30_percent"</span><span class="fu">:</span> <span class="fl">87.5</span><span class="er">%</span></span>
+<span id="cb7-7"><a href=""></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="fragment">
 <p><strong>NDCG = 0.92</strong> means model ranks 92% as well as perfect ranking!</p>
 </div>
@@ -574,21 +605,21 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 </section>
 <section id="api-endpoints" class="slide level2">
 <h2>API Endpoints</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
-<span id="cb7-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
-<span id="cb7-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
-<span id="cb7-4"><a href=""></a></span>
-<span id="cb7-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
-<span id="cb7-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
-<span id="cb7-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
-<span id="cb7-8"><a href=""></a></span>
-<span id="cb7-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
-<span id="cb7-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
-<span id="cb7-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
-<span id="cb7-12"><a href=""></a></span>
-<span id="cb7-13"><a href=""></a><span class="co"># List available models</span></span>
-<span id="cb7-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
-<span id="cb7-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
+<span id="cb8-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
+<span id="cb8-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
+<span id="cb8-4"><a href=""></a></span>
+<span id="cb8-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
+<span id="cb8-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
+<span id="cb8-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
+<span id="cb8-8"><a href=""></a></span>
+<span id="cb8-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
+<span id="cb8-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
+<span id="cb8-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
+<span id="cb8-12"><a href=""></a></span>
+<span id="cb8-13"><a href=""></a><span class="co"># List available models</span></span>
+<span id="cb8-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
+<span id="cb8-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="roadmap" class="slide level2">
 <h2>Roadmap</h2>

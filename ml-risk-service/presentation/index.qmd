@@ -18,7 +18,7 @@ format:
 
 ::: incremental
 1. **The Challenge**: Why we need machine learning for risk ranking
-2. **The Algorithm**: How random forests work (simple explanation)
+2. **The Algorithm**: How a random forest works
 3. **Training Pipeline**: From Central data to trained model
 4. **Predictions**: How to rank deployments in production
 5. **Vibe Coding**: Current prototype status
@@ -60,15 +60,20 @@ format:
 
 ::: incremental
 - **🔒 Intransparent**
-  - The risk score is baked into ACS with a hidden and complex formula.
+  - The risk score is baked into ACS with a complex formula.
   - Customers cannot understand or validate how scores are calculated.
 
 - **⚙️ Inflexible**
-  - Does not adapt to individual customer needs or emerging trends.
+  - Does not adapt to customer needs or emerging trends.
   - One-size-fits-all approach across all environments.
 :::
 
 ## Current Approach: Rule-Based Multipliers
+
+::: columns
+::: {.column width="50%"}
+
+**Feature multiplication**:
 
 ```
 Risk Score =
@@ -80,24 +85,54 @@ Risk Score =
   Image Age ×
   ...
 ```
+:::
 
-## The ML Solution
+::: {.column width="50%"}
+**Drawbacks:**
+
+::: incremental
+- **Hardcoded formulas**
+  - Manually tuned thresholds and weights
+
+- **Cannot reverse the calculation**
+  - Multiplied scores lose individual feature information
+:::
+:::
+:::
+
+## Example: Image Age Calculation
+
+```go
+// Creates a score that is:
+// A) No risk when daysSinceCreated is < penalizeDaysFloor
+if imageAgeInDays < penalizeDaysFloor {
+    return
+}
+
+// B) Increases linearly between penalizeDaysFloor and penalizeDaysCeil
+daysSincePenalized := imageAgeInDays - penalizeDaysFloor
+scaledDays := float32(daysSincePenalized) / float32(penalizeDaysCeil-penalizeDaysFloor)
+riskScore = float32(1) + float32(scaledDays*(maxMultiplier-1))
+
+// C) Is 1.5 when duration is > penalizeDaysCeil
+if riskScore > maxMultiplier {
+    riskScore = maxMultiplier
+}
+```
+
+## The Machine Learning Solution
 
 ::: incremental
 - **Learn** from historical deployment data
 - **Identify** which security features matter most
-- **Rank** deployments by actual risk, not just rules
-- **Explain** why a deployment is high-risk
+- **Rank** deployments by learned feature weight
+- **Explain** what features contribute to high risk scores
 - **Improve** continuously as new data arrives
-:::
-
-::: {.fragment}
-**Key Innovation:** Model learns to reproduce StackRox risk logic, then improves beyond it
 :::
 
 # The Algorithm {background-color="#2d2d2d"}
 
-## RandomForest: The Committee Approach
+## Random Forest: The Committee Approach
 
 **Analogy:** Assessing fire risk for a house
 
