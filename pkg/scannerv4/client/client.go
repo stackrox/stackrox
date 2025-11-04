@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -461,18 +462,20 @@ func getImageManifestID(ref name.Digest) string {
 // retryable gRPC codes.
 func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
 	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
+	policy := retry.NoCodesRetriedGrpcRetryPolicy().WithRetryableCodes(codes.Aborted, codes.Unavailable, codes.Internal)
+
 	f := func() error {
 		err := op()
-		if e, ok := status.FromError(err); ok {
-			switch e.Code() {
-			case codes.OK:
-				return nil
-			case codes.Aborted, codes.Unavailable, codes.Internal:
-			default:
-				return backoff.Permanent(err)
-			}
+		if err == nil {
+			return nil
 		}
-		return err
+
+		if policy.ShouldRetry(err) {
+			return err
+		}
+
+		// Non-retryable error
+		return backoff.Permanent(err)
 	}
 	return backoff.RetryNotify(f, backoff.WithContext(b, ctx), func(err error, duration time.Duration) {
 		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
