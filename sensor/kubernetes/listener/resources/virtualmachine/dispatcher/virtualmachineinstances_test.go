@@ -45,7 +45,7 @@ var _ suite.TearDownSubTest = (*virtualMachineInstanceSuite)(nil)
 
 func (s *virtualMachineInstanceSuite) SetupSubTest() {
 	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
-	
+
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
 	s.dispatcher = NewVirtualMachineInstanceDispatcher(clusterID, s.store)
