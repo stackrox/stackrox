@@ -17,7 +17,7 @@ import {
     SearchInput,
     Select,
 } from '@patternfly/react-core';
-impot type { MenuToggleElement } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type RoleSelectorProps = {
