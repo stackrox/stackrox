@@ -49,7 +49,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e85f58c3a57bedbd22fe00d4f87e823235ddf30c46649e18ada057ecb94f5749
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f97559cbaf4c84d2b67978c1f7579a0ac4bdd8e85a68e098ba99a6c447c2ff58
       - name: kind
         value: task
       resolver: bundles
@@ -310,7 +310,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e85f58c3a57bedbd22fe00d4f87e823235ddf30c46649e18ada057ecb94f5749
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f97559cbaf4c84d2b67978c1f7579a0ac4bdd8e85a68e098ba99a6c447c2ff58
       - name: kind
         value: task
       resolver: bundles
@@ -326,7 +326,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e85f58c3a57bedbd22fe00d4f87e823235ddf30c46649e18ada057ecb94f5749
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f97559cbaf4c84d2b67978c1f7579a0ac4bdd8e85a68e098ba99a6c447c2ff58
       - name: kind
         value: task
       resolver: bundles
@@ -363,7 +363,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e85f58c3a57bedbd22fe00d4f87e823235ddf30c46649e18ada057ecb94f5749
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f97559cbaf4c84d2b67978c1f7579a0ac4bdd8e85a68e098ba99a6c447c2ff58
       - name: kind
         value: task
       resolver: bundles
@@ -867,7 +867,7 @@ spec:
       - name: name
         value: create-snapshot
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e85f58c3a57bedbd22fe00d4f87e823235ddf30c46649e18ada057ecb94f5749
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f97559cbaf4c84d2b67978c1f7579a0ac4bdd8e85a68e098ba99a6c447c2ff58
       - name: kind
         value: task
       resolver: bundles
