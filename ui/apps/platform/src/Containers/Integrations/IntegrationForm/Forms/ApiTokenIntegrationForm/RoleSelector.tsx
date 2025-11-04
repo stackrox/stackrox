@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
-import type Ref from 'react';
-import {
+import Ref, { useMemo, useState } from 'react';
+import MenuToggleElement, {
     Badge,
     Button,
     Divider,
@@ -17,7 +16,6 @@ import {
     SearchInput,
     Select,
 } from '@patternfly/react-core';
-import type MenuToggleElement from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type RoleSelectorProps = {
