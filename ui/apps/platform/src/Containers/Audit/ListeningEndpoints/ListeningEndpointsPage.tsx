@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
     Bullseye,
@@ -19,6 +19,7 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    debounce,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
@@ -116,11 +117,12 @@ function ListeningEndpointsPage() {
 
     const [autocompleteOpen, setAutocompleteOpen] = useState(false);
     const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
+    const [debouncedSearchValue, setDebouncedSearchValue] = useState('');
 
     const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
     const variables = {
-        query: getRequestQueryStringForAutocomplete(searchFilter, entity, autocompleteInputValue),
+        query: getRequestQueryStringForAutocomplete(searchFilter, entity, debouncedSearchValue),
         categories: searchCategories[entity.toUpperCase()],
     };
 
@@ -128,13 +130,20 @@ function ListeningEndpointsPage() {
 
     function onEntitySelect(_id: string, selection: string) {
         setAutocompleteInputValue('');
+        setDebouncedSearchValue('');
         setEntity(selection);
     }
+
+    const updateSearchValue = useMemo(
+        () => debounce((value: string) => setDebouncedSearchValue(value), 800),
+        []
+    );
 
     function onSearchFilterChange(searchFilter: SearchFilter) {
         setSearchFilter(searchFilter);
         setPage(1);
         setAutocompleteInputValue('');
+        setDebouncedSearchValue('');
     }
 
     function onSelectAutocompleteValue(
@@ -145,6 +154,7 @@ function ListeningEndpointsPage() {
             const oldValue = searchValueAsArray(searchFilter[entity]);
             const newValue = toggleItemInArray(oldValue, value);
             setAutocompleteInputValue('');
+            setDebouncedSearchValue('');
             setSearchFilter({ ...searchFilter, [entity]: newValue });
         }
     }
@@ -170,7 +180,10 @@ function ListeningEndpointsPage() {
                 <TextInputGroupMain
                     value={autocompleteInputValue}
                     onClick={() => setAutocompleteOpen(!autocompleteOpen)}
-                    onChange={(_event, value) => setAutocompleteInputValue(value)}
+                    onChange={(_event, value) => {
+                        setAutocompleteInputValue(value);
+                        updateSearchValue(value);
+                    }}
                     id="autocomplete-input"
                     placeholder={`Filter results by ${entity}`}
                     role="combobox"
@@ -312,6 +325,7 @@ function ListeningEndpointsPage() {
                                             onClick={() => {
                                                 setPage(1);
                                                 setAutocompleteInputValue('');
+                                                setDebouncedSearchValue('');
                                                 setSearchFilter({});
                                             }}
                                         >
