@@ -107,7 +107,7 @@ function RoleSelector({
             ref={toggleRef}
             onClick={() => toggleIsRoleOpen(!isRoleOpen)}
             isExpanded={isRoleOpen}
-            isDisabled={selectedRoles.length === 0 || !isEditable || isGenerated}
+            isDisabled={roles.length === 0 || !isEditable || isGenerated}
             aria-label={'Select roles'}
             className={'role-select'}
             variant={'plainText'}
