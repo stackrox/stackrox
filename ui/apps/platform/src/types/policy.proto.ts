@@ -112,7 +112,7 @@ export type PolicySection = {
     policyGroups: PolicyGroup[];
 };
 
-type ClientPolicySection = {
+export type ClientPolicySection = {
     sectionName: string;
     policyGroups: ClientPolicyGroup[];
 };
