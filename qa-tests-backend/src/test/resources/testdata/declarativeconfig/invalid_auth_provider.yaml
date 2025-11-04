@@ -1,0 +1,7 @@
+name: ${AUTH_PROVIDER_KEY}
+minimumRole: "None"
+uiEndpoint: localhost:8000
+oidc:
+  issuer: example.com
+  mode: fragment
+  clientID: SOMECLIENTID
