@@ -1,5 +1,5 @@
-import Ref, { useMemo, useState } from 'react';
-import MenuToggleElement, {
+import { Ref, useMemo, useState } from 'react';
+import {
     Badge,
     Button,
     Divider,
@@ -13,6 +13,7 @@ import MenuToggleElement, {
     MenuSearch,
     MenuSearchInput,
     MenuToggle,
+    MenuToggleElement,
     SearchInput,
     Select,
 } from '@patternfly/react-core';
