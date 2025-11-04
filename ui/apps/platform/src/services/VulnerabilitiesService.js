@@ -8,10 +8,8 @@ function getBaseCveUrl(cveType) {
     if (cveType === entityTypes.NODE_CVE) {
         return '/v1/nodecves';
     }
-    if (cveType === entityTypes.IMAGE_CVE) {
-        return '/v1/imagecves';
-    }
-    return '/v1/cves';
+    // VulnMgmgListCves does not render global snooze action for image CVEs.
+    return '';
 }
 
 /**
@@ -24,7 +22,11 @@ function getBaseCveUrl(cveType) {
  */
 export function suppressVulns(cveType, cveNames, duration = '0') {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/suppress`, { cves: cveNames, duration });
+    return baseUrl
+        ? axios
+              .patch(`${baseUrl}/suppress`, { cves: cveNames, duration })
+              .then((response) => response.data)
+        : Promise.resolve({});
 }
 
 /**
@@ -36,5 +38,7 @@ export function suppressVulns(cveType, cveNames, duration = '0') {
  */
 export function unsuppressVulns(cveType, cveNames) {
     const baseUrl = getBaseCveUrl(cveType);
-    return axios.patch(`${baseUrl}/unsuppress`, { cves: cveNames });
+    return baseUrl
+        ? axios.patch(`${baseUrl}/unsuppress`, { cves: cveNames }).then((response) => response.data)
+        : Promise.resolve({});
 }
