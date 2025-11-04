@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';

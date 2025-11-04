@@ -1,5 +1,3 @@
-import React from 'react';
-
 const ScopedPermissions = ({ permissions }) => {
     return permissions.map((datum) => {
         return (
