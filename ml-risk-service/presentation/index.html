@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/tabby.min.js"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.32">
+
+  <meta name="author" content="Stephan Heßelmann">
+  <meta name="dcterms.date" content="2025-11-05">
+  <title>Machine learning based ranking for risk</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-2c1b5f745a11cfad616ebade4a4a7d24.css">
+  <link rel="stylesheet" href="styles.css">
+  <link href="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="index_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Machine learning based ranking for risk</h1>
+  <p class="subtitle">Intelligent risk recommendations for ACS</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Stephan Heßelmann 
+</div>
+</div>
+</div>
+
+  <p class="date">2025-11-05</p>
+</section>
+<section id="agenda" class="slide level2">
+<h2>Agenda</h2>
+<ol type="1">
+<li class="fragment"><strong>The Challenge</strong>: Why we need machine learning for risk ranking</li>
+<li class="fragment"><strong>The Algorithm</strong>: How random forests work (simple explanation)</li>
+<li class="fragment"><strong>Training Pipeline</strong>: From Central data to trained model</li>
+<li class="fragment"><strong>Predictions</strong>: How to rank deployments in production</li>
+<li class="fragment"><strong>Vibe Coding</strong>: Current prototype status</li>
+<li class="fragment"><strong>Roadmap</strong>: Possible improvements</li>
+</ol>
+</section>
+<section>
+<section id="the-challenge" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>The Challenge</h1>
+
+</section>
+<section id="what-is-risk" class="slide level2">
+<h2>What Is Risk?</h2>
+<ul>
+<li class="fragment"><strong>ACS monitors thousands of deployments</strong> across customer clusters</li>
+<li class="fragment">Each deployment has <strong>dozens of security characteristics</strong>:
+<ul>
+<li class="fragment">Policy violations</li>
+<li class="fragment">CVE vulnerabilities</li>
+<li class="fragment">Privileged containers</li>
+<li class="fragment">Network exposure</li>
+<li class="fragment">Process anomalies</li>
+<li class="fragment">… and many more</li>
+</ul></li>
+<li class="fragment"><strong>Question:</strong> Which deployments should security teams focus on first?</li>
+</ul>
+</section>
+<section id="current-approach-rule-based-multipliers" class="slide level2">
+<h2>Current Approach: Rule-Based Multipliers</h2>
+<pre><code>Risk Score =
+  Policy Violations ×
+  Process Baseline ×
+  Vulnerabilities ×
+  Service Config ×
+  Reachability ×
+  Risky Components ×
+  Component Count ×
+  Image Age</code></pre>
+<ul>
+<li class="fragment"><strong>Pros:</strong> Deterministic, explainable</li>
+<li class="fragment"><strong>Cons:</strong> Manually tuned, doesn’t learn from data</li>
+<li class="fragment"><strong>Gap:</strong> Can’t adapt to changing threat landscape</li>
+</ul>
+</section>
+<section id="the-ml-solution" class="slide level2">
+<h2>The ML Solution</h2>
+<ul>
+<li class="fragment"><strong>Learn</strong> from historical deployment data</li>
+<li class="fragment"><strong>Identify</strong> which security features matter most</li>
+<li class="fragment"><strong>Rank</strong> deployments by actual risk, not just rules</li>
+<li class="fragment"><strong>Explain</strong> why a deployment is high-risk</li>
+<li class="fragment"><strong>Improve</strong> continuously as new data arrives</li>
+</ul>
+<div class="fragment">
+<p><strong>Key Innovation:</strong> Model learns to reproduce StackRox risk logic, then improves beyond it</p>
+</div>
+</section></section>
+<section>
+<section id="the-algorithm" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>The Algorithm</h1>
+
+</section>
+<section id="randomforest-the-committee-approach" class="slide level2">
+<h2>RandomForest: The Committee Approach</h2>
+<p><strong>Analogy:</strong> Assessing fire risk for a house</p>
+<ul>
+<li class="fragment">Instead of <strong>1 inspector</strong> with a rigid checklist…</li>
+<li class="fragment">Ask <strong>1000 inspectors</strong> to each create their own evaluation method</li>
+<li class="fragment">Each inspector looks at different combinations of factors:
+<ul>
+<li class="fragment">Electrical wiring + smoke detectors</li>
+<li class="fragment">Flammable materials + escape routes</li>
+<li class="fragment">Building age + maintenance history</li>
+</ul></li>
+<li class="fragment"><strong>Final assessment</strong> = average of all 1000 opinions</li>
+</ul>
+</section>
+<section id="randomforest-architecture" class="slide level2">
+<h2>RandomForest Architecture</h2>
+
+<img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:90.0%"><aside class="notes">
+<ul>
+<li>1000 decision trees built independently</li>
+<li>Each tree sees random subset of features</li>
+<li>Predictions are averaged for final score</li>
+</ul>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="why-randomforest" class="slide level2">
+<h2>Why RandomForest?</h2>
+<ol type="1">
+<li class="fragment"><strong>Robust</strong>
+<ul>
+<li class="fragment">If one tree makes a mistake, 999 others can correct it</li>
+<li class="fragment">Not sensitive to outliers or noisy data</li>
+</ul></li>
+<li class="fragment"><strong>Handles Complexity</strong>
+<ul>
+<li class="fragment">Learns non-linear relationships automatically</li>
+<li class="fragment">No manual feature engineering required</li>
+</ul></li>
+<li class="fragment"><strong>Provides Explanations</strong>
+<ul>
+<li class="fragment">Feature importance: which security issues matter most</li>
+<li class="fragment">Per-prediction explanations available</li>
+</ul></li>
+<li class="fragment"><strong>Simple Training</strong>
+<ul>
+<li class="fragment">No epochs, no backpropagation, no GPUs required</li>
+<li class="fragment">Builds all 1000 trees in parallel (~30 seconds)</li>
+</ul></li>
+</ol>
+</section>
+<section id="example-one-decision-tree" class="slide level2">
+<h2>Example: One Decision Tree</h2>
+<pre><code>Is vulnerability_score &gt; 7.5?
+├─ YES → Is privileged_container_ratio &gt; 0.5?
+│         ├─ YES → Risk Score = 8.2
+│         └─ NO → Is external_exposure = 1?
+│                  ├─ YES → Risk Score = 6.5
+│                  └─ NO → Risk Score = 4.1
+└─ NO → Is policy_violation_score &gt; 3.0?
+         ├─ YES → Risk Score = 5.0
+         └─ NO → Risk Score = 2.3</code></pre>
+<div class="fragment">
+<p><strong>Final Prediction:</strong> Average of 1000 such trees</p>
+</div>
+</section></section>
+<section>
+<section id="training-pipeline" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>Training Pipeline</h1>
+
+</section>
+<section id="end-to-end-training-flow" class="slide level2">
+<h2>End-to-End Training Flow</h2>
+
+<img data-src="diagrams/training-pipeline.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section>
+<section id="feature-categories" class="slide level2">
+<h2>Feature Categories</h2>
+
+<img data-src="diagrams/feature-categories.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:95.0%"></section>
+<section id="security-features-20-extracted" class="slide level2">
+<h2>Security Features (20+ extracted)</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Deployment Configuration</strong></p>
+<ul>
+<li>Policy violation score</li>
+<li>Privileged container ratio</li>
+<li>Host network/PID/IPC access</li>
+<li>Service account tokens</li>
+</ul>
+<p><strong>Network Exposure</strong></p>
+<ul>
+<li>External exposure flag</li>
+<li>Exposed port count (log scale)</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Vulnerabilities</strong></p>
+<ul>
+<li>Average/max CVE severity</li>
+<li>Average/max CVSS scores</li>
+<li>Total vulnerability burden</li>
+</ul>
+<p><strong>Image Security</strong></p>
+<ul>
+<li>Risky component count</li>
+<li>Total component count</li>
+<li>Image age (days)</li>
+<li>Process baseline violations</li>
+</ul>
+</div></div>
+</section>
+<section id="synthetic-vs-real-risk-scores" class="slide level2">
+<h2>Synthetic vs Real Risk Scores</h2>
+<p><strong>Bootstrap Phase (Synthetic Scoring):</strong></p>
+<ul>
+<li class="fragment">Calculate risk using StackRox’s multiplier system</li>
+<li class="fragment">Model learns to reproduce existing logic</li>
+<li class="fragment">Provides baseline for initial deployment</li>
+</ul>
+<p><strong>Production Phase (Real Scoring):</strong></p>
+<ul>
+<li class="fragment">Human analysts or automated systems provide ground truth</li>
+<li class="fragment">Model learns from actual security outcomes</li>
+<li class="fragment">Improves beyond initial rule-based system</li>
+</ul>
+</section>
+<section id="model-configuration" class="slide level2">
+<h2>Model Configuration</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb3-1"><a href=""></a><span class="fu">model</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href=""></a><span class="at">  </span><span class="fu">algorithm</span><span class="kw">:</span><span class="at"> sklearn_ranksvm</span></span>
+<span id="cb3-3"><a href=""></a></span>
+<span id="cb3-4"><a href=""></a><span class="at">  </span><span class="fu">sklearn_params</span><span class="kw">:</span></span>
+<span id="cb3-5"><a href=""></a><span class="at">    </span><span class="fu">n_estimators</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span><span class="co">      # 1000 decision trees</span></span>
+<span id="cb3-6"><a href=""></a><span class="at">    </span><span class="fu">max_depth</span><span class="kw">:</span><span class="at"> </span><span class="dv">25</span><span class="co">           # Tree depth</span></span>
+<span id="cb3-7"><a href=""></a><span class="at">    </span><span class="fu">min_samples_split</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span><span class="co">   # Minimum samples to split</span></span>
+<span id="cb3-8"><a href=""></a><span class="at">    </span><span class="fu">min_samples_leaf</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span><span class="co">     # Minimum samples in leaf</span></span>
+<span id="cb3-9"><a href=""></a><span class="at">    </span><span class="fu">max_features</span><span class="kw">:</span><span class="at"> </span><span class="st">"sqrt"</span><span class="co">    # Features per split</span></span>
+<span id="cb3-10"><a href=""></a><span class="at">    </span><span class="fu">n_jobs</span><span class="kw">:</span><span class="at"> </span><span class="dv">-1</span><span class="co">              # Use all CPU cores</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p><strong>Training Time:</strong> ~30 seconds for 1000 deployments</p>
+</div>
+</section>
+<section id="performance-metric-ndcg" class="slide level2">
+<h2>Performance Metric: NDCG</h2>
+<p><strong>NDCG = Normalized Discounted Cumulative Gain</strong></p>
+<ul>
+<li class="fragment">Measures <strong>ranking quality</strong> on 0-1 scale</li>
+<li class="fragment">Values closer to <strong>1.0</strong> = better ranking</li>
+<li class="fragment">Industry standard for search engines and recommender systems</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code>True ranking:  [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+Model ranking: [10, 8, 9, 7, 6, 5, 4, 3, 2, 1]
+                    ↑ Small error at top
+NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
+</section>
+<section id="typical-performance" class="slide level2">
+<h2>Typical Performance</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Training Metrics</strong></p>
+<ul>
+<li>Training NDCG: <strong>0.95-0.99</strong></li>
+<li>Validation NDCG: <strong>0.85-0.95</strong></li>
+<li>Training time: <strong>~30 sec</strong></li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Model Characteristics</strong></p>
+<ul>
+<li>Feature count: <strong>~20</strong></li>
+<li>Training samples: <strong>1000-10000</strong></li>
+<li>Model size: <strong>~5-20 MB</strong></li>
+<li>Trees: <strong>1000</strong></li>
+</ul>
+</div></div>
+<div class="fragment">
+<p><strong>Validation NDCG &gt; 0.85</strong> means model ranks deployments very well!</p>
+</div>
+</section></section>
+<section>
+<section id="predictions" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>Predictions</h1>
+
+</section>
+<section id="prediction-flow" class="slide level2">
+<h2>Prediction Flow</h2>
+
+<img data-src="diagrams/prediction-flow.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:95.0%"></section>
+<section id="feature-importance-what-matters" class="slide level2">
+<h2>Feature Importance: What Matters?</h2>
+<p><strong>Top 5 Most Important Features:</strong></p>
+<pre><code>1. policy_violation_score      28.5%
+2. max_vulnerability_score     19.8%
+3. privileged_container_ratio  15.2%
+4. external_exposure            8.9%
+5. process_baseline_violations  7.6%</code></pre>
+<div class="fragment">
+<p><strong>Insight:</strong> Policy violations and critical CVEs drive risk ranking more than other factors</p>
+</div>
+</section>
+<section id="real-example-nginx-frontend" class="slide level2">
+<h2>Real Example: nginx-frontend</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><strong>Deployment Characteristics:</strong></p>
+<ul>
+<li>Policy violations: 12 (severity 8.5)</li>
+<li>Vulnerabilities: 15 CVEs</li>
+<li>Privileged: Yes (ratio: 0.75)</li>
+<li>External exposure: Yes</li>
+<li>Image age: 180 days</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<p><strong>Risk Prediction:</strong></p>
+<ul>
+<li><strong>Risk Score:</strong> 7.4 / 10</li>
+<li><strong>Rank:</strong> 15th of 1000</li>
+</ul>
+<p><strong>Top Contributing Features:</strong></p>
+<ol type="1">
+<li><code>policy_violation_score</code> → +2.1</li>
+<li><code>max_vulnerability_score</code> → +1.8</li>
+<li><code>privileged_container_ratio</code> → +1.2</li>
+<li><code>external_exposure</code> → +0.6</li>
+</ol>
+</div></div>
+</section>
+<section id="validation-predicted-vs-actual" class="slide level2">
+<h2>Validation: Predicted vs Actual</h2>
+<p><strong>Validation Metrics (on production data):</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb6-1"><a href=""></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href=""></a>  <span class="dt">"mae"</span><span class="fu">:</span> <span class="fl">0.34</span><span class="fu">,</span>           <span class="er">//</span> <span class="er">Mean</span> <span class="er">absolute</span> <span class="er">error</span></span>
+<span id="cb6-3"><a href=""></a>  <span class="dt">"rmse"</span><span class="fu">:</span> <span class="fl">0.49</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Root</span> <span class="er">mean</span> <span class="er">squared</span> <span class="er">error</span></span>
+<span id="cb6-4"><a href=""></a>  <span class="dt">"correlation"</span><span class="fu">:</span> <span class="fl">0.87</span><span class="fu">,</span>   <span class="er">//</span> <span class="er">Linear</span> <span class="er">correlation</span></span>
+<span id="cb6-5"><a href=""></a>  <span class="dt">"ndcg"</span><span class="fu">:</span> <span class="fl">0.92</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Ranking</span> <span class="er">quality</span> <span class="er">⭐</span></span>
+<span id="cb6-6"><a href=""></a>  <span class="dt">"within_30_percent"</span><span class="fu">:</span> <span class="fl">87.5</span><span class="er">%</span></span>
+<span id="cb6-7"><a href=""></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="fragment">
+<p><strong>NDCG = 0.92</strong> means model ranks 92% as well as perfect ranking!</p>
+</div>
+</section></section>
+<section>
+<section id="production-future" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>Production &amp; Future</h1>
+
+</section>
+<section id="current-status" class="slide level2">
+<h2>Current Status</h2>
+<p>✅ <strong>Implemented:</strong></p>
+<ul>
+<li class="fragment">Full training pipeline with Central integration</li>
+<li class="fragment">Feature extraction for deployments + images</li>
+<li class="fragment">RandomForest model (1000 trees, NDCG-optimized)</li>
+<li class="fragment">REST API endpoints for training and prediction</li>
+<li class="fragment">Model storage and versioning</li>
+<li class="fragment">Validation framework with NDCG tracking</li>
+</ul>
+<p>📦 <strong>Deployment:</strong></p>
+<ul>
+<li class="fragment">Docker container with FastAPI service</li>
+<li class="fragment">Model persistence to local/GCS storage</li>
+<li class="fragment">gRPC and REST interfaces</li>
+</ul>
+</section>
+<section id="api-endpoints" class="slide level2">
+<h2>API Endpoints</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
+<span id="cb7-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
+<span id="cb7-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
+<span id="cb7-4"><a href=""></a></span>
+<span id="cb7-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
+<span id="cb7-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
+<span id="cb7-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
+<span id="cb7-8"><a href=""></a></span>
+<span id="cb7-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
+<span id="cb7-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
+<span id="cb7-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
+<span id="cb7-12"><a href=""></a></span>
+<span id="cb7-13"><a href=""></a><span class="co"># List available models</span></span>
+<span id="cb7-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
+<span id="cb7-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="roadmap" class="slide level2">
+<h2>Roadmap</h2>
+<p><strong>Short-term (Q1 2025):</strong></p>
+<ul>
+<li class="fragment">Integration with ACS Console UI</li>
+<li class="fragment">Model A/B testing framework</li>
+<li class="fragment">Automated retraining pipeline</li>
+</ul>
+<p><strong>Medium-term (Q2-Q3 2025):</strong></p>
+<ul>
+<li class="fragment">Continuous learning from production feedback</li>
+<li class="fragment">Model drift detection and alerting</li>
+<li class="fragment">Multi-cluster model federation</li>
+</ul>
+<p><strong>Long-term (Q4 2025+):</strong></p>
+<ul>
+<li class="fragment">Temporal pattern detection (time-series)</li>
+<li class="fragment">Anomaly detection for new threat patterns</li>
+<li class="fragment">Active learning for high-uncertainty predictions</li>
+</ul>
+</section>
+<section id="key-takeaways" class="slide level2">
+<h2>Key Takeaways</h2>
+<ol type="1">
+<li class="fragment"><p><strong>RandomForest</strong> is simple, robust, and explainable for risk ranking</p></li>
+<li class="fragment"><p><strong>NDCG &gt; 0.85</strong> proves model ranks deployments effectively</p></li>
+<li class="fragment"><p><strong>Feature importance</strong> reveals which security issues matter most</p></li>
+<li class="fragment"><p><strong>Synthetic scoring</strong> enables bootstrap training without historical data</p></li>
+<li class="fragment"><p><strong>Production-ready</strong> with full API, storage, and validation</p></li>
+</ol>
+</section>
+<section id="questions" class="slide level2">
+<h2>Questions?</h2>
+<div class="r-stack">
+<div class="quarto-figure quarto-figure-center">
+<figure>
+<p><img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center" style="width:60.0%"></p>
+</figure>
+</div>
+</div>
+<p><strong>Resources:</strong></p>
+<ul>
+<li>Code: <code>stackrox/ml-risk-service</code></li>
+<li>Docs: <code>learning.md</code> (comprehensive technical guide)</li>
+<li>API: <code>http://localhost:8090/docs</code> (OpenAPI)</li>
+</ul>
+</section>
+<section class="slide level2">
+
+<p><strong>Thank you!</strong></p>
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+<p>ACS Engineering | Frankfurt meetup 2025</p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="index_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="index_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="index_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="index_files/libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="index_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="index_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="index_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="index_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="index_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":false},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>

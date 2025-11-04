@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#2d2d2d">Prediction Flow: From Deployment to Risk Score</text>
+
+  <!-- Step 1: New Deployment -->
+  <rect x="50" y="100" width="200" height="180" fill="#ffe6e6" stroke="#dc3545" stroke-width="3" rx="10"/>
+  <text x="150" y="130" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">New Deployment</text>
+  <text x="150" y="160" text-anchor="middle" font-size="13" fill="#333">nginx-frontend</text>
+  <rect x="70" y="175" width="160" height="95" fill="#fff" stroke="#dc3545" stroke-width="1" rx="5"/>
+  <text x="80" y="195" font-size="11" fill="#555">• 12 policy violations</text>
+  <text x="80" y="215" font-size="11" fill="#555">• 15 CVEs (3 critical)</text>
+  <text x="80" y="235" font-size="11" fill="#555">• Privileged: Yes</text>
+  <text x="80" y="255" font-size="11" fill="#555">• External exposure: Yes</text>
+
+  <!-- Arrow 1 -->
+  <line x1="250" y1="190" x2="320" y2="190" stroke="#0066cc" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="285" y="180" text-anchor="middle" font-size="11" fill="#0066cc">Extract</text>
+
+  <!-- Step 2: Feature Vector -->
+  <rect x="330" y="100" width="180" height="180" fill="#e6f2ff" stroke="#0066cc" stroke-width="3" rx="10"/>
+  <text x="420" y="130" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">Feature Vector</text>
+  <rect x="350" y="145" width="140" height="125" fill="#fff" stroke="#0066cc" stroke-width="1" rx="5"/>
+  <text x="360" y="165" font-size="11" fill="#555">policy_score: 8.5</text>
+  <text x="360" y="185" font-size="11" fill="#555">max_vuln: 9.2</text>
+  <text x="360" y="205" font-size="11" fill="#555">privileged: 0.75</text>
+  <text x="360" y="225" font-size="11" fill="#555">external_exp: 1.0</text>
+  <text x="360" y="245" font-size="11" fill="#555">...</text>
+  <text x="420" y="265" text-anchor="middle" font-size="12" font-weight="bold" fill="#0066cc">20 features</text>
+
+  <!-- Arrow 2 -->
+  <line x1="510" y1="190" x2="580" y2="190" stroke="#0066cc" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="545" y="180" text-anchor="middle" font-size="11" fill="#0066cc">Scale</text>
+
+  <!-- Step 3: Feature Scaling -->
+  <rect x="590" y="120" width="160" height="140" fill="#f0e6ff" stroke="#6f42c1" stroke-width="3" rx="10"/>
+  <text x="670" y="150" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">Scaling</text>
+  <text x="670" y="175" text-anchor="middle" font-size="12" fill="#333">StandardScaler</text>
+  <rect x="610" y="185" width="120" height="60" fill="#fff" stroke="#6f42c1" stroke-width="1" rx="5"/>
+  <text x="670" y="205" text-anchor="middle" font-size="10" fill="#555">(x - mean) / std</text>
+  <text x="670" y="225" text-anchor="middle" font-size="10" fill="#555">Normalized to</text>
+  <text x="670" y="240" text-anchor="middle" font-size="10" fill="#555">mean=0, std=1</text>
+
+  <!-- Arrow 3 -->
+  <line x1="750" y1="190" x2="820" y2="190" stroke="#0066cc" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="785" y="180" text-anchor="middle" font-size="11" fill="#0066cc">Predict</text>
+
+  <!-- Step 4: 1000 Trees Predictions -->
+  <rect x="830" y="80" width="300" height="220" fill="#d4e6f1" stroke="#2874a6" stroke-width="3" rx="10"/>
+  <text x="980" y="110" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">1000 Decision Trees Vote</text>
+
+  <!-- Individual predictions -->
+  <rect x="850" y="125" width="260" height="160" fill="#fff" stroke="#2874a6" stroke-width="1" rx="5"/>
+  <text x="870" y="150" font-size="13" fill="#555">Tree 1 → 7.2</text>
+  <text x="870" y="175" font-size="13" fill="#555">Tree 2 → 6.8</text>
+  <text x="870" y="200" font-size="13" fill="#555">Tree 3 → 7.5</text>
+  <text x="870" y="225" font-size="13" fill="#555">...</text>
+  <text x="870" y="250" font-size="13" fill="#555">Tree 1000 → 7.3</text>
+  <text x="980" y="275" text-anchor="middle" font-size="12" font-weight="bold" fill="#2874a6">Each tree traverses its learned decision path</text>
+
+  <!-- Arrow 4 -->
+  <line x1="980" y1="305" x2="980" y2="350" stroke="#0066cc" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1030" y="330" font-size="11" fill="#0066cc">Average</text>
+
+  <!-- Step 5: Final Risk Score -->
+  <rect x="850" y="360" width="260" height="120" fill="#d1f2eb" stroke="#28a745" stroke-width="3" rx="10"/>
+  <text x="980" y="390" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">Final Risk Score</text>
+  <text x="980" y="425" text-anchor="middle" font-size="36" font-weight="bold" fill="#28a745">7.4</text>
+  <text x="980" y="460" text-anchor="middle" font-size="13" fill="#666">Ranking: 15/1000 deployments</text>
+
+  <!-- Step 6: Feature Importance (explanation) -->
+  <rect x="50" y="350" width="750" height="180" fill="#fff3cd" stroke="#ffc107" stroke-width="3" rx="10"/>
+  <text x="425" y="380" text-anchor="middle" font-size="16" font-weight="bold" fill="#2d2d2d">Explanation: Top Contributing Features</text>
+
+  <g transform="translate(70, 395)">
+    <rect x="0" y="0" width="280" height="20" fill="#dc3545" opacity="0.7"/>
+    <text x="5" y="15" font-size="12" fill="#fff">1. policy_violations → +2.1</text>
+  </g>
+
+  <g transform="translate(70, 425)">
+    <rect x="0" y="0" width="230" height="20" fill="#dc3545" opacity="0.6"/>
+    <text x="5" y="15" font-size="12" fill="#fff">2. max_vulnerability → +1.8</text>
+  </g>
+
+  <g transform="translate(70, 455)">
+    <rect x="0" y="0" width="180" height="20" fill="#ffc107" opacity="0.7"/>
+    <text x="5" y="15" font-size="12" fill="#333">3. privileged_ratio → +1.2</text>
+  </g>
+
+  <g transform="translate(70, 485)">
+    <rect x="0" y="0" width="100" height="20" fill="#ffc107" opacity="0.5"/>
+    <text x="5" y="15" font-size="12" fill="#333">4. external_exposure → +0.6</text>
+  </g>
+
+  <g transform="translate(420, 395)">
+    <text x="0" y="15" font-size="13" fill="#666" font-style="italic">Feature importance computed from</text>
+    <text x="0" y="40" font-size="13" fill="#666" font-style="italic">all 1000 trees' decisions:</text>
+    <text x="0" y="65" font-size="13" fill="#666" font-style="italic">• How often feature was used</text>
+    <text x="0" y="90" font-size="13" fill="#666" font-style="italic">• How much it reduced error</text>
+  </g>
+
+  <!-- Legend -->
+  <text x="50" y="570" font-size="14" fill="#666" font-weight="bold">Prediction time:</text>
+  <text x="170" y="570" font-size="13" fill="#666">&lt; 10ms per deployment</text>
+</svg>

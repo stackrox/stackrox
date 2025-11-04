@@ -1,0 +1,178 @@
+/* Custom styles for ML Risk Service presentation */
+
+/* Section headers with dark background */
+.reveal section[data-background-color="#2d2d2d"] h1 {
+  color: #ffffff;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Code blocks */
+.reveal pre {
+  font-size: 0.55em;
+  line-height: 1.4;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.reveal code {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Incremental lists with better spacing */
+.reveal ul li, .reveal ol li {
+  margin-bottom: 0.5em;
+}
+
+/* Fragment animations */
+.reveal .fragment {
+  opacity: 0;
+}
+
+.reveal .fragment.visible {
+  opacity: 1;
+}
+
+/* Columns layout */
+.reveal .columns {
+  display: flex;
+  gap: 2em;
+}
+
+.reveal .column {
+  flex: 1;
+}
+
+/* Emphasis boxes */
+.reveal .callout {
+  padding: 1em;
+  border-left: 4px solid #0066cc;
+  background-color: #f0f7ff;
+  margin: 1em 0;
+}
+
+/* Tables */
+.reveal table {
+  font-size: 0.8em;
+  border-collapse: collapse;
+  margin: 1em auto;
+}
+
+.reveal th {
+  background-color: #2d2d2d;
+  color: white;
+  padding: 0.5em;
+}
+
+.reveal td {
+  padding: 0.5em;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Highlighted text */
+.reveal strong {
+  color: #0066cc;
+  font-weight: bold;
+}
+
+/* Image captions */
+.reveal figcaption {
+  font-size: 0.7em;
+  color: #666;
+  font-style: italic;
+  margin-top: 0.5em;
+}
+
+/* Slide numbers */
+.reveal .slide-number {
+  color: #666;
+  font-size: 0.8em;
+}
+
+/* Footer */
+.reveal .footer {
+  color: #999;
+  font-size: 0.7em;
+}
+
+/* Success/check marks */
+.reveal .success {
+  color: #28a745;
+}
+
+.reveal .warning {
+  color: #ffc107;
+}
+
+.reveal .error {
+  color: #dc3545;
+}
+
+/* Metric boxes for performance numbers */
+.metric-box {
+  display: inline-block;
+  padding: 0.5em 1em;
+  margin: 0.5em;
+  background-color: #e8f4f8;
+  border-radius: 8px;
+  border: 2px solid #0066cc;
+  font-weight: bold;
+}
+
+/* Code output blocks */
+.reveal .code-output {
+  background-color: #2d2d2d;
+  color: #f8f8f2;
+  padding: 1em;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.7em;
+}
+
+/* Diagram containers */
+.reveal .diagram-container {
+  background-color: #fafafa;
+  padding: 1em;
+  border-radius: 8px;
+  margin: 1em 0;
+}
+
+/* Notes style (for speaker notes) */
+.reveal .notes {
+  font-size: 0.6em;
+  color: #666;
+  font-style: italic;
+  border-top: 1px solid #ddd;
+  padding-top: 0.5em;
+  margin-top: 1em;
+}
+
+/* Title slide customization */
+.reveal .title-slide h1 {
+  font-size: 2.5em;
+  color: #2d2d2d;
+  margin-bottom: 0.3em;
+}
+
+.reveal .title-slide h2 {
+  font-size: 1.3em;
+  color: #666;
+  font-weight: normal;
+}
+
+/* Agenda numbering */
+.reveal .agenda-list {
+  counter-reset: agenda-counter;
+  list-style: none;
+}
+
+.reveal .agenda-list li::before {
+  counter-increment: agenda-counter;
+  content: counter(agenda-counter) ". ";
+  font-weight: bold;
+  color: #0066cc;
+}
