@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -25,10 +25,10 @@ import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import {
-    fetchClusterWithRetentionInformation,
-    saveCluster,
     downloadClusterYaml,
+    fetchClusterWithRetentionInformation,
     getClusterDefaults,
+    saveCluster,
 } from 'services/ClustersService';
 import type { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
