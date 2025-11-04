@@ -8,9 +8,12 @@ import {
     Menu,
     MenuContent,
     MenuFooter,
-    MenuInput,
     MenuItem,
     MenuList,
+    MenuSearch,
+    MenuSearchInput,
+    MenuToggle,
+    MenuToggleElement,
     SearchInput,
     Select,
 } from '@patternfly/react-core';
@@ -49,12 +52,12 @@ function RoleSelector({
                 return (
                     <MenuItem
                         key={roleName}
-                        hasCheck
+                        hasCheckbox
                         itemId={roleName}
                         isSelected={selectedRoles.includes(roleName)}
                         isDisabled={!isEditable || isRolesLoading || isGenerated}
                     >
-                        <span className="pf-u-mx-xs" data-testid="namespace-name">
+                        <span className="pf-v5-u-mx-xs" data-testid="namespace-name">
                             {roleName}
                         </span>
                     </MenuItem>
@@ -63,19 +66,20 @@ function RoleSelector({
     }, [roles, input, isEditable, isGenerated, isRolesLoading, selectedRoles]);
 
     const roleSelectMenu = (
-        <Menu onSelect={onRoleSelect} selected={selectedRoles} isScrollable>
-            <MenuInput className="pf-u-p-md">
-                <SearchInput
-                    value={input}
-                    aria-label="Filter roles"
-                    type="search"
-                    placeholder="Filter roles..."
-                    onChange={(_event, value) => handleTextInputChange(value)}
-                />
-            </MenuInput>
-            <Divider className="pf-u-m-0" />
+        <Menu onSelect={onRoleSelect} selected={selectedRoles}>
+            <MenuSearch>
+                <MenuSearchInput>
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter roles"
+                        placeholder="Filter roles..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
+            <Divider className="pf-v5-u-m-0" />
             <MenuContent>
-                <MenuList>
+                <MenuList className="api-token-role-select">
                     {filteredRoleSelectMenuItems.length === 0 && (
                         <MenuItem isDisabled key="no result">
                             No roles found
@@ -97,30 +101,43 @@ function RoleSelector({
         </Menu>
     );
 
-    return (
-        <Select
-            isOpen={isRoleOpen}
-            onToggle={toggleIsRoleOpen}
-            className="role-select"
-            placeholderText={
-                <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                    <FlexItem spacer={{ default: 'spacerSm' }}>
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={() => toggleIsRoleOpen(!isRoleOpen)}
+            isExpanded={isRoleOpen}
+            isDisabled={selectedRoles.length === 0 || !isEditable || isGenerated}
+            aria-label={"Select roles"}
+            className={"role-select"}
+            variant={"plainText"}
+        >
+            <Flex alignSelf={{ default: 'alignSelfCenter' }}>
+                <FlexItem spacer={{ default: 'spacerSm' }}>
                         <span style={{ position: 'relative', top: '1px' }}>
                             {roles.length === 0 ? 'No roles' : 'Roles'}
                         </span>
+                </FlexItem>
+                {selectedRoles.length !== 0 && (
+                    <FlexItem spacer={{ default: 'spacerSm' }}>
+                        <Badge isRead>{selectedRoles.length}</Badge>
                     </FlexItem>
-                    {selectedRoles.length !== 0 && (
-                        <FlexItem spacer={{ default: 'spacerSm' }}>
-                            <Badge isRead>{selectedRoles.length}</Badge>
-                        </FlexItem>
-                    )}
-                </Flex>
-            }
-            toggleAriaLabel="Select roles"
-            isDisabled={roles.length === 0}
-            isPlain
-            customContent={roleSelectMenu}
-        />
+                )}
+            </Flex>
+        </MenuToggle>
+    );
+
+    return (
+        <Select
+            isOpen={isRoleOpen}
+            onOpenChange={(nextOpen: boolean) => toggleIsRoleOpen(nextOpen)}
+            toggle={toggle}
+            popperProps={{
+                maxWidth: '400px',
+                direction: 'down',
+            }}
+        >
+            {roleSelectMenu}
+        </Select>
     );
 }
 
