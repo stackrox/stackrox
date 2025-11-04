@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/virtualmachine"
 	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -43,6 +44,8 @@ var _ suite.SetupSubTest = (*virtualMachineInstanceSuite)(nil)
 var _ suite.TearDownSubTest = (*virtualMachineInstanceSuite)(nil)
 
 func (s *virtualMachineInstanceSuite) SetupSubTest() {
+	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
 	s.dispatcher = NewVirtualMachineInstanceDispatcher(clusterID, s.store)
