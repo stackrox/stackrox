@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -35,17 +36,25 @@ type serviceImpl struct {
 	pipeline     *pipeline.Pipeline
 	activityChan chan *sensorAPI.FileActivity
 	stoppers     set.Set[concurrency.Stopper]
+	stopperLock  sync.Mutex
 }
 
 func (s *serviceImpl) Stop() {
+	// Take a snapshot of stoppers while holding the lock
+	var stoppersList []concurrency.Stopper
+	concurrency.WithLock(&s.stopperLock, func() {
+		stoppersList = s.stoppers.AsSlice()
+	})
+
 	// Stop all active connections
-	for _, stopper := range s.stoppers.AsSlice() {
+	for _, stopper := range stoppersList {
 		stopper.Client().Stop() // Signal the receiveMessages that it needs to stop
 	}
 	// Wait for all connections to stop
-	for _, stopper := range s.stoppers.AsSlice() {
+	for _, stopper := range stoppersList {
 		<-stopper.Client().Stopped().Done() // Wait for receiveMessages to stop
 	}
+
 	// Close the channel first to signal no more messages
 	close(s.activityChan)
 	// Wait for the pipeline to finish processing
@@ -67,11 +76,21 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "file activity authorization for  %q", fullMethodName)
 }
 
+func (s *serviceImpl) RemoveStopper(stopper concurrency.Stopper) {
+	concurrency.WithLock(&s.stopperLock, func() {
+		s.stoppers.Remove(stopper)
+	})
+}
+
 func (s *serviceImpl) Communicate(stream sensor.FileActivityService_CommunicateServer) error {
 	// Create a stopper for this agent connection
 	stopper := concurrency.NewStopper()
-	s.stoppers.Add(stopper)
-	defer s.stoppers.Remove(stopper)
+
+	concurrency.WithLock(&s.stopperLock, func() {
+		s.stoppers.Add(stopper)
+	})
+
+	defer s.RemoveStopper(stopper)
 
 	return s.receiveMessages(stream, stopper)
 }
