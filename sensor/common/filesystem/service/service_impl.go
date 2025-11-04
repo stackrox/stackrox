@@ -46,7 +46,10 @@ func (s *serviceImpl) Stop() {
 	for _, stopper := range s.stoppers.AsSlice() {
 		<-stopper.Client().Stopped().Done() // Wait for receiveMessages to stop
 	}
+	// Close the channel first to signal no more messages
 	close(s.activityChan)
+	// Wait for the pipeline to finish processing
+	s.pipeline.Stop()
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

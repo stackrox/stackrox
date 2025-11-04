@@ -153,13 +153,22 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	return pi
 }
 
+func (p *Pipeline) Stop() {
+	p.stopper.Client().Stop()
+	<-p.stopper.Client().Stopped().Done()
+}
+
 func (p *Pipeline) run() {
 	defer p.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-p.stopper.Flow().StopRequested():
 			return
-		case fs := <-p.activityChan:
+		case fs, ok := <-p.activityChan:
+			if !ok {
+				// Channel closed, no more messages
+				return
+			}
 			event := p.translate(fs)
 			// TODO: Send event to detector
 			log.Infof("event= %+v", event)
