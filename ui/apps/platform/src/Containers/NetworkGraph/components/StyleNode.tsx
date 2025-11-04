@@ -8,18 +8,18 @@ import type {
     ReactNode,
 } from 'react';
 import {
-    Decorator,
-    DEFAULT_DECORATOR_RADIUS,
     DEFAULT_DECORATOR_PADDING,
+    DEFAULT_DECORATOR_RADIUS,
     DEFAULT_LAYER,
+    Decorator,
     DefaultNode,
-    getDefaultShapeDecoratorCenter,
     Layer,
     NodeShape,
-    observer,
     ScaleDetailsLevel,
     TOP_LAYER,
     TopologyQuadrant,
+    getDefaultShapeDecoratorCenter,
+    observer,
     useHover,
 } from '@patternfly/react-topology';
 import type {
@@ -40,7 +40,7 @@ import EgressOnly from 'images/network-graph/egress-only.svg?react';
 import IngressOnly from 'images/network-graph/ingress-only.svg?react';
 import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import { ensureExhaustive } from 'utils/type.utils';
-import type { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
+import type { DeploymentData, NetworkPolicyState, NodeDataType } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 const CUSTOM_DECORATOR_PADDING = 2.5;

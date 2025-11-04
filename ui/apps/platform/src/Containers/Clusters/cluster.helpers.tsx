@@ -385,10 +385,6 @@ export const isCertificateExpiringSoon = (
     currentDatetime
 ) => getCredentialExpirationStatus(sensorCertExpiryStatus, currentDatetime) !== 'HEALTHY';
 
-export function formatSensorVersion(sensorVersion: string) {
-    return sensorVersion || 'Not Running';
-}
-
 export const isDelayedSensorHealthStatus = (sensorHealthStatus) =>
     sensorHealthStatus === 'UNHEALTHY' || sensorHealthStatus === 'DEGRADED';
 

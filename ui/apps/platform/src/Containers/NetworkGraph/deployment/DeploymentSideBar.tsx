@@ -10,8 +10,8 @@ import {
     StackItem,
     Tab,
     TabContent,
-    Tabs,
     TabTitleText,
+    Tabs,
     Text,
     Title,
 } from '@patternfly/react-core';

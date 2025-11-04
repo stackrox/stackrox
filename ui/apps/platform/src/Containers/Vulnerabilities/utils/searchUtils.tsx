@@ -10,9 +10,9 @@ import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto'
 import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import {
-    searchValueAsArray,
-    getRequestQueryStringForSearchFilter,
     applyRegexSearchModifiers,
+    getRequestQueryStringForSearchFilter,
+    searchValueAsArray,
 } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Alert,
     Divider,
     Flex,
     Form,
     FormGroup,
-    Radio,
-    Title,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Radio,
+    Title,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
@@ -25,10 +25,10 @@ import { getVersionedDocs } from 'utils/versioning';
 import {
     getLifeCyclesUpdates,
     initialPolicy,
-    isRuntimePolicy,
-    isBuildPolicy,
     isBuildAndDeployPolicy,
+    isBuildPolicy,
     isDeployPolicy,
+    isRuntimePolicy,
 } from '../../policies.utils';
 import type { ValidPolicyLifeCycle } from '../../policies.utils';
 

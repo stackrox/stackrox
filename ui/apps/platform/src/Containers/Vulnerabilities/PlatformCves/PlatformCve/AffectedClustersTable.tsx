@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { Truncate } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLSortResult } from 'hooks/useURLSort';

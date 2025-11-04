@@ -1,4 +1,4 @@
-import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
+import { sortAsciiCaseInsensitive, sortSeverity, sortValueByLength } from 'sorters/sorters';
 import type { ListPolicy } from 'types/policy.proto';
 import { getPolicyOriginLabel } from '../policies.utils';
 

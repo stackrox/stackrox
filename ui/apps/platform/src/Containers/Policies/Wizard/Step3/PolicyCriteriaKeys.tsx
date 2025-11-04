@@ -1,4 +1,3 @@
-import React from 'react';
 import { groupBy } from 'lodash';
 import { Divider, Flex, Title } from '@patternfly/react-core';
 

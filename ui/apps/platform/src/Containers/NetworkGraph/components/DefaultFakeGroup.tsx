@@ -6,16 +6,16 @@ import { observer } from 'mobx-react';
 import { css } from '@patternfly/react-styles';
 import styles from '@patternfly/react-topology/dist/js/css/topology-components';
 import {
-    Layer,
-    LabelPosition,
-    LabelBadge,
     Ellipse,
+    LabelBadge,
+    LabelPosition,
+    Layer,
     NodeLabel,
     createSvgIdUrl,
     useCombineRefs,
+    useDragNode,
     useHover,
     useSize,
-    useDragNode,
 } from '@patternfly/react-topology';
 
 const DefaultFakeGroup = ({

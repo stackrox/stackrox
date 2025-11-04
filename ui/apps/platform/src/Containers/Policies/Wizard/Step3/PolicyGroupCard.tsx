@@ -1,19 +1,19 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import {
     Alert,
+    Button,
     Card,
+    CardBody,
     CardHeader,
     CardTitle,
-    CardBody,
+    Checkbox,
     Divider,
     Flex,
     FlexItem,
-    Button,
-    Checkbox,
     Stack,
     StackItem,
 } from '@patternfly/react-core';
-import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
+import { PlusIcon, TrashIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
 
 import type { Policy } from 'types/policy.proto';

@@ -775,18 +775,16 @@ module.exports = [
         ignores: [
             'cypress/integration/**',
             'src/Components/**',
-            'src/Containers/AccessControl/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
-            'src/Containers/MainPage/**',
-            'src/Containers/NetworkGraph/**',
-            'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
-            'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Vulnerabilities/components/**',
+            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
+            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
+            'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
 
         // languageOptions from previous configuration object
@@ -830,32 +828,17 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/ConsolePlugin/**',
             'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/ConfigManagement/**',
-            'src/Containers/Docs/**',
-            'src/Containers/ExceptionConfiguration/**',
-            'src/Containers/Images/**',
-            'src/Containers/Login/**',
-            'src/Containers/MitreAttackVectors/**',
-            'src/Containers/Policies/**',
-            'src/Containers/Search/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/VirtualMachineCves/**',
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
-            'src/Containers/*.{js,jsx,ts,tsx}',
-            'src/constants/**',
-            'src/hooks/**',
-            'src/providers/**',
-            'src/test-utils/**',
-            'src/utils/**',
-            'src/*.{js,jsx,ts,tsx}',
         ],
 
         // After deprecated folders have been deleted:

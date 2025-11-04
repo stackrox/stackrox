@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { FormikProvider, useFormik } from 'formik';
-import { Alert, Bullseye, Spinner, Modal, Button, Flex } from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Flex, Modal, Spinner } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { isValidCidrBlock } from 'utils/urlUtils';
 import {
-    fetchCIDRBlocks,
     deleteCIDRBlock,
-    postCIDRBlock,
+    fetchCIDRBlocks,
     patchCIDRBlock,
+    postCIDRBlock,
 } from 'services/NetworkService';
 import useTimeout from 'hooks/useTimeout';
-import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
+import { getHasDuplicateCIDRAddresses, getHasDuplicateCIDRNames } from './cidrFormUtils';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm, { emptyCIDRBlockRow } from './CIDRForm';
-import type { CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
+import type { CIDRBlockEntities, CIDRBlockEntity } from './CIDRForm';
 
 const validationSchema = yup.object().shape({
     entities: yup.array().of(

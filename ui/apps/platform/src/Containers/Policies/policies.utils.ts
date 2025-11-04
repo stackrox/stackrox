@@ -9,19 +9,19 @@ import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import type { ClusterScopeObject } from 'services/RolesService';
 import type { NotifierIntegration } from 'types/notifier.proto';
 import type {
+    ClientPolicy,
     EnforcementAction,
     LifecycleStage,
+    ListPolicy,
+    Policy,
+    PolicyDeploymentExclusion,
     PolicyEventSource,
     PolicyExcludedDeployment,
     PolicyExclusion,
-    Policy,
-    ClientPolicy,
-    ValueObj,
-    PolicyScope,
     PolicyGroup,
-    PolicyDeploymentExclusion,
     PolicyImageExclusion,
-    ListPolicy,
+    PolicyScope,
+    ValueObj,
 } from 'types/policy.proto';
 import type { SearchFilter } from 'types/search';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -29,9 +29,9 @@ import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
 
 import {
-    policyCriteriaDescriptors,
     auditLogDescriptor,
     imageSigningCriteriaName,
+    policyCriteriaDescriptors,
 } from './Wizard/Step3/policyCriteriaDescriptors';
 import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 

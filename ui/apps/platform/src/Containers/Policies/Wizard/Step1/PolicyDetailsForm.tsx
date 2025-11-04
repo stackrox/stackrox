@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Divider, Flex, Title } from '@patternfly/react-core';
 

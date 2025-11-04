@@ -3,7 +3,6 @@
  * The rest of the files can be either TypeScript (.ts or .tsx) or JavaScript (.js).
  */
 
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 

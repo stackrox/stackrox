@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bullseye, PageSection, Spinner, Tab, Tabs, Title } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 

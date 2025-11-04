@@ -23,9 +23,9 @@ import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/no
 import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
 import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
 import {
+    VirtualMachineCVEName,
     VirtualMachineComponentName,
     VirtualMachineComponentVersion,
-    VirtualMachineCVEName,
     VirtualMachineID,
     VirtualMachineName,
 } from 'Components/CompoundSearchFilter/attributes/virtualMachine';

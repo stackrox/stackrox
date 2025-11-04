@@ -26,7 +26,7 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
-import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import {
     getHiddenSeverities,
     getOverviewPagePath,
@@ -35,9 +35,9 @@ import {
 } from '../../utils/searchUtils';
 import CvePageHeader from '../../components/CvePageHeader';
 import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
     clusterSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    nodeSearchFilterConfig,
 } from '../../searchFilterConfig';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import AffectedNodesTable, { defaultSortOption, sortFields } from './AffectedNodesTable';

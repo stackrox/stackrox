@@ -1,5 +1,5 @@
 import { Truncate, pluralize } from '@patternfly/react-core';
-import { ExpandableRowContent, Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 import { Link } from 'react-router-dom-v5-compat';
 
@@ -22,9 +22,9 @@ import {
 } from '../../utils/sortFields';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import {
+    getHighestCvssScore,
     getHighestVulnerabilitySeverity,
     getIsSomeVulnerabilityFixable,
-    getHighestCvssScore,
 } from '../../utils/vulnerabilityUtils';
 
 import NodeComponentsTable, { nodeComponentFragment } from '../components/NodeComponentsTable';

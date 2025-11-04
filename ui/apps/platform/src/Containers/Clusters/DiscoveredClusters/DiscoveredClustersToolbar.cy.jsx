@@ -75,13 +75,13 @@ describe(Cypress.spec.relative, () => {
         const dropdowns = [
             {
                 name: 'Status',
-                label: 'Status filter menu items',
+                label: 'Status filter menu toggle',
                 allOption: 'All statuses',
                 options: ['Unsecured', 'Undetermined'],
             },
             {
                 name: 'Type',
-                label: 'Type filter menu items',
+                label: 'Type filter menu toggle',
                 allOption: 'All types',
                 options: ['AKS', 'EKS'],
             },
@@ -151,12 +151,12 @@ describe(Cypress.spec.relative, () => {
         cy.findByText('Filter by name').type('cluster-b{enter}');
         */
 
-        openDropdownAnd('Status filter menu items', () => {
+        openDropdownAnd('Status filter menu toggle', () => {
             cy.findByRole('checkbox', { name: 'Unsecured' }).click();
             cy.findByRole('checkbox', { name: 'Undetermined' }).click();
         });
 
-        openDropdownAnd('Type filter menu items', () => {
+        openDropdownAnd('Type filter menu toggle', () => {
             cy.findByRole('checkbox', { name: 'AKS' }).click();
             cy.findByRole('checkbox', { name: 'EKS' }).click();
         });
