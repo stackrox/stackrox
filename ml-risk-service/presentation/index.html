@@ -333,9 +333,11 @@ Stephan Heßelmann
 <h2>Random Forest: The Committee Approach</h2>
 <p><strong>Analogy:</strong> Assessing fire risk for a house</p>
 <ul>
-<li class="fragment">Instead of <strong>1 inspector</strong> with a rigid checklist…</li>
-<li class="fragment">Ask <strong>1000 inspectors</strong> to each create their own evaluation method</li>
-<li class="fragment">Each inspector looks at different combinations of factors:
+<li class="fragment">Instead of <strong>1 inspector</strong> with a rigid checklist…
+<ul>
+<li class="fragment">… ask <strong>1000 inspectors</strong></li>
+</ul></li>
+<li class="fragment">Each inspector looks at different factors:
 <ul>
 <li class="fragment">Electrical wiring + smoke detectors</li>
 <li class="fragment">Flammable materials + escape routes</li>
@@ -344,49 +346,45 @@ Stephan Heßelmann
 <li class="fragment"><strong>Final assessment</strong> = average of all 1000 opinions</li>
 </ul>
 </section>
-<section id="randomforest-architecture" class="slide level2">
-<h2>RandomForest Architecture</h2>
+<section id="random-forest-architecture" class="slide level2">
+<h2>Random Forest Architecture</h2>
 
-<img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:90.0%"><aside class="notes">
-<ul>
-<li>1000 decision trees built independently</li>
-<li>Each tree sees random subset of features</li>
-<li>Predictions are averaged for final score</li>
-</ul>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="why-randomforest" class="slide level2">
-<h2>Why RandomForest?</h2>
+<img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:90.0%"></section>
+<section id="why-random-forest" class="slide level2">
+<h2>Why Random Forest?</h2>
 <ol type="1">
-<li class="fragment"><strong>Robust</strong>
+<li class="fragment">✅ <strong>Robust against outliers</strong>
 <ul>
 <li class="fragment">If one tree makes a mistake, 999 others can correct it</li>
-<li class="fragment">Not sensitive to outliers or noisy data</li>
 </ul></li>
-<li class="fragment"><strong>Handles Complexity</strong>
+<li class="fragment">✅ <strong>Handles complexity</strong>
 <ul>
 <li class="fragment">Learns non-linear relationships automatically</li>
-<li class="fragment">No manual feature engineering required</li>
 </ul></li>
-<li class="fragment"><strong>Provides Explanations</strong>
+<li class="fragment">✅ <strong>Provides Explanations</strong>
 <ul>
 <li class="fragment">Feature importance: which security issues matter most</li>
-<li class="fragment">Per-prediction explanations available</li>
 </ul></li>
-<li class="fragment"><strong>Simple Training</strong>
+<li class="fragment">✅ <strong>Simple Training</strong>
 <ul>
 <li class="fragment">No epochs, no backpropagation, no GPUs required</li>
-<li class="fragment">Builds all 1000 trees in parallel (~30 seconds)</li>
+</ul></li>
+</ol>
+</section>
+<section id="why-not-random-forest" class="slide level2">
+<h2>Why <strong>not</strong> Random Forest?</h2>
+<ol type="1">
+<li class="fragment">❌ <strong>Just a regression algorithm</strong>
+<ul>
+<li class="fragment">No actual AI. Not in the training data -&gt; it won’t be learned.</li>
+</ul></li>
+<li class="fragment">❌ <strong>Supervised learning</strong>
+<ul>
+<li class="fragment">Predictions are only as good the training input.</li>
+</ul></li>
+<li class="fragment">❌ <strong>Retraining</strong>
+<ul>
+<li class="fragment">Learning new things requires new training data + model retraining.</li>
 </ul></li>
 </ol>
 </section>
@@ -402,7 +400,7 @@ Stephan Heßelmann
          ├─ YES → Risk Score = 5.0
          └─ NO → Risk Score = 2.3</code></pre>
 <div class="fragment">
-<p><strong>Final Prediction:</strong> Average of 1000 such trees</p>
+<p><strong>Final Prediction:</strong> Average of 1000s such trees</p>
 </div>
 </section></section>
 <section>
@@ -414,85 +412,17 @@ Stephan Heßelmann
 <h2>End-to-End Training Flow</h2>
 
 <img data-src="diagrams/training-pipeline.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section>
-<section id="feature-categories" class="slide level2">
-<h2>Feature Categories</h2>
-
-<img data-src="diagrams/feature-categories.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:95.0%"></section>
-<section id="security-features-20-extracted" class="slide level2">
-<h2>Security Features (20+ extracted)</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Deployment Configuration</strong></p>
-<ul>
-<li>Policy violation score</li>
-<li>Privileged container ratio</li>
-<li>Host network/PID/IPC access</li>
-<li>Service account tokens</li>
-</ul>
-<p><strong>Network Exposure</strong></p>
-<ul>
-<li>External exposure flag</li>
-<li>Exposed port count (log scale)</li>
-</ul>
-</div><div class="column" style="width:50%;">
-<p><strong>Vulnerabilities</strong></p>
-<ul>
-<li>Average/max CVE severity</li>
-<li>Average/max CVSS scores</li>
-<li>Total vulnerability burden</li>
-</ul>
-<p><strong>Image Security</strong></p>
-<ul>
-<li>Risky component count</li>
-<li>Total component count</li>
-<li>Image age (days)</li>
-<li>Process baseline violations</li>
-</ul>
-</div></div>
-</section>
-<section id="synthetic-vs-real-risk-scores" class="slide level2">
-<h2>Synthetic vs Real Risk Scores</h2>
-<p><strong>Bootstrap Phase (Synthetic Scoring):</strong></p>
-<ul>
-<li class="fragment">Calculate risk using StackRox’s multiplier system</li>
-<li class="fragment">Model learns to reproduce existing logic</li>
-<li class="fragment">Provides baseline for initial deployment</li>
-</ul>
-<p><strong>Production Phase (Real Scoring):</strong></p>
-<ul>
-<li class="fragment">Human analysts or automated systems provide ground truth</li>
-<li class="fragment">Model learns from actual security outcomes</li>
-<li class="fragment">Improves beyond initial rule-based system</li>
-</ul>
-</section>
-<section id="model-configuration" class="slide level2">
-<h2>Model Configuration</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href=""></a><span class="fu">model</span><span class="kw">:</span></span>
-<span id="cb4-2"><a href=""></a><span class="at">  </span><span class="fu">algorithm</span><span class="kw">:</span><span class="at"> sklearn_ranksvm</span></span>
-<span id="cb4-3"><a href=""></a></span>
-<span id="cb4-4"><a href=""></a><span class="at">  </span><span class="fu">sklearn_params</span><span class="kw">:</span></span>
-<span id="cb4-5"><a href=""></a><span class="at">    </span><span class="fu">n_estimators</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span><span class="co">      # 1000 decision trees</span></span>
-<span id="cb4-6"><a href=""></a><span class="at">    </span><span class="fu">max_depth</span><span class="kw">:</span><span class="at"> </span><span class="dv">25</span><span class="co">           # Tree depth</span></span>
-<span id="cb4-7"><a href=""></a><span class="at">    </span><span class="fu">min_samples_split</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span><span class="co">   # Minimum samples to split</span></span>
-<span id="cb4-8"><a href=""></a><span class="at">    </span><span class="fu">min_samples_leaf</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span><span class="co">     # Minimum samples in leaf</span></span>
-<span id="cb4-9"><a href=""></a><span class="at">    </span><span class="fu">max_features</span><span class="kw">:</span><span class="at"> </span><span class="st">"sqrt"</span><span class="co">    # Features per split</span></span>
-<span id="cb4-10"><a href=""></a><span class="at">    </span><span class="fu">n_jobs</span><span class="kw">:</span><span class="at"> </span><span class="dv">-1</span><span class="co">              # Use all CPU cores</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="fragment">
-<p><strong>Training Time:</strong> ~30 seconds for 1000 deployments</p>
-</div>
-</section>
 <section id="performance-metric-ndcg" class="slide level2">
 <h2>Performance Metric: NDCG</h2>
 <p><strong>NDCG = Normalized Discounted Cumulative Gain</strong></p>
 <ul>
 <li class="fragment">Measures <strong>ranking quality</strong> on 0-1 scale</li>
 <li class="fragment">Values closer to <strong>1.0</strong> = better ranking</li>
-<li class="fragment">Industry standard for search engines and recommender systems</li>
 </ul>
 <p><strong>Example:</strong></p>
-<pre><code>True ranking:  [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-Model ranking: [10, 8, 9, 7, 6, 5, 4, 3, 2, 1]
-                    ↑ Small error at top
+<pre><code>True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
+                                     ↑ Small error at top
 NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 </section>
 <section id="typical-performance" class="slide level2">
@@ -501,16 +431,15 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <div class="column" style="width:50%;">
 <p><strong>Training Metrics</strong></p>
 <ul>
-<li>Training NDCG: <strong>0.95-0.99</strong></li>
-<li>Validation NDCG: <strong>0.85-0.95</strong></li>
-<li>Training time: <strong>~30 sec</strong></li>
+<li>NDCG: <strong>0.75-0.95</strong></li>
+<li>Training time: <strong>~60 sec</strong></li>
 </ul>
 </div><div class="column" style="width:50%;">
 <p><strong>Model Characteristics</strong></p>
 <ul>
 <li>Feature count: <strong>~20</strong></li>
-<li>Training samples: <strong>1000-10000</strong></li>
-<li>Model size: <strong>~5-20 MB</strong></li>
+<li>Training samples: <strong>100-1000</strong></li>
+<li>Model size: <strong>~20 MB</strong></li>
 <li>Trees: <strong>1000</strong></li>
 </ul>
 </div></div>
@@ -529,65 +458,27 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <img data-src="diagrams/prediction-flow.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:95.0%"></section>
 <section id="feature-importance-what-matters" class="slide level2">
 <h2>Feature Importance: What Matters?</h2>
-<p><strong>Top 5 Most Important Features:</strong></p>
+<p><strong>Example: Top 5 most important features</strong></p>
 <pre><code>1. policy_violation_score      28.5%
 2. max_vulnerability_score     19.8%
 3. privileged_container_ratio  15.2%
 4. external_exposure            8.9%
 5. process_baseline_violations  7.6%</code></pre>
 <div class="fragment">
-<p><strong>Insight:</strong> Policy violations and critical CVEs drive risk ranking more than other factors</p>
-</div>
-</section>
-<section id="real-example-nginx-frontend" class="slide level2">
-<h2>Real Example: nginx-frontend</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<p><strong>Deployment Characteristics:</strong></p>
 <ul>
-<li>Policy violations: 12 (severity 8.5)</li>
-<li>Vulnerabilities: 15 CVEs</li>
-<li>Privileged: Yes (ratio: 0.75)</li>
-<li>External exposure: Yes</li>
-<li>Image age: 180 days</li>
+<li class="fragment"><strong>Insight:</strong> Policy violations and critical CVEs drive risk ranking more than other factors.</li>
+<li class="fragment"><strong>Detail:</strong> Calculated for training data and each prediction.</li>
 </ul>
-</div><div class="column" style="width:50%;">
-<p><strong>Risk Prediction:</strong></p>
-<ul>
-<li><strong>Risk Score:</strong> 7.4 / 10</li>
-<li><strong>Rank:</strong> 15th of 1000</li>
-</ul>
-<p><strong>Top Contributing Features:</strong></p>
-<ol type="1">
-<li><code>policy_violation_score</code> → +2.1</li>
-<li><code>max_vulnerability_score</code> → +1.8</li>
-<li><code>privileged_container_ratio</code> → +1.2</li>
-<li><code>external_exposure</code> → +0.6</li>
-</ol>
-</div></div>
-</section>
-<section id="validation-predicted-vs-actual" class="slide level2">
-<h2>Validation: Predicted vs Actual</h2>
-<p><strong>Validation Metrics (on production data):</strong></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href=""></a><span class="fu">{</span></span>
-<span id="cb7-2"><a href=""></a>  <span class="dt">"mae"</span><span class="fu">:</span> <span class="fl">0.34</span><span class="fu">,</span>           <span class="er">//</span> <span class="er">Mean</span> <span class="er">absolute</span> <span class="er">error</span></span>
-<span id="cb7-3"><a href=""></a>  <span class="dt">"rmse"</span><span class="fu">:</span> <span class="fl">0.49</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Root</span> <span class="er">mean</span> <span class="er">squared</span> <span class="er">error</span></span>
-<span id="cb7-4"><a href=""></a>  <span class="dt">"correlation"</span><span class="fu">:</span> <span class="fl">0.87</span><span class="fu">,</span>   <span class="er">//</span> <span class="er">Linear</span> <span class="er">correlation</span></span>
-<span id="cb7-5"><a href=""></a>  <span class="dt">"ndcg"</span><span class="fu">:</span> <span class="fl">0.92</span><span class="fu">,</span>          <span class="er">//</span> <span class="er">Ranking</span> <span class="er">quality</span> <span class="er">⭐</span></span>
-<span id="cb7-6"><a href=""></a>  <span class="dt">"within_30_percent"</span><span class="fu">:</span> <span class="fl">87.5</span><span class="er">%</span></span>
-<span id="cb7-7"><a href=""></a><span class="fu">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="fragment">
-<p><strong>NDCG = 0.92</strong> means model ranks 92% as well as perfect ranking!</p>
 </div>
 </section></section>
 <section>
-<section id="production-future" class="title-slide slide level1 center" data-background-color="#2d2d2d">
-<h1>Production &amp; Future</h1>
+<section id="vibe-coding" class="title-slide slide level1 center" data-background-color="#2d2d2d">
+<h1>Vibe Coding</h1>
 
 </section>
 <section id="current-status" class="slide level2">
 <h2>Current Status</h2>
-<p>✅ <strong>Implemented:</strong></p>
+<p>🤖 <strong>Model:</strong></p>
 <ul>
 <li class="fragment">Full training pipeline with Central integration</li>
 <li class="fragment">Feature extraction for deployments + images</li>
@@ -605,42 +496,21 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 </section>
 <section id="api-endpoints" class="slide level2">
 <h2>API Endpoints</h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
-<span id="cb8-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
-<span id="cb8-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
-<span id="cb8-4"><a href=""></a></span>
-<span id="cb8-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
-<span id="cb8-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
-<span id="cb8-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
-<span id="cb8-8"><a href=""></a></span>
-<span id="cb8-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
-<span id="cb8-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
-<span id="cb8-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
-<span id="cb8-12"><a href=""></a></span>
-<span id="cb8-13"><a href=""></a><span class="co"># List available models</span></span>
-<span id="cb8-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
-<span id="cb8-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-<section id="roadmap" class="slide level2">
-<h2>Roadmap</h2>
-<p><strong>Short-term (Q1 2025):</strong></p>
-<ul>
-<li class="fragment">Integration with ACS Console UI</li>
-<li class="fragment">Model A/B testing framework</li>
-<li class="fragment">Automated retraining pipeline</li>
-</ul>
-<p><strong>Medium-term (Q2-Q3 2025):</strong></p>
-<ul>
-<li class="fragment">Continuous learning from production feedback</li>
-<li class="fragment">Model drift detection and alerting</li>
-<li class="fragment">Multi-cluster model federation</li>
-</ul>
-<p><strong>Long-term (Q4 2025+):</strong></p>
-<ul>
-<li class="fragment">Temporal pattern detection (time-series)</li>
-<li class="fragment">Anomaly detection for new threat patterns</li>
-<li class="fragment">Active learning for high-uncertainty predictions</li>
-</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href=""></a><span class="co"># Train model with Central data</span></span>
+<span id="cb6-2"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/train-full</span>
+<span id="cb6-3"><a href=""></a>  <span class="ex">→</span> Returns: model_version, validation_ndcg</span>
+<span id="cb6-4"><a href=""></a></span>
+<span id="cb6-5"><a href=""></a><span class="co"># Predict risk for deployment</span></span>
+<span id="cb6-6"><a href=""></a><span class="ex">POST</span> /api/v1/predictions</span>
+<span id="cb6-7"><a href=""></a>  <span class="ex">→</span> Returns: risk_score, feature_importance</span>
+<span id="cb6-8"><a href=""></a></span>
+<span id="cb6-9"><a href=""></a><span class="co"># Validate model predictions</span></span>
+<span id="cb6-10"><a href=""></a><span class="ex">POST</span> /api/v1/training/central/validate-predictions</span>
+<span id="cb6-11"><a href=""></a>  <span class="ex">→</span> Returns: mae, rmse, correlation, ndcg</span>
+<span id="cb6-12"><a href=""></a></span>
+<span id="cb6-13"><a href=""></a><span class="co"># List available models</span></span>
+<span id="cb6-14"><a href=""></a><span class="ex">GET</span> /api/v1/models</span>
+<span id="cb6-15"><a href=""></a>  <span class="ex">→</span> Returns: model metadata, versions</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="key-takeaways" class="slide level2">
 <h2>Key Takeaways</h2>
@@ -657,7 +527,7 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <div class="r-stack">
 <div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center" style="width:60.0%"></p>
+<p><img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center" style="width:100.0%"></p>
 </figure>
 </div>
 </div>
@@ -665,12 +535,7 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <ul>
 <li>Code: <code>stackrox/ml-risk-service</code></li>
 <li>Docs: <code>learning.md</code> (comprehensive technical guide)</li>
-<li>API: <code>http://localhost:8090/docs</code> (OpenAPI)</li>
 </ul>
-</section>
-<section class="slide level2">
-
-<p><strong>Thank you!</strong></p>
 
 </section></section>
     </div>

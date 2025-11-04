@@ -138,42 +138,45 @@ if riskScore > maxMultiplier {
 
 ::: incremental
 - Instead of **1 inspector** with a rigid checklist...
-- Ask **1000 inspectors** to each create their own evaluation method
-- Each inspector looks at different combinations of factors:
+  - ... ask **1000 inspectors**
+- Each inspector looks at different factors:
   - Electrical wiring + smoke detectors
   - Flammable materials + escape routes
   - Building age + maintenance history
 - **Final assessment** = average of all 1000 opinions
 :::
 
-## RandomForest Architecture
+## Random Forest Architecture
 
 ![](diagrams/randomforest-architecture.svg){fig-align="center" width="90%"}
 
-::: {.notes}
-- 1000 decision trees built independently
-- Each tree sees random subset of features
-- Predictions are averaged for final score
-:::
-
-## Why RandomForest?
+## Why Random Forest?
 
 ::: incremental
-1. **Robust**
+1. ✅ **Robust against outliers**
    - If one tree makes a mistake, 999 others can correct it
-   - Not sensitive to outliers or noisy data
 
-2. **Handles Complexity**
+2. ✅ **Handles complexity**
    - Learns non-linear relationships automatically
-   - No manual feature engineering required
 
-3. **Provides Explanations**
+3. ✅ **Provides Explanations**
    - Feature importance: which security issues matter most
-   - Per-prediction explanations available
 
-4. **Simple Training**
+4. ✅ **Simple Training**
    - No epochs, no backpropagation, no GPUs required
-   - Builds all 1000 trees in parallel (~30 seconds)
+:::
+
+## Why **not** Random Forest?
+
+::: incremental
+1. ❌ **Just a regression algorithm**
+   - No actual AI. Not in the training data -> it won't be learned.
+
+2. ❌ **Supervised learning**
+   - Predictions are only as good the training input.
+
+3. ❌ **Retraining**
+   - Learning new things requires new training data + model retraining.
 :::
 
 ## Example: One Decision Tree
@@ -191,7 +194,7 @@ Is vulnerability_score > 7.5?
 ```
 
 ::: {.fragment}
-**Final Prediction:** Average of 1000 such trees
+**Final Prediction:** Average of 1000s such trees
 :::
 
 # Training Pipeline {background-color="#2d2d2d"}
@@ -200,78 +203,6 @@ Is vulnerability_score > 7.5?
 
 ![](diagrams/training-pipeline.svg){fig-align="center" width="100%"}
 
-## Feature Categories
-
-![](diagrams/feature-categories.svg){fig-align="center" width="95%"}
-
-## Security Features (20+ extracted)
-
-:::: {.columns}
-::: {.column width="50%"}
-**Deployment Configuration**
-
-- Policy violation score
-- Privileged container ratio
-- Host network/PID/IPC access
-- Service account tokens
-
-**Network Exposure**
-
-- External exposure flag
-- Exposed port count (log scale)
-:::
-
-::: {.column width="50%"}
-**Vulnerabilities**
-
-- Average/max CVE severity
-- Average/max CVSS scores
-- Total vulnerability burden
-
-**Image Security**
-
-- Risky component count
-- Total component count
-- Image age (days)
-- Process baseline violations
-:::
-::::
-
-## Synthetic vs Real Risk Scores
-
-::: incremental
-**Bootstrap Phase (Synthetic Scoring):**
-
-- Calculate risk using StackRox's multiplier system
-- Model learns to reproduce existing logic
-- Provides baseline for initial deployment
-
-**Production Phase (Real Scoring):**
-
-- Human analysts or automated systems provide ground truth
-- Model learns from actual security outcomes
-- Improves beyond initial rule-based system
-:::
-
-## Model Configuration
-
-```yaml
-model:
-  algorithm: sklearn_ranksvm
-
-  sklearn_params:
-    n_estimators: 1000      # 1000 decision trees
-    max_depth: 25           # Tree depth
-    min_samples_split: 10   # Minimum samples to split
-    min_samples_leaf: 4     # Minimum samples in leaf
-    max_features: "sqrt"    # Features per split
-    n_jobs: -1              # Use all CPU cores
-```
-
-::: {.fragment}
-**Training Time:** ~30 seconds for 1000 deployments
-:::
-
 ## Performance Metric: NDCG
 
 **NDCG = Normalized Discounted Cumulative Gain**
@@ -279,13 +210,12 @@ model:
 ::: incremental
 - Measures **ranking quality** on 0-1 scale
 - Values closer to **1.0** = better ranking
-- Industry standard for search engines and recommender systems
 
 **Example:**
 ```
-True ranking:  [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-Model ranking: [10, 8, 9, 7, 6, 5, 4, 3, 2, 1]
-                    ↑ Small error at top
+True ranking:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Model ranking: [1, 2, 3, 4, 5, 6, 7, 9, 8, 10]
+                                     ↑ Small error at top
 NDCG ≈ 0.98  (98% as good as perfect ranking)
 ```
 :::
@@ -296,17 +226,16 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)
 ::: {.column width="50%"}
 **Training Metrics**
 
-- Training NDCG: **0.95-0.99**
-- Validation NDCG: **0.85-0.95**
-- Training time: **~30 sec**
+- NDCG: **0.75-0.95**
+- Training time: **~60 sec**
 :::
 
 ::: {.column width="50%"}
 **Model Characteristics**
 
 - Feature count: **~20**
-- Training samples: **1000-10000**
-- Model size: **~5-20 MB**
+- Training samples: **100-1000**
+- Model size: **~20 MB**
 - Trees: **1000**
 :::
 ::::
@@ -323,7 +252,7 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)
 
 ## Feature Importance: What Matters?
 
-**Top 5 Most Important Features:**
+**Example: Top 5 most important features**
 
 ```
 1. policy_violation_score      28.5%
@@ -333,62 +262,19 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)
 5. process_baseline_violations  7.6%
 ```
 
-::: {.fragment}
-**Insight:** Policy violations and critical CVEs drive risk ranking more than other factors
+:::::: {.fragment}
+::: incremental
+- **Insight:** Policy violations and critical CVEs drive risk ranking more than other factors.
+- **Detail:** Calculated for training data and each prediction.
 :::
+::::::
 
-## Real Example: nginx-frontend
-
-:::: {.columns}
-::: {.column width="50%"}
-**Deployment Characteristics:**
-
-- Policy violations: 12 (severity 8.5)
-- Vulnerabilities: 15 CVEs
-- Privileged: Yes (ratio: 0.75)
-- External exposure: Yes
-- Image age: 180 days
-:::
-
-::: {.column width="50%"}
-**Risk Prediction:**
-
-- **Risk Score:** 7.4 / 10
-- **Rank:** 15th of 1000
-
-**Top Contributing Features:**
-
-1. `policy_violation_score` → +2.1
-2. `max_vulnerability_score` → +1.8
-3. `privileged_container_ratio` → +1.2
-4. `external_exposure` → +0.6
-:::
-::::
-
-## Validation: Predicted vs Actual
-
-**Validation Metrics (on production data):**
-
-```json
-{
-  "mae": 0.34,           // Mean absolute error
-  "rmse": 0.49,          // Root mean squared error
-  "correlation": 0.87,   // Linear correlation
-  "ndcg": 0.92,          // Ranking quality ⭐
-  "within_30_percent": 87.5%
-}
-```
-
-::: {.fragment}
-**NDCG = 0.92** means model ranks 92% as well as perfect ranking!
-:::
-
-# Production & Future {background-color="#2d2d2d"}
+# Vibe Coding {background-color="#2d2d2d"}
 
 ## Current Status
 
 ::: incremental
-✅ **Implemented:**
+🤖 **Model:**
 
 - Full training pipeline with Central integration
 - Feature extraction for deployments + images
@@ -424,28 +310,6 @@ GET /api/v1/models
   → Returns: model metadata, versions
 ```
 
-## Roadmap
-
-::: incremental
-**Short-term (Q1 2025):**
-
-- Integration with ACS Console UI
-- Model A/B testing framework
-- Automated retraining pipeline
-
-**Medium-term (Q2-Q3 2025):**
-
-- Continuous learning from production feedback
-- Model drift detection and alerting
-- Multi-cluster model federation
-
-**Long-term (Q4 2025+):**
-
-- Temporal pattern detection (time-series)
-- Anomaly detection for new threat patterns
-- Active learning for high-uncertainty predictions
-:::
-
 ## Key Takeaways
 
 ::: incremental
@@ -463,15 +327,10 @@ GET /api/v1/models
 ## Questions?
 
 ::: {.r-stack}
-![](diagrams/randomforest-architecture.svg){fig-align="center" width="60%"}
+![](diagrams/randomforest-architecture.svg){fig-align="center" width="100%"}
 :::
 
 **Resources:**
 
 - Code: `stackrox/ml-risk-service`
 - Docs: `learning.md` (comprehensive technical guide)
-- API: `http://localhost:8090/docs` (OpenAPI)
-
----
-
-**Thank you!**

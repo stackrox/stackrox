@@ -1,139 +1,139 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
   <!-- Title -->
-  <text x="600" y="40" text-anchor="middle" font-size="28" font-weight="bold" fill="#2d2d2d">Security Feature Categories (~20 features)</text>
+  <text x="600" y="40" text-anchor="middle" font-size="38" font-weight="bold" fill="#2d2d2d">Security Feature Categories (~20 features)</text>
 
   <!-- Quadrant 1: Deployment Configuration -->
   <rect x="50" y="100" width="550" height="300" fill="#ffe6e6" stroke="#dc3545" stroke-width="4" rx="15"/>
-  <text x="325" y="140" text-anchor="middle" font-size="22" font-weight="bold" fill="#dc3545">📋 Deployment Configuration</text>
+  <text x="325" y="140" text-anchor="middle" font-size="30" font-weight="bold" fill="#dc3545">📋 Deployment Configuration</text>
 
   <g transform="translate(80, 165)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">policy_violation_score</tspan> - Weighted count of violations</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">policy_violation_score</tspan> - Weighted count of violations</text>
   </g>
 
   <g transform="translate(80, 200)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">privileged_container_ratio</tspan> - % privileged containers</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">privileged_container_ratio</tspan> - % privileged containers</text>
   </g>
 
   <g transform="translate(80, 235)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">host_network</tspan> - Uses host networking (0/1)</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">host_network</tspan> - Uses host networking (0/1)</text>
   </g>
 
   <g transform="translate(80, 270)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">host_pid</tspan> - Accesses host PID namespace (0/1)</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">host_pid</tspan> - Accesses host PID namespace (0/1)</text>
   </g>
 
   <g transform="translate(80, 305)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">host_ipc</tspan> - Accesses host IPC namespace (0/1)</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">host_ipc</tspan> - Accesses host IPC namespace (0/1)</text>
   </g>
 
   <g transform="translate(80, 340)">
     <circle cx="10" cy="0" r="6" fill="#dc3545"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">automount_service_account_token</tspan> - Auto-mounts SA tokens (0/1)</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">automount_service_account_token</tspan> - Auto-mounts SA tokens (0/1)</text>
   </g>
 
-  <text x="325" y="385" text-anchor="middle" font-size="15" fill="#dc3545" font-style="italic">High impact on risk ranking</text>
+  <text x="325" y="385" text-anchor="middle" font-size="22" fill="#dc3545" font-style="italic">High impact on risk ranking</text>
 
   <!-- Quadrant 2: Network Exposure -->
   <rect x="650" y="100" width="500" height="300" fill="#fff3cd" stroke="#ffc107" stroke-width="4" rx="15"/>
-  <text x="900" y="140" text-anchor="middle" font-size="22" font-weight="bold" fill="#856404">🌐 Network Exposure</text>
+  <text x="900" y="140" text-anchor="middle" font-size="30" font-weight="bold" fill="#856404">🌐 Network Exposure</text>
 
   <g transform="translate(680, 165)">
     <circle cx="10" cy="0" r="6" fill="#856404"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">has_external_exposure</tspan> - Exposed outside cluster</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">has_external_exposure</tspan> - Exposed outside cluster</text>
   </g>
 
   <g transform="translate(680, 200)">
     <circle cx="10" cy="0" r="6" fill="#856404"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">log_exposed_port_count</tspan> - Log scale of exposed ports</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">log_exposed_port_count</tspan> - Log scale of exposed ports</text>
   </g>
 
   <g transform="translate(680, 250)">
     <rect x="0" y="-15" width="440" height="100" fill="#fff" stroke="#856404" stroke-width="2" rx="8"/>
-    <text x="220" y="5" text-anchor="middle" font-size="14" fill="#555" font-weight="bold">Why log scale?</text>
-    <text x="220" y="30" text-anchor="middle" font-size="13" fill="#666">1 port vs 2 ports = small difference</text>
-    <text x="220" y="50" text-anchor="middle" font-size="13" fill="#666">10 ports vs 100 ports = large difference</text>
-    <text x="220" y="70" text-anchor="middle" font-size="13" fill="#666">Log scale captures this non-linearity</text>
+    <text x="220" y="5" text-anchor="middle" font-size="20" fill="#555" font-weight="bold">Why log scale?</text>
+    <text x="220" y="30" text-anchor="middle" font-size="18" fill="#666">1 port vs 2 ports = small difference</text>
+    <text x="220" y="50" text-anchor="middle" font-size="18" fill="#666">10 ports vs 100 ports = large difference</text>
+    <text x="220" y="70" text-anchor="middle" font-size="18" fill="#666">Log scale captures this non-linearity</text>
   </g>
 
-  <text x="900" y="385" text-anchor="middle" font-size="15" fill="#856404" font-style="italic">Medium-high impact</text>
+  <text x="900" y="385" text-anchor="middle" font-size="22" fill="#856404" font-style="italic">Medium-high impact</text>
 
   <!-- Quadrant 3: Vulnerabilities -->
   <rect x="50" y="450" width="550" height="300" fill="#d1f2eb" stroke="#28a745" stroke-width="4" rx="15"/>
-  <text x="325" y="490" text-anchor="middle" font-size="22" font-weight="bold" fill="#155724">🔒 Vulnerabilities (CVEs)</text>
+  <text x="325" y="490" text-anchor="middle" font-size="30" font-weight="bold" fill="#155724">🔒 Vulnerabilities (CVEs)</text>
 
   <g transform="translate(80, 515)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">avg_vulnerability_score</tspan> - Average CVE severity</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">avg_vulnerability_score</tspan> - Average CVE severity</text>
   </g>
 
   <g transform="translate(80, 550)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">max_vulnerability_score</tspan> - Worst CVE found</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">max_vulnerability_score</tspan> - Worst CVE found</text>
   </g>
 
   <g transform="translate(80, 585)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">avg_avg_cvss_score</tspan> - Average CVSS score</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">avg_avg_cvss_score</tspan> - Average CVSS score</text>
   </g>
 
   <g transform="translate(80, 620)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">max_avg_cvss_score</tspan> - Maximum CVSS score</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">max_avg_cvss_score</tspan> - Maximum CVSS score</text>
   </g>
 
   <g transform="translate(80, 655)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">sum_vulnerability_score</tspan> - Total vulnerability burden</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">sum_vulnerability_score</tspan> - Total vulnerability burden</text>
   </g>
 
   <g transform="translate(80, 690)">
     <circle cx="10" cy="0" r="6" fill="#155724"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">process_baseline_violations</tspan> - Unexpected processes</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">process_baseline_violations</tspan> - Unexpected processes</text>
   </g>
 
-  <text x="325" y="735" text-anchor="middle" font-size="15" fill="#155724" font-style="italic">Very high impact - critical for ranking</text>
+  <text x="325" y="735" text-anchor="middle" font-size="22" fill="#155724" font-style="italic">Very high impact - critical for ranking</text>
 
   <!-- Quadrant 4: Image Security -->
   <rect x="650" y="450" width="500" height="300" fill="#e6f2ff" stroke="#0066cc" stroke-width="4" rx="15"/>
-  <text x="900" y="490" text-anchor="middle" font-size="22" font-weight="bold" fill="#004085">📦 Image Security</text>
+  <text x="900" y="490" text-anchor="middle" font-size="30" font-weight="bold" fill="#004085">📦 Image Security</text>
 
   <g transform="translate(680, 515)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">avg_risky_component_count</tspan> - Avg risky components</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">avg_risky_component_count</tspan> - Avg risky components</text>
   </g>
 
   <g transform="translate(680, 550)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">max_risky_component_count</tspan> - Max risky components</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">max_risky_component_count</tspan> - Max risky components</text>
   </g>
 
   <g transform="translate(680, 585)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">avg_component_count</tspan> - Average total components</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">avg_component_count</tspan> - Average total components</text>
   </g>
 
   <g transform="translate(680, 620)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">log_avg_component_count</tspan> - Log scale of components</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">log_avg_component_count</tspan> - Log scale of components</text>
   </g>
 
   <g transform="translate(680, 655)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">avg_image_age_days</tspan> - Average image age</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">avg_image_age_days</tspan> - Average image age</text>
   </g>
 
   <g transform="translate(680, 690)">
     <circle cx="10" cy="0" r="6" fill="#004085"/>
-    <text x="25" y="5" font-size="16" fill="#333"><tspan font-weight="bold">max_image_age_days</tspan> - Oldest image age</text>
+    <text x="25" y="5" font-size="24" fill="#333"><tspan font-weight="bold">max_image_age_days</tspan> - Oldest image age</text>
   </g>
 
-  <text x="900" y="735" text-anchor="middle" font-size="15" fill="#004085" font-style="italic">Medium impact on risk</text>
+  <text x="900" y="735" text-anchor="middle" font-size="22" fill="#004085" font-style="italic">Medium impact on risk</text>
 
   <!-- Summary -->
-  <text x="600" y="785" text-anchor="middle" font-size="16" fill="#666">All features are numerical (0-1 binary flags or continuous values) - ready for RandomForest</text>
+  <text x="600" y="785" text-anchor="middle" font-size="24" fill="#666">All features are numerical (0-1 binary flags or continuous values) - ready for RandomForest</text>
 </svg>
