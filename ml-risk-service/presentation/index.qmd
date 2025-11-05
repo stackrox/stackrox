@@ -19,8 +19,8 @@ format:
 ::: incremental
 1. **The Challenge**: Why we need machine learning for risk ranking
 2. **The Algorithm**: How a random forest works
-3. **Training Pipeline**: From Central data to trained model
-4. **Predictions**: How to rank deployments in production
+3. **The Training**: From Central data to trained model
+4. **The Predictions**: How to rank deployments in production
 5. **Vibe Coding**: Current prototype status
 :::
 
@@ -196,13 +196,13 @@ Is vulnerability_score > 7.5?
    - Learning new things requires new training data + model retraining.
 :::
 
-# Training Pipeline {background-color="#2d2d2d"}
+# The Training {background-color="#2d2d2d"}
 
 ## End-to-End Training Flow
 
 ![](diagrams/training.svg){fig-align="center" width="100%"}
 
-# Predictions {background-color="#2d2d2d"}
+# The Predictions {background-color="#2d2d2d"}
 
 ## Prediction Flow
 
