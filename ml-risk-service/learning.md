@@ -41,7 +41,7 @@ RandomForest is particularly good for this task because:
 
 ### Step 1: Collecting Training Data
 
-Training data comes from StackRox Central and consists of real Kubernetes deployments with their security characteristics:
+Training data comes from StackRox Central via the `/v1/export/vuln-mgmt/workloads` API, which provides both deployment security characteristics and Central's calculated risk scores:
 
 ```
 Example deployment data:
@@ -52,9 +52,10 @@ Example deployment data:
 - Host network access: No
 - External exposure: Yes
 - Process baseline violations: 2
+- Central's risk score: 57.8 (ground truth)
 ```
 
-Each deployment is converted into **numerical features** that the model can understand.
+Each deployment is converted into **numerical features** that the model can understand, and Central's risk score serves as the training target.
 
 ### Step 2: Feature Extraction
 
@@ -94,8 +95,23 @@ The system extracts security-related features from each deployment. These fall i
 
 For training, the model needs to know what risk score each deployment should have. The system uses two approaches:
 
-**Approach 1: Synthetic Scoring (Bootstrap Phase)**
-When no historical risk scores exist, the system calculates synthetic scores based on StackRox's existing risk multiplier system:
+**Approach 1: Central's Risk Scores (Primary)**
+The primary source of training labels is Central's calculated risk scores, obtained via the `/v1/export/vuln-mgmt/workloads` API:
+
+```python
+# Central provides riskScore field for each deployment
+deployment_data = {
+    "id": "deployment-123",
+    "name": "nginx-frontend",
+    "riskScore": 57.8,  # Ground truth from Central
+    ...
+}
+```
+
+The model learns to reproduce and understand Central's risk assessment patterns. This approach ensures the ML model aligns with StackRox's established risk methodology while learning from actual security data.
+
+**Approach 2: Synthetic Scoring (Fallback)**
+When Central's risk scores are unavailable or incomplete, the system can calculate synthetic scores based on StackRox's risk multiplier system:
 
 ```
 Synthetic Risk Score =
@@ -109,10 +125,48 @@ Synthetic Risk Score =
   Image Age Multiplier
 ```
 
-Each multiplier is calculated from the deployment's features using pre-defined formulas that reproduce StackRox's current risk logic.
+Each multiplier is calculated from the deployment's features using pre-defined formulas that reproduce StackRox's risk logic. This fallback ensures training can proceed even without Central connectivity or for synthetic test data.
 
-**Approach 2: Real Risk Scores (Production Phase)**
-In production, human security analysts or other systems provide actual risk assessments, which the model uses as ground truth.
+### Step 3.5: Understanding Baseline Features (Optional)
+
+**What are baseline features?**
+Baseline features are an optional component that reproduces StackRox's traditional risk multiplier calculations. They were originally designed to bootstrap the ML system before Central integration was available.
+
+**When are they used?**
+The `create_training_sample()` function accepts an optional `risk_score` parameter:
+- **If `risk_score` is provided** (e.g., from Central's `riskScore` field): Baseline features are **not computed**, saving processing time
+- **If `risk_score` is None**: Baseline features are computed and multiplied together to create a synthetic score
+
+**Implementation detail**:
+```python
+# In feature extraction
+def create_training_sample(
+    deployment_data,
+    image_data_list,
+    alert_data,
+    baseline_violations,
+    risk_score=None  # Optional: use Central's score
+):
+    # Extract ML features (always done)
+    features = extract_features(deployment_data, image_data_list)
+
+    # Determine final risk score
+    if risk_score is not None:
+        # Use provided score (from Central)
+        final_score = risk_score
+        baseline_factors = None  # Skip baseline computation
+    else:
+        # Compute synthetic score from baseline factors
+        baseline_factors = compute_baseline_factors(...)
+        final_score = multiply_all_factors(baseline_factors)
+
+    return {
+        'features': features,
+        'risk_score': final_score
+    }
+```
+
+**Key insight**: The ML model only uses the extracted features (policy violations, vulnerabilities, etc.) for training. Whether the target score comes from Central or baseline multipliers doesn't affect the model's ability to learn - it's learning the same security patterns either way.
 
 ### Step 4: Data Preprocessing
 
@@ -367,16 +421,23 @@ The model performs several quality checks during training:
 
 ## Part 6: Common Scenarios
 
-### Scenario 1: First-Time Training (No Historical Data)
+### Scenario 1: First-Time Training
 
-**Problem**: No existing risk scores to learn from.
+**Problem**: Need to train a model for the first time.
 
-**Solution**: Use synthetic scoring based on StackRox multipliers:
+**Solution**: Use Central's risk scores as ground truth:
+1. Connect to Central via `/v1/export/vuln-mgmt/workloads` API
+2. Fetch deployment data including Central's calculated `riskScore` field
+3. Extract security features from deployment metadata
+4. Use Central's risk scores as training targets
+5. Model learns to reproduce and understand Central's risk assessment patterns
+
+**Fallback (if Central unavailable)**: Use synthetic scoring:
 1. Calculate baseline risk factors for each deployment
 2. Multiply all factors together to get synthetic score
 3. Use synthetic scores as training targets
 4. Model learns to reproduce StackRox's risk logic
-5. Over time, replace synthetic scores with real assessments
+5. Later, retrain with Central's actual scores when available
 
 ### Scenario 2: Continuous Learning (Production)
 
@@ -524,11 +585,14 @@ NDCG ≈ 0.0 (terrible ranking)
 
 ## Summary
 
-The ML Risk Service uses RandomForest to learn deployment risk patterns from historical data:
+The ML Risk Service uses RandomForest to learn deployment risk patterns from StackRox Central's risk assessments:
 
-1. **Training**: Builds 1000 decision trees that learn to rank deployments by analyzing security features
-2. **Prediction**: Averages predictions from all trees to produce robust risk scores
-3. **Explanation**: Identifies which security features contribute most to risk
-4. **Evaluation**: Uses NDCG to measure ranking quality
+1. **Data Collection**: Fetches deployment data and risk scores from Central's `/v1/export/vuln-mgmt/workloads` API
+2. **Training**: Builds 1000 decision trees that learn to rank deployments by analyzing security features and Central's ground truth risk scores
+3. **Prediction**: Averages predictions from all trees to produce robust risk scores aligned with Central's risk methodology
+4. **Explanation**: Identifies which security features contribute most to risk (feature importance)
+5. **Evaluation**: Uses NDCG to measure ranking quality against Central's scores
+
+**Key Design Principle**: The model learns from Central's established risk scoring patterns, ensuring consistency with StackRox's security expertise while enabling ML-driven improvements and adaptability.
 
 The system is designed to be transparent, explainable, and continuously improvable as new security patterns emerge.
