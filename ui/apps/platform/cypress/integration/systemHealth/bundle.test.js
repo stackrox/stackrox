@@ -89,7 +89,7 @@ describe('Download Diagnostic Data', () => {
 
             cy.get(isDatabaseDiagnosticsOnly).check();
 
-            cy.get('[aria-label="Options menu"]').should('be.disabled');
+            cy.get('[placeholder="Type a cluster name"]').should('be.disabled');
             cy.get(startingDate).should('be.disabled');
             cy.get(startingTime).should('be.disabled');
             cy.get(includeComplianceOperatorResources).should('be.disabled');

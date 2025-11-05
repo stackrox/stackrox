@@ -105,7 +105,7 @@ function DiagnosticBundleForm({
             isDisabled={values.isDatabaseDiagnosticsOnly}
             isFullWidth
         >
-            <TextInputGroup isPlain>
+            <TextInputGroup isPlain isDisabled={values.isDatabaseDiagnosticsOnly}>
                 <TextInputGroupMain
                     value={inputValue}
                     onClick={toggleClusterSelect}
