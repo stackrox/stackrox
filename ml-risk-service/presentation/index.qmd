@@ -147,7 +147,25 @@ if riskScore > maxMultiplier {
 
 ## Random Forest Architecture
 
-![](diagrams/randomforest-architecture.svg){fig-align="center" width="90%"}
+![](diagrams/random-forest.svg){fig-align="center" width="100%"}
+
+## Example: One Decision Tree
+
+```
+Is vulnerability_score > 7.5?
+├─ YES → Is privileged_container_ratio > 0.5?
+│         ├─ YES → Risk Score = 8.2
+│         └─ NO → Is external_exposure = 1?
+│                  ├─ YES → Risk Score = 6.5
+│                  └─ NO → Risk Score = 4.1
+└─ NO → Is policy_violation_score > 3.0?
+         ├─ YES → Risk Score = 5.0
+         └─ NO → Risk Score = 2.3
+```
+
+::: {.fragment}
+**Final Prediction:** Average of 1000s such trees
+:::
 
 ## Why Random Forest?
 
@@ -178,35 +196,17 @@ if riskScore > maxMultiplier {
    - Learning new things requires new training data + model retraining.
 :::
 
-## Example: One Decision Tree
-
-```
-Is vulnerability_score > 7.5?
-├─ YES → Is privileged_container_ratio > 0.5?
-│         ├─ YES → Risk Score = 8.2
-│         └─ NO → Is external_exposure = 1?
-│                  ├─ YES → Risk Score = 6.5
-│                  └─ NO → Risk Score = 4.1
-└─ NO → Is policy_violation_score > 3.0?
-         ├─ YES → Risk Score = 5.0
-         └─ NO → Risk Score = 2.3
-```
-
-::: {.fragment}
-**Final Prediction:** Average of 1000s such trees
-:::
-
 # Training Pipeline {background-color="#2d2d2d"}
 
 ## End-to-End Training Flow
 
-![](diagrams/training-pipeline.svg){fig-align="center" width="100%"}
+![](diagrams/training.svg){fig-align="center" width="100%"}
 
 # Predictions {background-color="#2d2d2d"}
 
 ## Prediction Flow
 
-![](diagrams/prediction-flow.svg){fig-align="center" width="95%"}
+![](diagrams/prediction.svg){fig-align="bottom" width="100%"}
 
 ## Feature Importance: What Matters?
 
@@ -311,5 +311,5 @@ Validation **NDCG > 0.75** means model ranks deployments reasonably well!
 **Resources**
 
 - Code: [`stackrox/ml-risk-service`](https://github.com/stackrox/stackrox/pull/17467)
-- Docs: `learning.md` (comprehensive technical guide)
+- Docs: `learning.md`
 :::

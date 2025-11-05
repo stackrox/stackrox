@@ -348,7 +348,22 @@ Stephan Heßelmann
 <section id="random-forest-architecture" class="slide level2">
 <h2>Random Forest Architecture</h2>
 
-<img data-src="diagrams/randomforest-architecture.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:90.0%"></section>
+<img data-src="diagrams/random-forest.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section>
+<section id="example-one-decision-tree" class="slide level2">
+<h2>Example: One Decision Tree</h2>
+<pre><code>Is vulnerability_score &gt; 7.5?
+├─ YES → Is privileged_container_ratio &gt; 0.5?
+│         ├─ YES → Risk Score = 8.2
+│         └─ NO → Is external_exposure = 1?
+│                  ├─ YES → Risk Score = 6.5
+│                  └─ NO → Risk Score = 4.1
+└─ NO → Is policy_violation_score &gt; 3.0?
+         ├─ YES → Risk Score = 5.0
+         └─ NO → Risk Score = 2.3</code></pre>
+<div class="fragment">
+<p><strong>Final Prediction:</strong> Average of 1000s such trees</p>
+</div>
+</section>
 <section id="why-random-forest" class="slide level2">
 <h2>Why Random Forest?</h2>
 <ol type="1">
@@ -386,21 +401,6 @@ Stephan Heßelmann
 <li class="fragment">Learning new things requires new training data + model retraining.</li>
 </ul></li>
 </ol>
-</section>
-<section id="example-one-decision-tree" class="slide level2">
-<h2>Example: One Decision Tree</h2>
-<pre><code>Is vulnerability_score &gt; 7.5?
-├─ YES → Is privileged_container_ratio &gt; 0.5?
-│         ├─ YES → Risk Score = 8.2
-│         └─ NO → Is external_exposure = 1?
-│                  ├─ YES → Risk Score = 6.5
-│                  └─ NO → Risk Score = 4.1
-└─ NO → Is policy_violation_score &gt; 3.0?
-         ├─ YES → Risk Score = 5.0
-         └─ NO → Risk Score = 2.3</code></pre>
-<div class="fragment">
-<p><strong>Final Prediction:</strong> Average of 1000s such trees</p>
-</div>
 </section></section>
 <section>
 <section id="training-pipeline" class="title-slide slide level1 center" data-background-color="#2d2d2d">
@@ -410,7 +410,7 @@ Stephan Heßelmann
 <section id="end-to-end-training-flow" class="slide level2">
 <h2>End-to-End Training Flow</h2>
 
-<img data-src="diagrams/training-pipeline.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section></section>
+<img data-src="diagrams/training.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:100.0%"></section></section>
 <section>
 <section id="predictions" class="title-slide slide level1 center" data-background-color="#2d2d2d">
 <h1>Predictions</h1>
@@ -419,7 +419,7 @@ Stephan Heßelmann
 <section id="prediction-flow" class="slide level2">
 <h2>Prediction Flow</h2>
 
-<img data-src="diagrams/prediction-flow.svg" class="quarto-figure quarto-figure-center r-stretch" style="width:95.0%"></section>
+<img data-src="diagrams/prediction.svg" class="quarto-figure quarto-figure-bottom r-stretch" style="width:100.0%"></section>
 <section id="feature-importance-what-matters" class="slide level2">
 <h2>Feature Importance: What Matters?</h2>
 <p><strong>Example: Top 5 most important features</strong></p>
@@ -509,7 +509,7 @@ NDCG ≈ 0.98  (98% as good as perfect ranking)</code></pre>
 <p><strong>Resources</strong></p>
 <ul>
 <li>Code: <a href="https://github.com/stackrox/stackrox/pull/17467"><code>stackrox/ml-risk-service</code></a></li>
-<li>Docs: <code>learning.md</code> (comprehensive technical guide)</li>
+<li>Docs: <code>learning.md</code></li>
 </ul>
 </div>
 
