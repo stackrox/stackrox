@@ -238,34 +238,61 @@ class BaselineFeatureExtractor:
     def _calculate_service_config_multiplier(self, deployment_data: Dict[str, Any]) -> float:
         """
         Calculate service configuration risk multiplier.
-        Based on host access, privileged containers, etc.
+        Mirrors logic from central/risk/multipliers/deployment/config.go
+
+        Scores based on:
+        - Volumes (read-write mounts)
+        - Secrets usage
+        - Capabilities (risky adds, missing drops)
+        - Privileged containers
+
+        Returns normalized score in range [1.0, 2.0]
         """
-        multiplier = 1.0
-
-        # Host network access
-        if deployment_data.get('host_network', False):
-            multiplier *= 1.2
-
-        # Host PID access
-        if deployment_data.get('host_pid', False):
-            multiplier *= 1.15
-
-        # Host IPC access
-        if deployment_data.get('host_ipc', False):
-            multiplier *= 1.1
-
-        # Privileged containers
+        # Based on central/risk/multipliers/deployment/config.go:34-61
+        overall_score = 0.0
         containers = deployment_data.get('containers', [])
-        privileged_count = 0
+
+        # Track risky capabilities to avoid double-counting
+        risky_capabilities_added = set(['ALL', 'SYS_ADMIN', 'NET_ADMIN', 'SYS_MODULE'])
+
         for container in containers:
-            security_context = container.get('security_context', {})
-            if security_context.get('privileged', False):
-                privileged_count += 1
+            # 1. Score volumes (read-write mounts) - config.go:35-38, 64-77
+            volumes = container.get('volumes', [])
+            for volume in volumes:
+                if isinstance(volume, dict) and not volume.get('readOnly', False):
+                    overall_score += 1
 
-        if privileged_count > 0:
-            multiplier *= (1.0 + privileged_count * 0.15)
+            # 2. Score secrets - config.go:39-42, 79-90
+            secrets = container.get('secrets', [])
+            if isinstance(secrets, list) and len(secrets) > 0:
+                overall_score += 1
 
-        return min(multiplier, 2.0)  # Cap multiplier
+            # 3. Score capabilities - config.go:43-51, 99-120
+            security_context = container.get('securityContext', container.get('security_context', {}))
+            if isinstance(security_context, dict):
+                # Check risky capabilities added
+                added_caps = security_context.get('addCapabilities', [])
+                if isinstance(added_caps, list):
+                    for cap in added_caps:
+                        if isinstance(cap, str) and cap.upper() in risky_capabilities_added:
+                            overall_score += 1
+
+                # Check if no capabilities dropped (risky)
+                dropped_caps = security_context.get('dropCapabilities', [])
+                if not isinstance(dropped_caps, list) or len(dropped_caps) == 0:
+                    overall_score += 1
+
+                # 4. Score privileged containers (multiplied by 2) - config.go:52-55
+                if security_context.get('privileged', False):
+                    overall_score *= 2
+
+        # Return 1.0 (no additional risk) if no risk factors found
+        if overall_score == 0:
+            return 1.0
+
+        # Normalize score using Central's normalization (config.go:60)
+        # configSaturation = 8, configMaxScore = 2
+        return self._normalize_score(overall_score, saturation=8, max_value=2.0)
 
     def _calculate_reachability_multiplier(self, deployment_data: Dict[str, Any]) -> float:
         """

@@ -31,6 +31,14 @@ class DeploymentFeatures:
     privileged_container_count: int = 0
     automount_service_account_token: bool = False
 
+    # Volume and secret configuration
+    rw_volume_mount_count: int = 0
+    secret_count: int = 0
+
+    # Container capabilities
+    risky_capabilities_added_count: int = 0  # ALL, SYS_ADMIN, NET_ADMIN, SYS_MODULE
+    no_capabilities_dropped: bool = False
+
     # Port exposure
     exposed_port_count: int = 0
     has_external_exposure: bool = False
@@ -54,6 +62,9 @@ class DeploymentFeatures:
 
 class DeploymentFeatureExtractor:
     """Extracts features from deployment data matching StackRox risk factors."""
+
+    # Risky capabilities to track (from central/risk/multipliers/deployment/config.go:92-97)
+    RISKY_CAPABILITIES = frozenset(['ALL', 'SYS_ADMIN', 'NET_ADMIN', 'SYS_MODULE'])
 
     def __init__(self, config_path: Optional[str] = None):
         self.config = self._load_config(config_path)
@@ -179,6 +190,9 @@ class DeploymentFeatureExtractor:
             logger.warning(f"Expected containers to be list/tuple, got {type(containers)}: {containers}")
             containers = []
 
+        # Track capabilities across all containers for the no_capabilities_dropped check
+        any_capabilities_dropped = False
+
         for container in containers:
             if isinstance(container, dict):
                 # Handle both securityContext and security_context field names
@@ -186,6 +200,40 @@ class DeploymentFeatureExtractor:
                                   container.get('security_context', {}))
                 if isinstance(security_context, dict) and security_context.get('privileged', False):
                     features.privileged_container_count += 1
+
+                # Extract volumes (count read-write mounts)
+                # Mirrors logic from central/risk/multipliers/deployment/config.go:64-77
+                volumes = container.get('volumes', [])
+                for volume in volumes:
+                    if isinstance(volume, dict):
+                        # Check if volume is not read-only (default is RW if not specified)
+                        if not volume.get('readOnly', False):
+                            features.rw_volume_mount_count += 1
+
+                # Extract secrets
+                # Mirrors logic from central/risk/multipliers/deployment/config.go:79-90
+                secrets = container.get('secrets', [])
+                if isinstance(secrets, list):
+                    features.secret_count += len(secrets)
+
+                # Extract capabilities
+                # Mirrors logic from central/risk/multipliers/deployment/config.go:99-120
+                if isinstance(security_context, dict):
+                    # Check added capabilities
+                    added_caps = security_context.get('addCapabilities', [])
+                    if isinstance(added_caps, list):
+                        for cap in added_caps:
+                            if isinstance(cap, str) and cap.upper() in self.RISKY_CAPABILITIES:
+                                features.risky_capabilities_added_count += 1
+
+                    # Check dropped capabilities
+                    dropped_caps = security_context.get('dropCapabilities', [])
+                    if isinstance(dropped_caps, list) and len(dropped_caps) > 0:
+                        any_capabilities_dropped = True
+
+        # Set no_capabilities_dropped flag (true if NO container dropped ANY capabilities)
+        # Mirrors logic from central/risk/multipliers/deployment/config.go:116-118
+        features.no_capabilities_dropped = not any_capabilities_dropped
 
         # Port exposure - handle Central API port data
         ports = deployment_data.get('ports', [])

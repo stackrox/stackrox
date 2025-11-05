@@ -202,6 +202,34 @@ health-check: ## Check service health
 	curl -f http://localhost:8081/health || echo -e "$(RED)Health check failed$(NC)"
 	curl -f http://localhost:8081/ready || echo -e "$(RED)Readiness check failed$(NC)"
 
+wait-for-ready:
+	@echo -e "$(BLUE)Waiting for service to be ready...$(NC)"
+	@# Wait for service to be ready (max 60 seconds)
+	@MAX_WAIT=60; \
+	ELAPSED=0; \
+	while [ $$ELAPSED -lt $$MAX_WAIT ]; do \
+		if curl -s -f http://localhost:8090/api/v1/health > /dev/null 2>&1; then \
+			echo -e "$(GREEN)✓ Service is ready (waited $$ELAPSED seconds)$(NC)"; \
+			break; \
+		fi; \
+		sleep 1; \
+		ELAPSED=$$((ELAPSED + 1)); \
+		if [ $$ELAPSED -eq $$MAX_WAIT ]; then \
+			echo -e "$(RED)Service failed to start within $$MAX_WAIT seconds$(NC)"; \
+			docker logs ml-risk-service; \
+			exit 1; \
+		fi; \
+	done
+
+.PHONY: train-predict-central
+train-predict-central: docker-run wait-for-ready ## Train model with Central data, reload it, and validate predictions
+	@echo -e "$(BLUE)Training the model with Central data"
+	curl -X POST http://localhost:8090/api/v1/training/central/train-full | jq .
+	@echo -e "$(BLUE)Reloading the model"
+	curl -X POST http://localhost:8090/api/v1/models/stackrox-risk-model/reload | jq .
+	@echo -e "$(BLUE)Validating the predictions"
+	curl -X POST http://localhost:8090/api/v1/training/central/validate-predictions | jq .
+
 .PHONY: test-prediction
 test-prediction: ## Test prediction endpoint via REST API
 	@echo -e "$(BLUE)Testing prediction endpoint...$(NC)"
