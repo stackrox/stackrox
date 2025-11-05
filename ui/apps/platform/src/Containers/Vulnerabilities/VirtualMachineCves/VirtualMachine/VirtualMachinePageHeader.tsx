@@ -1,8 +1,7 @@
-import React from 'react';
-import { Flex, Title, LabelGroup, Label, Alert } from '@patternfly/react-core';
+import { Alert, Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 
 import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
-import { VirtualMachine } from 'services/VirtualMachineService';
+import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
