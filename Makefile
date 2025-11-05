@@ -863,3 +863,66 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
+
+#####################################################################
+###### Fast Inner Loop Development Targets #########################
+#####################################################################
+
+# Fast build - builds only the Go binaries needed for the main image
+# Uses go-build.sh with CGO_ENABLED=0 to create static binaries (no GLIBC deps)
+.PHONY: fast-binaries
+fast-binaries: build-prep
+	@echo "+ $@"
+	@echo "Building static binaries for fast inner loop (CGO_ENABLED=0)..."
+	CGO_ENABLED=0 $(GOBUILD) \
+		central \
+		compliance/cmd/compliance \
+		config-controller \
+		migrator \
+		sensor/admission-control \
+		sensor/init-tls-certs \
+		sensor/kubernetes \
+		sensor/upgrader
+
+# Fast image build - uses pre-built base image from quay.io/rhacs-eng
+# Only copies in locally-built binaries
+# Usage: make fast-image [BASE_TAG=latest]
+BASE_TAG ?= latest
+IMAGE_TAG ?= local-dev
+
+.PHONY: fast-image
+fast-image: fast-binaries
+	@echo "+ $@"
+	@echo "Building fast development image using base tag: $(BASE_TAG)"
+	@echo "Using binaries from bin/linux_$(GOARCH)/"
+	@# Use the bin/linux_${GOARCH} directory as the build context
+	@# This avoids issues with .containerignore filtering out /bin/
+	docker build \
+		-f Dockerfile.fastbuild \
+		--build-arg BASE_TAG=$(BASE_TAG) \
+		-t stackrox/main:$(IMAGE_TAG) \
+		bin/linux_$(GOARCH)
+	@echo "Image built: stackrox/main:$(IMAGE_TAG)"
+
+# Load the fast-built image into kind cluster
+# Usage: make fast-load-kind [CLUSTER_NAME=stackrox-image-build]
+CLUSTER_NAME ?= stackrox-image-build
+
+.PHONY: fast-load-kind
+fast-load-kind: fast-image
+	@echo "+ $@"
+	@echo "Loading image into kind cluster: $(CLUSTER_NAME)"
+	kind load docker-image stackrox/main:$(IMAGE_TAG) --name $(CLUSTER_NAME)
+	@echo "Image loaded into kind cluster"
+
+# Complete fast inner loop: build binaries, create image, load into kind
+.PHONY: fast-inner-loop
+fast-inner-loop: fast-load-kind
+	@echo "+ $@"
+	@echo "Fast inner loop complete!"
+	@echo "Image stackrox/main:$(IMAGE_TAG) is ready in cluster $(CLUSTER_NAME)"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Deploy with roxie or your deployment tool"
+	@echo "  2. Test your changes"
+	@echo "  3. Iterate: make fast-inner-loop"
