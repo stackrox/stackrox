@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,8 +30,6 @@ type DataStore interface {
 func New(storage store.Store) DataStore {
 	ds := &datastoreImpl{
 		storage: storage,
-
-		cveSuppressionCache: make(common.CVESuppressionCache),
 	}
 	return ds
 }
