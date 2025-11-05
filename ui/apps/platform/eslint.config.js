@@ -780,7 +780,6 @@ module.exports = [
             'src/Containers/SystemHealth/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
@@ -803,7 +802,6 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
@@ -831,7 +829,6 @@ module.exports = [
             'src/Containers/ComplianceEnhanced/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VirtualMachineCves/**',
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated

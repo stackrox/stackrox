@@ -1,20 +1,16 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Skeleton,
     Split,
     SplitItem,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import {
-    virtualMachineCVESearchFilterConfig,
-    virtualMachineComponentSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -25,14 +21,18 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import {
     applyVirtualMachineCveTableFilters,
     applyVirtualMachineCveTableSort,
-    getVirtualMachineCveTableData,
     getVirtualMachineCveSeverityStatusCounts,
+    getVirtualMachineCveTableData,
 } from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from '../../components/CvesByStatusSummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
+import {
+    virtualMachineCVESearchFilterConfig,
+    virtualMachineComponentSearchFilterConfig,
+} from '../../searchFilterConfig';
 import {
     getHiddenSeverities,
     getHiddenStatuses,

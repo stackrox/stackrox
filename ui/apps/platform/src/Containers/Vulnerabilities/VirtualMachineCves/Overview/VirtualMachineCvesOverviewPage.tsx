@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardBody, Flex, PageSection, Text, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';

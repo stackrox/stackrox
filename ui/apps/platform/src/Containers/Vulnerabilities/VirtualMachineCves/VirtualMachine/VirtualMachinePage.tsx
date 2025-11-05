@@ -1,10 +1,10 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
+    Divider,
+    PageSection,
     Skeleton,
     Tab,
     TabContent,
@@ -14,7 +14,6 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { DEFAULT_VM_PAGE_SIZE } from 'Containers/Vulnerabilities/constants';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -22,6 +21,7 @@ import useURLSort from 'hooks/useURLSort';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { getVirtualMachine } from 'services/VirtualMachineService';
 
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import {
