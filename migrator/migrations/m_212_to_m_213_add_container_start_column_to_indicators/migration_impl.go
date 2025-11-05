@@ -41,7 +41,7 @@ func migrate(database *types.Databases) error {
 	}
 
 	var clusters []string
-	if err := db.Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
+	if err := db.Order("id").Model(&updatedSchema.Clusters{}).Pluck("id", &clusters).Error; err != nil {
 		return err
 	}
 	log.Infof("clusters found: %v", clusters)
