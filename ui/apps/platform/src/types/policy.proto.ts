@@ -22,7 +22,11 @@ export type PolicySeverity = (typeof policySeverities)[number];
 
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
-export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
+export type PolicyEventSource =
+    | 'NOT_APPLICABLE'
+    | 'DEPLOYMENT_EVENT'
+    | 'AUDIT_LOG_EVENT'
+    | 'NODE_EVENT';
 
 export type BasePolicy = {
     rationale: string;
