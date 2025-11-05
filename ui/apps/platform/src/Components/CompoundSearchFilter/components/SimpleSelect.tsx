@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
-import { Select, SelectList, MenuToggle } from '@patternfly/react-core';
+import { MenuToggle, Select, SelectList } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOption } from '@patternfly/react-core';
 
 export type SimpleSelectProps = {
