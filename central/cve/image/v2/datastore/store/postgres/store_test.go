@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -27,12 +26,6 @@ func TestImageCvesV2Store(t *testing.T) {
 }
 
 func (s *ImageCvesV2StoreSuite) SetupSuite() {
-
-	s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip("Skip postgres store tests because feature flag is off")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
