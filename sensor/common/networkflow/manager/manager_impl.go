@@ -299,16 +299,27 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
-	select {
-	case <-m.stopper.Flow().StopRequested():
-		return false
-	case m.sensorUpdates <- message.New(msg):
-		return true
-	default:
-		// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
-		// They will still be processed by the detection engine for newer entities, but
-		// sensor will not keep ordered updates indefinitely in memory.
-		return false
+	retryInterval    = 1 * time.Millisecond
+	maxRetryDuration = 100 * time.Millisecond
+
+	deadline := time.Now().Add(maxRetryDuration)
+
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return false
+		case m.sensorUpdates <- message.New(msg):
+			return true
+		default:
+			// Queue is full, check if we should retry
+			if time.Now().After(deadline) {
+				// Exceeded retry duration, give up
+				// The update will be cached for retry on the next cycle
+				return false
+			}
+			// Sleep briefly and retry
+			time.Sleep(retryInterval)
+		}
 	}
 }
 
