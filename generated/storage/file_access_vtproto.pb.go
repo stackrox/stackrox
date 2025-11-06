@@ -48,8 +48,8 @@ func (m *FileAccess_File) CloneVT() *FileAccess_File {
 		return (*FileAccess_File)(nil)
 	}
 	r := new(FileAccess_File)
-	r.Path = m.Path
-	r.HostPath = m.HostPath
+	r.MountedPath = m.MountedPath
+	r.NodePath = m.NodePath
 	r.Meta = m.Meta.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -120,10 +120,10 @@ func (this *FileAccess_File) EqualVT(that *FileAccess_File) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Path != that.Path {
+	if this.MountedPath != that.MountedPath {
 		return false
 	}
-	if this.HostPath != that.HostPath {
+	if this.NodePath != that.NodePath {
 		return false
 	}
 	if !this.Meta.EqualVT(that.Meta) {
@@ -272,17 +272,17 @@ func (m *FileAccess_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.HostPath) > 0 {
-		i -= len(m.HostPath)
-		copy(dAtA[i:], m.HostPath)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.HostPath)))
+	if len(m.NodePath) > 0 {
+		i -= len(m.NodePath)
+		copy(dAtA[i:], m.NodePath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.NodePath)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Path) > 0 {
-		i -= len(m.Path)
-		copy(dAtA[i:], m.Path)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Path)))
+	if len(m.MountedPath) > 0 {
+		i -= len(m.MountedPath)
+		copy(dAtA[i:], m.MountedPath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MountedPath)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -400,11 +400,11 @@ func (m *FileAccess_File) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Path)
+	l = len(m.MountedPath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.HostPath)
+	l = len(m.NodePath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -648,7 +648,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MountedPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -676,11 +676,11 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Path = string(dAtA[iNdEx:postIndex])
+			m.MountedPath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HostPath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NodePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -708,7 +708,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HostPath = string(dAtA[iNdEx:postIndex])
+			m.NodePath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1193,7 +1193,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MountedPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1225,11 +1225,11 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Path = stringValue
+			m.MountedPath = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HostPath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NodePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1261,7 +1261,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.HostPath = stringValue
+			m.NodePath = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
