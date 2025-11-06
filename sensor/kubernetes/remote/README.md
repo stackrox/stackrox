@@ -76,10 +76,72 @@ The integration in `sensor/kubernetes/main.go` prioritizes:
 ## Important Notes
 
 - Sensor still runs in the local cluster but monitors the remote cluster
-- The local cluster client is preserved for pod ownership introspection
+- The local cluster client is preserved for:
+  - Pod ownership introspection
+  - Cluster health monitoring (Scanner, Collector, Admission Control status)
+  - Certificate refresh operations
 - The remote cluster must be accessible from the Sensor pod's network
 - Ensure the kubeconfig has appropriate permissions for all resources Sensor needs to monitor
 - This feature is independent of and does not interfere with the fake workload generator
+
+## Scanner and Local Services
+
+**Important**: Scanner, Collector, and other local services (like Admission Control) remain deployed in the **local cluster** where Sensor runs, not in the remote cluster.
+
+### How Scanner Connection Works
+
+```
+┌──────────────────────────────────────────────────┐
+│         Local Cluster (where Sensor runs)        │
+│  ┌──────────┐                                    │
+│  │  Sensor  │──────────────────┐                 │
+│  └─┬──┬──┬──┘                  │                 │
+│    │  │  │                     │                 │
+│    │  │  │ monitors health     │ reads secret    │
+│    │  │  └──────────┐          │ with kubeconfig │
+│    │  │             ▼          ▼                 │
+│    │  │       ┌──────────┐  ┌────────┐          │
+│    │  │       │ Scanner  │  │ Secret │          │
+│    │  │       │Collector │  └────────┘          │
+│    │  │       │AdmitCtrl │                       │
+│    │  │       └──────────┘                       │
+│    │  │                                          │
+│    │  └─scans images────────────┐                │
+│    └─sends workload events──┐   │                │
+│                             │   │                │
+└─────────────────────────────┼───┼────────────────┘
+                              │   │
+                              ▼   ▼
+                       ┌─────────────┐
+                       │   Central   │
+                       └─────────────┘
+                              ▲
+                              │ monitors workloads
+                              │ via kubeconfig
+┌─────────────────────────────┼────────────────────┐
+│         Remote Cluster      │                    │
+│  ┌──────────┐  ┌──────────┐│                    │
+│  │   Pods   │  │Deployments│                     │
+│  └──────────┘  └──────────┘                      │
+└─────────────────────────────────────────────────┘
+```
+
+### Key Points
+
+1. **Scanner stays local**: Scanner (V2 or V4) is deployed in the same cluster as Sensor
+2. **Connection unchanged**: Scanner is accessed via Kubernetes service DNS:
+   - Scanner V2: `scanner.stackrox.svc:8443`
+   - Scanner V4: `scanner-v4-indexer.stackrox.svc:8443`
+3. **Image scanning**: Scanner scans images referenced by workloads in the remote cluster
+4. **Health monitoring**: Sensor checks Scanner/Collector/AdmissionControl health in the local cluster
+5. **Workload monitoring**: Sensor monitors pods, deployments, etc. in the remote cluster
+
+### Image Registry Access
+
+For Scanner to scan images from the remote cluster:
+- Images must be in registries accessible from the local cluster
+- Registry credentials must be configured in Central/Scanner
+- Private registries may require additional network configuration
 
 ## Example Secret YAML
 
