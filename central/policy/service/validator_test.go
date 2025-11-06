@@ -999,6 +999,13 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 		errExpected bool
 	}{
 		{
+			description: "Node policy with valid NodeFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.NodeFilePath: "/etc/passwd",
+				}),
+		},
+		{
 			description: "Node policy with no fields",
 			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
 			errExpected: true,
@@ -1029,13 +1036,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			description: "Node policy with wrong lifecycle stage (deploy)",
 			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
 			errExpected: true,
-		},
-		{
-			description: "Node policy with valid NodeFilePath field",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
-				map[string]string{
-					fieldnames.NodeFilePath: "/etc/passwd",
-				}),
 		},
 		{
 			description: "Node policy with NodeFilePath and invalid process fields",
