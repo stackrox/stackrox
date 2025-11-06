@@ -58,7 +58,6 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
-
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStoreV2.New(s.db, false, keyfence.ImageKeyFenceSingleton())
 	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())

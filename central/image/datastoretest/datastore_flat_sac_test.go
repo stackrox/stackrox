@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,10 +26,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func TestImageDataStoreFlatSAC(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData disabled.  Test is not appropriate.")
-	}
 	suite.Run(t, new(imageDatastoreFlatSACSuite))
 }
 

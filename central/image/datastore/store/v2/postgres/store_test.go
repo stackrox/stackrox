@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -24,6 +23,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// TODO(ROX-31640): Add tests for using old legacy times back in unless ROX-29911 gets implemented
+// TODO(ROX-29911): add tests.
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
@@ -43,10 +44,6 @@ func TestImagesStore(t *testing.T) {
 }
 
 func (s *ImagesStoreSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv("ROX_FLATTEN_CVE_DATA", "true")
-	}
-
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
@@ -61,15 +58,6 @@ func (s *ImagesStoreSuite) SetupTest() {
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
-	s.Require().NoError(err)
-}
-
-func (s *ImagesStoreSuite) TearDownSuite() {
-
-	s.T().Setenv("ROX_FLATTEN_CVE_DATA", "false")
 }
 
 func (s *ImagesStoreSuite) TestCountCVEs() {
