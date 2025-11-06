@@ -10,33 +10,12 @@ from src.api.schemas import (
     TrainModelResponse,
     ErrorResponse
 )
-from src.services.training_service import TrainingService
-from src.services.risk_service import RiskPredictionService
+from src.api.dependencies import get_training_service, get_risk_service
 from src.training.data_loader import TrainingDataLoader
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
-
-# Global service instances (in production, use dependency injection)
-_training_service = None
-_risk_service = None
-
-
-def get_training_service() -> TrainingService:
-    """Get training service instance."""
-    global _training_service
-    if _training_service is None:
-        _training_service = TrainingService()
-    return _training_service
-
-
-def get_risk_service() -> RiskPredictionService:
-    """Get risk prediction service instance."""
-    global _risk_service
-    if _risk_service is None:
-        _risk_service = RiskPredictionService()
-    return _risk_service
 
 
 @router.get(

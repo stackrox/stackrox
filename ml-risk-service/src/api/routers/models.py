@@ -13,22 +13,11 @@ from src.api.schemas import (
     ModelHealthResponse,
     ErrorResponse
 )
-from src.services.risk_service import RiskPredictionService
+from src.api.dependencies import get_risk_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/models", tags=["models"])
-
-# Global service instance (in production, use dependency injection)
-_risk_service = None
-
-
-def get_risk_service() -> RiskPredictionService:
-    """Get risk prediction service instance."""
-    global _risk_service
-    if _risk_service is None:
-        _risk_service = RiskPredictionService()
-    return _risk_service
 
 
 @router.get(
