@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,9 +36,6 @@ import (
 )
 
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("CVE flattened data model is not enabled")
-	}
 	suite.Run(t, new(ImageFlatPostgresDataStoreTestSuite))
 }
 
@@ -541,4 +537,82 @@ func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
+}
+
+func getTestImage(id string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Scan: &storage.ImageScan{
+			OperatingSystem: "blah",
+			ScanTime:        protocompat.TimestampNow(),
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "comp1",
+					Version: "ver1",
+					Vulns:   []*storage.EmbeddedVulnerability{},
+				},
+				{
+					Name:    "comp1",
+					Version: "ver2",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+					},
+				},
+			},
+		},
+		RiskScore: 30,
+		Priority:  1,
+	}
+}
+
+func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
+	cloned := image.CloneVT()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
 }
