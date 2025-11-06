@@ -113,10 +113,9 @@ docker-run: docker-build ## Run Docker container locally
 		-e HEALTH_PORT=8081 \
 		-e REST_PORT=8090 \
 		-e ENABLE_REST=true \
-		-e TRAINING_CENTRAL_API_TOKEN \
-		-e TRAINING_CENTRAL_ENDPOINT \
-		-e PREDICTION_CENTRAL_API_TOKEN \
-		-e PREDICTION_CENTRAL_ENDPOINT \
+		-e INFRA_CENTRAL_API_TOKEN \
+		-e STAGING_CENTRAL_API_TOKEN \
+		-e DOG_FOODING_CENTRAL_API_TOKEN \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 	@echo -e "$(GREEN)Container started!$(NC)"

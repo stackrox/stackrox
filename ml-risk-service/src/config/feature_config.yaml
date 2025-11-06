@@ -4,20 +4,20 @@ features:
   deployment:
     policy_violations:
       enabled: true
-      normalize_saturation: 50  # Saturation point for policy violation score normalization
-      max_value: 4.0  # Maximum multiplier for policy violations
+      normalize_saturation: 50 # Saturation point for policy violation score normalization
+      max_value: 4.0 # Maximum multiplier for policy violations
 
   image:
     component_count:
-      saturation: 500  # Saturation point for component count normalization
-      max_value: 1.5  # Maximum multiplier for component count
+      saturation: 500 # Saturation point for component count normalization
+      max_value: 1.5 # Maximum multiplier for component count
 
     image_age:
-      age_threshold_days: 365  # Age threshold in days (1 year)
-      max_multiplier: 1.3  # Maximum age multiplier
+      age_threshold_days: 365 # Age threshold in days (1 year)
+      max_multiplier: 1.3 # Maximum age multiplier
 
 model:
-  algorithm: "sklearn_ranksvm"  # Current algorithm: sklearn_ranksvm (extensible for future algorithms)
+  algorithm: "sklearn_ranksvm" # Current algorithm: sklearn_ranksvm (extensible for future algorithms)
   validation_split: 0.2
   random_state: 42
 
@@ -25,13 +25,13 @@ model:
   # Improved hyperparameters for better precision and generalization
   sklearn_params:
     n_estimators: 100
-    max_depth: 25  # Increased depth to capture complex patterns with larger datasets
-    min_samples_split: 10  # Minimum samples required to split node (prevents overfitting)
-    min_samples_leaf: 4  # Minimum samples in leaf node (smoother decision boundaries)
-    max_features: "sqrt"  # Use sqrt of features for each split (reduces overfitting)
-    bootstrap: true  # Use bootstrap samples (enabled by default, explicit for clarity)
-    oob_score: false  # Out-of-bag score (can be enabled for additional validation)
-    n_jobs: -1  # Use all available CPU cores
+    max_depth: 25 # Increased depth to capture complex patterns with larger datasets
+    min_samples_split: 10 # Minimum samples required to split node (prevents overfitting)
+    min_samples_leaf: 4 # Minimum samples in leaf node (smoother decision boundaries)
+    max_features: "sqrt" # Use sqrt of features for each split (reduces overfitting)
+    bootstrap: true # Use bootstrap samples (enabled by default, explicit for clarity)
+    oob_score: false # Out-of-bag score (can be enabled for additional validation)
+    n_jobs: -1 # Use all available CPU cores
 
   explainability:
     shap_enabled: true
@@ -46,8 +46,8 @@ api:
 common:
   # SSL/TLS Configuration
   ssl:
-    verify_certificates: false  # Set to false for self-signed certs in dev/test
-    ca_bundle_path: ""  # Optional custom CA bundle path
+    verify_certificates: false # Set to false for self-signed certs in dev/test
+    ca_bundle_path: "" # Optional custom CA bundle path
 
   # Retry configuration
   retry:
@@ -85,25 +85,25 @@ common:
 training:
   # List of data sources for training
   sources:
-    - type: "central"  # Type: "central" or "file"
-      name: "staging-central"  # Human-readable name for this source
-      enabled: true  # Set to false to temporarily disable this source
+    - type: "central" # Type: "central" or "file"
+      name: "staging-central" # Human-readable name for this source
+      enabled: false # Set to false to temporarily disable this source
       endpoint: "https://staging.demo.stackrox.com"
 
       # Authentication configuration
       authentication:
-        method: "api_token"  # Options: "api_token", "mtls"
+        method: "api_token" # Options: "api_token", "mtls"
         # Specify environment variable NAME containing the token (not the token itself)
         api_token_env: "STAGING_CENTRAL_API_TOKEN"
 
-    - type: "central"  # Type: "central" or "file"
-      name: "dog-fooding-central"  # Human-readable name for this source
-      enabled: true  # Set to false to temporarily disable this source
+    - type: "central" # Type: "central" or "file"
+      name: "dog-fooding-central" # Human-readable name for this source
+      enabled: false # Set to false to temporarily disable this source
       endpoint: "https://acs-cii18grublkv81uil8gg.acs.rhcloud.com"
 
       # Authentication configuration
       authentication:
-        method: "api_token"  # Options: "api_token", "mtls"
+        method: "api_token" # Options: "api_token", "mtls"
         # Specify environment variable NAME containing the token (not the token itself)
         api_token_env: "DOG_FOODING_CENTRAL_API_TOKEN"
 
@@ -120,18 +120,18 @@ training:
         include_policies: false
 
     # Example file source (commented out)
-    # - type: "file"
-    #   name: "local-training-data"
-    #   enabled: false
-    #   path: "/data/training_data.json"
-    #   format: "json"  # Options: "json", "jsonl"
+    - type: "file"
+      name: "local-training-data"
+      enabled: true
+      path: "/app/data/training_data.json"
+      format: "json" # Options: "json", "jsonl"
 
   # Training-specific settings
   training_settings:
-    default_limit: 2000  # Default maximum training samples per source
-    min_training_samples: 50  # Minimum total samples required for training
-    max_training_samples: 10000  # Maximum total samples across all sources
-    use_streaming_exports: true  # Use streaming API for data collection
+    default_limit: 2000 # Default maximum training samples per source
+    min_training_samples: 50 # Minimum total samples required for training
+    max_training_samples: 10000 # Maximum total samples across all sources
+    use_streaming_exports: true # Use streaming API for data collection
 
 # Prediction/Validation configuration - supports multiple input sources
 prediction:
@@ -163,7 +163,6 @@ prediction:
   # Prediction-specific settings
   prediction_settings:
     use_streaming_exports: true
-
 
 # DEPRECATED: Legacy configuration format (kept for backward compatibility)
 # These sections are deprecated and will be removed in a future version.

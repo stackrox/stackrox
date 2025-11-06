@@ -8,7 +8,7 @@ from various sources (Central API, JSON files, etc.) for both training and predi
 from src.streaming.sample_source import SampleStreamSource
 from src.streaming.sample_stream import SampleStream
 from src.streaming.central_source import CentralStreamSource
-from src.streaming.file_source import JSONFileStreamSource, JSONLinesStreamSource
+from src.streaming.file_source import JSONFileStreamSource, JSONLinesStreamSource, ProcessedSampleStreamSource
 
 __all__ = [
     'SampleStreamSource',
@@ -16,4 +16,5 @@ __all__ = [
     'CentralStreamSource',
     'JSONFileStreamSource',
     'JSONLinesStreamSource',
+    'ProcessedSampleStreamSource',
 ]

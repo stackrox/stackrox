@@ -193,6 +193,78 @@ class RiskTrainingService:
 
 
 
+    def train_model(self,
+                   filters: Optional[Dict[str, Any]] = None,
+                   limit: Optional[int] = None,
+                   config_override: Optional[str] = None,
+                   risk_service=None) -> TrainModelResponse:
+        """
+        Train model using configured data sources.
+
+        This method automatically determines whether to train from Central API
+        or file sources based on what's enabled in feature_config.yaml.
+
+        Args:
+            filters: Filters for data collection (applicable to Central sources)
+            limit: Maximum number of training samples to use
+            config_override: Optional JSON configuration overrides
+            risk_service: Risk service instance to update with trained model
+
+        Returns:
+            TrainModelResponse with training results
+        """
+        try:
+            from src.config.central_config import DataSourceConfig
+
+            # Load training data source configuration
+            config = DataSourceConfig.for_training()
+
+            # Get enabled sources
+            central_sources = config.get_central_sources(enabled_only=True)
+            file_sources = config.get_file_sources(enabled_only=True)
+
+            # Determine which training method to use
+            if not central_sources and not file_sources:
+                logger.error("No training sources enabled in configuration")
+                return self._create_training_response(
+                    success=False,
+                    training_metrics=None,
+                    risk_service=risk_service,
+                    error_message="No training sources enabled in feature_config.yaml. "
+                                "Please enable at least one Central or file source in the 'training.sources' section."
+                )
+
+            # Prefer Central sources if available (can be made configurable)
+            if central_sources:
+                logger.info(f"Training from Central API sources: {[s.name for s in central_sources]}")
+                return self.train_model_from_central(
+                    filters=filters,
+                    limit=limit,
+                    config_override=config_override,
+                    risk_service=risk_service
+                )
+
+            # Fall back to file sources
+            if file_sources:
+                # Use the first enabled file source
+                file_source = file_sources[0]
+                logger.info(f"Training from file source: {file_source.name} ({file_source.path})")
+
+                return self.train_model_from_file(
+                    file_path=file_source.path,
+                    limit=limit,
+                    risk_service=risk_service
+                )
+
+        except Exception as e:
+            logger.error(f"Training failed: {e}")
+            return self._create_training_response(
+                success=False,
+                training_metrics=None,
+                risk_service=risk_service,
+                error_message=f"Training failed: {str(e)}"
+            )
+
     def train_model_from_central(self,
                                 filters: Optional[Dict[str, Any]] = None,
                                 limit: Optional[int] = None,
@@ -284,10 +356,11 @@ class RiskTrainingService:
         """
         Train model using data from a JSON file.
 
-        Uses the new streaming architecture (JSONFileStreamSource + SampleStream).
+        Supports processed training samples (from collect_training_data.py)
+        that already have extracted features.
 
         Args:
-            file_path: Path to JSON training data file
+            file_path: Path to JSON training data file (array of processed samples)
             limit: Maximum number of training samples to use
             risk_service: Risk service instance to update with trained model
 
@@ -295,17 +368,16 @@ class RiskTrainingService:
             TrainModelResponse with training results
         """
         try:
-            from src.streaming import JSONFileStreamSource, SampleStream
+            from src.streaming import ProcessedSampleStreamSource
 
             logger.info(f"Starting model training from file: {file_path}")
 
-            # Create file source and sample stream
-            source = JSONFileStreamSource(file_path)
-            sample_stream = SampleStream(source, config=self.config)
+            # Create processed sample source (no feature extraction needed)
+            source = ProcessedSampleStreamSource(file_path)
 
-            # Stream and collect training samples
+            # Stream and collect training samples (already processed)
             training_samples = []
-            for sample in sample_stream.stream(filters=None, limit=limit):
+            for sample in source.stream_samples(filters=None, limit=limit):
                 training_samples.append(sample)
 
             if not training_samples:

@@ -139,6 +139,107 @@ async def get_training_info(
 
 
 @router.post(
+    "/train",
+    response_model=TrainModelResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid parameters or no sources enabled"},
+        500: {"model": ErrorResponse, "description": "Training failed"}
+    },
+    summary="Train model from configured sources",
+    description="Train model using data sources configured in feature_config.yaml (Central API or files)"
+)
+async def train_model(
+    limit: Optional[int] = Query(None, ge=10, le=10000, description="Maximum training samples to use"),
+    include_inactive: bool = Query(False, description="Include inactive deployments (Central sources only)"),
+    severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold (Central sources only)"),
+    clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter (Central sources only)"),
+    namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter (Central sources only)"),
+    config_override: Optional[str] = Query("", description="JSON configuration overrides"),
+    training_service: RiskTrainingService = Depends(get_training_service),
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
+) -> TrainModelResponse:
+    """
+    Train a model using configured data sources.
+
+    This endpoint automatically trains from Central API or file sources based on
+    what's enabled in `feature_config.yaml` under the `training.sources` section.
+
+    **Configuration-Driven Training:**
+    - Checks `training.sources` in `feature_config.yaml`
+    - If Central sources are enabled → trains from Central API
+    - If file sources are enabled → trains from file
+    - If both are enabled → prefers Central (configurable)
+    - If none are enabled → returns error
+
+    **Parameters:**
+    - **limit**: Optional limit on training samples
+    - **include_inactive**: Whether to include inactive deployments (Central only)
+    - **severity_threshold**: Minimum vulnerability severity (Central only)
+    - **clusters**: Comma-separated cluster IDs to filter (Central only)
+    - **namespaces**: Comma-separated namespaces to filter (Central only)
+    - **config_override**: Optional JSON string with training configuration overrides
+
+    **Example Configuration (feature_config.yaml):**
+    ```yaml
+    training:
+      sources:
+        - type: "central"
+          name: "production-central"
+          enabled: true
+          endpoint: "https://central.example.com"
+        - type: "file"
+          name: "local-data"
+          enabled: false
+          path: "/app/data/training_data.json"
+    ```
+
+    **Use Cases:**
+    - **Simple Training**: Just call `/train` - configuration determines the source
+    - **Environment-Based**: Different configs for dev (file) vs prod (Central)
+    - **CI/CD Integration**: Consistent API regardless of data source
+    - **Quick Testing**: Switch between file and Central by changing config
+
+    Returns comprehensive training results including metrics, model version, and feature importance.
+    """
+    try:
+        # Build filters for Central sources (ignored for file sources)
+        filters = {
+            'include_inactive': include_inactive,
+            'severity_threshold': severity_threshold
+        }
+
+        # Add optional filters
+        if clusters:
+            filters['clusters'] = [c.strip() for c in clusters.split(',') if c.strip()]
+        if namespaces:
+            filters['namespaces'] = [n.strip() for n in namespaces.split(',') if n.strip()]
+
+        logger.info(f"Starting unified training with limit={limit}, filters={filters}")
+
+        # Call unified training method
+        response = training_service.train_model(
+            filters=filters,
+            limit=limit,
+            config_override=config_override if config_override else None,
+            risk_service=prediction_service
+        )
+
+        if response.success:
+            logger.info(f"Training completed successfully. Model version: {response.model_version}")
+        else:
+            logger.error(f"Training failed: {response.error_message}")
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Training request failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Training failed: {str(e)}"
+        )
+
+
+@router.post(
     "/central/test-connection",
     response_model=Dict[str, Any],
     summary="Test Central API connection",
@@ -562,14 +663,12 @@ async def validate_predictions_from_central(
         logger.info(f"Filters: {filters}")
         logger.info(f"Limit: {limit}")
 
-        # Create a temporary Central export service for training Central (to access validate_predictions method)
-        # We don't actually use the training Central client - just need the service class
-        from src.config.central_config import create_central_client_from_config
-        training_client = create_central_client_from_config()
-        training_service = CentralExportService(client=training_client, config={})
+        # Create Central export service using prediction client
+        # The validate_predictions method uses prediction_client parameter, not self.client
+        validation_service = CentralExportService(client=prediction_client, config={})
 
         # Run validation
-        validation_results = training_service.validate_predictions(
+        validation_results = validation_service.validate_predictions(
             model=model,
             prediction_client=prediction_client,
             filters=filters,
@@ -578,7 +677,6 @@ async def validate_predictions_from_central(
 
         # Clean up
         prediction_client.close()
-        training_client.close()
 
         # Prepare response
         response = {
