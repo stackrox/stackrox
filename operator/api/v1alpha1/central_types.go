@@ -116,7 +116,7 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	AdminPasswordGenerationDisabled *bool `json:"adminPasswordGenerationDisabled,omitempty"`
 
-	// Here you can configure if you want to expose Central through a node port, a load balancer, or an OpenShift
+	// Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
 	// route.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	Exposure *Exposure `json:"exposure,omitempty"`
