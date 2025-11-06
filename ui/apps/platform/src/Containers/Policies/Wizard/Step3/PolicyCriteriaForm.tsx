@@ -132,7 +132,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                         id="policy-criteria-keys-container"
                     >
-                        <PolicyCriteriaKeys keys={filteredDescriptors} />
+                        <PolicyCriteriaKeys
+                            keys={filteredDescriptors}
+                            eventSource={values.eventSource}
+                        />
                     </Flex>
                 )}
             </Flex>

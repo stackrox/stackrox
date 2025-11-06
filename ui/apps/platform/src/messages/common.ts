@@ -153,6 +153,7 @@ export const policyCriteriaCategories = Object.freeze({
     USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
     RESOURCE_OPERATION: 'Resource operation (Required)',
     RESOURCE_ATTRIBUTES: 'Resource attributes',
+    FILE_ACTIVITY: 'File activity',
 });
 
 export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
