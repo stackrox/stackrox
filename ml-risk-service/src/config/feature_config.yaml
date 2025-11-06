@@ -94,7 +94,7 @@ training:
       authentication:
         method: "api_token"  # Options: "api_token", "mtls"
         # Specify environment variable NAME containing the token (not the token itself)
-        api_token_env: "TRAINING_CENTRAL_API_TOKEN"
+        api_token_env: "STAGING_CENTRAL_API_TOKEN"
 
         # For mTLS authentication, specify environment variable NAMES for cert paths:
         # client_cert_path_env: "TRAINING_CENTRAL_CLIENT_CERT_PATH"
@@ -127,7 +127,7 @@ prediction:
   # List of data sources for prediction validation
   sources:
     - type: "central"
-      name: "production-central"
+      name: "infra-central"
       enabled: true
       endpoint: "https://central-stackrox.apps.sh-10-31-1.ocp.infra.rox.systems"
 
@@ -135,7 +135,7 @@ prediction:
       authentication:
         method: "api_token"
         # Specify environment variable NAME containing the token
-        api_token_env: "PREDICTION_CENTRAL_API_TOKEN"
+        api_token_env: "INFRA_CENTRAL_API_TOKEN"
 
         # For mTLS authentication:
         # client_cert_path_env: "PREDICTION_CENTRAL_CLIENT_CERT_PATH"
