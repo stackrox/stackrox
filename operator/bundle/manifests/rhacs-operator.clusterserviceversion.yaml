@@ -129,7 +129,7 @@ spec:
           in the "central-htpasswd" secret.'
         displayName: Administrator Password
         path: central.adminPasswordSecret
-      - description: 'Here you can configure if you want to expose Central through
+      - description: 'Here you can configure if you want to expose central through
           a node port, a load balancer, or an OpenShift
 
           route.'

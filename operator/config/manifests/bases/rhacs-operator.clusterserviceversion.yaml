@@ -249,7 +249,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       - description: |-
-          Here you can configure if you want to expose Central through a node port, a load balancer, or an OpenShift
+          Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
           route.
         displayName: Exposure
         path: central.exposure
