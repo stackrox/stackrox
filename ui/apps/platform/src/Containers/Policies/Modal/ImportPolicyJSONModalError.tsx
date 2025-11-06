@@ -1,5 +1,12 @@
 import type { ReactElement } from 'react';
-import { Alert, Button, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    List,
+    ListItem,
+    ModalBoxBody,
+    ModalBoxFooter,
+} from '@patternfly/react-core';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 
@@ -81,13 +88,11 @@ function ImportPolicyJSONModalError({
                         className="pf-v5-u-mt-md"
                         isInline
                     >
-                        <ul>
+                        <List isPlain>
                             {errorMessages.map((msg) => (
-                                <li key={msg} className="py-2">
-                                    {msg}
-                                </li>
+                                <ListItem key={msg}>{msg}</ListItem>
                             ))}
-                        </ul>
+                        </List>
                         {duplicateErrorsOnly && (
                             <DuplicatePolicyForm
                                 updateResolution={updateResolution}
