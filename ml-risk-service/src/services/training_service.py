@@ -79,25 +79,10 @@ class TrainingService:
                 self.last_training_time = int(time.time())
                 self.training_samples_count = len(training_samples)
 
-                # Save model to storage so it appears in model registry
-                try:
-                    model_id = risk_service.get_default_model_id()
-                    description = f"Model trained from file with {len(training_samples)} samples"
-                    tags = {'source': 'file', 'method': 'train'}
+                # Save model to storage
+                self._save_trained_model(risk_service, training_samples, 'api', 'train')
 
-                    if risk_service.model.save_model_to_storage(
-                        risk_service.storage_manager,
-                        model_id,
-                        description,
-                        tags
-                    ):
-                        logger.info(f"Model saved to storage with ID: {model_id}")
-                    else:
-                        logger.warning("Model trained successfully but failed to save to storage")
-                except Exception as e:
-                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
-
-                # Convert metrics to response format
+                # Convert metrics to response format with feature importances
                 global_importance = risk_service.model.get_global_feature_importance()
                 feature_importances = [
                     FeatureImportance(
@@ -109,29 +94,21 @@ class TrainingService:
                     for name, score in global_importance.items()
                 ]
 
-                response_metrics = TrainingMetrics(
-                    validation_ndcg=training_metrics.val_ndcg,
-                    global_feature_importance=feature_importances
-                )
-
                 logger.info(f"Model training completed. Validation NDCG: {training_metrics.val_ndcg:.4f}")
 
-                return TrainModelResponse(
+                return self._create_training_response(
                     success=True,
-                    model_version=risk_service.model.model_version or "unknown",
-                    metrics=response_metrics,
-                    error_message=""
+                    training_metrics=training_metrics,
+                    risk_service=risk_service,
+                    feature_importances=feature_importances
                 )
 
         except Exception as e:
             logger.error(f"Model training failed: {e}")
-            return TrainModelResponse(
+            return self._create_training_response(
                 success=False,
-                model_version="",
-                metrics=TrainingMetrics(
-                    validation_ndcg=0.0,
-                    global_feature_importance=[]
-                ),
+                training_metrics=None,
+                risk_service=risk_service,
                 error_message=str(e)
             )
 
@@ -247,6 +224,106 @@ class TrainingService:
         import math
         return math.log1p(value) / math.log1p(100)
 
+    def _prepare_training_data(self, training_samples: List[Dict[str, Any]]):
+        """
+        Convert training samples to numpy arrays for model training.
+
+        Args:
+            training_samples: List of samples with 'features' and 'risk_score' fields
+
+        Returns:
+            Tuple of (X, y, feature_names) where:
+                X: numpy array of feature vectors
+                y: numpy array of risk scores
+                feature_names: sorted list of feature names
+        """
+        import numpy as np
+
+        feature_names = sorted(training_samples[0]['features'].keys())
+        X = []
+        y = []
+
+        for sample in training_samples:
+            feature_vector = [sample['features'][name] for name in feature_names]
+            X.append(feature_vector)
+            y.append(sample['risk_score'])
+
+        return np.array(X), np.array(y), feature_names
+
+    def _save_trained_model(self, risk_service, training_samples: List[Dict[str, Any]],
+                           source_type: str, method_name: str, additional_tags: Optional[Dict[str, str]] = None):
+        """
+        Save trained model to storage with metadata.
+
+        Args:
+            risk_service: Risk service instance containing the trained model
+            training_samples: List of training samples used
+            source_type: Source type for tags (e.g., 'file', 'central-api')
+            method_name: Training method name for tags (e.g., 'train', 'train-full')
+            additional_tags: Optional additional tags to include in metadata
+        """
+        if not risk_service:
+            return
+
+        try:
+            model_id = risk_service.get_default_model_id()
+            description = f"Model trained from {source_type} with {len(training_samples)} samples"
+            tags = {'source': source_type, 'method': method_name}
+
+            if additional_tags:
+                tags.update(additional_tags)
+
+            if risk_service.model.save_model_to_storage(
+                risk_service.storage_manager,
+                model_id,
+                description,
+                tags
+            ):
+                logger.info(f"Model saved to storage with ID: {model_id}")
+            else:
+                logger.warning("Model trained successfully but failed to save to storage")
+        except Exception as e:
+            logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
+
+    def _create_training_response(self, success: bool, training_metrics, risk_service,
+                                  error_message: str = "",
+                                  feature_importances: Optional[List[FeatureImportance]] = None) -> TrainModelResponse:
+        """
+        Create standardized training response.
+
+        Args:
+            success: Whether training succeeded
+            training_metrics: Training metrics object (or None if failed)
+            risk_service: Risk service instance
+            error_message: Error message if training failed
+            feature_importances: Optional list of feature importances (for detailed responses)
+
+        Returns:
+            TrainModelResponse with standardized format
+        """
+        if success and training_metrics:
+            response_metrics = TrainingMetrics(
+                validation_ndcg=training_metrics.val_ndcg,
+                global_feature_importance=feature_importances or []
+            )
+
+            return TrainModelResponse(
+                success=True,
+                error_message="",
+                model_version=risk_service.model.model_version if risk_service else "unknown",
+                metrics=response_metrics
+            )
+        else:
+            return TrainModelResponse(
+                success=False,
+                error_message=error_message,
+                model_version="",
+                metrics=TrainingMetrics(
+                    validation_ndcg=0.0,
+                    global_feature_importance=[]
+                )
+            )
+
     def generate_sample_training_data(self, num_samples: int = 100) -> str:
         """
         Generate sample training data for testing.
@@ -328,96 +405,50 @@ class TrainingService:
                 training_samples.append(sample)
 
             if not training_samples:
-                return TrainModelResponse(
+                return self._create_training_response(
                     success=False,
-                    error_message="No training samples found with current filters",
-                    model_version="",
-                    metrics=TrainingMetrics(
-                        validation_ndcg=0.0,
-                        global_feature_importance=[]
-                    )
+                    training_metrics=None,
+                    risk_service=risk_service,
+                    error_message="No training samples found with current filters"
                 )
 
             logger.info(f"Collected {len(training_samples)} samples from Central API")
 
-            # Use training pipeline to train the model with samples
-            logger.info(f"Training model with {len(training_samples)} samples from Central API")
-
-            # Extract X, y, and feature names from samples
-            feature_names = sorted(training_samples[0]['features'].keys())
-            X = []
-            y = []
-
-            for sample in training_samples:
-                feature_vector = [sample['features'][name] for name in feature_names]
-                X.append(feature_vector)
-                y.append(sample['risk_score'])
-
-            import numpy as np
-            X = np.array(X)
-            y = np.array(y)
+            # Prepare training data
+            X, y, feature_names = self._prepare_training_data(training_samples)
 
             # Train the model
+            logger.info(f"Training model with {len(training_samples)} samples from Central API")
             training_metrics = risk_service.model.train(X, y, feature_names=feature_names) if risk_service else None
 
             if not training_metrics:
-                return TrainModelResponse(
+                return self._create_training_response(
                     success=False,
-                    error_message="Failed to train model",
-                    model_version="",
-                    metrics=TrainingMetrics(
-                        validation_ndcg=0.0,
-                        global_feature_importance=[]
-                    )
+                    training_metrics=None,
+                    risk_service=risk_service,
+                    error_message="Failed to train model"
                 )
 
-            # Update risk service state
+            # Update risk service state and save model
             if risk_service:
                 risk_service.model_loaded = True
-
-                # Save model to storage so it appears in model registry
-                try:
-                    model_id = risk_service.get_default_model_id()
-                    description = f"Model trained from Central API with {len(training_samples)} samples"
-                    tags = {'source': 'central-api', 'method': 'train-full'}
-
-                    if risk_service.model.save_model_to_storage(
-                        risk_service.storage_manager,
-                        model_id,
-                        description,
-                        tags
-                    ):
-                        logger.info(f"Model saved to storage with ID: {model_id}")
-                    else:
-                        logger.warning("Model trained successfully but failed to save to storage")
-                except Exception as e:
-                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
-
-            # Create response
-            response_metrics = TrainingMetrics(
-                validation_ndcg=training_metrics.val_ndcg,
-                global_feature_importance=[]  # Can add if needed
-            )
+                self._save_trained_model(risk_service, training_samples, 'central-api', 'train-full')
 
             logger.info(f"Model training completed successfully. Validation NDCG: {training_metrics.val_ndcg:.4f}")
 
-            return TrainModelResponse(
+            return self._create_training_response(
                 success=True,
-                error_message="",
-                model_version=risk_service.model.model_version if risk_service else "unknown",
-                metrics=response_metrics
+                training_metrics=training_metrics,
+                risk_service=risk_service
             )
 
         except Exception as e:
             logger.error(f"Central API training failed: {e}")
-            return TrainModelResponse(
+            return self._create_training_response(
                 success=False,
-                error_message=f"Central API training failed: {str(e)}",
-                model_version="",
-                metrics=TrainingMetrics(
-                    validation_ndcg=0.0,
-                    global_feature_importance=[]
-                )
+                training_metrics=None,
+                risk_service=risk_service,
+                error_message=f"Central API training failed: {str(e)}"
             )
 
     def train_model_from_file(self,
@@ -452,92 +483,48 @@ class TrainingService:
                 training_samples.append(sample)
 
             if not training_samples:
-                return TrainModelResponse(
+                return self._create_training_response(
                     success=False,
-                    error_message=f"No training samples found in file: {file_path}",
-                    model_version="",
-                    metrics=TrainingMetrics(
-                        validation_ndcg=0.0,
-                        global_feature_importance=[]
-                    )
+                    training_metrics=None,
+                    risk_service=risk_service,
+                    error_message=f"No training samples found in file: {file_path}"
                 )
 
             logger.info(f"Collected {len(training_samples)} samples from file")
 
-            # Extract X, y, and feature names from samples
-            feature_names = sorted(training_samples[0]['features'].keys())
-            X = []
-            y = []
-
-            for sample in training_samples:
-                feature_vector = [sample['features'][name] for name in feature_names]
-                X.append(feature_vector)
-                y.append(sample['risk_score'])
-
-            import numpy as np
-            X = np.array(X)
-            y = np.array(y)
+            # Prepare training data
+            X, y, feature_names = self._prepare_training_data(training_samples)
 
             # Train the model
             training_metrics = risk_service.model.train(X, y, feature_names=feature_names) if risk_service else None
 
             if not training_metrics:
-                return TrainModelResponse(
+                return self._create_training_response(
                     success=False,
-                    error_message="Failed to train model",
-                    model_version="",
-                    metrics=TrainingMetrics(
-                        validation_ndcg=0.0,
-                        global_feature_importance=[]
-                    )
+                    training_metrics=None,
+                    risk_service=risk_service,
+                    error_message="Failed to train model"
                 )
 
-            # Update risk service state
+            # Update risk service state and save model
             if risk_service:
                 risk_service.model_loaded = True
-
-                # Save model to storage so it appears in model registry
-                try:
-                    model_id = risk_service.get_default_model_id()
-                    description = f"Model trained from file with {len(training_samples)} samples"
-                    tags = {'source': 'file', 'method': 'train-file', 'file': file_path}
-
-                    if risk_service.model.save_model_to_storage(
-                        risk_service.storage_manager,
-                        model_id,
-                        description,
-                        tags
-                    ):
-                        logger.info(f"Model saved to storage with ID: {model_id}")
-                    else:
-                        logger.warning("Model trained successfully but failed to save to storage")
-                except Exception as e:
-                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
-
-            # Create response
-            response_metrics = TrainingMetrics(
-                validation_ndcg=training_metrics.val_ndcg,
-                global_feature_importance=[]
-            )
+                self._save_trained_model(risk_service, training_samples, 'file', 'train-file', {'file': file_path})
 
             logger.info(f"Model training from file completed successfully. Validation NDCG: {training_metrics.val_ndcg:.4f}")
 
-            return TrainModelResponse(
+            return self._create_training_response(
                 success=True,
-                error_message="",
-                model_version=risk_service.model.model_version if risk_service else "unknown",
-                metrics=response_metrics
+                training_metrics=training_metrics,
+                risk_service=risk_service
             )
 
         except Exception as e:
             logger.error(f"File-based training failed: {e}")
-            return TrainModelResponse(
+            return self._create_training_response(
                 success=False,
-                error_message=f"File-based training failed: {str(e)}",
-                model_version="",
-                metrics=TrainingMetrics(
-                    validation_ndcg=0.0,
-                    global_feature_importance=[]
-                )
+                training_metrics=None,
+                risk_service=risk_service,
+                error_message=f"File-based training failed: {str(e)}"
             )
 
