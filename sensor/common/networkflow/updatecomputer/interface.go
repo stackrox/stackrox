@@ -19,9 +19,13 @@ type UpdateComputer interface {
 	) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor)
 
 	// OnSuccessfulSendConnections contains actions that should be executed after successful sending of connection updates to Central.
-	OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS)
+	// unsentConns: connections that failed to send and should remain cached
+	// currentConns: the full current state (used by legacy implementation, can be nil for transition-based)
+	OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow, currentConns map[indicator.NetworkConn]timestamp.MicroTS)
 	// OnSuccessfulSendEndpoints contains actions that should be executed after successful sending of endpoint updates to Central.
-	OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// unsentEps: endpoints that failed to send and should remain cached
+	// enrichedEndpointsProcesses: the full current state (used by legacy implementation, can be nil for transition-based)
+	OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint, enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 	// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 

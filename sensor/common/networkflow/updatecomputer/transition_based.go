@@ -376,19 +376,19 @@ func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.
 	})
 }
 
-func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
-	if conns != nil {
-		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
-	}
+func (c *TransitionBased) OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow, conns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Set cached updates to the unsent elements
+	// If all batches were sent successfully, unsentConns will be empty
+	c.cachedUpdatesConn = unsentConns
 }
 
 // OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	if enrichedEndpointsProcesses != nil {
-		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
-	}
+func (c *TransitionBased) OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint, enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Set cached updates to the unsent elements
+	// If all batches were sent successfully, unsentEps will be empty
+	c.cachedUpdatesEp = unsentEps
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.

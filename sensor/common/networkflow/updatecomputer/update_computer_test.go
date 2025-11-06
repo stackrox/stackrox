@@ -160,10 +160,10 @@ func TestComputeUpdatedConns(t *testing.T) {
 			t.Run(implLegacy, func(t *testing.T) {
 				computer := NewLegacy()
 				if tc.initialState != nil {
-					computer.OnSuccessfulSendConnections(tc.initialState)
+					computer.OnSuccessfulSendConnections(nil, tc.initialState)
 				}
 				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
-				computer.OnSuccessfulSendConnections(nil)
+				computer.OnSuccessfulSendConnections(nil, nil)
 				updates := computer.ComputeUpdatedConns(tc.currentState)
 				assert.Len(t, updates, tc.expectNumUpdates[implLegacy])
 			})
@@ -172,10 +172,10 @@ func TestComputeUpdatedConns(t *testing.T) {
 				if tc.initialState != nil {
 					// Trigger a computation + successful send to bring the update computer to the initial state.
 					computer.ComputeUpdatedConns(tc.initialState)
-					computer.OnSuccessfulSendConnections(tc.initialState)
+					computer.OnSuccessfulSendConnections(nil, tc.initialState)
 				}
 				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
-				computer.OnSuccessfulSendConnections(nil)
+				computer.OnSuccessfulSendConnections(nil, nil)
 				updates := computer.ComputeUpdatedConns(tc.currentState)
 				assert.Len(t, updates, tc.expectNumUpdates[implTransitionBased])
 			})
@@ -568,10 +568,10 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 		// Bring model to the initial state
 		ie, ip := l.ComputeUpdatedEndpointsAndProcesses(initialMapping)
 		_, _ = ie, ip
-		l.OnSuccessfulSendEndpoints(initialMapping)
+		l.OnSuccessfulSendEndpoints(nil, initialMapping)
 		l.OnSuccessfulSendProcesses(initialMapping)
 		// Call to OnSuccessfulSend with nils should not change anything in the state
-		l.OnSuccessfulSendEndpoints(nil)
+		l.OnSuccessfulSendEndpoints(nil, nil)
 		l.OnSuccessfulSendProcesses(nil)
 
 		updatesEp, updatesProc := l.ComputeUpdatedEndpointsAndProcesses(currentMapping)

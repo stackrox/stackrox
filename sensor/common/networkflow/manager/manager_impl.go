@@ -401,10 +401,12 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			batchSize = 1000 // fallback to default if invalid
 		}
 
-		allSent := true
 		connChunks := slices.Collect(slices.Chunk(result.updatedConns, batchSize))
 		epChunks := slices.Collect(slices.Chunk(result.updatedEndpoints, batchSize))
 		maxBatches := max(len(connChunks), len(epChunks))
+
+		var unsentConns []*storage.NetworkFlow
+		var unsentEps []*storage.NetworkEndpoint
 
 		for i := 0; i < maxBatches; i++ {
 			var connBatch []*storage.NetworkFlow
@@ -418,15 +420,15 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			}
 
 			if !m.sendConnsEps(connBatch, epBatch) {
-				allSent = false
+				// This batch failed to send, add to unsent
+				unsentConns = append(unsentConns, connBatch...)
+				unsentEps = append(unsentEps, epBatch...)
 			}
 		}
 
-		if allSent {
-			// Inform the updateComputer that sending has succeeded
-			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
-			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
-		}
+		// Inform the updateComputer which items remain unsent
+		m.updateComputer.OnSuccessfulSendConnections(unsentConns, result.currentConns)
+		m.updateComputer.OnSuccessfulSendEndpoints(unsentEps, result.currentEndpointsProcesses)
 	}
 
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {

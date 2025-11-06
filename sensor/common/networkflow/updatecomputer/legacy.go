@@ -81,7 +81,9 @@ func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]
 	})
 }
 
-func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+func (l *Legacy) OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow, currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Legacy implementation doesn't use cached updates, so unsentConns is ignored
+	// It tracks lastSentState instead
 	if currentConns != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -92,7 +94,9 @@ func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkC
 // OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+func (l *Legacy) OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint, enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Legacy implementation doesn't use cached updates, so unsentEps is ignored
+	// It tracks lastSentState instead
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
