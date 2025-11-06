@@ -1,0 +1,46 @@
+# Fast inner loop Dockerfile - uses pre-built image from quay.io/rhacs-eng
+# and only copies in locally-built binaries
+#
+# This Dockerfile expects binaries to be in the build context (passed via -f flag)
+# The Makefile copies bin/linux_${GOARCH}/* to .fastbuild/ before running docker build
+
+ARG BASE_TAG=latest
+FROM quay.io/rhacs-eng/main:${BASE_TAG}
+
+# Switch to root to copy binaries
+USER root
+
+# Copy central binary to /stackrox/
+COPY central /stackrox/central
+
+# Copy all other binaries to /stackrox/bin/ and rename them
+# Note: We use a temporary directory because COPY cannot rename files.
+# Some binaries need different names in the final image:
+#   - kubernetes -> kubernetes-sensor
+#   - upgrader -> sensor-upgrader
+COPY migrator compliance kubernetes upgrader admission-control config-controller init-tls-certs /tmp/binaries/
+RUN mv /tmp/binaries/migrator /stackrox/bin/migrator && \
+    mv /tmp/binaries/compliance /stackrox/bin/compliance && \
+    mv /tmp/binaries/kubernetes /stackrox/bin/kubernetes-sensor && \
+    mv /tmp/binaries/upgrader /stackrox/bin/sensor-upgrader && \
+    mv /tmp/binaries/admission-control /stackrox/bin/admission-control && \
+    mv /tmp/binaries/config-controller /stackrox/bin/config-controller && \
+    mv /tmp/binaries/init-tls-certs /stackrox/bin/init-tls-certs && \
+    chown 4000:4000 /stackrox/central \
+        /stackrox/bin/migrator \
+        /stackrox/bin/compliance \
+        /stackrox/bin/kubernetes-sensor \
+        /stackrox/bin/sensor-upgrader \
+        /stackrox/bin/admission-control \
+        /stackrox/bin/config-controller \
+        /stackrox/bin/init-tls-certs && \
+    rm -rf /tmp/binaries
+
+# Switch back to non-root user
+USER 4000:4000
+
+EXPOSE 8443
+
+ENTRYPOINT ["/stackrox/central"]
+
+HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
