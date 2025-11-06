@@ -1,0 +1,22 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.env.openshift }}
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: central-{{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "clusterSPIFFEID" "central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterSPIFFEID" "central") | nindent 4 }}
+spec:
+  # This template generates the SPIFFE ID for Central pods
+  # Format: spiffe://stackrox.local/ns/{namespace}/sa/{serviceaccount}
+  spiffeIDTemplate: "spiffe://stackrox.local/ns/{{ "{{" }} .PodMeta.Namespace {{ "}}" }}/sa/{{ "{{" }} .PodSpec.ServiceAccountName {{ "}}" }}"
+  podSelector:
+    matchLabels:
+      app: central
+  workloadSelectorTemplates:
+    - "k8s:ns:{{ ._rox._namespace }}"
+    - "k8s:sa:central"
+{{- end }}

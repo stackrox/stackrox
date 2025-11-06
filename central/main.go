@@ -583,7 +583,8 @@ func startGRPCServer() {
 	}
 
 	idExtractors := []authn.IdentityExtractor{
-		serviceMTLSExtractor, // internal services
+		serviceMTLSExtractor,               // internal services with mTLS certificates
+		sensorService.NewSPIFFEExtractor(), // internal services with SPIRE-issued certificates
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		userpass.IdentityExtractorOrPanic(roleDataStore.Singleton(), basicAuthMgr, basicAuthProvider),
 		serviceTokenExtractor,

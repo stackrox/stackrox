@@ -219,6 +219,11 @@ spec:
           mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
           readOnly: true
         {{- end }}
+        {{- if ._rox.env.openshift }}
+        - name: spire-workload-api
+          mountPath: /spire-workload-api
+          readOnly: true
+        {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       volumes:
       - name: varlog
@@ -309,5 +314,11 @@ spec:
         secret:
           secretName: {{ $mount }}
           optional: true
+      {{- end }}
+      {{- if ._rox.env.openshift }}
+      - name: spire-workload-api
+        csi:
+          driver: csi.spiffe.io
+          readOnly: true
       {{- end }}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
