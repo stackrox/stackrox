@@ -258,7 +258,7 @@ deploy_central() {
 # shellcheck disable=SC2120
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
-    info "Deploying central via operator into namespace ${central_namespace}"
+    info "Deploying central using operator into namespace ${central_namespace}"
     if ! kubectl get ns "${central_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${central_namespace}"
     fi
@@ -376,11 +376,11 @@ deploy_sensor() {
         deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-            echo "Deploying Sensor using Helm ..."
+            echo "Preparing deployment of Sensor using Helm ..."
             ci_export SENSOR_HELM_DEPLOY "true"
             ci_export ADMISSION_CONTROLLER "true"
         else
-            echo "Deploying sensor using kubectl ... "
+            echo "Preparing deployment of Sensor using kubectl ... "
             if [[ -n "${IS_RACE_BUILD:-}" ]]; then
                 # builds with -race are slow at generating the sensor bundle
                 # https://stack-rox.atlassian.net/browse/ROX-6987
@@ -409,7 +409,7 @@ deploy_sensor_via_operator() {
     local scanner_component_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
-    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+    info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi

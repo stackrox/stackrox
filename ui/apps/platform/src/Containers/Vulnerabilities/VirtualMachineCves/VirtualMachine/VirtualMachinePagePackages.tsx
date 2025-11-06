@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Skeleton,
     Split,
     SplitItem,
@@ -12,10 +11,10 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    pluralize,
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import ComponentScannableStatusDropdown from 'Containers/Vulnerabilities/components/ComponentScannableStatusDropdown';
 import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
@@ -32,6 +31,7 @@ import {
     applyVirtualMachinePackagesTableSort,
     getVirtualMachinePackagesTableData,
 } from '../aggregateUtils';
+import ComponentScannableStatusDropdown from '../../components/ComponentScannableStatusDropdown';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
 import VirtualMachinePackagesTable from './VirtualMachinePackagesTable';
 
