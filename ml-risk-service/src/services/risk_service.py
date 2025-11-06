@@ -323,14 +323,18 @@ class RiskPredictionService:
             logger.error(f"Failed to load model from {model_file}: {e}")
             return False
 
+    def get_default_model_id(self) -> str:
+        """Get the default model ID from config or environment."""
+        return (
+            self.config.get('default_model_id') or
+            os.environ.get('ROX_ML_DEFAULT_MODEL_ID', 'stackrox-risk-model')
+        )
+
     def _load_default_model(self):
         """Load the default model from storage at startup."""
         try:
             # Try to find the default model ID from config or environment
-            default_model_id = (
-                self.config.get('default_model_id') or
-                os.environ.get('ROX_ML_DEFAULT_MODEL_ID', 'stackrox-risk-model')
-            )
+            default_model_id = self.get_default_model_id()
 
             # Try to load the latest version of the default model
             models = self.storage_manager.list_models(default_model_id)

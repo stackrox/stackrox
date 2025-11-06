@@ -79,6 +79,24 @@ class TrainingService:
                 self.last_training_time = int(time.time())
                 self.training_samples_count = len(training_samples)
 
+                # Save model to storage so it appears in model registry
+                try:
+                    model_id = risk_service.get_default_model_id()
+                    description = f"Model trained from file with {len(training_samples)} samples"
+                    tags = {'source': 'file', 'method': 'train'}
+
+                    if risk_service.model.save_model_to_storage(
+                        risk_service.storage_manager,
+                        model_id,
+                        description,
+                        tags
+                    ):
+                        logger.info(f"Model saved to storage with ID: {model_id}")
+                    else:
+                        logger.warning("Model trained successfully but failed to save to storage")
+                except Exception as e:
+                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
+
                 # Convert metrics to response format
                 global_importance = risk_service.model.get_global_feature_importance()
                 feature_importances = [
@@ -357,6 +375,24 @@ class TrainingService:
             if risk_service:
                 risk_service.model_loaded = True
 
+                # Save model to storage so it appears in model registry
+                try:
+                    model_id = risk_service.get_default_model_id()
+                    description = f"Model trained from Central API with {len(training_samples)} samples"
+                    tags = {'source': 'central-api', 'method': 'train-full'}
+
+                    if risk_service.model.save_model_to_storage(
+                        risk_service.storage_manager,
+                        model_id,
+                        description,
+                        tags
+                    ):
+                        logger.info(f"Model saved to storage with ID: {model_id}")
+                    else:
+                        logger.warning("Model trained successfully but failed to save to storage")
+                except Exception as e:
+                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
+
             # Create response
             response_metrics = TrainingMetrics(
                 validation_ndcg=training_metrics.val_ndcg,
@@ -459,6 +495,24 @@ class TrainingService:
             # Update risk service state
             if risk_service:
                 risk_service.model_loaded = True
+
+                # Save model to storage so it appears in model registry
+                try:
+                    model_id = risk_service.get_default_model_id()
+                    description = f"Model trained from file with {len(training_samples)} samples"
+                    tags = {'source': 'file', 'method': 'train-file', 'file': file_path}
+
+                    if risk_service.model.save_model_to_storage(
+                        risk_service.storage_manager,
+                        model_id,
+                        description,
+                        tags
+                    ):
+                        logger.info(f"Model saved to storage with ID: {model_id}")
+                    else:
+                        logger.warning("Model trained successfully but failed to save to storage")
+                except Exception as e:
+                    logger.warning(f"Failed to save model to storage: {e}. Model is trained but not persisted.")
 
             # Create response
             response_metrics = TrainingMetrics(
