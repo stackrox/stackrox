@@ -38,14 +38,46 @@ This complexity creates barriers:
 
 When viewing any policy detail page, an AI-generated explanation appears in a new card titled "When This Policy Triggers". Explanations use structured formatting with bullet points, bold emphasis on key terms, and concrete examples of violation scenarios.
 
+(Note: The detail view retains the original single AI explanation. The tabbed interface with tables is wizard-only.)
+
 ### Policy Creation Wizard
 
-The wizard shows real-time explanations as users build policies. The explanation card appears below the rules section and updates automatically as criteria are modified. Features include:
+The wizard shows real-time visual feedback as users build policies. The explanation card appears below the rules section with three tabbed views:
 
-- **Real-time updates** with 2-second debouncing to prevent excessive API calls
+#### Interactive Simulator Tab
+- **Interactive deployment simulator** - users can input ANY values to test scenarios
+- **Field-specific controls** - appropriate inputs for each field type:
+  - Dockerfile Line: dropdown for instruction type + text input for arguments
+  - Image Signature: dropdown (Verified/Not Verified)
+  - CVE Severity: dropdown (CRITICAL/HIGH/MEDIUM/LOW)
+  - Registry/Tag/Labels: text inputs
+- **Shows ALL sections** - multiple sections displayed as separate cards
+- **Real-time evaluation** - immediate feedback as values are entered
+- **Match indicators** - shows "Matches (triggers)" or "No match (safe)" per criterion
+- **Visual styling** with red "VIOLATION" and green "NO VIOLATION" alerts
+- **Section-by-section breakdown** - shows how many criteria match (e.g., "2/3 match (need ALL)")
+- **Inverted field handling** - orange warning badges for inverted fields
+- **Flexible testing** - test ANY deployment configuration, not just configured values
+
+#### AI Explanation Tab
+- **LLM-generated explanation** with 2-second debouncing to prevent excessive API calls
 - **Smart validation** that detects incomplete criteria (fields with no values configured)
 - **Truncated preview** showing 3 lines by default with "Show more/less" toggle
 - **Proper formatting** with bold text rendering and structured layout
+- **Truth tables** showing all possible combinations of field conditions and policy outcomes:
+  - One table per policy section with columns for each field
+  - All possible value combinations using **concrete, realistic values** (not abstract T/F)
+  - Final "Result" column clearly shows "Violation" or "No Violation" for each combination
+  - Shows actual values: "true"/"false", "Verified"/"Not Verified", "6 cores"/"4 cores", "Absent"/"Present"
+  - Smart handling of large policies (6+ fields) with representative samples
+  - Legend explaining what each column represents and what values mean
+
+This dual-view approach provides:
+- **Interactive exploration** (users can test scenarios they care about)
+- **No information overload** (no exponential 2^n rows to scan)
+- **Instant feedback** (simulator updates immediately as switches toggle)
+- **Multi-section support** (all sections shown, not just first one)
+- **Better understanding** (hands-on interaction + natural language explanation)
 
 ### Technology Stack
 
@@ -113,17 +145,48 @@ Render Formatted Explanation
 
 - Auto-generates explanation on mount via React useEffect
 - Parses `**bold**` markers into styled `<strong>` elements
+- Detects and renders tables (lines starting with `|`) in preformatted `<pre>` blocks with monospace font
+- Tables styled with light background, border, and horizontal scrolling for wide content
 - Integrates into policy detail page after PolicyOverview section
 
 **PolicyExplainerWizard.tsx** (Policy Creation Wizard):
 
 - Reads policy data from Formik context (live editing state)
-- Implements 2-second debouncing to avoid API spam during active editing
-- Validates policy criteria before generating:
-  - Checks `key`, `value`, and `arrayValue` fields (handles different field types)
-  - Only flags incomplete when ALL fields are empty (allows optional sub-fields)
-- Shows truncated preview (3 lines) with "Show more/less" toggle
-- Parses formatting and integrates below rules section in wizard
+- Implements tabbed interface with three views (Structure, Examples, AI Explanation)
+- Tracks previous policy state for visual change detection
+- AI tab implements 2-second debouncing to avoid API spam during active editing
+- Validates policy criteria before generating AI explanations
+- Structure and Examples tabs update instantly with no debounce
+- Uses same table detection and rendering as PolicyExplainer (monospace preformatted blocks)
+- Includes "Show more/less" toggle for long explanations with truth tables
+
+**PolicySimulator.tsx** (Interactive Simulator Tab):
+
+- Creates interactive deployment simulator with flexible input controls
+- Shows ALL policy sections as separate cards
+- For each criterion, provides:
+  - Display name and configured value
+  - Appropriate input controls based on field type:
+    - **Dockerfile Line**: dropdown for instruction (RUN/CMD/etc.) + text input for arguments
+    - **Image Signature**: dropdown (Verified/Not Verified)
+    - **CVE Severity**: dropdown (CRITICAL/HIGH/MEDIUM/LOW/UNKNOWN)
+    - **Text fields** (Registry, Tag, Label, User, etc.): text input
+  - Match indicator showing "Matches (triggers)" or "No match (safe)"
+  - Inverted field warning badge
+- Real-time evaluation:
+  - Compares user-entered values against configured values
+  - Calculates match count per section (e.g., "2/3 match (need ALL)")
+  - Determines if section triggers (all criteria must match)
+  - Applies OR logic across sections (any section match = violation)
+  - Shows overall result in prominent alert (red=violation, green=pass)
+- Correctly handles inverted fields:
+  - Shows orange warning badge
+  - Match logic respects inverted semantics
+- Flexible testing:
+  - Users can enter ANY values, not just toggle between two states
+  - Test realistic deployment configurations
+  - Compare against configured policy values
+- Updates instantly with smooth animations
 
 ### Prompt Engineering Strategy
 
@@ -150,7 +213,23 @@ The prompt is carefully designed to:
    - Concrete examples with exact values
    - Bold formatting on key terms
 
-6. **Length Control**: Limited to ~300 words for readability
+6. **Truth Table Generation**:
+   - Generates comprehensive truth tables showing all possible field combinations
+   - One table per policy section with columns for each field
+   - Rows show all possible value combinations (2^n for n fields)
+   - Final "Result" column shows "Violation" or "No Violation" for each combination
+   - Uses **concrete, realistic values** instead of abstract T/F notation:
+     - Boolean fields: "true"/"false"
+     - Comparison fields: actual values like "6 cores" (matches >5) vs "4 cores" (doesn't match)
+     - Signature verification: "Verified"/"Not Verified"
+     - Inverted fields: "Absent"/"Present" or "Missing"/"exists"
+     - Image registries: actual names like "quay.io"/"docker.io"
+   - Intelligently handles large policies (6+ fields) by showing representative samples
+   - Includes legend explaining what each column represents and what values mean
+   - Makes AND logic within sections immediately visible
+   - Helps users understand inverted field behavior through concrete examples
+
+7. **Length Control**: Extended token limit (4096) to accommodate truth tables while keeping other sections concise
 
 ## Configuration
 
@@ -394,18 +473,199 @@ Before production deployment:
    - Test policies with various field combinations and boolean logic
    - Verify wizard updates correctly as policies are modified
 
+## Truth Table Example
+
+The AI explanation now includes a comprehensive truth table showing all possible combinations of field conditions using **concrete, realistic values** instead of abstract T/F notation. Here's an example for a policy checking privileged containers, signature verification, and CPU limits:
+
+```
+Truth Table for Section 1:
+
+| Privileged Container | Image Signature | CPU Request | Result       |
+|---------------------|-----------------|-------------|--------------|
+| true                | Not Verified    | 6 cores     | Violation    |
+| true                | Not Verified    | 4 cores     | No Violation |
+| true                | Verified        | 6 cores     | No Violation |
+| true                | Verified        | 4 cores     | No Violation |
+| false               | Not Verified    | 6 cores     | No Violation |
+| false               | Not Verified    | 4 cores     | No Violation |
+| false               | Verified        | 6 cores     | No Violation |
+| false               | Verified        | 4 cores     | No Violation |
+
+Legend:
+- Privileged Container: Whether container runs in privileged mode (true/false)
+- Image Signature: Whether image signature can be verified (Verified/Not Verified)
+- CPU Request: CPU cores requested (policy triggers when >5 cores)
+- Result: Whether the policy triggers a violation for this combination
+
+Note: Within this section, ALL three conditions must be met simultaneously for the policy to trigger. 
+Only the first row (privileged=true AND signature not verified AND CPU >5 cores) results in a violation.
+```
+
+**Example for Inverted Fields:**
+```
+| Required Label "app" | Image Registry | Result       |
+|---------------------|----------------|--------------|
+| Absent              | docker.io      | Violation    |
+| Absent              | quay.io        | No Violation |
+| Present             | docker.io      | No Violation |
+| Present             | quay.io        | No Violation |
+
+Note: "Required Label" is an inverted field - it triggers when the label is ABSENT (missing).
+```
+
+**Key Benefits:**
+- **Concrete Values**: Shows actual values like "6 cores", "Not Verified", "Absent" instead of abstract T/F
+- **Clear Results**: "Violation" / "No Violation" is immediately understandable
+- **Intuitive Understanding**: Users immediately see realistic scenarios (e.g., "true + Not Verified + 6 cores = Violation")
+- **Complete Coverage**: Shows every possible combination of field values
+- **Visual Clarity**: Makes AND logic immediately obvious (all conditions must match)
+- **Inverted Field Clarity**: Clearly shows "Absent"/"Present" for fields like "Required Label"
+- **Threshold Examples**: Shows values on both sides of comparisons (>5: shows "6 cores" vs "4 cores")
+- **Multiple Sections**: One table per section with note that ANY section resulting in Violation = policy triggers
+- **Smart Scaling**: For policies with 6+ fields, shows representative samples with clear notation
+
+## Interactive Simulator Approach
+
+The wizard implementation uses an interactive simulator that lets users explore policy behavior hands-on:
+
+### Design Rationale
+
+**Problem:** The original AI-only explanation had a 2-second delay, and static truth tables with 2^n rows quickly become overwhelming (8+ criteria = 256+ rows).
+
+**Solution:** Create an interactive deployment simulator where users input values and see results instantly:
+
+1. **Interactive Simulator Tab** - HANDS-ON TESTING
+   - Shows a simulated deployment with input controls for each criterion
+   - Users enter actual values to test "what if" scenarios they care about
+   - Field-specific controls (dropdowns for Dockerfile instructions, text inputs for registries, etc.)
+   - Shows ALL policy sections simultaneously (not just first one)
+   - Each section card shows:
+     - All criteria with appropriate input controls
+     - Match indicators per criterion
+     - Current match count (e.g., "2/3 match (need ALL)")
+     - Whether that section would trigger
+   - Overall result displayed prominently (VIOLATION vs NO VIOLATION)
+   - Immediate updates with no API delay
+
+2. **AI Explanation Tab** - NATURAL LANGUAGE SUMMARY
+   - Natural language explanation for those who prefer prose
+   - Maintains the 2-second debounce for API efficiency
+   - Best for understanding subtle logic and edge cases
+   - Complements the hands-on simulator with contextual explanation
+
+### User Experience Benefits
+
+- **Hands-On Exploration:** Test scenarios interactively by entering actual values
+- **Realistic Testing:** Input real deployment configurations (e.g., "RUN apt-get install", "quay.io/myapp")
+- **No Information Overload:** No exponential row explosion (8 fields = 256 rows!)
+- **Instant Feedback:** Simulator updates immediately as values are entered
+- **Multi-Section Support:** All sections shown, not just the first one
+- **Reduced Cognitive Load:** Familiar form controls (text inputs, dropdowns) instead of abstract tables
+- **Direct Logic Verification:** See AND logic (within sections) and OR logic (across sections) in action
+- **Focused Testing:** Test specific cases you care about with actual values
+
+### Technical Implementation
+
+**Simulator State Management:**
+- Extracts criteria from all policy sections (not just first one)
+- Each criterion stores:
+  - `configuredKey` and `configuredValue`: what the policy requires
+  - `simulatedKey` and `simulatedValue`: what the user enters
+- React state updates when user changes inputs
+- Each change triggers re-evaluation of sections and overall result
+
+**Interactive Controls:**
+- Field-specific input components:
+  ```typescript
+  // Dockerfile Line
+  <FormSelect> for instruction type (RUN, CMD, etc.)
+  <TextInput> for arguments
+  
+  // Image Signature
+  <FormSelect> with Verified/Not Verified options
+  
+  // CVE Severity
+  <FormSelect> with CRITICAL/HIGH/MEDIUM/LOW options
+  
+  // Generic fields (Registry, Tag, Label, etc.)
+  <TextInput> for free-form values
+  ```
+- Match indicators show "Matches (triggers)" or "No match (safe)"
+- Inverted fields get orange warning badges
+
+**Real-Time Evaluation:**
+- Value comparison:
+  ```typescript
+  // For key=value fields (Dockerfile Line)
+  keysMatch = simulatedKey === configuredKey;
+  valuesMatch = simulatedValue === configuredValue;
+  matches = keysMatch && valuesMatch;
+  
+  // For simple fields
+  matches = simulatedValue === configuredValue;
+  ```
+- Per-section logic:
+  ```typescript
+  matchCount = criteria.filter(c => valuesMatch(c)).length;
+  allMatch = matchCount === criteria.length; // AND logic
+  ```
+- Overall violation:
+  ```typescript
+  anySectionViolates = sections.some(s => s.allMatch); // OR logic
+  ```
+- Updates instantly on every input change
+
+**Visual Feedback:**
+- Prominent alert shows overall result (red=violation, green=pass)
+- Each criterion shows match status with colored badge
+- Each section card shows match count (e.g., "2/3 match (need ALL)")
+- Smooth CSS animations on result changes
+- Color-coded: red=matches (triggers), green=no match (safe)
+
+**Performance:**
+- No exponential complexity - O(n) where n = number of criteria
+- Instant re-renders (no API calls)
+- Works smoothly even with many criteria
+- AI explanation debounced at 2 seconds
+
+### Advantages Over AI-Only Approach
+
+| Aspect | AI-Only | Interactive Simulator + AI |
+|--------|---------|---------------------------|
+| Initial feedback | 2+ seconds | **Instant** |
+| Exploration | Passive reading | **Active hands-on testing** |
+| Scalability | N/A (text) | **No explosion with many criteria** |
+| Multi-section support | Text description | **Visual cards for ALL sections** |
+| Verification | Must trust AI | **Test yourself with toggles** |
+| Inverted fields | In explanation text | **Explicit labels (ABSENT/present)** |
+| User engagement | Low (reading) | **High (interactive)** |
+| Focused testing | "Here's everything" | **"Test what YOU care about"** |
+
 ## Next Steps
 
-1. **Validate with SMEs**: Have ACS policy experts review the generated explanations
-2. **User Testing**: Gather feedback from Support Engineers and users on explanation clarity
-3. **Expand Field Coverage**: Identify other confusing fields or patterns that need special handling
-4. **Backend Integration**: Move to production with caching and monitoring
-5. **Metrics**: Track usage patterns and identify areas where explanations provide most value
+1. **Validate with SMEs**: Have ACS policy experts review the generated explanations and table examples
+2. **User Testing**: Gather feedback from Support Engineers and users on the tabbed interface and table clarity
+3. **Refine Example Generation**: Add more field types and smarter scenario generation logic
+4. **Expand Field Coverage**: Identify other confusing fields or patterns that need special handling
+5. **Backend Integration**: Move AI explanation to production with caching and monitoring
+6. **Metrics**: Track which tabs users prefer and where they spend time
+7. **Animation Tuning**: Gather feedback on animation timing and visual feedback
 
 ## Conclusion
 
-This PoC successfully demonstrates that LLM-powered policy explanations can significantly improve the understandability of ACS security policies. The implementation leverages existing policy metadata and field descriptions to generate accurate, structured explanations with minimal hallucination risk.
+This PoC successfully demonstrates that combining LLM-powered explanations with instant visual feedback can significantly improve the understandability of ACS security policies. The implementation leverages existing policy metadata and field descriptions to generate accurate, structured explanations with minimal hallucination risk.
 
-The approach provides users with contextual, real-time guidance that reduces support burden and improves policy design quality by making complex boolean logic and field semantics more accessible.
+The interactive simulator provides hands-on exploration and immediate feedback, addressing different user needs:
+- **Interactive testing:** "What if I deploy X?" → Enter values in simulator
+- **Multi-section understanding:** "Which section triggers?" → See all sections evaluated simultaneously
+- **Detailed understanding:** "Why exactly does this work?" → Check AI Explanation tab
 
-Next steps should focus on moving the implementation to the backend, adding caching, and gathering user feedback to refine the explanation quality and format.
+The interactive simulator is particularly valuable for:
+- **Hands-on learning:** Enter real values and see results instantly
+- **Debugging policies:** Test specific deployment configurations you're concerned about
+- **Realistic testing:** Use actual Dockerfile instructions, registry names, label values, etc.
+- **Understanding AND/OR logic:** See which sections match (OR) and how criteria combine (AND)
+- **Inverted fields:** Orange warning badges alert you to inverted matching semantics
+- **No cognitive overload:** Test specific cases with real data instead of scanning abstract tables
+
+Next steps should focus on moving the AI implementation to the backend, adding caching for AI explanations, and gathering user feedback on the interactive simulator (do users find it more helpful than static explanations?).

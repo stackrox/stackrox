@@ -123,12 +123,12 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
                         className="pf-v5-u-p-lg"
-                        style={{ overflowY: 'auto' }}
+                        style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: '300px' }}
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>
                     <Divider component="div" />
-                    <Flex className="pf-v5-u-p-lg">
+                    <Flex className="pf-v5-u-p-lg" style={{ flex: '0 0 auto' }}>
                         <PolicyExplainerWizard />
                     </Flex>
                 </Flex>
