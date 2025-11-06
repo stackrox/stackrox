@@ -84,29 +84,25 @@ handle_dangling_processes() {
     ps -e -O ppid
 
     local psline this_pid pid
-    ps -e -O ppid | while read -r psline; do
-        # trim leading whitespace
-        psline="$(echo "$psline" | xargs)"
-        if [[ "$psline" =~ ^PID ]]; then
+    this_pid="$$"
+    ps -e -O ppid | while read -r pid psline; do
+        if [[ "$pid" == "PID" ]]; then
             # Ignoring header
             continue
         fi
-        this_pid="$$"
-        if [[ "$psline" =~ ^$this_pid ]]; then
-            echo "Ignoring self: $psline"
+        if [[ "$pid" == "$this_pid" ]]; then
+            echo "Ignoring self: $pid $psline"
             continue
         fi
-        # shellcheck disable=SC1087
-        if [[ "$psline" =~ [[:space:]]$this_pid[[:space:]] ]]; then
-            echo "Ignoring child: $psline"
+        if [[ "$psline" =~ "^$this_pid[[:space:]]" ]]; then
+            echo "Ignoring child: $pid $psline"
             continue
         fi
         if [[ "$psline" =~ entrypoint|defunct ]]; then
-            echo "Ignoring ci-operator entrypoint or defunct process: $psline"
+            echo "Ignoring ci-operator entrypoint or defunct process: $pid $psline"
             continue
         fi
-        echo "A candidate to kill: $psline"
-        pid="$(echo "$psline" | cut -d' ' -f1)"
+        echo "A candidate to kill: $pid $psline"
         echo "Will kill $pid"
         kill "$pid" || {
             echo "Error killing $pid"
