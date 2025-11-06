@@ -51,6 +51,8 @@ var (
 	// NetworkFlowUseLegacyUpdateComputer enables the Legacy update computer for the network flow enrichment pipeline
 	// updates sent to Central. Setting this to `true` enables the behavior as in 4.8 and earlier.
 	NetworkFlowUseLegacyUpdateComputer = RegisterBooleanSetting("ROX_NETFLOW_USE_LEGACY_UPDATE_COMPUTER", false)
+	// NetworkFlowSendBatchSize defines the maximum number of connections/endpoints to send in a single message to Central
+	NetworkFlowSendBatchSize = RegisterIntegerSetting("ROX_NETFLOW_SEND_BATCH_SIZE", 1000)
 
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes

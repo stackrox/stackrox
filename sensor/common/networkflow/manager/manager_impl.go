@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -395,7 +396,33 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
 	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
-		if sent := m.sendConnsEps(result.updatedConns, result.updatedEndpoints); sent {
+		batchSize := env.NetworkFlowSendBatchSize.IntegerSetting()
+		if batchSize <= 0 {
+			batchSize = 1000 // fallback to default if invalid
+		}
+
+		allSent := true
+		connChunks := slices.Collect(slices.Chunk(result.updatedConns, batchSize))
+		epChunks := slices.Collect(slices.Chunk(result.updatedEndpoints, batchSize))
+		maxBatches := max(len(connChunks), len(epChunks))
+
+		for i := 0; i < maxBatches; i++ {
+			var connBatch []*storage.NetworkFlow
+			var epBatch []*storage.NetworkEndpoint
+
+			if i < len(connChunks) {
+				connBatch = connChunks[i]
+			}
+			if i < len(epChunks) {
+				epBatch = epChunks[i]
+			}
+
+			if !m.sendConnsEps(connBatch, epBatch) {
+				allSent = false
+			}
+		}
+
+		if allSent {
 			// Inform the updateComputer that sending has succeeded
 			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
 			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
