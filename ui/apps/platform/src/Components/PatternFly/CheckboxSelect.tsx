@@ -8,14 +8,14 @@ import type {
     Ref,
 } from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectGroup,
-    MenuToggle,
     Badge,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectGroup,
     SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type {
     MenuToggleElement,

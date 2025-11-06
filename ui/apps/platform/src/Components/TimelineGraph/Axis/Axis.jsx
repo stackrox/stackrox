@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { scaleLinear } from 'd3-scale';
-import { axisTop, axisBottom } from 'd3-axis';
+import { axisBottom, axisTop } from 'd3-axis';
 
 import mainViewSelector from 'Components/TimelineGraph/MainView/selectors';
 import { getWidth } from 'utils/d3Utils';

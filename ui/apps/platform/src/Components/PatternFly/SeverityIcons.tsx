@@ -11,8 +11,8 @@ import { Icon } from '@patternfly/react-core';
 
 import {
     CRITICAL_SEVERITY_COLOR,
-    LOW_SEVERITY_COLOR,
     IMPORTANT_HIGH_SEVERITY_COLOR,
+    LOW_SEVERITY_COLOR,
     MODERATE_MEDIUM_SEVERITY_COLOR,
     UNKNOWN_SEVERITY_COLOR,
 } from 'constants/severityColors';

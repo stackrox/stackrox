@@ -774,7 +774,6 @@ module.exports = [
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
         ignores: [
             'cypress/integration/**',
-            'src/Components/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/PolicyCategories/**',
             'src/Containers/SystemHealth/**',
