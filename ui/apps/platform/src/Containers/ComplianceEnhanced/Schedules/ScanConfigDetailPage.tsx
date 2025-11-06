@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import type { ReactElement } from 'react';
 import { Link, generatePath, useParams } from 'react-router-dom-v5-compat';
 

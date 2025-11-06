@@ -824,9 +824,7 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Containers/Audit/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/VulnerablityReporting/**',
