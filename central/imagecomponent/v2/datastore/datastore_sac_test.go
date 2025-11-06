@@ -8,7 +8,6 @@ import (
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -31,10 +30,6 @@ type componentV2DataStoreSACTestSuite struct {
 }
 
 func (s *componentV2DataStoreSACTestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Setenv(features.FlattenCVEData.EnvVar(), "true")
-	}
-
 	var err error
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
