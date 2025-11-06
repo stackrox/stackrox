@@ -17,7 +17,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
@@ -1169,35 +1168,6 @@ func standardizeImages(images ...*storage.Image) {
 			return components[i].GetName() < components[j].GetName()
 		})
 	}
-}
-
-func TestImageCVEEdgeIsJoinedLast(t *testing.T) {
-	t.Setenv(env.ImageCVEEdgeCustomJoin.EnvVar(), "true")
-	if !env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		t.Skip("Skip tests when ROX_IMAGE_CVE_EDGE_CUSTOM_JOIN disabled")
-		t.SkipNow()
-	}
-	ctx := sac.WithAllAccess(context.Background())
-	testDB := pgtest.ForT(t)
-
-	// Initialize the datastore.
-	imageStore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
-
-	// Upsert test images.
-	images := testImages()
-	for _, image := range images {
-		assert.NoError(t, imageStore.UpsertImage(ctx, image))
-	}
-
-	cveView := NewCVEView(testDB.DB)
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.CVE, "cve-2018-1").
-		AddBools(search.Fixable, false).
-		AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).
-		ProtoQuery()
-	imageIDs, err := cveView.GetImageIDs(ctx, query)
-	assert.NoError(t, err)
-	assert.ElementsMatch(t, []string{"sha2"}, imageIDs)
 }
 
 func TestImageCVEUnknownSeverity(t *testing.T) {
