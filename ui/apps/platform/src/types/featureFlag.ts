@@ -3,7 +3,6 @@
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_ACTIVE_VULN_MGMT'
-    | 'ROX_AUTO_LOCK_PROCESS_BASELINES'
     | 'ROX_CISA_KEV'
     | 'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     | 'ROX_EXTERNAL_IPS'
