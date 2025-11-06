@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-var BATCH_SIZE = 10000
+var batchSize = 5000
 
 func migrate(database *types.Databases) error {
 	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
@@ -27,7 +27,7 @@ func migrate(database *types.Databases) error {
 	for {
 		batch := pgx.Batch{}
 		getStmt := `SELECT image_name_fullname, image_id FROM deployments_containers WHERE image_id is not null AND image_id != '' AND image_name_fullname is not null AND image_name_fullname != '' AND (image_idv2 is null OR image_idv2 = '') LIMIT $1`
-		rows, err := db.Query(database.DBCtx, getStmt, BATCH_SIZE)
+		rows, err := db.Query(database.DBCtx, getStmt, batchSize)
 		if err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func migrate(database *types.Databases) error {
 		if err = result.ErrorOrNil(); err != nil {
 			return err
 		}
-		if len(containers) != BATCH_SIZE {
+		if len(containers) != batchSize {
 			return nil
 		}
 	}
