@@ -9,6 +9,7 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 //// Image related relations.
+// These are required for migrations at this time.
 
 // This proto has been deprecated
 message ImageComponentEdge {
