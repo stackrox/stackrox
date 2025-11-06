@@ -27,7 +27,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesStoreSuite struct {

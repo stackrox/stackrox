@@ -28,7 +28,6 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesV2StoreSuite struct {
@@ -444,16 +443,6 @@ func getTestImageV2(name, sha string) *storage.ImageV2 {
 		},
 		RiskScore: 30,
 		Priority:  1,
-	}
-}
-
-func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
-	return &storage.Image{
-		Id:        imageV2.GetDigest(),
-		Name:      imageV2.GetName(),
-		Scan:      imageV2.GetScan(),
-		RiskScore: imageV2.GetRiskScore(),
-		Priority:  imageV2.GetPriority(),
 	}
 }
 
