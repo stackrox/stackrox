@@ -1,248 +1,84 @@
 """
 Training data loader for ML risk ranking system.
-Loads deployment and image data from JSON files or Central API.
+Uses the unified streaming architecture to load data from any source.
 """
 
-import json
 import logging
+import json
+from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple, Iterator
-from pathlib import Path
 import pandas as pd
 import numpy as np
-from dataclasses import asdict
-from datetime import datetime, timedelta
 
+from src.streaming import SampleStreamSource, SampleStream
 from src.feature_extraction.baseline_features import BaselineFeatureExtractor
 
 logger = logging.getLogger(__name__)
 
 
 class TrainingDataLoader:
-    """Loads and processes training data for ML risk ranking."""
+    """
+    Loads and processes training data using unified streaming architecture.
+
+    This class now uses SampleStream + SampleStreamSource for all data loading,
+    eliminating code duplication across different sources.
+    """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.baseline_extractor = BaselineFeatureExtractor()
 
-    def load_from_json(self, json_file_path: str) -> List[Dict[str, Any]]:
+    def stream_from_source(self,
+                          source: SampleStreamSource,
+                          filters: Optional[Dict[str, Any]] = None,
+                          limit: Optional[int] = None) -> Iterator[Dict[str, Any]]:
         """
-        Load training data from JSON file.
+        Stream training samples from any data source.
 
-        Expected JSON format:
-        {
-            "deployments": [
-                {
-                    "deployment": {...},  // Deployment protobuf as dict
-                    "images": [...],      // List of image protobuf as dict
-                    "alerts": [...],      // List of policy violation alerts
-                    "baseline_violations": [...],  // Process baseline violations
-                    "current_risk_score": 2.5     // Optional: existing risk score
-                }
-            ]
-        }
+        This is the new unified method that works with any SampleStreamSource
+        (Central API, JSON files, etc.).
 
         Args:
-            json_file_path: Path to JSON training data file
-
-        Returns:
-            List of training samples
-        """
-        try:
-            with open(json_file_path, 'r') as f:
-                data = json.load(f)
-
-            # Debug: Log what we loaded
-            logger.debug(f"Loaded data type: {type(data)}")
-            if isinstance(data, dict):
-                logger.debug(f"Data keys: {list(data.keys())}")
-            elif isinstance(data, list):
-                logger.debug(f"Data is a list with {len(data)} items")
-                if data:
-                    logger.debug(f"First item type: {type(data[0])}")
-                    if isinstance(data[0], dict):
-                        logger.debug(f"First item keys: {list(data[0].keys())}")
-
-            training_samples = []
-            deployments = data.get('deployments', [])
-
-            logger.info(f"Loading {len(deployments)} deployment samples from {json_file_path}")
-
-            for i, deployment_record in enumerate(deployments):
-                try:
-                    example = self._process_deployment_record(deployment_record)
-                    training_samples.append(example)
-
-                    if (i + 1) % 100 == 0:
-                        logger.info(f"Processed {i + 1} samples")
-
-                except Exception as e:
-                    logger.warning(f"Failed to process deployment record {i}: {e}")
-                    continue
-
-            logger.info(f"Successfully loaded {len(training_samples)} training samples")
-            return training_samples
-
-        except Exception as e:
-            logger.error(f"Failed to load training data from {json_file_path}: {e}")
-            raise
-
-
-    def load_from_central_api_streaming_with_config(self,
-                                                  config_path: Optional[str] = None,
-                                                  filters: Optional[Dict[str, Any]] = None) -> Iterator[Dict[str, Any]]:
-        """
-        Load training data from Central API using streaming approach with configuration.
-
-        Args:
-            config_path: Optional path to configuration file
-            filters: Optional filters for data collection (override config defaults)
+            source: Data source to stream from (CentralStreamSource, JSONFileStreamSource, etc.)
+            filters: Optional filtering criteria (source-specific)
+            limit: Maximum number of samples to yield
 
         Yields:
-            Training samples as they are processed
+            Training samples ready for model training
+
+        Example:
+            # Stream from Central API
+            from src.streaming import CentralStreamSource
+            from src.config.central_config import create_central_client_from_config
+
+            client = create_central_client_from_config()
+            source = CentralStreamSource(client, config)
+            loader = TrainingDataLoader()
+
+            for sample in loader.stream_from_source(source, filters={'clusters': ['prod']}, limit=1000):
+                # Process sample
+                pass
+
+            # Stream from JSON file
+            from src.streaming import JSONFileStreamSource
+
+            source = JSONFileStreamSource('training_data.json')
+            for sample in loader.stream_from_source(source, limit=500):
+                # Process sample
+                pass
         """
-        logger.info("Starting streaming data load from Central API using configuration")
+        logger.info(f"Streaming samples from {source.__class__.__name__}")
 
-        try:
-            from src.config.central_config import create_central_client_from_config, CentralConfig
-            from src.services.central_export_service import CentralExportService
+        # Create sample stream with our feature extractor
+        sample_stream = SampleStream(source, self.baseline_extractor, self.config)
 
-            # Load configuration
-            config = CentralConfig(config_path)
-            if not config.is_enabled():
-                raise RuntimeError("Central API integration is not enabled in configuration")
+        # Stream and yield samples
+        samples_yielded = 0
+        for sample in sample_stream.stream(filters, limit):
+            yield sample
+            samples_yielded += 1
 
-            # Create configured client
-            export_client = create_central_client_from_config(config_path)
-
-            # Test connection
-            connection_test = export_client.test_connection()
-            if not connection_test['success']:
-                raise ConnectionError(f"Failed to connect to Central API: {connection_test['message']}")
-
-            # Create export service with configured settings
-            export_settings = config.get_export_settings()
-            export_service = CentralExportService(
-                client=export_client,
-                config=export_settings
-            )
-
-            # Prepare filters - merge defaults with overrides
-            default_filters = config.get_default_filters()
-            logger.debug(f"Default filters from config: {default_filters}")
-            logger.debug(f"Override filters provided: {filters}")
-
-            # Merge filters (overrides take precedence)
-            if filters:
-                export_filters = {**default_filters, **filters}
-            else:
-                export_filters = default_filters
-            logger.info(f"Final merged filters: {export_filters}")
-
-            # Stream training data
-            samples_yielded = 0
-            for example in export_service.collect_training_data(export_filters):
-                yield example
-                samples_yielded += 1
-
-                if samples_yielded % 100 == 0:
-                    logger.info(f"Streamed {samples_yielded} training samples")
-
-            # Clean up
-            export_service.close()
-
-            logger.info(f"Completed streaming: {samples_yielded} training samples")
-
-        except ImportError as e:
-            logger.error(f"Central API components not available: {e}")
-            raise NotImplementedError("Central API integration requires additional components")
-        except Exception as e:
-            logger.error(f"Failed to load training data from Central API: {e}")
-            raise
-
-
-    def _prepare_export_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Prepare filters for Central export APIs.
-
-        Args:
-            filters: Input filters dictionary
-
-        Returns:
-            Processed filters for export APIs
-        """
-        if not filters:
-            # Default filters for training data
-            from datetime import datetime, timezone, timedelta
-            return {
-                'start_date': datetime.now(timezone.utc) - timedelta(days=90),
-                'include_inactive': False,
-                'severity_threshold': 'MEDIUM_SEVERITY'
-            }
-
-        export_filters = {}
-
-        # Date range filters
-        if 'start_date' in filters:
-            export_filters['start_date'] = filters['start_date']
-        if 'end_date' in filters:
-            export_filters['end_date'] = filters['end_date']
-        if 'days_back' in filters:
-            from datetime import datetime, timezone, timedelta
-            export_filters['start_date'] = datetime.now(timezone.utc) - timedelta(days=filters['days_back'])
-
-        # Scope filters
-        if 'clusters' in filters:
-            export_filters['clusters'] = filters['clusters']
-        if 'namespaces' in filters:
-            export_filters['namespaces'] = filters['namespaces']
-
-        # Security filters
-        if 'severity_threshold' in filters:
-            export_filters['severity_threshold'] = filters['severity_threshold']
-        if 'include_inactive' in filters:
-            export_filters['include_inactive'] = filters['include_inactive']
-        if 'policy_categories' in filters:
-            export_filters['policy_categories'] = filters['policy_categories']
-
-        return export_filters
-
-    def _process_deployment_record(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process a single deployment record into a training sample.
-
-        Args:
-            record: Raw deployment record from JSON
-
-        Returns:
-            Processed training sample
-        """
-        deployment_data = record.get('deployment', {})
-        images_data = record.get('images', [])
-        alerts_data = record.get('alerts', [])
-        baseline_violations = record.get('baseline_violations', [])
-        existing_risk_score = record.get('current_risk_score')
-
-        # Create training sample using baseline feature extractor
-        # Pass existing_risk_score if available (e.g., from Central), otherwise compute from baseline
-        example = self.baseline_extractor.create_training_sample(
-            deployment_data=deployment_data,
-            image_data_list=images_data,
-            alert_data=alerts_data,
-            baseline_violations=baseline_violations,
-            risk_score=existing_risk_score  # Use provided score or None to compute
-        )
-
-        # Add metadata
-        example['deployment_id'] = deployment_data.get('id', '')
-        example['deployment_name'] = deployment_data.get('name', '')
-        example['namespace'] = deployment_data.get('namespace', '')
-        example['cluster_id'] = deployment_data.get('cluster_id', '')
-
-        # Use existing risk score if provided, otherwise use calculated baseline
-        if existing_risk_score is not None:
-            example['risk_score'] = existing_risk_score
-
-        return example
+        logger.info(f"Completed streaming: {samples_yielded} samples from {source.__class__.__name__}")
 
     def create_ranking_dataset(self, training_samples: List[Dict[str, Any]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """

@@ -55,8 +55,9 @@ def test_validate_predictions_includes_top_features():
         }
     }
 
-    # Mock the prediction service to return one sample
-    with patch.object(CentralExportService, 'collect_training_data', return_value=[mock_sample]):
+    # Mock the streaming architecture to return one sample
+    from src.streaming import SampleStream
+    with patch.object(SampleStream, 'stream', return_value=[mock_sample]):
         with patch.object(service, 'close'):
             # Run validation
             results = service.validate_predictions(
@@ -137,8 +138,9 @@ def test_validate_predictions_handles_fewer_than_5_features():
         }
     }
 
-    # Mock the prediction service to return one sample
-    with patch.object(CentralExportService, 'collect_training_data', return_value=[mock_sample]):
+    # Mock the streaming architecture to return one sample
+    from src.streaming import SampleStream
+    with patch.object(SampleStream, 'stream', return_value=[mock_sample]):
         with patch.object(service, 'close'):
             # Run validation
             results = service.validate_predictions(

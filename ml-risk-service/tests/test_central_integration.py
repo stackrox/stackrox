@@ -164,7 +164,12 @@ def test_train_and_predict_with_central_data(
     all_samples = []
 
     try:
-        for i, sample in enumerate(central_export_service.collect_training_data(limit=100)):
+        # Use new streaming architecture
+        from src.streaming import CentralStreamSource, SampleStream
+        source = CentralStreamSource(central_export_service.client, {})
+        sample_stream = SampleStream(source, central_export_service.feature_extractor, {})
+
+        for i, sample in enumerate(sample_stream.stream(filters=None, limit=100)):
             all_samples.append(sample)
             if (i + 1) % 20 == 0:
                 logger.info(f"  Collected {i + 1} samples...")
@@ -326,8 +331,11 @@ def test_feature_extraction_from_central_data(
     """
     logger.info("Testing feature extraction from Central data...")
 
-    # Collect a few samples
-    samples = list(central_export_service.collect_training_data(limit=5))
+    # Collect a few samples using new streaming architecture
+    from src.streaming import CentralStreamSource, SampleStream
+    source = CentralStreamSource(central_export_service.client, {})
+    sample_stream = SampleStream(source, central_export_service.feature_extractor, {})
+    samples = list(sample_stream.stream(filters=None, limit=5))
 
     assert len(samples) > 0, "Should collect at least one sample"
 

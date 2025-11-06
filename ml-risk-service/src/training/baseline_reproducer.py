@@ -265,7 +265,9 @@ class BaselineReproducer:
         logger.info(f"Generating baseline validation report from {test_data_file}")
 
         # Load test data
-        test_data = self.data_loader.load_from_json(test_data_file)
+        from src.streaming import JSONFileStreamSource
+        source = JSONFileStreamSource(test_data_file)
+        test_data = list(self.data_loader.stream_from_source(source))
 
         # Run validation
         validation_report = self.validate_baseline_reproduction(test_data)
@@ -362,7 +364,9 @@ class BaselineReproducer:
             generator.generate_sample_training_data(sample_file, num_samples=10)
 
             # Load and process the sample data
-            test_data = self.data_loader.load_from_json(sample_file)
+            from src.streaming import JSONFileStreamSource
+            source = JSONFileStreamSource(sample_file)
+            test_data = list(self.data_loader.stream_from_source(source))
 
             # Run validation
             validation_report = self.validate_baseline_reproduction(test_data)

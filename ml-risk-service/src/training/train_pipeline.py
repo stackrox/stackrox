@@ -142,8 +142,10 @@ class TrainingPipeline:
     def _load_and_validate_data(self, data_file: str) -> Dict[str, Any]:
         """Load and validate training data."""
         try:
-            # Load training data
-            self.training_data = self.data_loader.load_from_json(data_file)
+            # Load training data using new streaming architecture
+            from src.streaming import JSONFileStreamSource
+            source = JSONFileStreamSource(data_file)
+            self.training_data = list(self.data_loader.stream_from_source(source))
 
             # Limit samples if configured
             max_samples = self.config.get('data', {}).get('max_samples')
@@ -417,7 +419,9 @@ class TrainingPipeline:
             generator.generate_sample_training_data(output_file, num_samples)
 
             # Validate generated data
-            test_data = self.data_loader.load_from_json(output_file)
+            from src.streaming import JSONFileStreamSource
+            source = JSONFileStreamSource(output_file)
+            test_data = list(self.data_loader.stream_from_source(source))
             validation_report = self.data_loader.validate_training_data(test_data)
 
             return {

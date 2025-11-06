@@ -32,8 +32,7 @@ sys.path.insert(0, str(project_root))
 
 from src.models.ranking_model import RiskRankingModel
 from src.config.central_config import create_central_client_from_config
-from src.services.central_export_service import CentralExportService
-from src.feature_extraction.baseline_features import BaselineFeatureExtractor
+from src.streaming import CentralStreamSource, SampleStream
 from src.training.data_loader import JSONTrainingDataGenerator
 
 logging.basicConfig(
@@ -71,13 +70,14 @@ class NEstimatorsAnalyzer:
         """
         logger.info(f"Loading training data from Central API (limit={limit})")
 
-        # Initialize Central client and service using helper function
+        # Initialize Central client and stream source using new architecture
         client = create_central_client_from_config(self.config_path)
-        service = CentralExportService(client, self.config)
+        source = CentralStreamSource(client, self.config)
+        sample_stream = SampleStream(source, config=self.config)
 
-        # Collect training data from Central
-        logger.info("Collecting training data from Central...")
-        deployments = list(service.collect_training_data(filters=None, limit=limit))
+        # Collect training data from Central using streaming
+        logger.info("Streaming training data from Central...")
+        deployments = list(sample_stream.stream(filters=None, limit=limit))
 
         if not deployments:
             raise ValueError("No training data collected from Central API")

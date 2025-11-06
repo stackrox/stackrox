@@ -341,17 +341,16 @@ async def collect_sample_from_central(
         # Collect sample data
         logger.info(f"Collecting {limit} training samples from Central (last {days_back} days)")
 
-        # Collect sample data using streaming approach with limit
-        training_samples = []
-        streaming_data = data_loader.load_from_central_api_streaming_with_config(
-            config_path=None,
-            filters=filters
-        )
+        # Collect sample data using new streaming architecture
+        from src.config.central_config import create_central_client_from_config
+        from src.streaming import CentralStreamSource
 
-        for example in streaming_data:
+        client = create_central_client_from_config()
+        source = CentralStreamSource(client, {})
+
+        training_samples = []
+        for example in data_loader.stream_from_source(source, filters=filters, limit=limit):
             training_samples.append(example)
-            if len(training_samples) >= limit:
-                break
 
         # Analyze collected data
         if training_samples:

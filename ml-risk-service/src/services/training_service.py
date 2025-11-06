@@ -280,7 +280,7 @@ class TrainingService:
         """
         Train model using data streamed from Central API.
 
-        This method abstracts the data source by using existing streaming and training methods.
+        Uses the new streaming architecture (CentralStreamSource + SampleStream).
 
         Args:
             filters: Filters for Central API data collection
@@ -292,48 +292,22 @@ class TrainingService:
             TrainModelResponse with training results
         """
         try:
-            from src.training.data_loader import TrainingDataLoader
+            from src.config.central_config import create_central_client_from_config
+            from src.streaming import CentralStreamSource, SampleStream
 
             logger.info(f"Starting model training from Central API with filters: {filters}")
 
-            # Create data loader and collect training data
-            data_loader = TrainingDataLoader()
+            # Create Central client and stream source
+            client = create_central_client_from_config()
+            source = CentralStreamSource(client, self.config)
 
-            # Set up default filters
-            training_filters = filters or {}
+            # Create sample stream
+            sample_stream = SampleStream(source, config=self.config)
 
-            # Stream data from Central API
-            data_iterator = data_loader.load_from_central_api_streaming_with_config(
-                config_path=None,
-                filters=training_filters
-            )
-
-            # Convert streaming data to training samples format
-            training_samples = self._convert_central_data_to_training_samples(
-                data_iterator, limit
-            )
-
-            # Check for variance in risk scores and apply synthetic scoring if needed
-            if training_samples:
-                import numpy as np
-                risk_scores = [sample.current_risk_score for sample in training_samples]
-                score_variance = np.var(risk_scores) if len(risk_scores) > 1 else 0.0
-                unique_scores = len(set(risk_scores))
-
-                logger.info(f"Risk score analysis: variance={score_variance:.6f}, unique_scores={unique_scores}, total_samples={len(risk_scores)}")
-
-                # If variance is too low, apply synthetic scoring to all samples
-                if score_variance < 1e-3 or unique_scores == 1:
-                    logger.warning(f"Low risk score variance detected (var={score_variance:.6f}, unique={unique_scores}). "
-                                  f"Applying synthetic scoring to all samples to ensure training effectiveness.")
-                    training_samples = self._apply_synthetic_scoring_to_all_samples(training_samples)
-
-                    # Re-analyze after synthetic scoring
-                    updated_risk_scores = [sample.current_risk_score for sample in training_samples]
-                    updated_variance = np.var(updated_risk_scores) if len(updated_risk_scores) > 1 else 0.0
-                    updated_unique = len(set(updated_risk_scores))
-                    logger.info(f"After synthetic scoring: variance={updated_variance:.6f}, unique_scores={updated_unique}, "
-                               f"range=[{min(updated_risk_scores):.3f}, {max(updated_risk_scores):.3f}]")
+            # Stream and collect training samples
+            training_samples = []
+            for sample in sample_stream.stream(filters, limit):
+                training_samples.append(sample)
 
             if not training_samples:
                 return TrainModelResponse(
@@ -346,94 +320,57 @@ class TrainingService:
                     )
                 )
 
-            # Use training pipeline instead of direct training to ensure model is saved to storage
-            logger.info(f"Using training pipeline for Central data with {len(training_samples)} samples")
+            logger.info(f"Collected {len(training_samples)} samples from Central API")
 
-            # Create temporary training data file for pipeline
-            import tempfile
-            import json
-            import os
+            # Use training pipeline to train the model with samples
+            logger.info(f"Training model with {len(training_samples)} samples from Central API")
 
-            # Convert training samples to deployment record format expected by pipeline
-            deployment_records = []
+            # Extract X, y, and feature names from samples
+            feature_names = sorted(training_samples[0]['features'].keys())
+            X = []
+            y = []
+
             for sample in training_samples:
-                # Convert TrainingSample back to deployment record format
-                deployment_record = self._convert_training_sample_to_deployment_record(sample)
-                deployment_records.append(deployment_record)
+                feature_vector = [sample['features'][name] for name in feature_names]
+                X.append(feature_vector)
+                y.append(sample['risk_score'])
 
-            # Create pipeline-compatible JSON structure
-            pipeline_data = {
-                "deployments": deployment_records
-            }
+            import numpy as np
+            X = np.array(X)
+            y = np.array(y)
 
-            # Create temporary file for training data with explicit path for debugging
-            temp_file_path = "/tmp/central_training_debug.json"
-            with open(temp_file_path, 'w') as temp_file:
-                json.dump(pipeline_data, temp_file, indent=2)
+            # Train the model
+            training_metrics = risk_service.model.train(X, y, feature_names=feature_names) if risk_service else None
 
-            # Debug: Log what we wrote to the temp file
-            logger.info(f"Created temp file {temp_file_path} with {len(deployment_records)} deployment records")
-            logger.info(f"Pipeline data structure: {list(pipeline_data.keys())}")
-            if deployment_records:
-                logger.info(f"First deployment record keys: {list(deployment_records[0].keys())}")
-
-            try:
-                # Run full training pipeline with the temporary file (this will save the model to storage)
-                pipeline_results = self.training_pipeline.run_full_pipeline(temp_file_path)
-
-                if pipeline_results.get('success', False):
-                    # Extract model info for response (pipeline returns flat structure)
-                    model_saving_results = pipeline_results.get('model_saving', {})
-
-                    # Get model metrics from pipeline results
-                    model_training_results = pipeline_results.get('model_training', {})
-                    training_metrics_dict = model_training_results.get('training_metrics', {})
-
-                    # Update risk service with the trained model from storage if available
-                    if risk_service and model_saving_results.get('success', False):
-                        try:
-                            # Load the newly saved model into the risk service
-                            model_id = "stackrox-risk-model"
-                            version = "latest"  # Pipeline saves with timestamp, but we can load latest
-                            if risk_service._load_model_from_storage(model_id, version):
-                                logger.info(f"Successfully loaded trained model into risk service")
-                            else:
-                                logger.warning(f"Failed to load trained model into risk service")
-                        except Exception as load_error:
-                            logger.warning(f"Failed to load trained model into risk service: {load_error}")
-
-                    # Create response with pipeline results
-                    response_metrics = TrainingMetrics(
-                        validation_ndcg=float(training_metrics_dict.get('val_ndcg', 0.0)),
-                        global_feature_importance=[]  # Would need to extract from model if needed
+            if not training_metrics:
+                return TrainModelResponse(
+                    success=False,
+                    error_message="Failed to train model",
+                    model_version="",
+                    metrics=TrainingMetrics(
+                        validation_ndcg=0.0,
+                        global_feature_importance=[]
                     )
+                )
 
-                    # Extract model version from saving results
-                    model_version = model_saving_results.get('model_version', 'unknown')
+            # Update risk service state
+            if risk_service:
+                risk_service.model_loaded = True
 
-                    return TrainModelResponse(
-                        success=True,
-                        error_message="",
-                        model_version=model_version,
-                        metrics=response_metrics
-                    )
-                else:
-                    error_msg = pipeline_results.get('error', 'Training pipeline failed')
-                    logger.error(f"Training pipeline failed: {error_msg}")
-                    return TrainModelResponse(
-                        success=False,
-                        error_message=f"Training pipeline failed: {error_msg}",
-                        model_version="",
-                        metrics=TrainingMetrics(
-                            validation_ndcg=0.0,
-                            global_feature_importance=[]
-                        )
-                    )
+            # Create response
+            response_metrics = TrainingMetrics(
+                validation_ndcg=training_metrics.val_ndcg,
+                global_feature_importance=[]  # Can add if needed
+            )
 
-            finally:
-                # Clean up temporary file (disabled for debugging)
-                logger.info(f"Temporary file preserved for debugging: {temp_file_path}")
-                pass  # Don't delete the file so we can examine it
+            logger.info(f"Model training completed successfully. Validation NDCG: {training_metrics.val_ndcg:.4f}")
+
+            return TrainModelResponse(
+                success=True,
+                error_message="",
+                model_version=risk_service.model.model_version if risk_service else "unknown",
+                metrics=response_metrics
+            )
 
         except Exception as e:
             logger.error(f"Central API training failed: {e}")
@@ -447,340 +384,106 @@ class TrainingService:
                 )
             )
 
-    def _convert_central_data_to_training_samples(self,
-                                                  data_iterator,
-                                                  limit: Optional[int] = None) -> List[TrainingSample]:
+    def train_model_from_file(self,
+                             file_path: str,
+                             limit: Optional[int] = None,
+                             risk_service=None) -> TrainModelResponse:
         """
-        Convert Central API streaming data to TrainingSample format.
+        Train model using data from a JSON file.
+
+        Uses the new streaming architecture (JSONFileStreamSource + SampleStream).
 
         Args:
-            data_iterator: Iterator yielding Central API training samples
-            limit: Optional limit on number of samples to process
+            file_path: Path to JSON training data file
+            limit: Maximum number of training samples to use
+            risk_service: Risk service instance to update with trained model
 
         Returns:
-            List of TrainingSample objects ready for training
-        """
-        training_samples = []
-        count = 0
-
-        try:
-            for example in data_iterator:
-                if limit and count >= limit:
-                    break
-
-                # Convert Central format to TrainingSample format
-                training_sample = self._convert_single_central_sample(example)
-                if training_sample:
-                    training_samples.append(training_sample)
-                    count += 1
-
-                    if count % 100 == 0:
-                        logger.info(f"Converted {count} training samples")
-
-        except Exception as e:
-            logger.error(f"Error converting Central data: {e}")
-
-        logger.info(f"Successfully converted {len(training_samples)} training samples from Central API")
-        return training_samples
-
-    def _convert_single_central_sample(self, example: Dict[str, Any]) -> Optional[TrainingSample]:
-        """
-        Convert a single Central API sample to TrainingSample format.
-
-        Args:
-            example: Central API training sample dictionary
-
-        Returns:
-            TrainingSample object or None if conversion fails
+            TrainModelResponse with training results
         """
         try:
-            from src.api.schemas import TrainingSample, DeploymentFeatures, ImageFeatures
+            from src.streaming import JSONFileStreamSource, SampleStream
 
-            # Extract features from the Central format
-            features = example.get('features', {})
+            logger.info(f"Starting model training from file: {file_path}")
 
-            # Create deployment features using existing mapping logic
-            deployment_features = DeploymentFeatures(
-                policy_violation_count=int(features.get('policy_violation_count', 0)),
-                policy_violation_severity_score=float(features.get('policy_violation_score', 0.0)),
-                process_baseline_violations=int(features.get('process_baseline_violations', 0)),
-                host_network=bool(features.get('host_network', False)),
-                host_pid=bool(features.get('host_pid', False)),
-                host_ipc=bool(features.get('host_ipc', False)),
-                privileged_container_count=int(features.get('privileged_container_count', 0)),
-                automount_service_account_token=bool(features.get('automount_service_account_token', False)),
-                exposed_port_count=int(features.get('exposed_port_count', 0)),
-                replica_count=max(int(features.get('replica_count', 1)), 1),
-                has_external_exposure=bool(features.get('has_external_exposure', False)),
-                is_orchestrator_component=bool(features.get('is_orchestrator_component', False)),
-                creation_timestamp=int(features.get('creation_timestamp', 0))
-            )
+            # Create file source and sample stream
+            source = JSONFileStreamSource(file_path)
+            sample_stream = SampleStream(source, config=self.config)
 
-            # Create image features (simplified - could be enhanced)
-            image_features = []
-            if 'image_features' in features:
-                for img_data in features['image_features']:
-                    image_feature = ImageFeatures(
-                        critical_vuln_count=int(img_data.get('critical_vuln_count', 0)),
-                        high_vuln_count=int(img_data.get('high_vuln_count', 0)),
-                        medium_vuln_count=int(img_data.get('medium_vuln_count', 0)),
-                        low_vuln_count=int(img_data.get('low_vuln_count', 0)),
-                        total_component_count=int(img_data.get('total_component_count', 0)),
-                        image_age_days=int(img_data.get('image_age_days', 0))
+            # Stream and collect training samples
+            training_samples = []
+            for sample in sample_stream.stream(filters=None, limit=limit):
+                training_samples.append(sample)
+
+            if not training_samples:
+                return TrainModelResponse(
+                    success=False,
+                    error_message=f"No training samples found in file: {file_path}",
+                    model_version="",
+                    metrics=TrainingMetrics(
+                        validation_ndcg=0.0,
+                        global_feature_importance=[]
                     )
-                    image_features.append(image_feature)
+                )
 
-            # Get baseline risk score and apply synthetic scoring if needed
-            baseline_risk_score = float(example.get('risk_score', 1.0))
+            logger.info(f"Collected {len(training_samples)} samples from file")
 
-            # Apply synthetic scoring for better variance if baseline is uniform
-            final_risk_score = self._apply_synthetic_risk_scoring(
-                baseline_risk_score, features, deployment_features, image_features)
+            # Extract X, y, and feature names from samples
+            feature_names = sorted(training_samples[0]['features'].keys())
+            X = []
+            y = []
 
-            # Create training sample
-            training_sample = TrainingSample(
-                deployment_features=deployment_features,
-                image_features=image_features,
-                current_risk_score=final_risk_score,
-                deployment_id=example.get('deployment_id', '')
+            for sample in training_samples:
+                feature_vector = [sample['features'][name] for name in feature_names]
+                X.append(feature_vector)
+                y.append(sample['risk_score'])
+
+            import numpy as np
+            X = np.array(X)
+            y = np.array(y)
+
+            # Train the model
+            training_metrics = risk_service.model.train(X, y, feature_names=feature_names) if risk_service else None
+
+            if not training_metrics:
+                return TrainModelResponse(
+                    success=False,
+                    error_message="Failed to train model",
+                    model_version="",
+                    metrics=TrainingMetrics(
+                        validation_ndcg=0.0,
+                        global_feature_importance=[]
+                    )
+                )
+
+            # Update risk service state
+            if risk_service:
+                risk_service.model_loaded = True
+
+            # Create response
+            response_metrics = TrainingMetrics(
+                validation_ndcg=training_metrics.val_ndcg,
+                global_feature_importance=[]
             )
 
-            return training_sample
+            logger.info(f"Model training from file completed successfully. Validation NDCG: {training_metrics.val_ndcg:.4f}")
+
+            return TrainModelResponse(
+                success=True,
+                error_message="",
+                model_version=risk_service.model.model_version if risk_service else "unknown",
+                metrics=response_metrics
+            )
 
         except Exception as e:
-            logger.warning(f"Failed to convert Central sample: {e}")
-            return None
-
-    def _apply_synthetic_risk_scoring(self, baseline_score: float, features: Dict[str, Any],
-                                    deployment_features, image_features: List) -> float:
-        """
-        Apply synthetic risk scoring similar to BaselineFeatureExtractor logic.
-
-        Args:
-            baseline_score: Original baseline risk score
-            features: Raw feature dictionary from Central API
-            deployment_features: Parsed deployment features
-            image_features: List of parsed image features
-
-        Returns:
-            Final risk score with variance for training
-        """
-        # If baseline score is meaningful (not default 1.0), use it
-        if baseline_score != 1.0:
-            logger.debug(f"Using meaningful baseline score: {baseline_score}")
-            return baseline_score
-
-        logger.debug(f"Applying synthetic risk scoring for baseline score: {baseline_score}")
-
-        # Generate synthetic score based on feature values
-        synthetic_score = 1.0  # Base score
-
-        # Add vulnerability-based risk (high impact)
-        if image_features:
-            for img in image_features:
-                vuln_score = (
-                    img.critical_vuln_count * 10.0 +
-                    img.high_vuln_count * 4.0 +
-                    img.medium_vuln_count * 1.0 +
-                    img.low_vuln_count * 0.25
-                ) / 100.0  # Normalize
-                synthetic_score += min(vuln_score * 0.5, 2.0)
-
-        # Add configuration-based risk (medium impact)
-        config_risk = 0.0
-        if deployment_features.host_network:
-            config_risk += 0.3
-        if deployment_features.host_pid:
-            config_risk += 0.3
-        if deployment_features.privileged_container_count > 0:
-            privileged_ratio = deployment_features.privileged_container_count / max(deployment_features.replica_count, 1)
-            config_risk += privileged_ratio * 0.4
-        if deployment_features.has_external_exposure:
-            config_risk += 0.2
-
-        synthetic_score += config_risk
-
-        # Add component-based risk (low impact)
-        if image_features:
-            for img in image_features:
-                if img.total_component_count > 0:
-                    risky_ratio = getattr(img, 'risky_component_count', 0) / img.total_component_count
-                    synthetic_score += min(risky_ratio * 0.3, 0.1)
-
-        # Add age-based risk (very low impact)
-        if deployment_features.creation_timestamp > 0:
-            import time
-            age_days = (time.time() - deployment_features.creation_timestamp) / 86400
-            age_score = min(age_days / 365.0, 5.0)
-            if age_score > 0.5:  # Older deployments slightly riskier
-                synthetic_score += min(age_score * 0.1, 0.2)
-
-        # Add controlled randomization for variance with enhanced distribution
-        # Use deployment-specific randomization for more variance
-        import random
-        deployment_hash = features.get('deployment_id_hash', hash(str(features)) % 1000000)
-        seed_value = deployment_hash % 2**32
-        random.seed(seed_value)
-
-        # Enhanced noise generation with normal distribution for better variance
-        noise = random.gauss(0, 0.4)  # Normal distribution with std=0.4 for good spread
-        synthetic_score += noise
-
-        # Add feature-based variance boost for samples with distinctive characteristics
-        feature_variance_boost = 0.0
-        if deployment_features.privileged_container_count > 0:
-            feature_variance_boost += random.uniform(0.2, 0.5)
-        if deployment_features.host_network or deployment_features.host_pid:
-            feature_variance_boost += random.uniform(0.3, 0.6)
-        if image_features and any(img.critical_vuln_count > 0 for img in image_features):
-            feature_variance_boost += random.uniform(0.4, 0.8)
-
-        synthetic_score += feature_variance_boost
-
-        # Apply logarithmic scaling to spread out lower values more
-        if synthetic_score > 1.0:
-            log_component = (synthetic_score - 1.0) * 0.3
-            synthetic_score = 1.0 + log_component + (log_component ** 0.7)
-
-        # Ensure reasonable bounds [0.5, 6.0] with wider range for better discrimination
-        final_score = max(0.5, min(synthetic_score, 6.0))
-
-        logger.debug(f"Synthetic scoring: base={baseline_score} -> synthetic={synthetic_score} -> final={final_score}")
-        return final_score
-
-    def _apply_synthetic_scoring_to_all_samples(self, training_samples: List) -> List:
-        """
-        Apply synthetic scoring to all training samples to generate variance.
-
-        Args:
-            training_samples: List of TrainingSample objects
-
-        Returns:
-            Updated list with synthetic risk scores
-        """
-        updated_samples = []
-
-        for i, sample in enumerate(training_samples):
-            # Extract features for synthetic scoring
-            features = self._extract_features_from_training_sample(sample)
-
-            # Add unique identifier to features for unique scoring
-            unique_id = f"{sample.deployment_id}_{i}" if sample.deployment_id else f"sample_{i}"
-            features['deployment_id_hash'] = hash(unique_id) % 1000000
-
-            # Force synthetic scoring by passing baseline_score=1.0
-            synthetic_score = self._apply_synthetic_risk_scoring(
-                1.0,  # Force synthetic scoring
-                features,  # Include features with unique identifier hash
-                sample.deployment_features,
-                sample.image_features
+            logger.error(f"File-based training failed: {e}")
+            return TrainModelResponse(
+                success=False,
+                error_message=f"File-based training failed: {str(e)}",
+                model_version="",
+                metrics=TrainingMetrics(
+                    validation_ndcg=0.0,
+                    global_feature_importance=[]
+                )
             )
 
-            # Update the sample with the new synthetic score
-            from src.api.schemas import TrainingSample
-            updated_sample = TrainingSample(
-                deployment_features=sample.deployment_features,
-                image_features=sample.image_features,
-                current_risk_score=synthetic_score,
-                deployment_id=sample.deployment_id
-            )
-
-            updated_samples.append(updated_sample)
-            logger.debug(f"Updated sample {sample.deployment_id}: {sample.current_risk_score:.6f} -> {synthetic_score:.6f}")
-
-        return updated_samples
-
-    def _convert_training_sample_to_deployment_record(self, sample: 'TrainingSample') -> Dict[str, Any]:
-        """
-        Convert a TrainingSample back to deployment record format expected by training pipeline.
-
-        Args:
-            sample: TrainingSample object to convert
-
-        Returns:
-            Deployment record in the format expected by the pipeline
-        """
-        # Create deployment data structure
-        deployment_data = {
-            'id': sample.deployment_id,
-            'name': f'deployment-{sample.deployment_id}',
-            'namespace': 'default',  # Default values since we don't have this info
-            'cluster_id': 'cluster-1',
-            'clusterId': 'cluster-1',
-            'replicas': sample.deployment_features.replica_count,
-            'hostNetwork': sample.deployment_features.host_network,
-            'hostPid': sample.deployment_features.host_pid,
-            'hostIpc': sample.deployment_features.host_ipc,
-            'automountServiceAccountToken': sample.deployment_features.automount_service_account_token,
-            'containers': [],
-            'ports': [],
-            'created': {'seconds': sample.deployment_features.creation_timestamp} if sample.deployment_features.creation_timestamp > 0 else None,
-            'orchestratorComponent': sample.deployment_features.is_orchestrator_component,
-            'inactive': False
-        }
-
-        # Add privileged containers if any
-        for i in range(sample.deployment_features.privileged_container_count):
-            deployment_data['containers'].append({
-                'name': f'container-{i}',
-                'securityContext': {'privileged': True}
-            })
-
-        # Add exposed ports
-        for i in range(sample.deployment_features.exposed_port_count):
-            deployment_data['ports'].append({
-                'name': f'port-{i}',
-                'port': 8080 + i,
-                'exposure': 'EXTERNAL' if sample.deployment_features.has_external_exposure else 'INTERNAL'
-            })
-
-        # Create images data structure
-        images_data = []
-        for img_feature in sample.image_features:
-            image_data = {
-                'id': f'image-{len(images_data)}',
-                'name': {
-                    'registry': 'docker.io',
-                    'remote': f'library/app-{len(images_data)}'
-                },
-                'metadata': {
-                    'layerShas': 10,  # Default layer count
-                    'created': {'seconds': int(time.time()) - img_feature.image_age_days * 86400} if img_feature.image_age_days > 0 else None
-                },
-                'components': img_feature.total_component_count,
-                'cluster_local': False,
-                'scan': {
-                    'criticalVulns': img_feature.critical_vuln_count,
-                    'highVulns': img_feature.high_vuln_count,
-                    'mediumVulns': img_feature.medium_vuln_count,
-                    'lowVulns': img_feature.low_vuln_count
-                }
-            }
-            images_data.append(image_data)
-
-        # Create alerts data structure (simulate policy violations)
-        alerts_data = []
-        for i in range(sample.deployment_features.policy_violation_count):
-            alerts_data.append({
-                'id': f'alert-{i}',
-                'policy': {
-                    'id': f'policy-{i}',
-                    'name': f'Policy Violation {i}',
-                    'severity': 'HIGH_SEVERITY'  # Default severity
-                },
-                'resource': {
-                    'deployment_id': sample.deployment_id
-                },
-                'time': {'seconds': int(time.time())}
-            })
-
-        # Create the complete deployment record
-        deployment_record = {
-            'deployment': deployment_data,
-            'images': images_data,
-            'alerts': alerts_data,
-            'baseline_violations': [],  # Empty for now
-            'current_risk_score': sample.current_risk_score
-        }
-
-        return deployment_record
