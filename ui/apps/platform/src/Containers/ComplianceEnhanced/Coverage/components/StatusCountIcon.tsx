@@ -1,4 +1,3 @@
-import React from 'react';
 import { Icon } from '@patternfly/react-core';
 import { BarsIcon, CheckCircleIcon, SecurityIcon, WrenchIcon } from '@patternfly/react-icons';
 import pluralize from 'pluralize';
