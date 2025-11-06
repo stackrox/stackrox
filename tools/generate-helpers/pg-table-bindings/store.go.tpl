@@ -259,6 +259,12 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
 {{- define "copyObject"}}
 {{- $schema := .schema }}
+var copyCols{{$schema.Table|upperCamelCase}} = []string{
+{{- range $index, $field := $schema.DBColumnFields }}
+    "{{$field.ColumnName|lowerCase}}",
+{{- end }}
+}
+
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
     if len(objs) == 0 {
         return nil
@@ -270,12 +276,6 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     // Which is essentially the desired behaviour of an upsert.
     deletes := make([]string, 0, batchSize)
     {{end}}
-
-    copyCols := []string {
-    {{- range $index, $field := $schema.DBColumnFields }}
-        "{{$field.ColumnName|lowerCase}}",
-    {{- end }}
-    }
 
     {{ $idx := false }}{{ range $field := $schema.DBColumnFields }}{{if eq "idx" ($field.Getter "obj") -}}{{ $idx = true }}{{end}}{{ end -}}
     {{ if $idx }}idx := 0{{ end }}
@@ -309,7 +309,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         // clear the inserts and vals for the next batch
         deletes = deletes[:0]
         {{end}}
-        if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+        if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols{{$schema.Table|upperCamelCase}}, pgx.CopyFromRows(inputRows)); err != nil {
             return err
         }
         // clear the input rows for the next batch

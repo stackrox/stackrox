@@ -114,6 +114,13 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 	return nil
 }
 
+var copyColsAPITokens = []string{
+	"id",
+	"expiration",
+	"revoked",
+	"serialized",
+}
+
 func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
 	if len(objs) == 0 {
 		return nil
@@ -124,13 +131,6 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"expiration",
-		"revoked",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -160,7 +160,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyColsAPITokens, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

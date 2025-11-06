@@ -137,6 +137,15 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 	return nil
 }
 
+var copyColsVirtualMachines = []string{
+	"id",
+	"namespace",
+	"name",
+	"clusterid",
+	"clustername",
+	"serialized",
+}
+
 func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.VirtualMachine) error {
 	if len(objs) == 0 {
 		return nil
@@ -147,15 +156,6 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"namespace",
-		"name",
-		"clusterid",
-		"clustername",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -187,7 +187,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines"}, copyColsVirtualMachines, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

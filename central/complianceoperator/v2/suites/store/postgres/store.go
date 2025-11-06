@@ -135,6 +135,13 @@ func insertIntoComplianceOperatorSuiteV2(batch *pgx.Batch, obj *storage.Complian
 	return nil
 }
 
+var copyColsComplianceOperatorSuiteV2 = []string{
+	"id",
+	"name",
+	"clusterid",
+	"serialized",
+}
+
 func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorSuiteV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -145,13 +152,6 @@ func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -181,7 +181,7 @@ func copyFromComplianceOperatorSuiteV2(ctx context.Context, s pgSearch.Deleter, 
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suite_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_suite_v2"}, copyColsComplianceOperatorSuiteV2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

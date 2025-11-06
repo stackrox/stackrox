@@ -148,6 +148,20 @@ func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *st
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2 = []string{
+	"reportid",
+	"scanconfigurationid",
+	"name",
+	"reportstatus_runstate",
+	"reportstatus_startedat",
+	"reportstatus_completedat",
+	"reportstatus_reportrequesttype",
+	"reportstatus_reportnotificationmethod",
+	"user_id",
+	"user_name",
+	"serialized",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorReportSnapshotV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -158,20 +172,6 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"reportid",
-		"scanconfigurationid",
-		"name",
-		"reportstatus_runstate",
-		"reportstatus_startedat",
-		"reportstatus_completedat",
-		"reportstatus_reportrequesttype",
-		"reportstatus_reportnotificationmethod",
-		"user_id",
-		"user_name",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -208,7 +208,7 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyColsComplianceOperatorReportSnapshotV2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -224,19 +224,19 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	return nil
 }
 
+var copyColsComplianceOperatorReportSnapshotV2Scans = []string{
+	"compliance_operator_report_snapshot_v2_reportid",
+	"idx",
+	"scanrefid",
+	"laststartedtime",
+}
+
 func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorReportSnapshotV2ReportId string, objs ...*storage.ComplianceOperatorReportSnapshotV2_Scan) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"compliance_operator_report_snapshot_v2_reportid",
-		"idx",
-		"scanrefid",
-		"laststartedtime",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -255,7 +255,7 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyColsComplianceOperatorReportSnapshotV2Scans, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

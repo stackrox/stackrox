@@ -120,6 +120,18 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 	return nil
 }
 
+var copyColsAdministrationEvents = []string{
+	"id",
+	"type",
+	"level",
+	"domain",
+	"resource_type",
+	"numoccurrences",
+	"lastoccurredat",
+	"createdat",
+	"serialized",
+}
+
 func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AdministrationEvent) error {
 	if len(objs) == 0 {
 		return nil
@@ -130,18 +142,6 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"type",
-		"level",
-		"domain",
-		"resource_type",
-		"numoccurrences",
-		"lastoccurredat",
-		"createdat",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -176,7 +176,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"administration_events"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"administration_events"}, copyColsAdministrationEvents, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

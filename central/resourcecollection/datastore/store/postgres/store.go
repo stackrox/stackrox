@@ -139,6 +139,14 @@ func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.Res
 	return nil
 }
 
+var copyColsCollections = []string{
+	"id",
+	"name",
+	"createdby_name",
+	"updatedby_name",
+	"serialized",
+}
+
 func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ResourceCollection) error {
 	if len(objs) == 0 {
 		return nil
@@ -149,14 +157,6 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"createdby_name",
-		"updatedby_name",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -187,7 +187,7 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections"}, copyColsCollections, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -203,18 +203,18 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsCollectionsEmbeddedCollections = []string{
+	"collections_id",
+	"idx",
+	"id",
+}
+
 func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, collectionID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"collections_id",
-		"idx",
-		"id",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -232,7 +232,7 @@ func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Dele
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"collections_embedded_collections"}, copyColsCollectionsEmbeddedCollections, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

@@ -140,6 +140,13 @@ func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *stora
 	return nil
 }
 
+var copyColsActiveComponents = []string{
+	"id",
+	"deploymentid",
+	"componentid",
+	"serialized",
+}
+
 func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ActiveComponent) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,13 +157,6 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"deploymentid",
-		"componentid",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -186,7 +186,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components"}, copyColsActiveComponents, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -202,19 +202,19 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 	return nil
 }
 
+var copyColsActiveComponentsActiveContextsSlices = []string{
+	"active_components_id",
+	"idx",
+	"containername",
+	"imageid",
+}
+
 func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, activeComponentID string, objs ...*storage.ActiveComponent_ActiveContext) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"active_components_id",
-		"idx",
-		"containername",
-		"imageid",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -233,7 +233,7 @@ func copyFromActiveComponentsActiveContextsSlices(ctx context.Context, s pgSearc
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components_active_contexts_slices"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"active_components_active_contexts_slices"}, copyColsActiveComponentsActiveContextsSlices, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

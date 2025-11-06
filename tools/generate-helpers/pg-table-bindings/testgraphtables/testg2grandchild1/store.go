@@ -114,6 +114,14 @@ func insertIntoTestG2GrandChild1(batch *pgx.Batch, obj *storage.TestG2GrandChild
 	return nil
 }
 
+var copyColsTestG2GrandChild1 = []string{
+	"id",
+	"parentid",
+	"childid",
+	"val",
+	"serialized",
+}
+
 func copyFromTestG2GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestG2GrandChild1) error {
 	if len(objs) == 0 {
 		return nil
@@ -124,14 +132,6 @@ func copyFromTestG2GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *post
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"parentid",
-		"childid",
-		"val",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -162,7 +162,7 @@ func copyFromTestG2GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *post
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_g2_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_g2_grand_child1"}, copyColsTestG2GrandChild1, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

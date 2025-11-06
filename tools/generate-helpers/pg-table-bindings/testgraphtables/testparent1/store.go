@@ -139,6 +139,14 @@ func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_C
 	return nil
 }
 
+var copyColsTestParent1 = []string{
+	"id",
+	"parentid",
+	"val",
+	"stringslice",
+	"serialized",
+}
+
 func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent1) error {
 	if len(objs) == 0 {
 		return nil
@@ -149,14 +157,6 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"parentid",
-		"val",
-		"stringslice",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -187,7 +187,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1"}, copyColsTestParent1, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
@@ -203,18 +203,18 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	return nil
 }
 
+var copyColsTestParent1Childrens = []string{
+	"test_parent1_id",
+	"idx",
+	"childid",
+}
+
 func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testParent1ID string, objs ...*storage.TestParent1_Child1Ref) error {
 	if len(objs) == 0 {
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"test_parent1_id",
-		"idx",
-		"childid",
-	}
 
 	idx := 0
 	for objBatch := range slices.Chunk(objs, batchSize) {
@@ -232,7 +232,7 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 		// delete for the top level parent
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_parent1_childrens"}, copyColsTestParent1Childrens, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

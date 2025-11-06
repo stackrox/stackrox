@@ -136,6 +136,14 @@ func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *sto
 	return nil
 }
 
+var copyColsComplianceOperatorScanSettingBindingV2 = []string{
+	"id",
+	"name",
+	"clusterid",
+	"scansettingname",
+	"serialized",
+}
+
 func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBindingV2) error {
 	if len(objs) == 0 {
 		return nil
@@ -146,14 +154,6 @@ func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSea
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"name",
-		"clusterid",
-		"scansettingname",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -184,7 +184,7 @@ func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSea
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_binding_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_binding_v2"}, copyColsComplianceOperatorScanSettingBindingV2, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch

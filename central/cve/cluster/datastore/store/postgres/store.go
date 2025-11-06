@@ -122,6 +122,21 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 	return nil
 }
 
+var copyColsClusterCves = []string{
+	"id",
+	"cvebaseinfo_cve",
+	"cvebaseinfo_publishedon",
+	"cvebaseinfo_createdat",
+	"cvebaseinfo_epss_epssprobability",
+	"cvss",
+	"severity",
+	"impactscore",
+	"snoozed",
+	"snoozeexpiry",
+	"type",
+	"serialized",
+}
+
 func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ClusterCVE) error {
 	if len(objs) == 0 {
 		return nil
@@ -132,21 +147,6 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
-
-	copyCols := []string{
-		"id",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"cvss",
-		"severity",
-		"impactscore",
-		"snoozed",
-		"snoozeexpiry",
-		"type",
-		"serialized",
-	}
 
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
@@ -184,7 +184,7 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		// clear the inserts and vals for the next batch
 		deletes = deletes[:0]
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves"}, copyColsClusterCves, pgx.CopyFromRows(inputRows)); err != nil {
 			return err
 		}
 		// clear the input rows for the next batch
