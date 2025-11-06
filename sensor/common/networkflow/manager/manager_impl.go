@@ -395,6 +395,10 @@ func (m *networkFlowManager) enrich() *enrichmentResult {
 func (m *networkFlowManager) send(result *enrichmentResult) {
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
+	// Clear cache and update state before sending (done before the if statement for safety)
+	m.updateComputer.OnStartSendConnections(result.currentConns)
+	m.updateComputer.OnStartSendEndpoints(result.currentEndpointsProcesses)
+
 	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
 		batchSize := env.NetworkFlowSendBatchSize.IntegerSetting()
 		if batchSize <= 0 {
@@ -426,9 +430,13 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			}
 		}
 
-		// Inform the updateComputer which items remain unsent
-		m.updateComputer.OnSuccessfulSendConnections(unsentConns, result.currentConns)
-		m.updateComputer.OnSuccessfulSendEndpoints(unsentEps, result.currentEndpointsProcesses)
+		// Store unsent items in cache for retry
+		if len(unsentConns) > 0 {
+			m.updateComputer.OnSendConnectionsFailure(unsentConns)
+		}
+		if len(unsentEps) > 0 {
+			m.updateComputer.OnSendEndpointsFailure(unsentEps)
+		}
 	}
 
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {

@@ -18,14 +18,14 @@ type UpdateComputer interface {
 		enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 	) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor)
 
-	// OnSuccessfulSendConnections contains actions that should be executed after successful sending of connection updates to Central.
-	// unsentConns: connections that failed to send and should remain cached
-	// currentConns: the full current state (used by legacy implementation, can be nil for transition-based)
-	OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow, currentConns map[indicator.NetworkConn]timestamp.MicroTS)
-	// OnSuccessfulSendEndpoints contains actions that should be executed after successful sending of endpoint updates to Central.
-	// unsentEps: endpoints that failed to send and should remain cached
-	// enrichedEndpointsProcesses: the full current state (used by legacy implementation, can be nil for transition-based)
-	OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint, enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// OnStartSendConnections is called before sending connection updates to Central. It clears the cache and updates internal state.
+	OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS)
+	// OnStartSendEndpoints is called before sending endpoint updates to Central. It clears the cache and updates internal state.
+	OnStartSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
+	// OnSendConnectionsFailure is called after sending with connections that failed to send. These items are stored in cache for retry.
+	OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow)
+	// OnSendEndpointsFailure is called after sending with endpoints that failed to send. These items are stored in cache for retry.
+	OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint)
 	// OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 	OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp)
 

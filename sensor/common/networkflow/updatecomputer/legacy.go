@@ -109,11 +109,11 @@ func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]
 	})
 }
 
-func (l *Legacy) OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow, currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
-	// Set cached updates to the unsent elements
-	l.cachedUpdatesConn = unsentConns
+func (l *Legacy) OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Clear the cache before sending - the manager now has the items
+	l.cachedUpdatesConn = nil
 
-	// Always update lastSentState to track what we've seen (for computing future diffs)
+	// Update lastSentState to track what we've seen (for computing future diffs)
 	if currentConns != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -121,14 +121,11 @@ func (l *Legacy) OnSuccessfulSendConnections(unsentConns []*storage.NetworkFlow,
 	}
 }
 
-// OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
-// Providing nil will skip updates for respective map.
-// Providing empty map will reset the state for given state.
-func (l *Legacy) OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint, enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	// Set cached updates to the unsent elements
-	l.cachedUpdatesEp = unsentEps
+func (l *Legacy) OnStartSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Clear the cache before sending - the manager now has the items
+	l.cachedUpdatesEp = nil
 
-	// Always update lastSentState to track what we've seen (for computing future diffs)
+	// Update lastSentState to track what we've seen (for computing future diffs)
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -137,6 +134,16 @@ func (l *Legacy) OnSuccessfulSendEndpoints(unsentEps []*storage.NetworkEndpoint,
 			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
 		}
 	}
+}
+
+func (l *Legacy) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+	// Store the unsent items in cache for retry
+	l.cachedUpdatesConn = unsentConns
+}
+
+func (l *Legacy) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+	// Store the unsent items in cache for retry
+	l.cachedUpdatesEp = unsentEps
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.

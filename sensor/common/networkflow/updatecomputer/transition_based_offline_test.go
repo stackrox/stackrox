@@ -193,7 +193,7 @@ func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 			l := NewTransitionBased()
 			// Initial online update - for TransitionBased, we must trigger a single computation and call `OnSuccessfulSend`
 			_ = l.ComputeUpdatedConns(tc.initialOnlineState)
-			l.OnSuccessfulSendConnections(nil, tc.initialOnlineState)
+			l.OnStartSendConnections(tc.initialOnlineState)
 
 			// Going offline - calling ComputeUpdatedConns but not OnSuccessfulSend
 			_ = l.ComputeUpdatedConns(tc.offlineUpdate1)
@@ -202,13 +202,13 @@ func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 
 			// Going online again - calling ComputeUpdatedConns followed by OnSuccessfulSend
 			finalUpdates := l.ComputeUpdatedConns(tc.currentOnlineState)
-			l.OnSuccessfulSendConnections(nil, tc.currentOnlineState)
+			l.OnStartSendConnections(tc.currentOnlineState)
 
 			assert.Len(t, finalUpdates, tc.expectNumUpdates)
 
 			// Empty update to ensure that any caches for offline mode are cleared
 			u := l.ComputeUpdatedConns(emptyUpdate)
-			l.OnSuccessfulSendConnections(nil, emptyUpdate)
+			l.OnStartSendConnections(emptyUpdate)
 			assert.Len(t, u, 0)
 		})
 	}
