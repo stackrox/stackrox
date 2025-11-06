@@ -142,11 +142,14 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
-		log.Errorw("Enriching image",
-			logging.ImageName(params.ImageName),
-			logging.Err(err),
-			logging.Bool("ad_hoc", true),
-		)
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(params.ImageName),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
+
 		return nil, err
 	}
 

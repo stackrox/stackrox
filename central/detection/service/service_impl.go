@@ -184,11 +184,13 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
-		log.Errorw("Enriching image",
-			logging.ImageName(image.GetName().GetFullName()),
-			logging.Err(err),
-			logging.Bool("ad_hoc", true),
-		)
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(image.GetName().GetFullName()),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
