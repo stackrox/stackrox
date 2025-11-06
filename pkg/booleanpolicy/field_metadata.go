@@ -3,6 +3,7 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -53,6 +54,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileAccess for a file-based runtime event
+	FileAccess = "fileAccess"
 )
 
 type metadataAndQB struct {
@@ -97,6 +100,20 @@ func (f *FieldMetadata) IsDeploymentEventField(fieldName string) bool {
 // IsAuditLogEventField returns true if the field is an audit log field
 func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
+}
+
+// IsFileEventField returns true if the field is a node event field
+func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
+	return f.FieldIsOfType(fieldName, FileAccess)
+}
+
+func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
+	field := f.fieldsToQB[fieldName]
+	if field == nil {
+		log.Warnf("policy field %s not found", fieldName)
+		return false
+	}
+	return slices.Contains(field.eventSourceContext, eventSource)
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
