@@ -95,10 +95,10 @@ docker-run: docker-build ## Run Docker container locally
 	@# Stop and remove existing container if it exists
 	@docker stop ml-risk-service 2>/dev/null || true
 	@docker rm ml-risk-service 2>/dev/null || true
-	@# Ensure directories exist for storage
-	@mkdir -p $(PWD)/deploy/models $(PWD)/deploy/reports
+	@# Ensure directories exist for storage and training data
+	@mkdir -p $(PWD)/deploy/models $(PWD)/deploy/reports $(PWD)/deploy/data
 	@# Fix permissions for container user
-	@chmod 777 $(PWD)/deploy/models $(PWD)/deploy/reports
+	@chmod 777 $(PWD)/deploy/models $(PWD)/deploy/reports $(PWD)/deploy/data
 	@# Run the container
 	docker run -d \
 		--name ml-risk-service \
@@ -106,6 +106,8 @@ docker-run: docker-build ## Run Docker container locally
 		-p 8081:8081 \
 		-p 8090:8090 \
 		-v $(PWD)/deploy/models:/app/models \
+		-v $(PWD)/deploy/reports:/app/reports \
+		-v $(PWD)/deploy/data:/app/data \
 		-e LOG_LEVEL="${LOG_LEVEL:-info}" \
 		-e GRPC_PORT=8080 \
 		-e HEALTH_PORT=8081 \
@@ -122,6 +124,9 @@ docker-run: docker-build ## Run Docker container locally
 	@echo -e "$(BLUE)  - Health: http://localhost:8081$(NC)"
 	@echo -e "$(BLUE)  - REST API: http://localhost:8090$(NC)"
 	@echo -e "$(BLUE)  - API Docs: http://localhost:8090/docs$(NC)"
+	@echo -e "$(BLUE)Mounted directories:$(NC)"
+	@echo -e "$(BLUE)  - Models: ./deploy/models -> /app/models$(NC)"
+	@echo -e "$(BLUE)  - Training data: ./deploy/data -> /app/data$(NC)"
 	@echo -e "$(BLUE)Check logs with: make docker-logs$(NC)"
 
 .PHONY: docker-stop
@@ -224,8 +229,6 @@ wait-for-ready:
 train-predict-central: docker-run wait-for-ready ## Train model with Central data, reload it, and validate predictions
 	@echo -e "$(BLUE)Training the model with Central data"
 	curl -X POST http://localhost:8090/api/v1/training/central/train-full | jq .
-	@echo -e "$(BLUE)Reloading the model"
-	curl -X POST http://localhost:8090/api/v1/models/stackrox-risk-model/reload | jq .
 	@echo -e "$(BLUE)Validating the predictions"
 	curl -X POST http://localhost:8090/api/v1/training/central/validate-predictions | jq .
 
@@ -434,6 +437,7 @@ clean: ## Clean up temporary files, trained models, and training reports
 	@echo -e "$(YELLOW)Cleaning up models and reports...$(NC)"
 	rm -rf ./models/ ./deploy/models/
 	rm -rf ./reports/ ./deploy/reports/
+	rm -rf ./deploy/data/
 	rm -f sample_training_data.json
 	rm -f *.pkl
 	@echo -e "$(GREEN)Cleanup completed!$(NC)"

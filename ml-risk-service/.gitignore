@@ -4,10 +4,7 @@
 src/config/feature_config.expanded.yaml
 
 # Generated model files and training artifacts
-deploy/models/
-deploy/reports/
-models/
-reports/
+deploy/
 
 # Python environment
 venv/
