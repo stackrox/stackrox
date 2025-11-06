@@ -7,7 +7,6 @@ from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 
 from src.api.schemas import (
-    TrainModelRequest,
     TrainModelResponse,
     ErrorResponse
 )
@@ -38,75 +37,6 @@ def get_risk_service() -> RiskPredictionService:
     if _risk_service is None:
         _risk_service = RiskPredictionService()
     return _risk_service
-
-
-@router.post(
-    "/train",
-    response_model=TrainModelResponse,
-    responses={
-        400: {"model": ErrorResponse, "description": "Invalid training data"},
-        500: {"model": ErrorResponse, "description": "Training failed"}
-    },
-    summary="Train ML model",
-    description="Train a new risk ranking model with provided training data"
-)
-async def train_model(
-    request: TrainModelRequest,
-    training_service: TrainingService = Depends(get_training_service),
-    risk_service: RiskPredictionService = Depends(get_risk_service)
-) -> TrainModelResponse:
-    """
-    Train a new risk ranking model.
-
-    This endpoint trains a new ML model using the provided training samples.
-    The training process includes:
-    - Data validation and preprocessing
-    - Feature extraction and ranking dataset creation
-    - Model training with cross-validation
-    - Performance evaluation and feature importance analysis
-
-    - **training_data**: List of training samples with features and target scores
-    - **config_override**: Optional JSON configuration overrides
-
-    Returns training metrics, model version, and feature importance rankings.
-    """
-    try:
-        if not request.training_data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No training data provided"
-            )
-
-        if len(request.training_data) < 10:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Insufficient training data (minimum 10 samples required)"
-            )
-
-        if len(request.training_data) > 10000:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Training data too large (maximum 10,000 samples)"
-            )
-
-        logger.info(f"Starting model training with {len(request.training_data)} samples")
-        response = training_service.train_model(request, risk_service)
-
-        if response.success:
-            logger.info(f"Model training completed successfully. Version: {response.model_version}")
-        else:
-            logger.error(f"Model training failed: {response.error_message}")
-
-        return response
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Training request failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Training failed: {str(e)}"
-        )
 
 
 @router.get(

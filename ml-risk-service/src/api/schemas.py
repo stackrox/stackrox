@@ -316,33 +316,6 @@ class BatchDeploymentRiskResponse(BaseModel):
     )
 
 
-class TrainingSample(BaseModel):
-    """Training sample for model training."""
-
-    deployment_features: DeploymentFeatures = Field(description="Deployment features")
-    image_features: List[ImageFeatures] = Field(
-        default=[],
-        description="Image features"
-    )
-    current_risk_score: float = Field(
-        description="Target risk score for training",
-        ge=0.0
-    )
-    deployment_id: str = Field(description="Deployment identifier")
-
-
-class TrainModelRequest(BaseModel):
-    """Request to train a new model."""
-
-    training_data: List[TrainingSample] = Field(
-        description="Training samples"
-    )
-    config_override: Optional[str] = Field(
-        default="",
-        description="JSON string with configuration overrides"
-    )
-
-
 class TrainingMetrics(BaseModel):
     """Training metrics and performance indicators for RandomForest model."""
 
