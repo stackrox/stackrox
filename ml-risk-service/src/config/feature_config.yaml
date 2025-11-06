@@ -82,9 +82,6 @@ training_central_api:
       severity_threshold: "MEDIUM_SEVERITY"
       include_alerts: true
       include_policies: false
-      # clusters: ["prod-cluster-1", "staging-cluster"]  # Optional: filter by specific clusters
-      # namespaces: ["default", "kube-system"]  # Optional: filter by specific namespaces
-      # vulnerability_states: ["ACTIVE", "OBSERVED"]
 
   retry:
     max_attempts: 3
@@ -140,7 +137,6 @@ prediction_central_api:
 
     # Default filters for validation data collection
     filters:
-      days_back: 7  # Changed from deployment_age_days for consistency with API
       include_inactive: false
       severity_threshold: "MEDIUM_SEVERITY"
       include_alerts: true

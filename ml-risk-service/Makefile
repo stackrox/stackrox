@@ -398,20 +398,15 @@ monitoring-down: ## Stop monitoring stack
 .PHONY: analyze-n-estimators
 analyze-n-estimators: docker-build ## Analyze RandomForest convergence for different n_estimators values
 	@echo -e "$(GREEN)Running n_estimators convergence analysis in Docker...$(NC)"
-	@mkdir -p $(PWD)/reports
 	docker run --rm \
 		--entrypoint python \
-		-v $(PWD)/reports:/app/reports \
 		-e TRAINING_CENTRAL_API_TOKEN \
 		-e TRAINING_CENTRAL_ENDPOINT \
 		$(DOCKER_IMAGE):$(DOCKER_TAG) \
 		scripts/analyze_n_estimators_convergence.py \
 			--data-source central \
-			--limit 1000 \
-			--output-dir /app/reports
+			--limit 1000
 	@echo -e "$(GREEN)Analysis complete!$(NC)"
-	@echo -e "$(BLUE)  Plot: reports/n_estimators_convergence.png$(NC)"
-	@echo -e "$(BLUE)  Data: reports/n_estimators_results.json$(NC)"
 
 .PHONY: analyze-n-estimators-synthetic
 analyze-n-estimators-synthetic: docker-build ## Run convergence analysis with synthetic data (no Central API needed)

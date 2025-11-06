@@ -382,8 +382,8 @@ def main():
     )
     parser.add_argument(
         '--output-dir',
-        default='reports',
-        help='Output directory for results'
+        default=None,
+        help='Output directory for results (optional - if not provided, only prints summary)'
     )
     parser.add_argument(
         '--n-estimators',
@@ -394,10 +394,6 @@ def main():
     )
 
     args = parser.parse_args()
-
-    # Create output directory
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize analyzer
     analyzer = NEstimatorsAnalyzer()
@@ -412,17 +408,23 @@ def main():
         # Run convergence analysis
         results = analyzer.analyze_convergence(X, y, feature_names, n_estimators_values=args.n_estimators)
 
-        # Generate outputs
-        plot_path = output_dir / 'n_estimators_convergence.png'
-        json_path = output_dir / 'n_estimators_results.json'
+        # Generate outputs if output directory is specified
+        if args.output_dir:
+            output_dir = Path(args.output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
 
-        analyzer.plot_convergence(str(plot_path))
-        analyzer.save_results(str(json_path))
+            plot_path = output_dir / 'n_estimators_convergence.png'
+            json_path = output_dir / 'n_estimators_results.json'
+
+            analyzer.plot_convergence(str(plot_path))
+            analyzer.save_results(str(json_path))
+
+            print(f"\nResults saved:")
+            print(f"  Plot: {plot_path}")
+            print(f"  Data: {json_path}")
+
+        # Always print summary to stdout
         analyzer.print_summary()
-
-        print(f"\nResults saved:")
-        print(f"  Plot: {plot_path}")
-        print(f"  Data: {json_path}")
 
     except Exception as e:
         logger.error(f"Analysis failed: {e}", exc_info=True)
