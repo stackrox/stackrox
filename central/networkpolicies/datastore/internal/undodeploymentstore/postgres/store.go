@@ -90,11 +90,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -106,10 +108,10 @@ func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.Net
 	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -120,6 +122,12 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
 
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
+
 	copyCols := []string{
 		"deploymentid",
 		"serialized",
@@ -128,7 +136,10 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -156,6 +167,9 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil

@@ -93,11 +93,13 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestParent2(batch *pgx.Batch, obj *storage.TestParent2) error {
+func insertIntoTestParent2(batch *pgx.Batch, pool pgSearch.BufferPool, obj *storage.TestParent2) (*[]byte, error) {
 
-	serialized, marshalErr := obj.MarshalVT()
+	buf := pool.Get(obj.SizeVT())
+	n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+	serialized := (*buf)[:n]
 	if marshalErr != nil {
-		return marshalErr
+		return buf, marshalErr
 	}
 
 	values := []interface{}{
@@ -111,10 +113,10 @@ func insertIntoTestParent2(batch *pgx.Batch, obj *storage.TestParent2) error {
 	finalStr := "INSERT INTO test_parent2 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	return nil
+	return buf, nil
 }
 
-func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestParent2) error {
+func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, pool pgSearch.BufferPool, objs ...*storage.TestParent2) error {
 	if len(objs) == 0 {
 		return nil
 	}
@@ -124,6 +126,12 @@ func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
 	deletes := make([]string, 0, batchSize)
+
+	// Keep track of pooled buffers to return after batch processing
+	pooledBuffers := make([]*[]byte, 0, batchSize)
+	defer func() {
+		pool.Put(pooledBuffers...)
+	}()
 
 	copyCols := []string{
 		"id",
@@ -135,7 +143,10 @@ func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 
-			serialized, marshalErr := obj.MarshalVT()
+			buf := pool.Get(obj.SizeVT())
+			pooledBuffers = append(pooledBuffers, buf)
+			n, marshalErr := obj.MarshalToSizedBufferVT(*buf)
+			serialized := (*buf)[:n]
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -165,6 +176,9 @@ func copyFromTestParent2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		}
 		// clear the input rows for the next batch
 		inputRows = inputRows[:0]
+		// Return all pooled buffers after successful CopyFrom
+		pool.Put(pooledBuffers...)
+		pooledBuffers = pooledBuffers[:0]
 	}
 
 	return nil
