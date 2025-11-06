@@ -8,6 +8,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from '../../policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
+import PolicyExplainerWizard from './PolicyExplainerWizard';
 
 import './PolicyCriteriaForm.css';
 
@@ -121,9 +122,14 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         direction={{ default: 'column', lg: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
-                        className="pf-v5-u-p-lg pf-v5-u-h-100"
+                        className="pf-v5-u-p-lg"
+                        style={{ overflowY: 'auto' }}
                     >
                         <BooleanPolicyLogicSection />
+                    </Flex>
+                    <Divider component="div" />
+                    <Flex className="pf-v5-u-p-lg">
+                        <PolicyExplainerWizard />
                     </Flex>
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
