@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// TODO(ROX-31640): Add tests for using old legacy times back in unless ROX-29911 gets implemented
+// TODO(ROX-29911): add tests.
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
@@ -63,10 +65,6 @@ func (s *ImagesV2StoreSuite) SetupTest() {
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesTableName+" CASCADE")
 	s.Require().NoError(err)
 	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImagesV2TableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageCvesTableName+" CASCADE")
-	s.Require().NoError(err)
-	_, err = s.testDB.DB.Exec(s.ctx, "TRUNCATE "+pkgSchema.ImageComponentsTableName+" CASCADE")
 	s.Require().NoError(err)
 }
 

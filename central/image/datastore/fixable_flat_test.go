@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -25,9 +24,6 @@ type normalizedImageComponent struct {
 }
 
 func TestFixableFlatSearch(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is disabled so skip.")
-	}
 	suite.Run(t, new(FixableFlatSearchTestSuite))
 }
 
