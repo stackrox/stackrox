@@ -158,7 +158,7 @@ spec:
                         properties:
                           hostPath:
                             description: |-
-                              Stores persistent data on a directory on the host. This is not recommended, and should only
+                              Stores persistent data in a directory on the host. This is not recommended, and should only
                               be used together with a node selector (only available in YAML view).
                             properties:
                               path:
@@ -338,7 +338,7 @@ spec:
                     type: object
                   exposure:
                     description: |-
-                      Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
+                      Here you can configure if you want to expose Central through a node port, a load balancer, or an OpenShift
                       route.
                     properties:
                       loadBalancer:
@@ -579,7 +579,7 @@ spec:
                     properties:
                       enabled:
                         description: |-
-                          Specifies if Telemetry is enabled.
+                          Specifies whether Telemetry is enabled.
                           The default is: true.
                         type: boolean
                       storage:
@@ -840,7 +840,7 @@ spec:
                 properties:
                   policies:
                     description: |-
-                      To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+                      To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
                       The default is: Enabled.
                     enum:
                     - Enabled
@@ -863,7 +863,7 @@ spec:
                     an ingress to a network policy\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
                     NetworkPolicy\n\tname: allow-ext-to-central\n\tpatches:\n\t- path:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
-                    \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
+                    \     protocol: TCP\n\n## Changing the value of a ConfigMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
                     path: data.endpoints\\.yaml:\n\t  verbatim: |\n\t    disableDefault:
                     false\n\n## Adding a container to a deployment\n\n\tapiVersion:
@@ -911,7 +911,7 @@ spec:
                           verbatim:
                             description: |-
                               Verbatim value to add, delete or replace.
-                              Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+                              Same as Value, but the content is not interpreted as YAML and is treated as a literal string instead.
                               At least one of Value and Verbatim must be empty.
                             type: string
                         type: object
@@ -1288,7 +1288,7 @@ spec:
                         properties:
                           hostPath:
                             description: |-
-                              Stores persistent data on a directory on the host. This is not recommended, and should only
+                              Stores persistent data in a directory on the host. This is not recommended, and should only
                               be used together with a node selector (only available in YAML view).
                             properties:
                               path:
