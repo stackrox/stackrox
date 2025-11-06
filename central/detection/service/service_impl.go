@@ -12,6 +12,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/administration/events"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	centralDetection "github.com/stackrox/rox/central/detection"
@@ -72,7 +73,7 @@ var (
 		},
 	})
 
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 
 	workloadScheme = k8sRuntime.NewScheme()
 
