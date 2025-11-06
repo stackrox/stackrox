@@ -305,11 +305,11 @@ class ModelStorage(ABC):
 
     def _get_model_path(self, model_id: str, version: str) -> str:
         """Get storage path for model."""
-        return f"models/{model_id}/v{version}"
+        return f"{model_id}/v{version}"
 
     def _get_metadata_path(self, model_id: str, version: str) -> str:
         """Get storage path for metadata."""
-        return f"models/{model_id}/v{version}/metadata.json"
+        return f"{model_id}/v{version}/metadata.json"
 
 
 class LocalModelStorage(ModelStorage):
@@ -319,9 +319,6 @@ class LocalModelStorage(ModelStorage):
         super().__init__(config)
         self.base_path = Path(config.base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
-        # Ensure models subdirectory exists for model storage
-        models_dir = self.base_path / "models"
-        models_dir.mkdir(parents=True, exist_ok=True)
 
     def save_model(self, model_data: bytes, metadata: ModelMetadata) -> bool:
         """Save model to local filesystem."""
@@ -383,14 +380,13 @@ class LocalModelStorage(ModelStorage):
     def list_models(self, model_id: Optional[str] = None) -> List[ModelMetadata]:
         """List available models."""
         models = []
-        models_dir = self.base_path / "models"
 
-        if not models_dir.exists():
+        if not self.base_path.exists():
             return models
 
         if model_id:
             # List versions for specific model
-            model_dir = models_dir / model_id
+            model_dir = self.base_path / model_id
             if model_dir.exists():
                 for version_dir in model_dir.iterdir():
                     if version_dir.is_dir() and version_dir.name.startswith('v'):
@@ -404,7 +400,7 @@ class LocalModelStorage(ModelStorage):
                                 self.logger.warning(f"Failed to load metadata from {metadata_file}: {e}")
         else:
             # List all models
-            for model_dir in models_dir.iterdir():
+            for model_dir in self.base_path.iterdir():
                 if model_dir.is_dir():
                     models.extend(self.list_models(model_dir.name))
 
@@ -422,7 +418,7 @@ class LocalModelStorage(ModelStorage):
                     return True
             else:
                 # Delete all versions
-                model_dir = self.base_path / "models" / model_id
+                model_dir = self.base_path / model_id
                 if model_dir.exists():
                     shutil.rmtree(model_dir)
                     self.logger.info(f"Deleted all versions of model {model_id}")
@@ -437,7 +433,7 @@ class LocalModelStorage(ModelStorage):
     def model_exists(self, model_id: str, version: Optional[str] = None) -> bool:
         """Check if model exists."""
         if version is None:
-            model_dir = self.base_path / "models" / model_id
+            model_dir = self.base_path / model_id
             return model_dir.exists() and any(model_dir.iterdir())
         else:
             model_path = self.base_path / self._get_model_path(model_id, version)
@@ -445,7 +441,7 @@ class LocalModelStorage(ModelStorage):
 
     def _get_latest_version(self, model_id: str) -> Optional[str]:
         """Get the latest version of a model."""
-        model_dir = self.base_path / "models" / model_id
+        model_dir = self.base_path / model_id
         self.logger.debug(f"Looking for latest version in: {model_dir}")
 
         if not model_dir.exists():

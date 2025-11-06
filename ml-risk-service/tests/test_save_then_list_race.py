@@ -46,10 +46,6 @@ def test_save_model_then_list_immediately():
         models_before = storage_manager.list_models('stackrox-risk-model')
         assert len(models_before) == 0, "Should start with no models"
 
-        # Check if models/ subdirectory exists
-        models_dir = base_path / "models"
-        print(f"Before save - models/ exists: {models_dir.exists()}")
-
         # Train and save a model (simulating training endpoint)
         model = RiskRankingModel()
         X_train = np.random.rand(50, 10)
@@ -84,12 +80,8 @@ def test_save_model_then_list_immediately():
         save_success = storage_manager.save_model(model_data, metadata)
         assert save_success, "Model save must succeed"
 
-        # Immediately check if models/ directory was created
-        print(f"After save - models/ exists: {models_dir.exists()}")
-        print(f"After save - models/ contents: {list(models_dir.iterdir()) if models_dir.exists() else 'N/A'}")
-
         # Verify the full path exists
-        expected_path = base_path / "models" / "stackrox-risk-model" / f"v{model.model_version}"
+        expected_path = base_path / "stackrox-risk-model" / f"v{model.model_version}"
         print(f"Expected path: {expected_path}")
         print(f"Expected path exists: {expected_path.exists()}")
 
@@ -221,22 +213,20 @@ def test_filesystem_visibility_after_save():
         storage_manager.save_model(model_data, metadata)
 
         # Immediately check filesystem visibility using multiple methods
-        models_dir = base_path / "models"
-
         # Method 1: Path.exists()
-        assert models_dir.exists(), f"models/ should exist via Path.exists(): {models_dir}"
+        assert base_path.exists(), f"base_path should exist via Path.exists(): {base_path}"
 
         # Method 2: os.path.exists()
         import os
-        assert os.path.exists(str(models_dir)), f"models/ should exist via os.path.exists(): {models_dir}"
+        assert os.path.exists(str(base_path)), f"base_path should exist via os.path.exists(): {base_path}"
 
         # Method 3: Path.iterdir()
-        contents = list(models_dir.iterdir())
-        assert len(contents) > 0, f"models/ should have contents via Path.iterdir(): {contents}"
+        contents = list(base_path.iterdir())
+        assert len(contents) > 0, f"base_path should have contents via Path.iterdir(): {contents}"
 
         # Method 4: os.listdir()
-        os_contents = os.listdir(str(models_dir))
-        assert len(os_contents) > 0, f"models/ should have contents via os.listdir(): {os_contents}"
+        os_contents = os.listdir(str(base_path))
+        assert len(os_contents) > 0, f"base_path should have contents via os.listdir(): {os_contents}"
 
         print(f"✓ All filesystem visibility checks passed")
         print(f"  Path.iterdir(): {[p.name for p in contents]}")

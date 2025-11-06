@@ -65,7 +65,6 @@ def test_makefile_workflow_exact_simulation():
             models_api_service = RiskPredictionService()
             print(f"Step 3: models.py service created")
             print(f"  Storage base_path: {models_api_storage.primary_storage.base_path}")
-            print(f"  models/ subdirectory exists: {(models_api_storage.primary_storage.base_path / 'models').exists()}")
 
             # Verify no models exist initially
             initial_list = models_api_service.list_models('stackrox-risk-model')
@@ -113,10 +112,9 @@ def test_makefile_workflow_exact_simulation():
         save_success = training_api_storage.save_model(model_data, metadata)
         assert save_success, "Training should save model successfully"
         print(f"  Model saved: {model.model_version}")
-        print(f"  models/ subdirectory now exists: {(deploy_models / 'models').exists()}")
 
         # Verify files were created
-        expected_path = deploy_models / "models" / "stackrox-risk-model" / f"v{model.model_version}"
+        expected_path = deploy_models / "stackrox-risk-model" / f"v{model.model_version}"
         print(f"  Expected path: {expected_path}")
         print(f"  Expected path exists: {expected_path.exists()}")
         assert expected_path.exists(), f"Model directory should exist: {expected_path}"
@@ -137,8 +135,7 @@ def test_makefile_workflow_exact_simulation():
             print(f"  saved by training.py service (in step 4)")
             print(f"\n  Debugging info:")
             print(f"    deploy_models path: {deploy_models}")
-            print(f"    models/ exists: {(deploy_models / 'models').exists()}")
-            print(f"    models/ contents: {list((deploy_models / 'models').iterdir()) if (deploy_models / 'models').exists() else 'N/A'}")
+            print(f"    deploy_models contents: {list(deploy_models.iterdir()) if deploy_models.exists() else 'N/A'}")
             print(f"    Storage backend base_path: {models_api_storage.primary_storage.base_path}")
 
             # Try listing with the training service's storage to see if THAT can see it

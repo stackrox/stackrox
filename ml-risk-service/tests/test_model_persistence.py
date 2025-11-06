@@ -240,7 +240,7 @@ def test_file_system_sync_after_save():
         storage_manager.save_model(model_data, metadata)
 
         # Immediately check if files exist on disk
-        expected_dir = Path(tmpdir) / "models" / "test-model" / "vv1.0.0"
+        expected_dir = Path(tmpdir) / "test-model" / "vv1.0.0"
         expected_model_file = expected_dir / "model.joblib"
         expected_metadata_file = expected_dir / "metadata.json"
 

@@ -37,7 +37,6 @@ def test_save_to_empty_base_directory():
         # Only base directory exists, NO subdirectories
         base_path.mkdir(parents=True, exist_ok=True)
         assert base_path.exists(), "Base directory should exist"
-        assert not (base_path / "models").exists(), "Subdirectory should NOT exist yet"
 
         # Set up storage with this base path
         storage_config = StorageConfig(
@@ -79,12 +78,12 @@ def test_save_to_empty_base_directory():
 
         # THIS IS THE CRITICAL TEST:
         # Can storage_manager.save_model() create the full directory structure
-        # when only base_path exists but base_path/models/ does not?
+        # when only base_path exists?
         success = storage_manager.save_model(model_data, metadata)
         assert success, "Model save should succeed even when subdirectories don't exist"
 
         # Verify the full directory structure was created
-        expected_path = base_path / "models" / "stackrox-risk-model" / f"v{model.model_version}"
+        expected_path = base_path / "stackrox-risk-model" / f"v{model.model_version}"
         assert expected_path.exists(), f"Full model directory should be created: {expected_path}"
 
         # Verify files exist
@@ -114,7 +113,6 @@ def test_list_models_with_missing_subdirectory():
         # Only create base directory
         base_path.mkdir(parents=True, exist_ok=True)
         assert base_path.exists()
-        assert not (base_path / "models").exists(), "models/ subdirectory should not exist"
 
         # Set up storage
         storage_config = StorageConfig(
