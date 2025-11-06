@@ -96,6 +96,17 @@ training:
         # Specify environment variable NAME containing the token (not the token itself)
         api_token_env: "STAGING_CENTRAL_API_TOKEN"
 
+    - type: "central"  # Type: "central" or "file"
+      name: "dog-fooding-central"  # Human-readable name for this source
+      enabled: true  # Set to false to temporarily disable this source
+      endpoint: "https://acs-cii18grublkv81uil8gg.acs.rhcloud.com"
+
+      # Authentication configuration
+      authentication:
+        method: "api_token"  # Options: "api_token", "mtls"
+        # Specify environment variable NAME containing the token (not the token itself)
+        api_token_env: "DOG_FOODING_CENTRAL_API_TOKEN"
+
         # For mTLS authentication, specify environment variable NAMES for cert paths:
         # client_cert_path_env: "TRAINING_CENTRAL_CLIENT_CERT_PATH"
         # client_key_path_env: "TRAINING_CENTRAL_CLIENT_KEY_PATH"

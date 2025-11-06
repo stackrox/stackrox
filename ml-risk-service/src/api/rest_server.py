@@ -15,7 +15,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 
-from src.api.routers import risk, models, training, health
+from src.api.routers import prediction, models, training, health
 from src.api.schemas import ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
             raise
 
     # Include routers
-    app.include_router(risk.router, prefix="/api/v1")
+    app.include_router(prediction.router, prefix="/api/v1")
     app.include_router(models.router, prefix="/api/v1")
     app.include_router(training.router, prefix="/api/v1")
     app.include_router(health.router, prefix="/api/v1")

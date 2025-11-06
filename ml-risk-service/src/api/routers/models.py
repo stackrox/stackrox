@@ -14,6 +14,7 @@ from src.api.schemas import (
     ErrorResponse
 )
 from src.api.dependencies import get_prediction_service
+from src.services.prediction_service import RiskPredictionService
 
 logger = logging.getLogger(__name__)
 

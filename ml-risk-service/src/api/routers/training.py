@@ -11,6 +11,8 @@ from src.api.schemas import (
     ErrorResponse
 )
 from src.api.dependencies import get_training_service, get_prediction_service
+from src.services.training_service import RiskTrainingService
+from src.services.prediction_service import RiskPredictionService
 from src.training.data_loader import TrainingDataLoader
 
 logger = logging.getLogger(__name__)
@@ -30,7 +32,7 @@ router = APIRouter(prefix="/training", tags=["training"])
 )
 async def get_training_status(
     job_id: str,
-    training_service: TrainingService = Depends(get_training_service)
+    training_service: RiskTrainingService = Depends(get_training_service)
 ) -> Dict[str, Any]:
     """
     Get training job status and progress.
@@ -62,7 +64,7 @@ async def get_training_status(
 )
 async def generate_sample_data(
     num_examples: int = Query(100, ge=10, le=1000, description="Number of samples to generate"),
-    training_service: TrainingService = Depends(get_training_service)
+    training_service: RiskTrainingService = Depends(get_training_service)
 ) -> Dict[str, Any]:
     """
     Generate sample training data for testing.
@@ -100,7 +102,7 @@ async def generate_sample_data(
     description="Get information about training service status and capabilities"
 )
 async def get_training_info(
-    training_service: TrainingService = Depends(get_training_service)
+    training_service: RiskTrainingService = Depends(get_training_service)
 ) -> Dict[str, Any]:
     """
     Get training service information and status.
