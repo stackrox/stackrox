@@ -1,5 +1,4 @@
-import React from 'react';
-import { PageSection, Title, Tabs, Tab } from '@patternfly/react-core';
+import { PageSection, Tab, Tabs, Title } from '@patternfly/react-core';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
