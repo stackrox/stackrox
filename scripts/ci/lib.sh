@@ -83,26 +83,26 @@ handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
-    local psline this_pid pid
-    this_pid="$$"
-    ps -e -O ppid | while read -r pid psline; do
+    local psline pid ppid
+    ps -e -O ppid | while read -r pid ppid psline; do
+        psline="$pid $ppid $psline"
         if [[ "$pid" == "PID" ]]; then
             # Ignoring header
             continue
         fi
-        if [[ "$pid" == "$this_pid" ]]; then
-            echo "Ignoring self: $pid $psline"
+        if [[ "$pid" == "$$" ]]; then
+            echo "Ignoring self: $psline"
             continue
         fi
-        if [[ "$psline" =~ ^$this_pid[[:space:]] ]]; then
-            echo "Ignoring child: $pid $psline"
+        if [[ "$ppid" == "$$" ]]; then
+            echo "Ignoring child: $psline"
             continue
         fi
         if [[ "$psline" =~ entrypoint|defunct ]]; then
-            echo "Ignoring ci-operator entrypoint or defunct process: $pid $psline"
+            echo "Ignoring ci-operator entrypoint or defunct process: $psline"
             continue
         fi
-        echo "A candidate to kill: $pid $psline"
+        echo "A candidate to kill: $psline"
         echo "Will kill $pid"
         kill "$pid" || {
             echo "Error killing $pid"
