@@ -123,11 +123,17 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     // Node event sources do not support scoping, exclusions, or enforcement actions
     function onChangeNodeEventSource() {
-        setFieldValue('eventSource', 'NODE_EVENT');
-        setFieldValue('scope', [], false);
-        setFieldValue('excludedImageNames', [], false);
-        setFieldValue('excludedDeploymentScopes', [], false);
-        setFieldValue('enforcementActions', [], false);
+        setValues(
+            {
+                ...values,
+                eventSource: 'NODE_EVENT',
+                scope: [],
+                excludedImageNames: [],
+                excludedDeploymentScopes: [],
+                enforcementActions: [],
+            },
+            false
+        );
     }
 
     const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
