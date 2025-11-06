@@ -104,8 +104,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	}
 
 	// Convert search Results directly to SearchResult protos without a second database pass
-	converter := &ImageSearchResultConverter{}
-	return search.ResultsToSearchResultProtos(results, converter), nil
+	return search.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
 }
 
 // TODO(ROX-29943): Eliminate unnecessary 2 pass database queries

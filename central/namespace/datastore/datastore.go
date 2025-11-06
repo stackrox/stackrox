@@ -227,8 +227,7 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 	}
 
 	// Convert search Results directly to SearchResult protos without a second database pass
-	converter := &NamespaceSearchResultConverter{}
-	return search.ResultsToSearchResultProtos(results, converter), nil
+	return search.ResultsToSearchResultProtos(results, &NamespaceSearchResultConverter{}), nil
 }
 
 func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
