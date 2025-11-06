@@ -28,7 +28,6 @@ type Legacy struct {
 	// cachedUpdates contains a list of updates to Central that cannot be sent at the given moment.
 	cachedUpdatesConn []*storage.NetworkFlow
 	cachedUpdatesEp   []*storage.NetworkEndpoint
-	cachedUpdatesProc []*storage.ProcessListeningOnPortFromSensor
 
 	// Mutex to protect the LastSentState maps
 	lastSentStateMutex sync.RWMutex
@@ -42,7 +41,6 @@ func NewLegacy() *Legacy {
 		enrichedProcessesLastSentState: make(map[indicator.ProcessListening]timestamp.MicroTS),
 		cachedUpdatesConn:              make([]*storage.NetworkFlow, 0),
 		cachedUpdatesEp:                make([]*storage.NetworkEndpoint, 0),
-		cachedUpdatesProc:              make([]*storage.ProcessListeningOnPortFromSensor, 0),
 	}
 }
 
@@ -68,7 +66,8 @@ func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses 
 	if len(enrichedEndpointsProcesses) == 0 {
 		// Received an empty map with current state.
 		// Return the cache as it may contain past updates collected during the offline mode.
-		return l.cachedUpdatesEp, l.cachedUpdatesProc
+		// Note: We don't cache processes, so return empty slice for those.
+		return l.cachedUpdatesEp, []*storage.ProcessListeningOnPortFromSensor{}
 	}
 	currentEps := make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(l.enrichedEndpointsLastSentState))
 	currentProc := make(map[indicator.ProcessListening]timestamp.MicroTS)
@@ -166,7 +165,6 @@ func (l *Legacy) ResetState() {
 	l.enrichedProcessesLastSentState = nil
 	l.cachedUpdatesConn = nil
 	l.cachedUpdatesEp = nil
-	l.cachedUpdatesProc = nil
 }
 
 func (l *Legacy) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
@@ -196,7 +194,6 @@ func (l *Legacy) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
 	// Size of buffers that hold updates to Central while Sensor is offline
 	lenSize.WithLabelValues("cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(l.cachedUpdatesConn)))
 	lenSize.WithLabelValues("cachedUpdates", string(EndpointEnrichedEntity)).Set(float64(len(l.cachedUpdatesEp)))
-	lenSize.WithLabelValues("cachedUpdates", string(ProcessEnrichedEntity)).Set(float64(len(l.cachedUpdatesProc)))
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
