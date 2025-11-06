@@ -88,6 +88,9 @@ RUN mkdir -p /app/models /app/reports /app/logs \
 # Copy application code from builder (where it was installed as a package)
 COPY --from=builder /app/src/ /app/src/
 
+# Copy analysis scripts
+COPY scripts/ /app/scripts/
+
 # Copy configuration files
 # Use template config with environment variable placeholders
 COPY src/config/feature_config.yaml /app/config/feature_config.yaml

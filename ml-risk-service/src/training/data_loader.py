@@ -432,6 +432,34 @@ class JSONTrainingDataGenerator:
     def __init__(self):
         self.baseline_extractor = BaselineFeatureExtractor()
 
+    def generate_sample_data(self, n_samples: int = 100) -> List[Dict[str, Any]]:
+        """
+        Generate sample training data and return it as a list.
+
+        Args:
+            n_samples: Number of samples to generate
+
+        Returns:
+            List of deployment dictionaries with deployment, images, and alerts data
+        """
+        import random
+
+        deployments = []
+
+        for i in range(n_samples):
+            deployment_data = self._generate_sample_deployment(i)
+            images_data = self._generate_sample_images(random.randint(1, 3))
+            alerts_data = self._generate_sample_alerts(random.randint(0, 5))
+
+            deployments.append({
+                'deployment': deployment_data,
+                'images': images_data,
+                'alerts': alerts_data,
+                'baseline_violations': []
+            })
+
+        return deployments
+
     def generate_sample_training_data(self, output_file: str, num_samples: int = 100) -> None:
         """
         Generate sample training data for testing.

@@ -24,7 +24,7 @@ model:
   # Algorithm-specific parameters (extensible for future implementations)
   # Improved hyperparameters for better precision and generalization
   sklearn_params:
-    n_estimators: 1000  # Increased to 1000 for maximum accuracy (more trees = more robust predictions)
+    n_estimators: 100
     max_depth: 25  # Increased depth to capture complex patterns with larger datasets
     min_samples_split: 10  # Minimum samples required to split node (prevents overfitting)
     min_samples_leaf: 4  # Minimum samples in leaf node (smoother decision boundaries)

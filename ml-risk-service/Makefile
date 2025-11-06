@@ -112,10 +112,10 @@ docker-run: docker-build ## Run Docker container locally
 		-e HEALTH_PORT=8081 \
 		-e REST_PORT=8090 \
 		-e ENABLE_REST=true \
-		-e TRAINING_CENTRAL_API_TOKEN="$${TRAINING_CENTRAL_API_TOKEN:-}" \
-		-e TRAINING_CENTRAL_ENDPOINT="$${TRAINING_CENTRAL_ENDPOINT:-}" \
-		-e PREDICTION_CENTRAL_API_TOKEN="$${PREDICTION_CENTRAL_API_TOKEN:-}" \
-		-e PREDICTION_CENTRAL_ENDPOINT="$${PREDICTION_CENTRAL_ENDPOINT:-}" \
+		-e TRAINING_CENTRAL_API_TOKEN \
+		-e TRAINING_CENTRAL_ENDPOINT \
+		-e PREDICTION_CENTRAL_API_TOKEN \
+		-e PREDICTION_CENTRAL_ENDPOINT \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):$(DOCKER_TAG)
 	@echo -e "$(GREEN)Container started!$(NC)"
@@ -393,6 +393,41 @@ monitoring-up: ## Start monitoring stack
 .PHONY: monitoring-down
 monitoring-down: ## Stop monitoring stack
 	docker-compose stop prometheus grafana
+
+# Model analysis commands
+.PHONY: analyze-n-estimators
+analyze-n-estimators: docker-build ## Analyze RandomForest convergence for different n_estimators values
+	@echo -e "$(GREEN)Running n_estimators convergence analysis in Docker...$(NC)"
+	@mkdir -p $(PWD)/reports
+	docker run --rm \
+		--entrypoint python \
+		-v $(PWD)/reports:/app/reports \
+		-e TRAINING_CENTRAL_API_TOKEN \
+		-e TRAINING_CENTRAL_ENDPOINT \
+		$(DOCKER_IMAGE):$(DOCKER_TAG) \
+		scripts/analyze_n_estimators_convergence.py \
+			--data-source central \
+			--limit 1000 \
+			--output-dir /app/reports
+	@echo -e "$(GREEN)Analysis complete!$(NC)"
+	@echo -e "$(BLUE)  Plot: reports/n_estimators_convergence.png$(NC)"
+	@echo -e "$(BLUE)  Data: reports/n_estimators_results.json$(NC)"
+
+.PHONY: analyze-n-estimators-synthetic
+analyze-n-estimators-synthetic: docker-build ## Run convergence analysis with synthetic data (no Central API needed)
+	@echo -e "$(GREEN)Running n_estimators convergence analysis in Docker (synthetic data)...$(NC)"
+	@mkdir -p $(PWD)/reports
+	docker run --rm \
+		--entrypoint python \
+		-v $(PWD)/reports:/app/reports \
+		$(DOCKER_IMAGE):$(DOCKER_TAG) \
+		scripts/analyze_n_estimators_convergence.py \
+			--data-source synthetic \
+			--limit 1000 \
+			--output-dir /app/reports
+	@echo -e "$(GREEN)Analysis complete!$(NC)"
+	@echo -e "$(BLUE)  Plot: reports/n_estimators_convergence.png$(NC)"
+	@echo -e "$(BLUE)  Data: reports/n_estimators_results.json$(NC)"
 
 # Cleanup commands
 .PHONY: clean
