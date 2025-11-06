@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "storage/risk.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// RiskService provides APIs for managing deployment risk rankings
+service RiskService {
+  // UpvoteDeploymentRisk adjusts a deployment's risk ranking upward
+  // by placing it between the two deployments above it in the current ranking
+  rpc UpvoteDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/{deployment_id}/upvote"
+    };
+  }
+
+  // DownvoteDeploymentRisk adjusts a deployment's risk ranking downward
+  // by placing it between the two deployments below it in the current ranking
+  rpc DownvoteDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/{deployment_id}/downvote"
+    };
+  }
+
+  // ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
+  rpc ResetDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/{deployment_id}/reset"
+      body: "*"
+    };
+  }
+}
+
+message RiskAdjustmentRequest {
+  // Deployment ID to adjust
+  string deployment_id = 1;
+}
+
+message RiskAdjustmentResponse {
+  // Updated risk object with new ranking adjustment
+  storage.Risk risk = 1;
+  // Original score (never changes)
+  float original_score = 2;
+  // New adjusted score (or original if reset)
+  float effective_score = 3;
+  // Human-readable message about the adjustment
+  string message = 4;
+}

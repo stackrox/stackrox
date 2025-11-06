@@ -58,6 +58,21 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetDeploymentsInUserScope mocks base method.
+func (m *MockDataStore) GetDeploymentsInUserScope(ctx context.Context) ([]*storage.Risk, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeploymentsInUserScope", ctx)
+	ret0, _ := ret[0].([]*storage.Risk)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeploymentsInUserScope indicates an expected call of GetDeploymentsInUserScope.
+func (mr *MockDataStoreMockRecorder) GetDeploymentsInUserScope(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentsInUserScope", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentsInUserScope), ctx)
+}
+
 // GetRisk mocks base method.
 func (m *MockDataStore) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
 	m.ctrl.T.Helper()

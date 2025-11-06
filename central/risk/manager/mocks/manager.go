@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
@@ -82,6 +83,21 @@ func (mr *MockManagerMockRecorder) CalculateRiskAndUpsertNode(node any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskAndUpsertNode", reflect.TypeOf((*MockManager)(nil).CalculateRiskAndUpsertNode), node)
 }
 
+// DownvoteDeploymentRisk mocks base method.
+func (m *MockManager) DownvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownvoteDeploymentRisk", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.Risk)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DownvoteDeploymentRisk indicates an expected call of DownvoteDeploymentRisk.
+func (mr *MockManagerMockRecorder) DownvoteDeploymentRisk(ctx, deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownvoteDeploymentRisk", reflect.TypeOf((*MockManager)(nil).DownvoteDeploymentRisk), ctx, deploymentID)
+}
+
 // ReprocessDeploymentRisk mocks base method.
 func (m *MockManager) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	m.ctrl.T.Helper()
@@ -92,4 +108,34 @@ func (m *MockManager) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 func (mr *MockManagerMockRecorder) ReprocessDeploymentRisk(deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessDeploymentRisk", reflect.TypeOf((*MockManager)(nil).ReprocessDeploymentRisk), deployment)
+}
+
+// ResetDeploymentRisk mocks base method.
+func (m *MockManager) ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetDeploymentRisk", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.Risk)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResetDeploymentRisk indicates an expected call of ResetDeploymentRisk.
+func (mr *MockManagerMockRecorder) ResetDeploymentRisk(ctx, deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetDeploymentRisk", reflect.TypeOf((*MockManager)(nil).ResetDeploymentRisk), ctx, deploymentID)
+}
+
+// UpvoteDeploymentRisk mocks base method.
+func (m *MockManager) UpvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpvoteDeploymentRisk", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.Risk)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpvoteDeploymentRisk indicates an expected call of UpvoteDeploymentRisk.
+func (mr *MockManagerMockRecorder) UpvoteDeploymentRisk(ctx, deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpvoteDeploymentRisk", reflect.TypeOf((*MockManager)(nil).UpvoteDeploymentRisk), ctx, deploymentID)
 }
