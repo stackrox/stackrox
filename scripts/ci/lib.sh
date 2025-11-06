@@ -94,7 +94,7 @@ handle_dangling_processes() {
             echo "Ignoring self: $pid $psline"
             continue
         fi
-        if [[ "$psline" =~ "^$this_pid[[:space:]]" ]]; then
+        if [[ "$psline" =~ ^$this_pid[[:space:]] ]]; then
             echo "Ignoring child: $pid $psline"
             continue
         fi
