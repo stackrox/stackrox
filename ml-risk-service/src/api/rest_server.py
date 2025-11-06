@@ -162,7 +162,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> FastAPI:
                 "openapi_spec": "/openapi.json"
             },
             "endpoints": {
-                "risk_prediction": "/api/v1/risk",
+                "risk_prediction": "/api/v1/prediction",
                 "model_management": "/api/v1/models",
                 "training": "/api/v1/training",
                 "health": "/api/v1/health"

@@ -16,7 +16,7 @@ import numpy as np
 
 from src.models.ranking_model import RiskRankingModel
 from src.storage.model_storage import ModelStorageManager, StorageConfig, ModelMetadata
-from src.services.risk_service import RiskPredictionService
+from src.services.prediction_service import RiskPredictionService
 from src.api.schemas import ReloadModelRequest
 
 
@@ -94,7 +94,7 @@ def test_model_available_immediately_after_training():
 
         # Create a NEW RiskPredictionService (simulating a fresh API call)
         # with the same storage configuration
-        with patch('src.services.risk_service.ModelStorageManager') as mock_storage_class:
+        with patch('src.services.prediction_service.ModelStorageManager') as mock_storage_class:
             mock_storage_class.return_value = storage_manager
 
             service = RiskPredictionService()
@@ -175,7 +175,7 @@ def test_model_persistence_across_service_instances():
         assert models[0].version == model.model_version
 
         # Should be able to load it
-        with patch('src.services.risk_service.ModelStorageManager') as mock_storage_class:
+        with patch('src.services.prediction_service.ModelStorageManager') as mock_storage_class:
             mock_storage_class.return_value = storage_manager_2
 
             service = RiskPredictionService()

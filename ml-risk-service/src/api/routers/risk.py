@@ -14,11 +14,11 @@ from src.api.schemas import (
     BatchDeploymentRiskResponse,
     ErrorResponse
 )
-from src.api.dependencies import get_risk_service
+from src.api.dependencies import get_prediction_service
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/risk", tags=["risk"])
+router = APIRouter(prefix="/prediction", tags=["prediction"])
 
 
 @router.post(
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/risk", tags=["risk"])
 )
 async def predict_deployment_risk(
     request: DeploymentRiskRequest,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> DeploymentRiskResponse:
     """
     Predict risk score for a single deployment.
@@ -48,13 +48,13 @@ async def predict_deployment_risk(
     Returns risk score (higher = more risk) and feature importance rankings.
     """
     try:
-        if not risk_service.is_model_loaded():
+        if not prediction_service.is_model_loaded():
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="No trained model available"
             )
 
-        response = risk_service.predict_deployment_risk(request)
+        response = prediction_service.predict_deployment_risk(request)
         return response
 
     except ValueError as e:
@@ -83,7 +83,7 @@ async def predict_deployment_risk(
 )
 async def predict_batch_deployment_risk(
     request: BatchDeploymentRiskRequest,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> BatchDeploymentRiskResponse:
     """
     Predict risk scores for multiple deployments in batch.
@@ -97,7 +97,7 @@ async def predict_batch_deployment_risk(
     Returns list of risk predictions with same ordering as input.
     """
     try:
-        if not risk_service.is_model_loaded():
+        if not prediction_service.is_model_loaded():
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="No trained model available"
@@ -115,7 +115,7 @@ async def predict_batch_deployment_risk(
                 detail="Batch size too large (max 100 deployments)"
             )
 
-        response = risk_service.predict_batch_deployment_risk(request)
+        response = prediction_service.predict_batch_deployment_risk(request)
         return response
 
     except HTTPException:
@@ -140,7 +140,7 @@ async def predict_batch_deployment_risk(
 )
 async def get_prediction_explanation(
     deployment_id: str,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> Dict[str, Any]:
     """
     Get detailed explanation for a risk prediction.

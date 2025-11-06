@@ -4,7 +4,7 @@ Unit tests for model reload functionality.
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from src.services.risk_service import RiskPredictionService
+from src.services.prediction_service import RiskPredictionService
 from src.api.schemas import ReloadModelRequest
 
 
@@ -15,7 +15,7 @@ def test_reload_tracks_actual_version_not_latest():
     mock_storage_manager = Mock()
 
     # Create service with mocked storage
-    with patch('src.services.risk_service.ModelStorageManager', return_value=mock_storage_manager):
+    with patch('src.services.prediction_service.ModelStorageManager', return_value=mock_storage_manager):
         service = RiskPredictionService()
 
         # Mock the model's load_model_from_storage to return success
@@ -51,7 +51,7 @@ def test_reload_with_force_loads_new_version():
     mock_storage_manager = Mock()
 
     # Create service with mocked storage
-    with patch('src.services.risk_service.ModelStorageManager', return_value=mock_storage_manager):
+    with patch('src.services.prediction_service.ModelStorageManager', return_value=mock_storage_manager):
         service = RiskPredictionService()
 
         # Simulate first load with version 1
@@ -98,7 +98,7 @@ def test_reload_with_explicit_version():
     mock_storage_manager = Mock()
 
     # Create service with mocked storage
-    with patch('src.services.risk_service.ModelStorageManager', return_value=mock_storage_manager):
+    with patch('src.services.prediction_service.ModelStorageManager', return_value=mock_storage_manager):
         service = RiskPredictionService()
 
         # Load a specific version
@@ -138,7 +138,7 @@ def test_reload_without_version_loads_newer_version():
     mock_storage_manager = Mock()
 
     # Create service with mocked storage
-    with patch('src.services.risk_service.ModelStorageManager', return_value=mock_storage_manager):
+    with patch('src.services.prediction_service.ModelStorageManager', return_value=mock_storage_manager):
         service = RiskPredictionService()
 
         # Initial state: version 1 is loaded

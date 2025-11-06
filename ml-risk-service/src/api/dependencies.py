@@ -11,15 +11,15 @@ manual reloads or restarts.
 """
 
 from typing import Optional
-from src.services.risk_service import RiskPredictionService
-from src.services.training_service import TrainingService
+from src.services.prediction_service import RiskPredictionService
+from src.services.training_service import RiskTrainingService
 
 # Global shared instances - initialized on first use
-_risk_service: Optional[RiskPredictionService] = None
-_training_service: Optional[TrainingService] = None
+_prediction_service: Optional[RiskPredictionService] = None
+_training_service: Optional[RiskTrainingService] = None
 
 
-def get_risk_service() -> RiskPredictionService:
+def get_prediction_service() -> RiskPredictionService:
     """
     Get the shared risk prediction service instance.
 
@@ -30,20 +30,20 @@ def get_risk_service() -> RiskPredictionService:
     Returns:
         Shared RiskPredictionService instance
     """
-    global _risk_service
-    if _risk_service is None:
-        _risk_service = RiskPredictionService()
-    return _risk_service
+    global _prediction_service
+    if _prediction_service is None:
+        _prediction_service = RiskPredictionService()
+    return _prediction_service
 
 
-def get_training_service() -> TrainingService:
+def get_training_service() -> RiskTrainingService:
     """
     Get the shared training service instance.
 
     Returns:
-        Shared TrainingService instance
+        Shared RiskTrainingService instance
     """
     global _training_service
     if _training_service is None:
-        _training_service = TrainingService()
+        _training_service = RiskTrainingService()
     return _training_service

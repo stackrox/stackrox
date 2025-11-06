@@ -22,8 +22,8 @@ from unittest.mock import patch
 
 from src.models.ranking_model import RiskRankingModel
 from src.storage.model_storage import ModelStorageManager, StorageConfig, ModelMetadata
-from src.services.risk_service import RiskPredictionService
-# Don't import TrainingService to avoid matplotlib dependency in tests
+from src.services.prediction_service import RiskPredictionService
+# Don't import RiskTrainingService to avoid matplotlib dependency in tests
 
 
 def test_makefile_workflow_exact_simulation():
@@ -57,7 +57,7 @@ def test_makefile_workflow_exact_simulation():
 
         # Step 3: Simulate first API call (e.g., /health/ready or /models)
         # This creates models.py's global _risk_service
-        with patch('src.services.risk_service.ModelStorageManager') as mock_storage_class1:
+        with patch('src.services.prediction_service.ModelStorageManager') as mock_storage_class1:
             # Create storage manager for models.py service
             models_api_storage = ModelStorageManager(storage_config)
             mock_storage_class1.return_value = models_api_storage
@@ -171,7 +171,7 @@ def test_same_storage_manager_instance():
         shared_storage = ModelStorageManager(storage_config)
 
         # Create models.py service
-        with patch('src.services.risk_service.ModelStorageManager') as mock1:
+        with patch('src.services.prediction_service.ModelStorageManager') as mock1:
             mock1.return_value = shared_storage
             models_service = RiskPredictionService()
 

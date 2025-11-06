@@ -13,7 +13,7 @@ from src.api.schemas import (
     ModelHealthResponse,
     ErrorResponse
 )
-from src.api.dependencies import get_risk_service
+from src.api.dependencies import get_prediction_service
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/models", tags=["models"])
 )
 async def list_models(
     model_id: Optional[str] = Query(None, description="Filter by specific model ID"),
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> ListModelsResponse:
     """
     List available models in storage.
@@ -39,7 +39,7 @@ async def list_models(
     training timestamp, and performance metrics.
     """
     try:
-        response = risk_service.list_models(model_id)
+        response = prediction_service.list_models(model_id)
         return response
 
     except Exception as e:
@@ -61,7 +61,7 @@ async def list_models(
 )
 async def get_model_info(
     model_id: str,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> Dict[str, Any]:
     """
     Get detailed information about a specific model.
@@ -72,7 +72,7 @@ async def get_model_info(
     and training information.
     """
     try:
-        response = risk_service.list_models(model_id)
+        response = prediction_service.list_models(model_id)
 
         if not response.models:
             raise HTTPException(
@@ -118,7 +118,7 @@ async def reload_model(
     model_id: str,
     version: Optional[str] = Query("", description="Model version (empty for latest)"),
     force_reload: bool = Query(False, description="Force reload even if already loaded"),
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> ReloadModelResponse:
     """
     Hot reload a model from storage.
@@ -142,7 +142,7 @@ async def reload_model(
             force_reload=force_reload
         )
 
-        response = risk_service.reload_model(request)
+        response = prediction_service.reload_model(request)
         return response
 
     except Exception as e:
@@ -164,7 +164,7 @@ async def reload_model(
 )
 async def get_model_health(
     model_id: str,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> ModelHealthResponse:
     """
     Get health status and metrics for a model.
@@ -175,7 +175,7 @@ async def get_model_health(
     """
     try:
         # Check if this is the currently loaded model
-        current_info = risk_service.get_current_model_info()
+        current_info = prediction_service.get_current_model_info()
 
         if current_info.get('model_id') != model_id:
             # Model is not currently loaded
@@ -193,7 +193,7 @@ async def get_model_health(
             )
 
         # Get health for currently loaded model
-        health_response = risk_service.get_model_health()
+        health_response = prediction_service.get_model_health()
         return health_response
 
     except Exception as e:
@@ -211,7 +211,7 @@ async def get_model_health(
     description="Get information about the currently loaded model"
 )
 async def get_current_model_info(
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> Dict[str, Any]:
     """
     Get information about the currently loaded model.
@@ -219,13 +219,13 @@ async def get_current_model_info(
     Returns details about which model is currently active and serving predictions.
     """
     try:
-        current_info = risk_service.get_current_model_info()
-        model_info = risk_service.get_model_info()
+        current_info = prediction_service.get_current_model_info()
+        model_info = prediction_service.get_model_info()
 
         return {
             **current_info,
             "model_details": model_info,
-            "is_healthy": risk_service.is_model_loaded()
+            "is_healthy": prediction_service.is_model_loaded()
         }
 
     except Exception as e:

@@ -19,7 +19,7 @@ from src.api.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class TrainingService:
+class RiskTrainingService:
     """Service for handling model training operations."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):

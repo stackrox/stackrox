@@ -16,7 +16,7 @@ from src.api.schemas import (
     DetailedHealthResponse,
     ErrorResponse
 )
-from src.services.risk_service import RiskPredictionService
+from src.api.dependencies import get_prediction_service
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +24,6 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 # Service start time for uptime calculation
 _service_start_time = time.time()
-
-# Global service instance (in production, use dependency injection)
-_risk_service = None
-
-
-def get_risk_service() -> RiskPredictionService:
-    """Get risk prediction service instance."""
-    global _risk_service
-    if _risk_service is None:
-        _risk_service = RiskPredictionService()
-    return _risk_service
 
 
 @router.get(
@@ -78,7 +67,7 @@ async def health_check() -> HealthStatus:
     description="Check if service is ready to accept requests"
 )
 async def readiness_check(
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> ReadinessStatus:
     """
     Readiness check endpoint.
@@ -88,7 +77,7 @@ async def readiness_check(
     """
     try:
         checks = {
-            "model_loaded": risk_service.is_model_loaded(),
+            "model_loaded": prediction_service.is_model_loaded(),
             "service_initialized": True,
             "dependencies_available": True  # Could check external dependencies
         }
@@ -130,7 +119,7 @@ async def readiness_check(
     description="Get Prometheus-format metrics for monitoring"
 )
 async def get_metrics(
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> PlainTextResponse:
     """
     Get Prometheus-format metrics.
@@ -152,15 +141,15 @@ ml_risk_service_uptime_seconds {uptime}
 
 # HELP ml_risk_predictions_total Total number of predictions served
 # TYPE ml_risk_predictions_total counter
-ml_risk_predictions_total {risk_service.predictions_served}
+ml_risk_predictions_total {prediction_service.predictions_served}
 
 # HELP ml_risk_model_loaded Whether a model is currently loaded
 # TYPE ml_risk_model_loaded gauge
-ml_risk_model_loaded {1 if risk_service.is_model_loaded() else 0}
+ml_risk_model_loaded {1 if prediction_service.is_model_loaded() else 0}
 
 # HELP ml_risk_prediction_time_total Total time spent on predictions
 # TYPE ml_risk_prediction_time_total counter
-ml_risk_prediction_time_total {risk_service.total_prediction_time / 1000.0}
+ml_risk_prediction_time_total {prediction_service.total_prediction_time / 1000.0}
 """
 
         return PlainTextResponse(content=metrics_text, media_type="text/plain")
@@ -180,7 +169,7 @@ ml_risk_prediction_time_total {risk_service.total_prediction_time / 1000.0}
     description="Get detailed service status including system information"
 )
 async def get_detailed_status(
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> Dict[str, Any]:
     """
     Get detailed service status.
@@ -202,19 +191,19 @@ async def get_detailed_status(
         # Service metrics
         uptime = time.time() - _service_start_time
         avg_prediction_time = (
-            risk_service.total_prediction_time / max(risk_service.predictions_served, 1)
-            if risk_service.predictions_served > 0 else 0.0
+            prediction_service.total_prediction_time / max(prediction_service.predictions_served, 1)
+            if prediction_service.predictions_served > 0 else 0.0
         )
 
         service_metrics = {
             "uptime_seconds": uptime,
-            "predictions_served": risk_service.predictions_served,
+            "predictions_served": prediction_service.predictions_served,
             "avg_prediction_time_ms": avg_prediction_time,
-            "model_loaded": risk_service.is_model_loaded()
+            "model_loaded": prediction_service.is_model_loaded()
         }
 
         # Model information
-        model_info = risk_service.get_model_info() if risk_service.is_model_loaded() else {}
+        model_info = prediction_service.get_model_info() if prediction_service.is_model_loaded() else {}
 
         return {
             "status": "healthy",
@@ -234,8 +223,8 @@ async def get_detailed_status(
             "timestamp": int(time.time()),
             "version": "1.0.0",
             "uptime_seconds": uptime,
-            "model_loaded": risk_service.is_model_loaded(),
-            "predictions_served": risk_service.predictions_served
+            "model_loaded": prediction_service.is_model_loaded(),
+            "predictions_served": prediction_service.predictions_served
         }
 
     except Exception as e:
@@ -257,7 +246,7 @@ async def get_detailed_status(
 )
 async def get_detailed_health(
     request: DetailedHealthRequest,
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> DetailedHealthResponse:
     """
     Get detailed health analysis.

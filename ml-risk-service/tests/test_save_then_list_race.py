@@ -18,7 +18,7 @@ import io
 
 from src.models.ranking_model import RiskRankingModel
 from src.storage.model_storage import ModelStorageManager, StorageConfig, ModelMetadata
-from src.services.risk_service import RiskPredictionService
+from src.services.prediction_service import RiskPredictionService
 from unittest.mock import patch
 
 
@@ -158,7 +158,7 @@ def test_save_and_list_with_service_instances():
 
         # Now create a RiskPredictionService and list models
         # This simulates what the /api/v1/models endpoint does
-        with patch('src.services.risk_service.ModelStorageManager') as mock_storage_class:
+        with patch('src.services.prediction_service.ModelStorageManager') as mock_storage_class:
             mock_storage_class.return_value = storage_manager
 
             service = RiskPredictionService()

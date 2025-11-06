@@ -10,7 +10,7 @@ from src.api.schemas import (
     TrainModelResponse,
     ErrorResponse
 )
-from src.api.dependencies import get_training_service, get_risk_service
+from src.api.dependencies import get_training_service, get_prediction_service
 from src.training.data_loader import TrainingDataLoader
 
 logger = logging.getLogger(__name__)
@@ -337,8 +337,8 @@ async def train_full_from_central(
     namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
     config_override: Optional[str] = Query("", description="JSON configuration overrides"),
     test_mode: bool = Query(False, description="Use optimized settings for quick testing (limit=50)"),
-    training_service: TrainingService = Depends(get_training_service),
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    training_service: RiskTrainingService = Depends(get_training_service),
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> TrainModelResponse:
     """
     Train a complete ML model using all available data from Central API.
@@ -420,7 +420,7 @@ async def train_full_from_central(
             filters=filters,
             limit=limit,
             config_override=config_override if config_override else None,
-            risk_service=risk_service
+            risk_service=prediction_service
         )
 
         if response.success:
@@ -465,7 +465,7 @@ async def validate_predictions_from_central(
     severity_threshold: str = Query("MEDIUM_SEVERITY", description="Minimum severity threshold"),
     clusters: Optional[str] = Query(None, description="Comma-separated cluster IDs to filter"),
     namespaces: Optional[str] = Query(None, description="Comma-separated namespaces to filter"),
-    risk_service: RiskPredictionService = Depends(get_risk_service)
+    prediction_service: RiskPredictionService = Depends(get_prediction_service)
 ) -> Dict[str, Any]:
     """
     Validate model predictions against actual risk scores from prediction Central.
@@ -524,7 +524,7 @@ async def validate_predictions_from_central(
             )
 
         # Get the current model
-        model = risk_service.model
+        model = prediction_service.model
         if model is None or model.model is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
