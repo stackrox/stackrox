@@ -46,7 +46,9 @@ class SampleStream:
             'total_records': 0,
             'successful_samples': 0,
             'failed_samples': 0,
-            'risk_scores': []
+            'risk_scores': [],
+            'user_adjusted_count': 0,
+            'ml_score_count': 0
         }
 
     def stream(self,
@@ -85,6 +87,12 @@ class SampleStream:
                 if processed_sample:
                     self._stats['successful_samples'] += 1
                     self._stats['risk_scores'].append(processed_sample.get('risk_score', 0.0))
+
+                    # Track whether score came from user adjustment
+                    if processed_sample.get('has_user_adjustment', False):
+                        self._stats['user_adjusted_count'] += 1
+                    else:
+                        self._stats['ml_score_count'] += 1
 
                     yield processed_sample
                     samples_yielded += 1
@@ -169,12 +177,19 @@ class SampleStream:
             # Get baseline violations if available
             baseline_violations = raw_record.get('baseline_violations', [])
 
-            # Extract Central's risk score if available
-            central_risk_score = deployment_data.get('riskScore')
-            existing_risk_score = raw_record.get('current_risk_score')
+            # Extract effective risk score (user-adjusted with fallback to ML score)
+            # This uses the new Risk field from Central's ExportDeploymentResponse
+            effective_score = self._get_effective_risk_score(raw_record)
 
-            # Prefer explicit current_risk_score, fall back to Central's riskScore
-            risk_score_to_use = existing_risk_score if existing_risk_score is not None else central_risk_score
+            # Fall back to explicit current_risk_score (for backward compatibility)
+            if effective_score is None:
+                effective_score = raw_record.get('current_risk_score')
+
+            # Last resort: deployment's denormalized riskScore field
+            if effective_score is None:
+                effective_score = deployment_data.get('riskScore')
+
+            risk_score_to_use = effective_score
 
             if risk_score_to_use is None:
                 logger.debug(f"No risk score found for deployment {deployment_id}, will compute from baseline")
@@ -188,12 +203,28 @@ class SampleStream:
                 risk_score=risk_score_to_use  # Use provided risk score or None to compute
             )
 
+            # Check if risk score came from user adjustment
+            has_user_adjustment = False
+            if 'result' in raw_record and isinstance(raw_record.get('result'), dict):
+                risk = raw_record['result'].get('risk')
+            else:
+                risk = raw_record.get('risk')
+
+            if risk and isinstance(risk, dict):
+                user_adj = risk.get('user_ranking_adjustment') or risk.get('userRankingAdjustment')
+                if user_adj and isinstance(user_adj, dict):
+                    last_adjusted = user_adj.get('last_adjusted') or user_adj.get('lastAdjusted')
+                    if last_adjusted and isinstance(last_adjusted, dict):
+                        if last_adjusted.get('seconds', 0) > 0:
+                            has_user_adjustment = True
+
             # Add standardized metadata
             training_sample.update({
                 'deployment_id': deployment_id,
                 'deployment_name': deployment_name,
                 'namespace': namespace,
-                'cluster_id': cluster_id
+                'cluster_id': cluster_id,
+                'has_user_adjustment': has_user_adjustment
             })
 
             # Add workload-specific metadata
@@ -225,6 +256,53 @@ class SampleStream:
             logger.debug(f"Record structure: keys={list(raw_record.keys())}")
             return None
 
+    def _get_effective_risk_score(self, raw_record: Dict[str, Any]) -> Optional[float]:
+        """
+        Extract effective risk score from Central export.
+
+        Uses user-adjusted score if available, otherwise original ML score.
+        Matches GetEffectiveScore() in central/risk/manager/score_calculator.go
+
+        Args:
+            raw_record: Raw record from Central (ExportDeploymentResponse format)
+
+        Returns:
+            Effective risk score or None if no risk data
+        """
+        # Extract Risk object from Central's export
+        if 'result' in raw_record and isinstance(raw_record.get('result'), dict):
+            risk = raw_record['result'].get('risk')
+        else:
+            risk = raw_record.get('risk')
+
+        if not risk or not isinstance(risk, dict):
+            return None
+
+        # Check for user ranking adjustment (handle both snake_case and camelCase)
+        user_adjustment = risk.get('user_ranking_adjustment') or risk.get('userRankingAdjustment')
+
+        if user_adjustment and isinstance(user_adjustment, dict):
+            # Check if adjustment has timestamp (indicates it's valid)
+            last_adjusted = user_adjustment.get('last_adjusted') or user_adjustment.get('lastAdjusted')
+
+            if last_adjusted and isinstance(last_adjusted, dict):
+                # Timestamp has 'seconds' field (protobuf format)
+                seconds = last_adjusted.get('seconds', 0)
+                if seconds > 0:
+                    # User has adjusted - use adjusted score
+                    adjusted_score = user_adjustment.get('adjusted_score') or user_adjustment.get('adjustedScore')
+                    if adjusted_score is not None:
+                        logger.debug(f"Using user-adjusted score: {adjusted_score}")
+                        return float(adjusted_score)
+
+        # No valid adjustment - use original ML score
+        original_score = risk.get('score')
+        if original_score is not None:
+            logger.debug(f"Using original ML score: {original_score}")
+            return float(original_score)
+
+        return None
+
     def _log_final_summary(self, samples_yielded: int):
         """Log final statistics summary."""
         try:
@@ -232,23 +310,29 @@ class SampleStream:
             successful = self._stats['successful_samples']
             failed = self._stats['failed_samples']
             risk_scores = self._stats['risk_scores']
+            user_adjusted = self._stats['user_adjusted_count']
+            ml_score = self._stats['ml_score_count']
 
             if risk_scores:
                 import numpy as np
                 avg_risk = float(np.mean(risk_scores))
                 logger.info(f"Sample streaming complete: total_records={total_records} "
                           f"successful={successful} failed={failed} "
+                          f"user_adjusted={user_adjusted} ml_scores={ml_score} "
                           f"avg_risk={avg_risk:.3f}")
             else:
                 logger.info(f"Sample streaming complete: total_records={total_records} "
-                          f"successful={successful} failed={failed}")
+                          f"successful={successful} failed={failed} "
+                          f"user_adjusted={user_adjusted} ml_scores={ml_score}")
 
             # Reset statistics for next stream
             self._stats = {
                 'total_records': 0,
                 'successful_samples': 0,
                 'failed_samples': 0,
-                'risk_scores': []
+                'risk_scores': [],
+                'user_adjusted_count': 0,
+                'ml_score_count': 0
             }
 
         except Exception as e:

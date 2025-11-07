@@ -111,8 +111,13 @@ class TrainingDataLoader:
             cluster_groups[cluster_id].append(i)
 
         # Build feature matrix
+        user_adjusted_count = 0
         for sample in training_samples:
             features = sample['features']
+
+            # Track user adjustments
+            if sample.get('has_user_adjustment', False):
+                user_adjusted_count += 1
 
             if feature_names is None:
                 feature_names = sorted(features.keys())
@@ -133,6 +138,8 @@ class TrainingDataLoader:
 
         logger.info(f"Created ranking dataset: {X.shape[0]} samples, {X.shape[1]} features, {len(groups)} groups")
         logger.info(f"Risk score range: {y_float.min():.6f} - {y_float.max():.6f}, unique values: {len(np.unique(y_float))}")
+        logger.info(f"Training data sources: {user_adjusted_count} user-adjusted ({100.0*user_adjusted_count/X.shape[0]:.1f}%), "
+                   f"{X.shape[0] - user_adjusted_count} ML scores ({100.0*(X.shape[0] - user_adjusted_count)/X.shape[0]:.1f}%)")
 
         # Return float scores - ranking transformation will be done in the model after data splitting
         return X, y_float, groups
