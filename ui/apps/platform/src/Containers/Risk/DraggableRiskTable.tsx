@@ -120,11 +120,12 @@ function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId }:
             isRowSelected={isSelected}
         >
             <Td
-                ref={drag}
-                style={{ cursor: 'grab', width: '40px', paddingRight: '0' }}
+                style={{ width: '40px', paddingRight: '0' }}
                 dataLabel="Drag handle"
             >
-                <GripVerticalIcon />
+                <div ref={drag} style={{ cursor: 'grab', display: 'flex', alignItems: 'center' }}>
+                    <GripVerticalIcon />
+                </div>
             </Td>
             <Td dataLabel="Name">
                 <div className="flex items-center">
