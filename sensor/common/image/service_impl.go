@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -170,6 +171,9 @@ func (s *serviceImpl) Start() error {
 func (s *serviceImpl) Stop() {}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
+	if features.FlattenImageData.Enabled() {
+		return []centralsensor.SensorCapability{centralsensor.FlattenImageDataOnSensor}
+	}
 	return nil
 }
 
