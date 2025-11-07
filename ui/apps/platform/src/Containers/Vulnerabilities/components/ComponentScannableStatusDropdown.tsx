@@ -1,9 +1,8 @@
-import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import { searchValueAsArray } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 type ComponentScannableStatusDropdownProps = {
     searchFilter: SearchFilter;

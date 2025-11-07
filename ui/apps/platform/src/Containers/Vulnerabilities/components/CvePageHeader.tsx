@@ -1,11 +1,10 @@
-import React from 'react';
 import type { ReactNode } from 'react';
-import { Flex, LabelGroup, Label, Text, Title, List, ListItem } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup, List, ListItem, Text, Title } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { CveBaseInfo } from 'types/cve.proto';
+import type { CveBaseInfo } from 'types/cve.proto';
 import { getDateTime } from 'utils/dateUtils';
 
 import {
