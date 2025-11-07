@@ -3,15 +3,12 @@ package resolvers
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -296,45 +293,6 @@ func paginate[T any](pv *v1.QueryPagination, slice []T, err error) ([]T, error) 
 	return slice[offset:end], nil
 }
 
-func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
-	}
-
-	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if ok {
-			var searchField search.FieldLabel
-			if features.FlattenImageData.Enabled() {
-				searchField = search.ImageID
-			} else {
-				searchField = search.ImageSHA
-			}
-			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
-				return true
-			}
-		}
-		return false
-	})
-
-	if !filtered || query == search.EmptyQuery() {
-		return "", nil
-	}
-
-	res, err := resolver.ImageDataStore.Search(ctx, query)
-	if err != nil {
-		return "", err
-	}
-	if len(res) != 1 {
-		return "", errors.Errorf(
-			"received %d images in query response when 1 image was expected. Please check the query",
-			len(res))
-	}
-
-	return res[0].ID, nil
-}
-
 // V1RawQueryAsResolverQuery parse v1.RawQuery into inputtypes.RawQuery and inputtypes.Pagination queries used by graphQL resolvers.
 func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 	if rQ.GetPagination() == nil {
@@ -385,30 +343,4 @@ func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface
 		go resolver.AuditLogger.SendAuditMessage(ctx, req, method, interceptor.AuthStatus{}, err)
 	}
 	return resp, err
-}
-
-func getImageIDFromQuery(q *v1.Query) string {
-	if q == nil {
-		return ""
-	}
-	var imageID string
-	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if !ok {
-			return
-		}
-
-		var searchField search.FieldLabel
-		if features.FlattenImageData.Enabled() {
-			searchField = search.ImageID
-		} else {
-			searchField = search.ImageSHA
-		}
-		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
-			imageID = matchFieldQuery.MatchFieldQuery.GetValue()
-			imageID = strings.TrimRight(imageID, `"`)
-			imageID = strings.TrimLeft(imageID, `"`)
-		}
-	})
-	return imageID
 }

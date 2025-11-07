@@ -115,7 +115,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, bts.resolver.ImageCVEDataStore, bts.resolver.ImageCVEV2DataStore, schema)
+		bts.namespaceDatastore, nil, bts.resolver.ImageCVEV2DataStore, schema)
 }
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
