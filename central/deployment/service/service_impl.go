@@ -74,7 +74,18 @@ func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.
 		defer cancel()
 	}
 	return s.datastore.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
-		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d}); err != nil {
+		// Fetch risk for this deployment to include both ML score and user adjustments
+		risk, exists, err := s.risks.GetRisk(ctx, d.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+		if err != nil {
+			return err
+		}
+
+		resp := &v1.ExportDeploymentResponse{Deployment: d}
+		if exists {
+			resp.Risk = risk // Includes score (ML) and user_ranking_adjustment (effective score)
+		}
+
+		if err := srv.Send(resp); err != nil {
 			return err
 		}
 		return nil

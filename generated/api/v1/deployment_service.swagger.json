@@ -1266,6 +1266,10 @@
       "properties": {
         "deployment": {
           "$ref": "#/definitions/storageDeployment"
+        },
+        "risk": {
+          "$ref": "#/definitions/storageRisk",
+          "title": "Risk includes both ML score and user_ranking_adjustment (effective score)"
         }
       }
     },

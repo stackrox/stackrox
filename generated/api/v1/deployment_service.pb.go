@@ -314,6 +314,7 @@ func (x *ExportDeploymentRequest) GetQuery() string {
 type ExportDeploymentResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	Risk          *storage.Risk          `protobuf:"bytes,2,opt,name=risk,proto3" json:"risk,omitempty"` // Risk includes both ML score and user_ranking_adjustment (effective score)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -351,6 +352,13 @@ func (*ExportDeploymentResponse) Descriptor() ([]byte, []int) {
 func (x *ExportDeploymentResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
 		return x.Deployment
+	}
+	return nil
+}
+
+func (x *ExportDeploymentResponse) GetRisk() *storage.Risk {
+	if x != nil {
+		return x.Risk
 	}
 	return nil
 }
@@ -482,11 +490,12 @@ const file_api_v1_deployment_service_proto_rawDesc = "" +
 	"\x04risk\x18\x02 \x01(\v2\r.storage.RiskR\x04risk\"I\n" +
 	"\x17ExportDeploymentRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"O\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"r\n" +
 	"\x18ExportDeploymentResponse\x123\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
-	"deployment2\xe8\x05\n" +
+	"deployment\x12!\n" +
+	"\x04risk\x18\x02 \x01(\v2\r.storage.RiskR\x04risk2\xe8\x05\n" +
 	"\x11DeploymentService\x12T\n" +
 	"\rGetDeployment\x12\x10.v1.ResourceByID\x1a\x13.storage.Deployment\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/deployments/{id}\x12r\n" +
 	"\x15GetDeploymentWithRisk\x12\x10.v1.ResourceByID\x1a!.v1.GetDeploymentWithRiskResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/v1/deploymentswithrisk/{id}\x12\\\n" +
@@ -536,28 +545,29 @@ var file_api_v1_deployment_service_proto_depIdxs = []int32{
 	11, // 3: v1.GetDeploymentWithRiskResponse.deployment:type_name -> storage.Deployment
 	12, // 4: v1.GetDeploymentWithRiskResponse.risk:type_name -> storage.Risk
 	11, // 5: v1.ExportDeploymentResponse.deployment:type_name -> storage.Deployment
-	7,  // 6: v1.DeploymentLabelsResponse.LabelsEntry.value:type_name -> v1.DeploymentLabelsResponse.LabelValues
-	10, // 7: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.deployment:type_name -> storage.ListDeployment
-	13, // 8: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.baseline_statuses:type_name -> storage.ContainerNameAndBaselineStatus
-	14, // 9: v1.DeploymentService.GetDeployment:input_type -> v1.ResourceByID
-	14, // 10: v1.DeploymentService.GetDeploymentWithRisk:input_type -> v1.ResourceByID
-	15, // 11: v1.DeploymentService.CountDeployments:input_type -> v1.RawQuery
-	15, // 12: v1.DeploymentService.ListDeployments:input_type -> v1.RawQuery
-	15, // 13: v1.DeploymentService.ListDeploymentsWithProcessInfo:input_type -> v1.RawQuery
-	16, // 14: v1.DeploymentService.GetLabels:input_type -> v1.Empty
-	5,  // 15: v1.DeploymentService.ExportDeployments:input_type -> v1.ExportDeploymentRequest
-	11, // 16: v1.DeploymentService.GetDeployment:output_type -> storage.Deployment
-	4,  // 17: v1.DeploymentService.GetDeploymentWithRisk:output_type -> v1.GetDeploymentWithRiskResponse
-	2,  // 18: v1.DeploymentService.CountDeployments:output_type -> v1.CountDeploymentsResponse
-	1,  // 19: v1.DeploymentService.ListDeployments:output_type -> v1.ListDeploymentsResponse
-	3,  // 20: v1.DeploymentService.ListDeploymentsWithProcessInfo:output_type -> v1.ListDeploymentsWithProcessInfoResponse
-	0,  // 21: v1.DeploymentService.GetLabels:output_type -> v1.DeploymentLabelsResponse
-	6,  // 22: v1.DeploymentService.ExportDeployments:output_type -> v1.ExportDeploymentResponse
-	16, // [16:23] is the sub-list for method output_type
-	9,  // [9:16] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	12, // 6: v1.ExportDeploymentResponse.risk:type_name -> storage.Risk
+	7,  // 7: v1.DeploymentLabelsResponse.LabelsEntry.value:type_name -> v1.DeploymentLabelsResponse.LabelValues
+	10, // 8: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.deployment:type_name -> storage.ListDeployment
+	13, // 9: v1.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo.baseline_statuses:type_name -> storage.ContainerNameAndBaselineStatus
+	14, // 10: v1.DeploymentService.GetDeployment:input_type -> v1.ResourceByID
+	14, // 11: v1.DeploymentService.GetDeploymentWithRisk:input_type -> v1.ResourceByID
+	15, // 12: v1.DeploymentService.CountDeployments:input_type -> v1.RawQuery
+	15, // 13: v1.DeploymentService.ListDeployments:input_type -> v1.RawQuery
+	15, // 14: v1.DeploymentService.ListDeploymentsWithProcessInfo:input_type -> v1.RawQuery
+	16, // 15: v1.DeploymentService.GetLabels:input_type -> v1.Empty
+	5,  // 16: v1.DeploymentService.ExportDeployments:input_type -> v1.ExportDeploymentRequest
+	11, // 17: v1.DeploymentService.GetDeployment:output_type -> storage.Deployment
+	4,  // 18: v1.DeploymentService.GetDeploymentWithRisk:output_type -> v1.GetDeploymentWithRiskResponse
+	2,  // 19: v1.DeploymentService.CountDeployments:output_type -> v1.CountDeploymentsResponse
+	1,  // 20: v1.DeploymentService.ListDeployments:output_type -> v1.ListDeploymentsResponse
+	3,  // 21: v1.DeploymentService.ListDeploymentsWithProcessInfo:output_type -> v1.ListDeploymentsWithProcessInfoResponse
+	0,  // 22: v1.DeploymentService.GetLabels:output_type -> v1.DeploymentLabelsResponse
+	6,  // 23: v1.DeploymentService.ExportDeployments:output_type -> v1.ExportDeploymentResponse
+	17, // [17:24] is the sub-list for method output_type
+	10, // [10:17] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_deployment_service_proto_init() }
