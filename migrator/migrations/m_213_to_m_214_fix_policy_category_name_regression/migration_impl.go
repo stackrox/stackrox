@@ -20,6 +20,7 @@ func migrate(database *types.Databases) error {
 	db := database.PostgresDB
 
 	conn, err := db.Acquire(database.DBCtx)
+	defer conn.Release()
 	if err != nil {
 		return err
 	}
@@ -66,6 +67,7 @@ func readRows(rows *postgres.Rows) (map[string][]*schema.PolicyCategories, error
 
 		if err := rows.Scan(&id, &name); err != nil {
 			log.Errorf("Error scanning row: %v", err)
+			return nil, err
 		}
 
 		category := &schema.PolicyCategories{
