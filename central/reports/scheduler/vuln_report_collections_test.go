@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -36,9 +35,6 @@ import (
 )
 
 func TestReportingWithCollections(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is not enabled")
-	}
 	suite.Run(t, new(ReportingWithCollectionsTestSuite))
 }
 
@@ -94,12 +90,8 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)
-	s.truncateTable(postgresSchema.ImageComponentsTableName)
-	s.truncateTable(postgresSchema.ImageCvesTableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
-	if features.FlattenCVEData.Enabled() {
-		s.truncateTable(postgresSchema.ImageComponentV2TableName)
-	}
+	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 }
 
 func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
