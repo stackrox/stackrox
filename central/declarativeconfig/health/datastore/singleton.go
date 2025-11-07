@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	pgStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
+	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	ds = New(pgStore.New(globaldb.GetPostgres()))
+	ds = New(store.New(globaldb.GetPostgres()))
 }
 
 // Singleton returns datastore instance.

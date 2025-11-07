@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
@@ -92,4 +93,9 @@ func (ds *datastoreImpl) verifyDeclarativeContext(ctx context.Context) error {
 				"declarative configuration resources")
 	}
 	return nil
+}
+
+// Begin starts a database transaction and returns a context with the transaction
+func (ds *datastoreImpl) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	return ds.store.Begin(ctx)
 }
