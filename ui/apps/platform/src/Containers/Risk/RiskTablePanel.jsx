@@ -40,9 +40,14 @@ function RiskTablePanel({
     const [currentDeployments, setCurrentDeployments] = useState([]);
     const [errorMessageDeployments, setErrorMessageDeployments] = useState('');
     const [deploymentCount, setDeploymentsCount] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     function setPage(newPage) {
         navigate(workflowState.setPage(newPage).toUrl());
+    }
+
+    function handleRefreshData() {
+        setRefreshKey((prev) => prev + 1);
     }
     const setSortOption = useCallback(
         (newSortOption) => {
@@ -85,7 +90,7 @@ function RiskTablePanel({
         } else {
             setIsViewFiltered(false);
         }
-    }, [restSearch, restSort, currentPage]);
+    }, [restSearch, restSort, currentPage, refreshKey]);
 
     return (
         <PanelNew testid="panel">
@@ -122,6 +127,7 @@ function RiskTablePanel({
                         setSelectedDeploymentId={setSelectedDeploymentId}
                         selectedDeploymentId={selectedDeploymentId}
                         setSortOption={setSortOption}
+                        onRefreshData={handleRefreshData}
                     />
                 )}
             </PanelBody>
