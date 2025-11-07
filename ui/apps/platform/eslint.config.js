@@ -776,7 +776,6 @@ module.exports = [
             'cypress/integration/**',
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
 
@@ -797,7 +796,6 @@ module.exports = [
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -821,7 +819,6 @@ module.exports = [
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
