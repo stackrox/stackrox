@@ -46,7 +46,7 @@ else
     exit 1
 fi
 
-if oc get daemonset -n "$SPIRE_NAMESPACE" spiffe-csi-driver &>/dev/null; then
+if oc get daemonset -n "$SPIRE_NAMESPACE" spire-spiffe-csi-driver &>/dev/null; then
     print_success "SPIFFE CSI Driver is installed"
 else
     print_error "SPIFFE CSI Driver not found"

@@ -12,6 +12,7 @@ metadata:
 spec:
   # This template generates the SPIFFE ID for Central pods
   # Format: spiffe://stackrox.local/ns/{namespace}/sa/{serviceaccount}
+  className: zero-trust-workload-identity-manager-spire
   spiffeIDTemplate: "spiffe://stackrox.local/ns/{{ "{{" }} .PodMeta.Namespace {{ "}}" }}/sa/{{ "{{" }} .PodSpec.ServiceAccountName {{ "}}" }}"
   podSelector:
     matchLabels:
