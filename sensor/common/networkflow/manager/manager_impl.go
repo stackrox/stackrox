@@ -314,7 +314,7 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 }
 
 func (m *networkFlowManager) sendToCentralWithRetry(msg *central.MsgFromSensor) bool {
-	retryInterval    := 1 * time.Millisecond
+	retryInterval := 1 * time.Millisecond
 	maxRetryDuration := 100 * time.Millisecond
 
 	deadline := time.Now().Add(maxRetryDuration)
