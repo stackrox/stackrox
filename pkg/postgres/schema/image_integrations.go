@@ -45,6 +45,6 @@ const (
 type ImageIntegrations struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:imageintegrations_sac_filter,type:btree"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid;index:imageintegrations_sac_filter,type:btree,option:CONCURRENTLY"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

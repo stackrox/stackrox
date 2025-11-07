@@ -78,7 +78,7 @@ type ComplianceOperatorReportSnapshotV2 struct {
 // ComplianceOperatorReportSnapshotV2Scans holds the Gorm model for Postgres table `compliance_operator_report_snapshot_v2_scans`.
 type ComplianceOperatorReportSnapshotV2Scans struct {
 	ComplianceOperatorReportSnapshotV2ReportID string                             `gorm:"column:compliance_operator_report_snapshot_v2_reportid;type:uuid;primaryKey"`
-	Idx                                        int                                `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorreportsnapshotv2scans_idx,type:btree"`
+	Idx                                        int                                `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorreportsnapshotv2scans_idx,type:btree,option:CONCURRENTLY"`
 	ScanRefID                                  string                             `gorm:"column:scanrefid;type:varchar"`
 	LastStartedTime                            *time.Time                         `gorm:"column:laststartedtime;type:timestamp"`
 	ComplianceOperatorReportSnapshotV2Ref      ComplianceOperatorReportSnapshotV2 `gorm:"foreignKey:compliance_operator_report_snapshot_v2_reportid;references:reportid;belongsTo;constraint:OnDelete:CASCADE"`

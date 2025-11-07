@@ -61,7 +61,7 @@ type ClusterCveEdges struct {
 	IsFixable   bool     `gorm:"column:isfixable;type:bool"`
 	FixedBy     string   `gorm:"column:fixedby;type:varchar"`
 	ClusterID   string   `gorm:"column:clusterid;type:uuid"`
-	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
+	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash,option:CONCURRENTLY"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

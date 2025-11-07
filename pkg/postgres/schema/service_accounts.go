@@ -45,9 +45,9 @@ const (
 type ServiceAccounts struct {
 	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
-	Namespace   string            `gorm:"column:namespace;type:varchar;index:serviceaccounts_sac_filter,type:btree"`
+	Namespace   string            `gorm:"column:namespace;type:varchar;index:serviceaccounts_sac_filter,type:btree,option:CONCURRENTLY"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
-	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:serviceaccounts_sac_filter,type:btree"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:serviceaccounts_sac_filter,type:btree,option:CONCURRENTLY"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`

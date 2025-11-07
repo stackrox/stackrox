@@ -53,18 +53,18 @@ const (
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
 	ID                 string     `gorm:"column:id;type:uuid;primaryKey"`
-	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
+	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash,option:CONCURRENTLY"`
 	ContainerName      string     `gorm:"column:containername;type:varchar"`
 	PodID              string     `gorm:"column:podid;type:varchar"`
-	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
+	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash,option:CONCURRENTLY"`
 	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
-	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp;index:processindicators_signal_time,type:btree"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp;index:processindicators_signal_time,type:btree,option:CONCURRENTLY"`
 	SignalName         string     `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
 	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`
 	SignalUID          uint32     `gorm:"column:signal_uid;type:bigint"`
-	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
-	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
+	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree,option:CONCURRENTLY"`
+	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree,option:CONCURRENTLY"`
 	ContainerStartTime *time.Time `gorm:"column:containerstarttime;type:timestamp"`
 	Serialized         []byte     `gorm:"column:serialized;type:bytea"`
 }

@@ -38,7 +38,7 @@ const (
 
 // TestSingleUUIDKeyStructs holds the Gorm model for Postgres table `test_single_uuid_key_structs`.
 type TestSingleUUIDKeyStructs struct {
-	Key         string                               `gorm:"column:key;type:uuid;primaryKey;index:testsingleuuidkeystructs_key,type:hash"`
+	Key         string                               `gorm:"column:key;type:uuid;primaryKey;index:testsingleuuidkeystructs_key,type:hash,option:CONCURRENTLY"`
 	Name        string                               `gorm:"column:name;type:varchar;unique"`
 	StringSlice *pq.StringArray                      `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                                 `gorm:"column:bool;type:bool"`

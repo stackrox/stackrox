@@ -71,7 +71,7 @@ type TestParent1 struct {
 // TestParent1Childrens holds the Gorm model for Postgres table `test_parent1_childrens`.
 type TestParent1Childrens struct {
 	TestParent1ID  string      `gorm:"column:test_parent1_id;type:varchar;primaryKey"`
-	Idx            int         `gorm:"column:idx;type:integer;primaryKey;index:testparent1childrens_idx,type:btree"`
+	Idx            int         `gorm:"column:idx;type:integer;primaryKey;index:testparent1childrens_idx,type:btree,option:CONCURRENTLY"`
 	ChildID        string      `gorm:"column:childid;type:varchar"`
 	TestParent1Ref TestParent1 `gorm:"foreignKey:test_parent1_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
