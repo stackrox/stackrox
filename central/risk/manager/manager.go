@@ -169,6 +169,10 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	deployment.RiskScore = risk.GetScore()
 	deployment.EffectiveRiskScore = GetEffectiveScore(risk)
 
+	// Set priority based on effective risk score (adjusted or ML score)
+	// Priority is stored as int64 but represents a score, so multiply by 1000 to preserve precision
+	deployment.Priority = int64(deployment.EffectiveRiskScore * 1000)
+
 	// Only update namespace/cluster risk aggregations if score changed
 	if oldScore != risk.GetScore() {
 		e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
@@ -452,11 +456,11 @@ func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID stri
 		return nil, errors.Errorf("deployment %s not found", deploymentID)
 	}
 
-	// Reset priority to the original ML score (convert float32 to int64)
-	deployment.Priority = int64(risk.GetScore() * 1000)
-
 	// Reset effective risk score to the original ML score
 	deployment.EffectiveRiskScore = risk.GetScore()
+
+	// Set priority based on effective risk score for consistency
+	deployment.Priority = int64(deployment.EffectiveRiskScore * 1000)
 
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
 		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
@@ -546,12 +550,12 @@ func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deployme
 		return nil, errors.Errorf("deployment %s not found", deploymentID)
 	}
 
-	// Update priority to the adjusted score (convert float32 to int64)
-	// Priority is stored as int64 but represents a score, so we multiply by 1000 to preserve precision
-	deployment.Priority = int64(newScore * 1000)
-
 	// Store the effective risk score on the deployment
 	deployment.EffectiveRiskScore = newScore
+
+	// Set priority based on effective risk score for consistency
+	// Priority is stored as int64 but represents a score, so we multiply by 1000 to preserve precision
+	deployment.Priority = int64(deployment.GetEffectiveRiskScore() * 1000)
 
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
 		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
@@ -561,7 +565,7 @@ func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deployme
 	if !moveUp {
 		direction = "down"
 	}
-	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d, effective_risk_score %.2f", deploymentID, direction, currentScore, newScore, deployment.Priority, deployment.EffectiveRiskScore)
+	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d, effective_risk_score %.2f", deploymentID, direction, currentScore, newScore, deployment.Priority, deployment.GetEffectiveRiskScore())
 
 	return targetRisk, nil
 }
