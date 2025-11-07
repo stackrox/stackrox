@@ -45,11 +45,6 @@ func NewLegacy() *Legacy {
 }
 
 func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
-	if len(current) == 0 {
-		// Received an empty map with current state.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		return l.cachedUpdatesConn
-	}
 	updates := concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkFlow {
 		return computeUpdates(current, l.enrichedConnsLastSentState, func(conn indicator.NetworkConn, ts timestamp.MicroTS) *storage.NetworkFlow {
 			return (&conn).ToProto(ts)
@@ -63,12 +58,6 @@ func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp
 }
 
 func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
-	if len(enrichedEndpointsProcesses) == 0 {
-		// Received an empty map with current state.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		// Note: We don't cache processes, so return empty slice for those.
-		return l.cachedUpdatesEp, []*storage.ProcessListeningOnPortFromSensor{}
-	}
 	currentEps := make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(l.enrichedEndpointsLastSentState))
 	currentProc := make(map[indicator.ProcessListening]timestamp.MicroTS)
 	// Convert the joint map into the legacy format with two maps
@@ -107,6 +96,28 @@ func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]
 			return (&proc).ToProto(ts)
 		})
 	})
+}
+
+func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	if currentConns != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedConnsLastSentState = maps.Clone(currentConns)
+	}
+}
+
+// OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
+// Providing nil will skip updates for respective map.
+// Providing empty map will reset the state for given state.
+func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if enrichedEndpointsProcesses != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedEndpointsLastSentState = make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		for endpoint, procWithTS := range enrichedEndpointsProcesses {
+			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
+		}
+	}
 }
 
 func (l *Legacy) OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {

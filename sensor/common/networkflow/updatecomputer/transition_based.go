@@ -376,6 +376,21 @@ func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.
 	})
 }
 
+func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
+	if conns != nil {
+		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
+	}
+}
+
+// OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
+// Providing nil will skip updates for respective map.
+// Providing empty map will reset the state for given state.
+func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	if enrichedEndpointsProcesses != nil {
+		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
+	}
+}
+
 func (c *TransitionBased) OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
 	// Clear the cache before sending - the manager now has the items
 	c.cachedUpdatesConn = nil

@@ -102,7 +102,7 @@ func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
 			// Initialize state with empty maps
 			initialEpProc := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{}
 			l.ComputeUpdatedEndpointsAndProcesses(initialEpProc)
-			l.OnStartSendEndpoints(initialEpProc)
+			l.OnSuccessfulSendEndpoints(initialEpProc)
 			l.OnSuccessfulSendProcesses(initialEpProc)
 
 			var gotProc []*storage.ProcessListeningOnPortFromSensor
@@ -118,7 +118,7 @@ func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
 				}
 				_, updatedProc := l.ComputeUpdatedEndpointsAndProcesses(procEpMap)
 				gotProc = append(gotProc, updatedProc...)
-				l.OnStartSendEndpoints(procEpMap)
+				l.OnSuccessfulSendEndpoints(procEpMap)
 				l.OnSuccessfulSendProcesses(procEpMap)
 			}
 
@@ -127,7 +127,7 @@ func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
 			// Empty update to ensure that any caches for offline mode are cleared
 			empty := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{}
 			uEp, uProc := l.ComputeUpdatedEndpointsAndProcesses(empty)
-			l.OnStartSendEndpoints(empty)
+			l.OnSuccessfulSendEndpoints(empty)
 			l.OnSuccessfulSendProcesses(empty)
 			assert.Len(t, uEp, 0)
 			assert.Len(t, uProc, 0)

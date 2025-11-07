@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -299,8 +300,22 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
-	retryInterval    = 1 * time.Millisecond
-	maxRetryDuration = 100 * time.Millisecond
+	select {
+	case <-m.stopper.Flow().StopRequested():
+		return false
+	case m.sensorUpdates <- message.New(msg):
+		return true
+	default:
+		// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
+		// They will still be processed by the detection engine for newer entities, but
+		// sensor will not keep ordered updates indefinitely in memory.
+		return false
+	}
+}
+
+func (m *networkFlowManager) sendToCentralWithRetry(msg *central.MsgFromSensor) bool {
+	retryInterval    := 1 * time.Millisecond
+	maxRetryDuration := 100 * time.Millisecond
 
 	deadline := time.Now().Add(maxRetryDuration)
 
@@ -406,6 +421,29 @@ func (m *networkFlowManager) enrich() *enrichmentResult {
 func (m *networkFlowManager) send(result *enrichmentResult) {
 	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
+	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
+		if sent := m.sendConnsEps(result.updatedConns, result.updatedEndpoints); sent {
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSendConnections(result.currentConns)
+			m.updateComputer.OnSuccessfulSendEndpoints(result.currentEndpointsProcesses)
+		}
+	}
+
+	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {
+		if sent := m.sendProcesses(result.updatedProcesses); sent {
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
+		}
+	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+
+	// Increment counter after all send operations complete (including channel operations)
+	m.sendCyclesCompleted.Add(1)
+}
+
+func (m *networkFlowManager) sendBatched(result *enrichmentResult) {
+	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
+
 	// Clear cache and update state before sending (done before the if statement for safety)
 	m.updateComputer.OnStartSendConnections(result.currentConns)
 	m.updateComputer.OnStartSendEndpoints(result.currentEndpointsProcesses)
@@ -434,7 +472,7 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 				epBatch = epChunks[i]
 			}
 
-			if !m.sendConnsEps(connBatch, epBatch) {
+			if !m.sendConnsEpsBatched(connBatch, epBatch) {
 				// This batch failed to send, add to unsent
 				unsentConns = append(unsentConns, connBatch...)
 				unsentEps = append(unsentEps, epBatch...)
@@ -465,7 +503,11 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 func (m *networkFlowManager) enrichAndSend() {
 	result := m.enrich()
 	m.enrichmentDoneSignal.Signal()
-	m.send(result)
+	if features.NetworkFlowBatching.Enabled() {
+		m.sendBatched(result)
+	} else {
+		m.send(result)
+	}
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
@@ -484,6 +526,28 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 
 	log.Debugf("Flow update : %v", protoToSend)
 	return m.sendToCentral(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+			NetworkFlowUpdate: protoToSend,
+		},
+	})
+}
+
+func (m *networkFlowManager) sendConnsEpsBatched(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
+	protoToSend := &central.NetworkFlowUpdate{
+		Updated:          conns,
+		UpdatedEndpoints: eps,
+		Time:             protocompat.TimestampNow(),
+	}
+
+	// Use long-lived context for detection to continue processing during disconnects
+	detectionContext := context.Background()
+	// Before sending, run the flows through policies asynchronously (ProcessNetworkFlow creates a new goroutine for each call)
+	for _, flow := range conns {
+		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
+	}
+
+	log.Debugf("Flow update : %v", protoToSend)
+	return m.sendToCentralWithRetry(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
