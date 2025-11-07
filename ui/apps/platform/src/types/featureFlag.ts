@@ -12,5 +12,4 @@ export type FeatureFlagEnvVar =
     | 'ROX_SCANNER_V4'
     | 'ROX_VIRTUAL_MACHINES'
     | 'ROX_VULN_MGMT_LEGACY_SNOOZE'
-    | 'ROX_VULNERABILITY_VIEW_BASED_REPORTS'
     ;

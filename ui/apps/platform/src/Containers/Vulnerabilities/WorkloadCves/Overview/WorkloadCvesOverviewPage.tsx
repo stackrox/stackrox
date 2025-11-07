@@ -305,10 +305,8 @@ function WorkloadCvesOverviewPage() {
 
     // Report-specific state management
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
-    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
-    const isOnDemandReportsVisible =
-        isViewBasedReportsEnabled &&
+    const isViewBasedReportsEnabled =
         hasWorkflowAdminAccess &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
@@ -409,7 +407,7 @@ function WorkloadCvesOverviewPage() {
                                 onEntityTabChange={onEntityTabChange}
                                 activeEntityTabKey={activeEntityTabKey}
                                 additionalToolbarItems={
-                                    isOnDemandReportsVisible && (
+                                    isViewBasedReportsEnabled && (
                                         <CreateReportDropdown
                                             onSelect={() => {
                                                 setIsCreateViewBasedReportModalOpen(true);
@@ -503,7 +501,7 @@ function WorkloadCvesOverviewPage() {
                     }}
                     onWatchedImagesChange={onWatchedImagesChange}
                 />
-                {isOnDemandReportsVisible && (
+                {isViewBasedReportsEnabled && (
                     <CreateViewBasedReportModal
                         isOpen={isCreateViewBasedReportModalOpen}
                         setIsOpen={setIsCreateViewBasedReportModalOpen}
