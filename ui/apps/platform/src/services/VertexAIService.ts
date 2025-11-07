@@ -1,8 +1,20 @@
-import type { BasePolicy, Policy, ClientPolicy, PolicyGroup, PolicySection } from 'types/policy.proto';
+import type {
+    BasePolicy,
+    ClientPolicy,
+    Policy,
+    PolicyGroup,
+    PolicySection,
+} from 'types/policy.proto';
 import {
-    policyCriteriaDescriptors,
     auditLogDescriptor,
+    policyCriteriaDescriptors,
 } from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
+
+// Extended type for ValueObj that includes arrayValue (used at runtime but not in official types)
+type ExtendedValueObj = {
+    value?: string;
+    arrayValue?: string[];
+};
 
 // Configuration - For PoC, these can be set here or via environment variables
 // Note: Using import.meta.env for Vite (not process.env)
@@ -16,15 +28,16 @@ const VERTEX_AI_CONFIG = {
 };
 
 // Debug logging to verify configuration is loaded (remove after testing)
-console.log('Vertex AI Config Debug:', {
-    projectId: VERTEX_AI_CONFIG.projectId,
-    location: VERTEX_AI_CONFIG.location,
-    model: VERTEX_AI_CONFIG.model,
-    hasAccessToken: !!VERTEX_AI_CONFIG.accessToken,
-    accessTokenLength: VERTEX_AI_CONFIG.accessToken?.length || 0,
-    envModel: import.meta.env.VITE_VERTEX_MODEL,
-    allEnvVars: Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')),
-});
+// Commented out to avoid console statement linting errors
+// console.log('Vertex AI Config Debug:', {
+//     projectId: VERTEX_AI_CONFIG.projectId,
+//     location: VERTEX_AI_CONFIG.location,
+//     model: VERTEX_AI_CONFIG.model,
+//     hasAccessToken: !!VERTEX_AI_CONFIG.accessToken,
+//     accessTokenLength: VERTEX_AI_CONFIG.accessToken?.length || 0,
+//     envModel: import.meta.env.VITE_VERTEX_MODEL,
+//     allEnvVars: Object.keys(import.meta.env).filter((k) => k.startsWith('VITE_')),
+// });
 
 // Combine all descriptors for lookup
 const allDescriptors = [...policyCriteriaDescriptors, ...auditLogDescriptor];
@@ -33,20 +46,20 @@ const allDescriptors = [...policyCriteriaDescriptors, ...auditLogDescriptor];
 const descriptorMap = new Map(allDescriptors.map((d) => [d.name, d]));
 
 type GeminiResponse = {
-    candidates: Array<{
+    candidates: {
         content: {
-            parts: Array<{
+            parts: {
                 text: string;
-            }>;
+            }[];
         };
         finishReason?: string;
-    }>;
+    }[];
 };
 
 type ClaudeResponse = {
-    content: Array<{
+    content: {
         text: string;
-    }>;
+    }[];
     stop_reason: string;
 };
 
@@ -85,60 +98,64 @@ function formatPolicyCriteria(policySections: PolicySection[] | undefined): stri
         const sectionName = section.sectionName || 'Policy Section';
         const groups = section.policyGroups
             .map((group: PolicyGroup) => {
-                const fieldName = group.fieldName;
+                const { fieldName } = group;
                 const operator = group.booleanOperator;
                 const negate = group.negate ? 'NOT ' : '';
-                
+
                 // Format values with explicit comparison operator explanation
-                const formattedValues = group.values.map((v) => {
-                    // Handle arrayValue (e.g., image signature fields)
-                    // TypeScript doesn't officially include arrayValue in ValueObj but it's used at runtime
-                    const vAny = v as any;
-                    if (vAny.arrayValue && Array.isArray(vAny.arrayValue)) {
-                        return vAny.arrayValue.length > 0 
-                            ? `${vAny.arrayValue.length} integration(s) selected`
-                            : 'No integrations selected';
-                    }
-                    
-                    const val = v.value;
-                    // Handle undefined/null values
-                    if (!val) {
-                        return '';
-                    }
-                    // Check if value starts with a comparison operator
-                    if (typeof val === 'string' && val.match(/^(>|>=|<|<=|=)/)) {
-                        return val; // Keep as-is, we'll add note below
-                    }
-                    return val;
-                }).join(`, ${operator} `);
-                
+                const formattedValues = group.values
+                    .map((v) => {
+                        // Handle arrayValue (e.g., image signature fields)
+                        // TypeScript doesn't officially include arrayValue in ValueObj but it's used at runtime
+                        const vExtended = v as ExtendedValueObj;
+                        if (vExtended.arrayValue && Array.isArray(vExtended.arrayValue)) {
+                            return vExtended.arrayValue.length > 0
+                                ? `${vExtended.arrayValue.length} integration(s) selected`
+                                : 'No integrations selected';
+                        }
+
+                        const val = v.value;
+                        // Handle undefined/null values
+                        if (!val) {
+                            return '';
+                        }
+                        // Check if value starts with a comparison operator
+                        if (typeof val === 'string' && val.match(/^(>|>=|<|<=|=)/)) {
+                            return val; // Keep as-is, we'll add note below
+                        }
+                        return val;
+                    })
+                    .join(`, ${operator} `);
+
                 const values = formattedValues;
-                
+
                 // Look up the descriptor for this field
                 const descriptor = descriptorMap.get(fieldName);
                 // Use shortName (what users see in UI) instead of name (internal field name)
                 const displayName = descriptor?.shortName || fieldName;
-                const description = descriptor?.description 
+                const description = descriptor?.description
                     ? `\n    Description: ${descriptor.description}`
                     : '';
-                
+
                 // Flag fields with inverted/negated matching behavior
                 const negatedWarning = isNegatedField(fieldName)
-                    ? '\n    ⚠️ INVERTED FIELD: This criterion matches when the condition is NOT met (e.g., "Required Label" matches when label is ABSENT)'
+                    ? '\n    ⚠️ INVERTED FIELD: This criterion matches when the condition is NOT met (inverted matching behavior)'
                     : '';
-                
+
                 // Add note about comparison operators if present
                 const hasComparisonOperators = group.values.some((v) => {
                     // Skip arrayValue entries
-                    const vAny = v as any;
-                    if (vAny.arrayValue) return false;
+                    const vExtended = v as ExtendedValueObj;
+                    if (vExtended.arrayValue) {
+                        return false;
+                    }
                     // Check if value has comparison operator
                     return v.value && typeof v.value === 'string' && v.value.match(/^(>|>=|<|<=)/);
                 });
                 const comparisonNote = hasComparisonOperators
                     ? '\n    ⚠️ COMPARISON OPERATORS: The values contain comparison operators (>, >=, <, <=). For example, ">8" means "greater than 8", not "exactly 8".'
                     : '';
-                
+
                 return `  ${negate}${displayName}: ${values}${description}${negatedWarning}${comparisonNote}`;
             })
             .join('\n\n');
@@ -158,9 +175,15 @@ function formatScopeInfo(policy: BasePolicy): string {
         const scopeDesc = policy.scope
             .map((s) => {
                 const parts: string[] = [];
-                if (s.cluster) parts.push(`Cluster: ${s.cluster}`);
-                if (s.namespace) parts.push(`Namespace: ${s.namespace}`);
-                if (s.label) parts.push(`Label: ${s.label.key}=${s.label.value}`);
+                if (s.cluster) {
+                    parts.push(`Cluster: ${s.cluster}`);
+                }
+                if (s.namespace) {
+                    parts.push(`Namespace: ${s.namespace}`);
+                }
+                if (s.label) {
+                    parts.push(`Label: ${s.label.key}=${s.label.value}`);
+                }
                 return parts.join(', ');
             })
             .join('; ');
@@ -209,12 +232,12 @@ Note: this differs from an alternative approach where policies would define the 
 Instead, in ACS the policy criteria define conditions when a violation should be raised.
 
 EXAMPLE TO PREVENT CONFUSION:
-Policy with "Image Signature Verified By" (inverted field) + "Disallowed Image Label: app=production"
-- This TRIGGERS A VIOLATION when: signature CANNOT be verified AND image has label app=production
-- This ENFORCES the requirement that: images with label app=production MUST be signed
-- How does it enforce this? By raising violations when they are NOT signed
-- WRONG interpretation: "enforces that images must NOT be signed"
-- CORRECT interpretation: "triggers when images with label app=production are NOT signed, thereby REQUIRING them to be signed"
+Policy with Field A (inverted field) + Field B (normal field)
+- This TRIGGERS A VIOLATION when: Field A condition is NOT met AND Field B condition IS met
+- This ENFORCES the requirement that: when Field B matches, Field A must also be satisfied
+- How does it enforce this? By raising violations when Field A is NOT satisfied while Field B matches
+- WRONG interpretation: "enforces that Field A must NOT be satisfied"
+- CORRECT interpretation: "triggers when Field A is NOT satisfied while Field B matches, thereby REQUIRING Field A to be satisfied when Field B is present"
 
 Always remember: TRIGGER CONDITION ≠ DESIRED STATE. Policies trigger on BAD states to enforce GOOD states.
 ===
@@ -236,6 +259,19 @@ ${scopeInfo}
 
 IMPORTANT: The "Description" fields under each policy criterion provide the authoritative explanation of what that criterion does, when it triggers, and how it should be used. Use these descriptions as your primary source of truth.
 
+CRITICAL - NEGATED FIELDS (NOT prefix): When a field name starts with "NOT ", it means the field is negated. A negated field triggers when it does NOT match the specified value(s).
+
+EXAMPLES:
+- "NOT Field X: value1" triggers when Field X is NOT "value1" (triggers on "value2", "value3", etc., but NOT on "value1")
+- "Field X: value1" triggers when Field X IS "value1"
+- "NOT Field Y: value2" triggers when Field Y is NOT "value2" (triggers on "value3", "value4", etc., but NOT on "value2")
+
+When explaining fields with the "NOT " prefix, be crystal clear:
+- WRONG: "NOT Field X: value1" → "triggers when Field X is value1"
+- CORRECT: "NOT Field X: value1" → "triggers when Field X is NOT value1"
+- WRONG: "NOT Field Y: value2" → "triggers when Field Y is value2"
+- CORRECT: "NOT Field Y: value2" → "triggers when Field Y is NOT value2"
+
 CRITICAL - COMPARISON OPERATORS: Some fields use comparison operators in their values (marked with "⚠️ COMPARISON OPERATORS"). When you see values like ">8" or "<5", these are NOT exact values - they are comparisons:
 - ">8" means "greater than 8" (not "exactly 8")
 - ">=8" means "greater than or equal to 8"
@@ -244,24 +280,24 @@ CRITICAL - COMPARISON OPERATORS: Some fields use comparison operators in their v
 - "=5" means "exactly equal to 5"
 
 When explaining these, use clear language like:
-- WRONG: "CPU request of 8 or 5 cores"
-- RIGHT: "CPU request greater than 8 cores OR less than 5 cores"
-- WRONG: "exactly 8 cores"
-- RIGHT: "more than 8 cores" (for ">8")
+- WRONG: "Field value of 8 or 5"
+- RIGHT: "Field value greater than 8 OR less than 5"
+- WRONG: "exactly 8"
+- RIGHT: "more than 8" (for ">8")
 
-CRITICAL - INVERTED/NEGATED FIELDS: Some fields are marked with "⚠️ INVERTED FIELD" which means they match when the specified condition is NOT met. This is a common source of user confusion:
-- "Required Image Label" matches when the label is ABSENT (not present)
-- "Disallowed Image Label" matches when the label is PRESENT
-- "Image Signature Verified By" matches when the signature CANNOT be verified (is missing or invalid)
+CRITICAL - INVERTED/NEGATED FIELDS: Some fields are marked with "⚠️ INVERTED FIELD" which means they INHERENTLY match when the specified condition is NOT met. This is DIFFERENT from the "NOT " prefix and is a common source of user confusion:
+- Fields named "Required X" typically match when X is ABSENT (not present)
+- Fields named "Disallowed X" typically match when X is PRESENT
+- Fields related to verification typically match when verification CANNOT be completed (is missing or invalid)
 
 When explaining inverted fields, be EXTREMELY CLEAR about the matching behavior. Use phrases like:
-- "matches when the label is ABSENT" (not just "requires label")
-- "triggers when the image signature CANNOT be verified" (not just "image signature")
-- "fires when the annotation is MISSING" (not just "required annotation")
+- "matches when X is ABSENT" (not just "requires X")
+- "triggers when verification CANNOT be completed" (not just "verification field")
+- "fires when X is MISSING" (not just "required X")
 
 Generate a technical explanation focused ONLY on when this policy triggers violations. Use PLAIN TEXT with simple formatting markers for emphasis.
 
-REMINDER: You are explaining TRIGGER CONDITIONS (when violations occur), not the enforcement goal. A policy that triggers when "images are NOT signed" is ENFORCING that "images MUST be signed". Keep this distinction clear in your explanation.
+REMINDER: You are explaining TRIGGER CONDITIONS (when violations occur), not the enforcement goal. A policy that triggers when "X is NOT present" is ENFORCING that "X MUST be present". Keep this distinction clear in your explanation.
 
 Start with a one-sentence summary of when the overall policy triggers (the BAD state that causes a violation).
 
@@ -277,8 +313,8 @@ IMPORTANT: Make it very clear that within each section, ALL field criteria must 
 - "**ALL** these field requirements must trigger simultaneously:"
 
 For inverted fields in particular, explicitly state the matching behavior:
-- WRONG: "Required Image Label: app=myapp"
-- RIGHT: "Image must be MISSING the label app=myapp (the 'Required Label' field triggers when the label is ABSENT)"
+- WRONG: "Field X: value Y"
+- RIGHT: "X must be MISSING/ABSENT value Y (the inverted field triggers when the condition is NOT met)"
 
 Format the conditions as:
 
@@ -312,27 +348,27 @@ For each policy section, create a table with:
 
 **CRITICAL - USE CONCRETE VALUES, NOT T/F:**
 - For boolean fields: use "true"/"false" or "yes"/"no"
-- For comparison fields (e.g., CPU Request >5): use actual example values like "6 cores" (matches) vs "4 cores" (doesn't match)
-- For signature verification: use "Verified"/"Not Verified"
-- For image registry: use actual registry names like "quay.io"/"docker.io"
-- For inverted fields (Required Label): use "Absent"/"Present" or "Missing"/"Has label"
-- For dropdown fields: use actual option values
+- For comparison fields: use actual example values like "6 units" (matches) vs "4 units" (doesn't match)
+- For verification fields: use "Verified"/"Not Verified" or "Valid"/"Invalid"
+- For text fields: use actual realistic values that make sense for that field type
+- For inverted fields: use "Absent"/"Present" or "Missing"/"Has X"
+- For dropdown/enum fields: use actual option values
 - Keep values concise but realistic
 
-Format the table using pipe characters (|) and dashes for borders. Example for a policy checking privileged containers, signature verification, and CPU limits:
+Format the table using pipe characters (|) and dashes for borders. Example format:
 
 **Truth Table for Section 1:**
 
-| Privileged | Signature      | CPU Request | Result       |
+| Field A    | Field B        | Field C     | Result       |
 |------------|----------------|-------------|--------------|
-| true       | Not Verified   | 6 cores     | Violation    |
-| true       | Not Verified   | 4 cores     | No Violation |
-| true       | Verified       | 6 cores     | No Violation |
-| true       | Verified       | 4 cores     | No Violation |
-| false      | Not Verified   | 6 cores     | No Violation |
-| false      | Not Verified   | 4 cores     | No Violation |
-| false      | Verified       | 6 cores     | No Violation |
-| false      | Verified       | 4 cores     | No Violation |
+| value1     | value2         | value3      | Violation    |
+| value1     | value2         | value4      | No Violation |
+| value1     | value5         | value3      | No Violation |
+| value1     | value5         | value4      | No Violation |
+| value6     | value2         | value3      | No Violation |
+| value6     | value2         | value4      | No Violation |
+| value6     | value5         | value3      | No Violation |
+| value6     | value5         | value4      | No Violation |
 
 IMPORTANT TRUTH TABLE GUIDELINES:
 - Within a section, ALL fields must match their trigger conditions (AND logic) for the policy to trigger
@@ -370,8 +406,8 @@ After generating the explanation, evaluate whether this policy is likely to be u
 - Would a real security team or DevOps engineer actually deploy this?
 
 REMINDER: The policy TRIGGERS on bad/unwanted states to ENFORCE good/desired states. Don't confuse the trigger condition with what the policy enforces.
-- A policy that triggers when images are NOT signed is ENFORCING that images MUST be signed
-- A policy that triggers when containers are privileged is ENFORCING that containers must NOT be privileged
+- A policy that triggers when X is NOT present is ENFORCING that X MUST be present
+- A policy that triggers when Y is enabled is ENFORCING that Y must NOT be enabled
 
 If you CANNOT come up with a realistic use case, OR if the only use case you can imagine is highly contrived/artificial, this is a strong signal the policy may be a mistake.
 
@@ -380,21 +416,20 @@ If you CANNOT come up with a realistic use case, OR if the only use case you can
 IMPORTANT: Be conservative with warnings. Only flag issues when you are VERY CONFIDENT there is a problem. Many policy combinations that seem unusual may have legitimate use cases. When in doubt, DO NOT warn.
 
 **Valid Use Cases to NOT Warn About:**
-- **Conditional Requirements**: Combining inverted and normal fields to enforce conditional rules is VALID. Example: "Image Signature Verified By" (inverted) + "Disallowed Image Label: production" creates a rule meaning "images with the 'production' label must be signed" - this is a legitimate security pattern.
+- **Conditional Requirements**: Combining inverted and normal fields to enforce conditional rules is VALID. Example: an inverted field (matches when X is NOT met) + a normal field (matches when Y IS met) creates a conditional rule meaning "when Y is present, X must also be satisfied" - this is a legitimate security pattern.
 - **Scoped Restrictions**: Using multiple criteria to narrow down which resources need specific security controls.
 - **Label/Annotation-based Enforcement**: Enforcing different security standards based on labels or annotations.
 
 **Only warn for these CLEAR problems:**
 
 1. **No Realistic Use Case**: You cannot come up with a practical, realistic scenario where this policy would be useful, OR the only use case is highly contrived/artificial
-2. **Overly Broad**: Does this policy trigger on nearly EVERY deployment without meaningful filtering? (e.g., single criterion like "CPU request >0" with no other filters - but if combined with other criteria for conditional logic, this is valid)
+2. **Overly Broad**: Does this policy trigger on nearly EVERY deployment without meaningful filtering? (e.g., single criterion with a very permissive threshold with no other filters - but if combined with other criteria for conditional logic, this is valid)
 3. **Logically Impossible**: Are there field combinations that make it mathematically impossible to trigger? (e.g., same field checked for X AND NOT X simultaneously, or mutually exclusive values for the same field)
 4. **Clear Misunderstanding**: Is there overwhelming evidence the user misunderstood inverted fields? (e.g., ONLY an inverted field with no other criteria, or description explicitly contradicts the behavior)
 5. **Contradicts Explicit Purpose**: Does the policy name/description/rationale EXPLICITLY state the opposite of what the criteria actually do?
-6. **Always True/False**: Are there conditions that are ALWAYS true or ALWAYS false with no useful filtering? (e.g., "container name is not empty" - nearly always true)
+6. **Always True/False**: Are there conditions that are ALWAYS true or ALWAYS false with no useful filtering? (e.g., checking for a field that is never empty - nearly always true)
 
 **DO NOT warn for:**
-- Combining inverted and normal fields (often creates valid conditional logic)
 - Narrow policies targeting specific scenarios (they may be intentionally specific)
 - Complex AND logic across multiple fields (legitimate security requirements)
 - Policies with multiple criteria that create conditional enforcement patterns
@@ -404,7 +439,7 @@ If you identify a CLEAR problem from the list above AND you are VERY CONFIDENT i
 --- WARNING ---
 [Brief, specific warning about the likely mistake. Be direct and actionable. Use correct "trigger" vs "enforce" language. Examples:
 - "This policy has no realistic use case - it's unclear why an organization would want these trigger conditions."
-- "This policy will trigger on nearly every deployment because it only requires CPU request >0, which most containers have. Consider making the criteria more specific."
+- "This policy will trigger on nearly every deployment because it uses a very permissive criterion that most resources satisfy. Consider making the criteria more specific."
 - "This policy appears to misunderstand inverted fields - the trigger conditions contradict the name/description. Remember: policies trigger on BAD states to enforce GOOD states."]
 --- END WARNING ---
 
@@ -412,7 +447,13 @@ If you identify a CLEAR problem from the list above AND you are VERY CONFIDENT i
 
 If the policy appears reasonable, has ANY plausible use case, or you are uncertain, do NOT include a WARNING section - just output the explanation as normal.
 
-The WARNING section should be brief (1-3 sentences), specific about the issue, and suggest what the user might want to reconsider.`;
+The WARNING section should be brief (1-3 sentences), specific about the issue, and suggest what the user might want to reconsider.
+---
+
+CRITICAL - COHERENCE:
+After you have crafted your response, read it again thoroughly and ensure all the parts are coherent with each other and with the previous instructions. Pay special attention to whether the explanation of each field aligns with the explanation of the overall policy, the warning (if any) and the examples/truth table.
+
+`;
 }
 
 /**
@@ -421,31 +462,27 @@ The WARNING section should be brief (1-3 sentences), specific about the issue, a
 function parseResponse(text: string): PolicyExplanationResult {
     const warningStartMarker = '--- WARNING ---';
     const warningEndMarker = '--- END WARNING ---';
-    
+
     const warningStart = text.indexOf(warningStartMarker);
-    
+
     if (warningStart === -1) {
         // No warning present
         return { explanation: text.trim() };
     }
-    
+
     const warningEnd = text.indexOf(warningEndMarker, warningStart);
-    
+
     if (warningEnd === -1) {
         // Malformed warning section, treat entire text as explanation
         return { explanation: text.trim() };
     }
-    
+
     // Extract warning text (between markers)
-    const warningText = text
-        .substring(warningStart + warningStartMarker.length, warningEnd)
-        .trim();
-    
+    const warningText = text.substring(warningStart + warningStartMarker.length, warningEnd).trim();
+
     // Extract explanation (everything after end marker)
-    const explanation = text
-        .substring(warningEnd + warningEndMarker.length)
-        .trim();
-    
+    const explanation = text.substring(warningEnd + warningEndMarker.length).trim();
+
     return {
         explanation,
         warning: warningText || undefined,
@@ -456,7 +493,9 @@ function parseResponse(text: string): PolicyExplanationResult {
  * Calls Vertex AI API to generate policy explanation using OAuth access token
  * Supports both Gemini and Claude models
  */
-export async function generatePolicyExplanation(policy: BasePolicy | Policy | ClientPolicy): Promise<PolicyExplanationResult> {
+export async function generatePolicyExplanation(
+    policy: BasePolicy | Policy | ClientPolicy
+): Promise<PolicyExplanationResult> {
     const { projectId, location, model, accessToken } = VERTEX_AI_CONFIG;
 
     if (!accessToken) {
@@ -470,9 +509,8 @@ export async function generatePolicyExplanation(policy: BasePolicy | Policy | Cl
 
     if (isClaude) {
         return generateWithClaude(projectId, location, model, accessToken, prompt);
-    } else {
-        return generateWithGemini(projectId, location, model, accessToken, prompt);
     }
+    return generateWithGemini(projectId, location, model, accessToken, prompt);
 }
 
 async function generateWithClaude(
@@ -502,7 +540,7 @@ async function generateWithClaude(
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify(requestBody),
         });
@@ -515,12 +553,13 @@ async function generateWithClaude(
         const data = (await response.json()) as ClaudeResponse;
 
         if (data.content && data.content.length > 0) {
-            const text = data.content[0].text;
-            
+            const { text } = data.content[0];
+
             if (data.stop_reason && data.stop_reason !== 'end_turn') {
-                console.warn('Response may be incomplete. Stop reason:', data.stop_reason);
+                // Log warning about incomplete response (commented to avoid linting errors)
+                // console.warn('Response may be incomplete. Stop reason:', data.stop_reason);
             }
-            
+
             return parseResponse(text);
         }
 
@@ -562,7 +601,7 @@ async function generateWithGemini(
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify(requestBody),
         });
@@ -576,12 +615,13 @@ async function generateWithGemini(
 
         if (data.candidates && data.candidates.length > 0) {
             const candidate = data.candidates[0];
-            const text = candidate.content.parts[0].text;
-            
+            const { text } = candidate.content.parts[0];
+
             if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-                console.warn('Response may be incomplete. Finish reason:', candidate.finishReason);
+                // Log warning about incomplete response (commented to avoid linting errors)
+                // console.warn('Response may be incomplete. Finish reason:', candidate.finishReason);
             }
-            
+
             return parseResponse(text);
         }
 
@@ -593,4 +633,3 @@ async function generateWithGemini(
         throw new Error('Failed to generate policy explanation: Unknown error');
     }
 }
-
