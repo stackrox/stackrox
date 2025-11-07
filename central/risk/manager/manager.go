@@ -440,7 +440,23 @@ func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID stri
 		return nil, errors.Wrapf(err, "failed to reset risk for deployment %s", deploymentID)
 	}
 
-	log.Infof("Reset user ranking adjustment for deployment %s", deploymentID)
+	// Reset the deployment's priority field to the original ML score
+	deployment, exists, err := e.deploymentStorage.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get deployment %s to reset priority", deploymentID)
+	}
+	if !exists {
+		return nil, errors.Errorf("deployment %s not found", deploymentID)
+	}
+
+	// Reset priority to the original ML score (convert float32 to int64)
+	deployment.Priority = int64(risk.GetScore() * 1000)
+
+	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
+		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
+	}
+
+	log.Infof("Reset user ranking adjustment for deployment %s, priority reset to %d", deploymentID, deployment.Priority)
 	return risk, nil
 }
 
@@ -514,11 +530,29 @@ func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deployme
 		return nil, errors.Wrapf(err, "failed to update risk for deployment %s", deploymentID)
 	}
 
+	// Update the deployment's priority field to reflect the adjusted score
+	// This ensures sorting by "Deployment Risk Priority" uses the user-adjusted score
+	deployment, exists, err := e.deploymentStorage.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get deployment %s to update priority", deploymentID)
+	}
+	if !exists {
+		return nil, errors.Errorf("deployment %s not found", deploymentID)
+	}
+
+	// Update priority to the adjusted score (convert float32 to int64)
+	// Priority is stored as int64 but represents a score, so we multiply by 1000 to preserve precision
+	deployment.Priority = int64(newScore * 1000)
+
+	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
+		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
+	}
+
 	direction := "up"
 	if !moveUp {
 		direction = "down"
 	}
-	log.Infof("Deployment %s moved %s: score %.2f -> %.2f", deploymentID, direction, currentScore, newScore)
+	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d", deploymentID, direction, currentScore, newScore, deployment.Priority)
 
 	return targetRisk, nil
 }

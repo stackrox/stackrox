@@ -21,7 +21,10 @@ function RiskTable({
     }
 
     async function handleReorder(fromIndex, toIndex) {
+        console.log(`[RiskTable] handleReorder called: fromIndex=${fromIndex}, toIndex=${toIndex}`);
+
         if (fromIndex === toIndex || isLoading) {
+            console.log('[RiskTable] Skipping reorder - same position or already loading');
             return;
         }
 
@@ -35,13 +38,17 @@ function RiskTable({
         // Determine direction based on indices
         const direction = fromIndex < toIndex ? 'RISK_POSITION_DOWN' : 'RISK_POSITION_UP';
 
+        console.log(`[RiskTable] Calling API: deploymentId=${deploymentId}, direction=${direction}`);
+
         try {
             const response = await changeDeploymentRiskPosition(deploymentId, direction);
+            console.log('[RiskTable] API call successful:', response);
             setSuccessMessage(response.message || 'Deployment position updated successfully');
             if (onRefreshData) {
                 onRefreshData();
             }
         } catch (error) {
+            console.error('[RiskTable] API call failed:', error);
             setErrorMessage(
                 error.response?.data?.message ||
                     error.message ||

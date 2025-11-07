@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { Identifier, XYCoord } from 'dnd-core';
@@ -48,9 +48,10 @@ interface DraggableRowProps {
     moveRow: (dragIndex: number, hoverIndex: number) => void;
     onRowClick: (row: DeploymentRow) => void;
     selectedDeploymentId?: string;
+    onDragEnd: () => void;
 }
 
-function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId }: DraggableRowProps) {
+function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId, onDragEnd }: DraggableRowProps) {
     const ref = useRef<HTMLTableRowElement>(null);
     const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>({
         accept: ITEM_TYPE,
@@ -96,6 +97,10 @@ function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId }:
         collect: (monitor: any) => ({
             isDragging: monitor.isDragging(),
         }),
+        end: (item, monitor) => {
+            console.log('[DraggableRow] Drag ended, calling onDragEnd');
+            onDragEnd();
+        },
     });
 
     preview(drop(ref));
@@ -171,9 +176,10 @@ function DraggableRiskTableInner({
     const [rows, setRows] = useState(currentDeployments);
 
     // Update rows when currentDeployments changes
-    if (currentDeployments !== rows) {
+    useEffect(() => {
+        console.log('[DraggableRiskTable] Props updated, resetting rows state');
         setRows(currentDeployments);
-    }
+    }, [currentDeployments]);
 
     const moveRow = (dragIndex: number, hoverIndex: number) => {
         const newRows = [...rows];
@@ -184,13 +190,19 @@ function DraggableRiskTableInner({
     };
 
     const handleDragEnd = () => {
+        console.log('[DraggableRiskTable] handleDragEnd called');
+
         // Find which rows changed position
         const originalIndices = currentDeployments.map((r) => r.deployment.id);
         const newIndices = rows.map((r) => r.deployment.id);
 
+        console.log('[DraggableRiskTable] Original order:', originalIndices);
+        console.log('[DraggableRiskTable] New order:', newIndices);
+
         for (let i = 0; i < newIndices.length; i++) {
             const originalIndex = originalIndices.indexOf(newIndices[i]);
             if (originalIndex !== i) {
+                console.log(`[DraggableRiskTable] Calling onReorder(${originalIndex}, ${i}) for deployment ${newIndices[i]}`);
                 onReorder(originalIndex, i);
                 break;
             }
@@ -210,7 +222,7 @@ function DraggableRiskTableInner({
                     <Th>Priority</Th>
                 </Tr>
             </Thead>
-            <Tbody onDragEnd={handleDragEnd}>
+            <Tbody>
                 {rows.map((row, index) => (
                     <DraggableRow
                         key={row.deployment.id}
@@ -219,6 +231,7 @@ function DraggableRiskTableInner({
                         moveRow={moveRow}
                         onRowClick={onRowClick}
                         selectedDeploymentId={selectedDeploymentId}
+                        onDragEnd={handleDragEnd}
                     />
                 ))}
             </Tbody>
