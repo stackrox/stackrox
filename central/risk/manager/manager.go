@@ -517,12 +517,13 @@ func (e *managerImpl) adjustDeploymentRisk(ctx context.Context, deploymentID str
 		targetRisk.UserRankingAdjustment = &storage.UserRankingAdjustment{}
 	}
 
-	targetRisk.UserRankingAdjustment.AdjustedScore = newScore
-	targetRisk.UserRankingAdjustment.LastAdjusted = protocompat.TimestampNow()
+	adj := targetRisk.GetUserRankingAdjustment()
+	adj.AdjustedScore = newScore
+	adj.LastAdjusted = protocompat.TimestampNow()
 
 	// Get user ID from context (if available via authn)
 	// For now, we'll use a placeholder - this should be extracted from the context
-	targetRisk.UserRankingAdjustment.LastAdjustedBy = "user" // TODO: Extract from authn context
+	adj.LastAdjustedBy = "user" // TODO: Extract from authn context
 
 	// Save the updated risk
 	if err := e.riskStorage.UpsertRisk(ctx, targetRisk); err != nil {

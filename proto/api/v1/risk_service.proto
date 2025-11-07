@@ -13,17 +13,13 @@ service RiskService {
   // UpvoteDeploymentRisk adjusts a deployment's risk ranking upward
   // by placing it between the two deployments above it in the current ranking
   rpc UpvoteDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
-    option (google.api.http) = {
-      post: "/v1/risk/deployment/{deployment_id}/upvote"
-    };
+    option (google.api.http) = {post: "/v1/risk/deployment/{deployment_id}/upvote"};
   }
 
   // DownvoteDeploymentRisk adjusts a deployment's risk ranking downward
   // by placing it between the two deployments below it in the current ranking
   rpc DownvoteDeploymentRisk(RiskAdjustmentRequest) returns (RiskAdjustmentResponse) {
-    option (google.api.http) = {
-      post: "/v1/risk/deployment/{deployment_id}/downvote"
-    };
+    option (google.api.http) = {post: "/v1/risk/deployment/{deployment_id}/downvote"};
   }
 
   // ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
