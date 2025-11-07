@@ -94,6 +94,6 @@ func getHeapAllocAndObjects(maxHeap uint64, maxHeapObj uint64) (uint64, uint64) 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	maxHeap = max(maxHeap, m.HeapAlloc)
-	maxHeapObj = max(maxHeap, m.HeapObjects)
+	maxHeapObj = max(maxHeapObj, m.HeapObjects)
 	return maxHeap, maxHeapObj
 }
