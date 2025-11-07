@@ -4,7 +4,7 @@
 set -eo pipefail
 
 NAMESPACE="${NAMESPACE:-stackrox}"
-SPIRE_NAMESPACE="zero-trust-workload-identity-manager"
+SPIRE_NAMESPACE="${SPIRE_NAMESPACE:-zero-trust-workload-identity-manager}"
 
 echo "=========================================="
 echo "StackRox SPIRE Integration Demo"
