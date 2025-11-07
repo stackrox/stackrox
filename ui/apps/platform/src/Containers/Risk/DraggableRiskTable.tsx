@@ -227,6 +227,7 @@ function DraggableRiskTableInner({
 
 export default function DraggableRiskTable(props: DraggableRiskTableProps) {
     return (
+        /* @ts-expect-error DndProvider types do not expect children as props */
         <DndProvider backend={HTML5Backend}>
             <DraggableRiskTableInner {...props} />
         </DndProvider>
