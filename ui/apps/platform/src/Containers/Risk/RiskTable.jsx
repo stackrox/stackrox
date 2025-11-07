@@ -3,99 +3,54 @@ import PropTypes from 'prop-types';
 import { Alert, AlertActionCloseButton } from '@patternfly/react-core';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/TableV2';
 import { changeDeploymentRiskPosition } from 'services/RiskService';
-
-import riskTableColumnDescriptors from './riskTableColumnDescriptors';
-
-function sortOptionFromTableState(state) {
-    let sortOption = null;
-    if (state.sorted.length && state.sorted[0].id) {
-        const column = riskTableColumnDescriptors.find(
-            (col) => col.accessor === state.sorted[0].id
-        );
-        sortOption = {
-            field: column.searchField,
-            reversed: state.sorted[0].desc,
-        };
-    }
-    return sortOption;
-}
+import DraggableRiskTable from './DraggableRiskTable';
 
 function RiskTable({
     currentDeployments,
     setSelectedDeploymentId,
     selectedDeploymentId,
-    setSortOption,
     onRefreshData,
 }) {
-    const [loadingDeploymentId, setLoadingDeploymentId] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    function onFetchData(state) {
-        const newSortOption = sortOptionFromTableState(state);
-        if (!newSortOption) {
+    function updateSelectedDeployment(row) {
+        setSelectedDeploymentId(row.deployment.id);
+    }
+
+    async function handleReorder(fromIndex, toIndex) {
+        if (fromIndex === toIndex || isLoading) {
             return;
         }
-        setSortOption(newSortOption);
-    }
 
-    function updateSelectedDeployment({ deployment }) {
-        setSelectedDeploymentId(deployment.id);
-    }
-
-    async function handleMoveUp(deploymentId) {
-        setLoadingDeploymentId(deploymentId);
+        setIsLoading(true);
         setErrorMessage('');
         setSuccessMessage('');
 
+        const movedRow = currentDeployments[fromIndex];
+        const deploymentId = movedRow.deployment.id;
+
+        // Determine direction based on indices
+        const direction = fromIndex < toIndex ? 'RISK_POSITION_DOWN' : 'RISK_POSITION_UP';
+
         try {
-            const response = await changeDeploymentRiskPosition(deploymentId, 'RISK_POSITION_UP');
-            setSuccessMessage(response.message || 'Deployment moved up successfully');
+            const response = await changeDeploymentRiskPosition(deploymentId, direction);
+            setSuccessMessage(response.message || 'Deployment position updated successfully');
             if (onRefreshData) {
                 onRefreshData();
             }
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || error.message || 'Failed to move deployment up');
+            setErrorMessage(
+                error.response?.data?.message ||
+                    error.message ||
+                    'Failed to update deployment position'
+            );
         } finally {
-            setLoadingDeploymentId(null);
+            setIsLoading(false);
         }
     }
-
-    async function handleMoveDown(deploymentId) {
-        setLoadingDeploymentId(deploymentId);
-        setErrorMessage('');
-        setSuccessMessage('');
-
-        try {
-            const response = await changeDeploymentRiskPosition(deploymentId, 'RISK_POSITION_DOWN');
-            setSuccessMessage(response.message || 'Deployment moved down successfully');
-            if (onRefreshData) {
-                onRefreshData();
-            }
-        } catch (error) {
-            setErrorMessage(error.response?.data?.message || error.message || 'Failed to move deployment down');
-        } finally {
-            setLoadingDeploymentId(null);
-        }
-    }
-
-    // Create enhanced column descriptors with handlers
-    const columnsWithHandlers = riskTableColumnDescriptors.map((col) => {
-        if (col.accessor === 'actions') {
-            return {
-                ...col,
-                Cell: (props) => col.Cell({
-                    ...props,
-                    onMoveUp: handleMoveUp,
-                    onMoveDown: handleMoveDown,
-                    loadingDeploymentId,
-                }),
-            };
-        }
-        return col;
-    });
 
     if (!currentDeployments.length) {
         return <NoResultsMessage message="No results found. Please refine your search." />;
@@ -119,14 +74,11 @@ function RiskTable({
                     className="pf-v5-u-mb-md"
                 />
             )}
-            <Table
-                idAttribute="deployment.id"
-                rows={currentDeployments}
-                columns={columnsWithHandlers}
+            <DraggableRiskTable
+                currentDeployments={currentDeployments}
                 onRowClick={updateSelectedDeployment}
-                selectedRowId={selectedDeploymentId}
-                onFetchData={onFetchData}
-                noDataText="No results found. Please refine your search."
+                selectedDeploymentId={selectedDeploymentId}
+                onReorder={handleReorder}
             />
         </>
     );
@@ -136,7 +88,6 @@ RiskTable.propTypes = {
     currentDeployments: PropTypes.arrayOf(PropTypes.object).isRequired,
     selectedDeploymentId: PropTypes.string,
     setSelectedDeploymentId: PropTypes.func.isRequired,
-    setSortOption: PropTypes.func.isRequired,
     onRefreshData: PropTypes.func,
 };
 

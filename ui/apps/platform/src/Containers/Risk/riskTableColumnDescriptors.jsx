@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import find from 'lodash/find';
-import { Tooltip, Button } from '@patternfly/react-core';
-import { CheckIcon, ExclamationCircleIcon, AngleUpIcon, AngleDownIcon } from '@patternfly/react-icons';
+import { Tooltip } from '@patternfly/react-core';
+import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import { sortDate, sortValue } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
@@ -45,51 +45,6 @@ DeploymentNameColumn.propTypes = {
     }).isRequired,
 };
 
-function ActionButtonsColumn({ original, onMoveUp, onMoveDown, loadingDeploymentId }) {
-    const deploymentId = original.deployment.id;
-    const isLoading = loadingDeploymentId === deploymentId;
-
-    return (
-        <div className="flex items-center gap-2">
-            <Tooltip content="Move deployment up in risk ranking">
-                <Button
-                    variant="plain"
-                    aria-label="Move up"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onMoveUp(deploymentId);
-                    }}
-                    isDisabled={isLoading}
-                    icon={<AngleUpIcon />}
-                />
-            </Tooltip>
-            <Tooltip content="Move deployment down in risk ranking">
-                <Button
-                    variant="plain"
-                    aria-label="Move down"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onMoveDown(deploymentId);
-                    }}
-                    isDisabled={isLoading}
-                    icon={<AngleDownIcon />}
-                />
-            </Tooltip>
-        </div>
-    );
-}
-
-ActionButtonsColumn.propTypes = {
-    original: PropTypes.shape({
-        deployment: PropTypes.shape({
-            id: PropTypes.string.isRequired,
-        }).isRequired,
-    }).isRequired,
-    onMoveUp: PropTypes.func.isRequired,
-    onMoveDown: PropTypes.func.isRequired,
-    loadingDeploymentId: PropTypes.string,
-};
-
 const riskTableColumnDescriptors = [
     {
         Header: 'Name',
@@ -124,13 +79,6 @@ const riskTableColumnDescriptors = [
         },
         sortMethod: sortValue,
     },
-    {
-        Header: 'Actions',
-        accessor: 'actions',
-        Cell: ActionButtonsColumn,
-        sortable: false,
-    },
 ];
 
 export default riskTableColumnDescriptors;
-export { ActionButtonsColumn };

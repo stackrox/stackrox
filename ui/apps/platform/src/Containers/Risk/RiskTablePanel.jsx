@@ -126,7 +126,6 @@ function RiskTablePanel({
                         currentDeployments={currentDeployments}
                         setSelectedDeploymentId={setSelectedDeploymentId}
                         selectedDeploymentId={selectedDeploymentId}
-                        setSortOption={setSortOption}
                         onRefreshData={handleRefreshData}
                     />
                 )}
