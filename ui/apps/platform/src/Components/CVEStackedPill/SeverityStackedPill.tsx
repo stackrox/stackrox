@@ -35,7 +35,9 @@ const vulnKeyMap = {
     moderate: 'MODERATE_VULNERABILITY_SEVERITY',
     important: 'IMPORTANT_VULNERABILITY_SEVERITY',
     critical: 'CRITICAL_VULNERABILITY_SEVERITY',
-};
+} as const;
+
+type VulnKey = keyof typeof vulnKeyMap;
 
 function SeverityStackedPill({ vulnCounter }: SeverityStackedPillProps): ReactElement {
     const { total } = vulnCounter.all;
@@ -45,7 +47,7 @@ function SeverityStackedPill({ vulnCounter }: SeverityStackedPillProps): ReactEl
             className="flex rounded-full w-full min-w-10 max-w-24 h-3 bg-base-300"
             style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
         >
-            {Object.entries(vulnKeyMap)
+            {(Object.entries(vulnKeyMap) as [VulnKey, (typeof vulnKeyMap)[VulnKey]][])
                 .filter(([dataKey]) => vulnCounter[dataKey].total !== 0)
                 .map(([dataKey, colorKey]) => (
                     <div

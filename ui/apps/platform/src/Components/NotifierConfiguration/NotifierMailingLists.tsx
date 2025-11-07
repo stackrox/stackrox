@@ -46,11 +46,15 @@ function NotifierMailingLists({
 }: NotifierMailingListsProps): ReactElement {
     const [isEmailNotifierModalOpen, setIsEmailNotifierModalOpen] = useState(false);
 
-    function updateNotifierList(notifierAdded: NotifierIntegrationBase) {
+    function updateNotifierList(notifierIdAdded: string) {
         fetchNotifierIntegrations()
             .then((notifiersFetched) => {
-                setNotifiers(notifiersFetched.filter(isEmailNotifier));
-                setNotifier(notifierAdded);
+                const emailNotifiers = notifiersFetched.filter(isEmailNotifier);
+                setNotifiers(emailNotifiers);
+                const notifierAdded = emailNotifiers.find((n) => n.id === notifierIdAdded);
+                if (notifierAdded) {
+                    setNotifier(notifierAdded);
+                }
                 setIsEmailNotifierModalOpen(false);
             })
             .catch(() => {
@@ -62,7 +66,7 @@ function NotifierMailingLists({
         setIsEmailNotifierModalOpen((current) => !current);
     }
 
-    function onSelectNotifier(_id, selectionId) {
+    function onSelectNotifier(_id: string, selectionId: string) {
         const notifierSelected = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierSelected) {
             setNotifier(notifierSelected);

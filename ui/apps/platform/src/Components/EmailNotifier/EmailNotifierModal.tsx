@@ -14,9 +14,11 @@ import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
 import EmailNotifierForm from './EmailNotifierForm';
 
+type FormResponseMessageWithData = FormResponseMessage & { data?: string };
+
 export type EmailNotifierModalProps = {
     isOpen: boolean;
-    updateNotifierList: (string) => void;
+    updateNotifierList: (id: string) => void;
     onToggleEmailNotifierModal: () => void;
 };
 
@@ -36,15 +38,15 @@ function EmailNotifierModal({
             onCancel: onToggleEmailNotifierModal,
         });
 
-    function onSave(emailNotifier: EmailIntegrationFormValues): Promise<FormResponseMessage> {
+    function onSave(
+        emailNotifier: EmailIntegrationFormValues
+    ): Promise<FormResponseMessageWithData> {
         return createIntegration('notifiers', emailNotifier).then((response) => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            return { isError: false, message: '', data: response?.data ?? null };
+            return { isError: false, message: '', data: response?.id ?? undefined };
         });
     }
 
-    function onCompleteRequest(response) {
+    function onCompleteRequest(response: FormResponseMessageWithData) {
         updateNotifierList(response?.data ?? '');
         onToggleEmailNotifierModal();
     }

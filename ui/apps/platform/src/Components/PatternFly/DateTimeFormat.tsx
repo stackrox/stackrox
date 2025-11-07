@@ -2,7 +2,7 @@ import { isValid, parse } from 'date-fns';
 
 import { getDateTime } from 'utils/dateUtils';
 
-function DateTimeFormat({ time, isInline = false }) {
+function DateTimeFormat({ time, isInline = false }: { time: string; isInline?: boolean }) {
     if (!time || !isValid(parse(time))) {
         return isInline ? <span>—</span> : <div>—</div>;
     }

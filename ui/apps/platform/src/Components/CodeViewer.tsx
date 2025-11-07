@@ -3,9 +3,13 @@ import type { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction }
 import { Button, ClipboardCopyButton, CodeBlock, CodeBlockAction } from '@patternfly/react-core';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
+// @ts-expect-error no type definitions available for react-syntax-highlighter
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+// @ts-expect-error no type definitions available for react-syntax-highlighter styles
 import lightTheme from 'react-syntax-highlighter/dist/esm/styles/prism/one-light';
+// @ts-expect-error no type definitions available for react-syntax-highlighter styles
 import darkTheme from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
+// @ts-expect-error no type definitions available for react-syntax-highlighter languages
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 
 import useClipboardCopy from 'hooks/useClipboardCopy';
@@ -16,7 +20,7 @@ const CodeViewerThemeContext = createContext<
     ['light' | 'dark', Dispatch<SetStateAction<'light' | 'dark'>>] | undefined
 >(undefined);
 
-export const CodeViewerThemeProvider = ({ children }) => {
+export const CodeViewerThemeProvider = ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<'light' | 'dark'>('light');
 
     return (
