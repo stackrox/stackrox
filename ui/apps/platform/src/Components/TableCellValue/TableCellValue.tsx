@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-// @ts-expect-error no type definitions available for object-resolve-path
 import resolvePath from 'object-resolve-path';
 
 type TableCellValueProps<T> = {

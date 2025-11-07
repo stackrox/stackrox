@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-// @ts-expect-error no type definitions available for react-helmet
 import { Helmet } from 'react-helmet';
 
 import { getProductBranding } from 'constants/productBranding';
