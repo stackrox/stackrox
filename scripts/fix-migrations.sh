@@ -19,6 +19,7 @@ for package in $PACKAGES; do
         exit 1
     fi
     mv "$MIGRATION_PATH" "$TEMP_DIR/$package"
+    rm "$TEMP_DIR/$package/migration.go"
 done
 
 for package in $PACKAGES; do
@@ -33,7 +34,7 @@ for package in $PACKAGES; do
         exit 1
     fi
 
-    rm -rf "${NEW_MIGRATION_PACKAGE}"/*
+    rm -f "${NEW_MIGRATION_PACKAGE}"/{migration_impl,migration_test}.go
 
     mv "$TEMP_DIR/$package"/* "$NEW_MIGRATION_PACKAGE/"
 
