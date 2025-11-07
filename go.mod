@@ -108,7 +108,7 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.2
 	github.com/quay/claircore v1.5.44
-	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
+	github.com/quay/claircore/toolkit v1.3.0
 	github.com/quay/zlog v1.1.9
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.34.0
