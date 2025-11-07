@@ -16,10 +16,10 @@
     "application/json"
   ],
   "paths": {
-    "/v1/risk/deployment/{deploymentId}/downvote": {
+    "/v1/risk/deployment/{deploymentId}/position": {
       "post": {
-        "summary": "DownvoteDeploymentRisk adjusts a deployment's risk ranking downward\nby placing it between the two deployments below it in the current ranking",
-        "operationId": "RiskService_DownvoteDeploymentRisk",
+        "summary": "ChangeDeploymentRiskPosition adjusts a deployment's risk ranking\nby placing it between the current position and the adjacent deployment\n(up or down based on direction parameter)",
+        "operationId": "RiskService_ChangeDeploymentRiskPosition",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -41,6 +41,14 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RiskServiceChangeDeploymentRiskPositionBody"
+            }
           }
         ],
         "tags": [
@@ -87,38 +95,6 @@
           "RiskService"
         ]
       }
-    },
-    "/v1/risk/deployment/{deploymentId}/upvote": {
-      "post": {
-        "summary": "UpvoteDeploymentRisk adjusts a deployment's risk ranking upward\nby placing it between the two deployments above it in the current ranking",
-        "operationId": "RiskService_UpvoteDeploymentRisk",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1RiskAdjustmentResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "deploymentId",
-            "description": "Deployment ID to adjust",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "RiskService"
-        ]
-      }
     }
   },
   "definitions": {
@@ -133,8 +109,18 @@
         }
       }
     },
+    "RiskServiceChangeDeploymentRiskPositionBody": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "$ref": "#/definitions/v1RiskPositionDirection",
+          "title": "Direction to move in the ranking"
+        }
+      }
+    },
     "RiskServiceResetDeploymentRiskBody": {
-      "type": "object"
+      "type": "object",
+      "title": "Keep for backward compatibility with Reset endpoint"
     },
     "googlerpcStatus": {
       "type": "object",
@@ -284,6 +270,17 @@
           "title": "Human-readable message about the adjustment"
         }
       }
+    },
+    "v1RiskPositionDirection": {
+      "type": "string",
+      "enum": [
+        "RISK_POSITION_DIRECTION_UNSPECIFIED",
+        "RISK_POSITION_UP",
+        "RISK_POSITION_DOWN"
+      ],
+      "default": "RISK_POSITION_DIRECTION_UNSPECIFIED",
+      "description": "- RISK_POSITION_UP: Move deployment higher in ranking (increase score)\n - RISK_POSITION_DOWN: Move deployment lower in ranking (decrease score)",
+      "title": "Direction for risk ranking position changes"
     }
   }
 }

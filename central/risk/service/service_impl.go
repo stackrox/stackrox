@@ -19,8 +19,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
-			"/v1.RiskService/UpvoteDeploymentRisk",
-			"/v1.RiskService/DownvoteDeploymentRisk",
+			"/v1.RiskService/ChangeDeploymentRiskPosition",
 			"/v1.RiskService/ResetDeploymentRisk",
 		},
 	})
@@ -48,32 +47,33 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// UpvoteDeploymentRisk adjusts a deployment's risk ranking upward.
-func (s *serviceImpl) UpvoteDeploymentRisk(ctx context.Context, req *v1.RiskAdjustmentRequest) (*v1.RiskAdjustmentResponse, error) {
+// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking position.
+func (s *serviceImpl) ChangeDeploymentRiskPosition(ctx context.Context, req *v1.RiskPositionChangeRequest) (*v1.RiskAdjustmentResponse, error) {
 	if req.GetDeploymentId() == "" {
 		return nil, errors.New("deployment_id is required")
 	}
 
-	risk, err := s.manager.UpvoteDeploymentRisk(ctx, req.GetDeploymentId())
+	if req.GetDirection() == v1.RiskPositionDirection_RISK_POSITION_DIRECTION_UNSPECIFIED {
+		return nil, errors.New("direction is required")
+	}
+
+	moveUp := req.GetDirection() == v1.RiskPositionDirection_RISK_POSITION_UP
+
+	risk, err := s.manager.ChangeDeploymentRiskPosition(ctx, req.GetDeploymentId(), moveUp)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to upvote deployment %s", req.GetDeploymentId())
+		direction := "up"
+		if !moveUp {
+			direction = "down"
+		}
+		return nil, errors.Wrapf(err, "failed to move deployment %s %s", req.GetDeploymentId(), direction)
 	}
 
-	return buildAdjustmentResponse(risk, "Deployment upvoted successfully"), nil
-}
-
-// DownvoteDeploymentRisk adjusts a deployment's risk ranking downward.
-func (s *serviceImpl) DownvoteDeploymentRisk(ctx context.Context, req *v1.RiskAdjustmentRequest) (*v1.RiskAdjustmentResponse, error) {
-	if req.GetDeploymentId() == "" {
-		return nil, errors.New("deployment_id is required")
+	message := "Deployment position moved up in ranking"
+	if !moveUp {
+		message = "Deployment position moved down in ranking"
 	}
 
-	risk, err := s.manager.DownvoteDeploymentRisk(ctx, req.GetDeploymentId())
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to downvote deployment %s", req.GetDeploymentId())
-	}
-
-	return buildAdjustmentResponse(risk, "Deployment downvoted successfully"), nil
+	return buildAdjustmentResponse(risk, message), nil
 }
 
 // ResetDeploymentRisk removes user ranking adjustments.

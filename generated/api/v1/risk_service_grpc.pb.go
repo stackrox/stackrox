@@ -19,9 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RiskService_UpvoteDeploymentRisk_FullMethodName   = "/v1.RiskService/UpvoteDeploymentRisk"
-	RiskService_DownvoteDeploymentRisk_FullMethodName = "/v1.RiskService/DownvoteDeploymentRisk"
-	RiskService_ResetDeploymentRisk_FullMethodName    = "/v1.RiskService/ResetDeploymentRisk"
+	RiskService_ChangeDeploymentRiskPosition_FullMethodName = "/v1.RiskService/ChangeDeploymentRiskPosition"
+	RiskService_ResetDeploymentRisk_FullMethodName          = "/v1.RiskService/ResetDeploymentRisk"
 )
 
 // RiskServiceClient is the client API for RiskService service.
@@ -30,12 +29,10 @@ const (
 //
 // RiskService provides APIs for managing deployment risk rankings
 type RiskServiceClient interface {
-	// UpvoteDeploymentRisk adjusts a deployment's risk ranking upward
-	// by placing it between the two deployments above it in the current ranking
-	UpvoteDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
-	// DownvoteDeploymentRisk adjusts a deployment's risk ranking downward
-	// by placing it between the two deployments below it in the current ranking
-	DownvoteDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
+	// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
+	// by placing it between the current position and the adjacent deployment
+	// (up or down based on direction parameter)
+	ChangeDeploymentRiskPosition(ctx context.Context, in *RiskPositionChangeRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
 	// ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
 	ResetDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
 }
@@ -48,20 +45,10 @@ func NewRiskServiceClient(cc grpc.ClientConnInterface) RiskServiceClient {
 	return &riskServiceClient{cc}
 }
 
-func (c *riskServiceClient) UpvoteDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error) {
+func (c *riskServiceClient) ChangeDeploymentRiskPosition(ctx context.Context, in *RiskPositionChangeRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RiskAdjustmentResponse)
-	err := c.cc.Invoke(ctx, RiskService_UpvoteDeploymentRisk_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *riskServiceClient) DownvoteDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RiskAdjustmentResponse)
-	err := c.cc.Invoke(ctx, RiskService_DownvoteDeploymentRisk_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, RiskService_ChangeDeploymentRiskPosition_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +71,10 @@ func (c *riskServiceClient) ResetDeploymentRisk(ctx context.Context, in *RiskAdj
 //
 // RiskService provides APIs for managing deployment risk rankings
 type RiskServiceServer interface {
-	// UpvoteDeploymentRisk adjusts a deployment's risk ranking upward
-	// by placing it between the two deployments above it in the current ranking
-	UpvoteDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error)
-	// DownvoteDeploymentRisk adjusts a deployment's risk ranking downward
-	// by placing it between the two deployments below it in the current ranking
-	DownvoteDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error)
+	// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
+	// by placing it between the current position and the adjacent deployment
+	// (up or down based on direction parameter)
+	ChangeDeploymentRiskPosition(context.Context, *RiskPositionChangeRequest) (*RiskAdjustmentResponse, error)
 	// ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
 	ResetDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error)
 }
@@ -101,11 +86,8 @@ type RiskServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRiskServiceServer struct{}
 
-func (UnimplementedRiskServiceServer) UpvoteDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpvoteDeploymentRisk not implemented")
-}
-func (UnimplementedRiskServiceServer) DownvoteDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DownvoteDeploymentRisk not implemented")
+func (UnimplementedRiskServiceServer) ChangeDeploymentRiskPosition(context.Context, *RiskPositionChangeRequest) (*RiskAdjustmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeDeploymentRiskPosition not implemented")
 }
 func (UnimplementedRiskServiceServer) ResetDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetDeploymentRisk not implemented")
@@ -130,38 +112,20 @@ func RegisterRiskServiceServer(s grpc.ServiceRegistrar, srv RiskServiceServer) {
 	s.RegisterService(&RiskService_ServiceDesc, srv)
 }
 
-func _RiskService_UpvoteDeploymentRisk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RiskAdjustmentRequest)
+func _RiskService_ChangeDeploymentRiskPosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RiskPositionChangeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RiskServiceServer).UpvoteDeploymentRisk(ctx, in)
+		return srv.(RiskServiceServer).ChangeDeploymentRiskPosition(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RiskService_UpvoteDeploymentRisk_FullMethodName,
+		FullMethod: RiskService_ChangeDeploymentRiskPosition_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RiskServiceServer).UpvoteDeploymentRisk(ctx, req.(*RiskAdjustmentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RiskService_DownvoteDeploymentRisk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RiskAdjustmentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RiskServiceServer).DownvoteDeploymentRisk(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RiskService_DownvoteDeploymentRisk_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RiskServiceServer).DownvoteDeploymentRisk(ctx, req.(*RiskAdjustmentRequest))
+		return srv.(RiskServiceServer).ChangeDeploymentRiskPosition(ctx, req.(*RiskPositionChangeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,12 +156,8 @@ var RiskService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RiskServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpvoteDeploymentRisk",
-			Handler:    _RiskService_UpvoteDeploymentRisk_Handler,
-		},
-		{
-			MethodName: "DownvoteDeploymentRisk",
-			Handler:    _RiskService_DownvoteDeploymentRisk_Handler,
+			MethodName: "ChangeDeploymentRiskPosition",
+			Handler:    _RiskService_ChangeDeploymentRiskPosition_Handler,
 		},
 		{
 			MethodName: "ResetDeploymentRisk",

@@ -43,20 +43,20 @@ func TestGetEffectiveScore(t *testing.T) {
 	})
 }
 
-func TestCalculateUpvoteScore(t *testing.T) {
-	t.Run("places deployment midway between current and higher score", func(t *testing.T) {
+func TestCalculatePositionChangeScore(t *testing.T) {
+	t.Run("moving up places deployment midway between current and higher score", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
 			createRisk("deploy-3", 4.0),
 		}
 
-		// Upvote deploy-2 (score 6.0) - should place it between 6.0 and 8.0
-		newScore := CalculateUpvoteScore(6.0, risks, 1)
+		// Move deploy-2 up (score 6.0) - should place it between 6.0 and 8.0
+		newScore := CalculatePositionChangeScore(6.0, risks, 1, true)
 		assert.Equal(t, float32(7.0), newScore) // (6.0 + 8.0) / 2 = 7.0
 	})
 
-	t.Run("skips deployments with same score", func(t *testing.T) {
+	t.Run("moving up skips deployments with same score", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
@@ -64,49 +64,47 @@ func TestCalculateUpvoteScore(t *testing.T) {
 			createRisk("deploy-4", 4.0),
 		}
 
-		// Upvote deploy-3 (score 6.0) - should skip deploy-2 (also 6.0) and use deploy-1 (8.0)
-		newScore := CalculateUpvoteScore(6.0, risks, 2)
+		// Move deploy-3 up (score 6.0) - should skip deploy-2 (also 6.0) and use deploy-1 (8.0)
+		newScore := CalculatePositionChangeScore(6.0, risks, 2, true)
 		assert.Equal(t, float32(7.0), newScore) // (6.0 + 8.0) / 2 = 7.0
 	})
 
-	t.Run("returns current score when already at top", func(t *testing.T) {
+	t.Run("moving up returns current score when already at top", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
 			createRisk("deploy-3", 4.0),
 		}
 
-		// Upvote deploy-1 (already at top) - should be no-op
-		newScore := CalculateUpvoteScore(8.0, risks, 0)
+		// Move deploy-1 up (already at top) - should be no-op
+		newScore := CalculatePositionChangeScore(8.0, risks, 0, true)
 		assert.Equal(t, float32(8.0), newScore)
 	})
 
-	t.Run("allows scores to exceed 10.0", func(t *testing.T) {
+	t.Run("moving up allows scores to exceed 10.0", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRiskWithAdjustment("deploy-1", 9.0, 11.0), // Already adjusted above 10
 			createRisk("deploy-2", 9.0),
 		}
 
-		// Upvote deploy-2 - should place it above 10.0
-		newScore := CalculateUpvoteScore(9.0, risks, 1)
+		// Move deploy-2 up - should place it above 10.0
+		newScore := CalculatePositionChangeScore(9.0, risks, 1, true)
 		assert.Equal(t, float32(10.0), newScore) // (9.0 + 11.0) / 2 = 10.0
 	})
-}
 
-func TestCalculateDownvoteScore(t *testing.T) {
-	t.Run("places deployment midway between current and lower score", func(t *testing.T) {
+	t.Run("moving down places deployment midway between current and lower score", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
 			createRisk("deploy-3", 4.0),
 		}
 
-		// Downvote deploy-2 (score 6.0) - should place it between 6.0 and 4.0
-		newScore := CalculateDownvoteScore(6.0, risks, 1)
+		// Move deploy-2 down (score 6.0) - should place it between 6.0 and 4.0
+		newScore := CalculatePositionChangeScore(6.0, risks, 1, false)
 		assert.Equal(t, float32(5.0), newScore) // (6.0 + 4.0) / 2 = 5.0
 	})
 
-	t.Run("skips deployments with same score", func(t *testing.T) {
+	t.Run("moving down skips deployments with same score", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
@@ -114,31 +112,31 @@ func TestCalculateDownvoteScore(t *testing.T) {
 			createRisk("deploy-4", 4.0),
 		}
 
-		// Downvote deploy-2 (score 6.0) - should skip deploy-3 (also 6.0) and use deploy-4 (4.0)
-		newScore := CalculateDownvoteScore(6.0, risks, 1)
+		// Move deploy-2 down (score 6.0) - should skip deploy-3 (also 6.0) and use deploy-4 (4.0)
+		newScore := CalculatePositionChangeScore(6.0, risks, 1, false)
 		assert.Equal(t, float32(5.0), newScore) // (6.0 + 4.0) / 2 = 5.0
 	})
 
-	t.Run("returns current score when already at bottom", func(t *testing.T) {
+	t.Run("moving down returns current score when already at bottom", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 8.0),
 			createRisk("deploy-2", 6.0),
 			createRisk("deploy-3", 4.0),
 		}
 
-		// Downvote deploy-3 (already at bottom) - should be no-op
-		newScore := CalculateDownvoteScore(4.0, risks, 2)
+		// Move deploy-3 down (already at bottom) - should be no-op
+		newScore := CalculatePositionChangeScore(4.0, risks, 2, false)
 		assert.Equal(t, float32(4.0), newScore)
 	})
 
-	t.Run("allows scores to go below 0.0", func(t *testing.T) {
+	t.Run("moving down allows scores to go below 0.0", func(t *testing.T) {
 		risks := []*storage.Risk{
 			createRisk("deploy-1", 2.0),
 			createRiskWithAdjustment("deploy-2", 1.0, -1.0), // Already adjusted below 0
 		}
 
-		// Downvote deploy-1 - should place it below 0.0
-		newScore := CalculateDownvoteScore(2.0, risks, 0)
+		// Move deploy-1 down - should place it below 0.0
+		newScore := CalculatePositionChangeScore(2.0, risks, 0, false)
 		assert.Equal(t, float32(0.5), newScore) // (2.0 + (-1.0)) / 2 = 0.5
 	})
 }

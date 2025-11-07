@@ -51,8 +51,7 @@ type Manager interface {
 	CalculateRiskAndUpsertNode(node *storage.Node) error
 
 	// User ranking adjustment methods
-	UpvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error)
-	DownvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error)
+	ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error)
 	ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error)
 }
 
@@ -422,18 +421,6 @@ func (e *managerImpl) updateClusterRisk(clusterID string, oldDeploymentScore flo
 	e.clusterRanker.Add(clusterID, oldClusterRiskScore-oldDeploymentScore+newDeploymentScore)
 }
 
-// UpvoteDeploymentRisk adjusts a deployment's risk ranking upward by placing it
-// between the two deployments above it in the current ranking.
-func (e *managerImpl) UpvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
-	return e.adjustDeploymentRisk(ctx, deploymentID, true)
-}
-
-// DownvoteDeploymentRisk adjusts a deployment's risk ranking downward by placing it
-// between the two deployments below it in the current ranking.
-func (e *managerImpl) DownvoteDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
-	return e.adjustDeploymentRisk(ctx, deploymentID, false)
-}
-
 // ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score.
 func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
 	// Get the current risk
@@ -457,8 +444,10 @@ func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID stri
 	return risk, nil
 }
 
-// adjustDeploymentRisk is a helper function that handles both upvote and downvote operations.
-func (e *managerImpl) adjustDeploymentRisk(ctx context.Context, deploymentID string, isUpvote bool) (*storage.Risk, error) {
+// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking by moving it
+// up or down in the ranking. It places the deployment midway between its current
+// position and the next adjacent deployment.
+func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error) {
 	// Get all deployment risks in user's scope
 	allRisks, err := e.riskStorage.GetDeploymentsInUserScope(ctx)
 	if err != nil {
@@ -495,20 +484,15 @@ func (e *managerImpl) adjustDeploymentRisk(ctx context.Context, deploymentID str
 	currentScore := GetEffectiveScore(targetRisk)
 
 	// Calculate new score
-	var newScore float32
-	if isUpvote {
-		newScore = CalculateUpvoteScore(currentScore, sortedRisks, currentIndex)
-	} else {
-		newScore = CalculateDownvoteScore(currentScore, sortedRisks, currentIndex)
-	}
+	newScore := CalculatePositionChangeScore(currentScore, sortedRisks, currentIndex, moveUp)
 
 	// If score didn't change, it's a no-op (at boundary)
 	if newScore == currentScore {
-		action := "upvote"
-		if !isUpvote {
-			action = "downvote"
+		direction := "up"
+		if !moveUp {
+			direction = "down"
 		}
-		log.Infof("Deployment %s %s is a no-op (at boundary)", deploymentID, action)
+		log.Infof("Deployment %s position change %s is a no-op (at boundary)", deploymentID, direction)
 		return targetRisk, nil
 	}
 
@@ -530,11 +514,11 @@ func (e *managerImpl) adjustDeploymentRisk(ctx context.Context, deploymentID str
 		return nil, errors.Wrapf(err, "failed to update risk for deployment %s", deploymentID)
 	}
 
-	action := "upvoted"
-	if !isUpvote {
-		action = "downvoted"
+	direction := "up"
+	if !moveUp {
+		direction = "down"
 	}
-	log.Infof("Deployment %s %s: score %.2f -> %.2f", deploymentID, action, currentScore, newScore)
+	log.Infof("Deployment %s moved %s: score %.2f -> %.2f", deploymentID, direction, currentScore, newScore)
 
 	return targetRisk, nil
 }

@@ -35,12 +35,15 @@ var (
 	_ = metadata.Join
 )
 
-func request_RiskService_UpvoteDeploymentRisk_0(ctx context.Context, marshaler runtime.Marshaler, client RiskServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_RiskService_ChangeDeploymentRiskPosition_0(ctx context.Context, marshaler runtime.Marshaler, client RiskServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RiskAdjustmentRequest
+		protoReq RiskPositionChangeRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
 	}
@@ -52,36 +55,18 @@ func request_RiskService_UpvoteDeploymentRisk_0(ctx context.Context, marshaler r
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-	msg, err := client.UpvoteDeploymentRisk(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ChangeDeploymentRiskPosition(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
 
-func local_request_RiskService_UpvoteDeploymentRisk_0(ctx context.Context, marshaler runtime.Marshaler, server RiskServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_RiskService_ChangeDeploymentRiskPosition_0(ctx context.Context, marshaler runtime.Marshaler, server RiskServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RiskAdjustmentRequest
+		protoReq RiskPositionChangeRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	val, ok := pathParams["deployment_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
-	}
-	protoReq.DeploymentId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
-	}
-	msg, err := server.UpvoteDeploymentRisk(ctx, &protoReq)
-	return msg, metadata, err
-}
-
-func request_RiskService_DownvoteDeploymentRisk_0(ctx context.Context, marshaler runtime.Marshaler, client RiskServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq RiskAdjustmentRequest
-		metadata runtime.ServerMetadata
-		err      error
-	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	val, ok := pathParams["deployment_id"]
 	if !ok {
@@ -91,25 +76,7 @@ func request_RiskService_DownvoteDeploymentRisk_0(ctx context.Context, marshaler
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
 	}
-	msg, err := client.DownvoteDeploymentRisk(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-}
-
-func local_request_RiskService_DownvoteDeploymentRisk_0(ctx context.Context, marshaler runtime.Marshaler, server RiskServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq RiskAdjustmentRequest
-		metadata runtime.ServerMetadata
-		err      error
-	)
-	val, ok := pathParams["deployment_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
-	}
-	protoReq.DeploymentId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "deployment_id", err)
-	}
-	msg, err := server.DownvoteDeploymentRisk(ctx, &protoReq)
+	msg, err := server.ChangeDeploymentRiskPosition(ctx, &protoReq)
 	return msg, metadata, err
 }
 
@@ -164,45 +131,25 @@ func local_request_RiskService_ResetDeploymentRisk_0(ctx context.Context, marsha
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterRiskServiceHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterRiskServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server RiskServiceServer) error {
-	mux.Handle(http.MethodPost, pattern_RiskService_UpvoteDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_RiskService_ChangeDeploymentRiskPosition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RiskService/UpvoteDeploymentRisk", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/upvote"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RiskService/ChangeDeploymentRiskPosition", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/position"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RiskService_UpvoteDeploymentRisk_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_RiskService_ChangeDeploymentRiskPosition_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_RiskService_UpvoteDeploymentRisk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodPost, pattern_RiskService_DownvoteDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RiskService/DownvoteDeploymentRisk", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/downvote"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RiskService_DownvoteDeploymentRisk_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_RiskService_DownvoteDeploymentRisk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RiskService_ChangeDeploymentRiskPosition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_RiskService_ResetDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -264,39 +211,22 @@ func RegisterRiskServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
 // "RiskServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterRiskServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client RiskServiceClient) error {
-	mux.Handle(http.MethodPost, pattern_RiskService_UpvoteDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_RiskService_ChangeDeploymentRiskPosition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.RiskService/UpvoteDeploymentRisk", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/upvote"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.RiskService/ChangeDeploymentRiskPosition", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/position"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RiskService_UpvoteDeploymentRisk_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_RiskService_ChangeDeploymentRiskPosition_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_RiskService_UpvoteDeploymentRisk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-	})
-	mux.Handle(http.MethodPost, pattern_RiskService_DownvoteDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.RiskService/DownvoteDeploymentRisk", runtime.WithHTTPPathPattern("/v1/risk/deployment/{deployment_id}/downvote"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RiskService_DownvoteDeploymentRisk_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		forward_RiskService_DownvoteDeploymentRisk_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RiskService_ChangeDeploymentRiskPosition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodPost, pattern_RiskService_ResetDeploymentRisk_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -319,13 +249,11 @@ func RegisterRiskServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_RiskService_UpvoteDeploymentRisk_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "risk", "deployment", "deployment_id", "upvote"}, ""))
-	pattern_RiskService_DownvoteDeploymentRisk_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "risk", "deployment", "deployment_id", "downvote"}, ""))
-	pattern_RiskService_ResetDeploymentRisk_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "risk", "deployment", "deployment_id", "reset"}, ""))
+	pattern_RiskService_ChangeDeploymentRiskPosition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "risk", "deployment", "deployment_id", "position"}, ""))
+	pattern_RiskService_ResetDeploymentRisk_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "risk", "deployment", "deployment_id", "reset"}, ""))
 )
 
 var (
-	forward_RiskService_UpvoteDeploymentRisk_0   = runtime.ForwardResponseMessage
-	forward_RiskService_DownvoteDeploymentRisk_0 = runtime.ForwardResponseMessage
-	forward_RiskService_ResetDeploymentRisk_0    = runtime.ForwardResponseMessage
+	forward_RiskService_ChangeDeploymentRiskPosition_0 = runtime.ForwardResponseMessage
+	forward_RiskService_ResetDeploymentRisk_0          = runtime.ForwardResponseMessage
 )
