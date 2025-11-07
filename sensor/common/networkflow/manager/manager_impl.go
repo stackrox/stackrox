@@ -472,7 +472,7 @@ func (m *networkFlowManager) sendBatched(result *enrichmentResult) {
 				epBatch = epChunks[i]
 			}
 
-			if !m.sendConnsEpsBatched(connBatch, epBatch) {
+			if !m.sendConnsEps(connBatch, epBatch) {
 				// This batch failed to send, add to unsent
 				unsentConns = append(unsentConns, connBatch...)
 				unsentEps = append(unsentEps, epBatch...)
@@ -525,33 +525,16 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	return m.sendToCentral(&central.MsgFromSensor{
+	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	})
-}
-
-func (m *networkFlowManager) sendConnsEpsBatched(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
-	protoToSend := &central.NetworkFlowUpdate{
-		Updated:          conns,
-		UpdatedEndpoints: eps,
-		Time:             protocompat.TimestampNow(),
 	}
 
-	// Use long-lived context for detection to continue processing during disconnects
-	detectionContext := context.Background()
-	// Before sending, run the flows through policies asynchronously (ProcessNetworkFlow creates a new goroutine for each call)
-	for _, flow := range conns {
-		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
+	if features.NetworkFlowBatching.Enabled() {
+		return m.sendToCentralWithRetry(msg)
 	}
-
-	log.Debugf("Flow update : %v", protoToSend)
-	return m.sendToCentralWithRetry(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: protoToSend,
-		},
-	})
+	return m.sendToCentral(msg)
 }
 
 func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListeningOnPortFromSensor) bool {
