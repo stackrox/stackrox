@@ -339,8 +339,13 @@ config-controller-gen:
 	make -C config-controller/ generate
 	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
+.PHONY: policy-crd-gen
+policy-crd-gen:
+	make -C apis/policy.stackrox.io/ manifests
+	make -C apis/policy.stackrox.io/ generate
+
 .PHONY: generated-srcs
-generated-srcs: go-generated-srcs config-controller-gen
+generated-srcs: go-generated-srcs config-controller-gen policy-crd-gen
 
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
