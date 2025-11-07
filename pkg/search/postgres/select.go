@@ -40,6 +40,7 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
+//
 // Deprecated: Use RunSelectRequestForSchemaFn
 func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
 	result := make([]*T, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
