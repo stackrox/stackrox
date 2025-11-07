@@ -50,6 +50,8 @@ message Deployment {
 
   reserved 30; // was tags
 
+  float effective_risk_score = 36; // @gotags: search:"Deployment Effective Risk Score,hidden" policy:",ignore" sql:"index=btree"
+
   bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
@@ -269,7 +271,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 9
+// Next available tag: 10
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -279,4 +281,5 @@ message ListDeployment {
   string namespace = 5;
   google.protobuf.Timestamp created = 6;
   int64 priority = 7;
+  float effective_risk_score = 9;
 }

@@ -25,6 +25,9 @@ type DataStore interface {
 	GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error)
 	UpsertRisk(ctx context.Context, risk *storage.Risk) error
 	RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error
+
+	// GetDeploymentsInUserScope returns all deployment risks visible to the user based on SAC
+	GetDeploymentsInUserScope(ctx context.Context) ([]*storage.Risk, error)
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.

@@ -79,6 +79,18 @@ const riskTableColumnDescriptors = [
         },
         sortMethod: sortValue,
     },
+    {
+        Header: 'Effective Risk Score',
+        searchField: 'Deployment Effective Risk Score',
+        accessor: 'deployment.effectiveRiskScore',
+        Cell: ({ value }) => {
+            if (value === null || value === undefined || Number.isNaN(value)) {
+                return '-';
+            }
+            return value.toFixed(2);
+        },
+        sortMethod: sortValue,
+    },
 ];
 
 export default riskTableColumnDescriptors;
