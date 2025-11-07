@@ -127,6 +127,7 @@ type Deployments struct {
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
+	EffectiveRiskScore            float32                 `gorm:"column:effectiveriskscore;type:numeric;index:deployments_effectiveriskscore,type:btree"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }

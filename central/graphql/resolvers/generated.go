@@ -583,6 +583,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"containers: [Container]!",
 		"created: Time",
+		"effectiveRiskScore: Float!",
 		"hostIpc: Boolean!",
 		"hostNetwork: Boolean!",
 		"hostPid: Boolean!",
@@ -7244,6 +7245,14 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 		value = resolver.list.GetCreated()
 	}
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *deploymentResolver) EffectiveRiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetEffectiveRiskScore()
+	if resolver.data == nil {
+		value = resolver.list.GetEffectiveRiskScore()
+	}
+	return float64(value)
 }
 
 func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
