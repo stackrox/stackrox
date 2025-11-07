@@ -4,7 +4,7 @@
 apiVersion: spire.spiffe.io/v1alpha1
 kind: ClusterSPIFFEID
 metadata:
-  name: central-{{ ._rox._namespace }}
+  name: central-{{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "clusterSPIFFEID" "central") | nindent 4 }}
   annotations:
@@ -17,6 +17,6 @@ spec:
     matchLabels:
       app: central
   workloadSelectorTemplates:
-    - "k8s:ns:{{ ._rox._namespace }}"
+    - "k8s:ns:{{ .Release.Namespace }}"
     - "k8s:sa:central"
 {{- end }}
