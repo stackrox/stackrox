@@ -346,6 +346,7 @@ deploy_central_via_operator() {
     db_connectionPoolSize_config=""
     if [[ -n "${ROX_POSTGRES_MAX_CONNS:-}" ]]; then
         db_connectionPoolSize_config=$'\n      connectionPoolSize:'
+        db_connectionPoolSize_config+=$'\n        minConnections: '"${ROX_POSTGRES_MAX_CONNS}"
         db_connectionPoolSize_config+=$'\n        maxConnections: '"${ROX_POSTGRES_MAX_CONNS}"
     fi
 
