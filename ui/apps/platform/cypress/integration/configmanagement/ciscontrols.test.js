@@ -11,8 +11,8 @@ import {
     verifyWidgetLinkToTableFromSidePanel,
     verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementDashboard,
-    visitConfigurationManagementEntityInSidePanel,
     visitConfigurationManagementEntitiesWithSearch,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'controls';

@@ -11,9 +11,9 @@ import {
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithStoredCredentials,
+    visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities,
     visitIntegrationsTable,
     visitIntegrationsWithStaticResponseForCapabilities,
-    visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
 

@@ -6,9 +6,9 @@ import {
     visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
+    approveRequest,
     deferAndVisitRequestDetails,
     visitApprovedDeferralsTab,
-    approveRequest,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
 import { selectors as workloadSelectors } from '../workloadCves/WorkloadCves.selectors';
