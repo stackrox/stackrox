@@ -12,9 +12,10 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
+import type { IntegrationBase } from 'services/IntegrationsService';
 import EmailNotifierForm from './EmailNotifierForm';
 
-type FormResponseMessageWithData = FormResponseMessage & { data?: string };
+type FormResponseMessageWithData = FormResponseMessage & { data?: IntegrationBase };
 
 export type EmailNotifierModalProps = {
     isOpen: boolean;
@@ -42,12 +43,12 @@ function EmailNotifierModal({
         emailNotifier: EmailIntegrationFormValues
     ): Promise<FormResponseMessageWithData> {
         return createIntegration('notifiers', emailNotifier).then((response) => {
-            return { isError: false, message: '', data: response?.id ?? undefined };
+            return { isError: false, message: '', data: response };
         });
     }
 
     function onCompleteRequest(response: FormResponseMessageWithData) {
-        updateNotifierList(response?.data ?? '');
+        updateNotifierList(response.data?.id ?? '');
         onToggleEmailNotifierModal();
     }
 
