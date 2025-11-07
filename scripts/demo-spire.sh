@@ -32,12 +32,15 @@ print_error() {
 # Step 1: Verify SPIRE components
 echo "Step 1: Verifying SPIRE Installation"
 echo "--------------------------------------"
-if oc get pods -n "$SPIRE_NAMESPACE" | grep -q "spire-server.*Running"; then
+# Disable pipefail temporarily to avoid SIGPIPE (exit 141) from grep -q
+set +o pipefail
+if oc get pods -n "$SPIRE_NAMESPACE" 2>/dev/null | grep -q "spire-server.*Running"; then
     print_success "SPIRE Server is running"
 else
     print_error "SPIRE Server is not running"
     exit 1
 fi
+set -o pipefail
 
 if oc get daemonset -n "$SPIRE_NAMESPACE" spire-agent &>/dev/null; then
     print_success "SPIRE Agent DaemonSet exists"

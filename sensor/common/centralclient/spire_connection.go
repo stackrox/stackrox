@@ -3,12 +3,13 @@ package centralclient
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"os"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spiffe/go-spiffe/v2/spiffetls/tlsconfig"
 	"github.com/spiffe/go-spiffe/v2/workloadapi"
+	"github.com/stackrox/rox/pkg/mtls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -44,11 +45,63 @@ func tryConnectViaSPIRE(ctx context.Context, centralEndpoint string) (*grpc.Clie
 
 	log.Info("✅ SPIRE: Successfully obtained X.509-SVID from SPIRE Workload API")
 
-	// Create TLS config using SPIRE credentials
-	tlsConfig := tlsconfig.TLSClientConfig(source, tlsconfig.AuthorizeAny())
-	tlsConfig.MinVersion = tls.VersionTLS12
+	// Get the SVID and trust bundle
+	svid, err := source.GetX509SVID()
+	if err != nil {
+		_ = source.Close()
+		return nil, errors.Wrap(err, "failed to get X509-SVID from source")
+	}
 
-	// Create gRPC connection with SPIRE credentials
+	// Create a custom TLS config that:
+	// 1. Uses SPIRE SVID as client certificate (for Sensor's identity)
+	// 2. Trusts both SPIRE trust bundle AND traditional mTLS CA (for backward compat)
+
+	// Get the trust bundle for verification
+	bundle, err := source.GetX509BundleForTrustDomain(svid.ID.TrustDomain())
+	if err != nil {
+		_ = source.Close()
+		return nil, errors.Wrap(err, "failed to get X509 bundle from SPIRE")
+	}
+
+	// Create root CA pool that includes both SPIRE and traditional CAs
+	rootCAs := x509.NewCertPool()
+
+	// Add SPIRE trust bundle
+	for _, cert := range bundle.X509Authorities() {
+		rootCAs.AddCert(cert)
+	}
+
+	// Also add traditional mTLS CA for backward compatibility
+	serviceCA, err := mtls.CACertPEM()
+	if err != nil {
+		log.Warnf("SPIRE: Failed to get traditional service CA: %v", err)
+	} else if len(serviceCA) > 0 {
+		if !rootCAs.AppendCertsFromPEM(serviceCA) {
+			log.Warn("SPIRE: Failed to add traditional service CA to root pool")
+		} else {
+			log.Info("SPIRE: Added traditional service CA for backward compatibility")
+		}
+	}
+
+	// Marshal certificates to DER format for tls.Certificate
+	var certDER [][]byte
+	for _, cert := range svid.Certificates {
+		certDER = append(certDER, cert.Raw)
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    rootCAs,
+		// Use SPIRE SVID as client certificate
+		Certificates: []tls.Certificate{
+			{
+				Certificate: certDER,
+				PrivateKey:  svid.PrivateKey,
+			},
+		},
+	}
+
+	// Create gRPC connection with hybrid TLS credentials
 	conn, err := grpc.NewClient(
 		centralEndpoint,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
