@@ -55,18 +55,18 @@ func migrate(database *types.Databases) error {
 	}
 
 	// Add the indexes back
-	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING HASH (deploymentid)")
-	if resultDB.Error != nil {
-		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_deploymentid"))
-	}
-	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_poduid ON process_indicators USING HASH (poduid)")
-	if resultDB.Error != nil {
-		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_poduid"))
-	}
-	resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_time ON process_indicators (signal_time)")
-	if resultDB.Error != nil {
-		log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_signal_time"))
-	}
+	//resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING HASH (deploymentid)")
+	//if resultDB.Error != nil {
+	//	log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_deploymentid"))
+	//}
+	//resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_poduid ON process_indicators USING HASH (poduid)")
+	//if resultDB.Error != nil {
+	//	log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_poduid"))
+	//}
+	//resultDB = db.Exec("CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_time ON process_indicators (signal_time)")
+	//if resultDB.Error != nil {
+	//	log.Error(errors.Wrap(resultDB.Error, "unable to create index processindicators_signal_time"))
+	//}
 
 	log.Info("Process Indicators migrated")
 	return nil
