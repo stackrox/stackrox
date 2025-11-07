@@ -164,17 +164,16 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 		log.Errorf("Error reprocessing risk for deployment %s: %v", deployment.GetName(), err)
 	}
 
-	if oldScore == risk.GetScore() {
-		return
-	}
-
-	e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
-	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
-
+	// Always update deployment risk fields, even if score hasn't changed
+	// This ensures effective_risk_score is populated for existing deployments
 	deployment.RiskScore = risk.GetScore()
-
-	// Calculate and store effective risk score (use adjusted score if exists, otherwise ML score)
 	deployment.EffectiveRiskScore = GetEffectiveScore(risk)
+
+	// Only update namespace/cluster risk aggregations if score changed
+	if oldScore != risk.GetScore() {
+		e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
+		e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
+	}
 
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
