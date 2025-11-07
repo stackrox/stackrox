@@ -22,6 +22,7 @@ import (
 // This function then automatically computes the diff for each policy, and executes the migration.
 // This method requires the caller to provide funcs that check if a policy exists,
 // fetches policy from the store and will upsert a policy to the store
+//
 // Deprecated: Use MigratePoliciesWithDiffsAndStoreV2 instead
 func MigratePoliciesWithDiffsAndStore(policyDiffFS embed.FS,
 	policyDiffs []PolicyDiff,
@@ -56,6 +57,7 @@ func MigratePoliciesWithDiffsAndStore(policyDiffFS embed.FS,
 // MigratePoliciesWithStore will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
 // matches the policies within comparisonPolicies. This method requires the caller to provide funcs that check if a policy exists,
 // fetches policy from the store and will upsert a policy to the store
+//
 // Deprecated: Use MigratePoliciesWithStoreV2 instead
 func MigratePoliciesWithStore(policiesToMigrate map[string]PolicyChanges,
 	comparisonPolicies map[string]*storage.Policy,
