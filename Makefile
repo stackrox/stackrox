@@ -856,7 +856,7 @@ bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
 .PHONY: fix_migrations
 fix_migrations:
-	$(SILENT)if [[ "x${UPSTREAM}" == "x" ]] || [[ "x${MIGRATION_PACKAGES}" == "x" ]]; then echo "Please set both UPSTREAM and MIGRATION_PACKAGES environment variables"; echo "MIGRATION_PACKAGES can be a comma separated list of migration packages to fix"; else ./scripts/fix-migrations.sh; fi
+	$(SILENT)if [[ "x${MIGRATION_PACKAGES}" == "x" ]]; then echo "Please set the MIGRATION_PACKAGES environment variable"; echo "MIGRATION_PACKAGES can be a comma separated list of migration packages to fix"; else ./scripts/fix-migrations.sh; fi
 
 .PHONY: image-prefetcher-deploy-bin
 image-prefetcher-deploy-bin: $(IMAGE_PREFETCHER_DEPLOY_BIN) ## download and install
