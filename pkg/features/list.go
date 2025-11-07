@@ -114,7 +114,7 @@ var (
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
 
 	// NetworkFlowBatching enables batched sending of network flows with retry logic
-	NetworkFlowBatching = registerFeature("Enable batched sending of network flows with retry logic", "ROX_NETFLOW_BATCHING", enabled)
+	NetworkFlowBatching = registerFeature("Enable batched sending of network flows with retry logic", "ROX_NETFLOW_BATCHING")
 )
 
 // The following feature flags are related to Scanner V4.
