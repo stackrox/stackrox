@@ -99,6 +99,8 @@ func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]
 }
 
 func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Clear the cache after successful send
+	l.cachedUpdatesConn = nil
 	if currentConns != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -110,6 +112,8 @@ func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkC
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
 func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Clear the cache after successful send
+	l.cachedUpdatesEp = nil
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
