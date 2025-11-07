@@ -2,14 +2,14 @@ import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
-    visitNetworkGraph,
-    visitNetworkGraphFromLeftNav,
     checkNetworkGraphEmptyState,
     selectCluster,
-    selectNamespace,
     selectDeployment,
     selectFilter,
+    selectNamespace,
     updateAndCloseCidrModal,
+    visitNetworkGraph,
+    visitNetworkGraphFromLeftNav,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';
 
