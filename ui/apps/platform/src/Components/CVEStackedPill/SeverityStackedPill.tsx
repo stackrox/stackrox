@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
 import { getPercentage } from 'utils/mathUtils';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 
 export type SeverityStackedPillProps = {
     vulnCounter: VulnCounter;
@@ -47,7 +48,7 @@ function SeverityStackedPill({ vulnCounter }: SeverityStackedPillProps): ReactEl
             className="flex rounded-full w-full min-w-10 max-w-24 h-3 bg-base-300"
             style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
         >
-            {(Object.entries(vulnKeyMap) as [VulnKey, (typeof vulnKeyMap)[VulnKey]][])
+            {(Object.entries(vulnKeyMap) as [VulnKey, VulnerabilitySeverity][])
                 .filter(([dataKey]) => vulnCounter[dataKey].total !== 0)
                 .map(([dataKey, colorKey]) => (
                     <div
