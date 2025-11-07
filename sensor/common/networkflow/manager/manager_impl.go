@@ -451,7 +451,7 @@ func (m *networkFlowManager) sendBatched(result *enrichmentResult) {
 	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
 		batchSize := env.NetworkFlowSendBatchSize.IntegerSetting()
 		if batchSize <= 0 {
-			batchSize = 1000 // fallback to default if invalid
+			batchSize = 10000 // fallback to default if invalid
 		}
 
 		connChunks := slices.Collect(slices.Chunk(result.updatedConns, batchSize))
