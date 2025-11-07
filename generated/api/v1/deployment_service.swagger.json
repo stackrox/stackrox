@@ -830,6 +830,10 @@
           "type": "number",
           "format": "float"
         },
+        "effectiveRiskScore": {
+          "type": "number",
+          "format": "float"
+        },
         "platformComponent": {
           "type": "boolean"
         }
@@ -943,9 +947,13 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "effectiveRiskScore": {
+          "type": "number",
+          "format": "float"
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 10"
     },
     "storageLivenessProbe": {
       "type": "object",

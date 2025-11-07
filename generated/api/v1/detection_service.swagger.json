@@ -936,6 +936,10 @@
           "type": "number",
           "format": "float"
         },
+        "effectiveRiskScore": {
+          "type": "number",
+          "format": "float"
+        },
         "platformComponent": {
           "type": "boolean"
         }

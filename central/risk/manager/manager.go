@@ -172,6 +172,10 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
 
 	deployment.RiskScore = risk.GetScore()
+
+	// Calculate and store effective risk score (use adjusted score if exists, otherwise ML score)
+	deployment.EffectiveRiskScore = GetEffectiveScore(risk)
+
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}
@@ -452,11 +456,14 @@ func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID stri
 	// Reset priority to the original ML score (convert float32 to int64)
 	deployment.Priority = int64(risk.GetScore() * 1000)
 
+	// Reset effective risk score to the original ML score
+	deployment.EffectiveRiskScore = risk.GetScore()
+
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
 		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
 	}
 
-	log.Infof("Reset user ranking adjustment for deployment %s, priority reset to %d", deploymentID, deployment.Priority)
+	log.Infof("Reset user ranking adjustment for deployment %s, priority reset to %d, effective_risk_score %.2f", deploymentID, deployment.Priority, deployment.EffectiveRiskScore)
 	return risk, nil
 }
 
@@ -544,6 +551,9 @@ func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deployme
 	// Priority is stored as int64 but represents a score, so we multiply by 1000 to preserve precision
 	deployment.Priority = int64(newScore * 1000)
 
+	// Store the effective risk score on the deployment
+	deployment.EffectiveRiskScore = newScore
+
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
 		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
 	}
@@ -552,7 +562,7 @@ func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deployme
 	if !moveUp {
 		direction = "down"
 	}
-	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d", deploymentID, direction, currentScore, newScore, deployment.Priority)
+	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d, effective_risk_score %.2f", deploymentID, direction, currentScore, newScore, deployment.Priority, deployment.EffectiveRiskScore)
 
 	return targetRisk, nil
 }

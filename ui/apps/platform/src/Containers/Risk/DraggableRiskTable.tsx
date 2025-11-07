@@ -36,6 +36,7 @@ interface DeploymentRow {
         cluster: string;
         namespace: string;
         priority: number;
+        effectiveRiskScore: number;
     };
     baselineStatuses: Array<{
         anomalousProcessesExecuted: boolean;
@@ -115,6 +116,12 @@ function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId, o
     const asInt = parseInt(String(priority), 10);
     const displayPriority = Number.isNaN(asInt) || asInt < 1 ? '-' : String(priority);
 
+    const effectiveRiskScore = row.deployment.effectiveRiskScore;
+    const displayEffectiveRiskScore =
+        effectiveRiskScore === null || effectiveRiskScore === undefined || Number.isNaN(effectiveRiskScore)
+            ? '-'
+            : effectiveRiskScore.toFixed(2);
+
     return (
         <Tr
             ref={ref}
@@ -156,6 +163,7 @@ function DraggableRow({ row, index, moveRow, onRowClick, selectedDeploymentId, o
             <Td dataLabel="Cluster">{row.deployment.cluster}</Td>
             <Td dataLabel="Namespace">{row.deployment.namespace}</Td>
             <Td dataLabel="Priority">{displayPriority}</Td>
+            <Td dataLabel="Effective Risk Score">{displayEffectiveRiskScore}</Td>
         </Tr>
     );
 }
@@ -220,6 +228,7 @@ function DraggableRiskTableInner({
                     <Th>Cluster</Th>
                     <Th>Namespace</Th>
                     <Th>Priority</Th>
+                    <Th>Effective Risk Score</Th>
                 </Tr>
             </Thead>
             <Tbody>
