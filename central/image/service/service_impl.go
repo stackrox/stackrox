@@ -940,7 +940,7 @@ func (s *serviceImpl) enrichLocalImageV2Internal(ctx context.Context, request *v
 	}()
 
 	var hasErrors bool
-	if request.Error != "" {
+	if request.GetError() != "" {
 		// If errors occurred we continue processing so that the failed image scan may be saved in
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing.
