@@ -68,8 +68,8 @@ make fast-binaries
 # Build binaries and create Docker image
 make fast-image
 
-# Build, create image, and load into kind cluster
-make fast-load-kind
+# Build, create image, and push to registry
+make fast-push-registry
 
 # Complete inner loop (recommended)
 make fast-inner-loop
@@ -130,7 +130,7 @@ All binaries are built with the same flags as the full build using `scripts/go-b
 * `Makefile` - Added fast build targets at the end:
   * `fast-binaries` - Build Go binaries only
   * `fast-image` - Build Docker image with local binaries
-  * `fast-load-kind` - Load image into kind cluster
+  * `fast-push-registry` - Push image to registry
   * `fast-inner-loop` - Complete workflow
 
 ## How It Works
@@ -164,13 +164,13 @@ This uses `Dockerfile.fastbuild` to:
 
 The Dockerfile uses `bin/linux_${GOARCH}/` as the build context to work around `.containerignore` filtering.
 
-### Step 3: Load into Kind
+### Step 3: Push to Registry
 
 ```bash
-make fast-load-kind
+make fast-push-registry
 ```
 
-This loads the image directly into the kind cluster's container registry.
+This tags and pushes the image to the kind registry at `localhost:5001`, making it available to the cluster as `kind-registry:5000/stackrox/main:local-dev`.
 
 ## Debugging
 
@@ -225,23 +225,27 @@ grep "CGO_ENABLED=0" Makefile
 ldd bin/linux_*/central  # Should output "not a dynamic executable"
 ```
 
-### Kind load fails
+### Registry push fails
 
-Check that your kind cluster is running:
+Check that the kind registry is running:
 
 ```bash
-kind get clusters
+docker ps | grep registry
 ```
 
-Ensure the cluster name matches (default: `stackrox-image-build`).
+Ensure the registry is accessible at `localhost:5001`:
+
+```bash
+curl localhost:5001/v2/
+```
 
 ### Deployment fails with image pull errors
 
-When deploying with roxctl-generated manifests, ensure:
+When deploying, ensure:
 
-1. Image is loaded into kind: `docker images | grep stackrox/main`
-2. Image name in manifests matches exactly (no `docker.io/` prefix)
-3. `imagePullPolicy` is set to `Never` or `IfNotPresent`
+1. Image is in the registry: `curl -X GET localhost:5001/v2/stackrox/main/tags/list`
+2. Image name in manifests is `kind-registry:5000/stackrox/main:local-dev`
+3. `imagePullPolicy` is set to `IfNotPresent`
 
 ## Complete Workflow Example
 
@@ -320,7 +324,3 @@ Use the fast build when:
 * You're doing inner loop development
 
 ## Additional Resources
-
-* [StackRox Build System](./README.md)
-* [Development Environment Setup](../CLAUDE.md)
-* [Inner Loop Session Guide](./CLAUDE.md)

@@ -339,13 +339,8 @@ config-controller-gen:
 	make -C config-controller/ generate
 	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
-.PHONY: policy-crd-gen
-policy-crd-gen:
-	make -C apis/policy.stackrox.io/ manifests
-	make -C apis/policy.stackrox.io/ generate
-
 .PHONY: generated-srcs
-generated-srcs: go-generated-srcs config-controller-gen policy-crd-gen
+generated-srcs: go-generated-srcs config-controller-gen
 
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
@@ -909,25 +904,25 @@ fast-image: fast-binaries
 		bin/linux_$(GOARCH)
 	@echo "Image built: stackrox/main:$(IMAGE_TAG)"
 
-# Load the fast-built image into kind cluster
-# Usage: make fast-load-kind [CLUSTER_NAME=stackrox-image-build]
-CLUSTER_NAME ?= stackrox-image-build
+# Push the fast-built image to kind registry
+# Usage: make fast-push-registry [REGISTRY_HOST=localhost:5001]
+REGISTRY_HOST ?= localhost:5001
+REGISTRY_IMAGE ?= kind-registry:5000/stackrox/main
 
-.PHONY: fast-load-kind
-fast-load-kind: fast-image
+.PHONY: fast-push-registry
+fast-push-registry: fast-image
 	@echo "+ $@"
-	@echo "Loading image into kind cluster: $(CLUSTER_NAME)"
-	kind load docker-image stackrox/main:$(IMAGE_TAG) --name $(CLUSTER_NAME)
-	@echo "Image loaded into kind cluster"
+	@echo "Tagging image for registry..."
+	podman tag localhost/stackrox/main:$(IMAGE_TAG) $(REGISTRY_HOST)/stackrox/main:$(IMAGE_TAG)
+	@echo "Pushing image to registry at $(REGISTRY_HOST)..."
+	podman push --tls-verify=false $(REGISTRY_HOST)/stackrox/main:$(IMAGE_TAG)
+	@echo "Image pushed to registry!"
+	@echo "Cluster can pull from: $(REGISTRY_IMAGE):$(IMAGE_TAG)"
 
-# Complete fast inner loop: build binaries, create image, load into kind
+# Complete fast inner loop: build binaries, create image, push to registry
 .PHONY: fast-inner-loop
-fast-inner-loop: fast-load-kind
+fast-inner-loop: fast-push-registry
 	@echo "+ $@"
 	@echo "Fast inner loop complete!"
-	@echo "Image stackrox/main:$(IMAGE_TAG) is ready in cluster $(CLUSTER_NAME)"
+	@echo "Image pushed to registry: $(REGISTRY_IMAGE):$(IMAGE_TAG)"
 	@echo ""
-	@echo "Next steps:"
-	@echo "  1. Deploy with roxie or your deployment tool"
-	@echo "  2. Test your changes"
-	@echo "  3. Iterate: make fast-inner-loop"

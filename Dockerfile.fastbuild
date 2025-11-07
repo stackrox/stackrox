@@ -41,6 +41,6 @@ USER 4000:4000
 
 EXPOSE 8443
 
-ENTRYPOINT ["/stackrox/central"]
+# Note: We don't set an ENTRYPOINT here to preserve the base image's default
+# Different components (central, sensor, collector, etc.) use different entrypoints
 
-HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
