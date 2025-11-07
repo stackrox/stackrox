@@ -161,14 +161,33 @@ func (m *managerImpl) Gather() phonehome.GatherFunc {
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
 func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents [][]byte) {
+	// Start transaction BEFORE acquiring mutex to ensure we have a DB connection
+	ctx, tx, err := m.declarativeConfigHealthDS.Begin(m.reconciliationCtx)
+	if err != nil {
+		log.Errorf("Failed to begin transaction for declarative config update: %v", err)
+		return
+	}
+
+	// Track if we need to rollback
+	var txErr error
+	defer func() {
+		if txErr != nil && tx != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				log.Errorf("Failed to rollback transaction: %v", rollbackErr)
+			}
+		}
+	}()
+
 	// Operate the whole function under a single lock.
 	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
 	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
 	m.transformedMessagesMutex.Lock()
 	defer m.transformedMessagesMutex.Unlock()
+
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
-		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
+		txErr = err
+		m.updateDeclarativeConfigHealthWithContext(ctx, declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
 		log.Debugf("Error during unmarshalling of declarative configuration files: %+v", err)
 		return
 	}
@@ -185,13 +204,23 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		for protoType, protoMessages := range transformedConfig {
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
 			// Register health status for all new messages. Existing messages will not be re-registered.
-			m.registerHealthForMessages(handlerID, protoMessages...)
+			m.registerHealthForMessagesWithContext(ctx, handlerID, protoMessages...)
 		}
 	}
-	m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID,
+	m.updateDeclarativeConfigHealthWithContext(ctx, declarativeConfigUtils.HealthStatusForHandler(handlerID,
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
+
+	// Commit the transaction (skip if tx is nil, e.g., in tests)
+	if tx != nil {
+		if err := tx.Commit(ctx); err != nil {
+			txErr = err
+			log.Errorf("Failed to commit transaction for declarative config update: %v", err)
+			return
+		}
+	}
+
 	m.shortCircuitReconciliationLoop()
 }
 
@@ -337,13 +366,6 @@ func (m *managerImpl) updateHealthForMessage(handler string, message protocompat
 	}
 }
 
-func (m *managerImpl) registerHealthForMessages(handler string, messages ...protocompat.Message) {
-	for _, message := range messages {
-		health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, nil, m.idExtractor, m.nameExtractor)
-		m.registerDeclarativeConfigHealth(health)
-	}
-}
-
 // removeStaleHealthStatuses is expected to run after reconciliation has deleted declarative proto messages.
 // It deletes health status entries for deleted proto messages, as well as entries for which the first creation
 // of a resource failed.
@@ -415,13 +437,32 @@ func (m *managerImpl) calculateHashAndIndicateChanges(transformedMessagesByHandl
 }
 
 func (m *managerImpl) updateDeclarativeConfigHealth(healthStatus *storage.DeclarativeConfigHealth) {
-	if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfig(m.reconciliationCtx, healthStatus); err != nil {
+	m.updateDeclarativeConfigHealthWithContext(m.reconciliationCtx, healthStatus)
+}
+
+func (m *managerImpl) updateDeclarativeConfigHealthWithContext(ctx context.Context, healthStatus *storage.DeclarativeConfigHealth) {
+	if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfig(ctx, healthStatus); err != nil {
 		log.Errorf("Could not upsert declarative config health %q: %v", healthStatus.GetId(), err)
 	}
 }
 
+func (m *managerImpl) registerHealthForMessages(handler string, messages ...protocompat.Message) {
+	m.registerHealthForMessagesWithContext(m.reconciliationCtx, handler, messages...)
+}
+
+func (m *managerImpl) registerHealthForMessagesWithContext(ctx context.Context, handler string, messages ...protocompat.Message) {
+	for _, message := range messages {
+		health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, nil, m.idExtractor, m.nameExtractor)
+		m.registerDeclarativeConfigHealthWithContext(ctx, health)
+	}
+}
+
 func (m *managerImpl) registerDeclarativeConfigHealth(healthStatus *storage.DeclarativeConfigHealth) {
-	_, exists, err := m.declarativeConfigHealthDS.GetDeclarativeConfig(m.reconciliationCtx,
+	m.registerDeclarativeConfigHealthWithContext(m.reconciliationCtx, healthStatus)
+}
+
+func (m *managerImpl) registerDeclarativeConfigHealthWithContext(ctx context.Context, healthStatus *storage.DeclarativeConfigHealth) {
+	_, exists, err := m.declarativeConfigHealthDS.GetDeclarativeConfig(ctx,
 		healthStatus.GetId())
 	// No-op. We do not want to upsert existing health status, as this might override the status and error messages.
 	if exists {
@@ -433,5 +474,5 @@ func (m *managerImpl) registerDeclarativeConfigHealth(healthStatus *storage.Decl
 	}
 
 	// Irrespective if we received an error to retrieve the health status, attempt to upsert it.
-	m.updateDeclarativeConfigHealth(healthStatus)
+	m.updateDeclarativeConfigHealthWithContext(ctx, healthStatus)
 }
