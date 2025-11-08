@@ -2,7 +2,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-port=$1
+port=${1:-8000}
 
 export STORAGE=pvc
 export STORAGE_SIZE=100
