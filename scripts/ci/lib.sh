@@ -863,6 +863,7 @@ EOM
     fi
     rm -f "${fetcher_metrics_json}"
 
+    setup_gcp
     if save_image_prefetches_metrics "${fetcher_metrics}"; then
         info "Image pre-fetcher metrics retrieved and saved."
     else
