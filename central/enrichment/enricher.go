@@ -3,6 +3,7 @@ package enrichment
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 )
 
 // Enricher enriches images with data from registries and scanners.
