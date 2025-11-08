@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
     Card,
     CardBody,
@@ -26,7 +26,7 @@ import ReportJobStatusFilter, {
     ensureReportJobStatuses,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
-import { ReportJobStatus } from 'Components/ReportJob/types';
+import type { ReportJobStatus } from 'Components/ReportJob/types';
 import useAnalytics, { VIEW_BASED_REPORT_FILTER_APPLIED } from 'hooks/useAnalytics';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 

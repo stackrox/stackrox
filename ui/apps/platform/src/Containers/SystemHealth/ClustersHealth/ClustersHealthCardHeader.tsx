@@ -4,7 +4,7 @@ import { CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
 
-import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+import { ErrorIcon, SpinnerIcon, healthIconMap } from '../CardHeaderIcons';
 
 import { getClustersHealthPhrase, getClustersHealthVariant } from './ClustersHealth.utils';
 import type { ClusterStatusCounts } from './ClustersHealth.utils';

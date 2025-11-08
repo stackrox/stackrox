@@ -1,4 +1,4 @@
-import {
+import type {
     Fixability,
     ImageType,
     ReportConfiguration,
@@ -6,10 +6,10 @@ import {
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
-import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import { getDate } from 'utils/dateUtils';
-import { ReportStatus } from 'types/reportJob';
-import {
+import type { ReportStatus } from 'types/reportJob';
+import type {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,
     ReportFormValues,

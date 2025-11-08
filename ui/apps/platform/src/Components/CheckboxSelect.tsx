@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
-import { Select, MenuToggle, Badge, Flex, FlexItem } from '@patternfly/react-core';
+import { Badge, Flex, FlexItem, MenuToggle, Select } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOption } from '@patternfly/react-core';
 
 import { ensureString } from 'utils/ensure';

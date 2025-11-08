@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Badge, Flex, List, ListItem, Title } from '@patternfly/react-core';
 

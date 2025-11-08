@@ -20,7 +20,6 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
 
@@ -77,9 +76,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     // Report-specific functionality
     const { hasReadAccess } = usePermissions();
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const isViewBasedReportsEnabled =
-        isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS') &&
         hasWorkflowAdminAccess &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||

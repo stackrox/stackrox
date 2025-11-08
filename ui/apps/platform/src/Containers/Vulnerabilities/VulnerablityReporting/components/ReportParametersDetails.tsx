@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     DescriptionList,
@@ -10,15 +9,12 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
-import {
-    getCVEsDiscoveredSinceText,
-    imageTypeLabelMap,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
-
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+
+import type { ReportFormValues } from '../forms/useReportFormValues';
+import { getCVEsDiscoveredSinceText, imageTypeLabelMap } from '../utils';
 
 export type ReportParametersDetailsProps = {
     headingLevel: 'h2' | 'h3';

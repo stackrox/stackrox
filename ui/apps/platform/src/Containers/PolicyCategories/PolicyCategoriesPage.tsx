@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
-    PageSection,
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Bullseye,
-    Spinner,
-    Divider,
     Button,
+    Divider,
     Flex,
+    PageSection,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    AlertGroup,
-    Alert,
-    AlertActionCloseButton,
 } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';

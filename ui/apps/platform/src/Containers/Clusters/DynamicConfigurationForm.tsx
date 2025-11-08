@@ -11,7 +11,6 @@ import {
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SelectSingle from 'Components/SelectSingle';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMetadata from 'hooks/useMetadata';
 import type { ClusterType, CompleteClusterConfig, DynamicClusterConfig } from 'types/cluster.proto';
 import { getVersionedDocs } from 'utils/versioning';
@@ -35,10 +34,6 @@ function DynamicConfigurationForm({
     helmConfig,
     isManagerTypeNonConfigurable,
 }: DynamicConfigurationFormProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAutoLockProcessBaselinesEnabled = isFeatureFlagEnabled(
-        'ROX_AUTO_LOCK_PROCESS_BASELINES'
-    );
     const { version } = useMetadata();
 
     const isLoggingSupported = clusterType === 'OPENSHIFT4_CLUSTER';
@@ -193,30 +188,26 @@ function DynamicConfigurationForm({
                     </Alert>
                 )}
             </FormGroup>
-            {isAutoLockProcessBaselinesEnabled && (
-                <FormGroup label="Automatically lock process baselines">
-                    <SelectSingle
-                        id="dynamicConfig.autoLockProcessBaselinesConfig.enabled"
-                        value={
-                            dynamicConfig.autoLockProcessBaselinesConfig?.enabled
-                                ? 'enabled'
-                                : 'disabled'
-                        }
-                        handleSelect={(id, value) => handleChange(id, value === 'enabled')}
-                        isDisabled={isManagerTypeNonConfigurable}
-                        isFullWidth={false}
-                    >
-                        <SelectOption value="enabled">Enabled</SelectOption>
-                        <SelectOption value="disabled">Disabled</SelectOption>
-                    </SelectSingle>
-                    <HelmValueWarning
-                        currentValue={dynamicConfig.autoLockProcessBaselinesConfig?.enabled}
-                        helmValue={
-                            helmConfig?.dynamicConfig?.autoLockProcessBaselinesConfig?.enabled
-                        }
-                    />
-                </FormGroup>
-            )}
+            <FormGroup label="Automatically lock process baselines">
+                <SelectSingle
+                    id="dynamicConfig.autoLockProcessBaselinesConfig.enabled"
+                    value={
+                        dynamicConfig.autoLockProcessBaselinesConfig?.enabled
+                            ? 'enabled'
+                            : 'disabled'
+                    }
+                    handleSelect={(id, value) => handleChange(id, value === 'enabled')}
+                    isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
+                >
+                    <SelectOption value="enabled">Enabled</SelectOption>
+                    <SelectOption value="disabled">Disabled</SelectOption>
+                </SelectSingle>
+                <HelmValueWarning
+                    currentValue={dynamicConfig.autoLockProcessBaselinesConfig?.enabled}
+                    helmValue={helmConfig?.dynamicConfig?.autoLockProcessBaselinesConfig?.enabled}
+                />
+            </FormGroup>
         </Form>
     );
 }

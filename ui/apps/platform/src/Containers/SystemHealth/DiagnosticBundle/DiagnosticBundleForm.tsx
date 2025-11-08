@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Button,
+    Checkbox,
     Chip,
     ChipGroup,
-    Checkbox,
     DatePicker,
     Flex,
     FlexItem,
@@ -17,10 +17,10 @@ import {
     Select,
     SelectList,
     SelectOption,
-    TimePicker,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
+    TimePicker,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';

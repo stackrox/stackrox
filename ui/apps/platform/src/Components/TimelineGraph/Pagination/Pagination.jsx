@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { PaginationInput, PrevPaginationButton, NextPaginationButton } from 'Components/Pagination';
+import { NextPaginationButton, PaginationInput, PrevPaginationButton } from 'Components/Pagination';
 
 const Pagination = ({ currentPage, totalSize, pageSize, onChange }) => {
     return (

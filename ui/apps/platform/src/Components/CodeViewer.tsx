@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import type { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from 'react';
-import { CodeBlockAction, ClipboardCopyButton, Button, CodeBlock } from '@patternfly/react-core';
+import { Button, ClipboardCopyButton, CodeBlock, CodeBlockAction } from '@patternfly/react-core';
 import { MoonIcon, SunIcon } from '@patternfly/react-icons';
 
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';

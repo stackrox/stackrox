@@ -773,14 +773,8 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
         ignores: [
-            'cypress/integration/**',
-            'src/Components/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/PolicyCategories/**',
-            'src/Containers/SystemHealth/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
 
@@ -801,8 +795,6 @@ module.exports = [
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -824,12 +816,8 @@ module.exports = [
     {
         files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
-            'src/Containers/Audit/**',
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/ComplianceEnhanced/**',
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/components/**',
-            'src/Containers/Vulnerabilities/VulnerablityReporting/**',
             'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],

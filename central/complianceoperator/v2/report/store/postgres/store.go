@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -152,12 +151,18 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetReportId())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
 
 	copyCols := []string{
 		"reportid",
@@ -173,46 +178,36 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 		"serialized",
 	}
 
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(obj.GetReportId()),
-				obj.GetScanConfigurationId(),
-				obj.GetName(),
-				obj.GetReportStatus().GetRunState(),
-				protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
-				protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-				obj.GetReportStatus().GetReportRequestType(),
-				obj.GetReportStatus().GetReportNotificationMethod(),
-				obj.GetUser().GetId(),
-				obj.GetUser().GetName(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
-			deletes = append(deletes, obj.GetReportId())
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
 		}
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(obj.GetReportId()),
+			obj.GetScanConfigurationId(),
+			obj.GetName(),
+			obj.GetReportStatus().GetRunState(),
+			protocompat.NilOrTime(obj.GetReportStatus().GetStartedAt()),
+			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+			obj.GetReportStatus().GetReportRequestType(),
+			obj.GetReportStatus().GetReportNotificationMethod(),
+			obj.GetUser().GetId(),
+			obj.GetUser().GetName(),
+			serialized,
+		}, nil
+	})
 
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
-
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	for _, obj := range objs {
@@ -228,8 +223,6 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"compliance_operator_report_snapshot_v2_reportid",
@@ -239,27 +232,23 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 	}
 
 	idx := 0
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
-				idx,
-				obj.GetScanRefId(),
-				protocompat.NilOrTime(obj.GetLastStartedTime()),
-			})
-
-			idx++
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
 		}
+		obj := objs[idx]
+		idx++
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
+			idx,
+			obj.GetScanRefId(),
+			protocompat.NilOrTime(obj.GetLastStartedTime()),
+		}, nil
+	})
 
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_report_snapshot_v2_scans"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil

@@ -1,22 +1,21 @@
-import React, { ReactNode } from 'react';
-import { Toolbar, ToolbarGroup, ToolbarContent } from '@patternfly/react-core';
+import type { ReactElement, ReactNode } from 'react';
+import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 import { uniq } from 'lodash';
 
-import CompoundSearchFilter, {
-    CompoundSearchFilterProps,
-} from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
-import { DefaultFilters } from '../types';
+import type { DefaultFilters } from '../types';
 import {
-    cveStatusClusterFixableDescriptor,
-    cveStatusFixableDescriptor,
     cveSeverityFilterDescriptor,
     cveSnoozedDescriptor,
+    cveStatusClusterFixableDescriptor,
+    cveStatusFixableDescriptor,
 } from '../filterChipDescriptor';
 import CVESeverityDropdown from './CVESeverityDropdown';
 import CVEStatusDropdown from './CVEStatusDropdown';
@@ -70,7 +69,7 @@ function AdvancedFiltersToolbar({
     defaultSearchFilterEntity,
     additionalContextFilter,
     children,
-}: AdvancedFiltersToolbarProps) {
+}: AdvancedFiltersToolbarProps): ReactElement {
     const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     const severityDescriptors = includeCveSeverityFilters

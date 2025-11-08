@@ -1,17 +1,17 @@
 import type { FormEvent, ReactElement } from 'react';
 import { FormikProvider, useFormik } from 'formik';
 import {
-    PageSection,
-    Title,
-    Flex,
-    TextInput,
+    ActionGroup,
     Button,
+    Flex,
     Form,
     FormGroup,
-    ActionGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
+    PageSection,
+    TextInput,
+    Title,
 } from '@patternfly/react-core';
 
 import type { PolicyCategory } from 'types/policy.proto';
