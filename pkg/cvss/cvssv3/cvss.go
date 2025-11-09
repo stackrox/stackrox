@@ -60,30 +60,45 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV3_Severity, error) {
 	return v, nil
 }
 
+type Writer interface {
+	GetVector() string
+
+	SetVector(vector string)
+	SetExploitabilityScore(score float32)
+	SetImpactScore(score float32)
+	SetAttackVector(attackVector storage.CVSSV3_AttackVector)
+	SetAttackComplexity(attackComplexity storage.CVSSV3_Complexity)
+	SetPrivilegesRequired(privilegesRequired storage.CVSSV3_Privileges)
+	SetUserInteraction(userInteraction storage.CVSSV3_UserInteraction)
+	SetScope(scope storage.CVSSV3_Scope)
+	SetConfidentiality(impact storage.CVSSV3_Impact)
+	SetIntegrity(impact storage.CVSSV3_Impact)
+	SetAvailability(impact storage.CVSSV3_Impact)
+	SetScore(score float32)
+	SetSeverity(severity storage.CVSSV3_Severity)
+}
+
 // ParseCVSSV3 parses the vector string and returns an internal representation of CVSS V3
-func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
-	vec, err := cvss3.VectorFromString(vectorStr)
+func ParseCVSSV3(out Writer, vector string) error {
+	vec, err := getValidatedVectorFromString(vector)
 	if err != nil {
-		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
-	}
-	if err := vec.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
+		return err
 	}
 
 	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	return &storage.CVSSV3{
-		Vector:             vectorStr,
-		AttackVector:       attackVectorMap[metrics.AttackVector.String()],
-		AttackComplexity:   complexityMap[metrics.AttackComplexity.String()],
-		PrivilegesRequired: privilegesMap[metrics.PrivilegesRequired.String()],
-		UserInteraction:    userInteractionMap[metrics.UserInteraction.String()],
-		Scope:              scopeMap[metrics.Scope.String()],
-		Confidentiality:    impactMap[metrics.Confidentiality.String()],
-		Integrity:          impactMap[metrics.Integrity.String()],
-		Availability:       impactMap[metrics.Availability.String()],
-	}, nil
+	out.SetVector(vector)
+	out.SetAttackVector(attackVectorMap[metrics.AttackVector.String()])
+	out.SetAttackComplexity(complexityMap[metrics.AttackComplexity.String()])
+	out.SetPrivilegesRequired(privilegesMap[metrics.PrivilegesRequired.String()])
+	out.SetUserInteraction(userInteractionMap[metrics.UserInteraction.String()])
+	out.SetScope(scopeMap[metrics.Scope.String()])
+	out.SetConfidentiality(impactMap[metrics.Confidentiality.String()])
+	out.SetIntegrity(impactMap[metrics.Integrity.String()])
+	out.SetAvailability(impactMap[metrics.Availability.String()])
+
+	return nil
 }
 
 // Severity returns the severity for the cvss v3 score
@@ -104,16 +119,25 @@ func Severity(score float32) storage.CVSSV3_Severity {
 }
 
 // CalculateScores calculates and sets CVSS scores based on the current vector string.
-func CalculateScores(cvssV3 *storage.CVSSV3) error {
-	vec, err := cvss3.VectorFromString(cvssV3.GetVector())
+func CalculateScores(io Writer) error {
+	vec, err := getValidatedVectorFromString(io.GetVector())
 	if err != nil {
-		return fmt.Errorf("parsing: %w", err)
+		return err
+	}
+	io.SetScore(float32(vec.BaseScore()))
+	io.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
+	io.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1)))
+	return nil
+}
+
+func getValidatedVectorFromString(vector string) (cvss3.Vector, error) {
+	vec, err := cvss3.VectorFromString(vector)
+	if err != nil {
+		return cvss3.Vector{}, fmt.Errorf("invalid CVSSv3 vector %q: %w", vector, err)
 	}
 	if err := vec.Validate(); err != nil {
-		return fmt.Errorf("validating: %w", err)
+		return cvss3.Vector{}, fmt.Errorf("invalid CVSSv3 vector %q: %w", vector, err)
 	}
-	cvssV3.Score = float32(vec.BaseScore())
-	cvssV3.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
-	cvssV3.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1))
-	return nil
+
+	return vec, nil
 }
