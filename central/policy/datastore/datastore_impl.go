@@ -11,6 +11,8 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
+	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -25,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -70,9 +73,10 @@ type datastoreImpl struct {
 	storage     store.Store
 	policyMutex sync.Mutex
 
-	clusterDatastore    clusterDS.DataStore
-	notifierDatastore   notifierDS.DataStore
-	categoriesDatastore categoriesDataStore.DataStore
+	clusterDatastore            clusterDS.DataStore
+	notifierDatastore           notifierDS.DataStore
+	categoriesDatastore         categoriesDataStore.DataStore
+	policyCategoryEdgeDatastore policyCategoryEdgeDS.DataStore
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -195,26 +199,67 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 	return policies, missingIndices, nil
 }
 
+const getAllPoliciesWithCategoriesStmt = `
+  SELECT 
+      p.serialized,
+      COALESCE(
+          array_agg(pc.name ORDER BY pc.name) FILTER (WHERE pc.name IS NOT NULL), 
+          '{}'
+      ) as category_names
+  FROM policies p
+  LEFT JOIN policy_category_edges pce ON p.id = pce.policyid
+  LEFT JOIN policy_categories pc ON pce.categoryid = pc.id
+  GROUP BY p.id, p.serialized
+  `
+
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
-	var policies []*storage.Policy
-	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
-		policies = append(policies, policy)
-		return nil
-	})
+	// the tx.begin is only to get easy access to a raw DB object for now
+	// refactor this to be a function of the store, which would remove the transaction overhead
+	// leading to even better performance
+	_, tx, err := ds.storage.Begin(ctx)
+	defer tx.Commit(ctx)
+
 	if err != nil {
 		return nil, err
 	}
 
-	err = ds.fillCategoryNames(ctx, policies...)
+	rows, err := tx.Query(ctx, getAllPoliciesWithCategoriesStmt)
 	if err != nil {
-		return nil, errorsPkg.Wrap(err, "failed to fill category names")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var policies []*storage.Policy
+	for rows.Next() {
+		var serialized []byte
+		var categoryNames []string
+
+		if err := rows.Scan(&serialized, &categoryNames); err != nil {
+			return nil, err
+		}
+
+		policy := &storage.Policy{}
+		if err := proto.Unmarshal(serialized, policy); err != nil {
+			return nil, err
+		}
+
+		// Fill the categories array
+		policy.Categories = categoryNames
+
+		policies = append(policies, policy)
 	}
 
-	return policies, err
+	return policies, rows.Err()
+	// err = ds.fillCategoryNames(ctx, policies...)
+	// if err != nil {
+	// 	return nil, errorsPkg.Wrap(err, "failed to fill category names")
+	// }
+
+	// return policies, err
 }
 
 // GetPolicyByName returns policy with given name.
