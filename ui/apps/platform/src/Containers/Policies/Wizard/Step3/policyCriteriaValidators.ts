@@ -26,13 +26,13 @@ export const policySectionValidators: PolicySectionValidator[] = [
             const hasVerb = section.policyGroups.some((g) => g.fieldName === 'Kubernetes API Verb');
 
             if (!hasResource && !hasVerb) {
-                return 'The [Kubernetes resource type] and [Kubernetes API verb] criteria must be present for audit log policies.';
+                return 'Criteria must be present for audit log policies: Kubernetes resource type and Kubernetes API verb';
             }
             if (!hasResource) {
-                return 'The [Kubernetes resource type] criterion must be present for audit log policies.';
+                return 'Criterion must be present for audit log policies: Kubernetes resource type';
             }
             if (!hasVerb) {
-                return 'The [Kubernetes API verb] criterion must be present for audit log policies.';
+                return 'Criterion must be present for audit log policies: Kubernetes API verb';
             }
             return undefined;
         },
