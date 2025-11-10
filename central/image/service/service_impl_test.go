@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -444,21 +445,25 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 			Id:   "fake-id_1",
 			Scan: nil, // A nil scan should trigger a re-scan.
 		}, true, nil)
-	imageDSMock.EXPECT().SearchRawImagesMetadata(gomock.Any(), gomock.Any()).
+	imageDSMock.EXPECT().Search(gomock.Any(), gomock.Any()).
 		AnyTimes().
-		Return([]*storage.ImageV2{
+		Return([]search.Result{
 			{
-				Id:   "fake-id_2",
-				Scan: nil,
-				Name: &storage.ImageName{
-					FullName: "fake/image:A",
+				ID: "fake-id_2",
+				FieldValues: map[string]string{
+					search.ImageName.String():     "fake/image:A",
+					search.ImageRegistry.String(): "fake",
+					search.ImageRemote.String():   "image",
+					search.ImageTag.String():      "A",
 				},
 			},
 			{
-				Id:   "fake-id_3",
-				Scan: nil,
-				Name: &storage.ImageName{
-					FullName: "fake/image:B",
+				ID: "fake-id_3",
+				FieldValues: map[string]string{
+					search.ImageName.String():     "fake/image:B",
+					search.ImageRegistry.String(): "fake",
+					search.ImageRemote.String():   "image",
+					search.ImageTag.String():      "B",
 				},
 			},
 		}, nil)
