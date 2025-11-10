@@ -1,8 +1,7 @@
 {{- $_ := include "srox.init" . -}}
-
 StackRox Central Services has been installed.
+[<- if not .Operator >]
 
-[< if not .Operator >]
 Central Services Configuration Summary:
 
   Stackrox Version:                            {{ .Chart.AppVersion }}
@@ -57,7 +56,6 @@ IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that 
 
              oc annotate namespace/{{ .Release.Namespace }} --overwrite openshift.io/node-selector=""
 {{ end -}}
-[< end >]
 
 {{ if ne (._rox.central.telemetry.enabled | toString) "false" }}
 StackRox Kubernetes Security Platform collects and transmits anonymous usage and
@@ -66,3 +64,4 @@ system configuration information. If you want to OPT OUT from this, use
 {{ end }}
 
 Thank you for using StackRox!
+[<- end ->]
