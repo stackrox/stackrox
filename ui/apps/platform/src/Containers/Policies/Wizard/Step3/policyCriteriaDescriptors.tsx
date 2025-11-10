@@ -1491,6 +1491,30 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
+    {
+        label: 'Mounted file path',
+        name: 'Mounted File Path',
+        shortName: 'Mounted file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
+    {
+        label: 'File operation',
+        name: 'File Operation',
+        shortName: 'File operation',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileOperationOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
 ];
 
 export const auditLogDescriptor: Descriptor[] = [

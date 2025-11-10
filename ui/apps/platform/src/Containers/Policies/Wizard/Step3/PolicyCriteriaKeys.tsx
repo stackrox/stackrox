@@ -26,6 +26,7 @@ const criteriaDomains: Partial<Record<PolicyCriteriaCategoryKey, CriteriaDomain>
     [policyCriteriaCategories.ACCESS_CONTROL]: 'Workload configuration',
     [policyCriteriaCategories.PROCESS_ACTIVITY]: 'Workload activity',
     [policyCriteriaCategories.BASELINE_DEVIATION]: 'Workload activity',
+    [policyCriteriaCategories.FILE_ACTIVITY]: 'Workload activity',
     [policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS]: 'Workload activity',
     [policyCriteriaCategories.RESOURCE_OPERATION]: 'Kubernetes resource operations',
     [policyCriteriaCategories.RESOURCE_ATTRIBUTES]: 'Kubernetes resource operations',
