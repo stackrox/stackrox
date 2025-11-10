@@ -72,7 +72,7 @@ function PolicyCriteriaKeys({ keys, eventSource }: PolicyCriteriaKeysProps) {
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsXs' }}
                 >
-                    {showDomainHeading && domain && <Title headingLevel="h3">{domain}</Title>}
+                    {showDomainHeading && <Title headingLevel="h3">{domain}</Title>}
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsNone' }}
