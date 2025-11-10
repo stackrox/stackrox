@@ -3,7 +3,7 @@
 # Port Forward to StackRox Central
 #
 # Usage:
-#   ./port-forward.sh <port> [namespace]
+#   ./port-forward.sh <local_port> [namespace]
 #
 # Using a different command:
 #     The KUBE_COMMAND environment variable will override the default of kubectl
@@ -17,12 +17,12 @@
 
 set -x
 
-port="$1"
+local_port="$1"
 namespace=${2:-stackrox}
 
 if [ -z "$1" ]; then
-	echo "usage: $0 <port> [namespace]"
-	echo "The above would forward localhost:<port> to central:443."
+	echo "usage: $0 <local_port> [namespace]"
+	echo "The above would forward localhost:<local_port> to central:443."
 	exit 1
 fi
 
@@ -37,14 +37,14 @@ echo
 max_attempts=300
 count=1
 
-nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" 1>/dev/null 2>&1 &
-until nc -z 127.0.0.1 "$port"; do
+nohup kubectl port-forward -n "${namespace}" svc/central "${local_port}:443" 1>/dev/null 2>&1 &
+until nc -z 127.0.0.1 "$local_port"; do
     if [ "$count" -ge "$max_attempts" ]; then
-        echo "Port $port did not become available after $max_attempts attempts. Exiting."
+        echo "Port $local_port did not become available after $max_attempts attempts. Exiting."
 	exit 1
     fi
     echo "Waiting for port forward. Attempt $count of $max_attempts"
     sleep 1
     count=$((count + 1))
 done
-echo "Access central on https://localhost:${port}"
+echo "Access central on https://localhost:${local_port}"
