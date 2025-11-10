@@ -215,6 +215,21 @@ func (mr *MockDataStoreMockRecorder) SearchRawImages(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImages", reflect.TypeOf((*MockDataStore)(nil).SearchRawImages), ctx, q)
 }
 
+// SearchRawImagesMetadata mocks base method.
+func (m *MockDataStore) SearchRawImagesMetadata(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawImagesMetadata", ctx, q)
+	ret0, _ := ret[0].([]*storage.ImageV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawImagesMetadata indicates an expected call of SearchRawImagesMetadata.
+func (mr *MockDataStoreMockRecorder) SearchRawImagesMetadata(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImagesMetadata", reflect.TypeOf((*MockDataStore)(nil).SearchRawImagesMetadata), ctx, q)
+}
+
 // UpdateVulnerabilityState mocks base method.
 func (m *MockDataStore) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
 	m.ctrl.T.Helper()
