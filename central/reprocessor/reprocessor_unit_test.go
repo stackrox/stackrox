@@ -565,6 +565,8 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		imageDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(results, nil)
 		for _, img := range imgs {
 			imageDS.EXPECT().GetImage(gomock.Any(), img.GetId()).AnyTimes().Return(img, true, nil)
+			q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).ProtoQuery()
+			imageDS.EXPECT().SearchRawImagesMetadata(gomock.Any(), q).AnyTimes().Return([]*storage.ImageV2{img}, nil)
 		}
 
 		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).AnyTimes().Return(nil)
