@@ -3,13 +3,13 @@ import { useQuery } from '@apollo/client';
 import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-import useURLSort from 'hooks/useURLSort';
-import useURLPagination from 'hooks/useURLPagination';
+import type useURLSort from 'hooks/useURLSort';
+import type useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
@@ -19,11 +19,11 @@ import WorkloadCVEOverviewTable, {
     tableId,
     unfilteredImageCountQuery,
 } from '../Tables/WorkloadCVEOverviewTable';
-import { VulnerabilitySeverityLabel } from '../../types';
-import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-import ExceptionRequestModal, {
-    ExceptionRequestModalProps,
-} from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import type { VulnerabilitySeverityLabel } from '../../types';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
+import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import ExceptionRequestModal from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import type { ExceptionRequestModalProps } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import { useImageCves } from './useImageCves';

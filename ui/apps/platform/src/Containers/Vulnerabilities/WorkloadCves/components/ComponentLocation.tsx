@@ -2,7 +2,7 @@ import React from 'react';
 import { Flex, Icon, Tooltip, Truncate } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 
-import { SourceType } from 'types/image.proto';
+import type { SourceType } from 'types/image.proto';
 
 export type ComponentLocationProps = {
     location: string;

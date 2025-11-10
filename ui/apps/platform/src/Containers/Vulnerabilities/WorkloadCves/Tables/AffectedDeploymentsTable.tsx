@@ -5,26 +5,25 @@ import { Table, Thead, Tr, Th, Tbody, Td, ExpandableRowContent } from '@patternf
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import ExpandRowTh from 'Components/ExpandRowTh';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import DeploymentComponentVulnerabilitiesTable, {
-    DeploymentComponentVulnerability,
-    ImageMetadataContext,
     deploymentComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
+import type {
+    DeploymentComponentVulnerability,
+    ImageMetadataContext,
+} from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { VulnerabilitySeverityLabel } from '../../types';
+import type { VulnerabilitySeverityLabel } from '../../types';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';

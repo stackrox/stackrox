@@ -1,4 +1,5 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties } from 'react';
 import {
     Bullseye,
     Divider,
@@ -9,22 +10,22 @@ import {
     Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
-import { Pagination as PaginationParam } from 'services/types';
+import type { Pagination as PaginationParam } from 'services/types';
 
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentResourceTable, {
-    DeploymentResources,
     deploymentResourcesFragment,
     deploymentResourcesTableId,
     defaultColumns as deploymentResourcesDefaultColumns,
 } from './DeploymentResourceTable';
+import type { DeploymentResources } from './DeploymentResourceTable';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export type ImagePageResourcesProps = {

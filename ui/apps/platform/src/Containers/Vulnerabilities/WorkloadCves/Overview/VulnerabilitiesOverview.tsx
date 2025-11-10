@@ -1,13 +1,9 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';
 
 import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
-import type {
-    DefaultFilters,
-    QuerySearchFilter,
-    WorkloadEntityTab,
-} from 'Containers/Vulnerabilities/types';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -18,15 +14,16 @@ import type { SearchFilter } from 'types/search';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
+import type { DefaultFilters, QuerySearchFilter, WorkloadEntityTab } from '../../types';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer from './ImagesTableContainer';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { defaultColumns as cveDefaultColumns } from '../Tables/WorkloadCVEOverviewTable';
-import { defaultColumns as imageDefaultColumns } from '../Tables/ImageOverviewTable';
-import { defaultColumns as deploymentDefaultColumns } from '../Tables/DeploymentOverviewTable';
+import type { defaultColumns as cveDefaultColumns } from '../Tables/WorkloadCVEOverviewTable';
+import type { defaultColumns as imageDefaultColumns } from '../Tables/ImageOverviewTable';
+import type { defaultColumns as deploymentDefaultColumns } from '../Tables/DeploymentOverviewTable';
 
 function getSearchFilterEntityByTab(
     entityTab: WorkloadEntityTab
@@ -66,8 +63,8 @@ type VulnerabilitiesOverviewProps = {
     onUnwatchImage: (imageName: string) => void;
     activeEntityTabKey: WorkloadEntityTab;
     onEntityTabChange: (entityTab: WorkloadEntityTab) => void;
-    additionalToolbarItems: React.ReactNode;
-    additionalHeaderItems: React.ReactNode;
+    additionalToolbarItems: ReactNode;
+    additionalHeaderItems: ReactNode;
     showDeferralUI: boolean;
     cveTableColumnOverrides: ColumnConfigOverrides<keyof typeof cveDefaultColumns>;
     imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof imageDefaultColumns>;

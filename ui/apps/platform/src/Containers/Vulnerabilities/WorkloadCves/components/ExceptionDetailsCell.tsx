@@ -4,7 +4,7 @@ import { Td } from '@patternfly/react-table';
 
 import { exceptionManagementPath } from 'routePaths';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 
 function getExceptionManagementURL(

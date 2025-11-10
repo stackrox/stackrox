@@ -4,7 +4,7 @@ import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 
-import { ScanMessage } from 'messages/vulnMgmt.messages';
+import type { ScanMessage } from 'messages/vulnMgmt.messages';
 
 export type ImageScanningIncompleteLabelProps = {
     scanMessage: ScanMessage;

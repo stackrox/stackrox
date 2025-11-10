@@ -1,12 +1,13 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties } from 'react';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { Bullseye, Button, Icon } from '@patternfly/react-core';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 
-import { WatchedImage } from 'types/image.proto';
-import { UseRestMutationReturn } from 'hooks/useRestMutation';
+import type { WatchedImage } from 'types/image.proto';
+import type { UseRestMutationReturn } from 'hooks/useRestMutation';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import { Empty } from 'services/types';
+import type { Empty } from 'services/types';
 
 export type WatchedImagesTableProps = {
     className?: string;

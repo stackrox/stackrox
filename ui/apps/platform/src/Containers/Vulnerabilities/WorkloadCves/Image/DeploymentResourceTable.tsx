@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom-v5-compat';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { generateVisibilityForColumns, ManagedColumns } from 'hooks/useManagedColumns';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import { generateVisibilityForColumns } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import DateDistance from 'Components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';

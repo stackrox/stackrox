@@ -14,10 +14,11 @@ import {
     vulnerabilitiesUserWorkloadsPath,
 } from 'routePaths';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
-import useFeatureFlags, { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-import { NonEmptyArray } from 'utils/type.utils';
+import type { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageRoute from './Deployment/DeploymentPageRoute';
@@ -25,9 +26,10 @@ import ImagePageRoute from './Image/ImagePageRoute';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
-import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
+import { WorkloadCveViewContext } from './WorkloadCveViewContext';
+import type { WorkloadCveView } from './WorkloadCveViewContext';
 
-import { QuerySearchFilter, WorkloadEntityTab } from '../types';
+import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
 import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
 
 export const userWorkloadViewId = 'user-workloads';

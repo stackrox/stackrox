@@ -5,22 +5,19 @@ import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { VulnerabilityState } from 'types/cve.proto';
+import type { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { isNonEmptyArray } from 'utils/type.utils';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
@@ -32,11 +29,11 @@ import ImageNameLink from '../components/ImageNameLink';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 
 import ImageComponentVulnerabilitiesTable, {
-    ImageComponentVulnerability,
     imageComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
-import { WatchStatus } from '../../types';
+import type { ImageComponentVulnerability } from './ImageComponentVulnerabilitiesTable';
+import type { WatchStatus } from '../../types';
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {

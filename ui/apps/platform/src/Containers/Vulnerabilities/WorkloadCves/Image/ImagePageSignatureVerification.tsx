@@ -4,7 +4,7 @@ import { Table, TableText, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-ta
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import DateDistance from 'Components/DateDistance';
-import { SignatureVerificationResult, VerifiedStatus } from '../../types';
+import type { SignatureVerificationResult, VerifiedStatus } from '../../types';
 
 export type ImagePageSignatureVerificationProps = {
     results?: SignatureVerificationResult[];

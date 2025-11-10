@@ -2,23 +2,21 @@ import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 import { Flex, Label, LabelGroup } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import GenerateSbomModal, {
@@ -26,7 +24,11 @@ import GenerateSbomModal, {
 } from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
-import { SignatureVerificationResult, VulnerabilitySeverityLabel, WatchStatus } from '../../types';
+import type {
+    SignatureVerificationResult,
+    VulnerabilitySeverityLabel,
+    WatchStatus,
+} from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
 import VerifiedSignatureLabel, {
     getVerifiedSignatureInResults,
