@@ -693,9 +693,30 @@ spec:
                             type: object
                         type: object
                     type: object
-                  fact:
-                    description: Settings for the SFA container, which is responsible
-                      for file activity monitoring on the Node.
+                  hostAliases:
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      required:
+                      - ip
+                      type: object
+                    type: array
+                  nodeInventory:
+                    description: Settings for the Node-Inventory container, which
+                      is responsible for scanning the Nodes' filesystem.
                     properties:
                       resources:
                         description: |-
@@ -759,30 +780,10 @@ spec:
                             type: object
                         type: object
                     type: object
-                  hostAliases:
-                    description: HostAliases allows configuring additional hostnames
-                      to resolve in the pod's hosts file.
-                    items:
-                      description: |-
-                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
-                        pod's hosts file.
-                      properties:
-                        hostnames:
-                          description: Hostnames for the above IP address.
-                          items:
-                            type: string
-                          type: array
-                          x-kubernetes-list-type: atomic
-                        ip:
-                          description: IP address of the host file entry.
-                          type: string
-                      required:
-                      - ip
-                      type: object
-                    type: array
-                  nodeInventory:
-                    description: Settings for the Node-Inventory container, which
-                      is responsible for scanning the Nodes' filesystem.
+                  sfa:
+                    description: |-
+                      Settings for the Sensitive File Activity container, which is
+                      responsible for file activity monitoring on the Node.
                     properties:
                       resources:
                         description: |-
