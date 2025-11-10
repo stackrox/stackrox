@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/vm-relay-split-relay-go",
-    "hash": "934205850bd2751244403a63aec85662ad0dee66"
+    "hash": "2897f570a3e3ad02d2a405feaee2363a2a8a393b"
   },
   "upstream": {
     "branch": "master-base/gualvare/vm-relay-semaphore-integration-tests"
