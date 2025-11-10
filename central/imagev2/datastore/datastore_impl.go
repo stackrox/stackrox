@@ -127,26 +127,6 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	return images, nil
 }
 
-// TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
-// SearchRawImagesMetadata returns the image data without the scan.
-func (ds *datastoreImpl) SearchRawImagesMetadata(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchRawImagesMetadata")
-
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	images, err := ds.storage.GetManyImageMetadata(ctx, search.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-
-	ds.updateImagePriority(images...)
-
-	return images, nil
-}
-
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
 	wrappedFn := func(image *storage.ImageV2) error {
 		ds.updateImagePriority(image)
