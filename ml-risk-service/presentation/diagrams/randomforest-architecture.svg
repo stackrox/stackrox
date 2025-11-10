@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600">
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-size="32" font-weight="bold" fill="#2d2d2d">RandomForest: 1000 Decision Trees Ensemble</text>
+
+  <!-- Input Features Box -->
+  <rect x="50" y="100" width="200" height="400" fill="#e8f4f8" stroke="#0066cc" stroke-width="3" rx="10"/>
+  <text x="150" y="130" text-anchor="middle" font-size="26" font-weight="bold" fill="#2d2d2d">Input Features</text>
+
+  <text x="70" y="170" font-size="20" fill="#333">• policy_violations</text>
+  <text x="70" y="200" font-size="20" fill="#333">• vulnerabilities</text>
+  <text x="70" y="230" font-size="20" fill="#333">• privileged_containers</text>
+  <text x="70" y="260" font-size="20" fill="#333">• external_exposure</text>
+  <text x="70" y="290" font-size="20" fill="#333">• host_network</text>
+  <text x="70" y="320" font-size="20" fill="#333">• image_age</text>
+  <text x="70" y="350" font-size="20" fill="#333">• component_count</text>
+  <text x="70" y="380" font-size="20" fill="#333">• baseline_violations</text>
+  <text x="150" y="420" text-anchor="middle" font-size="24" font-weight="bold" fill="#0066cc">~20 features</text>
+
+  <!-- Arrow to trees -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+    </marker>
+  </defs>
+
+  <line x1="250" y1="300" x2="350" y2="300" stroke="#0066cc" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+  <!-- Decision Trees -->
+  <!-- Tree 1 -->
+  <g transform="translate(370, 80)">
+    <rect width="120" height="140" fill="#d4e6f1" stroke="#2874a6" stroke-width="2" rx="5"/>
+    <text x="60" y="25" text-anchor="middle" font-size="20" font-weight="bold" fill="#2874a6">Tree 1</text>
+    <circle cx="60" cy="50" r="8" fill="#2874a6"/>
+    <line x1="60" y1="58" x2="40" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <line x1="60" y1="58" x2="80" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <circle cx="40" cy="80" r="6" fill="#2874a6"/>
+    <circle cx="80" cy="80" r="6" fill="#2874a6"/>
+    <line x1="40" y1="86" x2="25" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="40" y1="86" x2="55" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="65" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="95" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <rect x="18" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="48" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="58" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="88" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+  </g>
+
+  <!-- Tree 2 -->
+  <g transform="translate(520, 80)">
+    <rect width="120" height="140" fill="#d4e6f1" stroke="#2874a6" stroke-width="2" rx="5"/>
+    <text x="60" y="25" text-anchor="middle" font-size="20" font-weight="bold" fill="#2874a6">Tree 2</text>
+    <circle cx="60" cy="50" r="8" fill="#2874a6"/>
+    <line x1="60" y1="58" x2="40" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <line x1="60" y1="58" x2="80" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <circle cx="40" cy="80" r="6" fill="#2874a6"/>
+    <circle cx="80" cy="80" r="6" fill="#2874a6"/>
+    <line x1="40" y1="86" x2="25" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="40" y1="86" x2="55" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="65" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="95" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <rect x="18" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="48" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="58" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="88" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+  </g>
+
+  <!-- Tree 3 -->
+  <g transform="translate(670, 80)">
+    <rect width="120" height="140" fill="#d4e6f1" stroke="#2874a6" stroke-width="2" rx="5"/>
+    <text x="60" y="25" text-anchor="middle" font-size="20" font-weight="bold" fill="#2874a6">Tree 3</text>
+    <circle cx="60" cy="50" r="8" fill="#2874a6"/>
+    <line x1="60" y1="58" x2="40" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <line x1="60" y1="58" x2="80" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <circle cx="40" cy="80" r="6" fill="#2874a6"/>
+    <circle cx="80" cy="80" r="6" fill="#2874a6"/>
+    <line x1="40" y1="86" x2="25" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="40" y1="86" x2="55" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="65" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="95" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <rect x="18" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="48" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="58" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="88" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+  </g>
+
+  <!-- Ellipsis (indicating more trees) -->
+  <text x="820" y="160" font-size="52" fill="#2874a6">...</text>
+
+  <!-- Tree 1000 -->
+  <g transform="translate(370, 340)">
+    <rect width="120" height="140" fill="#d4e6f1" stroke="#2874a6" stroke-width="2" rx="5"/>
+    <text x="60" y="25" text-anchor="middle" font-size="20" font-weight="bold" fill="#2874a6">Tree 1000</text>
+    <circle cx="60" cy="50" r="8" fill="#2874a6"/>
+    <line x1="60" y1="58" x2="40" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <line x1="60" y1="58" x2="80" y2="80" stroke="#2874a6" stroke-width="2"/>
+    <circle cx="40" cy="80" r="6" fill="#2874a6"/>
+    <circle cx="80" cy="80" r="6" fill="#2874a6"/>
+    <line x1="40" y1="86" x2="25" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="40" y1="86" x2="55" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="65" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <line x1="80" y1="86" x2="95" y2="105" stroke="#2874a6" stroke-width="2"/>
+    <rect x="18" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="48" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="58" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+    <rect x="88" y="105" width="14" height="18" fill="#28a745" opacity="0.8" rx="2"/>
+  </g>
+
+  <!-- Aggregation/Voting Box -->
+  <rect x="900" y="200" width="250" height="200" fill="#fff3cd" stroke="#ffc107" stroke-width="3" rx="10"/>
+  <text x="1025" y="235" text-anchor="middle" font-size="26" font-weight="bold" fill="#2d2d2d">Aggregation</text>
+  <text x="1025" y="270" text-anchor="middle" font-size="24" fill="#333">(Voting)</text>
+
+  <text x="920" y="310" font-size="20" fill="#333">Tree 1: 7.2</text>
+  <text x="920" y="335" font-size="20" fill="#333">Tree 2: 6.8</text>
+  <text x="920" y="360" font-size="20" fill="#333">Tree 3: 7.5</text>
+  <text x="920" y="385" font-size="20" fill="#333">...</text>
+
+  <!-- Arrow from trees to aggregation -->
+  <line x1="800" y1="150" x2="890" y2="250" stroke="#0066cc" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <line x1="800" y1="410" x2="890" y2="350" stroke="#0066cc" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+  <!-- Final Output -->
+  <rect x="900" y="430" width="250" height="100" fill="#d1f2eb" stroke="#28a745" stroke-width="3" rx="10"/>
+  <text x="1025" y="460" text-anchor="middle" font-size="26" font-weight="bold" fill="#2d2d2d">Final Risk Score</text>
+  <text x="1025" y="495" text-anchor="middle" font-size="42" font-weight="bold" fill="#28a745">7.4</text>
+
+  <!-- Arrow from aggregation to output -->
+  <line x1="1025" y1="400" x2="1025" y2="420" stroke="#0066cc" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+  <!-- Legend -->
+  <text x="100" y="570" font-size="20" fill="#666">Each tree built independently with random feature subsets</text>
+</svg>

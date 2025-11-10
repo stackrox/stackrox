@@ -1244,6 +1244,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"results: [Risk_Result]!",
 		"score: Float!",
 		"subject: RiskSubject",
+		"userRankingAdjustment: UserRankingAdjustment",
 	}))
 	utils.Must(builder.AddType("RiskSubject", []string{
 		"clusterId: String!",
@@ -1509,6 +1510,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"upgradeStatusDetail: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.UpgradeProgress_UpgradeState(0)))
+	utils.Must(builder.AddType("UserRankingAdjustment", []string{
+		"adjustedScore: Float!",
+		"lastAdjusted: Time",
+		"lastAdjustedBy: String!",
+	}))
 	utils.Must(builder.AddType("V1Metadata", []string{
 		"author: String!",
 		"command: [String!]!",
@@ -13574,6 +13580,11 @@ func (resolver *riskResolver) Subject(ctx context.Context) (*riskSubjectResolver
 	return resolver.root.wrapRiskSubject(value, true, nil)
 }
 
+func (resolver *riskResolver) UserRankingAdjustment(ctx context.Context) (*userRankingAdjustmentResolver, error) {
+	value := resolver.data.GetUserRankingAdjustment()
+	return resolver.root.wrapUserRankingAdjustment(value, true, nil)
+}
+
 type riskSubjectResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -16344,6 +16355,63 @@ func toUpgradeProgress_UpgradeStates(values *[]string) []storage.UpgradeProgress
 		output[i] = toUpgradeProgress_UpgradeState(&v)
 	}
 	return output
+}
+
+type userRankingAdjustmentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.UserRankingAdjustment
+}
+
+func (resolver *Resolver) wrapUserRankingAdjustment(value *storage.UserRankingAdjustment, ok bool, err error) (*userRankingAdjustmentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &userRankingAdjustmentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapUserRankingAdjustments(values []*storage.UserRankingAdjustment, err error) ([]*userRankingAdjustmentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*userRankingAdjustmentResolver, len(values))
+	for i, v := range values {
+		output[i] = &userRankingAdjustmentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapUserRankingAdjustmentWithContext(ctx context.Context, value *storage.UserRankingAdjustment, ok bool, err error) (*userRankingAdjustmentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &userRankingAdjustmentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapUserRankingAdjustmentsWithContext(ctx context.Context, values []*storage.UserRankingAdjustment, err error) ([]*userRankingAdjustmentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*userRankingAdjustmentResolver, len(values))
+	for i, v := range values {
+		output[i] = &userRankingAdjustmentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *userRankingAdjustmentResolver) AdjustedScore(ctx context.Context) float64 {
+	value := resolver.data.GetAdjustedScore()
+	return float64(value)
+}
+
+func (resolver *userRankingAdjustmentResolver) LastAdjusted(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastAdjusted()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *userRankingAdjustmentResolver) LastAdjustedBy(ctx context.Context) string {
+	value := resolver.data.GetLastAdjustedBy()
+	return value
 }
 
 type v1MetadataResolver struct {

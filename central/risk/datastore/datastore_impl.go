@@ -165,3 +165,25 @@ func upsertRankerRecord(ranker *ranking.Ranker, id string, score float32) {
 func removeRankerRecord(ranker *ranking.Ranker, id string) {
 	ranker.Remove(id)
 }
+
+// GetDeploymentsInUserScope returns all deployment risks visible to the user based on SAC.
+// This uses the existing SAC (Scoped Access Control) system to filter risks based on
+// the user's permissions from the context.
+func (d *datastoreImpl) GetDeploymentsInUserScope(ctx context.Context) ([]*storage.Risk, error) {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil || !allowed {
+		return nil, err
+	}
+
+	// Build query to get all deployment risks
+	query := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).
+		ProtoQuery()
+
+	// Use SearchRawRisks which applies SAC filtering automatically
+	risks, err := d.SearchRawRisks(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return risks, nil
+}

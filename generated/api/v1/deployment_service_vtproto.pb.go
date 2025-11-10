@@ -237,6 +237,13 @@ func (m *ExportDeploymentResponse) CloneVT() *ExportDeploymentResponse {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
 		}
 	}
+	if rhs := m.Risk; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Risk }); ok {
+			r.Risk = vtpb.CloneVT()
+		} else {
+			r.Risk = proto.Clone(rhs).(*storage.Risk)
+		}
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -524,6 +531,13 @@ func (this *ExportDeploymentResponse) EqualVT(that *ExportDeploymentResponse) bo
 			return false
 		}
 	} else if !proto.Equal(this.Deployment, that.Deployment) {
+		return false
+	}
+	if equal, ok := interface{}(this.Risk).(interface{ EqualVT(*storage.Risk) bool }); ok {
+		if !equal.EqualVT(that.Risk) {
+			return false
+		}
+	} else if !proto.Equal(this.Risk, that.Risk) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1013,6 +1027,28 @@ func (m *ExportDeploymentResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Risk != nil {
+		if vtmsg, ok := interface{}(m.Risk).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.Risk)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
 	if m.Deployment != nil {
 		if vtmsg, ok := interface{}(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
@@ -1226,6 +1262,16 @@ func (m *ExportDeploymentResponse) SizeVT() (n int) {
 			l = size.SizeVT()
 		} else {
 			l = proto.Size(m.Deployment)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Risk != nil {
+		if size, ok := interface{}(m.Risk).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.Risk)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -2223,6 +2269,50 @@ func (m *ExportDeploymentResponse) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deployment); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Risk", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Risk == nil {
+				m.Risk = &storage.Risk{}
+			}
+			if unmarshal, ok := interface{}(m.Risk).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Risk); err != nil {
 					return err
 				}
 			}
@@ -3255,6 +3345,50 @@ func (m *ExportDeploymentResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Deployment); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Risk", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Risk == nil {
+				m.Risk = &storage.Risk{}
+			}
+			if unmarshal, ok := interface{}(m.Risk).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Risk); err != nil {
 					return err
 				}
 			}

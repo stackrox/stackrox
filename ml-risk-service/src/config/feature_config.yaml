@@ -1,0 +1,262 @@
+# Feature configuration for ML risk ranking
+# Only contains values actually used by the code - feature weights are learned by RandomForest
+features:
+  deployment:
+    policy_violations:
+      enabled: true
+      normalize_saturation: 50 # Saturation point for policy violation score normalization
+      max_value: 4.0 # Maximum multiplier for policy violations
+
+  image:
+    component_count:
+      saturation: 500 # Saturation point for component count normalization
+      max_value: 1.5 # Maximum multiplier for component count
+
+    image_age:
+      age_threshold_days: 365 # Age threshold in days (1 year)
+      max_multiplier: 1.3 # Maximum age multiplier
+
+model:
+  algorithm: "sklearn_ranksvm" # Current algorithm: sklearn_ranksvm (extensible for future algorithms)
+  validation_split: 0.2
+  random_state: 42
+
+  # Algorithm-specific parameters (extensible for future implementations)
+  # Improved hyperparameters for better precision and generalization
+  sklearn_params:
+    n_estimators: 100
+    max_depth: 25 # Increased depth to capture complex patterns with larger datasets
+    min_samples_split: 10 # Minimum samples required to split node (prevents overfitting)
+    min_samples_leaf: 4 # Minimum samples in leaf node (smoother decision boundaries)
+    max_features: "sqrt" # Use sqrt of features for each split (reduces overfitting)
+    bootstrap: true # Use bootstrap samples (enabled by default, explicit for clarity)
+    oob_score: false # Out-of-bag score (can be enabled for additional validation)
+    n_jobs: -1 # Use all available CPU cores
+
+  explainability:
+    shap_enabled: true
+    top_features: 10
+
+api:
+  grpc_port: 8080
+  health_port: 8081
+  max_workers: 10
+
+# Common settings shared by training and prediction
+common:
+  # SSL/TLS Configuration
+  ssl:
+    verify_certificates: false # Set to false for self-signed certs in dev/test
+    ca_bundle_path: "" # Optional custom CA bundle path
+
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  # Performance tuning
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2
+    memory_limit_mb: 512
+
+  # Export settings for Central API
+  export_settings:
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2
+
+    # Workload-specific settings
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    # Default filters
+    default_filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+
+# Training configuration - supports multiple input sources
+training:
+  # List of data sources for training
+  sources:
+    - type: "central" # Type: "central" or "file"
+      name: "staging-central" # Human-readable name for this source
+      enabled: false # Set to false to temporarily disable this source
+      endpoint: "https://staging.demo.stackrox.com"
+
+      # Authentication configuration
+      authentication:
+        method: "api_token" # Options: "api_token", "mtls"
+        # Specify environment variable NAME containing the token (not the token itself)
+        api_token_env: "STAGING_CENTRAL_API_TOKEN"
+
+    - type: "central" # Type: "central" or "file"
+      name: "dog-fooding-central" # Human-readable name for this source
+      enabled: false # Set to false to temporarily disable this source
+      endpoint: "https://acs-cii18grublkv81uil8gg.acs.rhcloud.com"
+
+      # Authentication configuration
+      authentication:
+        method: "api_token" # Options: "api_token", "mtls"
+        # Specify environment variable NAME containing the token (not the token itself)
+        api_token_env: "DOG_FOODING_CENTRAL_API_TOKEN"
+
+        # For mTLS authentication, specify environment variable NAMES for cert paths:
+        # client_cert_path_env: "TRAINING_CENTRAL_CLIENT_CERT_PATH"
+        # client_key_path_env: "TRAINING_CENTRAL_CLIENT_KEY_PATH"
+        # ca_cert_path_env: "TRAINING_CENTRAL_CA_CERT_PATH"
+
+      # Source-specific filters (optional - overrides common default_filters)
+      filters:
+        include_inactive: false
+        severity_threshold: "MEDIUM_SEVERITY"
+        include_alerts: true
+        include_policies: false
+
+    # Example file source (commented out)
+    - type: "file"
+      name: "local-training-data"
+      enabled: true
+      path: "/app/data/training_data.json"
+      format: "json" # Options: "json", "jsonl"
+
+  # Training-specific settings
+  training_settings:
+    default_limit: 2000 # Default maximum training samples per source
+    min_training_samples: 50 # Minimum total samples required for training
+    max_training_samples: 10000 # Maximum total samples across all sources
+    use_streaming_exports: true # Use streaming API for data collection
+
+# Prediction/Validation configuration - supports multiple input sources
+prediction:
+  # List of data sources for prediction validation
+  sources:
+    - type: "central"
+      name: "infra-central"
+      enabled: true
+      endpoint: "https://central-stackrox.apps.sh-10-31-1.ocp.infra.rox.systems"
+
+      # Authentication configuration
+      authentication:
+        method: "api_token"
+        # Specify environment variable NAME containing the token
+        api_token_env: "INFRA_CENTRAL_API_TOKEN"
+
+        # For mTLS authentication:
+        # client_cert_path_env: "PREDICTION_CENTRAL_CLIENT_CERT_PATH"
+        # client_key_path_env: "PREDICTION_CENTRAL_CLIENT_KEY_PATH"
+        # ca_cert_path_env: "PREDICTION_CENTRAL_CA_CERT_PATH"
+
+      # Source-specific filters
+      filters:
+        include_inactive: false
+        severity_threshold: "MEDIUM_SEVERITY"
+        include_alerts: true
+        include_policies: false
+
+  # Prediction-specific settings
+  prediction_settings:
+    use_streaming_exports: true
+
+# DEPRECATED: Legacy configuration format (kept for backward compatibility)
+# These sections are deprecated and will be removed in a future version.
+# Please migrate to the new "training" and "prediction" sections above.
+training_central_api:
+  enabled: true
+  endpoint: "https://staging.demo.stackrox.com"
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"
+    api_token: "${TRAINING_CENTRAL_API_TOKEN}"
+    client_cert_path: "${TRAINING_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${TRAINING_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${TRAINING_CENTRAL_CA_CERT_PATH}"
+
+  ssl:
+    verify_certificates: false
+    ca_bundle_path: ""
+
+  export_settings:
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2
+
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2
+    memory_limit_mb: 512
+
+  training:
+    default_limit: 2000
+    min_training_samples: 50
+    max_training_samples: 10000
+    default_filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+
+prediction_central_api:
+  enabled: true
+  endpoint: "https://central-stackrox.apps.sh-10-31-1.ocp.infra.rox.systems"
+  use_streaming_exports: true
+
+  authentication:
+    method: "api_token"
+    api_token: "${PREDICTION_CENTRAL_API_TOKEN}"
+    client_cert_path: "${PREDICTION_CENTRAL_CLIENT_CERT_PATH}"
+    client_key_path: "${PREDICTION_CENTRAL_CLIENT_KEY_PATH}"
+    ca_cert_path: "${PREDICTION_CENTRAL_CA_CERT_PATH}"
+
+  ssl:
+    verify_certificates: false
+    ca_bundle_path: ""
+
+  export_settings:
+    chunk_size: 1000
+    timeout_seconds: 300
+    max_workers: 2
+
+    workload_settings:
+      include_vulnerabilities: true
+      include_runtime_data: true
+      min_cvss_score: 0.0
+      vulnerability_states: ["ACTIVE", "OBSERVED"]
+
+    filters:
+      include_inactive: false
+      severity_threshold: "MEDIUM_SEVERITY"
+      include_alerts: true
+      include_policies: false
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 2
+    resume_broken_streams: true
+
+  performance:
+    batch_size: 100
+    max_concurrent_streams: 2
+    memory_limit_mb: 512
