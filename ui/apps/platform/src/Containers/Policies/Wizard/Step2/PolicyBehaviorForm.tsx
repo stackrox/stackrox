@@ -18,6 +18,7 @@ import omit from 'lodash/omit';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMetadata from 'hooks/useMetadata';
 import type { ClientPolicy, PolicyEventSource } from 'types/policy.proto';
 import { getVersionedDocs } from 'utils/versioning';
@@ -45,10 +46,15 @@ function getEventSourceHelperText(eventSource: PolicyEventSource) {
         return 'Inspect the Kubernetes audit log for access to sensitive Kubernetes resources.';
     }
 
+    if (eventSource === 'NODE_EVENT') {
+        return 'Event sources that evaluate node level activity.';
+    }
+
     return '';
 }
 
 function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { errors, setFieldTouched, setFieldValue, setValues, touched, values } =
         useFormikContext<ClientPolicy>();
     const [lifeCycleChanges, setLifeCycleChanges] = useState<ValidPolicyLifeCycle | null>(null);
@@ -113,6 +119,21 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         // clear policy sections to prevent non-runtime criteria from being sent to BE
         const clearedCriteria = cloneDeep(initialPolicy.policySections);
         setFieldValue('policySections', clearedCriteria, false);
+    }
+
+    // Node event sources do not support scoping, exclusions, or enforcement actions
+    function onChangeNodeEventSource() {
+        setValues(
+            {
+                ...values,
+                eventSource: 'NODE_EVENT',
+                scope: [],
+                excludedImageNames: [],
+                excludedDeploymentScopes: [],
+                enforcementActions: [],
+            },
+            false
+        );
     }
 
     const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
@@ -304,6 +325,16 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 onChange={onChangeAuditLogEventSource}
                                 isDisabled={!isRuntime || hasActiveViolations}
                             />
+                            {isFeatureFlagEnabled('ROX_SENSITIVE_FILE_ACTIVITY') && (
+                                <Radio
+                                    label="Node"
+                                    isChecked={values.eventSource === 'NODE_EVENT'}
+                                    id="policy-event-source-node"
+                                    name="eventSource"
+                                    onChange={onChangeNodeEventSource}
+                                    isDisabled={!isRuntime || hasActiveViolations}
+                                />
+                            )}
                         </Flex>
                         <FormHelperText>
                             <HelperText>

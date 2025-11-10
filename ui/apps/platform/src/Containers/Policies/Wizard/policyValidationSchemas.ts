@@ -34,13 +34,13 @@ type PolicyStep2 = Pick<Policy, 'eventSource' | 'lifecycleStages'>;
 const validationSchemaStep2: yup.ObjectSchema<PolicyStep2> = yup.object().shape({
     eventSource: yup
         .string()
-        .oneOf(['NOT_APPLICABLE', 'DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT'])
+        .oneOf(['NOT_APPLICABLE', 'DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT', 'NODE_EVENT'])
         .when('lifecycleStages', {
             is: (lifecycleStages: string[]) => lifecycleStages.includes('RUNTIME'),
             // Remove values of eventSource that are not relevant for lifecycle stage.
             then: (eventSourceSchema) => eventSourceSchema.notOneOf(['NOT_APPLICABLE']),
             otherwise: (eventSourceSchema) =>
-                eventSourceSchema.notOneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT']),
+                eventSourceSchema.notOneOf(['DEPLOYMENT_EVENT', 'AUDIT_LOG_EVENT', 'NODE_EVENT']),
         })
         .required(),
     lifecycleStages: yup

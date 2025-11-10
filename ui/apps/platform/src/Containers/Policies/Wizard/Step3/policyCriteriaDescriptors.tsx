@@ -1595,3 +1595,7 @@ export const auditLogDescriptor: Descriptor[] = [
         lifecycleStages: ['RUNTIME'],
     },
 ];
+
+export const nodeEventDescriptor: Descriptor[] = [
+    // TODO: Criteria coming in a future update
+];

@@ -31,6 +31,7 @@ import { allEnabled } from 'utils/featureFlagUtils';
 import {
     auditLogDescriptor,
     imageSigningCriteriaName,
+    nodeEventDescriptor,
     policyCriteriaDescriptors,
 } from './Wizard/Step3/policyCriteriaDescriptors';
 import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
@@ -688,13 +689,19 @@ export function getLifeCyclesUpdates<
     return changedValues;
 }
 
+const eventSourceToDescriptorsMap: Readonly<Record<PolicyEventSource, Descriptor[]>> = {
+    NOT_APPLICABLE: policyCriteriaDescriptors,
+    DEPLOYMENT_EVENT: policyCriteriaDescriptors,
+    AUDIT_LOG_EVENT: auditLogDescriptor,
+    NODE_EVENT: nodeEventDescriptor,
+};
+
 export function getPolicyDescriptors(
     isFeatureFlagEnabled: (string) => boolean,
     eventSource: PolicyEventSource,
     lifecycleStages: LifecycleStage[]
 ) {
-    const unfilteredDescriptors =
-        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyCriteriaDescriptors;
+    const unfilteredDescriptors = eventSourceToDescriptorsMap[eventSource];
 
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
         const { featureFlagDependency } = unfilteredDescriptor;
