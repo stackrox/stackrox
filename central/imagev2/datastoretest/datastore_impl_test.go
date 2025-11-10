@@ -501,6 +501,35 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageIdsAndDigest() {
 	s.Equal(testImage1.GetDigest(), results[0].Digest)
 }
 
+func (s *ImageV2DataStoreTestSuite) TestSearchRawImagesMetadata() {
+	ctx := sac.WithAllAccess(context.Background())
+	testImage1 := fixtures.GetImageV2WithUniqueComponents(5)
+	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
+
+	testImage2 := testImage1.CloneVT()
+	testImage2.Name.FullName = "registry.test.io/img2:latest"
+	testImage2.Id = uuid.NewV5FromNonUUIDs(testImage2.GetName().GetFullName(), testImage2.GetDigest()).String()
+	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
+
+	testImage3 := testImage1.CloneVT()
+	testImage3.Name.FullName = "registry.test.io/img3:latest"
+	testImage3.Id = uuid.NewV5FromNonUUIDs(testImage3.GetName().GetFullName(), testImage3.GetDigest()).String()
+	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
+
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, testImage1.GetDigest()).ProtoQuery()
+	storedImages, err := s.datastore.SearchRawImagesMetadata(ctx, q)
+	s.NoError(err)
+	s.Len(storedImages, 3)
+
+	testImage1.Scan.Components = nil
+	testImage1.Priority = 1
+	testImage2.Scan.Components = nil
+	testImage2.Priority = 1
+	testImage3.Scan.Components = nil
+	testImage3.Priority = 1
+	protoassert.ElementsMatch(s.T(), []*storage.ImageV2{testImage1, testImage2, testImage3}, storedImages)
+}
+
 func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
@@ -582,8 +611,7 @@ func getTestImageV2(name string) *storage.ImageV2 {
 				},
 			},
 		},
-		RiskScore: 30,
-		Priority:  1,
+		Priority: 1,
 	}
 }
 
