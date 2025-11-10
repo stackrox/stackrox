@@ -1277,6 +1277,7 @@ type InvalidateImageCache_ImageKey struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ImageId       string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
 	ImageFullName string                 `protobuf:"bytes,2,opt,name=image_full_name,json=imageFullName,proto3" json:"image_full_name,omitempty"`
+	ImageIdV2     string                 `protobuf:"bytes,3,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1321,6 +1322,13 @@ func (x *InvalidateImageCache_ImageKey) GetImageId() string {
 func (x *InvalidateImageCache_ImageKey) GetImageFullName() string {
 	if x != nil {
 		return x.ImageFullName
+	}
+	return ""
+}
+
+func (x *InvalidateImageCache_ImageKey) GetImageIdV2() string {
+	if x != nil {
+		return x.ImageIdV2
 	}
 	return ""
 }
@@ -1416,13 +1424,14 @@ const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01\"<\n" +
 	"\x13ReprocessDeployment\x12%\n" +
-	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xac\x01\n" +
+	"\x0edeployment_ids\x18\x01 \x03(\tR\rdeploymentIds\"\xcc\x01\n" +
 	"\x14InvalidateImageCache\x12E\n" +
 	"\n" +
-	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys\x1aM\n" +
+	"image_keys\x18\x01 \x03(\v2&.central.InvalidateImageCache.ImageKeyR\timageKeys\x1am\n" +
 	"\bImageKey\x12\x19\n" +
 	"\bimage_id\x18\x01 \x01(\tR\aimageId\x12&\n" +
-	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName2P\n" +
+	"\x0fimage_full_name\x18\x02 \x01(\tR\rimageFullName\x12\x1e\n" +
+	"\vimage_id_v2\x18\x03 \x01(\tR\timageIdV22P\n" +
 	"\rSensorService\x12?\n" +
 	"\vCommunicate\x12\x16.central.MsgFromSensor\x1a\x14.central.MsgToSensor(\x010\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 

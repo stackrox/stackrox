@@ -2,6 +2,7 @@ package reprocessor
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -848,10 +849,12 @@ func (l *loopImpl) getImageNamesWithSameSHA(img *storage.ImageV2) []*storage.Ima
 	}
 
 	// Query all images with this digest
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).ProtoQuery()
-	images, err := l.imagesV2.SearchRawImagesMetadata(allAccessCtx, query)
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).
+		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
+		ProtoQuery()
+	results, err := l.imagesV2.Search(allAccessCtx, query)
 	if err != nil {
-		log.Warnw("Failed to retrieve all image names by digest",
+		log.Warnw("Failed to retrieve image names by digest",
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.ImageID(img.GetId()),
 			logging.String("digest", img.GetDigest()),
@@ -861,10 +864,17 @@ func (l *loopImpl) getImageNamesWithSameSHA(img *storage.ImageV2) []*storage.Ima
 	}
 
 	// Collect all image names
-	allNames := make([]*storage.ImageName, 0, len(images))
-	for _, img := range images {
-		if img.GetName() != nil {
-			allNames = append(allNames, img.GetName())
+	allNames := make([]*storage.ImageName, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
+				allNames = append(allNames, &storage.ImageName{
+					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
+					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
+					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
+					FullName: nameVal,
+				})
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -1141,10 +1142,12 @@ func (s *serviceImpl) getImageNamesWithSameSHA(ctx context.Context, img *storage
 	}
 
 	// Query all images with this digest
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).ProtoQuery()
-	images, err := s.datastoreV2.SearchRawImagesMetadata(ctx, query)
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).
+		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
+		ProtoQuery()
+	results, err := s.datastoreV2.Search(ctx, query)
 	if err != nil {
-		log.Warnw("Failed to retrieve all image names by digest",
+		log.Warnw("Failed to retrieve image names by digest",
 			logging.FromContext(ctx),
 			logging.ImageName(img.GetName().GetFullName()),
 			logging.ImageID(img.GetId()),
@@ -1155,10 +1158,17 @@ func (s *serviceImpl) getImageNamesWithSameSHA(ctx context.Context, img *storage
 	}
 
 	// Collect all image names
-	allNames := make([]*storage.ImageName, 0, len(images))
-	for _, img := range images {
-		if img.GetName() != nil {
-			allNames = append(allNames, img.GetName())
+	allNames := make([]*storage.ImageName, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
+				allNames = append(allNames, &storage.ImageName{
+					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
+					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
+					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
+					FullName: nameVal,
+				})
+			}
 		}
 	}
 
@@ -1214,6 +1224,12 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	var results []search.Result
 	if features.FlattenImageData.Enabled() {
+		// Add selects to retrieve Image SHA in the search results
+		selectSelects := []*v1.QuerySelect{
+			search.NewQuerySelect(search.ImageSHA).Proto(),
+			search.NewQuerySelect(search.ImageName).Proto(),
+		}
+		query.Selects = append(query.GetSelects(), selectSelects...)
 		results, err = s.datastoreV2.Search(ctx, query)
 	} else {
 		results, err = s.datastore.Search(ctx, query)
@@ -1241,20 +1257,45 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 
-	keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
-	for _, id := range idSlice {
-		keys = append(keys, &central.InvalidateImageCache_ImageKey{
-			ImageId: id,
+	if features.FlattenImageData.Enabled() {
+		// Extract ImageV2 ID and SHA from search results
+		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(results))
+		for _, res := range results {
+			if res.FieldValues != nil {
+				// Set both ImageId (SHA for old sensors) and ImageIdV2 (ImageV2 ID for new sensors)
+				keys = append(keys, &central.InvalidateImageCache_ImageKey{
+					ImageId:       res.FieldValues[strings.ToLower(search.ImageSHA.String())], // SHA for backward compatibility
+					ImageIdV2:     res.ID,                                                     // ImageV2 ID for new sensors
+					ImageFullName: res.FieldValues[strings.ToLower(search.ImageName.String())],
+				})
+			}
+		}
+
+		if len(keys) > 0 {
+			s.connManager.BroadcastMessage(&central.MsgToSensor{
+				Msg: &central.MsgToSensor_InvalidateImageCache{
+					InvalidateImageCache: &central.InvalidateImageCache{
+						ImageKeys: keys,
+					},
+				},
+			})
+		}
+	} else {
+		keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
+		for _, id := range idSlice {
+			keys = append(keys, &central.InvalidateImageCache_ImageKey{
+				ImageId: id,
+			})
+		}
+
+		s.connManager.BroadcastMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_InvalidateImageCache{
+				InvalidateImageCache: &central.InvalidateImageCache{
+					ImageKeys: keys,
+				},
+			},
 		})
 	}
-
-	s.connManager.BroadcastMessage(&central.MsgToSensor{
-		Msg: &central.MsgToSensor_InvalidateImageCache{
-			InvalidateImageCache: &central.InvalidateImageCache{
-				ImageKeys: keys,
-			},
-		},
-	})
 
 	return response, nil
 }
