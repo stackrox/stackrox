@@ -454,9 +454,31 @@ build-volumes:
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
 
+# Marker file for tracking when binaries were last built
+MAIN_BUILD_MARKER := .build-markers/main-build.marker
+
 .PHONY: main-build
-main-build: build-prep main-build-dockerized
+main-build: $(MAIN_BUILD_MARKER)
 	@echo "+ $@"
+
+# Smart rebuild: only run docker if source files are newer than binaries
+$(MAIN_BUILD_MARKER): build-prep $(shell find central sensor migrator compliance config-controller -name '*.go' 2>/dev/null | head -100)
+	@mkdir -p .build-markers
+	@# Check if we need to rebuild
+	@if [ ! -f bin/linux_$(GOARCH)/central ] || \
+	   [ ! -f bin/linux_$(GOARCH)/migrator ] || \
+	   find central sensor migrator compliance config-controller -name '*.go' -newer $(MAIN_BUILD_MARKER) 2>/dev/null | head -1 | grep -q .; then \
+		echo "Source files changed, rebuilding..."; \
+		$(MAKE) main-build-dockerized; \
+	else \
+		echo "Binaries up-to-date, skipping rebuild"; \
+	fi
+	@touch $(MAIN_BUILD_MARKER)
+
+.PHONY: main-build-force
+main-build-force: build-prep
+	@rm -f $(MAIN_BUILD_MARKER)
+	$(MAKE) main-build
 
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: build-volumes
@@ -624,8 +646,27 @@ junit-reports/report.xml: $(GO_TEST_OUTPUT_PATH) $(GO_JUNIT_REPORT_BIN)
 .PHONY: image
 image: main-image
 
+# fast-image: Optimized build target for local development (runs make with parallelization)
+.PHONY: fast-image
+fast-image:
+	@echo "Building with parallel jobs for faster local development..."
+	$(MAKE) -j4 image
+
 .PHONY: all-builds
+ifdef CI
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) ui-build
+else
+# For local dev builds, only build CLI for host arch to save time
+all-builds: cli-local main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) ui-build
+endif
+
+.PHONY: cli-local
+cli-local: build-prep
+	# Build only the roxctl variants needed for the local image
+ifneq ($(HOST_OS),linux)
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) $(GOBUILD) ./roxctl
+endif
+	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) GOARCH=amd64 $(GOBUILD) ./roxctl
 
 .PHONY: main-image
 main-image: all-builds
