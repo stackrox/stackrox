@@ -120,7 +120,6 @@ function PolicyCriteriaFieldInput({
                         handleSelect={handleChangeSelect}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select an option'}
-                        maxWidth="100%"
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption
