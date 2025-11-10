@@ -537,7 +537,9 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.FilterSuppressedCVEsNoCloneV2(image)
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
-			convertedImage := utils.ConvertToV1(image)
+			// Gather all known image names with the same SHA to ensure backward compatibility
+			allNames := l.getImageNamesWithSameSHA(image)
+			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
@@ -835,6 +837,38 @@ func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.Enri
 func (l *loopImpl) enrichImageV2(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
 	return l.imageEnricherV2.EnrichImage(ctx, enrichCtx, image)
+}
+
+// getImageNamesWithSameSHA retrieves all known image names with the same SHA as the given image from the datastore.
+// This is used to ensure backward compatibility when sending image data to sensors that don't
+// have the FlattenImageDataOnSensor capability.
+func (l *loopImpl) getImageNamesWithSameSHA(img *storage.ImageV2) []*storage.ImageName {
+	if img.GetDigest() == "" {
+		return nil
+	}
+
+	// Query all images with this digest
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).ProtoQuery()
+	images, err := l.imagesV2.SearchRawImagesMetadata(allAccessCtx, query)
+	if err != nil {
+		log.Warnw("Failed to retrieve all image names by digest",
+			logging.ImageName(img.GetName().GetFullName()),
+			logging.ImageID(img.GetId()),
+			logging.String("digest", img.GetDigest()),
+			logging.Err(err),
+		)
+		return nil
+	}
+
+	// Collect all image names
+	allNames := make([]*storage.ImageName, 0, len(images))
+	for _, img := range images {
+		if img.GetName() != nil {
+			allNames = append(allNames, img.GetName())
+		}
+	}
+
+	return allNames
 }
 
 func (l *loopImpl) enrichLoop() {
