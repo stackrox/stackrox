@@ -38,7 +38,7 @@ max_attempts=300
 count=1
 
 nohup kubectl port-forward -n "${namespace}" svc/central "${local_port}:443" 1>/dev/null 2>&1 &
-until nc -z 127.0.0.1 "$port"; do
+until nc -z 127.0.0.1 "$local_port"; do
     if [ "$count" -ge "$max_attempts" ]; then
         echo "Port $local_port did not become available after $max_attempts attempts. Exiting."
 	exit 1
