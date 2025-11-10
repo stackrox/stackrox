@@ -17,5 +17,19 @@
         "url": "https://github.com/stackrox/stackrox/pull/17328#issuecomment-3410977810"
       }
     }
-  }
+  },
+  "merged": [
+    {
+      "number": 17255,
+      "gqlID": "PR_kwDOGd6UEM6taaz2"
+    },
+    {
+      "number": 17243,
+      "gqlID": "PR_kwDOGd6UEM6tGvCY"
+    },
+    {
+      "number": 17320,
+      "gqlID": "PR_kwDOGd6UEM6uCnJO"
+    }
+  ]
 }
