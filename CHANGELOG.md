@@ -13,7 +13,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
-- Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (both passthrough and reencrypt).
+- ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 
 ### Removed Features
 
