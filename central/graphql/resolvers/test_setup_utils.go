@@ -323,12 +323,6 @@ func registerImageV2Loader(_ testing.TB, ds imageV2DS.DataStore, view imagesView
 	})
 }
 
-func registerImageComponentLoader(_ testing.TB, ds imageComponentDS.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponent{}), func() interface{} {
-		return loaders.NewComponentLoader(ds)
-	})
-}
-
 func registerImageComponentV2Loader(_ testing.TB, ds imageComponentV2DS.DataStore) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponentV2{}), func() interface{} {
 		return loaders.NewComponentV2Loader(ds)
