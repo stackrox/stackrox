@@ -339,6 +339,16 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
 	}
 	// Return concatenated past and current updates.
+	if features.NetworkFlowBatching.Enabled() {
+		if len(c.cachedUpdatesEp) > maxUpdateSize {
+			epUpdate := c.cachedUpdatesEp[:maxUpdateSize]
+			c.cachedUpdatesEp = c.cachedUpdatesEp[maxUpdateSize:]
+			return epUpdate, c.cachedUpdatesProc
+		}
+		epUpdate := c.cachedUpdatesEp
+		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
+		return epUpdate, c.cachedUpdatesProc
+	}
 	return c.cachedUpdatesEp, c.cachedUpdatesProc
 }
 
@@ -399,7 +409,7 @@ func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.Networ
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
 func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	if enrichedEndpointsProcesses != nil {
+	if !features.NetworkFlowBatching.Enabled() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 	}
 }
