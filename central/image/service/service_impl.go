@@ -240,7 +240,7 @@ func (s *serviceImpl) internalScanRespFromImageV2(ctx context.Context, imgV2 *st
 	utils.StripCVEDescriptionsNoCloneV2(imgV2)
 
 	// Gather all known image names for this digest to ensure backward compatibility
-	allNames := s.getAllImageNamesWithSameSHA(ctx, imgV2)
+	allNames := s.getImageNamesWithSameSHA(ctx, imgV2)
 	img := utils.ConvertToV1(imgV2, allNames...)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
@@ -1132,10 +1132,10 @@ func buildNames(requestImageName *storage.ImageName, existingImageNames []*stora
 	return names
 }
 
-// getAllImageNamesWithSameSHA retrieves all known image names with the same SHA as the given image from the datastore.
+// getImageNamesWithSameSHA retrieves all known image names with the same SHA as the given image from the datastore.
 // This is used to ensure backward compatibility when sending image data to sensors that don't
 // have the FlattenImageDataOnSensor capability.
-func (s *serviceImpl) getAllImageNamesWithSameSHA(ctx context.Context, img *storage.ImageV2) []*storage.ImageName {
+func (s *serviceImpl) getImageNamesWithSameSHA(ctx context.Context, img *storage.ImageV2) []*storage.ImageName {
 	if img.GetDigest() == "" {
 		return nil
 	}
