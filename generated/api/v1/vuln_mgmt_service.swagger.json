@@ -735,15 +735,34 @@
           "type": "number",
           "format": "float"
         },
-        "effectiveRiskScore": {
-          "type": "number",
-          "format": "float"
-        },
         "platformComponent": {
           "type": "boolean"
+        },
+        "userRankingAdjustment": {
+          "$ref": "#/definitions/storageDeploymentUserRankingAdjustment"
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 38"
+    },
+    "storageDeploymentUserRankingAdjustment": {
+      "type": "object",
+      "properties": {
+        "effectiveRiskScore": {
+          "type": "number",
+          "format": "float",
+          "title": "User-adjusted effective risk score (can be outside 0-10 range)"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Timestamp of last adjustment"
+        },
+        "lastUpdatedBy": {
+          "type": "string",
+          "title": "User ID who made the last adjustment"
+        }
+      },
+      "title": "DeploymentUserRankingAdjustment tracks user-adjusted risk rankings for deployments"
     },
     "storageEPSS": {
       "type": "object",

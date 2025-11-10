@@ -3,7 +3,7 @@ syntax = "proto3";
 package v1;
 
 import weak "google/api/annotations.proto";
-import "storage/risk.proto";
+import "storage/deployment.proto";
 
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
@@ -11,8 +11,7 @@ option java_package = "io.stackrox.proto.api.v1";
 // RiskService provides APIs for managing deployment risk rankings
 service RiskService {
   // ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
-  // by placing it between the current position and the adjacent deployment
-  // (up or down based on direction parameter)
+  // by calculating effective score as average of neighbor deployments
   rpc ChangeDeploymentRiskPosition(RiskPositionChangeRequest) returns (RiskAdjustmentResponse) {
     option (google.api.http) = {
       post: "/v1/risk/deployment/{deployment_id}/position"
@@ -27,34 +26,45 @@ service RiskService {
       body: "*"
     };
   }
-}
 
-// Direction for risk ranking position changes
-enum RiskPositionDirection {
-  RISK_POSITION_DIRECTION_UNSPECIFIED = 0;
-  RISK_POSITION_UP = 1;    // Move deployment higher in ranking (increase score)
-  RISK_POSITION_DOWN = 2;  // Move deployment lower in ranking (decrease score)
+  // ResetAllDeploymentRisks removes all user ranking adjustments for all deployments
+  rpc ResetAllDeploymentRisks(ResetAllRisksRequest) returns (ResetAllRisksResponse) {
+    option (google.api.http) = {
+      post: "/v1/risk/deployment/reset-all"
+      body: "*"
+    };
+  }
 }
 
 message RiskPositionChangeRequest {
   // Deployment ID to adjust
   string deployment_id = 1;
-  // Direction to move in the ranking
-  RiskPositionDirection direction = 2;
+  // Deployment ID directly above new position (null if moved to top)
+  string above_deployment_id = 2;
+  // Deployment ID directly below new position (null if moved to bottom)
+  string below_deployment_id = 3;
 }
 
-// Keep for backward compatibility with Reset endpoint
 message RiskAdjustmentRequest {
-  // Deployment ID to adjust
+  // Deployment ID to reset
   string deployment_id = 1;
 }
 
+message ResetAllRisksRequest {}
+
+message ResetAllRisksResponse {
+  // Number of deployments that had adjustments reset
+  int32 count = 1;
+  // Human-readable message about the operation
+  string message = 2;
+}
+
 message RiskAdjustmentResponse {
-  // Updated risk object with new ranking adjustment
-  storage.Risk risk = 1;
-  // Original score (never changes)
+  // Updated deployment with new ranking adjustment
+  storage.Deployment deployment = 1;
+  // Original ML-calculated risk score
   float original_score = 2;
-  // New adjusted score (or original if reset)
+  // Effective risk score (user-adjusted or ML score)
   float effective_score = 3;
   // Human-readable message about the adjustment
   string message = 4;

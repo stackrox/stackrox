@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	RiskService_ChangeDeploymentRiskPosition_FullMethodName = "/v1.RiskService/ChangeDeploymentRiskPosition"
 	RiskService_ResetDeploymentRisk_FullMethodName          = "/v1.RiskService/ResetDeploymentRisk"
+	RiskService_ResetAllDeploymentRisks_FullMethodName      = "/v1.RiskService/ResetAllDeploymentRisks"
 )
 
 // RiskServiceClient is the client API for RiskService service.
@@ -30,11 +31,12 @@ const (
 // RiskService provides APIs for managing deployment risk rankings
 type RiskServiceClient interface {
 	// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
-	// by placing it between the current position and the adjacent deployment
-	// (up or down based on direction parameter)
+	// by calculating effective score as average of neighbor deployments
 	ChangeDeploymentRiskPosition(ctx context.Context, in *RiskPositionChangeRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
 	// ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
 	ResetDeploymentRisk(ctx context.Context, in *RiskAdjustmentRequest, opts ...grpc.CallOption) (*RiskAdjustmentResponse, error)
+	// ResetAllDeploymentRisks removes all user ranking adjustments for all deployments
+	ResetAllDeploymentRisks(ctx context.Context, in *ResetAllRisksRequest, opts ...grpc.CallOption) (*ResetAllRisksResponse, error)
 }
 
 type riskServiceClient struct {
@@ -65,6 +67,16 @@ func (c *riskServiceClient) ResetDeploymentRisk(ctx context.Context, in *RiskAdj
 	return out, nil
 }
 
+func (c *riskServiceClient) ResetAllDeploymentRisks(ctx context.Context, in *ResetAllRisksRequest, opts ...grpc.CallOption) (*ResetAllRisksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetAllRisksResponse)
+	err := c.cc.Invoke(ctx, RiskService_ResetAllDeploymentRisks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RiskServiceServer is the server API for RiskService service.
 // All implementations should embed UnimplementedRiskServiceServer
 // for forward compatibility.
@@ -72,11 +84,12 @@ func (c *riskServiceClient) ResetDeploymentRisk(ctx context.Context, in *RiskAdj
 // RiskService provides APIs for managing deployment risk rankings
 type RiskServiceServer interface {
 	// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking
-	// by placing it between the current position and the adjacent deployment
-	// (up or down based on direction parameter)
+	// by calculating effective score as average of neighbor deployments
 	ChangeDeploymentRiskPosition(context.Context, *RiskPositionChangeRequest) (*RiskAdjustmentResponse, error)
 	// ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score
 	ResetDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error)
+	// ResetAllDeploymentRisks removes all user ranking adjustments for all deployments
+	ResetAllDeploymentRisks(context.Context, *ResetAllRisksRequest) (*ResetAllRisksResponse, error)
 }
 
 // UnimplementedRiskServiceServer should be embedded to have
@@ -91,6 +104,9 @@ func (UnimplementedRiskServiceServer) ChangeDeploymentRiskPosition(context.Conte
 }
 func (UnimplementedRiskServiceServer) ResetDeploymentRisk(context.Context, *RiskAdjustmentRequest) (*RiskAdjustmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetDeploymentRisk not implemented")
+}
+func (UnimplementedRiskServiceServer) ResetAllDeploymentRisks(context.Context, *ResetAllRisksRequest) (*ResetAllRisksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetAllDeploymentRisks not implemented")
 }
 func (UnimplementedRiskServiceServer) testEmbeddedByValue() {}
 
@@ -148,6 +164,24 @@ func _RiskService_ResetDeploymentRisk_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RiskService_ResetAllDeploymentRisks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetAllRisksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RiskServiceServer).ResetAllDeploymentRisks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RiskService_ResetAllDeploymentRisks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RiskServiceServer).ResetAllDeploymentRisks(ctx, req.(*ResetAllRisksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RiskService_ServiceDesc is the grpc.ServiceDesc for RiskService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +196,10 @@ var RiskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetDeploymentRisk",
 			Handler:    _RiskService_ResetDeploymentRisk_Handler,
+		},
+		{
+			MethodName: "ResetAllDeploymentRisks",
+			Handler:    _RiskService_ResetAllDeploymentRisks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

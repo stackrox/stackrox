@@ -51,8 +51,9 @@ type Manager interface {
 	CalculateRiskAndUpsertNode(node *storage.Node) error
 
 	// User ranking adjustment methods
-	ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error)
-	ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error)
+	ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, aboveDeploymentID string, belowDeploymentID string) (*storage.Deployment, error)
+	ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Deployment, error)
+	ResetAllDeploymentRisks(ctx context.Context) (int, error)
 }
 
 type managerImpl struct {
@@ -165,13 +166,18 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	}
 
 	// Always update deployment risk fields, even if score hasn't changed
-	// This ensures effective_risk_score is populated for existing deployments
 	deployment.RiskScore = risk.GetScore()
-	deployment.EffectiveRiskScore = GetEffectiveScore(risk)
 
-	// Set priority based on effective risk score (adjusted or ML score)
+	// When ML risk is recalculated, clear any user adjustments
+	// This ensures the effective risk score reverts to the new ML-calculated score
+	deployment.UserRankingAdjustment = nil
+
+	// Calculate effective score (will use ML score since we just cleared adjustments)
+	effectiveScore := GetDeploymentEffectiveRiskScore(deployment)
+
+	// Set priority based on effective risk score
 	// Priority is stored as int64 but represents a score, so multiply by 1000 to preserve precision
-	deployment.Priority = int64(deployment.EffectiveRiskScore * 1000)
+	deployment.Priority = int64(effectiveScore * 1000)
 
 	// Only update namespace/cluster risk aggregations if score changed
 	if oldScore != risk.GetScore() {
@@ -429,143 +435,153 @@ func (e *managerImpl) updateClusterRisk(clusterID string, oldDeploymentScore flo
 }
 
 // ResetDeploymentRisk removes user ranking adjustments and returns to the original ML-calculated score.
-func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Risk, error) {
-	// Get the current risk
-	risk, exists, err := e.riskStorage.GetRisk(ctx, deploymentID, storage.RiskSubjectType_DEPLOYMENT)
+func (e *managerImpl) ResetDeploymentRisk(ctx context.Context, deploymentID string) (*storage.Deployment, error) {
+	// Get the deployment
+	deployment, exists, err := e.deploymentStorage.GetDeployment(ctx, deploymentID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get risk for deployment %s", deploymentID)
+		return nil, errors.Wrapf(err, "failed to get deployment %s", deploymentID)
 	}
 	if !exists {
-		return nil, errors.Errorf("risk not found for deployment %s", deploymentID)
+		return nil, errors.Errorf("deployment %s not found", deploymentID)
 	}
 
 	// Clear the user ranking adjustment
-	risk.UserRankingAdjustment = nil
+	deployment.UserRankingAdjustment = nil
 
-	// Save the updated risk
-	if err := e.riskStorage.UpsertRisk(ctx, risk); err != nil {
-		return nil, errors.Wrapf(err, "failed to reset risk for deployment %s", deploymentID)
-	}
+	// Calculate effective score (will now equal ML risk score)
+	effectiveScore := GetDeploymentEffectiveRiskScore(deployment)
 
-	// Reset the deployment's priority field to the original ML score
-	deployment, exists, err := e.deploymentStorage.GetDeployment(ctx, deploymentID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get deployment %s to reset priority", deploymentID)
-	}
-	if !exists {
-		return nil, errors.Errorf("deployment %s not found", deploymentID)
-	}
+	// Update priority based on effective score
+	deployment.Priority = int64(effectiveScore * 1000)
 
-	// Reset effective risk score to the original ML score
-	deployment.EffectiveRiskScore = risk.GetScore()
-
-	// Set priority based on effective risk score for consistency
-	deployment.Priority = int64(deployment.EffectiveRiskScore * 1000)
-
+	// Save the updated deployment
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
-		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
+		return nil, errors.Wrapf(err, "failed to reset deployment %s", deploymentID)
 	}
 
-	log.Infof("Reset user ranking adjustment for deployment %s, priority reset to %d, effective_risk_score %.2f", deploymentID, deployment.Priority, deployment.EffectiveRiskScore)
-	return risk, nil
+	log.Infof("Reset user ranking adjustment for deployment %s, priority reset to %d, effective_risk_score %.2f",
+		deploymentID, deployment.Priority, effectiveScore)
+
+	return deployment, nil
 }
 
-// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking by moving it
-// up or down in the ranking. It places the deployment midway between its current
-// position and the next adjacent deployment.
-func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, moveUp bool) (*storage.Risk, error) {
-	// Get all deployment risks in user's scope
-	allRisks, err := e.riskStorage.GetDeploymentsInUserScope(ctx)
+// ResetAllDeploymentRisks removes all user ranking adjustments across all deployments.
+func (e *managerImpl) ResetAllDeploymentRisks(ctx context.Context) (int, error) {
+	// Get all deployments
+	deployments, err := e.deploymentStorage.GetDeployments(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get deployments in user scope")
+		return 0, errors.Wrap(err, "failed to get deployments")
 	}
 
-	if len(allRisks) == 0 {
-		return nil, errors.New("no deployments found in user scope")
-	}
-
-	// Find the target deployment
-	var targetRisk *storage.Risk
-	for _, risk := range allRisks {
-		if risk.GetSubject().GetId() == deploymentID {
-			targetRisk = risk
-			break
+	resetCount := 0
+	for _, deployment := range deployments {
+		// Only process deployments that have user adjustments
+		if deployment.GetUserRankingAdjustment() == nil {
+			continue
 		}
-	}
 
-	if targetRisk == nil {
-		return nil, errors.Errorf("deployment %s not found in user scope", deploymentID)
-	}
+		// Clear the user ranking adjustment
+		deployment.UserRankingAdjustment = nil
 
-	// Sort risks by effective score (descending)
-	sortedRisks := SortRisksByEffectiveScore(allRisks)
+		// Calculate effective score (will now equal ML risk score)
+		effectiveScore := GetDeploymentEffectiveRiskScore(deployment)
 
-	// Find current position
-	currentIndex := FindDeploymentIndex(sortedRisks, deploymentID)
-	if currentIndex == -1 {
-		return nil, errors.Errorf("deployment %s not found in sorted list", deploymentID)
-	}
+		// Update priority based on effective score
+		deployment.Priority = int64(effectiveScore * 1000)
 
-	// Get current effective score
-	currentScore := GetEffectiveScore(targetRisk)
-
-	// Calculate new score
-	newScore := CalculatePositionChangeScore(currentScore, sortedRisks, currentIndex, moveUp)
-
-	// If score didn't change, it's a no-op (at boundary)
-	if newScore == currentScore {
-		direction := "up"
-		if !moveUp {
-			direction = "down"
+		// Save the updated deployment
+		if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
+			log.Errorf("Failed to reset deployment %s: %v", deployment.GetId(), err)
+			continue
 		}
-		log.Infof("Deployment %s position change %s is a no-op (at boundary)", deploymentID, direction)
-		return targetRisk, nil
+
+		resetCount++
 	}
 
-	// Create or update user ranking adjustment
-	if targetRisk.GetUserRankingAdjustment() == nil {
-		targetRisk.UserRankingAdjustment = &storage.UserRankingAdjustment{}
-	}
+	log.Infof("Reset user ranking adjustments for %d deployments", resetCount)
+	return resetCount, nil
+}
 
-	adj := targetRisk.GetUserRankingAdjustment()
-	adj.AdjustedScore = newScore
-	adj.LastAdjusted = protocompat.TimestampNow()
-
-	// Get user ID from context (if available via authn)
-	// For now, we'll use a placeholder - this should be extracted from the context
-	adj.LastAdjustedBy = "user" // TODO: Extract from authn context
-
-	// Save the updated risk
-	if err := e.riskStorage.UpsertRisk(ctx, targetRisk); err != nil {
-		return nil, errors.Wrapf(err, "failed to update risk for deployment %s", deploymentID)
-	}
-
-	// Update the deployment's priority field to reflect the adjusted score
-	// This ensures sorting by "Deployment Risk Priority" uses the user-adjusted score
+// ChangeDeploymentRiskPosition adjusts a deployment's risk ranking by placing it
+// between two neighbor deployments. The new effective score is calculated as the
+// average of the neighbors' effective scores.
+func (e *managerImpl) ChangeDeploymentRiskPosition(ctx context.Context, deploymentID string, aboveDeploymentID string, belowDeploymentID string) (*storage.Deployment, error) {
+	// Get the target deployment
 	deployment, exists, err := e.deploymentStorage.GetDeployment(ctx, deploymentID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get deployment %s to update priority", deploymentID)
+		return nil, errors.Wrapf(err, "failed to get deployment %s", deploymentID)
 	}
 	if !exists {
 		return nil, errors.Errorf("deployment %s not found", deploymentID)
 	}
 
-	// Store the effective risk score on the deployment
-	deployment.EffectiveRiskScore = newScore
+	// Get the neighbors' effective scores
+	var aboveScore, belowScore float32
+	hasAbove := aboveDeploymentID != ""
+	hasBelow := belowDeploymentID != ""
 
-	// Set priority based on effective risk score for consistency
-	// Priority is stored as int64 but represents a score, so we multiply by 1000 to preserve precision
-	deployment.Priority = int64(deployment.GetEffectiveRiskScore() * 1000)
+	if hasAbove {
+		aboveDeploy, exists, err := e.deploymentStorage.GetDeployment(ctx, aboveDeploymentID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get above deployment %s", aboveDeploymentID)
+		}
+		if !exists {
+			return nil, errors.Errorf("above deployment %s not found", aboveDeploymentID)
+		}
+		aboveScore = GetDeploymentEffectiveRiskScore(aboveDeploy)
+	}
 
+	if hasBelow {
+		belowDeploy, exists, err := e.deploymentStorage.GetDeployment(ctx, belowDeploymentID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get below deployment %s", belowDeploymentID)
+		}
+		if !exists {
+			return nil, errors.Errorf("below deployment %s not found", belowDeploymentID)
+		}
+		belowScore = GetDeploymentEffectiveRiskScore(belowDeploy)
+	}
+
+	// Calculate new effective score based on neighbors
+	var newScore float32
+	if hasAbove && hasBelow {
+		// Both neighbors: average of the two
+		newScore = (aboveScore + belowScore) / 2.0
+	} else if hasAbove {
+		// Only above neighbor: slightly below it
+		newScore = aboveScore - 0.01
+	} else if hasBelow {
+		// Only below neighbor: slightly above it
+		newScore = belowScore + 0.01
+	} else {
+		// No neighbors specified - this is invalid
+		return nil, errors.New("at least one neighbor deployment must be specified")
+	}
+
+	// Get current effective score for logging
+	currentScore := GetDeploymentEffectiveRiskScore(deployment)
+
+	// Create or update user ranking adjustment
+	if deployment.GetUserRankingAdjustment() == nil {
+		deployment.UserRankingAdjustment = &storage.DeploymentUserRankingAdjustment{}
+	}
+
+	adj := deployment.GetUserRankingAdjustment()
+	adj.EffectiveRiskScore = newScore
+	adj.LastUpdated = protocompat.TimestampNow()
+	// TODO: Extract user ID from authn context
+	adj.LastUpdatedBy = "user"
+
+	// Update priority based on new effective score
+	deployment.Priority = int64(newScore * 1000)
+
+	// Save the updated deployment
 	if err := e.deploymentStorage.UpsertDeployment(ctx, deployment); err != nil {
-		return nil, errors.Wrapf(err, "failed to update deployment %s priority", deploymentID)
+		return nil, errors.Wrapf(err, "failed to update deployment %s", deploymentID)
 	}
 
-	direction := "up"
-	if !moveUp {
-		direction = "down"
-	}
-	log.Infof("Deployment %s moved %s: score %.2f -> %.2f, priority updated to %d, effective_risk_score %.2f", deploymentID, direction, currentScore, newScore, deployment.Priority, deployment.GetEffectiveRiskScore())
+	log.Infof("Deployment %s repositioned: score %.2f -> %.2f (between above=%.2f, below=%.2f), priority updated to %d",
+		deploymentID, currentScore, newScore, aboveScore, belowScore, deployment.Priority)
 
-	return targetRisk, nil
+	return deployment, nil
 }

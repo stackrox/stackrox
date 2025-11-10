@@ -68,7 +68,7 @@ func (x Volume_MountPropagation) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Volume_MountPropagation.Descriptor instead.
 func (Volume_MountPropagation) EnumDescriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{4, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{5, 0}
 }
 
 type PortConfig_ExposureLevel int32
@@ -126,7 +126,7 @@ func (x PortConfig_ExposureLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortConfig_ExposureLevel.Descriptor instead.
 func (PortConfig_ExposureLevel) EnumDescriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{11, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{12, 0}
 }
 
 // For any update to EnvVarSource, please also update 'ui/src/messages/common.js'
@@ -188,7 +188,7 @@ func (x ContainerConfig_EnvironmentConfig_EnvVarSource) Number() protoreflect.En
 
 // Deprecated: Use ContainerConfig_EnvironmentConfig_EnvVarSource.Descriptor instead.
 func (ContainerConfig_EnvironmentConfig_EnvVarSource) EnumDescriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{12, 0, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 0, 0}
 }
 
 type SecurityContext_SeccompProfile_ProfileType int32
@@ -237,51 +237,115 @@ func (x SecurityContext_SeccompProfile_ProfileType) Number() protoreflect.EnumNu
 
 // Deprecated: Use SecurityContext_SeccompProfile_ProfileType.Descriptor instead.
 func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{14, 1, 0}
 }
 
-// Next available tag: 36
+// DeploymentUserRankingAdjustment tracks user-adjusted risk rankings for deployments
+type DeploymentUserRankingAdjustment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// User-adjusted effective risk score (can be outside 0-10 range)
+	EffectiveRiskScore float32 `protobuf:"fixed32,1,opt,name=effective_risk_score,json=effectiveRiskScore,proto3" json:"effective_risk_score,omitempty"`
+	// Timestamp of last adjustment
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	// User ID who made the last adjustment
+	LastUpdatedBy string `protobuf:"bytes,3,opt,name=last_updated_by,json=lastUpdatedBy,proto3" json:"last_updated_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeploymentUserRankingAdjustment) Reset() {
+	*x = DeploymentUserRankingAdjustment{}
+	mi := &file_storage_deployment_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeploymentUserRankingAdjustment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeploymentUserRankingAdjustment) ProtoMessage() {}
+
+func (x *DeploymentUserRankingAdjustment) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_deployment_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeploymentUserRankingAdjustment.ProtoReflect.Descriptor instead.
+func (*DeploymentUserRankingAdjustment) Descriptor() ([]byte, []int) {
+	return file_storage_deployment_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *DeploymentUserRankingAdjustment) GetEffectiveRiskScore() float32 {
+	if x != nil {
+		return x.EffectiveRiskScore
+	}
+	return 0
+}
+
+func (x *DeploymentUserRankingAdjustment) GetLastUpdated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastUpdated
+	}
+	return nil
+}
+
+func (x *DeploymentUserRankingAdjustment) GetLastUpdatedBy() string {
+	if x != nil {
+		return x.LastUpdatedBy
+	}
+	return ""
+}
+
+// Next available tag: 38
 type Deployment struct {
-	state                         protoimpl.MessageState `protogen:"open.v1"`
-	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
-	Name                          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                                                       // @gotags: search:"Deployment"
-	Hash                          uint64                 `protobuf:"varint,26,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                                                     // @gotags: hash:"ignore" sensorhash:"ignore"
-	Type                          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                                                       // @gotags: search:"Deployment Type"
-	Namespace                     string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                             // @gotags: search:"Namespace"
-	NamespaceId                   string                 `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"`                                                                     // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
-	OrchestratorComponent         bool                   `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent,proto3" json:"orchestrator_component,omitempty" search:"Orchestrator Component"`                                      // @gotags: search:"Orchestrator Component"
-	Replicas                      int64                  `protobuf:"varint,6,opt,name=replicas,proto3" json:"replicas,omitempty" policy:"Replicas"`                                                                                              // @gotags: policy:"Replicas"
-	Labels                        map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label"`                         // @gotags: search:"Deployment Label"
-	PodLabels                     map[string]string      `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels,proto3" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label"` // @gotags: search:"Pod Label"
-	LabelSelector                 *LabelSelector         `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector,proto3" json:"label_selector,omitempty"`
-	Created                       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created,hidden" hash:"ignore"`                             // @gotags: search:"Created,hidden" hash:"ignore"
-	ClusterId                     string                 `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`        // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ClusterName                   string                 `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
-	Containers                    []*Container           `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
-	Annotations                   map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"` // @gotags: search:"Deployment Annotation"
-	Priority                      int64                  `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
-	Inactive                      bool                   `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
-	ImagePullSecrets              []string               `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
-	ServiceAccount                string                 `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
-	ServiceAccountPermissionLevel PermissionLevel        `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,proto3,enum=storage.PermissionLevel" json:"service_account_permission_level,omitempty" search:"Service Account Permission Level"` // @gotags: search:"Service Account Permission Level"
-	AutomountServiceAccountToken  bool                   `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken,proto3" json:"automount_service_account_token,omitempty" policy:"Automount Service Account Token"`                                 // @gotags: policy:"Automount Service Account Token"
-	HostNetwork                   bool                   `protobuf:"varint,21,opt,name=host_network,json=hostNetwork,proto3" json:"host_network,omitempty" policy:"Host Network"`                                                                                        // @gotags: policy:"Host Network"
-	HostPid                       bool                   `protobuf:"varint,31,opt,name=host_pid,json=hostPid,proto3" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                    // @gotags: policy:"Host PID"
-	HostIpc                       bool                   `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc,proto3" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                    // @gotags: policy:"Host IPC"
-	RuntimeClass                  string                 `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass,proto3" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                      // @gotags: policy:"Runtime Class"
-	Tolerations                   []*Toleration          `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
-	Ports                         []*PortConfig          `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
-	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
-	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
-	EffectiveRiskScore            float32                `protobuf:"fixed32,36,opt,name=effective_risk_score,json=effectiveRiskScore,proto3" json:"effective_risk_score,omitempty" search:"Deployment Effective Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                // @gotags: search:"Deployment Effective Risk Score,hidden" policy:",ignore" sql:"index=btree"
-	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
+	state                         protoimpl.MessageState           `protogen:"open.v1"`
+	Id                            string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
+	Name                          string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                                                       // @gotags: search:"Deployment"
+	Hash                          uint64                           `protobuf:"varint,26,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                                                     // @gotags: hash:"ignore" sensorhash:"ignore"
+	Type                          string                           `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                                                       // @gotags: search:"Deployment Type"
+	Namespace                     string                           `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                             // @gotags: search:"Namespace"
+	NamespaceId                   string                           `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"`                                                                     // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"
+	OrchestratorComponent         bool                             `protobuf:"varint,33,opt,name=orchestrator_component,json=orchestratorComponent,proto3" json:"orchestrator_component,omitempty" search:"Orchestrator Component"`                                      // @gotags: search:"Orchestrator Component"
+	Replicas                      int64                            `protobuf:"varint,6,opt,name=replicas,proto3" json:"replicas,omitempty" policy:"Replicas"`                                                                                              // @gotags: policy:"Replicas"
+	Labels                        map[string]string                `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Label"`                         // @gotags: search:"Deployment Label"
+	PodLabels                     map[string]string                `protobuf:"bytes,19,rep,name=pod_labels,json=podLabels,proto3" json:"pod_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Pod Label"` // @gotags: search:"Pod Label"
+	LabelSelector                 *LabelSelector                   `protobuf:"bytes,20,opt,name=label_selector,json=labelSelector,proto3" json:"label_selector,omitempty"`
+	Created                       *timestamppb.Timestamp           `protobuf:"bytes,8,opt,name=created,proto3" json:"created,omitempty" search:"Created,hidden" hash:"ignore"`                             // @gotags: search:"Created,hidden" hash:"ignore"
+	ClusterId                     string                           `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`        // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ClusterName                   string                           `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster"` // @gotags: search:"Cluster"
+	Containers                    []*Container                     `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
+	Annotations                   map[string]string                `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Deployment Annotation"` // @gotags: search:"Deployment Annotation"
+	Priority                      int64                            `protobuf:"varint,15,opt,name=priority,proto3" json:"priority,omitempty" search:"Deployment Risk Priority,hidden" hash:"ignore"`                                                                                // @gotags: search:"Deployment Risk Priority,hidden" hash:"ignore"
+	Inactive                      bool                             `protobuf:"varint,16,opt,name=inactive,proto3" json:"inactive,omitempty"`
+	ImagePullSecrets              []string                         `protobuf:"bytes,17,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty" search:"Image Pull Secret"`                                                                        // @gotags: search:"Image Pull Secret"
+	ServiceAccount                string                           `protobuf:"bytes,18,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" search:"Service Account"`                                                                                // @gotags: search:"Service Account"
+	ServiceAccountPermissionLevel PermissionLevel                  `protobuf:"varint,28,opt,name=service_account_permission_level,json=serviceAccountPermissionLevel,proto3,enum=storage.PermissionLevel" json:"service_account_permission_level,omitempty" search:"Service Account Permission Level"` // @gotags: search:"Service Account Permission Level"
+	AutomountServiceAccountToken  bool                             `protobuf:"varint,25,opt,name=automount_service_account_token,json=automountServiceAccountToken,proto3" json:"automount_service_account_token,omitempty" policy:"Automount Service Account Token"`                                 // @gotags: policy:"Automount Service Account Token"
+	HostNetwork                   bool                             `protobuf:"varint,21,opt,name=host_network,json=hostNetwork,proto3" json:"host_network,omitempty" policy:"Host Network"`                                                                                        // @gotags: policy:"Host Network"
+	HostPid                       bool                             `protobuf:"varint,31,opt,name=host_pid,json=hostPid,proto3" json:"host_pid,omitempty" policy:"Host PID"`                                                                                                    // @gotags: policy:"Host PID"
+	HostIpc                       bool                             `protobuf:"varint,32,opt,name=host_ipc,json=hostIpc,proto3" json:"host_ipc,omitempty" policy:"Host IPC"`                                                                                                    // @gotags: policy:"Host IPC"
+	RuntimeClass                  string                           `protobuf:"bytes,34,opt,name=runtime_class,json=runtimeClass,proto3" json:"runtime_class,omitempty" policy:"Runtime Class"`                                                                                      // @gotags: policy:"Runtime Class"
+	Tolerations                   []*Toleration                    `protobuf:"bytes,22,rep,name=tolerations,proto3" json:"tolerations,omitempty" search:"-"`                                                                                                            // @gotags: search:"-"
+	Ports                         []*PortConfig                    `protobuf:"bytes,24,rep,name=ports,proto3" json:"ports,omitempty" policy:"Ports"`                                                                                                                        // @gotags: policy:"Ports"
+	StateTimestamp                int64                            `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
+	RiskScore                     float32                          `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
+	PlatformComponent             bool                             `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
+	UserRankingAdjustment         *DeploymentUserRankingAdjustment `protobuf:"bytes,37,opt,name=user_ranking_adjustment,json=userRankingAdjustment,proto3" json:"user_ranking_adjustment,omitempty"`
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
 	*x = Deployment{}
-	mi := &file_storage_deployment_proto_msgTypes[0]
+	mi := &file_storage_deployment_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -293,7 +357,7 @@ func (x *Deployment) String() string {
 func (*Deployment) ProtoMessage() {}
 
 func (x *Deployment) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[0]
+	mi := &file_storage_deployment_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -306,7 +370,7 @@ func (x *Deployment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Deployment.ProtoReflect.Descriptor instead.
 func (*Deployment) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Deployment) GetId() string {
@@ -519,18 +583,18 @@ func (x *Deployment) GetRiskScore() float32 {
 	return 0
 }
 
-func (x *Deployment) GetEffectiveRiskScore() float32 {
-	if x != nil {
-		return x.EffectiveRiskScore
-	}
-	return 0
-}
-
 func (x *Deployment) GetPlatformComponent() bool {
 	if x != nil {
 		return x.PlatformComponent
 	}
 	return false
+}
+
+func (x *Deployment) GetUserRankingAdjustment() *DeploymentUserRankingAdjustment {
+	if x != nil {
+		return x.UserRankingAdjustment
+	}
+	return nil
 }
 
 // Next tag: 13
@@ -548,7 +612,7 @@ type ContainerImage struct {
 
 func (x *ContainerImage) Reset() {
 	*x = ContainerImage{}
-	mi := &file_storage_deployment_proto_msgTypes[1]
+	mi := &file_storage_deployment_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +624,7 @@ func (x *ContainerImage) String() string {
 func (*ContainerImage) ProtoMessage() {}
 
 func (x *ContainerImage) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[1]
+	mi := &file_storage_deployment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +637,7 @@ func (x *ContainerImage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerImage.ProtoReflect.Descriptor instead.
 func (*ContainerImage) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{1}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{2}
 }
 
 // Deprecated: Marked as deprecated in storage/deployment.proto.
@@ -631,7 +695,7 @@ type Container struct {
 
 func (x *Container) Reset() {
 	*x = Container{}
-	mi := &file_storage_deployment_proto_msgTypes[2]
+	mi := &file_storage_deployment_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -643,7 +707,7 @@ func (x *Container) String() string {
 func (*Container) ProtoMessage() {}
 
 func (x *Container) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[2]
+	mi := &file_storage_deployment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -656,7 +720,7 @@ func (x *Container) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Container.ProtoReflect.Descriptor instead.
 func (*Container) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{2}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Container) GetId() string {
@@ -748,7 +812,7 @@ type Resources struct {
 
 func (x *Resources) Reset() {
 	*x = Resources{}
-	mi := &file_storage_deployment_proto_msgTypes[3]
+	mi := &file_storage_deployment_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +824,7 @@ func (x *Resources) String() string {
 func (*Resources) ProtoMessage() {}
 
 func (x *Resources) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[3]
+	mi := &file_storage_deployment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +837,7 @@ func (x *Resources) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resources.ProtoReflect.Descriptor instead.
 func (*Resources) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{3}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Resources) GetCpuCoresRequest() float32 {
@@ -818,7 +882,7 @@ type Volume struct {
 
 func (x *Volume) Reset() {
 	*x = Volume{}
-	mi := &file_storage_deployment_proto_msgTypes[4]
+	mi := &file_storage_deployment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +894,7 @@ func (x *Volume) String() string {
 func (*Volume) ProtoMessage() {}
 
 func (x *Volume) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[4]
+	mi := &file_storage_deployment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +907,7 @@ func (x *Volume) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Volume.ProtoReflect.Descriptor instead.
 func (*Volume) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{4}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Volume) GetName() string {
@@ -897,7 +961,7 @@ type LivenessProbe struct {
 
 func (x *LivenessProbe) Reset() {
 	*x = LivenessProbe{}
-	mi := &file_storage_deployment_proto_msgTypes[5]
+	mi := &file_storage_deployment_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -909,7 +973,7 @@ func (x *LivenessProbe) String() string {
 func (*LivenessProbe) ProtoMessage() {}
 
 func (x *LivenessProbe) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[5]
+	mi := &file_storage_deployment_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -922,7 +986,7 @@ func (x *LivenessProbe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LivenessProbe.ProtoReflect.Descriptor instead.
 func (*LivenessProbe) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{5}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LivenessProbe) GetDefined() bool {
@@ -941,7 +1005,7 @@ type ReadinessProbe struct {
 
 func (x *ReadinessProbe) Reset() {
 	*x = ReadinessProbe{}
-	mi := &file_storage_deployment_proto_msgTypes[6]
+	mi := &file_storage_deployment_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -953,7 +1017,7 @@ func (x *ReadinessProbe) String() string {
 func (*ReadinessProbe) ProtoMessage() {}
 
 func (x *ReadinessProbe) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[6]
+	mi := &file_storage_deployment_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -966,7 +1030,7 @@ func (x *ReadinessProbe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadinessProbe.ProtoReflect.Descriptor instead.
 func (*ReadinessProbe) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{6}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReadinessProbe) GetDefined() bool {
@@ -997,7 +1061,7 @@ type Pod struct {
 
 func (x *Pod) Reset() {
 	*x = Pod{}
-	mi := &file_storage_deployment_proto_msgTypes[7]
+	mi := &file_storage_deployment_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1073,7 @@ func (x *Pod) String() string {
 func (*Pod) ProtoMessage() {}
 
 func (x *Pod) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[7]
+	mi := &file_storage_deployment_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1086,7 @@ func (x *Pod) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pod.ProtoReflect.Descriptor instead.
 func (*Pod) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{7}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Pod) GetId() string {
@@ -1108,7 +1172,7 @@ type ContainerInstance struct {
 
 func (x *ContainerInstance) Reset() {
 	*x = ContainerInstance{}
-	mi := &file_storage_deployment_proto_msgTypes[8]
+	mi := &file_storage_deployment_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1120,7 +1184,7 @@ func (x *ContainerInstance) String() string {
 func (*ContainerInstance) ProtoMessage() {}
 
 func (x *ContainerInstance) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[8]
+	mi := &file_storage_deployment_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1133,7 +1197,7 @@ func (x *ContainerInstance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerInstance.ProtoReflect.Descriptor instead.
 func (*ContainerInstance) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{8}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ContainerInstance) GetInstanceId() *ContainerInstanceID {
@@ -1213,7 +1277,7 @@ type ContainerInstanceID struct {
 
 func (x *ContainerInstanceID) Reset() {
 	*x = ContainerInstanceID{}
-	mi := &file_storage_deployment_proto_msgTypes[9]
+	mi := &file_storage_deployment_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1225,7 +1289,7 @@ func (x *ContainerInstanceID) String() string {
 func (*ContainerInstanceID) ProtoMessage() {}
 
 func (x *ContainerInstanceID) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[9]
+	mi := &file_storage_deployment_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1238,7 +1302,7 @@ func (x *ContainerInstanceID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerInstanceID.ProtoReflect.Descriptor instead.
 func (*ContainerInstanceID) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{9}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ContainerInstanceID) GetContainerRuntime() ContainerRuntime {
@@ -1272,7 +1336,7 @@ type EmbeddedSecret struct {
 
 func (x *EmbeddedSecret) Reset() {
 	*x = EmbeddedSecret{}
-	mi := &file_storage_deployment_proto_msgTypes[10]
+	mi := &file_storage_deployment_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1348,7 @@ func (x *EmbeddedSecret) String() string {
 func (*EmbeddedSecret) ProtoMessage() {}
 
 func (x *EmbeddedSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[10]
+	mi := &file_storage_deployment_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1361,7 @@ func (x *EmbeddedSecret) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbeddedSecret.ProtoReflect.Descriptor instead.
 func (*EmbeddedSecret) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{10}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EmbeddedSecret) GetName() string {
@@ -1330,7 +1394,7 @@ type PortConfig struct {
 
 func (x *PortConfig) Reset() {
 	*x = PortConfig{}
-	mi := &file_storage_deployment_proto_msgTypes[11]
+	mi := &file_storage_deployment_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1342,7 +1406,7 @@ func (x *PortConfig) String() string {
 func (*PortConfig) ProtoMessage() {}
 
 func (x *PortConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[11]
+	mi := &file_storage_deployment_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1355,7 +1419,7 @@ func (x *PortConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortConfig.ProtoReflect.Descriptor instead.
 func (*PortConfig) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{11}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *PortConfig) GetName() string {
@@ -1416,7 +1480,7 @@ type ContainerConfig struct {
 
 func (x *ContainerConfig) Reset() {
 	*x = ContainerConfig{}
-	mi := &file_storage_deployment_proto_msgTypes[12]
+	mi := &file_storage_deployment_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1428,7 +1492,7 @@ func (x *ContainerConfig) String() string {
 func (*ContainerConfig) ProtoMessage() {}
 
 func (x *ContainerConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[12]
+	mi := &file_storage_deployment_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,7 +1505,7 @@ func (x *ContainerConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContainerConfig.ProtoReflect.Descriptor instead.
 func (*ContainerConfig) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{12}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ContainerConfig) GetEnv() []*ContainerConfig_EnvironmentConfig {
@@ -1508,7 +1572,7 @@ type SecurityContext struct {
 
 func (x *SecurityContext) Reset() {
 	*x = SecurityContext{}
-	mi := &file_storage_deployment_proto_msgTypes[13]
+	mi := &file_storage_deployment_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1520,7 +1584,7 @@ func (x *SecurityContext) String() string {
 func (*SecurityContext) ProtoMessage() {}
 
 func (x *SecurityContext) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[13]
+	mi := &file_storage_deployment_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1533,7 +1597,7 @@ func (x *SecurityContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecurityContext.ProtoReflect.Descriptor instead.
 func (*SecurityContext) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{13}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SecurityContext) GetPrivileged() bool {
@@ -1587,23 +1651,22 @@ func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 
 // Next available tag: 10
 type ListDeployment struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Hash               uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
-	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Cluster            string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	ClusterId          string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace          string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Created            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
-	Priority           int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
-	EffectiveRiskScore float32                `protobuf:"fixed32,9,opt,name=effective_risk_score,json=effectiveRiskScore,proto3" json:"effective_risk_score,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash          uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Cluster       string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace     string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Created       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	Priority      int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListDeployment) Reset() {
 	*x = ListDeployment{}
-	mi := &file_storage_deployment_proto_msgTypes[14]
+	mi := &file_storage_deployment_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1615,7 +1678,7 @@ func (x *ListDeployment) String() string {
 func (*ListDeployment) ProtoMessage() {}
 
 func (x *ListDeployment) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[14]
+	mi := &file_storage_deployment_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1628,7 +1691,7 @@ func (x *ListDeployment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDeployment.ProtoReflect.Descriptor instead.
 func (*ListDeployment) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{14}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListDeployment) GetId() string {
@@ -1687,13 +1750,6 @@ func (x *ListDeployment) GetPriority() int64 {
 	return 0
 }
 
-func (x *ListDeployment) GetEffectiveRiskScore() float32 {
-	if x != nil {
-		return x.EffectiveRiskScore
-	}
-	return 0
-}
-
 type Pod_ContainerInstanceList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instances     []*ContainerInstance   `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
@@ -1703,7 +1759,7 @@ type Pod_ContainerInstanceList struct {
 
 func (x *Pod_ContainerInstanceList) Reset() {
 	*x = Pod_ContainerInstanceList{}
-	mi := &file_storage_deployment_proto_msgTypes[18]
+	mi := &file_storage_deployment_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1715,7 +1771,7 @@ func (x *Pod_ContainerInstanceList) String() string {
 func (*Pod_ContainerInstanceList) ProtoMessage() {}
 
 func (x *Pod_ContainerInstanceList) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[18]
+	mi := &file_storage_deployment_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1728,7 +1784,7 @@ func (x *Pod_ContainerInstanceList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pod_ContainerInstanceList.ProtoReflect.Descriptor instead.
 func (*Pod_ContainerInstanceList) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{7, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{8, 0}
 }
 
 func (x *Pod_ContainerInstanceList) GetInstances() []*ContainerInstance {
@@ -1758,7 +1814,7 @@ type PortConfig_ExposureInfo struct {
 
 func (x *PortConfig_ExposureInfo) Reset() {
 	*x = PortConfig_ExposureInfo{}
-	mi := &file_storage_deployment_proto_msgTypes[19]
+	mi := &file_storage_deployment_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1770,7 +1826,7 @@ func (x *PortConfig_ExposureInfo) String() string {
 func (*PortConfig_ExposureInfo) ProtoMessage() {}
 
 func (x *PortConfig_ExposureInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[19]
+	mi := &file_storage_deployment_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1783,7 +1839,7 @@ func (x *PortConfig_ExposureInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortConfig_ExposureInfo.ProtoReflect.Descriptor instead.
 func (*PortConfig_ExposureInfo) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{11, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{12, 0}
 }
 
 func (x *PortConfig_ExposureInfo) GetLevel() PortConfig_ExposureLevel {
@@ -1853,7 +1909,7 @@ type ContainerConfig_EnvironmentConfig struct {
 
 func (x *ContainerConfig_EnvironmentConfig) Reset() {
 	*x = ContainerConfig_EnvironmentConfig{}
-	mi := &file_storage_deployment_proto_msgTypes[20]
+	mi := &file_storage_deployment_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1865,7 +1921,7 @@ func (x *ContainerConfig_EnvironmentConfig) String() string {
 func (*ContainerConfig_EnvironmentConfig) ProtoMessage() {}
 
 func (x *ContainerConfig_EnvironmentConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[20]
+	mi := &file_storage_deployment_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1878,7 +1934,7 @@ func (x *ContainerConfig_EnvironmentConfig) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ContainerConfig_EnvironmentConfig.ProtoReflect.Descriptor instead.
 func (*ContainerConfig_EnvironmentConfig) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{12, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 0}
 }
 
 func (x *ContainerConfig_EnvironmentConfig) GetKey() string {
@@ -1914,7 +1970,7 @@ type SecurityContext_SELinux struct {
 
 func (x *SecurityContext_SELinux) Reset() {
 	*x = SecurityContext_SELinux{}
-	mi := &file_storage_deployment_proto_msgTypes[21]
+	mi := &file_storage_deployment_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1926,7 +1982,7 @@ func (x *SecurityContext_SELinux) String() string {
 func (*SecurityContext_SELinux) ProtoMessage() {}
 
 func (x *SecurityContext_SELinux) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[21]
+	mi := &file_storage_deployment_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1939,7 +1995,7 @@ func (x *SecurityContext_SELinux) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecurityContext_SELinux.ProtoReflect.Descriptor instead.
 func (*SecurityContext_SELinux) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 0}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{14, 0}
 }
 
 func (x *SecurityContext_SELinux) GetUser() string {
@@ -1980,7 +2036,7 @@ type SecurityContext_SeccompProfile struct {
 
 func (x *SecurityContext_SeccompProfile) Reset() {
 	*x = SecurityContext_SeccompProfile{}
-	mi := &file_storage_deployment_proto_msgTypes[22]
+	mi := &file_storage_deployment_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1992,7 +2048,7 @@ func (x *SecurityContext_SeccompProfile) String() string {
 func (*SecurityContext_SeccompProfile) ProtoMessage() {}
 
 func (x *SecurityContext_SeccompProfile) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_deployment_proto_msgTypes[22]
+	mi := &file_storage_deployment_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2005,7 +2061,7 @@ func (x *SecurityContext_SeccompProfile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecurityContext_SeccompProfile.ProtoReflect.Descriptor instead.
 func (*SecurityContext_SeccompProfile) Descriptor() ([]byte, []int) {
-	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1}
+	return file_storage_deployment_proto_rawDescGZIP(), []int{14, 1}
 }
 
 func (x *SecurityContext_SeccompProfile) GetType() SecurityContext_SeccompProfile_ProfileType {
@@ -2026,7 +2082,11 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xa8\f\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xba\x01\n" +
+	"\x1fDeploymentUserRankingAdjustment\x120\n" +
+	"\x14effective_risk_score\x18\x01 \x01(\x02R\x12effectiveRiskScore\x12=\n" +
+	"\flast_updated\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12&\n" +
+	"\x0flast_updated_by\x18\x03 \x01(\tR\rlastUpdatedBy\"\xde\f\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2064,9 +2124,9 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x05ports\x18\x18 \x03(\v2\x13.storage.PortConfigR\x05ports\x12'\n" +
 	"\x0fstate_timestamp\x18\x1b \x01(\x03R\x0estateTimestamp\x12\x1d\n" +
 	"\n" +
-	"risk_score\x18\x1d \x01(\x02R\triskScore\x120\n" +
-	"\x14effective_risk_score\x18$ \x01(\x02R\x12effectiveRiskScore\x12-\n" +
-	"\x12platform_component\x18# \x01(\bR\x11platformComponent\x1a9\n" +
+	"risk_score\x18\x1d \x01(\x02R\triskScore\x12-\n" +
+	"\x12platform_component\x18# \x01(\bR\x11platformComponent\x12`\n" +
+	"\x17user_ranking_adjustment\x18% \x01(\v2(.storage.DeploymentUserRankingAdjustmentR\x15userRankingAdjustment\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
@@ -2075,7 +2135,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x03\x10\x04J\x04\b\f\x10\rJ\x04\b\x1e\x10\x1f\"\xd8\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01J\x04\b\x03\x10\x04J\x04\b\f\x10\rJ\x04\b\x1e\x10\x1fJ\x04\b$\x10%\"\xd8\x01\n" +
 	"\x0eContainerImage\x12\x12\n" +
 	"\x02id\x18\x04 \x01(\tB\x02\x18\x01R\x02id\x12&\n" +
 	"\x04name\x18\x01 \x01(\v2\x12.storage.ImageNameR\x04name\x12!\n" +
@@ -2216,7 +2276,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"UNCONFINED\x10\x00\x12\x13\n" +
 	"\x0fRUNTIME_DEFAULT\x10\x01\x12\r\n" +
-	"\tLOCALHOST\x10\x02\"\xa3\x02\n" +
+	"\tLOCALHOST\x10\x02\"\xf7\x01\n" +
 	"\x0eListDeployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\b \x01(\x04R\x04hash\x12\x12\n" +
@@ -2226,8 +2286,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1a\n" +
-	"\bpriority\x18\a \x01(\x03R\bpriority\x120\n" +
-	"\x14effective_risk_score\x18\t \x01(\x02R\x12effectiveRiskScoreB.\n" +
+	"\bpriority\x18\a \x01(\x03R\bpriorityJ\x04\b\t\x10\n" +
+	"B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -2243,85 +2303,88 @@ func file_storage_deployment_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_storage_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_storage_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_storage_deployment_proto_goTypes = []any{
 	(Volume_MountPropagation)(0),                        // 0: storage.Volume.MountPropagation
 	(PortConfig_ExposureLevel)(0),                       // 1: storage.PortConfig.ExposureLevel
 	(ContainerConfig_EnvironmentConfig_EnvVarSource)(0), // 2: storage.ContainerConfig.EnvironmentConfig.EnvVarSource
 	(SecurityContext_SeccompProfile_ProfileType)(0),     // 3: storage.SecurityContext.SeccompProfile.ProfileType
-	(*Deployment)(nil),                                  // 4: storage.Deployment
-	(*ContainerImage)(nil),                              // 5: storage.ContainerImage
-	(*Container)(nil),                                   // 6: storage.Container
-	(*Resources)(nil),                                   // 7: storage.Resources
-	(*Volume)(nil),                                      // 8: storage.Volume
-	(*LivenessProbe)(nil),                               // 9: storage.LivenessProbe
-	(*ReadinessProbe)(nil),                              // 10: storage.ReadinessProbe
-	(*Pod)(nil),                                         // 11: storage.Pod
-	(*ContainerInstance)(nil),                           // 12: storage.ContainerInstance
-	(*ContainerInstanceID)(nil),                         // 13: storage.ContainerInstanceID
-	(*EmbeddedSecret)(nil),                              // 14: storage.EmbeddedSecret
-	(*PortConfig)(nil),                                  // 15: storage.PortConfig
-	(*ContainerConfig)(nil),                             // 16: storage.ContainerConfig
-	(*SecurityContext)(nil),                             // 17: storage.SecurityContext
-	(*ListDeployment)(nil),                              // 18: storage.ListDeployment
-	nil,                                                 // 19: storage.Deployment.LabelsEntry
-	nil,                                                 // 20: storage.Deployment.PodLabelsEntry
-	nil,                                                 // 21: storage.Deployment.AnnotationsEntry
-	(*Pod_ContainerInstanceList)(nil),                   // 22: storage.Pod.ContainerInstanceList
-	(*PortConfig_ExposureInfo)(nil),                     // 23: storage.PortConfig.ExposureInfo
-	(*ContainerConfig_EnvironmentConfig)(nil),           // 24: storage.ContainerConfig.EnvironmentConfig
-	(*SecurityContext_SELinux)(nil),                     // 25: storage.SecurityContext.SELinux
-	(*SecurityContext_SeccompProfile)(nil),              // 26: storage.SecurityContext.SeccompProfile
-	(*LabelSelector)(nil),                               // 27: storage.LabelSelector
+	(*DeploymentUserRankingAdjustment)(nil),             // 4: storage.DeploymentUserRankingAdjustment
+	(*Deployment)(nil),                                  // 5: storage.Deployment
+	(*ContainerImage)(nil),                              // 6: storage.ContainerImage
+	(*Container)(nil),                                   // 7: storage.Container
+	(*Resources)(nil),                                   // 8: storage.Resources
+	(*Volume)(nil),                                      // 9: storage.Volume
+	(*LivenessProbe)(nil),                               // 10: storage.LivenessProbe
+	(*ReadinessProbe)(nil),                              // 11: storage.ReadinessProbe
+	(*Pod)(nil),                                         // 12: storage.Pod
+	(*ContainerInstance)(nil),                           // 13: storage.ContainerInstance
+	(*ContainerInstanceID)(nil),                         // 14: storage.ContainerInstanceID
+	(*EmbeddedSecret)(nil),                              // 15: storage.EmbeddedSecret
+	(*PortConfig)(nil),                                  // 16: storage.PortConfig
+	(*ContainerConfig)(nil),                             // 17: storage.ContainerConfig
+	(*SecurityContext)(nil),                             // 18: storage.SecurityContext
+	(*ListDeployment)(nil),                              // 19: storage.ListDeployment
+	nil,                                                 // 20: storage.Deployment.LabelsEntry
+	nil,                                                 // 21: storage.Deployment.PodLabelsEntry
+	nil,                                                 // 22: storage.Deployment.AnnotationsEntry
+	(*Pod_ContainerInstanceList)(nil),                   // 23: storage.Pod.ContainerInstanceList
+	(*PortConfig_ExposureInfo)(nil),                     // 24: storage.PortConfig.ExposureInfo
+	(*ContainerConfig_EnvironmentConfig)(nil),           // 25: storage.ContainerConfig.EnvironmentConfig
+	(*SecurityContext_SELinux)(nil),                     // 26: storage.SecurityContext.SELinux
+	(*SecurityContext_SeccompProfile)(nil),              // 27: storage.SecurityContext.SeccompProfile
 	(*timestamppb.Timestamp)(nil),                       // 28: google.protobuf.Timestamp
-	(PermissionLevel)(0),                                // 29: storage.PermissionLevel
-	(*Toleration)(nil),                                  // 30: storage.Toleration
-	(*ImageName)(nil),                                   // 31: storage.ImageName
-	(ContainerRuntime)(0),                               // 32: storage.ContainerRuntime
+	(*LabelSelector)(nil),                               // 29: storage.LabelSelector
+	(PermissionLevel)(0),                                // 30: storage.PermissionLevel
+	(*Toleration)(nil),                                  // 31: storage.Toleration
+	(*ImageName)(nil),                                   // 32: storage.ImageName
+	(ContainerRuntime)(0),                               // 33: storage.ContainerRuntime
 }
 var file_storage_deployment_proto_depIdxs = []int32{
-	19, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
-	20, // 1: storage.Deployment.pod_labels:type_name -> storage.Deployment.PodLabelsEntry
-	27, // 2: storage.Deployment.label_selector:type_name -> storage.LabelSelector
-	28, // 3: storage.Deployment.created:type_name -> google.protobuf.Timestamp
-	6,  // 4: storage.Deployment.containers:type_name -> storage.Container
-	21, // 5: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
-	29, // 6: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
-	30, // 7: storage.Deployment.tolerations:type_name -> storage.Toleration
-	15, // 8: storage.Deployment.ports:type_name -> storage.PortConfig
-	31, // 9: storage.ContainerImage.name:type_name -> storage.ImageName
-	16, // 10: storage.Container.config:type_name -> storage.ContainerConfig
-	5,  // 11: storage.Container.image:type_name -> storage.ContainerImage
-	17, // 12: storage.Container.security_context:type_name -> storage.SecurityContext
-	8,  // 13: storage.Container.volumes:type_name -> storage.Volume
-	15, // 14: storage.Container.ports:type_name -> storage.PortConfig
-	14, // 15: storage.Container.secrets:type_name -> storage.EmbeddedSecret
-	7,  // 16: storage.Container.resources:type_name -> storage.Resources
-	9,  // 17: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
-	10, // 18: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
-	0,  // 19: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
-	12, // 20: storage.Pod.live_instances:type_name -> storage.ContainerInstance
-	22, // 21: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
-	28, // 22: storage.Pod.started:type_name -> google.protobuf.Timestamp
-	13, // 23: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
-	28, // 24: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
-	28, // 25: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
-	32, // 26: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
-	1,  // 27: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
-	23, // 28: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
-	24, // 29: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
-	25, // 30: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
-	26, // 31: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
-	28, // 32: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
-	12, // 33: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
-	1,  // 34: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
-	2,  // 35: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	3,  // 36: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	28, // 0: storage.DeploymentUserRankingAdjustment.last_updated:type_name -> google.protobuf.Timestamp
+	20, // 1: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
+	21, // 2: storage.Deployment.pod_labels:type_name -> storage.Deployment.PodLabelsEntry
+	29, // 3: storage.Deployment.label_selector:type_name -> storage.LabelSelector
+	28, // 4: storage.Deployment.created:type_name -> google.protobuf.Timestamp
+	7,  // 5: storage.Deployment.containers:type_name -> storage.Container
+	22, // 6: storage.Deployment.annotations:type_name -> storage.Deployment.AnnotationsEntry
+	30, // 7: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
+	31, // 8: storage.Deployment.tolerations:type_name -> storage.Toleration
+	16, // 9: storage.Deployment.ports:type_name -> storage.PortConfig
+	4,  // 10: storage.Deployment.user_ranking_adjustment:type_name -> storage.DeploymentUserRankingAdjustment
+	32, // 11: storage.ContainerImage.name:type_name -> storage.ImageName
+	17, // 12: storage.Container.config:type_name -> storage.ContainerConfig
+	6,  // 13: storage.Container.image:type_name -> storage.ContainerImage
+	18, // 14: storage.Container.security_context:type_name -> storage.SecurityContext
+	9,  // 15: storage.Container.volumes:type_name -> storage.Volume
+	16, // 16: storage.Container.ports:type_name -> storage.PortConfig
+	15, // 17: storage.Container.secrets:type_name -> storage.EmbeddedSecret
+	8,  // 18: storage.Container.resources:type_name -> storage.Resources
+	10, // 19: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
+	11, // 20: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
+	0,  // 21: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
+	13, // 22: storage.Pod.live_instances:type_name -> storage.ContainerInstance
+	23, // 23: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
+	28, // 24: storage.Pod.started:type_name -> google.protobuf.Timestamp
+	14, // 25: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
+	28, // 26: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
+	28, // 27: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
+	33, // 28: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
+	1,  // 29: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
+	24, // 30: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
+	25, // 31: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
+	26, // 32: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
+	27, // 33: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
+	28, // 34: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
+	13, // 35: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
+	1,  // 36: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
+	2,  // 37: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	3,  // 38: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
+	39, // [39:39] is the sub-list for method output_type
+	39, // [39:39] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_storage_deployment_proto_init() }
@@ -2340,7 +2403,7 @@ func file_storage_deployment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_deployment_proto_rawDesc), len(file_storage_deployment_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   23,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

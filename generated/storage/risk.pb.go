@@ -9,7 +9,6 @@ package storage
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -91,14 +90,13 @@ func (RiskSubjectType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Risk struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Subject               *RiskSubject           `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Score                 float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
-	Results               []*Risk_Result         `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
-	UserRankingAdjustment *UserRankingAdjustment `protobuf:"bytes,5,opt,name=user_ranking_adjustment,json=userRankingAdjustment,proto3" json:"user_ranking_adjustment,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Subject       *RiskSubject           `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	Score         float32                `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
+	Results       []*Risk_Result         `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Risk) Reset() {
@@ -159,77 +157,6 @@ func (x *Risk) GetResults() []*Risk_Result {
 	return nil
 }
 
-func (x *Risk) GetUserRankingAdjustment() *UserRankingAdjustment {
-	if x != nil {
-		return x.UserRankingAdjustment
-	}
-	return nil
-}
-
-type UserRankingAdjustment struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Adjusted risk score after user ranking changes
-	// No limits - can be negative or exceed 10.0
-	AdjustedScore float32 `protobuf:"fixed32,1,opt,name=adjusted_score,json=adjustedScore,proto3" json:"adjusted_score,omitempty"`
-	// Timestamp of last adjustment
-	LastAdjusted *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_adjusted,json=lastAdjusted,proto3" json:"last_adjusted,omitempty"`
-	// User ID who made the last adjustment
-	LastAdjustedBy string `protobuf:"bytes,3,opt,name=last_adjusted_by,json=lastAdjustedBy,proto3" json:"last_adjusted_by,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *UserRankingAdjustment) Reset() {
-	*x = UserRankingAdjustment{}
-	mi := &file_storage_risk_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UserRankingAdjustment) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserRankingAdjustment) ProtoMessage() {}
-
-func (x *UserRankingAdjustment) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UserRankingAdjustment.ProtoReflect.Descriptor instead.
-func (*UserRankingAdjustment) Descriptor() ([]byte, []int) {
-	return file_storage_risk_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *UserRankingAdjustment) GetAdjustedScore() float32 {
-	if x != nil {
-		return x.AdjustedScore
-	}
-	return 0
-}
-
-func (x *UserRankingAdjustment) GetLastAdjusted() *timestamppb.Timestamp {
-	if x != nil {
-		return x.LastAdjusted
-	}
-	return nil
-}
-
-func (x *UserRankingAdjustment) GetLastAdjustedBy() string {
-	if x != nil {
-		return x.LastAdjustedBy
-	}
-	return ""
-}
-
 type RiskSubject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -242,7 +169,7 @@ type RiskSubject struct {
 
 func (x *RiskSubject) Reset() {
 	*x = RiskSubject{}
-	mi := &file_storage_risk_proto_msgTypes[2]
+	mi := &file_storage_risk_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -254,7 +181,7 @@ func (x *RiskSubject) String() string {
 func (*RiskSubject) ProtoMessage() {}
 
 func (x *RiskSubject) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[2]
+	mi := &file_storage_risk_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -267,7 +194,7 @@ func (x *RiskSubject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RiskSubject.ProtoReflect.Descriptor instead.
 func (*RiskSubject) Descriptor() ([]byte, []int) {
-	return file_storage_risk_proto_rawDescGZIP(), []int{2}
+	return file_storage_risk_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RiskSubject) GetId() string {
@@ -309,7 +236,7 @@ type Risk_Result struct {
 
 func (x *Risk_Result) Reset() {
 	*x = Risk_Result{}
-	mi := &file_storage_risk_proto_msgTypes[3]
+	mi := &file_storage_risk_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -321,7 +248,7 @@ func (x *Risk_Result) String() string {
 func (*Risk_Result) ProtoMessage() {}
 
 func (x *Risk_Result) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[3]
+	mi := &file_storage_risk_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -368,7 +295,7 @@ type Risk_Result_Factor struct {
 
 func (x *Risk_Result_Factor) Reset() {
 	*x = Risk_Result_Factor{}
-	mi := &file_storage_risk_proto_msgTypes[4]
+	mi := &file_storage_risk_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -380,7 +307,7 @@ func (x *Risk_Result_Factor) String() string {
 func (*Risk_Result_Factor) ProtoMessage() {}
 
 func (x *Risk_Result_Factor) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_risk_proto_msgTypes[4]
+	mi := &file_storage_risk_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,24 +341,19 @@ var File_storage_risk_proto protoreflect.FileDescriptor
 
 const file_storage_risk_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/risk.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x86\x03\n" +
+	"\x12storage/risk.proto\x12\astorage\"\xb4\x02\n" +
 	"\x04Risk\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
 	"\asubject\x18\x02 \x01(\v2\x14.storage.RiskSubjectR\asubject\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x12.\n" +
-	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x12V\n" +
-	"\x17user_ranking_adjustment\x18\x05 \x01(\v2\x1e.storage.UserRankingAdjustmentR\x15userRankingAdjustment\x1a\x9f\x01\n" +
+	"\aresults\x18\x04 \x03(\v2\x14.storage.Risk.ResultR\aresults\x1a\x9f\x01\n" +
 	"\x06Result\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
 	"\afactors\x18\x02 \x03(\v2\x1b.storage.Risk.Result.FactorR\afactors\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x02R\x05score\x1a4\n" +
 	"\x06Factor\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x10\n" +
-	"\x03url\x18\x02 \x01(\tR\x03url\"\xa9\x01\n" +
-	"\x15UserRankingAdjustment\x12%\n" +
-	"\x0eadjusted_score\x18\x01 \x01(\x02R\radjustedScore\x12?\n" +
-	"\rlast_adjusted\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\flastAdjusted\x12(\n" +
-	"\x10last_adjusted_by\x18\x03 \x01(\tR\x0elastAdjustedBy\"\x88\x01\n" +
+	"\x03url\x18\x02 \x01(\tR\x03urlJ\x04\b\x05\x10\x06\"\x88\x01\n" +
 	"\vRiskSubject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1d\n" +
@@ -464,28 +386,24 @@ func file_storage_risk_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_risk_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_storage_risk_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_risk_proto_goTypes = []any{
-	(RiskSubjectType)(0),          // 0: storage.RiskSubjectType
-	(*Risk)(nil),                  // 1: storage.Risk
-	(*UserRankingAdjustment)(nil), // 2: storage.UserRankingAdjustment
-	(*RiskSubject)(nil),           // 3: storage.RiskSubject
-	(*Risk_Result)(nil),           // 4: storage.Risk.Result
-	(*Risk_Result_Factor)(nil),    // 5: storage.Risk.Result.Factor
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(RiskSubjectType)(0),       // 0: storage.RiskSubjectType
+	(*Risk)(nil),               // 1: storage.Risk
+	(*RiskSubject)(nil),        // 2: storage.RiskSubject
+	(*Risk_Result)(nil),        // 3: storage.Risk.Result
+	(*Risk_Result_Factor)(nil), // 4: storage.Risk.Result.Factor
 }
 var file_storage_risk_proto_depIdxs = []int32{
-	3, // 0: storage.Risk.subject:type_name -> storage.RiskSubject
-	4, // 1: storage.Risk.results:type_name -> storage.Risk.Result
-	2, // 2: storage.Risk.user_ranking_adjustment:type_name -> storage.UserRankingAdjustment
-	6, // 3: storage.UserRankingAdjustment.last_adjusted:type_name -> google.protobuf.Timestamp
-	0, // 4: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
-	5, // 5: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	2, // 0: storage.Risk.subject:type_name -> storage.RiskSubject
+	3, // 1: storage.Risk.results:type_name -> storage.Risk.Result
+	0, // 2: storage.RiskSubject.type:type_name -> storage.RiskSubjectType
+	4, // 3: storage.Risk.Result.factors:type_name -> storage.Risk.Result.Factor
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_risk_proto_init() }
@@ -499,7 +417,7 @@ func file_storage_risk_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_risk_proto_rawDesc), len(file_storage_risk_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

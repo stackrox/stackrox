@@ -21,6 +21,7 @@ var (
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			"/v1.RiskService/ChangeDeploymentRiskPosition",
 			"/v1.RiskService/ResetDeploymentRisk",
+			"/v1.RiskService/ResetAllDeploymentRisks",
 		},
 	})
 )
@@ -53,27 +54,18 @@ func (s *serviceImpl) ChangeDeploymentRiskPosition(ctx context.Context, req *v1.
 		return nil, errors.New("deployment_id is required")
 	}
 
-	if req.GetDirection() == v1.RiskPositionDirection_RISK_POSITION_DIRECTION_UNSPECIFIED {
-		return nil, errors.New("direction is required")
+	// At least one neighbor must be specified
+	if req.GetAboveDeploymentId() == "" && req.GetBelowDeploymentId() == "" {
+		return nil, errors.New("at least one neighbor deployment must be specified")
 	}
 
-	moveUp := req.GetDirection() == v1.RiskPositionDirection_RISK_POSITION_UP
-
-	risk, err := s.manager.ChangeDeploymentRiskPosition(ctx, req.GetDeploymentId(), moveUp)
+	deployment, err := s.manager.ChangeDeploymentRiskPosition(ctx, req.GetDeploymentId(), req.GetAboveDeploymentId(), req.GetBelowDeploymentId())
 	if err != nil {
-		direction := "up"
-		if !moveUp {
-			direction = "down"
-		}
-		return nil, errors.Wrapf(err, "failed to move deployment %s %s", req.GetDeploymentId(), direction)
+		return nil, errors.Wrapf(err, "failed to reposition deployment %s", req.GetDeploymentId())
 	}
 
-	message := "Deployment position moved up in ranking"
-	if !moveUp {
-		message = "Deployment position moved down in ranking"
-	}
-
-	return buildAdjustmentResponse(risk, message), nil
+	message := "Deployment repositioned in risk ranking"
+	return buildAdjustmentResponse(deployment, message), nil
 }
 
 // ResetDeploymentRisk removes user ranking adjustments.
@@ -82,25 +74,45 @@ func (s *serviceImpl) ResetDeploymentRisk(ctx context.Context, req *v1.RiskAdjus
 		return nil, errors.New("deployment_id is required")
 	}
 
-	risk, err := s.manager.ResetDeploymentRisk(ctx, req.GetDeploymentId())
+	deployment, err := s.manager.ResetDeploymentRisk(ctx, req.GetDeploymentId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to reset deployment %s", req.GetDeploymentId())
 	}
 
-	return buildAdjustmentResponse(risk, "Deployment risk reset to original ML score"), nil
+	return buildAdjustmentResponse(deployment, "Deployment risk reset to original ML score"), nil
 }
 
-// buildAdjustmentResponse creates the response message from a risk object.
-func buildAdjustmentResponse(risk *storage.Risk, message string) *v1.RiskAdjustmentResponse {
-	originalScore := risk.GetScore()
-	effectiveScore := originalScore
+// ResetAllDeploymentRisks removes all user ranking adjustments.
+func (s *serviceImpl) ResetAllDeploymentRisks(ctx context.Context, req *v1.ResetAllRisksRequest) (*v1.ResetAllRisksResponse, error) {
+	count, err := s.manager.ResetAllDeploymentRisks(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to reset all deployment risks")
+	}
 
-	if adj := risk.GetUserRankingAdjustment(); adj != nil && adj.GetLastAdjusted() != nil {
-		effectiveScore = adj.GetAdjustedScore()
+	message := "All deployment risk adjustments have been reset to original ML scores"
+	if count == 0 {
+		message = "No deployments had risk adjustments to reset"
+	}
+
+	return &v1.ResetAllRisksResponse{
+		Count:   int32(count),
+		Message: message,
+	}, nil
+}
+
+// buildAdjustmentResponse creates the response message from a deployment object.
+func buildAdjustmentResponse(deployment *storage.Deployment, message string) *v1.RiskAdjustmentResponse {
+	// Original score is the ML-calculated risk score
+	originalScore := deployment.GetRiskScore()
+
+	// Effective score is either the user-adjusted score or the ML score
+	effectiveScore := originalScore
+	if adj := deployment.GetUserRankingAdjustment(); adj != nil {
+		effectiveScore = adj.GetEffectiveRiskScore()
 	}
 
 	return &v1.RiskAdjustmentResponse{
-		Risk:           risk,
+		Deployment:     deployment,
 		OriginalScore:  originalScore,
 		EffectiveScore: effectiveScore,
 		Message:        message,

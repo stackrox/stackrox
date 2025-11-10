@@ -12,7 +12,17 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 36
+// DeploymentUserRankingAdjustment tracks user-adjusted risk rankings for deployments
+message DeploymentUserRankingAdjustment {
+  // User-adjusted effective risk score (can be outside 0-10 range)
+  float effective_risk_score = 1;
+  // Timestamp of last adjustment
+  google.protobuf.Timestamp last_updated = 2;
+  // User ID who made the last adjustment
+  string last_updated_by = 3;
+}
+
+// Next available tag: 38
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
@@ -50,9 +60,9 @@ message Deployment {
 
   reserved 30; // was tags
 
-  float effective_risk_score = 36; // @gotags: search:"Deployment Effective Risk Score,hidden" policy:",ignore" sql:"index=btree"
-
   bool platform_component = 35; // @gotags: search:"Platform Component"
+  reserved 36; // was effective_risk_score (now computed from user_ranking_adjustment or risk_score)
+  DeploymentUserRankingAdjustment user_ranking_adjustment = 37;
 }
 
 // Next tag: 13
@@ -281,5 +291,5 @@ message ListDeployment {
   string namespace = 5;
   google.protobuf.Timestamp created = 6;
   int64 priority = 7;
-  float effective_risk_score = 9;
+  reserved 9; // was effective_risk_score (now computed from user_ranking_adjustment or risk_score)
 }

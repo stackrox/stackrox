@@ -830,15 +830,34 @@
           "type": "number",
           "format": "float"
         },
-        "effectiveRiskScore": {
-          "type": "number",
-          "format": "float"
-        },
         "platformComponent": {
           "type": "boolean"
+        },
+        "userRankingAdjustment": {
+          "$ref": "#/definitions/storageDeploymentUserRankingAdjustment"
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 38"
+    },
+    "storageDeploymentUserRankingAdjustment": {
+      "type": "object",
+      "properties": {
+        "effectiveRiskScore": {
+          "type": "number",
+          "format": "float",
+          "title": "User-adjusted effective risk score (can be outside 0-10 range)"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Timestamp of last adjustment"
+        },
+        "lastUpdatedBy": {
+          "type": "string",
+          "title": "User ID who made the last adjustment"
+        }
+      },
+      "title": "DeploymentUserRankingAdjustment tracks user-adjusted risk rankings for deployments"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -947,10 +966,6 @@
         "priority": {
           "type": "string",
           "format": "int64"
-        },
-        "effectiveRiskScore": {
-          "type": "number",
-          "format": "float"
         }
       },
       "title": "Next available tag: 10"
@@ -1054,9 +1069,6 @@
             "type": "object",
             "$ref": "#/definitions/storageRiskResult"
           }
-        },
-        "userRankingAdjustment": {
-          "$ref": "#/definitions/storageUserRankingAdjustment"
         }
       }
     },
@@ -1179,25 +1191,6 @@
         "TOLERATION_OPERATOR_EQUAL"
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
-    },
-    "storageUserRankingAdjustment": {
-      "type": "object",
-      "properties": {
-        "adjustedScore": {
-          "type": "number",
-          "format": "float",
-          "title": "Adjusted risk score after user ranking changes\nNo limits - can be negative or exceed 10.0"
-        },
-        "lastAdjusted": {
-          "type": "string",
-          "format": "date-time",
-          "title": "Timestamp of last adjustment"
-        },
-        "lastAdjustedBy": {
-          "type": "string",
-          "title": "User ID who made the last adjustment"
-        }
-      }
     },
     "storageVolume": {
       "type": "object",

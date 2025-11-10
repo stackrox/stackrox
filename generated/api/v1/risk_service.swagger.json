@@ -16,9 +16,42 @@
     "application/json"
   ],
   "paths": {
+    "/v1/risk/deployment/reset-all": {
+      "post": {
+        "summary": "ResetAllDeploymentRisks removes all user ranking adjustments for all deployments",
+        "operationId": "RiskService_ResetAllDeploymentRisks",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ResetAllRisksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ResetAllRisksRequest"
+            }
+          }
+        ],
+        "tags": [
+          "RiskService"
+        ]
+      }
+    },
     "/v1/risk/deployment/{deploymentId}/position": {
       "post": {
-        "summary": "ChangeDeploymentRiskPosition adjusts a deployment's risk ranking\nby placing it between the current position and the adjacent deployment\n(up or down based on direction parameter)",
+        "summary": "ChangeDeploymentRiskPosition adjusts a deployment's risk ranking\nby calculating effective score as average of neighbor deployments",
         "operationId": "RiskService_ChangeDeploymentRiskPosition",
         "responses": {
           "200": {
@@ -77,7 +110,7 @@
         "parameters": [
           {
             "name": "deploymentId",
-            "description": "Deployment ID to adjust",
+            "description": "Deployment ID to reset",
             "in": "path",
             "required": true,
             "type": "string"
@@ -98,29 +131,148 @@
     }
   },
   "definitions": {
-    "ResultFactor": {
+    "ContainerConfigEnvironmentConfig": {
       "type": "object",
       "properties": {
-        "message": {
+        "key": {
           "type": "string"
         },
-        "url": {
+        "value": {
           "type": "string"
+        },
+        "envVarSource": {
+          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
         }
       }
+    },
+    "EnvironmentConfigEnvVarSource": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "RAW",
+        "SECRET_KEY",
+        "CONFIG_MAP_KEY",
+        "FIELD",
+        "RESOURCE_FIELD",
+        "UNKNOWN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "PortConfigExposureInfo": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "serviceName": {
+          "type": "string",
+          "title": "only set if level is not HOST"
+        },
+        "serviceId": {
+          "type": "string"
+        },
+        "serviceClusterIp": {
+          "type": "string"
+        },
+        "servicePort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "nodePort": {
+          "type": "integer",
+          "format": "int32",
+          "title": "only set if level is HOST, NODE, EXTERNAL or ROUTE"
+        },
+        "externalIps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "only set if level is EXTERNAL"
+        },
+        "externalHostnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "only set if level is EXTERNAL or ROUTE"
+        }
+      }
+    },
+    "PortConfigExposureLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "EXTERNAL",
+        "NODE",
+        "INTERNAL",
+        "HOST",
+        "ROUTE"
+      ],
+      "default": "UNSET"
     },
     "RiskServiceChangeDeploymentRiskPositionBody": {
       "type": "object",
       "properties": {
-        "direction": {
-          "$ref": "#/definitions/v1RiskPositionDirection",
-          "title": "Direction to move in the ranking"
+        "aboveDeploymentId": {
+          "type": "string",
+          "title": "Deployment ID directly above new position (null if moved to top)"
+        },
+        "belowDeploymentId": {
+          "type": "string",
+          "title": "Deployment ID directly below new position (null if moved to bottom)"
         }
       }
     },
     "RiskServiceResetDeploymentRiskBody": {
+      "type": "object"
+    },
+    "SeccompProfileProfileType": {
+      "type": "string",
+      "enum": [
+        "UNCONFINED",
+        "RUNTIME_DEFAULT",
+        "LOCALHOST"
+      ],
+      "default": "UNCONFINED"
+    },
+    "SecurityContextSELinux": {
       "type": "object",
-      "title": "Keep for backward compatibility with Reset endpoint"
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        }
+      }
+    },
+    "SecurityContextSeccompProfile": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/SeccompProfileProfileType"
+        },
+        "localhostProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "VolumeMountPropagation": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "HOST_TO_CONTAINER",
+        "BIDIRECTIONAL"
+      ],
+      "default": "NONE"
     },
     "googlerpcStatus": {
       "type": "object",
@@ -152,135 +304,556 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
-    "storageRisk": {
+    "storageContainer": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
         },
-        "subject": {
-          "$ref": "#/definitions/storageRiskSubject"
+        "config": {
+          "$ref": "#/definitions/storageContainerConfig"
         },
-        "score": {
-          "type": "number",
-          "format": "float"
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
         },
-        "results": {
+        "securityContext": {
+          "$ref": "#/definitions/storageSecurityContext"
+        },
+        "volumes": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageRiskResult"
+            "$ref": "#/definitions/storageVolume"
           }
         },
-        "userRankingAdjustment": {
-          "$ref": "#/definitions/storageUserRankingAdjustment"
-        }
-      }
-    },
-    "storageRiskResult": {
-      "type": "object",
-      "properties": {
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storagePortConfig"
+          },
+          "title": "Policies use the port config on the top-level deployment."
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEmbeddedSecret"
+          }
+        },
+        "resources": {
+          "$ref": "#/definitions/storageResources"
+        },
         "name": {
           "type": "string"
         },
-        "factors": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/ResultFactor"
-          }
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
         },
-        "score": {
-          "type": "number",
-          "format": "float"
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
         }
       }
     },
-    "storageRiskSubject": {
+    "storageContainerConfig": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ContainerConfigEnvironmentConfig"
+          }
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "directory": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "appArmorProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "storageContainerImage": {
       "type": "object",
       "properties": {
         "id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
+        }
+      },
+      "title": "Next tag: 13"
+    },
+    "storageDeployment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
           "type": "string"
         },
         "namespace": {
           "type": "string"
         },
+        "namespaceId": {
+          "type": "string"
+        },
+        "orchestratorComponent": {
+          "type": "boolean"
+        },
+        "replicas": {
+          "type": "string",
+          "format": "int64"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "labelSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
         "clusterId": {
           "type": "string"
         },
-        "type": {
-          "$ref": "#/definitions/storageRiskSubjectType"
+        "clusterName": {
+          "type": "string"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageContainer"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "inactive": {
+          "type": "boolean"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "serviceAccount": {
+          "type": "string"
+        },
+        "serviceAccountPermissionLevel": {
+          "$ref": "#/definitions/storagePermissionLevel"
+        },
+        "automountServiceAccountToken": {
+          "type": "boolean"
+        },
+        "hostNetwork": {
+          "type": "boolean"
+        },
+        "hostPid": {
+          "type": "boolean"
+        },
+        "hostIpc": {
+          "type": "boolean"
+        },
+        "runtimeClass": {
+          "type": "string"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageToleration"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storagePortConfig"
+          }
+        },
+        "stateTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "Internal use only"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "userRankingAdjustment": {
+          "$ref": "#/definitions/storageDeploymentUserRankingAdjustment"
         }
-      }
+      },
+      "title": "Next available tag: 38"
     },
-    "storageRiskSubjectType": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "DEPLOYMENT",
-        "NAMESPACE",
-        "CLUSTER",
-        "NODE",
-        "NODE_COMPONENT",
-        "IMAGE",
-        "IMAGE_COMPONENT",
-        "SERVICEACCOUNT"
-      ],
-      "default": "UNKNOWN",
-      "title": "Next tag: 9"
-    },
-    "storageUserRankingAdjustment": {
+    "storageDeploymentUserRankingAdjustment": {
       "type": "object",
       "properties": {
-        "adjustedScore": {
+        "effectiveRiskScore": {
           "type": "number",
           "format": "float",
-          "title": "Adjusted risk score after user ranking changes\nNo limits - can be negative or exceed 10.0"
+          "title": "User-adjusted effective risk score (can be outside 0-10 range)"
         },
-        "lastAdjusted": {
+        "lastUpdated": {
           "type": "string",
           "format": "date-time",
           "title": "Timestamp of last adjustment"
         },
-        "lastAdjustedBy": {
+        "lastUpdatedBy": {
           "type": "string",
           "title": "User ID who made the last adjustment"
+        }
+      },
+      "title": "DeploymentUserRankingAdjustment tracks user-adjusted risk rankings for deployments"
+    },
+    "storageEmbeddedSecret": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "storageImageName": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        }
+      }
+    },
+    "storageLabelSelector": {
+      "type": "object",
+      "properties": {
+        "matchLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "This is actually a oneof, but we can't make it one due to backwards\ncompatibility constraints."
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageLabelSelectorRequirement"
+          }
+        }
+      },
+      "description": "Next available tag: 3",
+      "title": "Label selector components are joined with logical AND, see\n    https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/"
+    },
+    "storageLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storagePermissionLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "NONE",
+        "DEFAULT",
+        "ELEVATED_IN_NAMESPACE",
+        "ELEVATED_CLUSTER_WIDE",
+        "CLUSTER_ADMIN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+    },
+    "storagePortConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "containerPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        },
+        "exposure": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "exposedPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exposureInfos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PortConfigExposureInfo"
+          }
+        }
+      },
+      "title": "Next Available Tag: 6"
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageResources": {
+      "type": "object",
+      "properties": {
+        "cpuCoresRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "cpuCoresLimit": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbLimit": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "storageSecurityContext": {
+      "type": "object",
+      "properties": {
+        "privileged": {
+          "type": "boolean"
+        },
+        "selinux": {
+          "$ref": "#/definitions/SecurityContextSELinux"
+        },
+        "dropCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        },
+        "seccompProfile": {
+          "$ref": "#/definitions/SecurityContextSeccompProfile"
+        },
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageTaintEffect": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_TAINT_EFFECT",
+        "NO_SCHEDULE_TAINT_EFFECT",
+        "PREFER_NO_SCHEDULE_TAINT_EFFECT",
+        "NO_EXECUTE_TAINT_EFFECT"
+      ],
+      "default": "UNKNOWN_TAINT_EFFECT"
+    },
+    "storageToleration": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/storageTolerationOperator"
+        },
+        "value": {
+          "type": "string"
+        },
+        "taintEffect": {
+          "$ref": "#/definitions/storageTaintEffect"
+        }
+      }
+    },
+    "storageTolerationOperator": {
+      "type": "string",
+      "enum": [
+        "TOLERATION_OPERATION_UNKNOWN",
+        "TOLERATION_OPERATOR_EXISTS",
+        "TOLERATION_OPERATOR_EQUAL"
+      ],
+      "default": "TOLERATION_OPERATION_UNKNOWN"
+    },
+    "storageVolume": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "$ref": "#/definitions/VolumeMountPropagation"
+        }
+      }
+    },
+    "v1ResetAllRisksRequest": {
+      "type": "object"
+    },
+    "v1ResetAllRisksResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number of deployments that had adjustments reset"
+        },
+        "message": {
+          "type": "string",
+          "title": "Human-readable message about the operation"
         }
       }
     },
     "v1RiskAdjustmentResponse": {
       "type": "object",
       "properties": {
-        "risk": {
-          "$ref": "#/definitions/storageRisk",
-          "title": "Updated risk object with new ranking adjustment"
+        "deployment": {
+          "$ref": "#/definitions/storageDeployment",
+          "title": "Updated deployment with new ranking adjustment"
         },
         "originalScore": {
           "type": "number",
           "format": "float",
-          "title": "Original score (never changes)"
+          "title": "Original ML-calculated risk score"
         },
         "effectiveScore": {
           "type": "number",
           "format": "float",
-          "title": "New adjusted score (or original if reset)"
+          "title": "Effective risk score (user-adjusted or ML score)"
         },
         "message": {
           "type": "string",
           "title": "Human-readable message about the adjustment"
         }
       }
-    },
-    "v1RiskPositionDirection": {
-      "type": "string",
-      "enum": [
-        "RISK_POSITION_DIRECTION_UNSPECIFIED",
-        "RISK_POSITION_UP",
-        "RISK_POSITION_DOWN"
-      ],
-      "default": "RISK_POSITION_DIRECTION_UNSPECIFIED",
-      "description": "- RISK_POSITION_UP: Move deployment higher in ranking (increase score)\n - RISK_POSITION_DOWN: Move deployment lower in ranking (decrease score)",
-      "title": "Direction for risk ranking position changes"
     }
   }
 }

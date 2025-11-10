@@ -23,64 +23,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Direction for risk ranking position changes
-type RiskPositionDirection int32
-
-const (
-	RiskPositionDirection_RISK_POSITION_DIRECTION_UNSPECIFIED RiskPositionDirection = 0
-	RiskPositionDirection_RISK_POSITION_UP                    RiskPositionDirection = 1 // Move deployment higher in ranking (increase score)
-	RiskPositionDirection_RISK_POSITION_DOWN                  RiskPositionDirection = 2 // Move deployment lower in ranking (decrease score)
-)
-
-// Enum value maps for RiskPositionDirection.
-var (
-	RiskPositionDirection_name = map[int32]string{
-		0: "RISK_POSITION_DIRECTION_UNSPECIFIED",
-		1: "RISK_POSITION_UP",
-		2: "RISK_POSITION_DOWN",
-	}
-	RiskPositionDirection_value = map[string]int32{
-		"RISK_POSITION_DIRECTION_UNSPECIFIED": 0,
-		"RISK_POSITION_UP":                    1,
-		"RISK_POSITION_DOWN":                  2,
-	}
-)
-
-func (x RiskPositionDirection) Enum() *RiskPositionDirection {
-	p := new(RiskPositionDirection)
-	*p = x
-	return p
-}
-
-func (x RiskPositionDirection) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (RiskPositionDirection) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v1_risk_service_proto_enumTypes[0].Descriptor()
-}
-
-func (RiskPositionDirection) Type() protoreflect.EnumType {
-	return &file_api_v1_risk_service_proto_enumTypes[0]
-}
-
-func (x RiskPositionDirection) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use RiskPositionDirection.Descriptor instead.
-func (RiskPositionDirection) EnumDescriptor() ([]byte, []int) {
-	return file_api_v1_risk_service_proto_rawDescGZIP(), []int{0}
-}
-
 type RiskPositionChangeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deployment ID to adjust
 	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
-	// Direction to move in the ranking
-	Direction     RiskPositionDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=v1.RiskPositionDirection" json:"direction,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Deployment ID directly above new position (null if moved to top)
+	AboveDeploymentId string `protobuf:"bytes,2,opt,name=above_deployment_id,json=aboveDeploymentId,proto3" json:"above_deployment_id,omitempty"`
+	// Deployment ID directly below new position (null if moved to bottom)
+	BelowDeploymentId string `protobuf:"bytes,3,opt,name=below_deployment_id,json=belowDeploymentId,proto3" json:"below_deployment_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *RiskPositionChangeRequest) Reset() {
@@ -120,17 +72,23 @@ func (x *RiskPositionChangeRequest) GetDeploymentId() string {
 	return ""
 }
 
-func (x *RiskPositionChangeRequest) GetDirection() RiskPositionDirection {
+func (x *RiskPositionChangeRequest) GetAboveDeploymentId() string {
 	if x != nil {
-		return x.Direction
+		return x.AboveDeploymentId
 	}
-	return RiskPositionDirection_RISK_POSITION_DIRECTION_UNSPECIFIED
+	return ""
 }
 
-// Keep for backward compatibility with Reset endpoint
+func (x *RiskPositionChangeRequest) GetBelowDeploymentId() string {
+	if x != nil {
+		return x.BelowDeploymentId
+	}
+	return ""
+}
+
 type RiskAdjustmentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Deployment ID to adjust
+	// Deployment ID to reset
 	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -173,13 +131,103 @@ func (x *RiskAdjustmentRequest) GetDeploymentId() string {
 	return ""
 }
 
+type ResetAllRisksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetAllRisksRequest) Reset() {
+	*x = ResetAllRisksRequest{}
+	mi := &file_api_v1_risk_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetAllRisksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetAllRisksRequest) ProtoMessage() {}
+
+func (x *ResetAllRisksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_risk_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetAllRisksRequest.ProtoReflect.Descriptor instead.
+func (*ResetAllRisksRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_risk_service_proto_rawDescGZIP(), []int{2}
+}
+
+type ResetAllRisksResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of deployments that had adjustments reset
+	Count int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	// Human-readable message about the operation
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetAllRisksResponse) Reset() {
+	*x = ResetAllRisksResponse{}
+	mi := &file_api_v1_risk_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetAllRisksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetAllRisksResponse) ProtoMessage() {}
+
+func (x *ResetAllRisksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_risk_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetAllRisksResponse.ProtoReflect.Descriptor instead.
+func (*ResetAllRisksResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_risk_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ResetAllRisksResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *ResetAllRisksResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type RiskAdjustmentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Updated risk object with new ranking adjustment
-	Risk *storage.Risk `protobuf:"bytes,1,opt,name=risk,proto3" json:"risk,omitempty"`
-	// Original score (never changes)
+	// Updated deployment with new ranking adjustment
+	Deployment *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	// Original ML-calculated risk score
 	OriginalScore float32 `protobuf:"fixed32,2,opt,name=original_score,json=originalScore,proto3" json:"original_score,omitempty"`
-	// New adjusted score (or original if reset)
+	// Effective risk score (user-adjusted or ML score)
 	EffectiveScore float32 `protobuf:"fixed32,3,opt,name=effective_score,json=effectiveScore,proto3" json:"effective_score,omitempty"`
 	// Human-readable message about the adjustment
 	Message       string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
@@ -189,7 +237,7 @@ type RiskAdjustmentResponse struct {
 
 func (x *RiskAdjustmentResponse) Reset() {
 	*x = RiskAdjustmentResponse{}
-	mi := &file_api_v1_risk_service_proto_msgTypes[2]
+	mi := &file_api_v1_risk_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +249,7 @@ func (x *RiskAdjustmentResponse) String() string {
 func (*RiskAdjustmentResponse) ProtoMessage() {}
 
 func (x *RiskAdjustmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_risk_service_proto_msgTypes[2]
+	mi := &file_api_v1_risk_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,12 +262,12 @@ func (x *RiskAdjustmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RiskAdjustmentResponse.ProtoReflect.Descriptor instead.
 func (*RiskAdjustmentResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_risk_service_proto_rawDescGZIP(), []int{2}
+	return file_api_v1_risk_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RiskAdjustmentResponse) GetRisk() *storage.Risk {
+func (x *RiskAdjustmentResponse) GetDeployment() *storage.Deployment {
 	if x != nil {
-		return x.Risk
+		return x.Deployment
 	}
 	return nil
 }
@@ -249,24 +297,28 @@ var File_api_v1_risk_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_risk_service_proto_rawDesc = "" +
 	"\n" +
-	"\x19api/v1/risk_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x12storage/risk.proto\"y\n" +
+	"\x19api/v1/risk_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\"\xa0\x01\n" +
 	"\x19RiskPositionChangeRequest\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x127\n" +
-	"\tdirection\x18\x02 \x01(\x0e2\x19.v1.RiskPositionDirectionR\tdirection\"<\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12.\n" +
+	"\x13above_deployment_id\x18\x02 \x01(\tR\x11aboveDeploymentId\x12.\n" +
+	"\x13below_deployment_id\x18\x03 \x01(\tR\x11belowDeploymentId\"<\n" +
 	"\x15RiskAdjustmentRequest\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\xa5\x01\n" +
-	"\x16RiskAdjustmentResponse\x12!\n" +
-	"\x04risk\x18\x01 \x01(\v2\r.storage.RiskR\x04risk\x12%\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\x16\n" +
+	"\x14ResetAllRisksRequest\"G\n" +
+	"\x15ResetAllRisksResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xb7\x01\n" +
+	"\x16RiskAdjustmentResponse\x123\n" +
+	"\n" +
+	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
+	"deployment\x12%\n" +
 	"\x0eoriginal_score\x18\x02 \x01(\x02R\roriginalScore\x12'\n" +
 	"\x0feffective_score\x18\x03 \x01(\x02R\x0eeffectiveScore\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage*n\n" +
-	"\x15RiskPositionDirection\x12'\n" +
-	"#RISK_POSITION_DIRECTION_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10RISK_POSITION_UP\x10\x01\x12\x16\n" +
-	"\x12RISK_POSITION_DOWN\x10\x022\xa7\x02\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage2\xa1\x03\n" +
 	"\vRiskService\x12\x92\x01\n" +
 	"\x1cChangeDeploymentRiskPosition\x12\x1d.v1.RiskPositionChangeRequest\x1a\x1a.v1.RiskAdjustmentResponse\"7\x82\xd3\xe4\x93\x021:\x01*\",/v1/risk/deployment/{deployment_id}/position\x12\x82\x01\n" +
-	"\x13ResetDeploymentRisk\x12\x19.v1.RiskAdjustmentRequest\x1a\x1a.v1.RiskAdjustmentResponse\"4\x82\xd3\xe4\x93\x02.:\x01*\")/v1/risk/deployment/{deployment_id}/resetB'\n" +
+	"\x13ResetDeploymentRisk\x12\x19.v1.RiskAdjustmentRequest\x1a\x1a.v1.RiskAdjustmentResponse\"4\x82\xd3\xe4\x93\x02.:\x01*\")/v1/risk/deployment/{deployment_id}/reset\x12x\n" +
+	"\x17ResetAllDeploymentRisks\x12\x18.v1.ResetAllRisksRequest\x1a\x19.v1.ResetAllRisksResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/risk/deployment/reset-allB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
 
 var (
@@ -281,27 +333,28 @@ func file_api_v1_risk_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_risk_service_proto_rawDescData
 }
 
-var file_api_v1_risk_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_v1_risk_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_api_v1_risk_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_risk_service_proto_goTypes = []any{
-	(RiskPositionDirection)(0),        // 0: v1.RiskPositionDirection
-	(*RiskPositionChangeRequest)(nil), // 1: v1.RiskPositionChangeRequest
-	(*RiskAdjustmentRequest)(nil),     // 2: v1.RiskAdjustmentRequest
-	(*RiskAdjustmentResponse)(nil),    // 3: v1.RiskAdjustmentResponse
-	(*storage.Risk)(nil),              // 4: storage.Risk
+	(*RiskPositionChangeRequest)(nil), // 0: v1.RiskPositionChangeRequest
+	(*RiskAdjustmentRequest)(nil),     // 1: v1.RiskAdjustmentRequest
+	(*ResetAllRisksRequest)(nil),      // 2: v1.ResetAllRisksRequest
+	(*ResetAllRisksResponse)(nil),     // 3: v1.ResetAllRisksResponse
+	(*RiskAdjustmentResponse)(nil),    // 4: v1.RiskAdjustmentResponse
+	(*storage.Deployment)(nil),        // 5: storage.Deployment
 }
 var file_api_v1_risk_service_proto_depIdxs = []int32{
-	0, // 0: v1.RiskPositionChangeRequest.direction:type_name -> v1.RiskPositionDirection
-	4, // 1: v1.RiskAdjustmentResponse.risk:type_name -> storage.Risk
-	1, // 2: v1.RiskService.ChangeDeploymentRiskPosition:input_type -> v1.RiskPositionChangeRequest
-	2, // 3: v1.RiskService.ResetDeploymentRisk:input_type -> v1.RiskAdjustmentRequest
-	3, // 4: v1.RiskService.ChangeDeploymentRiskPosition:output_type -> v1.RiskAdjustmentResponse
-	3, // 5: v1.RiskService.ResetDeploymentRisk:output_type -> v1.RiskAdjustmentResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 0: v1.RiskAdjustmentResponse.deployment:type_name -> storage.Deployment
+	0, // 1: v1.RiskService.ChangeDeploymentRiskPosition:input_type -> v1.RiskPositionChangeRequest
+	1, // 2: v1.RiskService.ResetDeploymentRisk:input_type -> v1.RiskAdjustmentRequest
+	2, // 3: v1.RiskService.ResetAllDeploymentRisks:input_type -> v1.ResetAllRisksRequest
+	4, // 4: v1.RiskService.ChangeDeploymentRiskPosition:output_type -> v1.RiskAdjustmentResponse
+	4, // 5: v1.RiskService.ResetDeploymentRisk:output_type -> v1.RiskAdjustmentResponse
+	3, // 6: v1.RiskService.ResetAllDeploymentRisks:output_type -> v1.ResetAllRisksResponse
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_risk_service_proto_init() }
@@ -314,14 +367,13 @@ func file_api_v1_risk_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_risk_service_proto_rawDesc), len(file_api_v1_risk_service_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      0,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_v1_risk_service_proto_goTypes,
 		DependencyIndexes: file_api_v1_risk_service_proto_depIdxs,
-		EnumInfos:         file_api_v1_risk_service_proto_enumTypes,
 		MessageInfos:      file_api_v1_risk_service_proto_msgTypes,
 	}.Build()
 	File_api_v1_risk_service_proto = out.File

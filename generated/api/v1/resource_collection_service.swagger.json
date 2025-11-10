@@ -503,10 +503,6 @@
         "priority": {
           "type": "string",
           "format": "int64"
-        },
-        "effectiveRiskScore": {
-          "type": "number",
-          "format": "float"
         }
       },
       "title": "Next available tag: 10"
