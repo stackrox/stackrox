@@ -159,12 +159,16 @@ func (s *relayTestSuite) TestSemaphore() {
 
 func (s *relayTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
 	client := newMockSensorClient().withDelay(100 * time.Millisecond)
-	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Millisecond)
-	defer cancel()
+	ctx, cancel := context.WithCancel(s.ctx)
+
+	go func() {
+		<-client.upsertCalledChan
+		cancel()
+	}()
 
 	err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
 	s.Require().Error(err)
-	s.Contains(err.Error(), "context deadline exceeded")
+	s.Contains(err.Error(), "context canceled")
 }
 
 func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {

@@ -86,15 +86,19 @@ type mockSensorClient struct {
 	delay            time.Duration
 	err              error
 	response         *sensor.UpsertVirtualMachineIndexReportResponse
+	upsertCalledChan chan struct{}
 }
 
 func newMockSensorClient() *mockSensorClient {
 	return &mockSensorClient{
-		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
+		response:         &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
+		upsertCalledChan: make(chan struct{}),
 	}
 }
 
 func (c *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	c.upsertCalledChan <- struct{}{}
+
 	select {
 	case <-time.After(c.delay):
 		c.capturedRequests = append(c.capturedRequests, req)
