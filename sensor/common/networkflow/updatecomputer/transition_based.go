@@ -34,6 +34,7 @@ const (
 	updateActionSkip   = "skip"
 
 	maxUpdateSize = 10000
+	maxCacheSize  = 60000
 )
 
 // closedConnEntry stores timestamp information for recently closed connections
@@ -184,6 +185,8 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 	if features.NetworkFlowBatching.Enabled() {
+		// Limit cache size, prioritizing closed connections over open ones
+		c.cachedUpdatesConn = limitCacheSize(c.cachedUpdatesConn, maxCacheSize, isConnClosed)
 		if len(c.cachedUpdatesConn) > maxUpdateSize {
 			update := c.cachedUpdatesConn[:maxUpdateSize]
 			c.cachedUpdatesConn = c.cachedUpdatesConn[maxUpdateSize:]
@@ -195,6 +198,61 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	}
 	// Return concatenated past and current updates.
 	return c.cachedUpdatesConn
+}
+
+// isConnClosed returns true if the network flow represents a closed connection.
+// A flow is closed if its LastSeenTimestamp is not InfiniteFuture (which represents an open connection).
+func isConnClosed(flow *storage.NetworkFlow) bool {
+  ts := flow.GetLastSeenTimestamp()
+  if ts == nil {
+    return false
+  }
+
+  return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+}
+
+// isEndpointClosed returns true if the network endpoint represents a closed endpoint.
+func isEndpointClosed(endpoint *storage.NetworkEndpoint) bool {
+  ts := endpoint.GetLastActiveTimestamp()
+  if ts == nil {
+    return false
+  }
+
+  return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+}
+
+
+// limitCacheSize limits the cache to maxSize by discarding open events first,
+// since sending an open event without a closing event would result in stale
+// connections and endpoints.
+func limitCacheSize[T any](cache []T, maxSize int, isClosed func(T) bool) []T {
+	if len(cache) <= maxSize {
+		return cache
+	}
+
+	openCount := 0
+	for _, item := range cache {
+		if !isClosed(item) {
+			openCount++
+		}
+	}
+
+	toDiscard := len(cache) - maxSize
+
+	result := make([]T, 0, maxSize)
+	discarded := 0
+	for _, item := range cache {
+		if !isClosed(item) && discarded < toDiscard {
+			discarded++
+			continue
+		}
+		result = append(result, item)
+		if len(result) == maxSize {
+			return result
+		}
+	}
+
+	return result
 }
 
 // categorizeUpdate determines whether an update to Central should be sent for a given enrichment update.
@@ -340,6 +398,8 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	}
 	// Return concatenated past and current updates.
 	if features.NetworkFlowBatching.Enabled() {
+		// Limit cache size, prioritizing closed endpoints over open ones
+		c.cachedUpdatesEp = limitCacheSize(c.cachedUpdatesEp, maxCacheSize, isEndpointClosed)
 		if len(c.cachedUpdatesEp) > maxUpdateSize {
 			epUpdate := c.cachedUpdatesEp[:maxUpdateSize]
 			c.cachedUpdatesEp = c.cachedUpdatesEp[maxUpdateSize:]
