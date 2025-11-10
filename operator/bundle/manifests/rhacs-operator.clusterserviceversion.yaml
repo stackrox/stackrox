@@ -953,6 +953,13 @@ spec:
         path: central.adminPassword.adminPasswordSecretReference
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: The version of the reconciled release.
+        displayName: Reconciled Version
+        path: reconciledVersion
+      - description: ObservedGeneration is the generation most recently observed by
+          the controller.
+        displayName: Observed Generation
+        path: observedGeneration
       version: v1alpha1
     - description: 'SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is
