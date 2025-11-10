@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/schema"
+	frozenPolicySchema "github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policy"
+	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policycategory"
+	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policycategoryedge"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -35,9 +37,9 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 
 	// Create the schemas and tables required for the pre-migration dataset
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePolicyCategoriesStmt)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePolicyCategoryEdgesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), frozenPolicySchema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), policycategory.CreateTablePolicyCategoriesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), policycategoryedge.CreateTablePolicyCategoryEdgesStmt)
 }
 
 func (s *migrationTestSuite) TestMigration() {
@@ -50,7 +52,7 @@ func (s *migrationTestSuite) TestMigration() {
 			Id:   policyID,
 			Name: "Test Policy " + uuid.NewV4().String(),
 		}
-		policySchema, err := schema.ConvertPolicyFromProto(policy)
+		policySchema, err := frozenPolicySchema.ConvertPolicyFromProto(policy)
 		s.Require().NoError(err)
 		s.Require().NoError(s.gormDB.Create(policySchema).Error)
 	}
@@ -79,7 +81,7 @@ func (s *migrationTestSuite) TestMigration() {
 			Id:   categoryID,
 			Name: name,
 		}
-		categorySchema, err := schema.ConvertPolicyCategoryFromProto(category)
+		categorySchema, err := policycategory.ConvertPolicyCategoryFromProto(category)
 		s.Require().NoError(err)
 		s.Require().NoError(s.gormDB.Create(categorySchema).Error)
 	}
@@ -92,7 +94,7 @@ func (s *migrationTestSuite) TestMigration() {
 			PolicyId:   policyID,
 			CategoryId: categoryIDs[i],
 		}
-		edgeSchema, err := schema.ConvertPolicyCategoryEdgeFromProto(edge)
+		edgeSchema, err := policycategoryedge.ConvertPolicyCategoryEdgeFromProto(edge)
 		s.Require().NoError(err)
 		s.Require().NoError(s.gormDB.Create(edgeSchema).Error)
 	}
@@ -106,7 +108,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(migration.Run(dbs))
 
 	// Verify that all edges now point to the most capitalized category
-	var edges []*schema.PolicyCategoryEdges
+	var edges []*policycategoryedge.PolicyCategoryEdges
 	result := s.gormDB.Find(&edges)
 	s.Require().NoError(result.Error)
 	s.Require().Len(edges, 5, "Should have 5 edges after migration")
@@ -117,7 +119,7 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	// Verify that the inferior categories were deleted
-	var categories []*schema.PolicyCategories
+	var categories []*policycategory.PolicyCategories
 	result = s.gormDB.Find(&categories)
 	s.Require().NoError(result.Error)
 	s.Require().Len(categories, 1, "Should have only 1 category after migration (the most capitalized one)")

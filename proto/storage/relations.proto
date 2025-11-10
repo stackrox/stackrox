@@ -95,5 +95,5 @@ message ClusterCVEEdge {
 message PolicyCategoryEdge {
   string id = 1; // @gotags: sql:"pk,id"
   string policy_id = 2; // @gotags: sql:"fk(Policy:id)" search:"Policy ID,hidden"
-  string category_id = 3; // @gotags: sql:"fk(PolicyCategory:id)"
+  string category_id = 3; // @gotags: sql:"fk(PolicyCategory:id)" search:"Policy Category ID,hidden"
 }

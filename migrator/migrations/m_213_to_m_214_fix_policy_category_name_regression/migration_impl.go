@@ -4,20 +4,23 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cloudflare/cfssl/log"
-	"github.com/lib/pq"
-	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/schema"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policy"
+	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policycategory"
+	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policycategoryedge"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 func migrate(database *types.Databases) error {
-	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, schema.CreateTablePolicyCategoriesStmt)
-	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, schema.CreateTablePoliciesStmt)
-	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, schema.CreateTablePolicyCategoryEdgesStmt)
+	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, policycategory.CreateTablePolicyCategoriesStmt)
+	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, policy.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, policycategoryedge.CreateTablePolicyCategoryEdgesStmt)
 	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
 	db := database.PostgresDB
+	categoryStore := policycategory.New(db)
+	edgesStore := policycategoryedge.New(db)
 
 	conn, err := db.Acquire(database.DBCtx)
 	defer conn.Release()
@@ -25,57 +28,40 @@ func migrate(database *types.Databases) error {
 		return err
 	}
 
-	rows, err := conn.Query(database.DBCtx, "SELECT id,name FROM policy_categories WHERE LOWER(name) in (SELECT LOWER(name) FROM policy_categories GROUP BY LOWER(name) HAVING COUNT(name) > 1);")
-	if err != nil {
-		return err
-	}
-
-	categories, err := readRows(rows)
+	categories := make(map[string][]*storage.PolicyCategory, 0)
+	err = categoryStore.GetByQueryFn(database.DBCtx, search.EmptyQuery(), func(category *storage.PolicyCategory) error {
+		categories[strings.ToLower(category.GetName())] = append(categories[strings.ToLower(category.GetName())], category)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
 	uppercaseRegex := regexp.MustCompile("[A-Z]")
 	for categoryNameLower, currentCategories := range categories {
-		currentCandidate := &schema.PolicyCategories{}
+		currentCandidate := &storage.PolicyCategory{}
 		var categoryIds []string
 		for _, category := range currentCategories {
-			categoryIds = append(categoryIds, category.ID)
+			categoryIds = append(categoryIds, category.GetId())
 			if len(uppercaseRegex.FindAllStringIndex(category.Name, -1)) >= len(uppercaseRegex.FindAllStringIndex(currentCandidate.Name, -1)) {
 				currentCandidate = category
 			}
 		}
-		_, err = db.Exec(database.DBCtx, "UPDATE policy_category_edges SET categoryid = $1 WHERE categoryid = ANY($2::text[])", currentCandidate.ID, pq.Array(categoryIds))
+		edgesToUpdate := make([]*storage.PolicyCategoryEdge, 0)
+		err = edgesStore.GetByQueryFn(database.DBCtx, search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryID, categoryIds...).ProtoQuery(), func(edge *storage.PolicyCategoryEdge) error {
+			edge.CategoryId = currentCandidate.GetId()
+			edgesToUpdate = append(edgesToUpdate, edge)
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		_, err = db.Exec(database.DBCtx, "DELETE FROM policy_categories WHERE LOWER(name) = $1 AND id != $2", categoryNameLower, currentCandidate.ID)
+		err = edgesStore.UpsertMany(database.DBCtx, edgesToUpdate)
+		_, err = db.Exec(database.DBCtx, "DELETE FROM policy_categories WHERE LOWER(name) = $1 AND id != $2", categoryNameLower, currentCandidate.GetId())
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func readRows(rows *postgres.Rows) (map[string][]*schema.PolicyCategories, error) {
-	res := make(map[string][]*schema.PolicyCategories)
-
-	for rows.Next() {
-		var id string
-		var name string
-
-		if err := rows.Scan(&id, &name); err != nil {
-			log.Errorf("Error scanning row: %v", err)
-			return nil, err
-		}
-
-		category := &schema.PolicyCategories{
-			ID:   id,
-			Name: name,
-		}
-		res[strings.ToLower(name)] = append(res[strings.ToLower(name)], category)
-	}
-
-	return res, rows.Err()
 }
