@@ -11,8 +11,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
@@ -22,11 +20,9 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
-	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -68,35 +64,18 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
 
-	var imgDataStore imageDataStore.DataStore
-	var imgV2DataStore imageV2Datastore.DataStore
-	if features.FlattenImageData.Enabled() {
-		imgV2DataStore = resolvers.CreateTestImageV2V2Datastore(s.T(), s.testDB, mockCtrl)
-		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-			imgV2DataStore,
-			imagesView.NewImageView(s.testDB.DB),
-			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			resolvers.CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
-			imagecve.NewCVEView(s.testDB.DB),
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-		)
-	} else {
-		imgDataStore = resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-			imgDataStore,
-			imagesView.NewImageView(s.testDB.DB),
-			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-			imagecve.NewCVEView(s.testDB.DB),
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-		)
-	}
+	imgDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+		imgDataStore,
+		imagesView.NewImageView(s.testDB.DB),
+		resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+		resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+		imagecve.NewCVEView(s.testDB.DB),
+		imagecveflat.NewCVEFlatView(s.testDB.DB),
+		imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+		deploymentsView.NewDeploymentView(s.testDB.DB),
+	)
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
@@ -111,7 +90,6 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)
-	s.truncateTable(postgresSchema.ImagesV2TableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 }
@@ -216,13 +194,8 @@ func (s *ReportingWithCollectionsTestSuite) truncateTable(name string) {
 
 func (s *ReportingWithCollectionsTestSuite) upsertManyImages(images []*storage.Image) {
 	for _, img := range images {
-		if features.FlattenImageData.Enabled() {
-			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(img))
-			s.NoError(err)
-		} else {
-			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
-			s.NoError(err)
-		}
+		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
+		s.NoError(err)
 	}
 }
 

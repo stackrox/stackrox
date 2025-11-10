@@ -422,7 +422,7 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 		}
 		images := make([]*storage.Image, 0, len(deployment.GetContainers()))
 		for _, c := range deployment.GetContainers() {
-			img, ok := imageMap[c.GetImage().GetId()]
+			img, ok := imageMap[c.GetImage().GetIdV2()]
 			if ok {
 				images = append(images, imageUtils.ConvertToV1(img))
 			} else {
