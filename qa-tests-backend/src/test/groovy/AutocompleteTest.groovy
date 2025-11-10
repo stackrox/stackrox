@@ -13,17 +13,11 @@ class AutocompleteTest extends BaseSpecification {
     private static final String GROUP_AUTOCOMPLETE = "GROUP"
 
     SearchCategory getVulnSearchCategory() {
-        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
-            return SearchCategory.IMAGE_VULNERABILITIES_V2
-        }
-        return SearchCategory.IMAGE_VULNERABILITIES
+        return SearchCategory.IMAGE_VULNERABILITIES_V2
     }
 
     SearchCategory getComponentSearchCategory() {
-        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
-            return SearchCategory.IMAGE_COMPONENTS_V2
-        }
-        return SearchCategory.IMAGE_COMPONENTS
+        return SearchCategory.IMAGE_COMPONENTS_V2
     }
 
     @Tag("BAT")
