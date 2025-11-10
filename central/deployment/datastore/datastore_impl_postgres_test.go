@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
