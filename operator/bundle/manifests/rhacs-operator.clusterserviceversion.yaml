@@ -1262,14 +1262,15 @@ spec:
           checking host-level configurations.
         displayName: Compliance Settings
         path: perNode.compliance
-      - description: Settings for the SFA container, which is responsible for file
-          activity monitoring on the Node.
-        displayName: SFA
-        path: perNode.fact
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
+      - description: 'Settings for the Sensitive File Activity container, which is
+
+          responsible for file activity monitoring on the Node.'
+        displayName: SFA
+        path: perNode.sfa
       - description: 'To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security
 
@@ -1334,7 +1335,7 @@ spec:
 
           for an overview of default resource requirements and a sizing guide.'
         displayName: Resources
-        path: perNode.fact.resources
+        path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Allows overriding the default resource settings for this component.
@@ -1342,7 +1343,7 @@ spec:
 
           for an overview of default resource requirements and a sizing guide.'
         displayName: Resources
-        path: perNode.nodeInventory.resources
+        path: perNode.sfa.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Should process baselines be automatically locked when the observation
