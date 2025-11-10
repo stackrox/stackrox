@@ -13,10 +13,14 @@ const (
 	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
 )
 
+// The following paths are the bare minimum supported for the
+// file activity tech preview. This is to control and minimize the
+// scale/quantity of runtime events, and prove the feature before
+// widening support to an arbitrary list of files.
 var filePathAllowedStrings = []string{
 	"/etc/passwd",
 	"/etc/shadow",
-	"/etc/sshd/sshd_config",
+	"/etc/ssh/sshd_config",
 	"/etc/sudoers",
 }
 

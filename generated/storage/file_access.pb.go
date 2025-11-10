@@ -250,13 +250,13 @@ type FileAccess_File struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Relevant to deployment-based events, this is the path of a file in the
 	// container.
-	// e.g. if /etc/passwd is mounted to /tmp/etc/passwd in the container,
-	// mounted_path will be /tmp/etc/passwd when accessed from within the container
+	// e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
+	// is accessed from within the container: mounted_path will be /tmp/etc/passwd
 	MountedPath string `protobuf:"bytes,1,opt,name=mounted_path,json=mountedPath,proto3" json:"mounted_path,omitempty" search:"Mounted File Path"` // @gotags: search:"Mounted File Path"
 	// The path on the node file system. This is relevant to both deployment- and
 	// node-based events.
-	// e.g. if /etc/passwd is mounted to /tmp/etc/passwd in the container,
-	// node_path will be /etc/passwd when accessed from within the container
+	// e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
+	// is accessed from within the container: node_path will be /etc/passwd
 	NodePath      string                   `protobuf:"bytes,2,opt,name=node_path,json=nodePath,proto3" json:"node_path,omitempty" search:"Node File Path"` // @gotags: search:"Node File Path"
 	Meta          *FileAccess_FileMetadata `protobuf:"bytes,3,opt,name=meta,proto3" json:"meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
