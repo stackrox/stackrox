@@ -98,14 +98,26 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 
 - Always check existing services before implementing new endpoints
 - Use cancellation for heavy queries to prevent memory leaks
-- Avoid creating wrapper hooks around `useRestQuery`—pass fetch functions directly
 
 ### State Management
 
-- **Prefer React built-ins:** `useState`, `useReducer`, and React Context for new code
-- **Avoid Redux/Redux-Saga:** Only modify existing code when migrating away
-- **Component state:** Use `useState` for component-specific data
-- **Shared state:** Use React Context for cross-component state
+**Hierarchy of preferred approaches:**
+
+1. **Component state first:** Use `useState` for data that only one component needs
+2. **Prop drilling:** Pass state down through props to child components if needed
+3. **React Context:** Use if prop drilling becomes excessive (lift state to closest shared ancestor first)
+4. **Redux/Redux-Saga:** Only modify existing Redux code — never add new Redux code for new features
+
+**Decision tree:**
+- Does only one component use this state? → `useState`
+- Do a few related components need it? → Find closest ancestor, pass props
+- Lots of prop drilling? → Ask developer preference; consider Context if approved
+- State already in Redux? → Only modify it there, don't duplicate elsewhere
+
+**Best practices:**
+- **No state duplication:** Never sync the same data in multiple places — single source of truth
+- **Complex state:** Use `useReducer` instead of multiple `useState` calls for related fields
+- **Custom hooks:** Extract state logic into a hook when it's reused or complex (e.g., `useFormState`, `useFilters`)
 
 ### Performance
 
@@ -117,35 +129,18 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 ### Styling
 
 - **Use PatternFly components** for consistent design and accessibility
+- **Avoid custom CSS** and PatternFly style overrides whenever possible
+- **Use PatternFly layout components** (Flex, Split, Stack, Bullseye) instead of organizing components with utility classes or CSS
+- **Avoid plain HTML elements** when a PatternFly alternative exists (Form, Text, Title, Table)
 - **Use PatternFly CSS variables** for custom styling
 - **No CSS-in-JS:** Avoid styled-components
 - **No Tailwind:** Use PatternFly utilities
-- **Custom CSS:** CSS modules or plain CSS when PatternFly doesn't provide what you need
 
 ### Refactoring & Pattern Changes
 
 - **Search first** with Grep/Glob for all occurrences before changing a pattern
 - **Assess scope** before starting work
-- **Batch fixes** all instances at once
 - **Test after** to verify linting/type-checking passes
-
-### RBAC (Role-Based Access Control)
-
-Always check permissions when:
-
-- Adding action components (buttons, modals, forms)
-- Creating navigation links
-- Implementing data fetching or mutations
-- Rendering conditional UI
-
-**Common pattern:**
-
-```typescript
-const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-const hasReadAccessForResourceName = hasReadAccess('ResourceName');
-```
-
-**Cross-link validation:** When Component A links to Page B, ensure users have access to both.
 
 ---
 
@@ -162,40 +157,6 @@ const hasReadAccessForResourceName = hasReadAccess('ResourceName');
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
 
 **For detailed testing guidance:** See [apps/platform/README.md#testing](./apps/platform/README.md#testing)
-
----
-
-## Git Workflow
-
-### Commit Message Format
-
-- Use conventional commit format: `type: description` (e.g., `feat:`, `fix:`, `chore:`, `test:`)
-- Default to `chore:` if unsure of the type
-- Write messages explaining **why**, not just **what**
-- Keep messages **concise and focused** — only include relevant information for a reviewer
-
-**Example:**
-
-```
-feat: add dark mode toggle to settings
-
-Users requested the ability to switch themes. This implementation
-uses PatternFly's theme variables for consistency.
-```
-
-**Required:**
-
-- Sign off commits with `-s` flag
-
-**Prohibited:**
-
-- Do NOT include "🤖 Generated with Claude Code" or similar markers
-- Do NOT add any co-author lines
-- Do NOT mention Claude as a contributor
-
-### General Workflow
-
-- Don't push changes or create PRs — let the developer handle that
 
 ---
 
