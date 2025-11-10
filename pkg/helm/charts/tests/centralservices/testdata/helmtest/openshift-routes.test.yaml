@@ -47,35 +47,21 @@ tests:
       .routes["central"] | assertThat(. == null)
       .routes["central-mtls"] | assertThat(. == null)
       .routes["central-reencrypt"] | assertThat(. == null)
-  - name: "routes have HTTP redirect enabled by default"
+  - name: "passthrough route has HTTP redirect enabled"
     set:
       central.exposure.route.enabled: true
-      central.exposure.route.reencrypt.enabled: true
+      central.exposure.route.reencrypt.enabled: false
     expect: |
       .routes["central"] | [
           assertThat(. != null),
           assertThat(.spec.tls.insecureEdgeTerminationPolicy == "Redirect")
         ]
-      .routes["central-reencrypt"] | [
-          assertThat(. != null),
-          assertThat(.spec.tls.insecureEdgeTerminationPolicy == "Redirect")
-        ]
-  - name: "passthrough route HTTP redirect can be disabled"
-    set:
-      central.exposure.route.enabled: true
-      central.exposure.route.redirectInsecure: false
-    expect: |
-      .routes["central"] | [
-          assertThat(. != null),
-          assertThat(.spec.tls.insecureEdgeTerminationPolicy == null)
-        ]
-  - name: "reencrypt route HTTP redirect can be disabled"
+  - name: "reencrypt route has HTTP redirect enabled"
     set:
       central.exposure.route.enabled: true
       central.exposure.route.reencrypt.enabled: true
-      central.exposure.route.reencrypt.redirectInsecure: false
     expect: |
       .routes["central-reencrypt"] | [
           assertThat(. != null),
-          assertThat(.spec.tls.insecureEdgeTerminationPolicy == null)
+          assertThat(.spec.tls.insecureEdgeTerminationPolicy == "Redirect")
         ]

@@ -18,9 +18,7 @@ spec:
     targetPort: https
   tls:
     termination: passthrough
-{{- if ._rox.central.exposure.route.redirectInsecure }}
     insecureEdgeTerminationPolicy: Redirect
-{{- end }}
   to:
     kind: Service
     name: central
@@ -65,9 +63,7 @@ spec:
     targetPort: https
   tls:
     termination: reencrypt
-{{- if $reencryptConfig.redirectInsecure }}
     insecureEdgeTerminationPolicy: Redirect
-{{- end }}
     {{- with $reencryptConfig.tls }}
     {{- if .caCertificate }}
     caCertificate: |
