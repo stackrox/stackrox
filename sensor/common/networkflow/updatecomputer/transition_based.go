@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -31,6 +32,8 @@ const (
 	// updateAction represents a decision whether to update Central. Used in metric labels.
 	updateActionUpdate = "update"
 	updateActionSkip   = "skip"
+
+	maxUpdateSize = 10000
 )
 
 // closedConnEntry stores timestamp information for recently closed connections
@@ -180,6 +183,16 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	// Store into cache in case sending to Central fails.
 	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
+	if features.NetworkFlowBatching.Enabled() {
+		if len(c.cachedUpdatesConn) > maxUpdateSize {
+			update := c.cachedUpdatesConn[:maxUpdateSize]
+			c.cachedUpdatesConn = c.cachedUpdatesConn[maxUpdateSize:]
+			return update
+		}
+		update := c.cachedUpdatesConn
+		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
+		return update
+	}
 	// Return concatenated past and current updates.
 	return c.cachedUpdatesConn
 }
@@ -377,7 +390,7 @@ func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.
 }
 
 func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
-	if conns != nil {
+	if !features.NetworkFlowBatching.Enabled() && conns != nil {
 		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
 	}
 }
