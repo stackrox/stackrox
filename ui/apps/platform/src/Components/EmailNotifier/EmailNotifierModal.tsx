@@ -42,8 +42,8 @@ function EmailNotifierModal({
     function onSave(
         emailNotifier: EmailIntegrationFormValues
     ): Promise<FormResponseMessageWithData> {
-        return createIntegration('notifiers', emailNotifier).then((response) => {
-            return { isError: false, message: '', data: response };
+        return createIntegration('notifiers', emailNotifier).then((integration) => {
+            return { isError: false, message: '', data: integration };
         });
     }
 
