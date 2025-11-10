@@ -3,7 +3,7 @@ import { LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
 import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
-import { SignatureVerificationResult } from '../../types';
+import type { SignatureVerificationResult } from '../../types';
 import SignatureCountLabel from './SignatureCountLabel';
 import VerifiedSignatureLabel, { getVerifiedSignatureInResults } from './VerifiedSignatureLabel';
 

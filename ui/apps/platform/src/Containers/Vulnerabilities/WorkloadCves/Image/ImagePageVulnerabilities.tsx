@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import {
     Divider,
     DropdownItem,
@@ -12,43 +13,36 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
-import { SearchFilter } from 'types/search';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { SearchFilter } from 'types/search';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { Pagination as PaginationParam } from 'services/types';
+import type { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
-import {
-    SummaryCardLayout,
-    SummaryCard,
-} from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
+import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
-import {
-    imageComponentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import CvesByStatusSummaryCard, {
-    ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
 } from '../../components/CvesByStatusSummaryCard';
+import type { ResourceCountByCveSeverityAndStatus } from '../../components/CvesByStatusSummaryCard';
+import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import ImageVulnerabilitiesTable, {
-    ImageVulnerability,
     defaultColumns,
     imageVulnerabilitiesFragment,
     tableId,
 } from '../Tables/ImageVulnerabilitiesTable';
+import type { ImageVulnerability } from '../Tables/ImageVulnerabilitiesTable';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -57,16 +51,20 @@ import {
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
-import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
+import { imageMetadataContextFragment } from '../Tables/table.utils';
+import type { ImageMetadataContext } from '../Tables/table.utils';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
-import ExceptionRequestModal, {
-    ExceptionRequestModalProps,
-} from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import ExceptionRequestModal from '../../components/ExceptionRequestModal/ExceptionRequestModal';
+import type { ExceptionRequestModalProps } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import {
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+} from '../../searchFilterConfig';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -104,7 +102,7 @@ export type ImagePageVulnerabilitiesProps = {
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
-    additionalToolbarItems?: React.ReactNode;
+    additionalToolbarItems?: ReactNode;
     searchFilter: SearchFilter;
     setSearchFilter: (filter: SearchFilter) => void;
 };

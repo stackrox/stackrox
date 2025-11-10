@@ -1,9 +1,10 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties } from 'react';
 import { Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
-import { SignatureVerificationResult } from '../../types';
+import type { SignatureVerificationResult } from '../../types';
 
 export function getVerifiedSignatureInResults(
     results: SignatureVerificationResult[] | null | undefined

@@ -8,13 +8,14 @@ import {
     HelperTextItem,
     TextInput,
 } from '@patternfly/react-core';
-import { FormikHelpers, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikHelpers } from 'formik';
 import * as yup from 'yup';
 
-import { UseRestQueryReturn } from 'hooks/useRestQuery';
-import { UseRestMutationReturn } from 'hooks/useRestMutation';
+import type { UseRestQueryReturn } from 'hooks/useRestQuery';
+import type { UseRestMutationReturn } from 'hooks/useRestMutation';
 import useAnalytics, { WATCH_IMAGE_SUBMITTED } from 'hooks/useAnalytics';
-import { WatchedImage } from 'types/image.proto';
+import type { WatchedImage } from 'types/image.proto';
 
 const validationSchema = yup.object({
     imageName: yup.string().required('A valid image name is required'),

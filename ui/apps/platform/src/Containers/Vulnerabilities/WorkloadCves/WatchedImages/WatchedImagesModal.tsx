@@ -1,4 +1,5 @@
-import React, { CSSProperties, useCallback } from 'react';
+import React, { useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import {
     Alert,
     Bullseye,
