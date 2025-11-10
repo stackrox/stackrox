@@ -107,7 +107,7 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "allowed file path",
-			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/sshd/sshd_config"},
+			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/ssh/sshd_config"},
 			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
 			r:       allowedFilePathRegex,
 		},
