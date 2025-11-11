@@ -16,8 +16,8 @@ import { CompatRouter } from 'react-router-dom-v5-compat';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 
-import { AnyAction } from 'redux';
-import { ThunkAction, ThunkDispatch } from 'redux-thunk';
+import type { AnyAction } from 'redux';
+import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { ApolloProvider } from '@apollo/client';
 
 import 'css.imports';
