@@ -235,7 +235,6 @@ func limitCacheSize[T any](cache []T, maxSize int, isClosed func(T) bool) []T {
 
 	discarded := 0
 	for i, item := range cache {
-			
 		if !isClosed(item) && discarded < toDiscard {
 			discarded++
 		} else {
@@ -247,7 +246,7 @@ func limitCacheSize[T any](cache []T, maxSize int, isClosed func(T) bool) []T {
 		}
 	}
 
-	return cache[:maxSize]
+	return cache[:idx]
 }
 
 // categorizeUpdate determines whether an update to Central should be sent for a given enrichment update.
