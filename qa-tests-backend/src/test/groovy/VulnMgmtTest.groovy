@@ -151,7 +151,7 @@ fragment cveFields on ImageVulnerability {
 
     @Unroll
     // TODO(ROX-29222): Fix the test for getting cves by component
-    @IgnoreIf({ Env.ROX_FLATTEN_CVE_DATA == "true" })
+    @Ignore("ROX-29222: Fix the test for getting cves by component")
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()
