@@ -32,9 +32,6 @@ const (
 	// updateAction represents a decision whether to update Central. Used in metric labels.
 	updateActionUpdate = "update"
 	updateActionSkip   = "skip"
-
-	maxUpdateSize = 10000
-	maxCacheSize  = 60000
 )
 
 // closedConnEntry stores timestamp information for recently closed connections
@@ -51,6 +48,9 @@ var (
 	ConnectionEnrichedEntity EnrichedEntity = "connection"
 	EndpointEnrichedEntity   EnrichedEntity = "endpoint"
 	ProcessEnrichedEntity    EnrichedEntity = "process"
+
+	NetworkFlowMaxUpdateSize int = env.NetworkFlowMaxUpdateSize.IntegerSetting()
+	NetworkFlowMaxCacheSize  int = env.NetworkFlowMaxCacheSize.IntegerSetting()
 )
 
 // TransitionType describes the type of transition of states - in the previous tick and in the current tick -
@@ -186,10 +186,10 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 	if features.NetworkFlowBatching.Enabled() {
 		// Limit cache size, prioritizing closed connections over open ones
-		c.cachedUpdatesConn = limitCacheSize(c.cachedUpdatesConn, maxCacheSize, isConnClosed)
-		if len(c.cachedUpdatesConn) > maxUpdateSize {
-			update := c.cachedUpdatesConn[:maxUpdateSize]
-			c.cachedUpdatesConn = c.cachedUpdatesConn[maxUpdateSize:]
+		c.cachedUpdatesConn = limitCacheSize(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed)
+		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
+			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
+			c.cachedUpdatesConn = c.cachedUpdatesConn[NetworkFlowMaxUpdateSize:]
 			return update
 		}
 		update := c.cachedUpdatesConn
@@ -393,10 +393,10 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	// Return concatenated past and current updates.
 	if features.NetworkFlowBatching.Enabled() {
 		// Limit cache size, prioritizing closed endpoints over open ones
-		c.cachedUpdatesEp = limitCacheSize(c.cachedUpdatesEp, maxCacheSize, isEndpointClosed)
-		if len(c.cachedUpdatesEp) > maxUpdateSize {
-			epUpdate := c.cachedUpdatesEp[:maxUpdateSize]
-			c.cachedUpdatesEp = c.cachedUpdatesEp[maxUpdateSize:]
+		c.cachedUpdatesEp = limitCacheSize(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed)
+		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
+			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
+			c.cachedUpdatesEp = c.cachedUpdatesEp[NetworkFlowMaxUpdateSize:]
 			return epUpdate, c.cachedUpdatesProc
 		}
 		epUpdate := c.cachedUpdatesEp
