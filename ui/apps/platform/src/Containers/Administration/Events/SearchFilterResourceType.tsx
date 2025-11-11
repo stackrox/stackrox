@@ -20,17 +20,17 @@ function SearchFilterResourceType({
         setResourceType(selection === optionAll ? undefined : selection);
     }
 
-    const options = resourceTypes.map((resourceTypeArg) => (
-        <SelectOption key={resourceTypeArg} value={resourceTypeArg}>
-            {resourceTypeArg}
-        </SelectOption>
-    ));
-    options.push(
-        <Divider key="Divider" />,
+    const options = [
         <SelectOption key="All" value={optionAll}>
             {optionAll}
-        </SelectOption>
-    );
+        </SelectOption>,
+        <Divider key="Divider" />,
+        ...resourceTypes.map((resourceTypeArg) => (
+            <SelectOption key={resourceTypeArg} value={resourceTypeArg}>
+                {resourceTypeArg}
+            </SelectOption>
+        )),
+    ];
 
     return (
         <SelectSingle
