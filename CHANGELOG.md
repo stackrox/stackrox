@@ -9,6 +9,15 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.9.1]
+
+### Technical Changes
+
+- ROX-31566: Optimized the database migration for process indicators added in version 4.9 by implementing a strategy to drop indices before migration and rebuild them afterward, significantly improving performance.
+- ROX-31138: Resolved an issue where automatically rescanned images failed to suppress deferred CVEs in the RHACS Web UI, causing them to reappear in results and reports.
+- ROX-31554: Fixed an issue where Central would panic and terminate Sensor connections, when a Sensor sent an event type unknown to Central. This occurred specifically when a Sensor version 4.9 was paired with Central version 4.7 or 4.8 on a cluster using OpenShift Virtualization. This fix ensures Central operates normally under these conditions and has also been applied to Central 4.9 to improve future compatibility with Sensors.
+- ROX-31552: Fixed an issue where Sensor would send VM data even though the feature flag `ROX_VIRTUAL_MACHINES` was not enabled, leading to issues tracked with ROX-31554.
+
 ## [4.9.0]
 
 ### Added Features
