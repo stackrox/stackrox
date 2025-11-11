@@ -435,7 +435,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		} else {
 			t.Logf("ERROR: Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
 		}
-		// Log all conditions if any (only if deployment object was returned)
+		// Log deployment conditions only if deployment was partially created (useful for debugging failures)
 		if createdDeployment != nil && len(createdDeployment.Status.Conditions) > 0 {
 			t.Logf("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
 			for i, cond := range createdDeployment.Status.Conditions {
