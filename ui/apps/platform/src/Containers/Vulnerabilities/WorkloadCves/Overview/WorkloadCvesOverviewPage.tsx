@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Button,
     Card,
@@ -49,14 +49,14 @@ import {
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
 import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import {
-    parseQuerySearchFilter,
+    getNamespaceViewPagePath,
     getVulnStateScopedQueryString,
     getZeroCveScopedQueryString,
-    getNamespaceViewPagePath,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import {
-    getWorkloadCveOverviewDefaultSortOption,
     getDefaultZeroCveSortOption,
+    getWorkloadCveOverviewDefaultSortOption,
     getWorkloadCveOverviewSortFields,
     syncSeveritySortOption,
 } from '../../utils/sortUtils';

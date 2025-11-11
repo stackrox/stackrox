@@ -1,8 +1,7 @@
-import React from 'react';
-import { LabelGroup, Label } from '@patternfly/react-core';
+import { Label, LabelGroup } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
-import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
+import { getDateTime, getDistanceStrict } from 'utils/dateUtils';
 import type { SignatureVerificationResult } from '../../types';
 import SignatureCountLabel from './SignatureCountLabel';
 import VerifiedSignatureLabel, { getVerifiedSignatureInResults } from './VerifiedSignatureLabel';

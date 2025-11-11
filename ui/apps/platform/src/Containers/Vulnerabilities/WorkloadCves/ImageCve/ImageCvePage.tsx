@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Breadcrumb,
@@ -56,7 +56,7 @@ import AffectedImagesTable, {
 import type { ImageForCve } from '../Tables/AffectedImagesTable';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import type { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
+import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../../types';
 import AffectedDeploymentsTable, {
     deploymentsForCveFragment,
     tableId as affectedDeploymentsTableId,
@@ -66,7 +66,7 @@ import type { DeploymentForCve } from '../Tables/AffectedDeploymentsTable';
 import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import type { ResourceCountsByCveSeverity } from '../../components/BySeveritySummaryCard';
-import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { resourceCountByCveSeverityAndStatusFragment } from '../../components/CvesByStatusSummaryCard';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,

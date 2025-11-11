@@ -1,6 +1,5 @@
-import React from 'react';
 import type { CSSProperties } from 'react';
-import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Bullseye, Button, Icon } from '@patternfly/react-core';
 import { MinusCircleIcon } from '@patternfly/react-icons';
 

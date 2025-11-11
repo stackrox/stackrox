@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 

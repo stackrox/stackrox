@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import {
     Alert,
@@ -7,10 +7,10 @@ import {
     Divider,
     Flex,
     Modal,
-    pluralize,
     Spinner,
     Text,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 import noop from 'lodash/noop';
 

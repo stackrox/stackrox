@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import {
     Divider,
@@ -6,11 +5,11 @@ import {
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Split,
     SplitItem,
     Text,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import type { SearchFilter } from 'types/search';
@@ -35,7 +34,7 @@ import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
 } from '../../components/CvesByStatusSummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../../components/CvesByStatusSummaryCard';
-import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import ImageVulnerabilitiesTable, {
     defaultColumns,
@@ -62,8 +61,8 @@ import CompletedExceptionRequestModal from '../../components/ExceptionRequestMod
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import {
-    imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
 } from '../../searchFilterConfig';
 
 export const imageVulnerabilitiesQuery = gql`

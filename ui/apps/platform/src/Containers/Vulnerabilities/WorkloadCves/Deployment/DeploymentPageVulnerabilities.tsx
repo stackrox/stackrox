@@ -1,14 +1,13 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import {
     Divider,
     Flex,
     PageSection,
     Pagination,
-    pluralize,
     Split,
     SplitItem,
     Title,
+    pluralize,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import type { SearchFilter } from 'types/search';
@@ -33,17 +32,17 @@ import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
 } from '../../components/CvesByStatusSummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../../components/CvesByStatusSummaryCard';
-import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import {
-    parseQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
-    getVulnStateScopedQueryString,
     getStatusesForExceptionCount,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import {
-    imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
 } from '../../searchFilterConfig';
 import { formatVulnerabilityData, imageMetadataContextFragment } from '../Tables/table.utils';

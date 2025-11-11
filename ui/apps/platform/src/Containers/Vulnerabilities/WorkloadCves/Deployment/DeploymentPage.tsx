@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
+    Divider,
+    PageSection,
     Skeleton,
     Tab,
     TabTitleText,

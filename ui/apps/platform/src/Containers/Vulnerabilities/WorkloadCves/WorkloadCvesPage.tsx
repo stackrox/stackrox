@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 

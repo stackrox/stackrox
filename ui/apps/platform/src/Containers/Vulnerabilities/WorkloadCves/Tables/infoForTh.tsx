@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex, FlexItem } from '@patternfly/react-core';
 import type { ThProps } from '@patternfly/react-table';
 

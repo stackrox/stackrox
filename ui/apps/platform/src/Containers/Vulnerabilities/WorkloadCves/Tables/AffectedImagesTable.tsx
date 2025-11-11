@@ -1,8 +1,7 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
 import { LabelGroup } from '@patternfly/react-core';
-import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -19,11 +18,11 @@ import { isNonEmptyArray } from 'utils/type.utils';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import {
-    getIsSomeVulnerabilityFixable,
+    getEarliestDiscoveredAtTime,
     getHighestCvssScore,
     getHighestNvdCvssScore,
     getHighestVulnerabilitySeverity,
-    getEarliestDiscoveredAtTime,
+    getIsSomeVulnerabilityFixable,
 } from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
