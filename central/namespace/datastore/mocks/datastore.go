@@ -15,6 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -119,10 +120,10 @@ func (mr *MockDataStoreMockRecorder) GetNamespace(ctx, id any) *gomock.Call {
 }
 
 // GetNamespacesForSAC mocks base method.
-func (m *MockDataStore) GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error) {
+func (m *MockDataStore) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNamespacesForSAC")
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret0, _ := ret[0].([]effectiveaccessscope.Namespace)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

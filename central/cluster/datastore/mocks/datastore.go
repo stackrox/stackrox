@@ -17,6 +17,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -153,10 +154,10 @@ func (mr *MockDataStoreMockRecorder) GetClusters(ctx any) *gomock.Call {
 }
 
 // GetClustersForSAC mocks base method.
-func (m *MockDataStore) GetClustersForSAC() ([]*storage.Cluster, error) {
+func (m *MockDataStore) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClustersForSAC")
-	ret0, _ := ret[0].([]*storage.Cluster)
+	ret0, _ := ret[0].([]effectiveaccessscope.Cluster)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
