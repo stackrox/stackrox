@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
-	"gorm.io/gorm"
 )
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
@@ -853,21 +852,4 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	_, err = conn.Exec(ctx, prune)
 
 	return err
-}
-
-//// Used for testing
-
-func dropTableNetworkflow(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_flows_v2 CASCADE")
-}
-
-// Destroy destroys the tables
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNetworkflow(ctx, db)
-}
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, networkFlowsTable)
-	return New(db, clusterID, networktreeMgr)
 }
