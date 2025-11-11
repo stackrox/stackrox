@@ -285,7 +285,7 @@ function S3CompatibleIntegrationForm({
                         >
                             <SelectSingle
                                 id="externalBackup.schedule.weekly.day"
-                                value={String(values.externalBackup.schedule?.weekly?.day ?? '')}
+                                value={String(values.externalBackup.schedule?.weekly?.day ?? 0)}
                                 handleSelect={setFieldValue}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
