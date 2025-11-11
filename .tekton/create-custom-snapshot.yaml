@@ -169,7 +169,7 @@ spec:
     - name: wait-for-bundle-image
       params:
       - name: IMAGE
-        value: "$(params.bundle-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+        value: "$(params.bundle-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)"
       taskRef:
         params:
         - name: name
