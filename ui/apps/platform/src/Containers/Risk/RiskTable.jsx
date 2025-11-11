@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Alert, AlertActionCloseButton } from '@patternfly/react-core';
+import { Alert, AlertActionCloseButton, Button } from '@patternfly/react-core';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { changeDeploymentRiskPosition } from 'services/RiskService';
+import { changeDeploymentRiskPosition, resetAllDeploymentRisks } from 'services/RiskService';
 import DraggableRiskTable from './DraggableRiskTable';
 
 function RiskTable({
@@ -20,11 +20,11 @@ function RiskTable({
         setSelectedDeploymentId(row.deployment.id);
     }
 
-    async function handleReorder(fromIndex, toIndex) {
-        console.log(`[RiskTable] handleReorder called: fromIndex=${fromIndex}, toIndex=${toIndex}`);
+    async function handleReorder(deploymentId, aboveDeploymentId, belowDeploymentId) {
+        console.log(`[RiskTable] handleReorder called: deploymentId=${deploymentId}, above=${aboveDeploymentId}, below=${belowDeploymentId}`);
 
-        if (fromIndex === toIndex || isLoading) {
-            console.log('[RiskTable] Skipping reorder - same position or already loading');
+        if (isLoading) {
+            console.log('[RiskTable] Skipping reorder - already loading');
             return;
         }
 
@@ -32,16 +32,10 @@ function RiskTable({
         setErrorMessage('');
         setSuccessMessage('');
 
-        const movedRow = currentDeployments[fromIndex];
-        const deploymentId = movedRow.deployment.id;
-
-        // Determine direction based on indices
-        const direction = fromIndex < toIndex ? 'RISK_POSITION_DOWN' : 'RISK_POSITION_UP';
-
-        console.log(`[RiskTable] Calling API: deploymentId=${deploymentId}, direction=${direction}`);
+        console.log(`[RiskTable] Calling API with neighbor IDs`);
 
         try {
-            const response = await changeDeploymentRiskPosition(deploymentId, direction);
+            const response = await changeDeploymentRiskPosition(deploymentId, aboveDeploymentId, belowDeploymentId);
             console.log('[RiskTable] API call successful:', response);
             setSuccessMessage(response.message || 'Deployment position updated successfully');
             if (onRefreshData) {
@@ -53,6 +47,37 @@ function RiskTable({
                 error.response?.data?.message ||
                     error.message ||
                     'Failed to update deployment position'
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    async function handleResetAll() {
+        console.log('[RiskTable] handleResetAll called');
+
+        if (isLoading) {
+            console.log('[RiskTable] Skipping reset - already loading');
+            return;
+        }
+
+        setIsLoading(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        try {
+            const response = await resetAllDeploymentRisks();
+            console.log('[RiskTable] Reset All API call successful:', response);
+            setSuccessMessage(response.message || `Reset ${response.count} deployment risk adjustments`);
+            if (onRefreshData) {
+                onRefreshData();
+            }
+        } catch (error) {
+            console.error('[RiskTable] Reset All API call failed:', error);
+            setErrorMessage(
+                error.response?.data?.message ||
+                    error.message ||
+                    'Failed to reset all deployment risks'
             );
         } finally {
             setIsLoading(false);
@@ -81,6 +106,15 @@ function RiskTable({
                     className="pf-v5-u-mb-md"
                 />
             )}
+            <div className="pf-v5-u-mb-md">
+                <Button
+                    variant="secondary"
+                    onClick={handleResetAll}
+                    isDisabled={isLoading}
+                >
+                    Reset All Risk Adjustments
+                </Button>
+            </div>
             <DraggableRiskTable
                 currentDeployments={currentDeployments}
                 onRowClick={updateSelectedDeployment}

@@ -172,7 +172,7 @@ interface DraggableRiskTableProps {
     currentDeployments: DeploymentRow[];
     onRowClick: (row: DeploymentRow) => void;
     selectedDeploymentId?: string;
-    onReorder: (fromIndex: number, toIndex: number) => void;
+    onReorder: (deploymentId: string, aboveDeploymentId?: string, belowDeploymentId?: string) => void;
 }
 
 function DraggableRiskTableInner({
@@ -200,18 +200,25 @@ function DraggableRiskTableInner({
     const handleDragEnd = () => {
         console.log('[DraggableRiskTable] handleDragEnd called');
 
-        // Find which rows changed position
-        const originalIndices = currentDeployments.map((r) => r.deployment.id);
-        const newIndices = rows.map((r) => r.deployment.id);
+        // Find which deployment changed position
+        const originalIds = currentDeployments.map((r) => r.deployment.id);
+        const newIds = rows.map((r) => r.deployment.id);
 
-        console.log('[DraggableRiskTable] Original order:', originalIndices);
-        console.log('[DraggableRiskTable] New order:', newIndices);
+        console.log('[DraggableRiskTable] Original order:', originalIds);
+        console.log('[DraggableRiskTable] New order:', newIds);
 
-        for (let i = 0; i < newIndices.length; i++) {
-            const originalIndex = originalIndices.indexOf(newIndices[i]);
+        // Find the first deployment that moved
+        for (let i = 0; i < newIds.length; i++) {
+            const originalIndex = originalIds.indexOf(newIds[i]);
             if (originalIndex !== i) {
-                console.log(`[DraggableRiskTable] Calling onReorder(${originalIndex}, ${i}) for deployment ${newIndices[i]}`);
-                onReorder(originalIndex, i);
+                const movedDeploymentId = newIds[i];
+
+                // Get neighbor deployments at the new position
+                const aboveDeploymentId = i > 0 ? newIds[i - 1] : undefined;
+                const belowDeploymentId = i < newIds.length - 1 ? newIds[i + 1] : undefined;
+
+                console.log(`[DraggableRiskTable] Calling onReorder for deployment ${movedDeploymentId} with above=${aboveDeploymentId}, below=${belowDeploymentId}`);
+                onReorder(movedDeploymentId, aboveDeploymentId, belowDeploymentId);
                 break;
             }
         }
