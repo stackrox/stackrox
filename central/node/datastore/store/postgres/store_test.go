@@ -9,6 +9,7 @@ import (
 
 	nodeCveStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -20,14 +21,12 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 type NodesStoreSuite struct {
 	suite.Suite
-	ctx    context.Context
-	pool   postgres.DB
-	gormDB *gorm.DB
+	ctx  context.Context
+	pool postgres.DB
 }
 
 func TestNodesStore(t *testing.T) {
@@ -37,28 +36,17 @@ func TestNodesStore(t *testing.T) {
 func (s *NodesStoreSuite) SetupTest() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	source := pgtest.GetConnectionString(s.T())
-
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(s.ctx, config)
-	s.NoError(err)
-	Destroy(s.ctx, s.pool)
-
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.pool = pgtest.ForT(s.T())
 }
 
 func (s *NodesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	if s.gormDB != nil {
-		pgtest.CloseGormDB(s.T(), s.gormDB)
-	}
 }
 
 func (s *NodesStoreSuite) TestStore() {
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -109,7 +97,7 @@ func (s *NodesStoreSuite) TestStore() {
 }
 
 func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -147,7 +135,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	}
 	defer s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
 
-	store := CreateTableAndNewStore(s.ctx, s.T(), s.pool, s.gormDB, false)
+	store := New(s.pool, false, concurrency.NewKeyFence())
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -186,7 +174,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	s.Empty(newNode.GetScan().GetComponents()[0].GetVulnerabilities())
 
 	// Removed vulns should be marked orphaned in node_cves table
-	cveStore := nodeCveStore.CreateTableAndNewStore(s.ctx, s.pool, s.gormDB)
+	cveStore := nodeCveStore.New(s.pool)
 	orphanedCVEs, err := cveStore.GetByQuery(s.ctx, search.NewQueryBuilder().AddBools(search.CVEOrphaned, true).ProtoQuery())
 	s.NoError(err)
 	s.NotEmpty(orphanedCVEs)

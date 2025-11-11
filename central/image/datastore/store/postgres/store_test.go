@@ -8,9 +8,9 @@ import (
 
 	cveStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -33,18 +33,9 @@ func TestImagesStore(t *testing.T) {
 func (s *ImagesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
+	pool := pgtest.ForT(s.T())
 	defer pool.Close()
-
-	Destroy(ctx, pool)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
+	store := New(pool, false, concurrency.NewKeyFence())
 
 	metadata, err := store.GetManyImageMetadata(ctx, nil)
 	s.NoError(err)
@@ -111,17 +102,9 @@ func (s *ImagesStoreSuite) TestStore() {
 
 func (s *ImagesStoreSuite) TestNVDCVSS() {
 	ctx := sac.WithAllAccess(context.Background())
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	pool, err := postgres.New(ctx, config)
-	s.NoError(err)
+	pool := pgtest.ForT(s.T())
 	defer pool.Close()
-	Destroy(ctx, pool)
-
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
+	store := New(pool, false, concurrency.NewKeyFence())
 
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -146,7 +129,7 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	s.True(exists)
 	s.NotEmpty(foundImage)
 
-	cvePgStore := cveStore.CreateTableAndNewStore(ctx, pool, gormDB)
+	cvePgStore := cveStore.New(pool)
 	cves, err := cvePgStore.GetIDs(ctx)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(cves)
