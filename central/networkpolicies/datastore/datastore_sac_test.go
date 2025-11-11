@@ -41,17 +41,8 @@ type networkPolicySACSuite struct {
 }
 
 func (s *networkPolicySACSuite) SetupSuite() {
-	var err error
-	ctx := context.Background()
-	src := pgtest.GetConnectionString(s.T())
-	cfg, err := postgres.ParseConfig(src)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(ctx, cfg)
-	s.Require().NoError(err)
-	pgdbStore.Destroy(ctx, s.pool)
-	gormDB := pgtest.OpenGormDB(s.T(), src)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+	s.pool = pgtest.ForT(s.T())
+	s.storage = pgdbStore.New(s.pool)
 
 	mockCtrl := gomock.NewController(s.T())
 	undomock := undostoremock.NewMockUndoStore(mockCtrl)
