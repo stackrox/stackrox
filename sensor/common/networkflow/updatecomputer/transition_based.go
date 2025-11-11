@@ -203,24 +203,23 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 // isConnClosed returns true if the network flow represents a closed connection.
 // A flow is closed if its LastSeenTimestamp is not InfiniteFuture (which represents an open connection).
 func isConnClosed(flow *storage.NetworkFlow) bool {
-  ts := flow.GetLastSeenTimestamp()
-  if ts == nil {
-    return false
-  }
+	ts := flow.GetLastSeenTimestamp()
+	if ts == nil {
+		return false
+	}
 
-  return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
 }
 
 // isEndpointClosed returns true if the network endpoint represents a closed endpoint.
 func isEndpointClosed(endpoint *storage.NetworkEndpoint) bool {
-  ts := endpoint.GetLastActiveTimestamp()
-  if ts == nil {
-    return false
-  }
+	ts := endpoint.GetLastActiveTimestamp()
+	if ts == nil {
+		return false
+	}
 
-  return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
+	return ts.GetSeconds() != timestamp.InfiniteFuture.GoTime().Unix()
 }
-
 
 // limitCacheSize limits the cache to maxSize by discarding open events first,
 // since sending an open event without a closing event would result in stale
