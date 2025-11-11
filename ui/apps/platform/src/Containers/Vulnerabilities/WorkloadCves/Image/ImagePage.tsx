@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
@@ -13,8 +13,8 @@ import {
     PageSection,
     Skeleton,
     Tab,
-    Tabs,
     TabTitleText,
+    Tabs,
     Title,
     Tooltip,
 } from '@patternfly/react-core';
@@ -49,7 +49,7 @@ import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';

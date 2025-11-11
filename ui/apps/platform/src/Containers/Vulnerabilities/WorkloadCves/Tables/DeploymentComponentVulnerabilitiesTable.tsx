@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { LabelGroup } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -14,9 +13,9 @@ import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
+    flattenDeploymentComponentVulns,
     imageMetadataContextFragment,
     sortTableData,
-    flattenDeploymentComponentVulns,
 } from './table.utils';
 import type { DeploymentComponentVulnerability, ImageMetadataContext } from './table.utils';
 import DockerfileLayer from '../components/DockerfileLayer';

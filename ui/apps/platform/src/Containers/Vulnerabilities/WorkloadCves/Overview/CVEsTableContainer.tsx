@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQuery } from '@apollo/client';
 import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Bullseye, Button, Text } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
-import { Tbody, Tr, Td } from '@patternfly/react-table';
+import { Tbody, Td, Tr } from '@patternfly/react-table';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useURLSearch from 'hooks/useURLSearch';

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
@@ -34,14 +33,14 @@ import type { VulnerabilitySeverityLabel } from '../../types';
 // import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils'; // Ross CISA KEV
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
-    getScoreVersionsForTopCVSS,
-    getScoreVersionsForTopNvdCVSS,
-    sortCveDistroList,
     aggregateByCVSS,
-    aggregateByEPSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
+    aggregateByEPSS,
+    getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     getSeveritySortOptions,
+    sortCveDistroList,
 } from '../../utils/sortUtils';
 import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';

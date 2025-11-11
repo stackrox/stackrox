@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Button, Modal, Form, FormGroup, Checkbox } from '@patternfly/react-core';
+import { useState } from 'react';
+import { Button, Checkbox, Form, FormGroup, Modal } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
-import { useFormik, FormikProvider } from 'formik';
+import { FormikProvider, useFormik } from 'formik';
 import { Globe } from 'react-feather';
 
 import useAnalytics, { WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED } from 'hooks/useAnalytics';

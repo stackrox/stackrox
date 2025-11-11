@@ -1,5 +1,4 @@
-import React from 'react';
-import { Card, CardTitle, CardBody } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
 export type AffectedImagesProps = {
     className?: string;

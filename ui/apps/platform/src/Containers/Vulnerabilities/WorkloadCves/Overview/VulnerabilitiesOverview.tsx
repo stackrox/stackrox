@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import { Flex } from '@patternfly/react-core';

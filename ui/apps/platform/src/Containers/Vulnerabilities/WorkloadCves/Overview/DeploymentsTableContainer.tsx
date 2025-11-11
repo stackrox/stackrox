@@ -1,4 +1,3 @@
-import React from 'react';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import type useURLSort from 'hooks/useURLSort';
