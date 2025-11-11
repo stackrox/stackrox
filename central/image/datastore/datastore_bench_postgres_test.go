@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -28,7 +29,6 @@ func BenchmarkImageGetMany(b *testing.B) {
 
 	testDB := pgtest.ForT(b)
 
-	gormDB := testDB.GetGormDB(b)
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
@@ -36,7 +36,8 @@ func BenchmarkImageGetMany(b *testing.B) {
 	if features.FlattenCVEData.Enabled() {
 		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 	} else {
-		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+		store := pgStore.New(db, false, concurrency.NewKeyFence())
+		datastore = NewWithPostgres(store, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 	}
 
 	ids := make([]string, 0, 100)
@@ -73,7 +74,6 @@ func BenchmarkImageUpsert(b *testing.B) {
 
 	testDB := pgtest.ForT(b)
 
-	gormDB := testDB.GetGormDB(b)
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
@@ -81,7 +81,8 @@ func BenchmarkImageUpsert(b *testing.B) {
 	if features.FlattenCVEData.Enabled() {
 		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 	} else {
-		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+		store := pgStore.New(db, false, concurrency.NewKeyFence())
+		datastore = NewWithPostgres(store, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 	}
 
 	images := make([]*storage.Image, 0, 100)
