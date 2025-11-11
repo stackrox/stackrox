@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -39,7 +38,6 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
 	if suite.pool != nil {
-		pgStore.Destroy(suite.ctx, suite.pool)
 		suite.pool.Close()
 	}
 }
