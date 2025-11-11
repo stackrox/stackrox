@@ -184,9 +184,11 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 	// Store into cache in case sending to Central fails.
 	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
-	if features.NetworkFlowBatching.Enabled() {
-		// Limit cache size, prioritizing closed connections over open ones
+	// Limit cache size, prioritizing closed connections over open ones
+	if features.NetworkFlowCacheLimiting.Enabled() {
 		c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
+	}
+	if features.NetworkFlowBatching.Enabled() {
 		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
 			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
 			c.cachedUpdatesConn = c.cachedUpdatesConn[NetworkFlowMaxUpdateSize:]
@@ -400,10 +402,12 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(procUpdates))
 		c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
 	}
+	// Limit cache size, prioritizing closed endpoints over open ones
+	if features.NetworkFlowCacheLimiting.Enabled() {
+		c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
+	}
 	// Return concatenated past and current updates.
 	if features.NetworkFlowBatching.Enabled() {
-		// Limit cache size, prioritizing closed endpoints over open ones
-		c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
 		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
 			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
 			c.cachedUpdatesEp = c.cachedUpdatesEp[NetworkFlowMaxUpdateSize:]

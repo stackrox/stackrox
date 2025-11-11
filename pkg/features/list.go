@@ -84,6 +84,9 @@ var (
 	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes
 	NetworkFlowBatching = registerFeature("Enable batching of network flow updates to smooth out data spikes", "ROX_NETFLOW_BATCHING")
 
+	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues during data spikes
+	NetworkFlowCacheLimiting = registerFeature("Enable limiting network flow cache size to prevent memory issues", "ROX_NETFLOW_CACHE_LIMITING")
+
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
