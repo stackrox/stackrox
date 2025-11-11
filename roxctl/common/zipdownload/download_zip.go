@@ -32,7 +32,10 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 		return errors.Wrap(err, "could not read from zip")
 	}
 
-	// Locations opened later with os.Root must be created traditionally.
+	// Pre-create output directory because os.OpenRoot requires it to exist.
+	// Note: While archive/zip can detect insecure paths via GODEBUG=zipinsecurepath=0,
+	// we use os.Root for enforcement (not just detection). os.Root provides OS-level
+	// confinement that physically prevents path traversal, even if code has bugs.
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return errors.Wrapf(err, "Unable to create folder %q", outputDir)
 	}
