@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import {
     Checkbox,
     Form,
-    FormSelect,
     List,
     ListItem,
     PageSection,
@@ -28,9 +27,6 @@ import type { IntegrationFormProps } from '../../integrationFormTypes';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
-import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
-import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
-import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
@@ -44,6 +40,26 @@ const urlStyles = [
         value: 'S3_URL_STYLE_VIRTUAL_HOSTED',
     },
 ];
+
+const intervalOptions = [
+    { label: 'Daily', value: 'DAILY' },
+    { label: 'Weekly', value: 'WEEKLY' },
+];
+
+const weeklyOptions = [
+    { label: 'Sunday', value: '0' },
+    { label: 'Monday', value: '1' },
+    { label: 'Tuesday', value: '2' },
+    { label: 'Wednesday', value: '3' },
+    { label: 'Thursday', value: '4' },
+    { label: 'Friday', value: '5' },
+    { label: 'Saturday', value: '6' },
+];
+
+const dailyOptions = Array.from({ length: 24 }, (_, i) => ({
+    label: `${String(i).padStart(2, '0')}:00 UTC`,
+    value: String(i),
+}));
 
 export type S3CompatibleIntegration = {
     s3compatible: {
@@ -180,6 +196,19 @@ function S3CompatibleIntegrationForm({
         return setFieldValue(event.target.id, value, false);
     }
 
+    function onScheduleIntervalChange(fieldId, value) {
+        // Initialize weekly day when switching to WEEKLY
+        if (value === 'WEEKLY' && !values.externalBackup.schedule.weekly) {
+            setFieldValue('externalBackup.schedule', {
+                ...values.externalBackup.schedule,
+                intervalType: value,
+                weekly: { day: 0 },
+            });
+        } else {
+            setFieldValue(fieldId, value);
+        }
+    }
+
     function onUpdateCredentialsChange(value, event) {
         setFieldValue('externalBackup.s3compatible.accessKeyId', '');
         setFieldValue('externalBackup.s3compatible.secretAccessKey', '');
@@ -232,15 +261,19 @@ function S3CompatibleIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <FormSelect
+                        <SelectSingle
                             id="externalBackup.schedule.intervalType"
                             value={values.externalBackup.schedule.intervalType}
-                            onChange={(event, value) => onChange(value, event)}
+                            handleSelect={onScheduleIntervalChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
-                            <ScheduleIntervalOptions />
-                        </FormSelect>
+                            {intervalOptions.map(({ value, label }) => (
+                                <SelectOption key={value} value={value}>
+                                    {label}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
                     </FormLabelGroup>
                     {values.externalBackup.schedule.intervalType === 'WEEKLY' && (
                         <FormLabelGroup
@@ -250,15 +283,19 @@ function S3CompatibleIntegrationForm({
                             touched={touched}
                             errors={errors}
                         >
-                            <FormSelect
+                            <SelectSingle
                                 id="externalBackup.schedule.weekly.day"
-                                value={values.externalBackup.schedule?.weekly?.day}
-                                onChange={(event, value) => onChange(value, event)}
+                                value={String(values.externalBackup.schedule?.weekly?.day ?? '')}
+                                handleSelect={setFieldValue}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             >
-                                <ScheduleWeeklyOptions />
-                            </FormSelect>
+                                {weeklyOptions.map(({ value, label }) => (
+                                    <SelectOption key={value} value={value}>
+                                        {label}
+                                    </SelectOption>
+                                ))}
+                            </SelectSingle>
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
@@ -268,15 +305,19 @@ function S3CompatibleIntegrationForm({
                         touched={touched}
                         errors={errors}
                     >
-                        <FormSelect
+                        <SelectSingle
                             id="externalBackup.schedule.hour"
-                            value={values.externalBackup.schedule.hour}
-                            onChange={(event, value) => onChange(value, event)}
+                            value={String(values.externalBackup.schedule.hour)}
+                            handleSelect={setFieldValue}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
-                            <ScheduleDailyOptions />
-                        </FormSelect>
+                            {dailyOptions.map(({ value, label }) => (
+                                <SelectOption key={value} value={value}>
+                                    {label}
+                                </SelectOption>
+                            ))}
+                        </SelectSingle>
                     </FormLabelGroup>
                     <FormLabelGroup
                         isRequired
