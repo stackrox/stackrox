@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/compliance/node/index"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/common"
-	"github.com/stackrox/rox/compliance/virtualmachines/agent/vsock"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/jsonutil"
