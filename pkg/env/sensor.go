@@ -126,4 +126,9 @@ var (
 	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
 	// All failures that happen within this period are considered "okay" and will be retried later.
 	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
+
+	// NetworkFlowMaxUpdateSize is maximum number of connections and endpoints to be sent in one update.
+	NetworkFlowMaxUpdateSize = RegisterIntegerSetting("ROX_NETFLOW_MAX_UPDATE_SIZE", 10000)
+	// NetworkFlowMaxCacheSize is the maximum number of connections and endpoints sensor holds in cache.
+	NetworkFlowMaxCacheSize = RegisterIntegerSetting("ROX_NETFLOW_MAX_CACHE_SIZE", 60000)
 )
