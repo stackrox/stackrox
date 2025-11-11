@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "framework",
+    srcs = [
+        "check.go",
+        "check_registry.go",
+        "check_registry_helpers.go",
+        "context.go",
+        "control.go",
+        "control_helpers.go",
+        "data.go",
+        "domain.go",
+        "domain_helpers.go",
+        "halt.go",
+        "results.go",
+        "run.go",
+        "status.go",
+        "target.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/framework",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/framework",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":framework",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "framework_test",
+    srcs = [
+        "context_test.go",
+        "control_test.go",
+        "results_test.go",
+        "run_test.go",
+    ],
+    embed = [":framework"],
+    deps = [
+        "//generated/storage",
+        "//pkg/compliance/framework",
+        "//pkg/concurrency",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

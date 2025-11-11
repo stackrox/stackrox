@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = ["store.go"],
+    importpath = "github.com/stackrox/rox/central/cve/cluster/datastore/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cve/converter/v2:converter",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)

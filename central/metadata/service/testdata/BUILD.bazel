@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "testdata_lib",
+    srcs = ["exec_tlschallenge.go"],
+    importpath = "github.com/stackrox/rox/central/metadata/service/testdata",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//central/metadata/service",
+        "//central/tlsconfig",
+        "//generated/api/v1:api",
+        "//pkg/jsonutil",
+        "//pkg/mtls",
+        "//pkg/utils",
+    ],
+)
+
+go_binary(
+    name = "testdata",
+    embed = [":testdata_lib"],
+    visibility = ["//visibility:public"],
+)

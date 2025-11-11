@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "controlservice",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensorupgrade/controlservice",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/service/connection",
+        "//central/sensor/service/connection/upgradecontroller",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/auth",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":controlservice",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "controlservice_test",
+    srcs = ["service_impl_test.go"],
+    embed = [":controlservice"],
+    deps = ["//pkg/grpc/testutils"],
+)

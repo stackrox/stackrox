@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_176_to_m_177_network_baselines_cidr",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkbaselinestore",
+        "//migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_176_to_m_177_network_baselines_cidr",
+    visibility = ["//visibility:public"],
+)

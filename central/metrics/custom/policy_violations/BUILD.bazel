@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policy_violations",
+    srcs = [
+        "labels.go",
+        "tracker.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom/policy_violations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/metrics/custom/tracker",
+        "//generated/storage",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policy_violations",
+    visibility = ["//visibility:public"],
+)

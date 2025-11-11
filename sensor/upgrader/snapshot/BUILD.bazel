@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "snapshot",
+    srcs = [
+        "defs.go",
+        "snapshot.go",
+        "snapshotter.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/snapshot",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "//pkg/pods",
+        "//pkg/utils",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":snapshot",
+    visibility = ["//visibility:public"],
+)

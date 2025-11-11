@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "osutils",
+    srcs = ["restart.go"],
+    importpath = "github.com/stackrox/rox/pkg/osutils",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":osutils",
+    visibility = ["//visibility:public"],
+)

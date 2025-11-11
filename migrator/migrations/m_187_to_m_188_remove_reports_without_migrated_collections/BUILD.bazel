@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_187_to_m_188_remove_reports_without_migrated_collections",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections/schema",
+        "//migrator/types",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_187_to_m_188_remove_reports_without_migrated_collections",
+    visibility = ["//visibility:public"],
+)

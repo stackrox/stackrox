@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/development/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/image/datastore",
+        "//central/risk/manager",
+        "//central/sensor/service/connection",
+        "//generated/internalapi/central",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/httputil/proxy",
+        "//pkg/random",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_hashicorp_go_retryablehttp//:go-retryablehttp",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_impl_test.go"],
+    embed = [":service"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/auth/authproviders",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/grpc/authn/basic",
+        "//pkg/uuid",
+        "//tests/bad-ca",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

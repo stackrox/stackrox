@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "convert.go",
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/integration/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/complianceoperator/v2/integration/datastore",
+        "//generated/api/v2:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/paginated",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = [
+        "convert_test.go",
+        "service_impl_test.go",
+    ],
+    embed = [":service"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/complianceoperator/v2/integration/datastore",
+        "//central/complianceoperator/v2/integration/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/api/v2:api",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/grpc/testutils",
+        "//pkg/pointers",
+        "//pkg/protoassert",
+        "//pkg/sac",
+        "//pkg/sac/testconsts",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

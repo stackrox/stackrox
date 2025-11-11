@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "declarativeconfig",
+    srcs = [
+        "access_scope.go",
+        "auth_machine_to_machine.go",
+        "auth_provider.go",
+        "configuration.go",
+        "context.go",
+        "notifier.go",
+        "origin.go",
+        "permission_set.go",
+        "role.go",
+        "uuid.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/declarativeconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":declarativeconfig",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "declarativeconfig_test",
+    srcs = [
+        "access_scope_test.go",
+        "auth_machine_to_machine_test.go",
+        "auth_provider_test.go",
+        "configuration_test.go",
+        "context_test.go",
+        "notifier_test.go",
+        "origin_test.go",
+        "permission_set_test.go",
+        "role_test.go",
+        "uuid_test.go",
+    ],
+    embed = [":declarativeconfig"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)

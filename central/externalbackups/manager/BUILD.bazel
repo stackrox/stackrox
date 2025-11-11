@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manager",
+    srcs = ["manager.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/externalbackups/plugins",
+        "//central/externalbackups/plugins/types",
+        "//central/externalbackups/scheduler",
+        "//central/systeminfo/listener",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/integrationhealth",
+        "//pkg/logging",
+        "//pkg/protoconv/schedule",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "podevents",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/podevents",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//central/pod/datastore",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":podevents",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "podevents_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":podevents"],
+    deps = [
+        "//central/pod/datastore/mocks",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

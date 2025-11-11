@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_202_to_m_203_vuln_requests_for_suppressed_cves",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema",
+        "//migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/store/vulnerabilityrequests",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//clause",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_202_to_m_203_vuln_requests_for_suppressed_cves",
+    visibility = ["//visibility:public"],
+)

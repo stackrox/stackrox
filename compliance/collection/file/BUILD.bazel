@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "file",
+    srcs = [
+        "file.go",
+        "user.go",
+    ],
+    importpath = "github.com/stackrox/rox/compliance/collection/file",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_coreos_go_systemd_v22//dbus",
+        "@com_github_godbus_dbus_v5//:dbus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":file",
+    visibility = ["//visibility:public"],
+)

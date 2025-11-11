@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/reports/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/deployment/datastore",
+        "//central/graphql/resolvers/loaders",
+        "//central/namespace/datastore",
+        "//central/notifier/datastore",
+        "//central/notifier/processor",
+        "//central/reports/common",
+        "//central/reports/config/datastore",
+        "//central/reports/scheduler",
+        "//central/resourcecollection/datastore",
+        "//central/role/datastore",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/contextutil",
+        "//pkg/errox",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)

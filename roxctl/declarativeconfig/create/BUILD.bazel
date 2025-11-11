@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "create",
+    srcs = [
+        "access_scope.go",
+        "auth_provider.go",
+        "create.go",
+        "notifier.go",
+        "permission_set.go",
+        "role.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/declarativeconfig/create",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/accessscope",
+        "//pkg/declarativeconfig",
+        "//pkg/declarativeconfig/transform",
+        "//pkg/errox",
+        "//pkg/utils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/declarativeconfig/k8sobject",
+        "//roxctl/declarativeconfig/lint",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_spf13_pflag//:pflag",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":create",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "create_test",
+    srcs = [
+        "access_scope_test.go",
+        "auth_provider_test.go",
+        "notifier_test.go",
+        "permission_set_test.go",
+        "role_test.go",
+    ],
+    embed = [":create"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/utils",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/declarativeconfig/k8sobject",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

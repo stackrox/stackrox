@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resources",
+    srcs = [
+        "deployment.go",
+        "namespace.go",
+        "pod.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/resources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)

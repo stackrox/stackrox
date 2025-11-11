@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "api.go",
+        "delete_exact.go",
+        "predicates.go",
+        "rest_config.go",
+        "status_condition.go",
+        "storageclass.go",
+        "watch.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/utils",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//pkg/images/defaults",
+        "//pkg/k8sutil",
+        "//pkg/version",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/extensions",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//storage/v1:storage",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/event",
+        "@io_k8s_sigs_controller_runtime//pkg/predicate",
+        "@io_k8s_sigs_controller_runtime//pkg/reconcile",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = [
+        "predicates_test.go",
+        "status_condition_test.go",
+    ],
+    embed = [":utils"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/event",
+    ],
+)

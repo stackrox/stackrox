@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enforcer",
+    srcs = [
+        "enforcer.go",
+        "kill.go",
+        "node_constraint.go",
+        "util.go",
+        "zero_replica.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/retry",
+        "//sensor/common/enforcer",
+        "//sensor/kubernetes/client",
+        "//sensor/kubernetes/enforcer/common",
+        "//sensor/kubernetes/enforcer/cronjob",
+        "//sensor/kubernetes/enforcer/daemonset",
+        "//sensor/kubernetes/enforcer/deployment",
+        "//sensor/kubernetes/enforcer/deploymentconfig",
+        "//sensor/kubernetes/enforcer/pod",
+        "//sensor/kubernetes/enforcer/replicaset",
+        "//sensor/kubernetes/enforcer/replicationcontroller",
+        "//sensor/kubernetes/enforcer/statefulset",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//kubernetes/typed/core/v1:core",
+        "@io_k8s_client_go//tools/record",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enforcer",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kustomize_lib",
+    srcs = ["noop.go"],
+    importpath = "github.com/stackrox/rox/operator/tools/kustomize",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kustomize_lib",
+    visibility = ["//visibility:public"],
+)

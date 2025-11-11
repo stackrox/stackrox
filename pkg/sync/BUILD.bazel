@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sync",
+    srcs = [
+        "common_aliases.go",
+        "deadlock_detect_dev.go",
+        "kill_nix.go",
+        "kill_windows.go",
+        "mutex_dev.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/sync",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/debug",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sync",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "images",
+    srcs = [
+        "db_response.go",
+        "singleton.go",
+        "types.go",
+        "view_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/views/images",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/views/common",
+        "//generated/api/v1:api",
+        "//pkg/contextutil",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/postgres",
+        "//pkg/postgres/schema",
+        "//pkg/postgres/walker",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":images",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ecr",
+    srcs = [
+        "ecr.go",
+        "transport.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/registries/ecr",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/sync",
+        "//pkg/urlfmt",
+        "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+        "@com_github_aws_aws_sdk_go_v2_credentials//stscreds",
+        "@com_github_aws_aws_sdk_go_v2_service_ecr//:ecr",
+        "@com_github_aws_aws_sdk_go_v2_service_sts//:sts",
+        "@com_github_heroku_docker_registry_client//registry",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ecr",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ecr_test",
+    srcs = ["transport_test.go"],
+    embed = [":ecr"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

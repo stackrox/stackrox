@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusterentities",
+    srcs = [
+        "debug.go",
+        "entity_status.go",
+        "store.go",
+        "store_container_id.go",
+        "store_endpoints.go",
+        "store_ips.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/clusterentities",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/set",
+        "//pkg/sync",
+        "//sensor/common/clusterentities/metrics",
+        "//sensor/common/heritage",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusterentities",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clusterentities_test",
+    srcs = [
+        "store_container_id_test.go",
+        "store_endpoints_test.go",
+        "store_heritage_test.go",
+        "store_ips_test.go",
+        "store_test.go",
+        "testing_test.go",
+    ],
+    embed = [":clusterentities"],
+    deps = [
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/set",
+        "//sensor/common/heritage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

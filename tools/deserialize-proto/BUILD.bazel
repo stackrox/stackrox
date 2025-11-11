@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "deserialize-proto_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/tools/deserialize-proto",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/pgtest/conn",
+        "//pkg/postgres/pgutils",
+        "//pkg/protoutils",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_spf13_pflag//:pflag",
+        "@io_k8s_utils//env",
+        "@org_golang_google_protobuf//encoding/protojson",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+go_binary(
+    name = "deserialize-proto",
+    embed = [":deserialize-proto_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deserialize-proto_test",
+    srcs = ["main_test.go"],
+    embed = [":deserialize-proto_lib"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_protobuf//proto",
+    ],
+)

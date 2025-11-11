@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "registries",
+    srcs = [
+        "factory.go",
+        "factory_impl.go",
+        "factory_options.go",
+        "set.go",
+        "set_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/registries",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/registries/artifactory",
+        "//pkg/registries/artifactregistry",
+        "//pkg/registries/azure",
+        "//pkg/registries/docker",
+        "//pkg/registries/ecr",
+        "//pkg/registries/ghcr",
+        "//pkg/registries/google",
+        "//pkg/registries/ibm",
+        "//pkg/registries/nexus",
+        "//pkg/registries/quay",
+        "//pkg/registries/rhel",
+        "//pkg/registries/types",
+        "//pkg/set",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":registries",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "registries_test",
+    srcs = [
+        "factory_impl_test.go",
+        "set_impl_test.go",
+    ],
+    embed = [":registries"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/types",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

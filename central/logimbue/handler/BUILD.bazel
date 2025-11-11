@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = [
+        "handler.go",
+        "handler_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/logimbue/handler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/logimbue/store",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = ["handler_test.go"],
+    embed = [":handler"],
+    deps = [
+        "//central/logimbue/store/mocks",
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

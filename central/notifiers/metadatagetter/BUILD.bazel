@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "metadatagetter",
+    srcs = [
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/metadatagetter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/namespace/datastore",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/search",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metadatagetter",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "metadatagetter_test",
+    srcs = ["datastore_impl_test.go"],
+    embed = [":metadatagetter"],
+    deps = [
+        "//central/namespace/datastore/mocks",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "util",
+    srcs = [
+        "force_insecure_creds.go",
+        "lazy_conn.go",
+        "stream.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//:go-grpc-middleware",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":util",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "util_test",
+    srcs = ["lazy_conn_test.go"],
+    embed = [":util"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/utils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc_examples//helloworld/helloworld",
+    ],
+)

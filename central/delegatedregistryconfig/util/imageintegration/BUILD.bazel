@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "imageintegration",
+    srcs = ["imageintegration.go"],
+    importpath = "github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imageintegration",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "imageintegration_test",
+    srcs = ["imageintegration_test.go"],
+    embed = [":imageintegration"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

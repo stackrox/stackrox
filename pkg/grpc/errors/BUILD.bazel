@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "errors",
+    srcs = ["interceptor.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/errors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/errox/grpc",
+        "//pkg/logging",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":errors",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "errors_test",
+    srcs = ["interceptor_test.go"],
+    embed = [":errors"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zaptest/observer",
+    ],
+)

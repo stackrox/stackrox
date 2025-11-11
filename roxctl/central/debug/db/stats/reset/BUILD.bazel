@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reset",
+    srcs = ["reset.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/debug/db/stats/reset",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/utils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reset",
+    visibility = ["//visibility:public"],
+)

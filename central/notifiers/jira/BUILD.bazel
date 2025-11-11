@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jira",
+    srcs = ["jira.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/jira",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/metadatagetter",
+        "//central/notifiers/utils",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/mitre/datastore",
+        "//pkg/notifiers",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_andygrunwald_go_jira//:go-jira",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jira",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "jira_test",
+    srcs = [
+        "jira_fake_test.go",
+        "jira_integration_test.go",
+        "jira_test.go",
+    ],
+    embed = [":jira"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/fixtures",
+        "//pkg/mitre/datastore/mocks",
+        "//pkg/notifiers/mocks",
+        "//pkg/protocompat",
+        "@com_github_andygrunwald_go_jira//:go-jira",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

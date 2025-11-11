@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "acscsemail",
+    srcs = [
+        "acscsemail.go",
+        "client.go",
+        "client_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/acscsemail",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/acscsemail/message",
+        "//central/notifiers/email",
+        "//central/notifiers/metadatagetter",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/mitre/datastore",
+        "//pkg/notifiers",
+        "//pkg/satoken",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":acscsemail",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "acscsemail_test",
+    srcs = [
+        "acscsemail_test.go",
+        "client_impl_test.go",
+    ],
+    embed = [":acscsemail"],
+    deps = [
+        "//central/notifiers/acscsemail/message",
+        "//central/notifiers/acscsemail/mocks",
+        "//generated/storage",
+        "//pkg/branding",
+        "//pkg/certgen",
+        "//pkg/mitre/datastore/mocks",
+        "//pkg/mtls",
+        "//pkg/notifiers/mocks",
+        "//pkg/protocompat",
+        "//pkg/retry",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@org_uber_go_mock//gomock",
+    ],
+)

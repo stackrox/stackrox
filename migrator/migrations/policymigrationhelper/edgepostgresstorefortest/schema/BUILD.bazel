@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = ["policycategoryedges.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/edgepostgresstorefortest/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//migrator/migrations/policymigrationhelper/categorypostgresstorefortest/schema",
+        "//migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

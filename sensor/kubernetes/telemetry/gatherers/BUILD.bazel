@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gatherers",
+    srcs = [
+        "cluster.go",
+        "namespace.go",
+        "node.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/k8sutil",
+        "//pkg/providers",
+        "//pkg/telemetry",
+        "//pkg/telemetry/data",
+        "//pkg/telemetry/gatherers",
+        "//sensor/common/store",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/version",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gatherers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gatherers_test",
+    srcs = [
+        "cluster_test.go",
+        "namespace_test.go",
+        "node_test.go",
+    ],
+    embed = [":gatherers"],
+    deps = [
+        "//pkg/telemetry/data",
+        "//sensor/kubernetes/listener/resources",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

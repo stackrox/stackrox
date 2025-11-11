@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "enhancement",
+    srcs = [
+        "broker.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/enhancement",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//central/sensor/service/connection",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enhancement",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "enhancement_test",
+    srcs = ["broker_test.go"],
+    embed = [":enhancement"],
+    deps = [
+        "//central/sensor/service/connection/mocks",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

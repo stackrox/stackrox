@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "concurrency",
+    srcs = [
+        "after_func.go",
+        "combine.go",
+        "context.go",
+        "do.go",
+        "error_signal.go",
+        "error_wait.go",
+        "flag.go",
+        "key_fence.go",
+        "keyed_mutex.go",
+        "lock.go",
+        "poller.go",
+        "retry_ticker.go",
+        "signal.go",
+        "stopper.go",
+        "timeout.go",
+        "transparent.go",
+        "turnstile.go",
+        "types.go",
+        "util.go",
+        "value_stream.go",
+        "wait.go",
+        "wait_group.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/concurrency",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency/sortedkeys",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/util/wait",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":concurrency",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "concurrency_test",
+    srcs = [
+        "after_func_test.go",
+        "context_test.go",
+        "do_test.go",
+        "error_signal_test.go",
+        "flag_test.go",
+        "key_fence_test.go",
+        "keyed_mutex_test.go",
+        "poller_test.go",
+        "retry_ticker_test.go",
+        "signal_test.go",
+        "stopper_test.go",
+        "transparent_test.go",
+        "turnstile_test.go",
+        "value_stream_bench_test.go",
+        "value_stream_test.go",
+        "wait_group_test.go",
+    ],
+    embed = [":concurrency"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/util/wait",
+    ],
+)

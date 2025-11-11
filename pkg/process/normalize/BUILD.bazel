@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "normalize",
+    srcs = ["normalize.go"],
+    importpath = "github.com/stackrox/rox/pkg/process/normalize",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":normalize",
+    visibility = ["//visibility:public"],
+)

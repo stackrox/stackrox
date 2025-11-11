@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tokensource",
+    srcs = ["tokensource.go"],
+    importpath = "github.com/stackrox/rox/pkg/auth/tokensource",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tokensource",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tokensource_test",
+    srcs = ["tokensource_test.go"],
+    embed = [":tokensource"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

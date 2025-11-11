@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = ["virtual_machine_store.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/sync",
+        "//sensor/common/virtualmachine",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["virtual_machine_store_test.go"],
+    embed = [":store"],
+    deps = [
+        "//sensor/common/virtualmachine",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

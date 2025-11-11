@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "maputil",
+    srcs = [
+        "cmpmap.go",
+        "generic_diff.go",
+        "maputil.go",
+        "normalize.go",
+        "syncmap.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/maputil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/reflectutils",
+        "//pkg/set",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":maputil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "maputil_test",
+    srcs = [
+        "cmpmap_test.go",
+        "maputil_test.go",
+        "syncmap_test.go",
+    ],
+    embed = [":maputil"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

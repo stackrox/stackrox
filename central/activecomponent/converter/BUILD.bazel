@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "converter",
+    srcs = [
+        "common.go",
+        "id.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/activecomponent/converter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":converter",
+    visibility = ["//visibility:public"],
+)

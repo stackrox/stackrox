@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "common.go",
+        "conn_replace.go",
+        "manager.go",
+        "message_injector.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = ["conn_replace_test.go"],
+    embed = [":common"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

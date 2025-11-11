@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "fallback_seq_num.go",
+        "paths.go",
+        "seq_num.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/migrations/internal",
+    visibility = ["//pkg/migrations:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//pkg/migrations:__subpackages__"],
+)

@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "metrics",
+    srcs = [
+        "central.go",
+        "custom_registry.go",
+        "init.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/errox",
+        "//pkg/metrics",
+        "//pkg/reflectutils",
+        "//pkg/sensor/event",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metrics",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "metrics_test",
+    srcs = [
+        "central_test.go",
+        "custom_registry_test.go",
+    ],
+    embed = [":metrics"],
+    deps = [
+        "//generated/internalapi/central",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "@com_github_prometheus_client_model//go",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

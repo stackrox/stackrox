@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internaltov2storage",
+    srcs = [
+        "compliance_check_results.go",
+        "compliance_operator_profile.go",
+        "compliance_operator_scan.go",
+        "compliance_operator_scan_setting_binding.go",
+        "compliance_remediation.go",
+        "compliance_rule.go",
+        "compliance_suite.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/convert/internaltov2storage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internaltov2storage",
+    visibility = ["//visibility:public"],
+)

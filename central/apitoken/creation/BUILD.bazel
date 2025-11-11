@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "creation",
+    srcs = ["log.go"],
+    importpath = "github.com/stackrox/rox/central/apitoken/creation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/events",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/grpc/authn",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":creation",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "creation_test",
+    srcs = ["log_test.go"],
+    embed = [":creation"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/grpc/authn/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)

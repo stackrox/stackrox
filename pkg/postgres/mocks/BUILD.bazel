@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "pgxpool_conn.go",
+        "pool.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/postgres/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/postgres",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgconn",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

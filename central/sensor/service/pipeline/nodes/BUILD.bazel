@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "nodes",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/nodes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/enrichment",
+        "//central/metrics",
+        "//central/node/datastore",
+        "//central/risk/manager",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/nodes/enricher",
+        "//pkg/search",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nodes",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "nodes_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":nodes"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/node/datastore/mocks",
+        "//central/risk/manager/mocks",
+        "//central/sensor/service/common",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/nodes/enricher/mocks",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

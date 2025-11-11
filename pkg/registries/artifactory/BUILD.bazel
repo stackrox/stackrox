@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "artifactory",
+    srcs = ["artifactory.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/artifactory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":artifactory",
+    visibility = ["//visibility:public"],
+)

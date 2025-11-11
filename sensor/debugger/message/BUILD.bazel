@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "message",
+    srcs = ["fake.go"],
+    importpath = "github.com/stackrox/rox/sensor/debugger/message",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":message",
+    visibility = ["//visibility:public"],
+)

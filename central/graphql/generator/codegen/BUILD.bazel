@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "codegen",
+    srcs = [
+        "case.go",
+        "codegen.go",
+        "schema.go",
+        "typewalk.go",
+        "utils.go",
+    ],
+    embedsrcs = ["codegen.go.tpl"],
+    importpath = "github.com/stackrox/rox/central/graphql/generator/codegen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/graphql/generator",
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/protoutils",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//reflect/protoregistry",
+        "@org_golang_google_protobuf//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":codegen",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "codegen_test",
+    srcs = ["case_test.go"],
+    embed = [":codegen"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

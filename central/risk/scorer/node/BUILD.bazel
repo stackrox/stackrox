@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "node",
+    srcs = [
+        "scorer.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/scorer/node",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/datastore",
+        "//central/risk/multipliers/node",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":node",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "node_test",
+    srcs = ["scorer_test.go"],
+    embed = [":node"],
+    deps = [
+        "//central/risk/multipliers/node",
+        "//central/risk/scorer",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

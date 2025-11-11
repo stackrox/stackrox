@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pointers",
+    srcs = ["pointer.go"],
+    importpath = "github.com/stackrox/rox/pkg/pointers",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pointers",
+    visibility = ["//visibility:public"],
+)

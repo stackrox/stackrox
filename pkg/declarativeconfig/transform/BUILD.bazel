@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "transform",
+    srcs = [
+        "access_scope.go",
+        "auth_machine_to_machine.go",
+        "auth_provider.go",
+        "notifier.go",
+        "permission_set.go",
+        "role.go",
+        "transformer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/declarativeconfig/transform",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders/iap",
+        "//pkg/auth/authproviders/oidc",
+        "//pkg/auth/authproviders/openshift",
+        "//pkg/auth/authproviders/saml",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/declarativeconfig",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/protocompat",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":transform",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "transform_test",
+    srcs = [
+        "access_scope_test.go",
+        "auth_machine_to_machine_test.go",
+        "auth_provider_test.go",
+        "notifier_test.go",
+        "permission_set_test.go",
+        "role_test.go",
+    ],
+    embed = [":transform"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders/iap",
+        "//pkg/auth/authproviders/oidc",
+        "//pkg/auth/authproviders/openshift",
+        "//pkg/auth/authproviders/saml",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/declarativeconfig",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

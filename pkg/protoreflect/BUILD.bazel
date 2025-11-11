@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protoreflect",
+    srcs = [
+        "descriptors.go",
+        "field.go",
+        "slice_id.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/protoreflect",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoreflect",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protoreflect_test",
+    srcs = ["descriptors_test.go"],
+    embed = [":protoreflect"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

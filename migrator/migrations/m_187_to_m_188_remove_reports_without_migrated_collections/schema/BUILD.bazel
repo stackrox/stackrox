@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "collections.go",
+        "convert_collections.go",
+        "convert_report_configurations.go",
+        "report_configurations.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = [
+        "convert_collections_test.go",
+        "convert_report_configurations_test.go",
+    ],
+    embed = [":schema"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

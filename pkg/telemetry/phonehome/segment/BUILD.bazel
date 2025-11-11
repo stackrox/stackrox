@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "segment",
+    srcs = ["segment.go"],
+    importpath = "github.com/stackrox/rox/pkg/telemetry/phonehome/segment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/clientconn",
+        "//pkg/expiringcache",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/telemetry/phonehome/telemeter",
+        "@com_github_segmentio_analytics_go_v3//:analytics-go",
+        "@com_github_stackrox_hashstructure//:hashstructure",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":segment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "segment_test",
+    srcs = ["segment_test.go"],
+    embed = [":segment"],
+    deps = [
+        "//pkg/expiringcache",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome/telemeter",
+        "@com_github_segmentio_analytics_go_v3//:analytics-go",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

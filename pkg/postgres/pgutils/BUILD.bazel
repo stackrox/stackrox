@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pgutils",
+    srcs = [
+        "error.go",
+        "retry.go",
+        "scan.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/postgres/pgutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgconn",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+        "@io_gorm_gorm//schema",
+        "@org_golang_x_net//context",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pgutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pgutils_test",
+    srcs = [
+        "error_test.go",
+        "utils_test.go",
+    ],
+    embed = [":pgutils"],
+    deps = [
+        "//pkg/errorhelpers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

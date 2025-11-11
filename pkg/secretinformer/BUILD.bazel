@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "secretinformer",
+    srcs = ["informer.go"],
+    importpath = "github.com/stackrox/rox/pkg/secretinformer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//informers",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//tools/cache",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":secretinformer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "secretinformer_test",
+    srcs = ["informer_test.go"],
+    embed = [":secretinformer"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

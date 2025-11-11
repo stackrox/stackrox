@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scan",
+    srcs = [
+        "csv.go",
+        "cve.go",
+        "scan.go",
+        "scan_errors.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/image/scan",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/cvss",
+        "//pkg/errox",
+        "//pkg/gjson",
+        "//pkg/images/utils",
+        "//pkg/jsonutil",
+        "//pkg/printers",
+        "//pkg/retry",
+        "//pkg/roxctl/common",
+        "//pkg/set",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scan",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scan_test",
+    srcs = [
+        "cve_test.go",
+        "scan_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":scan"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/utils",
+        "//roxctl/common/environment",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "@com_github_fatih_color//:color",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//test/bufconn",
+    ],
+)

@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sachelper",
+    srcs = [
+        "access.go",
+        "cluster.go",
+        "extract.go",
+        "namespace.go",
+        "pagination.go",
+        "resource_filter.go",
+        "sachelper.go",
+        "scope.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/role/sachelper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/namespace/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/postgres/schema",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sliceutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sachelper",
+    visibility = ["//visibility:public"],
+)

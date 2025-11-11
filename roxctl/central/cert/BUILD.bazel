@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cert",
+    srcs = ["cert.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/cert",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/ioutils",
+        "//pkg/roxctl/common",
+        "//pkg/tlsutils",
+        "//pkg/utils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cert",
+    visibility = ["//visibility:public"],
+)

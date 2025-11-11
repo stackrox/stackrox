@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "options",
+    srcs = ["options.go"],
+    importpath = "github.com/stackrox/rox/central/search/options",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globalindex",
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":options",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "converter",
+    srcs = ["convert_utils.go"],
+    importpath = "github.com/stackrox/rox/pkg/nodes/converter",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":converter",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "converter_test",
+    srcs = ["convert_utils_test.go"],
+    embed = [":converter"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//require",
+    ],
+)

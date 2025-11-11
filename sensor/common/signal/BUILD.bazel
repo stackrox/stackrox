@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "signal",
+    srcs = [
+        "pipeline.go",
+        "signal_service.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/signal",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/logging",
+        "//pkg/stringutils",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/unimplemented",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":signal",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "upgrade",
+    srcs = [
+        "command_handler_impl.go",
+        "deployment.go",
+        "image_errors.go",
+        "process.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/upgrade",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/pods",
+        "//pkg/protocompat",
+        "//pkg/retry",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/timeutil",
+        "//pkg/utils",
+        "//sensor/common",
+        "//sensor/common/config",
+        "//sensor/common/message",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_apimachinery//pkg/watch",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":upgrade",
+    visibility = ["//visibility:public"],
+)

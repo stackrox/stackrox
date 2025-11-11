@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = ["client.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "@com_github_openshift_client_go//apps/clientset/versioned",
+        "@com_github_openshift_client_go//config/clientset/versioned",
+        "@com_github_openshift_client_go//operator/clientset/versioned",
+        "@com_github_openshift_client_go//route/clientset/versioned",
+        "@io_k8s_client_go//dynamic",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":client",
+    visibility = ["//visibility:public"],
+)

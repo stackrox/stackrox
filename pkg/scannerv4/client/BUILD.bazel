@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "client",
+    srcs = [
+        "client.go",
+        "options.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scannerv4/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/mtls",
+        "//pkg/protocompat",
+        "//pkg/scannerv4",
+        "//pkg/utils",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_google_go_containerregistry//pkg/authn",
+        "@com_github_google_go_containerregistry//pkg/name",
+        "@com_github_quay_zlog//:zlog",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":client",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "client_test",
+    srcs = ["options_test.go"],
+    embed = [":client"],
+    deps = [
+        "//pkg/mtls",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

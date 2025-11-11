@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "basic",
+    srcs = [
+        "credentials.go",
+        "username.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/client/authn/basic",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_google_grpc//credentials"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":basic",
+    visibility = ["//visibility:public"],
+)

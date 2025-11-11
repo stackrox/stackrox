@@ -1,0 +1,76 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "enrichment",
+    srcs = [
+        "enricher.go",
+        "enricher_impl.go",
+        "integration.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/enrichment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/cve/fetcher",
+        "//central/cve/image/datastore",
+        "//central/cve/node/datastore",
+        "//central/delegatedregistryconfig/datastore",
+        "//central/delegatedregistryconfig/delegator",
+        "//central/delegatedregistryconfig/scanWaiterV2",
+        "//central/delegatedregistryconfig/scanwaiter",
+        "//central/image/datastore",
+        "//central/imageintegration",
+        "//central/imageintegration/datastore",
+        "//central/integrationhealth/reporter",
+        "//central/namespace/datastore",
+        "//central/role/sachelper",
+        "//central/sensor/service/connection",
+        "//central/signatureintegration/datastore",
+        "//central/vulnmgmt/vulnerabilityrequest/suppressor",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/images/cache",
+        "//pkg/images/enricher",
+        "//pkg/images/integration",
+        "//pkg/images/types",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/nodes/enricher",
+        "//pkg/openshift",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/scanners/types",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enrichment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "enrichment_test",
+    srcs = [
+        "integration_test.go",
+        "singleton_test.go",
+    ],
+    embed = [":enrichment"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/openshift",
+        "//pkg/protoassert",
+        "//pkg/scanners/types",
+        "//pkg/set",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

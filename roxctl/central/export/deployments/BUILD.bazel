@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deployments",
+    srcs = ["deployments.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/export/deployments",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/jsonutil",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployments",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deployments_test",
+    srcs = ["deployments_test.go"],
+    embed = [":deployments"],
+    embedsrcs = ["serialized_test_deployment.json"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/fixtures",
+        "//pkg/grpc",
+        "//pkg/protocompat",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/flags",
+        "//roxctl/common/io/mocks",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

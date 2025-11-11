@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "labels",
+    srcs = [
+        "cofinite_set.go",
+        "common.go",
+        "predicates.go",
+        "selector.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/labels",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":labels",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "labels_test",
+    srcs = ["selector_test.go"],
+    embed = [":labels"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

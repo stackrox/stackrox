@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "google",
+    srcs = [
+        "convert.go",
+        "google.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/google",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/cvss/cvssv2",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/scanners/types",
+        "//pkg/urlfmt",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_containeranalysis//apiv1beta1",
+        "@org_golang_google_api//iterator",
+        "@org_golang_google_api//option",
+        "@org_golang_google_genproto//googleapis/devtools/containeranalysis/v1beta1/common",
+        "@org_golang_google_genproto//googleapis/devtools/containeranalysis/v1beta1/grafeas",
+        "@org_golang_google_genproto//googleapis/devtools/containeranalysis/v1beta1/package",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":google",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "google_test",
+    srcs = ["google_test.go"],
+    embed = [":google"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

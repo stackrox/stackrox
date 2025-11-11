@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "processlisteningonport",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/processlisteningonport",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//central/processlisteningonport/datastore",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/metrics",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processlisteningonport",
+    visibility = ["//visibility:public"],
+)

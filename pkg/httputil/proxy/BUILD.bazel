@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "proxy",
+    srcs = [
+        "config.go",
+        "connect.go",
+        "defaults.go",
+        "dial.go",
+        "env_config.go",
+        "proxy.go",
+        "watch.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/httputil/proxy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/netutil",
+        "//pkg/sliceutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@org_golang_x_net//http/httpproxy",
+        "@org_golang_x_net//proxy",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proxy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "proxy_test",
+    srcs = ["proxy_test.go"],
+    embed = [":proxy"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@org_golang_x_net//http/httpproxy",
+    ],
+)

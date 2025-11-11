@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_170_to_m_171_create_policy_categories_and_edges",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/frozenschema/v74:frozenschema",
+        "//migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategoryedgepostgresstore",
+        "//migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore",
+        "//migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_170_to_m_171_create_policy_categories_and_edges",
+    visibility = ["//visibility:public"],
+)

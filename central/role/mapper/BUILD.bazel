@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mapper",
+    srcs = [
+        "always_admin_mapper_impl.go",
+        "singleton.go",
+        "store_based_mapper_factory_impl.go",
+        "store_based_mapper_impl.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/role/mapper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/group/datastore",
+        "//central/role/datastore",
+        "//central/telemetry/centralclient",
+        "//central/user/datastore",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/grpc/authn",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome/telemeter",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mapper",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mapper_test",
+    srcs = ["store_based_mapper_impl_test.go"],
+    embed = [":mapper"],
+    deps = [
+        "//central/group/datastore/mocks",
+        "//central/role/datastore/mocks",
+        "//central/user/datastore/mocks",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/sac/resources",
+        "//pkg/testutils/roletest",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

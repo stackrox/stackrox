@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "crio",
+    srcs = [
+        "config.go",
+        "crio.go",
+    ],
+    importpath = "github.com/stackrox/rox/compliance/collection/containerruntimes/crio",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/collection/containerruntimes/common",
+        "//compliance/utils",
+        "//generated/internalapi/compliance",
+        "@com_github_burntsushi_toml//:toml",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":crio",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "crio_test",
+    srcs = ["config_test.go"],
+    embed = [":crio"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

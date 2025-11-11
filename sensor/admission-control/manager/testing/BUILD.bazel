@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testing",
+    srcs = ["manager_testing_impl.go"],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/manager/testing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/policies",
+        "//pkg/size",
+        "//sensor/admission-control/manager",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testing",
+    visibility = ["//visibility:public"],
+)

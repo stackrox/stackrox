@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pagerduty",
+    srcs = ["pagerduty.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/pagerduty",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/utils",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/images/types",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pagerduty_go_pagerduty//:go-pagerduty",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pagerduty",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pagerduty_test",
+    srcs = ["pagerduty_test.go"],
+    embed = [":pagerduty"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/fixtures",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

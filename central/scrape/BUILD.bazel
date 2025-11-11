@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scrape",
+    srcs = [
+        "controller.go",
+        "controller_impl.go",
+        "scrape.go",
+        "scrape_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/scrape",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/service/common",
+        "//generated/internalapi/central",
+        "//generated/internalapi/compliance",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scrape",
+    visibility = ["//visibility:public"],
+)

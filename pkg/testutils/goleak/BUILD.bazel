@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "goleak",
+    srcs = ["assert_no_leak.go"],
+    importpath = "github.com/stackrox/rox/pkg/testutils/goleak",
+    visibility = ["//visibility:public"],
+    deps = ["@org_uber_go_goleak//:goleak"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":goleak",
+    visibility = ["//visibility:public"],
+)

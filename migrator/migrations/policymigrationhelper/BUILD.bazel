@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policymigrationhelper",
+    srcs = [
+        "policy_migrator.go",
+        "postgres_policy_migrator.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/policymigrationhelper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/log",
+        "//pkg/jsonutil",
+        "//pkg/protoutils",
+        "//pkg/sac",
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policymigrationhelper",
+    visibility = ["//visibility:public"],
+)

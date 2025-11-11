@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "overlays",
+    srcs = ["postrenderer.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/overlays",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stackrox_k8s_overlay_patch//pkg/patch",
+        "@com_github_stackrox_k8s_overlay_patch//pkg/types",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@sh_helm_helm_v3//pkg/postrender",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":overlays",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "overlays_test",
+    srcs = ["postrenderer_test.go"],
+    embed = [":overlays"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)

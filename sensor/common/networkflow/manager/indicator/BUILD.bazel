@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "indicator",
+    srcs = [
+        "indicator.go",
+        "key.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/networkflow/manager/indicator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "//pkg/protoconv",
+        "//pkg/timestamp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":indicator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "indicator_test",
+    srcs = ["key_test.go"],
+    embed = [":indicator"],
+    deps = [
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "@com_github_cespare_xxhash//:xxhash",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

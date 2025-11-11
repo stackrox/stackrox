@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "delete",
+    srcs = ["delete.go"],
+    importpath = "github.com/stackrox/rox/roxctl/cluster/delete",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":delete",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "delete_test",
+    srcs = ["delete_test.go"],
+    embed = [":delete"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/utils",
+        "//roxctl/common/environment/mocks",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//test/bufconn",
+    ],
+)

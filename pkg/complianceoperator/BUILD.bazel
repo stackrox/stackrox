@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "complianceoperator",
+    srcs = [
+        "api.go",
+        "const.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/complianceoperator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sapi",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperator",
+    visibility = ["//visibility:public"],
+)

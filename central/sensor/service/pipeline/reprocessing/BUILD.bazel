@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reprocessing",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/detection/lifecycle",
+        "//central/metrics",
+        "//central/reprocessor",
+        "//central/risk/manager",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/metrics",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reprocessing",
+    visibility = ["//visibility:public"],
+)

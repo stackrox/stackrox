@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "singleton.go",
+        "store.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/serviceidentities/internal/store",
+    visibility = ["//central/serviceidentities:__subpackages__"],
+    deps = [
+        "//central/globaldb",
+        "//central/serviceidentities/internal/store/postgres",
+        "//generated/storage",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//central/serviceidentities:__subpackages__"],
+)

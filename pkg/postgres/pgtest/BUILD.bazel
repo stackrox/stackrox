@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pgtest",
+    srcs = ["postgres.go"],
+    importpath = "github.com/stackrox/rox/pkg/postgres/pgtest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/postgres",
+        "//pkg/postgres/pgtest/conn",
+        "//pkg/postgres/schema",
+        "//pkg/random",
+        "@com_github_lib_pq//:pq",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pgtest",
+    visibility = ["//visibility:public"],
+)

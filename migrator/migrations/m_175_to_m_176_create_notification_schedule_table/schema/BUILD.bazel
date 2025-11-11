@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = ["notification_schedules.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

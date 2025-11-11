@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "cluster.go",
+        "flow.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+    deps = [
+        "//generated/storage",
+        "//pkg/timestamp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+)

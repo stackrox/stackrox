@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = ["permission_sets.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)

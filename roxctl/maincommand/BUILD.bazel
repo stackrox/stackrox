@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "maincommand",
+    srcs = [
+        "command.go",
+        "error_writer.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/maincommand",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/version",
+        "//roxctl/central",
+        "//roxctl/cluster",
+        "//roxctl/collector",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/completion",
+        "//roxctl/declarativeconfig",
+        "//roxctl/deployment",
+        "//roxctl/doc",
+        "//roxctl/helm",
+        "//roxctl/image",
+        "//roxctl/logconvert",
+        "//roxctl/netpol",
+        "//roxctl/scanner",
+        "//roxctl/sensor",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":maincommand",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "maincommand_test",
+    srcs = [
+        "command_test.go",
+        "embed_tree_debug_test.go",
+        "error_writer_test.go",
+    ],
+    embed = [":maincommand"],
+    embedsrcs = ["command_tree_debug.yaml"],
+    deps = [
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_spf13_pflag//:pflag",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)

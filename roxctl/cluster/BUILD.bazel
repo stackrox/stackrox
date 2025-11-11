@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cluster",
+    srcs = ["cluster.go"],
+    importpath = "github.com/stackrox/rox/roxctl/cluster",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/cluster/delete",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cluster",
+    visibility = ["//visibility:public"],
+)

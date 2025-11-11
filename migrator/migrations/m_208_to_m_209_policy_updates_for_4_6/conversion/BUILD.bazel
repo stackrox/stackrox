@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conversion",
+    srcs = [
+        "convert_policies.go",
+        "convert_policy_categories.go",
+        "convert_policy_category_edges.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/conversion",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/schema",
+        "@com_github_lib_pq//:pq",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":conversion",
+    visibility = ["//visibility:public"],
+)

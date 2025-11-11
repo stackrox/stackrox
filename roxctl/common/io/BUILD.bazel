@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "io",
+    srcs = ["io.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/io",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/env"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":io",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "io_test",
+    srcs = ["io_test.go"],
+    embed = [":io"],
+    deps = [
+        "//pkg/env",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

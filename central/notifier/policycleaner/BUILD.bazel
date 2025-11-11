@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policycleaner",
+    srcs = [
+        "clean_policy.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifier/policycleaner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/detection",
+        "//central/detection/buildtime",
+        "//central/detection/deploytime",
+        "//central/detection/runtime",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policycleaner",
+    visibility = ["//visibility:public"],
+)

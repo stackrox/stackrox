@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scoped",
+    srcs = ["context.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/scoped",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "//pkg/search/postgres/mapping",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scoped",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scoped_test",
+    srcs = ["context_test.go"],
+    embed = [":scoped"],
+    deps = [
+        "//generated/api/v1:api",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

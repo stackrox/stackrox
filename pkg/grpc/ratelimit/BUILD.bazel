@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ratelimit",
+    srcs = [
+        "ratelimit.go",
+        "ratelimit_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/ratelimit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/httputil",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/ratelimit",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ratelimit",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ratelimit_test",
+    srcs = ["ratelimit_impl_test.go"],
+    embed = [":ratelimit"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_x_time//rate",
+    ],
+)

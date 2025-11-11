@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "csv",
+    srcs = ["csv_handler.go"],
+    importpath = "github.com/stackrox/rox/central/administration/usage/csv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/usage/datastore/securedunits",
+        "//generated/storage",
+        "//pkg/csv",
+        "//pkg/errox",
+        "//pkg/grpc/errors",
+        "//pkg/protocompat",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":csv",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "csv_test",
+    srcs = ["csv_test.go"],
+    embed = [":csv"],
+    deps = [
+        "//generated/storage",
+        "//pkg/csv",
+        "//pkg/protoconv",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

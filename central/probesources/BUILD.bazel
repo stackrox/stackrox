@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "probesources",
+    srcs = ["sources.go"],
+    importpath = "github.com/stackrox/rox/central/probesources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/clusters",
+        "//central/probeupload/manager",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/kocache",
+        "//pkg/logging",
+        "//pkg/probeupload",
+        "//pkg/sync",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":probesources",
+    visibility = ["//visibility:public"],
+)

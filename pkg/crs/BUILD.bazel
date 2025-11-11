@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "crs",
+    srcs = [
+        "crs.go",
+        "env.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/crs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":crs",
+    visibility = ["//visibility:public"],
+)

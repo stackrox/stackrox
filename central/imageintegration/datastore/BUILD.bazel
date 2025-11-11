@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/imageintegration/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/imageintegration/store",
+        "//central/imageintegration/store/postgres",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/openshift",
+        "//pkg/postgres",
+        "//pkg/registries/types",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/scanners/types",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["singleton_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/imageintegration/store",
+        "//central/imageintegration/store/mocks",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/openshift",
+        "//pkg/scanners/types",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "delegatedregistry",
+    srcs = ["delegated_registry_handler.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/delegatedregistry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/registry",
+        "//sensor/common/scan",
+        "//sensor/common/trace",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":delegatedregistry",
+    visibility = ["//visibility:public"],
+)

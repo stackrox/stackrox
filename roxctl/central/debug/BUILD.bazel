@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "debug",
+    srcs = [
+        "authz_trace.go",
+        "debug.go",
+        "download_diagnostics.go",
+        "dump.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/central/debug",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/httputil",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//roxctl/central/debug/db",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/util",
+        "//roxctl/common/zipdownload",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":debug",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "debug_test",
+    srcs = [
+        "authz_trace_test.go",
+        "download_diagnostics_test.go",
+    ],
+    embed = [":debug"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/grpc",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//roxctl/common/environment",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/flags",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_uber_go_mock//gomock",
+    ],
+)

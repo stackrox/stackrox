@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "enforcers",
+    srcs = ["bypass.go"],
+    importpath = "github.com/stackrox/rox/pkg/enforcers",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enforcers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "enforcers_test",
+    srcs = ["bypass_test.go"],
+    embed = [":enforcers"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

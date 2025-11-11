@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gen_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/central/graphql/resolvers/gen",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//central/analystnotes",
+        "//central/graphql/generator",
+        "//central/graphql/generator/codegen",
+        "//central/graphql/resolvers/inputtypes",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protocompat",
+    ],
+)
+
+go_binary(
+    name = "gen",
+    embed = [":gen_lib"],
+    visibility = ["//visibility:public"],
+)

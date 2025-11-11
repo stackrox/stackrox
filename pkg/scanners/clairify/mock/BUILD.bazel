@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mock",
+    srcs = ["mock.go"],
+    importpath = "github.com/stackrox/rox/pkg/scanners/clairify/mock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mock",
+    visibility = ["//visibility:public"],
+)

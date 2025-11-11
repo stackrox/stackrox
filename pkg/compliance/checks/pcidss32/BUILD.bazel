@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pcidss32",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/pcidss32",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/compliance/checks/pcidss32/check362",
+        "//pkg/compliance/checks/pcidss32/check71",
+        "//pkg/compliance/checks/pcidss32/check712",
+        "//pkg/compliance/checks/pcidss32/check713",
+        "//pkg/compliance/checks/pcidss32/check722",
+        "//pkg/compliance/checks/pcidss32/check723",
+        "//pkg/compliance/checks/pcidss32/check811",
+        "//pkg/compliance/checks/pcidss32/check85",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pcidss32",
+    visibility = ["//visibility:public"],
+)

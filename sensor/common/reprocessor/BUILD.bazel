@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reprocessor",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/reprocessor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//sensor/common",
+        "//sensor/common/admissioncontroller",
+        "//sensor/common/detector",
+        "//sensor/common/image/cache",
+        "//sensor/common/message",
+        "//sensor/common/unimplemented",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reprocessor",
+    visibility = ["//visibility:public"],
+)

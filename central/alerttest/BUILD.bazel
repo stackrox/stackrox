@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "alerttest",
+    srcs = ["alert.go"],
+    importpath = "github.com/stackrox/rox/central/alerttest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures/fixtureconsts",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":alerttest",
+    visibility = ["//visibility:public"],
+)

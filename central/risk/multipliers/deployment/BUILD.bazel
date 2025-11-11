@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deployment",
+    srcs = [
+        "config.go",
+        "image_helper.go",
+        "multiplier.go",
+        "port_exposure.go",
+        "process_baseline_violations.go",
+        "violations.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/multipliers/deployment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/processbaseline/evaluator",
+        "//central/processindicator/views",
+        "//central/risk/getters",
+        "//central/risk/multipliers",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deployment_test",
+    srcs = [
+        "config_test.go",
+        "port_exposure_test.go",
+        "process_baseline_violations_test.go",
+        "violations_test.go",
+    ],
+    embed = [":deployment"],
+    deps = [
+        "//central/processbaseline/evaluator/mocks",
+        "//central/processindicator/views",
+        "//central/risk/getters",
+        "//central/risk/multipliers",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

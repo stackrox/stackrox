@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "handlers",
+    srcs = ["http_handler.go"],
+    importpath = "github.com/stackrox/rox/central/certs/handlers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/certs/export",
+        "//central/systeminfo/listener",
+        "//pkg/httputil",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handlers",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dispatcher",
+    srcs = [
+        "utils.go",
+        "virtualmachineinstances.go",
+        "virtualmachines.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//pkg/logging",
+        "//pkg/virtualmachine",
+        "//sensor/common/virtualmachine",
+        "//sensor/kubernetes/eventpipeline/component",
+        "//sensor/kubernetes/utils",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_kubevirt_api//core/v1:core",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dispatcher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "dispatcher_test",
+    srcs = [
+        "utils_test.go",
+        "virtualmachineinstances_test.go",
+        "virtualmachines_test.go",
+    ],
+    embed = [":dispatcher"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/protoassert",
+        "//pkg/uuid",
+        "//pkg/virtualmachine",
+        "//sensor/common/virtualmachine",
+        "//sensor/kubernetes/eventpipeline/component",
+        "//sensor/kubernetes/listener/resources/virtualmachine/dispatcher/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_kubevirt_api//core/v1:core",
+        "@org_golang_google_protobuf//proto",
+        "@org_uber_go_mock//gomock",
+    ],
+)

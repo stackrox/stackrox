@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tokens",
+    srcs = [
+        "claims.go",
+        "facade.go",
+        "info.go",
+        "issuer.go",
+        "issuer_factory.go",
+        "options.go",
+        "revocation.go",
+        "source.go",
+        "sources.go",
+        "validator.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/tokens",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/jwt",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/timeutil",
+        "//pkg/uuid",
+        "@com_github_go_jose_go_jose_v4//:go-jose",
+        "@com_github_go_jose_go_jose_v4//jwt",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tokens",
+    visibility = ["//visibility:public"],
+)

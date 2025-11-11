@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "index",
+    srcs = [
+        "caching_indexer.go",
+        "indexer.go",
+    ],
+    importpath = "github.com/stackrox/rox/compliance/node/index",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/node",
+        "//compliance/utils",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/scannerv4/mappers",
+        "//pkg/sync",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//indexer",
+        "@com_github_quay_claircore//indexer/controller",
+        "@com_github_quay_claircore//rhel",
+        "@com_github_quay_zlog//:zlog",
+        "@com_github_rs_zerolog//:zerolog",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":index",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "index_test",
+    srcs = [
+        "caching_indexer_test.go",
+        "indexer_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":index"],
+    deps = [
+        "//compliance/utils",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/mtls",
+        "//pkg/protoassert",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

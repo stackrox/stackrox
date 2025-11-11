@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "openshift",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+        "testutils.go",
+        "watcher.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/openshift",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/idputil",
+        "//pkg/auth/authproviders/openshift/internal/dexconnector",
+        "//pkg/auth/tokens",
+        "//pkg/env",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/satoken",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":openshift",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deployment",
+    srcs = ["service_impl.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/deployment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/idcheck",
+        "//sensor/common/store",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployment",
+    visibility = ["//visibility:public"],
+)

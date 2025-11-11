@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "chaos_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/scale/chaos",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/env",
+        "//pkg/logging",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+    ],
+)
+
+go_binary(
+    name = "chaos",
+    embed = [":chaos_lib"],
+    visibility = ["//visibility:public"],
+)

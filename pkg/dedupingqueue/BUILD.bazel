@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dedupingqueue",
+    srcs = ["deduping_queue.go"],
+    importpath = "github.com/stackrox/rox/pkg/dedupingqueue",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/metrics",
+        "//pkg/sync",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dedupingqueue",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "dedupingqueue_test",
+    srcs = ["deduping_queue_test.go"],
+    embed = [":dedupingqueue"],
+    deps = [
+        "//pkg/concurrency",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

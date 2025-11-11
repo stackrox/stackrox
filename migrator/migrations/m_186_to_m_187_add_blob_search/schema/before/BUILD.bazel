@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "before",
+    srcs = [
+        "blobs.go",
+        "convert_blobs.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/before",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":before",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "before_test",
+    srcs = ["convert_blobs_test.go"],
+    embed = [":before"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

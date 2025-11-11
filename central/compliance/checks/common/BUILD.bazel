@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "checks.go",
+        "host_os.go",
+        "integrations.go",
+        "rbac.go",
+        "vulns.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//generated/storage",
+        "//pkg/booleanpolicy/policyfields",
+        "//pkg/k8srbac",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = [
+        "checks_test.go",
+        "integrations_test.go",
+        "vulns_test.go",
+    ],
+    embed = [":common"],
+    deps = [
+        "//central/compliance/checks/testutils",
+        "//central/compliance/framework",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

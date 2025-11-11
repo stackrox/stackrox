@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "derivelocalvalues",
+    srcs = [
+        "command.go",
+        "derivelocalvalues.go",
+        "extraction.go",
+        "k8s_access.go",
+        "live.go",
+        "local.go",
+        "map_util.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/helm/derivelocalvalues",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/k8sutil",
+        "//pkg/maputil",
+        "//pkg/namespaces",
+        "//pkg/reflectutils",
+        "//pkg/set",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/helm/internal/common",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_client_go//dynamic",
+        "@io_k8s_client_go//plugin/pkg/client/auth",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//util/jsonpath",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":derivelocalvalues",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "derivelocalvalues_test",
+    srcs = [
+        "command_test.go",
+        "derivelocalvalues_test.go",
+        "extraction_test.go",
+        "k8s_access_test.go",
+        "map_util_test.go",
+    ],
+    embed = [":derivelocalvalues"],
+    deps = [
+        "//pkg/errox",
+        "//roxctl/common/environment",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)

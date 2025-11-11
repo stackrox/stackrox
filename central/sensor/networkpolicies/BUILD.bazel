@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "networkpolicies",
+    srcs = [
+        "controller.go",
+        "controller_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/networkpolicies",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/service/common",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkpolicies",
+    visibility = ["//visibility:public"],
+)

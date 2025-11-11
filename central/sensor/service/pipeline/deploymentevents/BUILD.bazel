@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deploymentevents",
+    srcs = [
+        "cluster_enrichment.go",
+        "pipeline.go",
+        "validate_input.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/activecomponent/updater/aggregator",
+        "//central/cluster/datastore",
+        "//central/deployment/datastore",
+        "//central/detection/lifecycle",
+        "//central/metrics",
+        "//central/networkbaseline/manager",
+        "//central/networkpolicies/graph",
+        "//central/reprocessor",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/search",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploymentevents",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deploymentevents_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":deploymentevents"],
+    deps = [
+        "//central/activecomponent/updater/aggregator/mocks",
+        "//central/cluster/datastore/mocks",
+        "//central/deployment/datastore/mocks",
+        "//central/detection/lifecycle/mocks",
+        "//central/networkbaseline/manager/mocks",
+        "//central/networkpolicies/graph/mocks",
+        "//central/reprocessor/mocks",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

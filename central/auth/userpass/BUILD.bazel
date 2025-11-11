@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "userpass",
+    srcs = [
+        "auth.go",
+        "watch_handler.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/auth/userpass",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/role/datastore",
+        "//central/role/mapper",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/basic",
+        "//pkg/auth/htpasswd",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/env",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/basic",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":userpass",
+    visibility = ["//visibility:public"],
+)

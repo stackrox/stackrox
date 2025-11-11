@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "datastore.go",
+        "graphdump.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/graphdb/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/cve/cluster/datastore",
+        "//central/cve/converter/v2:converter",
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//central/image/datastore/store/v2/postgres",
+        "//central/namespace/datastore",
+        "//central/node/datastore",
+        "//central/ranking",
+        "//central/risk/datastore",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/features",
+        "//pkg/fixtures",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/sac/testconsts",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

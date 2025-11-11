@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_206_to_m_207_add_default_policy_edge",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_add_default_policy_edge",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_206_to_m_207_add_default_policy_edge/schema",
+        "//migrator/types",
+        "//pkg/sac",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_206_to_m_207_add_default_policy_edge",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8srbac",
+    srcs = [
+        "blankable.go",
+        "evaluator.go",
+        "evaluator_impl.go",
+        "globable.go",
+        "policy_rule_field.go",
+        "policy_rule_field_set.go",
+        "policy_rule_fields.go",
+        "policy_rule_set.go",
+        "roles.go",
+        "subject_key.go",
+        "subject_set.go",
+        "subjects.go",
+        "utils.go",
+        "wildcardable.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/k8srbac",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8srbac",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8srbac_test",
+    srcs = [
+        "evaluator_test.go",
+        "policy_rule_field_set_test.go",
+        "policy_rule_field_test.go",
+        "policy_rule_set_test.go",
+        "subject_rule_set_test.go",
+        "subjects_test.go",
+    ],
+    embed = [":k8srbac"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

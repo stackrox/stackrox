@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scannerv4",
+    srcs = [
+        "util.go",
+        "version.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scannerv4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/images/utils",
+        "@com_github_google_go_containerregistry//pkg/name",
+        "@com_github_mitchellh_mapstructure//:mapstructure",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scannerv4",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scannerv4_test",
+    srcs = ["version_test.go"],
+    embed = [":scannerv4"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

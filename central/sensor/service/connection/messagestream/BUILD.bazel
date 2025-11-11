@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "messagestream",
+    srcs = [
+        "sizing_events.go",
+        "stream.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/connection/messagestream",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/metrics",
+        "//generated/internalapi/central",
+        "//pkg/reflectutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":messagestream",
+    visibility = ["//visibility:public"],
+)

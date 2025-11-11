@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "roxctl_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/roxctl",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/clientconn",
+        "//pkg/devbuild",
+        "//pkg/sync",
+        "//roxctl/common",
+        "//roxctl/maincommand",
+        "//roxctl/utils",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_binary(
+    name = "roxctl",
+    embed = [":roxctl_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "roxctl_test",
+    srcs = ["main_test.go"],
+    embed = [":roxctl_lib"],
+    deps = [
+        "//pkg/sync",
+        "//roxctl/common",
+        "//roxctl/maincommand",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

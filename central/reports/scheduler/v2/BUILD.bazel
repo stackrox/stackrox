@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scheduler",
+    srcs = [
+        "scheduler.go",
+        "scheduler_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/reports/scheduler/v2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/graphql/resolvers",
+        "//central/notifier/datastore",
+        "//central/reports/common",
+        "//central/reports/config/datastore",
+        "//central/reports/scheduler/v2/reportgenerator",
+        "//central/reports/snapshot/datastore",
+        "//central/reports/validation",
+        "//central/resourcecollection/datastore",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv/schedule",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_pkg_errors//:errors",
+        "@in_gopkg_robfig_cron_v2//:cron_v2",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scheduler",
+    visibility = ["//visibility:public"],
+)

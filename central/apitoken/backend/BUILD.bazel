@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backend",
+    srcs = [
+        "backend.go",
+        "backend_impl.go",
+        "constants.go",
+        "singleton.go",
+        "source.go",
+        "source_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/apitoken/backend",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/apitoken/datastore",
+        "//central/jwt",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/permissions",
+        "//pkg/auth/tokens",
+        "//pkg/auth/user",
+        "//pkg/errox",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/timeutil",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backend",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "backend_test",
+    srcs = ["provider_test.go"],
+    embed = [":backend"],
+    deps = ["//pkg/auth/authproviders"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nvd",
+    srcs = ["nvd.go"],
+    importpath = "github.com/stackrox/rox/pkg/scannerv4/enricher/nvd",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nvd",
+    visibility = ["//visibility:public"],
+)

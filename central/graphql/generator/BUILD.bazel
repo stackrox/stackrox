@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generator",
+    srcs = [
+        "schema2.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/graphql/generator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/protoreflect",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generator_test",
+    srcs = ["schema2_test.go"],
+    embed = [":generator"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

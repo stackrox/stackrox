@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scannerclient",
+    srcs = [
+        "grpc_client.go",
+        "reset_notifiable.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/scannerclient",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/registries/types",
+        "//pkg/scannerv4",
+        "//pkg/scannerv4/client",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//sensor/common",
+        "//sensor/common/centralcaps",
+        "@com_github_google_go_containerregistry//pkg/authn",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scannerclient",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scannerclient_test",
+    srcs = ["grpc_client_test.go"],
+    embed = [":scannerclient"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/registries/types",
+        "//pkg/scannerv4/client/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_uber_go_mock//gomock",
+    ],
+)

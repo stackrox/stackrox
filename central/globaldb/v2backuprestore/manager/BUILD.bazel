@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "file_encodings.go",
+        "manager.go",
+        "restore_context.go",
+        "restore_process.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb/v2backuprestore/common",
+        "//central/globaldb/v2backuprestore/formats",
+        "//central/globaldb/v2backuprestore/formats/all",
+        "//generated/api/v1:api",
+        "//pkg/backup",
+        "//pkg/concurrency",
+        "//pkg/grpc/authn",
+        "//pkg/ioutils",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/osutils",
+        "//pkg/postgres/pgconfig",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/timeutil",
+        "//pkg/utils",
+        "@com_github_graph_gophers_graphql_go//errors",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "manager_test",
+    srcs = ["formats_test.go"],
+    embed = [":manager"],
+    deps = [
+        "//central/globaldb/v2backuprestore/formats",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

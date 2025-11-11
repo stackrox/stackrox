@@ -1,0 +1,126 @@
+# Bazel workspace for StackRox
+# This file defines external dependencies for the entire build system
+
+workspace(name = "stackrox_rox")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# ============================================================================
+# Go Rules
+# ============================================================================
+
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "f4a9314518ca6acfa16cc4ab43b0b8ce1e4ea64b81c38d8a3772883f153346b8",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+    ],
+)
+
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "b760f7fe75173886007f7c2e616a21241208f3d90e8657dc65d36a771e916b6a",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.39.1/bazel-gazelle-v0.39.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.39.1/bazel-gazelle-v0.39.1.tar.gz",
+    ],
+)
+
+# Load Go rules
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+
+# Initialize Go rules
+go_rules_dependencies()
+
+# Register Go toolchain (matching go.mod version: 1.24.0)
+go_register_toolchains(version = "1.24.0")
+
+# ============================================================================
+# Go Dependencies (from go.mod)
+# ============================================================================
+
+# Load go_repository rule
+load("@bazel_gazelle//:deps.bzl", "go_repository")
+
+# Load dependencies from go.mod/go.sum FIRST (before gazelle_dependencies)
+# This ensures our versions take precedence over Gazelle's defaults
+# Run: bazel run //:gazelle-update-repos
+load("//:go_deps.bzl", "go_dependencies")
+
+# gazelle:repository_macro go_deps.bzl%go_dependencies
+go_dependencies()
+
+# Initialize Gazelle AFTER our dependencies so our versions take precedence
+gazelle_dependencies()
+
+# ============================================================================
+# Protocol Buffers
+# ============================================================================
+
+# bazel_features is required by rules_proto
+http_archive(
+    name = "bazel_features",
+    sha256 = "c2596994cf63513bd44180411a4ac3ae95d32bf59148fcb6087a4642b3ffef11",
+    strip_prefix = "bazel_features-1.20.0",
+    url = "https://github.com/bazel-contrib/bazel_features/releases/download/v1.20.0/bazel_features-v1.20.0.tar.gz",
+)
+
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+bazel_features_deps()
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+    strip_prefix = "rules_proto-6.0.2",
+    urls = [
+        "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
+    ],
+)
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
+rules_proto_dependencies()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
+rules_proto_toolchains()
+
+# Add protobuf for dependencies that need it
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "a1fa6ffa97c09d1efe0344e4352a6dbc51cebaafbdf20bcb6405147a0158c406",
+    strip_prefix = "protobuf-3.24.4",
+    urls = [
+        "https://github.com/protocolbuffers/protobuf/archive/v3.24.4.tar.gz",
+    ],
+)
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+protobuf_deps()
+
+# ============================================================================
+# Container/Docker Rules (Phase 3 - commented out for now)
+# ============================================================================
+
+# Will be added in Phase 3 when we build container images
+# We'll use rules_oci for modern OCI image building
+
+# ============================================================================
+# NodeJS Rules (Phase 4 - commented out for now)
+# ============================================================================
+
+# Will be added in Phase 4 when we build the UI
+
+# ============================================================================
+# Python Rules (Phase 5 - commented out for now)
+# ============================================================================
+
+# Will be added in Phase 5 for various Python scripts
+
+# ============================================================================
+# Custom StackRox Rules
+# ============================================================================
+
+# Load any custom rules we define in //tools/bazel
+# (Will be created as needed during migration)
+

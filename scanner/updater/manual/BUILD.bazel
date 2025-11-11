@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manual",
+    srcs = [
+        "manual.go",
+        "severity.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/updater/manual",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/scannerv4/updater/manual",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_zlog//:zlog",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manual",
+    visibility = ["//visibility:public"],
+)

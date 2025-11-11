@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_208_to_m_209_policy_updates_for_4_6",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    embedsrcs = [
+        "policies_before_and_after/after/impersonated_secret_access.json",
+        "policies_before_and_after/before/impersonated_secret_access.json",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/conversion",
+        "//migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/schema",
+        "//migrator/migrations/policymigrationhelper",
+        "//migrator/types",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_208_to_m_209_policy_updates_for_4_6",
+    visibility = ["//visibility:public"],
+)

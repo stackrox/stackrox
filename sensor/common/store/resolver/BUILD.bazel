@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolver",
+    srcs = ["resolver.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/store/resolver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//sensor/common/selector",
+        "//sensor/common/store",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resolver",
+    visibility = ["//visibility:public"],
+)

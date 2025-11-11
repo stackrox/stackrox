@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "test_test",
+    srcs = ["proto_test.go"],
+    data = glob(["testdata/**"]),
+    embedsrcs = [
+        "testdata/compat.alert.json",
+        "testdata/pretty.alert.json",
+    ],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/jsonutil",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handlers",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/central/policy/handlers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifier/datastore",
+        "//central/policy/customresource",
+        "//central/policy/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/httputil",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//protoadapt",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handlers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handlers_test",
+    srcs = ["handler_test.go"],
+    embed = [":handlers"],
+    deps = [
+        "//central/notifier/datastore/mocks",
+        "//central/policy/customresource",
+        "//central/policy/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/zip",
+        "@com_github_stretchr_testify//suite",
+        "@com_github_tidwall_gjson//:gjson",
+        "@org_uber_go_mock//gomock",
+    ],
+)

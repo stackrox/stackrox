@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusterhealth",
+    srcs = ["updater.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/clusterhealth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/pods",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//sensor/common",
+        "//sensor/common/centralcaps",
+        "//sensor/common/message",
+        "//sensor/common/unimplemented",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusterhealth",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clusterhealth_test",
+    srcs = ["updater_test.go"],
+    embed = [":clusterhealth"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/namespaces",
+        "//sensor/common",
+        "//sensor/common/message",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

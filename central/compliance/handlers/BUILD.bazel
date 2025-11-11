@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handlers",
+    srcs = ["csv.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/handlers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/compliance/datastore",
+        "//central/compliance/datastore/types",
+        "//central/compliance/standards",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/csv",
+        "//pkg/errox",
+        "//pkg/protocompat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handlers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handlers_test",
+    srcs = ["csv_test.go"],
+    embed = [":handlers"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

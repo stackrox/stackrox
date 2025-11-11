@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_198_to_m_199_policy_description_and_criteria_updates",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    embedsrcs = [
+        "policies_before_and_after/after/automount_service_account_token.json",
+        "policies_before_and_after/after/exec-adduser.json",
+        "policies_before_and_after/after/exec-systemctl.json",
+        "policies_before_and_after/after/host_network.json",
+        "policies_before_and_after/after/host_pids.json",
+        "policies_before_and_after/after/no_resources_specified.json",
+        "policies_before_and_after/after/root_user.json",
+        "policies_before_and_after/after/sensitive_files.json",
+        "policies_before_and_after/before/automount_service_account_token.json",
+        "policies_before_and_after/before/exec-adduser.json",
+        "policies_before_and_after/before/exec-systemctl.json",
+        "policies_before_and_after/before/host_network.json",
+        "policies_before_and_after/before/host_pids.json",
+        "policies_before_and_after/before/no_resources_specified.json",
+        "policies_before_and_after/before/root_user.json",
+        "policies_before_and_after/before/sensitive_files.json",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_policy_description_and_criteria_updates",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_198_to_m_199_policy_description_and_criteria_updates/schema",
+        "//migrator/migrations/policymigrationhelper",
+        "//migrator/types",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_198_to_m_199_policy_description_and_criteria_updates",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "simplecache",
+    srcs = ["simplecache.go"],
+    importpath = "github.com/stackrox/rox/pkg/simplecache",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sync"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":simplecache",
+    visibility = ["//visibility:public"],
+)

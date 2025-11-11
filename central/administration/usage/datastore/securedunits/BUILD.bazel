@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "securedunits",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "get_cluster_ids.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/administration/usage/datastore/securedunits",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/usage/store",
+        "//central/administration/usage/store/cache",
+        "//central/administration/usage/store/postgres",
+        "//central/cluster/datastore",
+        "//central/globaldb",
+        "//generated/storage",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":securedunits",
+    visibility = ["//visibility:public"],
+)

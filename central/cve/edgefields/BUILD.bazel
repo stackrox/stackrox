@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "edgefields",
+    srcs = ["transform.go"],
+    importpath = "github.com/stackrox/rox/central/cve/edgefields",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/search",
+        "//pkg/search/scoped",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":edgefields",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "edgefields_test",
+    srcs = ["transform_test.go"],
+    embed = [":edgefields"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "//pkg/search/scoped",
+    ],
+)

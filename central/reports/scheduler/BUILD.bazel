@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scheduler",
+    srcs = ["schedule.go"],
+    importpath = "github.com/stackrox/rox/central/reports/scheduler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/deployment/datastore",
+        "//central/graphql/resolvers",
+        "//central/graphql/resolvers/loaders",
+        "//central/namespace/datastore",
+        "//central/notifier/datastore",
+        "//central/reports/common",
+        "//central/reports/config/datastore",
+        "//central/resourcecollection/datastore",
+        "//central/role/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/branding",
+        "//pkg/concurrency",
+        "//pkg/grpc/authz/allow",
+        "//pkg/logging",
+        "//pkg/notifier",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/protoconv/schedule",
+        "//pkg/retry",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/templates",
+        "//pkg/timestamp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_pkg_errors//:errors",
+        "@in_gopkg_robfig_cron_v2//:cron_v2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scheduler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scheduler_test",
+    srcs = ["schedule_test.go"],
+    embed = [":scheduler"],
+    deps = [
+        "//generated/storage",
+        "//pkg/branding",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

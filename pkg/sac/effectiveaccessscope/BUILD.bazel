@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "effectiveaccessscope",
+    srcs = [
+        "compacted.go",
+        "conversion.go",
+        "effective_access_scope.go",
+        "node_attributes.go",
+        "test_datasets.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/sac/effectiveaccessscope",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/labels",
+        "@io_k8s_apimachinery//pkg/selection",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":effectiveaccessscope",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "effectiveaccessscope_test",
+    srcs = [
+        "compacted_test.go",
+        "effective_access_scope_test.go",
+    ],
+    embed = [":effectiveaccessscope"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/labels",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/labels",
+        "@io_k8s_apimachinery//pkg/selection",
+    ],
+)

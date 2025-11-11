@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "buildinfo",
+    srcs = [
+        "buildinfo.go",
+        "buildinfo_dev.go",
+        "buildinfo_notest.go",
+        "norace.go",
+        "race.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/buildinfo",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":buildinfo",
+    visibility = ["//visibility:public"],
+)

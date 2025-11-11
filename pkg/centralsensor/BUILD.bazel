@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "centralsensor",
+    srcs = [
+        "caps.go",
+        "caps_list.go",
+        "client_test_only.go",
+        "init_cert.go",
+        "legacy_caps.go",
+        "legacy_sensor_version_info.go",
+        "sensor_hello.go",
+        "tls_challenge.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/centralsensor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "//pkg/testutils",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":centralsensor",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "centralsensor_test",
+    srcs = [
+        "init_cert_test.go",
+        "legacy_sensor_version_info_test.go",
+        "sensor_hello_test.go",
+    ],
+    embed = [":centralsensor"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/uuid",
+        "//pkg/version",
+        "//pkg/version/testutils",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

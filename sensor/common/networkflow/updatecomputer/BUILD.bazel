@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "updatecomputer",
+    srcs = [
+        "interface.go",
+        "legacy.go",
+        "metrics.go",
+        "testing.go",
+        "transition_based.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/networkflow/updatecomputer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "//sensor/common/networkflow/manager/indicator",
+        "@com_github_cespare_xxhash//:xxhash",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":updatecomputer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "updatecomputer_test",
+    srcs = [
+        "transition_based_offline_test.go",
+        "transition_based_test.go",
+        "update_computer_test.go",
+    ],
+    embed = [":updatecomputer"],
+    deps = [
+        "//generated/storage",
+        "//pkg/net",
+        "//pkg/networkgraph",
+        "//pkg/timestamp",
+        "//sensor/common/networkflow/manager/indicator",
+        "@com_github_cespare_xxhash//:xxhash",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

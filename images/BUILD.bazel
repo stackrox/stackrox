@@ -1,0 +1,48 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+# Create tar layer with roxctl binary
+pkg_tar(
+    name = "roxctl_layer",
+    srcs = ["//roxctl:roxctl"],
+    package_dir = "/usr/local/bin",
+    mode = "0755",
+)
+
+# Build OCI image for roxctl
+oci_image(
+    name = "roxctl_image",
+    base = "@distroless_base_linux_amd64",
+    entrypoint = ["/usr/local/bin/roxctl"],
+    tars = [":roxctl_layer"],
+)
+
+# Load image into Docker
+# Usage: bazelisk run //images:roxctl_load
+oci_load(
+    name = "roxctl_load",
+    image = ":roxctl_image",
+    repo_tags = ["stackrox/roxctl:bazel"],
+)
+
+
+# Migrator image
+pkg_tar(
+    name = "migrator_layer",
+    srcs = ["//migrator:migrator"],
+    package_dir = "/usr/local/bin",
+    mode = "0755",
+)
+
+oci_image(
+    name = "migrator_image",
+    base = "@distroless_base_linux_amd64",
+    entrypoint = ["/usr/local/bin/migrator"],
+    tars = [":migrator_layer"],
+)
+
+oci_load(
+    name = "migrator_load",
+    image = ":migrator_image",
+    repo_tags = ["stackrox/migrator:bazel"],
+)

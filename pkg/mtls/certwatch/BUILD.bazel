@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "certwatch",
+    srcs = [
+        "certwatch.go",
+        "options.go",
+        "tls_config_holder.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/mtls/certwatch",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/tlscheck",
+        "//pkg/x509utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certwatch",
+    visibility = ["//visibility:public"],
+)

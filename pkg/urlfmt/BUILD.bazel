@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "urlfmt",
+    srcs = ["url.go"],
+    importpath = "github.com/stackrox/rox/pkg/urlfmt",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":urlfmt",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "urlfmt_test",
+    srcs = ["url_test.go"],
+    embed = [":urlfmt"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "servicecerttoken",
+    srcs = ["extractor.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/service",
+        "//pkg/grpc/common/authn/servicecerttoken",
+        "//pkg/grpc/requestinfo",
+        "//pkg/logging",
+        "//pkg/mtls",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":servicecerttoken",
+    visibility = ["//visibility:public"],
+)

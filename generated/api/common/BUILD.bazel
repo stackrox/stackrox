@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "common",
+    srcs = [
+        "extended_rpc_status.pb.go",
+        "extended_rpc_status_vtproto.pb.go",
+    ],
+    importpath = "github.com/stackrox/rox/generated/api/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_planetscale_vtprotobuf//protohelpers",
+        "@com_github_planetscale_vtprotobuf//types/known/anypb",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+        "@org_golang_google_protobuf//types/known/anypb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "compliance_proto",
+    srcs = ["compliance_data.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//storage:storage_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_proto_library(
+    name = "compliance_go_proto",
+    importpath = "./internalapi/compliance",
+    proto = ":compliance_proto",
+    visibility = ["//visibility:public"],
+    deps = ["//storage:compliance_proto"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compliance",
+    visibility = ["//visibility:public"],
+)

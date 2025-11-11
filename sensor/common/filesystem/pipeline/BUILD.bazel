@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pipeline",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/filesystem/pipeline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "//sensor/common/clusterentities",
+        "//sensor/common/detector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pipeline",
+    visibility = ["//visibility:public"],
+)

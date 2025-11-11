@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policycategorymigrationhelper",
+    srcs = ["category_migrator.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/policycategorymigrationhelper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/jsonutil",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policycategorymigrationhelper",
+    visibility = ["//visibility:public"],
+)

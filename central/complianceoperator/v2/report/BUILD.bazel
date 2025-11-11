@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "report",
+    srcs = [
+        "errors.go",
+        "request.go",
+        "result.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":report",
+    visibility = ["//visibility:public"],
+)

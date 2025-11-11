@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cryptocodec",
+    srcs = ["crypto_codec.go"],
+    importpath = "github.com/stackrox/rox/pkg/cryptoutils/cryptocodec",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/cryptoutils",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cryptocodec",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cryptocodec_test",
+    srcs = ["crypto_codec_test.go"],
+    embed = [":cryptocodec"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

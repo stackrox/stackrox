@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clairv4",
+    srcs = [
+        "clairv4.go",
+        "convert.go",
+        "error.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/clairv4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/registries",
+        "//pkg/registries/types",
+        "//pkg/retry",
+        "//pkg/scanners/types",
+        "//pkg/set",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clairv4",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clairv4_test",
+    srcs = [
+        "clairv4_test.go",
+        "convert_test.go",
+    ],
+    embed = [":clairv4"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/registries/mocks",
+        "//pkg/registries/types",
+        "//pkg/utils",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

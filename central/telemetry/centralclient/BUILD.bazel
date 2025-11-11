@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "centralclient",
+    srcs = [
+        "client.go",
+        "interceptors.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/telemetry/centralclient",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/installation/store",
+        "//generated/storage",
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/glob",
+        "//pkg/grpc",
+        "//pkg/grpc/client/authn/basic",
+        "//pkg/images/defaults",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/telemetry/phonehome/telemeter",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/version",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":centralclient",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "centralclient_test",
+    srcs = [
+        "client_test.go",
+        "interceptors_test.go",
+    ],
+    embed = [":centralclient"],
+    deps = [
+        "//pkg/clientconn",
+        "//pkg/env",
+        "//pkg/grpc",
+        "//pkg/images/defaults",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+        "//pkg/telemetry/phonehome/segment/mock",
+        "//pkg/version",
+        "//pkg/version/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

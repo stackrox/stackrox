@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "endpoints",
+    srcs = [
+        "config.go",
+        "defaults.go",
+        "instantiate.go",
+        "instantiate_all.go",
+        "legacy_spec.go",
+        "load.go",
+        "paths.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/endpoints",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/tlsconfig",
+        "//pkg/env",
+        "//pkg/fileutils",
+        "//pkg/grpc",
+        "//pkg/logging",
+        "//pkg/mtls/verifier",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":endpoints",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "endpoints_test",
+    srcs = ["legacy_spec_test.go"],
+    embed = [":endpoints"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

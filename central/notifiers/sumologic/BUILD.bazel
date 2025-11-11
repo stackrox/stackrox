@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sumologic",
+    srcs = ["sumologic.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/sumologic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/errorhelpers",
+        "//pkg/httputil/proxy",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/retry",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@org_golang_google_protobuf//encoding/protojson",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sumologic",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sumologic_test",
+    srcs = ["sumologic_test.go"],
+    embed = [":sumologic"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

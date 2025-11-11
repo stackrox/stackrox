@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fixedby",
+    srcs = [
+        "fixedby.go",
+        "versiontype_string.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/enricher/fixedby",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/scannerv4/enricher/fixedby",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//alpine",
+        "@com_github_quay_claircore//aws",
+        "@com_github_quay_claircore//debian",
+        "@com_github_quay_claircore//gobin",
+        "@com_github_quay_claircore//java",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//nodejs",
+        "@com_github_quay_claircore//oracle",
+        "@com_github_quay_claircore//photon",
+        "@com_github_quay_claircore//python",
+        "@com_github_quay_claircore//rhel",
+        "@com_github_quay_claircore//rhel/rhcc",
+        "@com_github_quay_claircore//ruby",
+        "@com_github_quay_claircore//suse",
+        "@com_github_quay_claircore//ubuntu",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fixedby",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fixedby_test",
+    srcs = ["fixedby_test.go"],
+    deps = [
+        ":fixedby",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore_toolkit//types/cpe",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

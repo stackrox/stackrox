@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deployment",
+    srcs = ["matcher.go"],
+    importpath = "github.com/stackrox/rox/central/networkpolicies/deployment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/networkpolicies/datastore",
+        "//generated/storage",
+        "//pkg/labels",
+        "//pkg/logging",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deployment_test",
+    srcs = ["matcher_test.go"],
+    embed = [":deployment"],
+    deps = [
+        "//central/networkpolicies/datastore/mocks",
+        "//generated/storage",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

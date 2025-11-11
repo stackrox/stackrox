@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "v2backuprestore",
+    srcs = [
+        "check_manifest.go",
+        "manifest.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/v2backuprestore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/errorhelpers",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":v2backuprestore",
+    visibility = ["//visibility:public"],
+)

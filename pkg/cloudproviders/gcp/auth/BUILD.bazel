@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "client_manager.go",
+        "client_manager_impl.go",
+        "cred_manager.go",
+        "cred_manager_impl.go",
+        "tokensource.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/tokensource",
+        "//pkg/k8sutil",
+        "//pkg/logging",
+        "//pkg/secretinformer",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_artifactregistry//apiv1",
+        "@com_google_cloud_go_securitycenter//apiv1",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_client_go//kubernetes",
+        "@org_golang_google_api//storage/v1:storage",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auth",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "client_manager_impl_test.go",
+        "cred_manager_impl_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//pkg/auth/tokensource",
+        "//pkg/cloudproviders/gcp/auth/mocks",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["component.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//sensor/common/message",
+        "//sensor/kubernetes/eventpipeline/component",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

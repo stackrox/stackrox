@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testtags",
+    srcs = ["analyzer.go"],
+    importpath = "github.com/stackrox/rox/tools/roxvet/analyzers/testtags",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/roxvet/common",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/analysis/passes/inspect",
+        "@org_golang_x_tools//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testtags",
+    visibility = ["//visibility:public"],
+)

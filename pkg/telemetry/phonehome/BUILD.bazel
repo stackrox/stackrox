@@ -1,0 +1,75 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "phonehome",
+    srcs = [
+        "campaign.go",
+        "client.go",
+        "config.go",
+        "download_config.go",
+        "gatherer.go",
+        "hash.go",
+        "headers_multimap.go",
+        "interceptor.go",
+        "request_params.go",
+        "telemeter.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/telemetry/phonehome",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/errox/grpc",
+        "//pkg/eventual",
+        "//pkg/glob",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/errors",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome/segment",
+        "//pkg/telemetry/phonehome/telemeter",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":phonehome",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "phonehome_test",
+    srcs = [
+        "campaign_test.go",
+        "gatherer_test.go",
+        "hash_test.go",
+        "headers_multimap_test.go",
+        "interceptor_test.go",
+        "request_params_test.go",
+    ],
+    embed = [":phonehome"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/concurrency",
+        "//pkg/glob",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/grpc/requestinfo",
+        "//pkg/telemetry/phonehome/telemeter",
+        "//pkg/telemetry/phonehome/telemeter/mocks",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//peer",
+        "@org_uber_go_mock//gomock",
+    ],
+)

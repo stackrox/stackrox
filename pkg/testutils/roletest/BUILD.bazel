@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "roletest",
+    srcs = ["resolved_role.go"],
+    importpath = "github.com/stackrox/rox/pkg/testutils/roletest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":roletest",
+    visibility = ["//visibility:public"],
+)

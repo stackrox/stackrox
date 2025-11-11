@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "networkpolicy",
+    srcs = [
+        "k8s.go",
+        "rox.go",
+        "yaml.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/protoconv/networkpolicy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/protoconv",
+        "//pkg/protoconv/k8s",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/serializer/json",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkpolicy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "networkpolicy_test",
+    srcs = ["conversion_test.go"],
+    embed = [":networkpolicy"],
+    deps = [
+        "//pkg/k8sutil",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+    ],
+)

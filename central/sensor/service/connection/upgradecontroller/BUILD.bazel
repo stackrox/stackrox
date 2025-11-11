@@ -1,0 +1,71 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "upgradecontroller",
+    srcs = [
+        "active.go",
+        "metrics.go",
+        "process.go",
+        "process_check_ins.go",
+        "register_connection.go",
+        "storage_operations.go",
+        "timeout_provider.go",
+        "trigger.go",
+        "unexpected_error.go",
+        "upgrade_controller.go",
+        "upgrade_controller_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/sensor/service/common",
+        "//central/sensor/service/connection/upgradecontroller/stateutils",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sensorupgrader",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":upgradecontroller",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "upgradecontroller_test",
+    srcs = [
+        "register_connection_test.go",
+        "upgrade_controller_test.go",
+    ],
+    embed = [":upgradecontroller"],
+    deps = [
+        "//central/sensor/service/connection/upgradecontroller/stateutils",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/protoassert",
+        "//pkg/sensorupgrader",
+        "//pkg/sync",
+        "//pkg/version/testutils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

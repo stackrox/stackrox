@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hash",
+    srcs = ["hasher.go"],
+    importpath = "github.com/stackrox/rox/pkg/sensor/hash",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/utils",
+        "@com_github_stackrox_hashstructure//:hashstructure",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":hash",
+    visibility = ["//visibility:public"],
+)

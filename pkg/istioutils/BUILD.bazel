@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "istioutils",
+    srcs = ["istio_api_resources.go"],
+    importpath = "github.com/stackrox/rox/pkg/istioutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/util/version",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":istioutils",
+    visibility = ["//visibility:public"],
+)

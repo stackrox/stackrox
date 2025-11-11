@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "complianceoperatorrules",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/pipelines/complianceoperatorrules",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/manager",
+        "//central/complianceoperator/rules/datastore",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/metrics",
+        "//pkg/postgres/pgutils",
+        "//pkg/set",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperatorrules",
+    visibility = ["//visibility:public"],
+)

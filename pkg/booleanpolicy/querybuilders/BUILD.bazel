@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "querybuilders",
+    srcs = [
+        "builders.go",
+        "compound.go",
+        "special_cases.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/querybuilders",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/booleanpolicy/query",
+        "//pkg/search",
+        "//pkg/search/predicate/basematchers",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":querybuilders",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "querybuilders_test",
+    srcs = ["builders_test.go"],
+    embed = [":querybuilders"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

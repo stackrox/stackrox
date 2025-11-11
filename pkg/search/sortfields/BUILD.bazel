@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sortfields",
+    srcs = [
+        "fields_map.go",
+        "transformer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/sortfields",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sortfields",
+    visibility = ["//visibility:public"],
+)

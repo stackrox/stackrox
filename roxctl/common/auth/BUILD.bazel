@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "auth.go",
+        "basic.go",
+        "token.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/grpc/client/authn/basic",
+        "//pkg/grpc/client/authn/tokenbased",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//credentials",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auth",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = ["token_test.go"],
+    embed = [":auth"],
+    deps = [
+        "//pkg/env",
+        "//pkg/errox",
+        "//roxctl/common/flags",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

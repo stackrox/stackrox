@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "zip",
+    srcs = [
+        "generate_certs.go",
+        "zip.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/clusters/zip",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/clusters",
+        "//central/serviceidentities/datastore",
+        "//central/tlsconfig",
+        "//generated/storage",
+        "//image/sensor",
+        "//pkg/apiparams",
+        "//pkg/centralsensor",
+        "//pkg/grpc/authn",
+        "//pkg/helm/util",
+        "//pkg/httputil",
+        "//pkg/images/defaults",
+        "//pkg/istioutils",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/namespaces",
+        "//pkg/renderer",
+        "//pkg/zip",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zip",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "zip_test",
+    srcs = [
+        "generate_certs_test.go",
+        "render_test.go",
+    ],
+    embed = [":zip"],
+    deps = [
+        "//central/clusters",
+        "//central/serviceidentities/datastore/mocks",
+        "//generated/storage",
+        "//image/sensor",
+        "//pkg/env",
+        "//pkg/images/defaults",
+        "//pkg/mtls/testutils",
+        "//pkg/version/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@org_uber_go_mock//gomock",
+    ],
+)

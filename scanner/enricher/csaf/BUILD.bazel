@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "csaf",
+    srcs = [
+        "csaf.go",
+        "fetcher.go",
+        "parser.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/enricher/csaf",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/features",
+        "//pkg/scannerv4/enricher/csaf",
+        "//pkg/scannerv4/mappers",
+        "//pkg/utils",
+        "//scanner/enricher/csaf/internal/zreader",
+        "@com_github_klauspost_compress//snappy",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//pkg/tmp",
+        "@com_github_quay_claircore_toolkit//types/csaf",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":csaf",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "csaf_test",
+    srcs = [
+        "csaf_test.go",
+        "fetcher_test.go",
+        "parser_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":csaf"],
+    deps = [
+        "//pkg/features",
+        "//pkg/scannerv4/enricher/csaf",
+        "//pkg/testutils",
+        "@com_github_klauspost_compress//snappy",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//rhel/vex",
+        "@com_github_quay_claircore_toolkit//types/csaf",
+        "@com_github_quay_zlog//:zlog",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

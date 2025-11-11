@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "output",
+    srcs = ["output.go"],
+    importpath = "github.com/stackrox/rox/roxctl/helm/output",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//image",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "//pkg/telemetry/phonehome",
+        "//pkg/utils",
+        "//pkg/version",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/helm/internal/common",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@sh_helm_helm_v3//pkg/chart/loader",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":output",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "output_test",
+    srcs = [
+        "output_lint_test.go",
+        "output_test.go",
+    ],
+    embed = [":output"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/images/defaults",
+        "//pkg/telemetry/phonehome",
+        "//pkg/version/testutils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+        "//roxctl/helm/internal/common",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@sh_helm_helm_v3//pkg/lint",
+        "@sh_helm_helm_v3//pkg/lint/support",
+    ],
+)

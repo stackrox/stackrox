@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "augmentedobjs",
+    srcs = [
+        "construct.go",
+        "custom_types.go",
+        "meta.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/evaluator/pathutil",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":augmentedobjs",
+    visibility = ["//visibility:public"],
+)

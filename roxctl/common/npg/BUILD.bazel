@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "npg",
+    srcs = [
+        "errors.go",
+        "file.go",
+        "logger.go",
+        "testing.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/npg",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common/logger",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":npg",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "npg_test",
+    srcs = ["errors_test.go"],
+    embed = [":npg"],
+    deps = [
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "//roxctl/common/printer",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

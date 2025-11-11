@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "helmtest.go",
+        "meta.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/helm/charts/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//image",
+        "//pkg/helm/charts",
+        "//pkg/images/defaults",
+        "//pkg/images/defaults/testutils",
+        "//pkg/testutils",
+        "@com_github_stackrox_helmtest//pkg/framework",
+        "@com_github_stretchr_testify//require",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

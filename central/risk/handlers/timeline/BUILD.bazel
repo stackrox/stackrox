@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "timeline",
+    srcs = ["csv.go"],
+    importpath = "github.com/stackrox/rox/central/risk/handlers/timeline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/graphql/resolvers",
+        "//central/graphql/resolvers/loaders",
+        "//pkg/csv",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/pods/utils",
+        "//pkg/stringutils",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":timeline",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "singleton.go",
+        "store.go",
+        "store_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/user/datastore/internal/store",
+    visibility = ["//central/user/datastore:__subpackages__"],
+    deps = [
+        "//generated/storage",
+        "//pkg/expiringcache",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":store",
+    visibility = ["//central/user/datastore:__subpackages__"],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["store_test.go"],
+    embed = [":store"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

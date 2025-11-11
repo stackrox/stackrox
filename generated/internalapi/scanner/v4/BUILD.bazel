@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scanner",
+    srcs = [
+        "common.pb.go",
+        "common_vtproto.pb.go",
+        "index_report.pb.go",
+        "index_report_vtproto.pb.go",
+        "indexer_service.pb.go",
+        "indexer_service_grpc.pb.go",
+        "indexer_service_vtproto.pb.go",
+        "matcher_service.pb.go",
+        "matcher_service_grpc.pb.go",
+        "matcher_service_vtproto.pb.go",
+        "vulnerability_report.pb.go",
+        "vulnerability_report_vtproto.pb.go",
+    ],
+    importpath = "github.com/stackrox/rox/generated/internalapi/scanner/v4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_planetscale_vtprotobuf//protohelpers",
+        "@com_github_planetscale_vtprotobuf//types/known/timestamppb",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+        "@org_golang_google_protobuf//types/known/emptypb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scanner",
+    visibility = ["//visibility:public"],
+)

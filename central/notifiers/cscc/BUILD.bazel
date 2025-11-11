@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cscc",
+    srcs = [
+        "convert.go",
+        "cscc.go",
+        "validate.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/cscc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cloudproviders/gcp",
+        "//central/cluster/datastore",
+        "//central/notifiers/utils",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/cloudproviders/gcp/utils",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_googleapis_gax_go_v2//:gax-go",
+        "@com_github_pkg_errors//:errors",
+        "@com_google_cloud_go_securitycenter//apiv1",
+        "@com_google_cloud_go_securitycenter//apiv1/securitycenterpb",
+        "@org_golang_google_protobuf//types/known/structpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cscc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cscc_test",
+    srcs = ["cscc_test.go"],
+    embed = [":cscc"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+        "@com_google_cloud_go_securitycenter//apiv1/securitycenterpb",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "convert_notifiers.go",
+        "convert_report_configurations.go",
+        "convert_report_snapshots.go",
+        "notifiers.go",
+        "report_configurations.go",
+        "report_snapshots.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_report_config_migrations/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = [
+        "convert_notifiers_test.go",
+        "convert_report_configurations_test.go",
+        "convert_report_snapshots_test.go",
+    ],
+    embed = [":schema"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

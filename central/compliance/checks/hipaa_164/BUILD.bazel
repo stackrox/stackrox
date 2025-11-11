@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hipaa_164",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/hipaa_164",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/hipaa_164/check306e",
+        "//central/compliance/checks/hipaa_164/check308a1i",
+        "//central/compliance/checks/hipaa_164/check308a1iia",
+        "//central/compliance/checks/hipaa_164/check308a1iib",
+        "//central/compliance/checks/hipaa_164/check308a3iia",
+        "//central/compliance/checks/hipaa_164/check308a3iib",
+        "//central/compliance/checks/hipaa_164/check308a4",
+        "//central/compliance/checks/hipaa_164/check308a4iib",
+        "//central/compliance/checks/hipaa_164/check308a5iib",
+        "//central/compliance/checks/hipaa_164/check308a6ii",
+        "//central/compliance/checks/hipaa_164/check308a7iie",
+        "//central/compliance/checks/hipaa_164/check310a1",
+        "//central/compliance/checks/hipaa_164/check310d",
+        "//central/compliance/checks/hipaa_164/check312c",
+        "//central/compliance/checks/hipaa_164/check312e",
+        "//central/compliance/checks/hipaa_164/check312e1",
+        "//central/compliance/checks/hipaa_164/check314a2ic",
+        "//central/compliance/checks/hipaa_164/check316b2iii",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":hipaa_164",
+    visibility = ["//visibility:public"],
+)

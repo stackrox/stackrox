@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ioutils",
+    srcs = [
+        "chain_reader.go",
+        "chan_reader.go",
+        "chan_writer.go",
+        "checksum_reader.go",
+        "close.go",
+        "context_bound_reader.go",
+        "counting_reader.go",
+        "error_reader.go",
+        "interruptible_reader.go",
+        "nil_hash.go",
+        "nop_write_closer.go",
+        "readutils.go",
+        "resumable_reader.go",
+        "rwbuf.go",
+        "seekable_reader.go",
+        "sliding_reader.go",
+        "with_closer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/ioutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/ringbuffer",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ioutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ioutils_test",
+    srcs = [
+        "chain_reader_test.go",
+        "chan_reader_test.go",
+        "chan_writer_test.go",
+        "checksum_reader_test.go",
+        "context_bound_reader_test.go",
+        "error_reader_test.go",
+        "interruptible_reader_test.go",
+        "readutils_test.go",
+        "resumable_reader_test.go",
+        "rwbuf_test.go",
+        "sliding_reader_test.go",
+    ],
+    embed = [":ioutils"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

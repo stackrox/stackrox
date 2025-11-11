@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "doc",
+    srcs = ["generate.go"],
+    importpath = "github.com/stackrox/rox/roxctl/doc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_spf13_cobra//doc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":doc",
+    visibility = ["//visibility:public"],
+)

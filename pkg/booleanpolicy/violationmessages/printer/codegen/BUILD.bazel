@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "codegen_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer/codegen",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_dave_jennifer//jen",
+    ],
+)
+
+go_binary(
+    name = "codegen",
+    embed = [":codegen_lib"],
+    visibility = ["//visibility:public"],
+)

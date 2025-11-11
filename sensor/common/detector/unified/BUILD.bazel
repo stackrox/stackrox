@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unified",
+    srcs = [
+        "detector.go",
+        "detector_impl.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/detector/unified",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/booleanpolicy",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/detection",
+        "//pkg/detection/deploytime",
+        "//pkg/detection/runtime",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unified",
+    visibility = ["//visibility:public"],
+)

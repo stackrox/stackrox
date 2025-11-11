@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "views",
+    srcs = ["image_risk_view.go"],
+    importpath = "github.com/stackrox/rox/central/imagev2/views",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":views",
+    visibility = ["//visibility:public"],
+)

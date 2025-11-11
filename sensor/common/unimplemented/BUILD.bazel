@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unimplemented",
+    srcs = ["unimplemented.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/unimplemented",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/internalapi/central"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unimplemented",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["writer.go"],
+    importpath = "github.com/stackrox/rox/central/administration/events/datastore/internal/writer/mocks",
+    visibility = ["//central/administration/events/datastore:__subpackages__"],
+    deps = [
+        "//pkg/administration/events",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//central/administration/events/datastore:__subpackages__"],
+)

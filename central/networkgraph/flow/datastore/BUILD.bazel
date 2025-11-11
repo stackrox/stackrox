@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "cluster.go",
+        "cluster_impl.go",
+        "flow.go",
+        "flow_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/flow/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/cache",
+        "//central/networkgraph/aggregator",
+        "//central/networkgraph/config/datastore",
+        "//central/networkgraph/entity/networktree",
+        "//central/networkgraph/flow/datastore/internal/store",
+        "//central/networkgraph/flow/datastore/internal/store/postgres",
+        "//central/networkgraph/flow/datastore/internal/store/singleton",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/timestamp",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)

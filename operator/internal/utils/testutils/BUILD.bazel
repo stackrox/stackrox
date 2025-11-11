@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "cert.go",
+        "client.go",
+        "const.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/utils/testutils",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/client/fake",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//operator:__subpackages__"],
+)

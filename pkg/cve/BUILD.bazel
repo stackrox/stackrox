@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cve",
+    srcs = [
+        "cve.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/cve",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/search/postgres",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cve",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cve_test",
+    srcs = ["cve_test.go"],
+    embed = [":cve"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

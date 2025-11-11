@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "standards",
+    srcs = [
+        "check.go",
+        "cis_kubernetes.go",
+        "hipaa_164.go",
+        "nist800-190.go",
+        "nist800-53.go",
+        "pcidss32.go",
+        "standard.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/standards",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/framework",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_kubelet//config/v1beta1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":standards",
+    visibility = ["//visibility:public"],
+)

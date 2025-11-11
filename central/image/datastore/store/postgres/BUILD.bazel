@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "gen.go",
+        "store.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/image/datastore/store/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/image/datastore/store",
+        "//central/image/datastore/store/common/v2:common",
+        "//central/image/views",
+        "//central/metrics",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/concurrency",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/postgres/schema",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/paginated",
+        "//pkg/search/postgres",
+        "//pkg/search/sortfields",
+        "//pkg/set",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_stackrox_hashstructure//:hashstructure",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

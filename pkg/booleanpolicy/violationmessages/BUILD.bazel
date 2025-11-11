@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "violationmessages",
+    srcs = [
+        "context.go",
+        "printer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/violationmessages",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/booleanpolicy/evaluator",
+        "//pkg/booleanpolicy/fieldnames",
+        "//pkg/booleanpolicy/violationmessages/printer",
+        "//pkg/errorhelpers",
+        "//pkg/search",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":violationmessages",
+    visibility = ["//visibility:public"],
+)

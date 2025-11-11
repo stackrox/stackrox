@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "new",
+    srcs = [
+        "compliance_operator_check_result_v2.go",
+        "compliance_operator_profile_v2.go",
+        "compliance_operator_rule_v2.go",
+        "compliance_operator_scan_v2.go",
+        "convert_compliance_operator_check_result_v2.go",
+        "convert_compliance_operator_profile_v2.go",
+        "convert_compliance_operator_rule_v2.go",
+        "convert_compliance_operator_scan_v2.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":new",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "new_test",
+    srcs = [
+        "convert_compliance_operator_check_result_v2_test.go",
+        "convert_compliance_operator_profile_v2_test.go",
+        "convert_compliance_operator_rule_v2_test.go",
+        "convert_compliance_operator_scan_v2_test.go",
+    ],
+    embed = [":new"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

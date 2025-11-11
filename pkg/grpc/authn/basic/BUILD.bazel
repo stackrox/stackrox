@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "basic",
+    srcs = [
+        "extractor.go",
+        "identity.go",
+        "identity_test_constructors.go",
+        "manager.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authn/basic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/htpasswd",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/auth/tokens",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/requestinfo",
+        "//pkg/sac/resources",
+        "//pkg/timeutil",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":basic",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "if_then_else.go",
+        "ignore_error.go",
+        "invert.go",
+        "must.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/logging",
+        "//pkg/utils/panic",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = ["must_test.go"],
+    embed = [":utils"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

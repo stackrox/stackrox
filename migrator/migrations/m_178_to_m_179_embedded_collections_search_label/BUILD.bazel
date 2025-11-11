@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_178_to_m_179_embedded_collections_search_label",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_178_to_m_179_embedded_collections_search_label",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_178_to_m_179_embedded_collections_search_label/reportconfigstore",
+        "//migrator/migrations/m_178_to_m_179_embedded_collections_search_label/schema",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_178_to_m_179_embedded_collections_search_label",
+    visibility = ["//visibility:public"],
+)

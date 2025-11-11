@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_192_to_m_193_report_config_migrations",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_report_config_migrations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_192_to_m_193_report_config_migrations/schema",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//clause",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_192_to_m_193_report_config_migrations",
+    visibility = ["//visibility:public"],
+)

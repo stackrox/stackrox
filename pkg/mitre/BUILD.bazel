@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mitre",
+    srcs = [
+        "common.go",
+        "parser.go",
+        "types.go",
+    ],
+    embedsrcs = ["files/mitre.json"],
+    importpath = "github.com/stackrox/rox/pkg/mitre",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mitre",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mitre_test",
+    srcs = [
+        "common_test.go",
+        "parser_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":mitre"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

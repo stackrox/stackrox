@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sac",
+    srcs = [
+        "allow_fixed_scopes_checker_core.go",
+        "context.go",
+        "err_permission_denied.go",
+        "filter.go",
+        "for_resource_helpers.go",
+        "for_resources_helpers.go",
+        "id.go",
+        "objects.go",
+        "query_helper.go",
+        "query_testutils.go",
+        "scope_checker.go",
+        "scope_checker_core.go",
+        "scope_checker_or.go",
+        "scope_key.go",
+        "test_scope_checker_core.go",
+        "uniform_scope_checker_core.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/sac",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/errox",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sac",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sac_test",
+    srcs = [
+        "context_test.go",
+        "for_resource_helpers_test.go",
+        "id_test.go",
+        "query_helper_test.go",
+    ],
+    embed = [":sac"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/protoassert",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

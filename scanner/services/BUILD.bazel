@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "services",
+    srcs = [
+        "common.go",
+        "indexer.go",
+        "matcher.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/services",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/allow",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/grpc/authz/or",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/protocompat",
+        "//pkg/scannerv4/mappers",
+        "//scanner/indexer",
+        "//scanner/matcher",
+        "//scanner/sbom",
+        "//scanner/services/validators",
+        "@com_github_google_go_containerregistry//pkg/authn",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_zlog//:zlog",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":services",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "services_test",
+    srcs = [
+        "indexer_test.go",
+        "matcher_test.go",
+    ],
+    embed = [":services"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/grpc/testutils",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//scanner/indexer/mocks",
+        "//scanner/matcher/mocks",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore_toolkit//types/cpe",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

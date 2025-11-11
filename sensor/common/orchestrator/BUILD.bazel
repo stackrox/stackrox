@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "orchestrator",
+    srcs = ["orchestrator.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/orchestrator",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":orchestrator",
+    visibility = ["//visibility:public"],
+)

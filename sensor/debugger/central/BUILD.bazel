@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "central",
+    srcs = [
+        "communicate_server.go",
+        "grpc_client.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/debugger/central",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/grpc/util",
+        "//pkg/sync",
+        "//sensor/common/centralclient",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//connectivity",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":central",
+    visibility = ["//visibility:public"],
+)

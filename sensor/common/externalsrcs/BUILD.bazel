@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "externalsrcs",
+    srcs = [
+        "handler.go",
+        "singleton.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/externalsrcs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/net",
+        "//pkg/sync",
+        "//sensor/common",
+        "//sensor/common/message",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":externalsrcs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "externalsrcs_test",
+    srcs = [
+        "handler_test.go",
+        "util_test.go",
+    ],
+    embed = [":externalsrcs"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/net",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

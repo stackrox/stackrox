@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check_ra_5",
+    srcs = ["check.go"],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist80053/check_ra_5",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//pkg/compliance/framework",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check_ra_5",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check_ra_5_test",
+    srcs = ["check_test.go"],
+    embed = [":check_ra_5"],
+    deps = [
+        "//central/compliance/checks/testutils",
+        "//generated/storage",
+        "//pkg/set",
+        "@org_uber_go_mock//gomock",
+    ],
+)

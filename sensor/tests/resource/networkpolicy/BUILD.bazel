@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "networkpolicy_test",
+    srcs = ["networkpolicy_test.go"],
+    deps = [
+        "//sensor/tests/helper",
+        "//sensor/testutils",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

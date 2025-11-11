@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "notifiers",
+    srcs = [
+        "alert_notifier.go",
+        "audit_notifier.go",
+        "common.go",
+        "error.go",
+        "format.go",
+        "metadata_getter.go",
+        "network_policy_notifier.go",
+        "notifier.go",
+        "prune.go",
+        "registry.go",
+        "report_notifier.go",
+        "resolvable_alert_notifier.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/notifiers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/administration/events/option",
+        "//pkg/httputil",
+        "//pkg/images/types",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/mitre/datastore",
+        "//pkg/mitre/utils",
+        "//pkg/protoconv",
+        "//pkg/retry",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":notifiers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "notifiers_test",
+    srcs = [
+        "format_test.go",
+        "prune_test.go",
+    ],
+    embed = [":notifiers"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/images/types",
+        "//pkg/mitre/datastore",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/timeutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

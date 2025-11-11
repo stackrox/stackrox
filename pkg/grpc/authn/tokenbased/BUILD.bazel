@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tokenbased",
+    srcs = [
+        "extractor.go",
+        "identity.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authn/tokenbased",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/auth/tokens",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/requestinfo",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tokenbased",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "complianceoperatorresultsv2",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorresultsv2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/report/manager",
+        "//central/convert/internaltov2storage",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperatorresultsv2",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "complianceoperatorresultsv2_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":complianceoperatorresultsv2"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/complianceoperator/v2/checkresults/datastore/mocks",
+        "//central/complianceoperator/v2/report/manager/mocks",
+        "//central/convert/internaltov2storage",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

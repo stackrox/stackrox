@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "apiparams",
+    srcs = [
+        "cluster_certs.go",
+        "cluster_helm_config.go",
+        "cluster_zip.go",
+        "policy.go",
+        "sbom.go",
+        "scanner.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/apiparams",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":apiparams",
+    visibility = ["//visibility:public"],
+)

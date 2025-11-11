@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "detection",
+    srcs = [
+        "compiled_policy.go",
+        "exclusion.go",
+        "policy_compiler.go",
+        "policy_set.go",
+        "policy_set_impl.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/detection",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/maputil",
+        "//pkg/policies",
+        "//pkg/protocompat",
+        "//pkg/regexutils",
+        "//pkg/scopecomp",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":detection",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "detection_test",
+    srcs = [
+        "compiled_policy_test.go",
+        "exclusion_test.go",
+        "policy_set_impl_test.go",
+    ],
+    embed = [":detection"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/fieldnames",
+        "//pkg/booleanpolicy/policyversion",
+        "//pkg/fixtures",
+        "//pkg/protoconv",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

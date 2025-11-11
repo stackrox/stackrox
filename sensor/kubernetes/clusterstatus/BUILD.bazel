@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusterstatus",
+    srcs = [
+        "openshift.go",
+        "updater.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/clusterstatus",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/deploymentenvs",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/protoconv",
+        "//pkg/providers",
+        "//pkg/retry",
+        "//pkg/sync",
+        "//pkg/version",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/unimplemented",
+        "//sensor/kubernetes/client",
+        "@com_github_openshift_api//config/v1:config",
+        "@com_github_openshift_client_go//config/clientset/versioned",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/version",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusterstatus",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clusterstatus_test",
+    srcs = ["updater_test.go"],
+    embed = [":clusterstatus"],
+    deps = [
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/protoassert",
+        "//sensor/common",
+        "@com_github_openshift_api//config/v1:config",
+        "@com_github_openshift_client_go//apps/clientset/versioned",
+        "@com_github_openshift_client_go//config/clientset/versioned",
+        "@com_github_openshift_client_go//config/clientset/versioned/fake",
+        "@com_github_openshift_client_go//operator/clientset/versioned",
+        "@com_github_openshift_client_go//route/clientset/versioned",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//dynamic",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

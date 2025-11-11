@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "regexutils",
+    srcs = ["regex.go"],
+    importpath = "github.com/stackrox/rox/pkg/regexutils",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":regexutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "regexutils_test",
+    srcs = ["regex_test.go"],
+    embed = [":regexutils"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

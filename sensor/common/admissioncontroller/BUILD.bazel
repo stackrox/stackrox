@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "admissioncontroller",
+    srcs = [
+        "alert_handler.go",
+        "management_service.go",
+        "message_forwarder.go",
+        "policies.go",
+        "settings_manager.go",
+        "settings_manager_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/admissioncontroller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/admissioncontrol",
+        "//pkg/booleanpolicy",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/logging",
+        "//pkg/policies",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/store",
+        "//sensor/common/unimplemented",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":admissioncontroller",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "admissioncontroller_test",
+    srcs = [
+        "alert_handler_test.go",
+        "management_service_test.go",
+    ],
+    embed = [":admissioncontroller"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//sensor/common",
+        "//sensor/common/admissioncontroller/mocks",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

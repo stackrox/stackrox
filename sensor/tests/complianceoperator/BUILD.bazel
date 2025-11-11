@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "complianceoperator_test",
+    srcs = [
+        "crd_test.go",
+        "sync_test.go",
+    ],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/complianceoperator",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/utils",
+        "//sensor/tests/helper",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+        "@org_uber_go_zap//zapcore",
+    ],
+)

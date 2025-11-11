@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "generic",
+    srcs = ["type_conv.go"],
+    importpath = "github.com/stackrox/rox/pkg/generic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generic",
+    visibility = ["//visibility:public"],
+)

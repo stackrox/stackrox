@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "storeinterface",
+    srcs = ["analyzer.go"],
+    importpath = "github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/set",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":storeinterface",
+    visibility = ["//visibility:public"],
+)

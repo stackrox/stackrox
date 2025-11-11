@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = [
+        "blob.go",
+        "query_builder.go",
+        "query_builder_view_based.go",
+        "report_formatter.go",
+        "testutils.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/reports/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/resourcecollection/datastore",
+        "//central/role",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/csv",
+        "//pkg/fixtures",
+        "//pkg/grpc/authn",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/search",
+        "//pkg/stringutils",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = [
+        "query_builder_test.go",
+        "report_formatter_test.go",
+    ],
+    embed = [":common"],
+    deps = [
+        "//central/role",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/mocks",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/protoassert",
+        "//pkg/search",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

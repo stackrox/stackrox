@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "awscredentials",
+    srcs = ["registry.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/awscredentials",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/docker/config",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/sync",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@com_github_aws_aws_sdk_go_v2_feature_ec2_imds//:imds",
+        "@com_github_aws_aws_sdk_go_v2_service_ecr//:ecr",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":awscredentials",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "awscredentials_test",
+    srcs = ["registry_test.go"],
+    embed = [":awscredentials"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/docker/config",
+        "@com_github_aws_aws_sdk_go_v2_service_ecr//:ecr",
+    ],
+)

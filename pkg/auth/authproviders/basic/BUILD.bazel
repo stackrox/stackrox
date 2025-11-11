@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "basic",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+        "context.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/basic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/idputil",
+        "//pkg/auth/tokens",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/basic",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/monoclock",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":basic",
+    visibility = ["//visibility:public"],
+)

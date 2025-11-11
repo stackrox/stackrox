@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "virtualmachine",
+    srcs = ["virtualmachineinfo.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/virtualmachine",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachine",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "data",
+    srcs = ["flatten.go"],
+    importpath = "github.com/stackrox/rox/pkg/compliance/data",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/internalapi/compliance"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":data",
+    visibility = ["//visibility:public"],
+)

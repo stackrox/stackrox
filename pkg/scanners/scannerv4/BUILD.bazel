@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scannerv4",
+    srcs = [
+        "convert.go",
+        "nodescan_convert.go",
+        "scannerv4.go",
+        "vm_convert.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/scannerv4",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair",
+        "//pkg/cvss",
+        "//pkg/cvss/cvssv2",
+        "//pkg/cvss/cvssv3",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/registries",
+        "//pkg/scanners/types",
+        "//pkg/scannerv4",
+        "//pkg/scannerv4/client",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//pkg/version",
+        "@com_github_google_go_containerregistry//pkg/authn",
+        "@com_github_google_go_containerregistry//pkg/name",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scannerv4",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scannerv4_test",
+    srcs = [
+        "convert_test.go",
+        "nodescan_convert_test.go",
+        "scannerv4_test.go",
+        "vm_convert_test.go",
+    ],
+    embed = [":scannerv4"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/scannerv4/client/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

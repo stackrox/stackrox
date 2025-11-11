@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resources",
+    srcs = ["resources.go"],
+    importpath = "github.com/stackrox/rox/pkg/administration/events/resources",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sac/resources"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)

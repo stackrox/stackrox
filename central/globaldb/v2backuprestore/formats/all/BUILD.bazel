@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "all",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/formats/all",
+    visibility = ["//visibility:public"],
+    deps = ["//central/globaldb/v2backuprestore/formats/postgresv1"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":all",
+    visibility = ["//visibility:public"],
+)

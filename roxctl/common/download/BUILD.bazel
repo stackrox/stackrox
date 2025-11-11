@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "download",
+    srcs = ["parse_filename.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/download",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/errox"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":download",
+    visibility = ["//visibility:public"],
+)

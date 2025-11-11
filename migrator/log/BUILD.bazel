@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "log",
+    srcs = ["log.go"],
+    importpath = "github.com/stackrox/rox/migrator/log",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/logging"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":log",
+    visibility = ["//visibility:public"],
+)

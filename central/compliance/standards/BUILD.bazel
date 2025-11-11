@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "standards",
+    srcs = [
+        "data_dependencies.go",
+        "qualified_name.go",
+        "registry.go",
+        "registry_singleton.go",
+        "standards.go",
+        "types.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/standards",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/standards/metadata",
+        "//generated/api/v1:api",
+        "//pkg/compliance/framework",
+        "//pkg/errox",
+        "//pkg/search",
+        "//pkg/search/predicate",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":standards",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "standards_test",
+    srcs = [
+        "registry_test.go",
+        "utils_test.go",
+    ],
+    embed = [":standards"],
+    deps = [
+        "//central/compliance/standards/metadata",
+        "//pkg/search",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

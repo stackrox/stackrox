@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pgconfig",
+    srcs = ["config.go"],
+    importpath = "github.com/stackrox/rox/pkg/postgres/pgconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/config",
+        "//pkg/migrations",
+        "//pkg/postgres",
+        "//pkg/size",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pgconfig",
+    visibility = ["//visibility:public"],
+)

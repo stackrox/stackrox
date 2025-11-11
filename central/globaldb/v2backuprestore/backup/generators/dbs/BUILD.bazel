@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbs",
+    srcs = [
+        "postgres.go",
+        "postgres_size.go",
+        "postgres_version.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/version/utils",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dbs",
+    visibility = ["//visibility:public"],
+)

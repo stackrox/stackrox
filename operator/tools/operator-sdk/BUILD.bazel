@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "operator-sdk_lib",
+    srcs = ["noop.go"],
+    importpath = "github.com/stackrox/rox/operator/tools/operator-sdk",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":operator-sdk_lib",
+    visibility = ["//visibility:public"],
+)

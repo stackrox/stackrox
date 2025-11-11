@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "userpki",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/userpki",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/tokens",
+        "//pkg/cryptoutils",
+        "//pkg/grpc/authn/userpki",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":userpki",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "config",
+    srcs = ["from_cluster.go"],
+    importpath = "github.com/stackrox/rox/pkg/helm/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/images/defaults",
+        "//pkg/maputil",
+        "//pkg/renderer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "config_test",
+    srcs = ["roundtrip_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":config"],
+    deps = [
+        "//generated/storage",
+        "//image",
+        "//pkg/helm/charts",
+        "//pkg/helm/util",
+        "//pkg/images/defaults/testutils",
+        "//pkg/jsonutil",
+        "//pkg/k8sutil",
+        "//pkg/maputil",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@sh_helm_helm_v3//pkg/chartutil",
+    ],
+)

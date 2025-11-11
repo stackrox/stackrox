@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "schema",
+    srcs = [
+        "convert_image_cve_edges.go",
+        "convert_image_cves.go",
+        "convert_images.go",
+        "convert_vulnerability_requests.go",
+        "image_cve_edges.go",
+        "image_cves.go",
+        "images.go",
+        "vulnerability_requests.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_202_to_m_203_vuln_requests_for_suppressed_cves/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "@com_github_lib_pq//:pq",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":schema",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = [
+        "convert_image_cve_edges_test.go",
+        "convert_image_cves_test.go",
+        "convert_images_test.go",
+        "convert_vulnerability_requests_test.go",
+    ],
+    embed = [":schema"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

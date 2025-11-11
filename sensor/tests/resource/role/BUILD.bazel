@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "role_test",
+    srcs = ["role_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/utils",
+        "//sensor/tests/helper",
+        "@com_github_graph_gophers_graphql_go//errors",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

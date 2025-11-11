@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "orchestrator",
+    srcs = ["kubernetes.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/orchestrator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//sensor/common/orchestrator",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_client_go//informers",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//listers/core/v1:core",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":orchestrator",
+    visibility = ["//visibility:public"],
+)

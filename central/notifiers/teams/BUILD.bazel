@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "teams",
+    srcs = ["teams.go"],
+    importpath = "github.com/stackrox/rox/central/notifiers/teams",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/metadatagetter",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/images/types",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/retry",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":teams",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "teams_test",
+    srcs = ["teams_test.go"],
+    embed = [":teams"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/notifiers",
+        "//pkg/notifiers/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

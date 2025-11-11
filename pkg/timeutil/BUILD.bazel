@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "timeutil",
+    srcs = [
+        "date.go",
+        "max.go",
+        "must_parse.go",
+        "offset.go",
+        "timer.go",
+        "weekday.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/timeutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/mathutil",
+        "//pkg/utils/panic",
+        "@com_github_tkuchiki_go_timezone//:go-timezone",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":timeutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "timeutil_test",
+    srcs = [
+        "date_test.go",
+        "max_test.go",
+        "weekday_test.go",
+    ],
+    embed = [":timeutil"],
+    deps = [
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

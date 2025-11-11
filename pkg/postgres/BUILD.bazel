@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "batch.go",
+        "conn.go",
+        "context.go",
+        "error.go",
+        "metrics.go",
+        "paths.go",
+        "pgxpool_conn.go",
+        "pool.go",
+        "pool_impl.go",
+        "postgres.go",
+        "rows.go",
+        "tx.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/contextutil",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgconn",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

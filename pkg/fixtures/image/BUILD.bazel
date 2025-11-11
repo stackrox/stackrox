@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "image",
+    srcs = ["reader.go"],
+    embedsrcs = [
+        "files/apache-centos-6.json",
+        "files/nodejs-centos-6.json",
+        "files/wordpress-centos-6.json",
+        "files/wordpress-debian-8.json",
+        "files/wordpress-debian-ubuntu-11.json",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/fixtures/image",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/jsonutil",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":image",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "image_test",
+    srcs = ["reader_test.go"],
+    embed = [":image"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

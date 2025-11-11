@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "images",
+    srcs = ["options.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/options/images",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/search",
+        "//pkg/search/options/deployments",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":images",
+    visibility = ["//visibility:public"],
+)

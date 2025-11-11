@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "syslog",
+    srcs = [
+        "syslog.go",
+        "tcp_sender.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/syslog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/metadatagetter",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/version",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":syslog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "syslog_test",
+    srcs = ["syslog_test.go"],
+    embed = [":syslog"],
+    deps = [
+        "//central/notifiers/syslog/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/notifiers/mocks",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

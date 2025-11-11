@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "buildtime",
+    srcs = [
+        "detector.go",
+        "detector_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/detection/buildtime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/detection",
+        "//central/policy/datastore",
+        "//generated/storage",
+        "//pkg/booleanpolicy",
+        "//pkg/detection",
+        "//pkg/images/types",
+        "//pkg/policies",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":buildtime",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "buildtime_test",
+    srcs = ["detector_impl_test.go"],
+    embed = [":buildtime"],
+    deps = [
+        "//central/detection",
+        "//central/policy/datastore/mocks",
+        "//generated/storage",
+        "//pkg/defaults/policies",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

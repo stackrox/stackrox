@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_197_to_m_198_add_oidc_claim_mappings",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings/store/authproviders",
+        "//migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings/store/groups",
+        "//migrator/types",
+        "//pkg/auth/authproviders/oidc",
+        "//pkg/logging",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_197_to_m_198_add_oidc_claim_mappings",
+    visibility = ["//visibility:public"],
+)

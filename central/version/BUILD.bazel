@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "version",
+    srcs = ["ensure.go"],
+    importpath = "github.com/stackrox/rox/central/version",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/version/store",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/protocompat",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":version",
+    visibility = ["//visibility:public"],
+)

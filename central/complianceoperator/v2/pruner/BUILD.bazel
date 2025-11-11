@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pruner",
+    srcs = [
+        "pruner.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/pruner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/integration/datastore",
+        "//central/complianceoperator/v2/profiles/datastore",
+        "//central/complianceoperator/v2/rules/datastore",
+        "//central/complianceoperator/v2/scanconfigurations/datastore",
+        "//central/complianceoperator/v2/scans/datastore",
+        "//central/complianceoperator/v2/scansettingbindings/datastore",
+        "//central/complianceoperator/v2/suites/datastore",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pruner",
+    visibility = ["//visibility:public"],
+)

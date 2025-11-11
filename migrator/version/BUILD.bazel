@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "version",
+    srcs = [
+        "convert_versions.go",
+        "version.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/version",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/log",
+        "//migrator/postgres/gorm",
+        "//pkg/migrations",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/postgres/schema",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/protoutils",
+        "//pkg/timestamp",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":version",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "version_test",
+    srcs = ["convert_versions_test.go"],
+    embed = [":version"],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/protoutils",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

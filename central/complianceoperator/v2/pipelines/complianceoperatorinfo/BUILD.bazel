@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "complianceoperatorinfo",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorinfo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/compliancemanager",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperatorinfo",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "complianceoperatorinfo_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":complianceoperatorinfo"],
+    deps = [
+        "//central/complianceoperator/v2/compliancemanager/mocks",
+        "//central/complianceoperator/v2/integration/datastore/mocks",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/fixtures/fixtureconsts",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

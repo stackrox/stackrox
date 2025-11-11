@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "complianceoperator",
+    srcs = ["availabilitychecker.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/complianceoperator",
+        "//sensor/kubernetes/listener/watcher/availability",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "complianceoperator_test",
+    srcs = ["availabilitychecker_test.go"],
+    embed = [":complianceoperator"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

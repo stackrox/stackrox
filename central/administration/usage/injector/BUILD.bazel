@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "injector",
+    srcs = [
+        "injector.go",
+        "injector_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/administration/usage/injector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/usage/datastore/securedunits",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":injector",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "injector_test",
+    srcs = ["injector_test.go"],
+    embed = [":injector"],
+    deps = [
+        "//central/administration/usage/datastore/securedunits/mocks",
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

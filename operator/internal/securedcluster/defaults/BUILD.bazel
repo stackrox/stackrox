@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "defaults",
+    srcs = [
+        "admission_controller.go",
+        "common.go",
+        "scanner_v4.go",
+        "static.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/operator/internal/securedcluster/defaults",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/common",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_utils//ptr",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":defaults",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "defaults_test",
+    srcs = ["static_test.go"],
+    embed = [":defaults"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/common/defaulting_test_helpers",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_stretchr_testify//require",
+    ],
+)

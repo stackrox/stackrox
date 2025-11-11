@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "expiration",
+    srcs = [
+        "expiration.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/apitoken/expiration",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/administration/events",
+        "//central/apitoken/datastore",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":expiration",
+    visibility = ["//visibility:public"],
+)

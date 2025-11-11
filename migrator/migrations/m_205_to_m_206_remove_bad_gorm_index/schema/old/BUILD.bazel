@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "old",
+    srcs = ["compliance_integrations.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index/schema/old",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/sac/resources",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":old",
+    visibility = ["//visibility:public"],
+)

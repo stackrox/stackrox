@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fieldnames",
+    srcs = ["list.go"],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/fieldnames",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldnames",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clairify",
+    srcs = [
+        "clairify.go",
+        "convert.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/clairify",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair",
+        "//pkg/clientconn",
+        "//pkg/cvss/cvssv2",
+        "//pkg/cvss/cvssv3",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/httputil/proxy",
+        "//pkg/images/utils",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/registries",
+        "//pkg/scancomponent",
+        "//pkg/scanners/types",
+        "//pkg/scans",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/urlfmt",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//credentials",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clairify",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clairify_test",
+    srcs = [
+        "clairify_test.go",
+        "convert_test.go",
+    ],
+    embed = [":clairify"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair/mock",
+        "//pkg/features",
+        "//pkg/fixtures",
+        "//pkg/protoassert",
+        "//pkg/scanners/clairify/mock",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

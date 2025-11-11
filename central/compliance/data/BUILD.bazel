@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "data",
+    srcs = [
+        "factory.go",
+        "repository.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/data",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/compliance/datastore",
+        "//central/compliance/framework",
+        "//central/compliance/standards",
+        "//central/complianceoperator/checkresults/datastore",
+        "//central/image/datastore",
+        "//central/imageintegration",
+        "//central/imageintegration/datastore",
+        "//central/networkgraph/entity/networktree",
+        "//central/networkgraph/flow/datastore",
+        "//central/networkpolicies/datastore",
+        "//central/networkpolicies/graph",
+        "//central/notifier/datastore",
+        "//central/policy/datastore",
+        "//central/processindicator/datastore",
+        "//central/rbac/k8srole/datastore",
+        "//central/rbac/k8srolebinding/datastore",
+        "//generated/api/v1:api",
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/compress",
+        "//pkg/compliance/data",
+        "//pkg/images/integration",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_mailru_easyjson//:easyjson",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":data",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "data_test",
+    srcs = ["repository_test.go"],
+    embed = [":data"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/compress",
+        "//pkg/protoassert",
+        "//pkg/utils",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "undodeploymentstore",
+    srcs = ["undodeploymentstore.go"],
+    importpath = "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore",
+    visibility = ["//central/networkpolicies/datastore:__subpackages__"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":undodeploymentstore",
+    visibility = ["//central/networkpolicies/datastore:__subpackages__"],
+)

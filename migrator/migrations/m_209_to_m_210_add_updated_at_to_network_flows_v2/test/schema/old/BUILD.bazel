@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "old",
+    srcs = ["schema.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2/test/schema/old",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/postgres"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":old",
+    visibility = ["//visibility:public"],
+)

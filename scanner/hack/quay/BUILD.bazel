@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "quay_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/scanner/hack/quay",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "quay",
+    embed = [":quay_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resources",
+    srcs = ["resources.go"],
+    importpath = "github.com/stackrox/rox/pkg/protoconv/resources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/images/utils",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv/k8s",
+        "//pkg/protoconv/resources/volumes",
+        "//pkg/stringutils",
+        "//pkg/timestamp",
+        "//pkg/utils",
+        "@com_github_openshift_api//apps/v1:apps",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//batch/v1:batch",
+        "@io_k8s_api//batch/v1beta1",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resources_test",
+    srcs = ["resources_test.go"],
+    embed = [":resources"],
+    deps = [
+        "//generated/storage",
+        "//pkg/kubernetes",
+        "//pkg/protoconv/resources/volumes",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//apps/v1beta2",
+        "@io_k8s_api//batch/v1:batch",
+        "@io_k8s_api//batch/v1beta1",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//extensions/v1beta1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

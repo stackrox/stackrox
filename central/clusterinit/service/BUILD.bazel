@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+        "transformation.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/clusterinit/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/clusterinit/backend",
+        "//central/clusterinit/store",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/protocompat",
+        "//pkg/set",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_impl_test.go"],
+    embed = [":service"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/clusterinit/backend",
+        "//central/clusterinit/backend/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/crs",
+        "//pkg/protoassert",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_protobuf//types/known/durationpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_uber_go_mock//gomock",
+    ],
+)

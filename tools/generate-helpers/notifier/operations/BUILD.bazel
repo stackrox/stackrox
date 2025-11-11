@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "operations",
+    srcs = [
+        "generator.go",
+        "registry.go",
+    ],
+    importpath = "github.com/stackrox/rox/tools/generate-helpers/notifier/operations",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_dave_jennifer//jen"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":operations",
+    visibility = ["//visibility:public"],
+)

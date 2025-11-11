@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "upgrader_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/sensor/upgrader",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/clientconn",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/utils",
+        "//pkg/version",
+        "//sensor/upgrader/config",
+        "//sensor/upgrader/flags",
+        "//sensor/upgrader/metarunner",
+        "//sensor/upgrader/runner",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+go_binary(
+    name = "upgrader",
+    embed = [":upgrader_lib"],
+    visibility = ["//visibility:public"],
+)

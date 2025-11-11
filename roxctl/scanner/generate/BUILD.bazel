@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generate",
+    srcs = ["generate.go"],
+    importpath = "github.com/stackrox/rox/roxctl/scanner/generate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/errox",
+        "//pkg/istioutils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/logger",
+        "//roxctl/common/zipdownload",
+        "//roxctl/scanner/clustertype",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generate_test",
+    srcs = ["generate_test.go"],
+    embed = [":generate"],
+    deps = [
+        "//pkg/apiparams",
+        "//pkg/errox",
+        "//pkg/istioutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scopecomp",
+    srcs = ["scope.go"],
+    importpath = "github.com/stackrox/rox/pkg/scopecomp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/regexutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scopecomp",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scopecomp_test",
+    srcs = ["scope_test.go"],
+    embed = [":scopecomp"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

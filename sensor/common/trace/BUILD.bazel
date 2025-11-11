@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "trace",
+    srcs = ["trace.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/trace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":trace",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "trace_test",
+    srcs = ["trace_test.go"],
+    embed = [":trace"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//metadata",
+    ],
+)

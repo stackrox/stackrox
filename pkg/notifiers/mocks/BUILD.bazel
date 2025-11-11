@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "alert_notifier.go",
+        "audit_notifier.go",
+        "metadata_getter.go",
+        "notifier.go",
+        "report_notifier.go",
+        "resolvable_alert_notifier.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/notifiers/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/notifiers",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

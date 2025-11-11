@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "aggregator",
+    srcs = [
+        "process_aggregator.go",
+        "process_aggregator_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/activecomponent/updater/aggregator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/set",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":aggregator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "aggregator_test",
+    srcs = ["process_aggregator_test.go"],
+    embed = [":aggregator"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

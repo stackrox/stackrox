@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "compliance_profiles.go",
+        "compliance_results.go",
+        "compliance_rules.go",
+        "compliance_scan_setting_bindings.go",
+        "compliance_scans.go",
+        "compliance_suites.go",
+        "utils.go",
+        "vuln_exception.go",
+        "vuln_request.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/convert/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/convert/internaltov2storage",
+        "//generated/api/v2:api",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "format",
+    srcs = [
+        "email_formatter.go",
+        "formatter.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/report",
+        "//pkg/csv",
+        "//pkg/templates",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":format",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "format_test",
+    srcs = [
+        "email_formatter_test.go",
+        "formatter_test.go",
+    ],
+    embed = [":format"],
+    deps = [
+        "//central/complianceoperator/v2/report",
+        "//central/complianceoperator/v2/report/manager/format/mocks",
+        "//pkg/csv",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_uber_go_mock//gomock",
+    ],
+)

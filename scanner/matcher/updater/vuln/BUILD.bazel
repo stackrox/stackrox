@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "vuln",
+    srcs = [
+        "dist.go",
+        "gc.go",
+        "updater.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/matcher/updater/vuln",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/sync",
+        "//pkg/utils",
+        "//scanner/datastore/postgres",
+        "//scanner/updater/jsonblob",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_klauspost_compress//zstd",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//libvuln/updates",
+        "@com_github_quay_claircore//pkg/ctxlock/v2:ctxlock",
+        "@com_github_quay_zlog//:zlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vuln",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "vuln_test",
+    srcs = [
+        "dist_test.go",
+        "updater_test.go",
+    ],
+    embed = [":vuln"],
+    deps = [
+        "//scanner/datastore/postgres/mocks",
+        "//scanner/updater/jsonblob",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//datastore",
+        "@com_github_quay_claircore//libvuln/driver",
+        "@com_github_quay_claircore//libvuln/updates",
+        "@com_github_quay_claircore//test",
+        "@com_github_quay_zlog//:zlog",
+        "@com_github_rs_zerolog//:zerolog",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

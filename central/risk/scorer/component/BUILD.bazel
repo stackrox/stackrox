@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "component",
+    srcs = [
+        "image_scorer.go",
+        "scorer.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/scorer/component",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/datastore",
+        "//central/risk/multipliers/component",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/scancomponent",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":component",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clair",
+    srcs = ["convert.go"],
+    importpath = "github.com/stackrox/rox/pkg/clair",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/cvss/cvssv2",
+        "//pkg/cvss/cvssv3",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/protoconv",
+        "//pkg/scancomponent",
+        "//pkg/scans",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clair",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clair_test",
+    srcs = ["convert_test.go"],
+    embed = [":clair"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/clair/mock",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

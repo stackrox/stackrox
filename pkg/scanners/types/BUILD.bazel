@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = [
+        "components.go",
+        "semaphore.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/scanners/types",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "@com_github_stackrox_scanner//generated/scanner/api/v1:api",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//visibility:public"],
+)

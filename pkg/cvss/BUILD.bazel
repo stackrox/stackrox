@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cvss",
+    srcs = ["severity.go"],
+    importpath = "github.com/stackrox/rox/pkg/cvss",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cvss",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cvss_test",
+    srcs = ["severity_test.go"],
+    embed = [":cvss"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

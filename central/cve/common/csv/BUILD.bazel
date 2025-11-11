@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "csv",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/central/cve/common/csv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/graphql/resolvers",
+        "//generated/api/v1:api",
+        "//pkg/features",
+        "//pkg/postgres/schema",
+        "//pkg/search",
+        "//pkg/search/scoped",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":csv",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "csv_test",
+    srcs = ["handler_test.go"],
+    embed = [":csv"],
+    deps = [
+        "//central/audit",
+        "//central/cluster/datastore/mocks",
+        "//central/deployment/datastore/mocks",
+        "//central/graphql/resolvers",
+        "//central/image/datastore/mocks",
+        "//central/imagecomponent/datastore/mocks",
+        "//central/imagecomponent/v2/datastore/mocks",
+        "//central/namespace/datastore/mocks",
+        "//central/node/datastore/mocks",
+        "//generated/api/v1:api",
+        "//pkg/features",
+        "//pkg/notifier/mocks",
+        "//pkg/postgres/schema",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/search/scoped",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

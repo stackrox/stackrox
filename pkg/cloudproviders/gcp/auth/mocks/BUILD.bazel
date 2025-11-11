@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["cred_manager.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_x_oauth2//google",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

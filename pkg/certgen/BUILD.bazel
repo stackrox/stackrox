@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "certgen",
+    srcs = [
+        "ca.go",
+        "central.go",
+        "central_jwt.go",
+        "certgen.go",
+        "scanner.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/certgen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/mtls",
+        "//pkg/services",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_cloudflare_cfssl//initca",
+        "@com_github_golang_jwt_jwt_v4//:jwt",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certgen",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "certgen_test",
+    srcs = [
+        "ca_test.go",
+        "scanner_test.go",
+    ],
+    embed = [":certgen"],
+    deps = [
+        "//pkg/mtls",
+        "//pkg/mtls/mocks",
+        "//pkg/mtls/testutils",
+        "//pkg/x509utils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

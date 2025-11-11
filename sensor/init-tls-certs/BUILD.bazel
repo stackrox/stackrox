@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "init-tls-certs_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/sensor/init-tls-certs",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_pkg_errors//:errors"],
+)
+
+go_binary(
+    name = "init-tls-certs",
+    embed = [":init-tls-certs_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "init-tls-certs_test",
+    srcs = ["main_test.go"],
+    embed = [":init-tls-certs_lib"],
+    deps = ["@com_github_stretchr_testify//suite"],
+)

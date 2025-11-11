@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "zreader",
+    srcs = [
+        "compression_string.go",
+        "zreader.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/enricher/csaf/internal/zreader",
+    visibility = ["//scanner/enricher/csaf:__subpackages__"],
+    deps = [
+        "@com_github_klauspost_compress//gzip",
+        "@com_github_klauspost_compress//zstd",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zreader",
+    visibility = ["//scanner/enricher/csaf:__subpackages__"],
+)
+
+go_test(
+    name = "zreader_test",
+    srcs = ["zreader_test.go"],
+    embed = [":zreader"],
+    deps = [
+        "@com_github_klauspost_compress//gzip",
+        "@com_github_klauspost_compress//zstd",
+    ],
+)

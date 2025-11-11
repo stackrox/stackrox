@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "readable",
+    srcs = [
+        "float.go",
+        "time.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/readable",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":readable",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "readable_test",
+    srcs = ["float_test.go"],
+    embed = [":readable"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

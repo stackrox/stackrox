@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "alerts",
+    srcs = ["sender.go"],
+    importpath = "github.com/stackrox/rox/sensor/admission-control/alerts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//sensor/admission-control/common",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":alerts",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "alerts_test",
+    srcs = ["sender_test.go"],
+    embed = [":alerts"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "@com_github_cenkalti_backoff_v3//:backoff",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "vulns",
+    srcs = ["component.go"],
+    importpath = "github.com/stackrox/rox/central/risk/scorer/vulns",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cvss",
+        "//pkg/scancomponent",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vulns",
+    visibility = ["//visibility:public"],
+)

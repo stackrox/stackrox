@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "net",
+    srcs = [
+        "addr.go",
+        "endpoint.go",
+        "ip_port.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/net",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/netutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":net",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "net_test",
+    srcs = [
+        "addr_test.go",
+        "endpoint_test.go",
+        "ip_port_test.go",
+    ],
+    embed = [":net"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

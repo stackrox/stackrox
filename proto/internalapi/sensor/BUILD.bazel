@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "sensor_proto",
+    srcs = [
+        "admission_control.proto",
+        "admission_control_iservice.proto",
+        "cert_distribution_iservice.proto",
+        "collector.proto",
+        "collector_iservice.proto",
+        "compliance_iservice.proto",
+        "deployment_iservice.proto",
+        "image_iservice.proto",
+        "network_connection_info.proto",
+        "network_connection_iservice.proto",
+        "network_enums.proto",
+        "sfa.proto",
+        "sfa_iservice.proto",
+        "signal_iservice.proto",
+        "virtual_machine_iservice.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1:v1_proto",
+        "//internalapi/central:central_proto",
+        "//internalapi/compliance:compliance_proto",
+        "//internalapi/scanner/v4:v4_proto",
+        "//internalapi/sensor:sensor_proto",
+        "//internalapi/virtualmachine/v1:v1_proto",
+        "//storage:storage_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_proto_library(
+    name = "sensor_go_proto",
+    compilers = [
+        "@io_bazel_rules_go//proto:go_grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "./internalapi/sensor",
+    proto = ":sensor_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1:empty_proto",
+        "//api/v1:signal_proto",
+        "//internalapi/central:sensor_events_proto",
+        "//internalapi/compliance:compliance_data_proto",
+        "//internalapi/scanner/v4:index_report_proto",
+        "//internalapi/sensor:admission_control_proto",
+        "//internalapi/sensor:collector_proto",
+        "//internalapi/sensor:network_connection_info_proto",
+        "//internalapi/sensor:network_connection_iservice_proto",
+        "//internalapi/sensor:network_enums_proto",
+        "//internalapi/sensor:sfa_proto",
+        "//internalapi/virtualmachine/v1:index_report_proto",
+        "//storage:cluster_proto",
+        "//storage:container_runtime_proto",
+        "//storage:deployment_proto",
+        "//storage:image_proto",
+        "//storage:kube_event_proto",
+        "//storage:namespace_metadata_proto",
+        "//storage:network_flow_proto",
+        "//storage:node_proto",
+        "//storage:policy_proto",
+        "//storage:process_indicator_proto",
+        "//storage:service_identity_proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sensor",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "globalindex",
+    srcs = ["bleveindex.go"],
+    importpath = "github.com/stackrox/rox/central/globalindex",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/search",
+        "//central/globalindex/mapping",
+        "//generated/api/v1:api",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":globalindex",
+    visibility = ["//visibility:public"],
+)

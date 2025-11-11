@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deduperkey",
+    srcs = ["key.go"],
+    importpath = "github.com/stackrox/rox/pkg/deduperkey",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/sensor/event",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deduperkey",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deduperkey_test",
+    srcs = ["key_test.go"],
+    embed = [":deduperkey"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/sensor/event",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

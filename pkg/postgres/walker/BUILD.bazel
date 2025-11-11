@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "walker",
+    srcs = [
+        "schema.go",
+        "stringutils.go",
+        "walker.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/postgres/walker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/auth/permissions",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/stringutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":walker",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "walker_test",
+    srcs = [
+        "stringutils_test.go",
+        "walker_test.go",
+    ],
+    embed = [":walker"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

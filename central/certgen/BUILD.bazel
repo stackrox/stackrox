@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "certgen",
+    srcs = [
+        "central_db.go",
+        "central_scanner.go",
+        "sensor.go",
+        "service.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/certgen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/clusters",
+        "//central/clusters/zip",
+        "//central/jwt",
+        "//central/serviceidentities/datastore",
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/auth/permissions",
+        "//pkg/certgen",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/grpc/routes",
+        "//pkg/httputil",
+        "//pkg/images/defaults",
+        "//pkg/mtls",
+        "//pkg/postgres/pgconfig",
+        "//pkg/renderer",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/zip",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certgen",
+    visibility = ["//visibility:public"],
+)

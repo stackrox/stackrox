@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "query",
+    srcs = [
+        "operator_string.go",
+        "query.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/query",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/booleanpolicy/evaluator/mapeval"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":query",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "query_test",
+    srcs = ["query_test.go"],
+    embed = [":query"],
+    deps = [
+        "//pkg/booleanpolicy/evaluator/mapeval",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sortedkeys",
+    srcs = [
+        "serialization.go",
+        "sorted_keys.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/concurrency/sortedkeys",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sliceutils"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sortedkeys",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sortedkeys_test",
+    srcs = ["sorted_keys_test.go"],
+    embed = [":sortedkeys"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

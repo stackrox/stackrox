@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "admission-control_lib",
+    srcs = [
+        "certs.go",
+        "main.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/admission-control",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/clientconn",
+        "//pkg/concurrency",
+        "//pkg/continuousprofiling",
+        "//pkg/devmode",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/fileutils",
+        "//pkg/grpc",
+        "//pkg/logging",
+        "//pkg/memlimit",
+        "//pkg/mtls",
+        "//pkg/mtls/verifier",
+        "//pkg/pods",
+        "//pkg/safe",
+        "//pkg/utils",
+        "//pkg/version",
+        "//pkg/x509utils",
+        "//sensor/admission-control/alerts",
+        "//sensor/admission-control/fetchcerts",
+        "//sensor/admission-control/manager",
+        "//sensor/admission-control/service",
+        "//sensor/admission-control/settingswatch",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_sys//unix",
+    ],
+)
+
+go_binary(
+    name = "admission-control",
+    embed = [":admission-control_lib"],
+    visibility = ["//visibility:public"],
+)

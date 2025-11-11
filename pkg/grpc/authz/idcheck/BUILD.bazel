@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "idcheck",
+    srcs = [
+        "authorizer.go",
+        "id_check.go",
+        "service_type.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authz/idcheck",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":idcheck",
+    visibility = ["//visibility:public"],
+)

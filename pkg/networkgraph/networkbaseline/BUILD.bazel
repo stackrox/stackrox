@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "networkbaseline",
+    srcs = [
+        "baseline_info.go",
+        "peer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/networkgraph/networkbaseline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/networkgraph",
+        "//pkg/timestamp",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkbaseline",
+    visibility = ["//visibility:public"],
+)

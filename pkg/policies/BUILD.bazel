@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "policies",
+    srcs = [
+        "import_errors.go",
+        "lifecycles.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/policies",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policies",
+    visibility = ["//visibility:public"],
+)

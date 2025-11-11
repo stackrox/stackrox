@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "option",
+    srcs = ["options.go"],
+    importpath = "github.com/stackrox/rox/migrator/option",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/migrations"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":option",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "safe",
+    srcs = ["run.go"],
+    importpath = "github.com/stackrox/rox/pkg/safe",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":safe",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "safe_test",
+    srcs = ["run_test.go"],
+    embed = [":safe"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

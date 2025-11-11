@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "branding",
+    srcs = [
+        "brandedlogo.go",
+        "brandedtext.go",
+        "env.go",
+    ],
+    embedsrcs = [
+        "files/red_hat_acs_logo_rgb.png",
+        "files/stackrox_integration_logo.png",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/branding",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":branding",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "branding_test",
+    srcs = [
+        "brandedlogo_test.go",
+        "brandedtext_test.go",
+    ],
+    embed = [":branding"],
+    deps = [
+        "@com_github_cloudflare_cfssl//scan/crypto/sha256",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

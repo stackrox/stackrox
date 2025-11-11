@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "common",
+    srcs = [
+        "command.go",
+        "compliance_return.go",
+        "file.go",
+        "insecure_registries.go",
+        "note.go",
+        "rbac.go",
+        "util.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/common",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/assert",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/framework",
+        "//pkg/compliance/msgfmt",
+        "//pkg/netutil",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//visibility:public"],
+)

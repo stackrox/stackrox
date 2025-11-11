@@ -80,3 +80,7 @@ shellcheck-reports
 repository-to-cpe.json
 container-name-repos-map.json
 .build-markers/
+
+# Bazel artifacts
+/bazel-*
+!MODULE.bazel.lock

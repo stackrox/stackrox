@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "requestinfo",
+    srcs = ["requestinfo.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/requestinfo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/cryptoutils",
+        "//pkg/devbuild",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/netutil/pipeconn",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//credentials",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//peer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":requestinfo",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "requestinfo_test",
+    srcs = ["requestinfo_test.go"],
+    embed = [":requestinfo"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/contextutil",
+        "//pkg/netutil/pipeconn",
+        "//pkg/testutils",
+        "//pkg/utils",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//metadata",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials",
+        "@org_golang_google_grpc//peer",
+    ],
+)

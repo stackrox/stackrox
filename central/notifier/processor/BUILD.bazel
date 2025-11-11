@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "processor",
+    srcs = [
+        "processor_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifier/processor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/integrationhealth/reporter",
+        "//central/notifier/datastore",
+        "//central/notifier/encconfig/datastore",
+        "//central/notifiers/utils",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/declarativeconfig",
+        "//pkg/env",
+        "//pkg/integrationhealth",
+        "//pkg/logging",
+        "//pkg/notifier",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processor",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "processor_test",
+    srcs = ["processor_impl_test.go"],
+    embed = [":processor"],
+    deps = [
+        "//generated/storage",
+        "//pkg/notifier",
+        "//pkg/notifiers/mocks",
+        "@org_uber_go_mock//gomock",
+    ],
+)

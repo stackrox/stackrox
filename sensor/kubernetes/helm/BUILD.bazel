@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "helm",
+    srcs = ["helm_managed_config.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/helm",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/clusterid",
+        "//pkg/logging",
+        "//sensor/common/sensor/helmconfig",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":helm",
+    visibility = ["//visibility:public"],
+)

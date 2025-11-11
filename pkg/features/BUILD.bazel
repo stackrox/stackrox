@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "features",
+    srcs = [
+        "feature.go",
+        "features.go",
+        "list.go",
+        "options.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/features",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":features",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "features_test",
+    srcs = ["features_test.go"],
+    embed = [":features"],
+    deps = [
+        "//pkg/buildinfo",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

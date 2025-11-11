@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = ["pod_id.go"],
+    importpath = "github.com/stackrox/rox/pkg/pods/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = ["pod_id_test.go"],
+    embed = [":utils"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/types",
+    ],
+)

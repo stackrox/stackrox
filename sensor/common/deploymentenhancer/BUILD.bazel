@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deploymentenhancer",
+    srcs = ["component.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/deploymentenhancer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/sensor/queue",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/metrics",
+        "//sensor/common/store",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deploymentenhancer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deploymentenhancer_test",
+    srcs = ["component_test.go"],
+    embed = [":deploymentenhancer"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/testutils/goleak",
+        "//pkg/uuid",
+        "//sensor/common/clusterentities",
+        "//sensor/common/message",
+        "//sensor/common/registry",
+        "//sensor/common/store",
+        "//sensor/common/store/mocks",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

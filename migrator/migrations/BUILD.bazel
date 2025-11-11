@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "migrations",
+    srcs = ["registry.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations",
+    visibility = ["//visibility:public"],
+    deps = ["//migrator/types"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":migrations",
+    visibility = ["//visibility:public"],
+)

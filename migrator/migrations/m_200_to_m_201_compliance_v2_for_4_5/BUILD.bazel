@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_200_to_m_201_compliance_v2_for_4_5",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/schema/new",
+        "//migrator/migrations/m_200_to_m_201_compliance_v2_for_4_5/stores/rules",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/uuid",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//clause",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_200_to_m_201_compliance_v2_for_4_5",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resources",
+    srcs = ["list.go"],
+    importpath = "github.com/stackrox/rox/pkg/sac/resources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resources_test",
+    srcs = ["list_test.go"],
+    embed = [":resources"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

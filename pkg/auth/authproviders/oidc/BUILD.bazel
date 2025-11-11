@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "oidc",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+        "provider.go",
+        "wrappers.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/oidc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/idputil",
+        "//pkg/auth/authproviders/oidc/internal/endpoint",
+        "//pkg/auth/tokens",
+        "//pkg/cryptoutils",
+        "//pkg/errox",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/ioutils",
+        "//pkg/logging",
+        "//pkg/maputil",
+        "//pkg/netutil",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_coreos_go_oidc_v3//oidc",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_hashicorp_go_retryablehttp//:go-retryablehttp",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":oidc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "oidc_test",
+    srcs = [
+        "backend_impl_test.go",
+        "map_claims_test.go",
+        "provider_test.go",
+    ],
+    embed = [":oidc"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/oidc/internal/endpoint",
+        "//pkg/auth/tokens",
+        "//pkg/set",
+        "@com_github_coreos_go_oidc_v3//oidc",
+        "@com_github_hashicorp_go_retryablehttp//:go-retryablehttp",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

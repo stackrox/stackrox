@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "csv",
+    srcs = [
+        "http_writer.go",
+        "utils.go",
+        "writer.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/csv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/grpc/errors",
+        "//pkg/logging",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":csv",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "csv_test",
+    srcs = [
+        "http_writer_test.go",
+        "utils_test.go",
+    ],
+    embed = [":csv"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

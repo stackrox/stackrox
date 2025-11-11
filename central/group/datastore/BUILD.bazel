@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+        "validate.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/group/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/group/datastore/filter",
+        "//central/group/datastore/internal/store",
+        "//central/group/datastore/internal/store/postgres",
+        "//central/role/datastore",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/concurrency",
+        "//pkg/declarativeconfig",
+        "//pkg/errox",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = [
+        "datastore_impl_test.go",
+        "validate_test.go",
+    ],
+    embed = [":datastore"],
+    deps = [
+        "//central/group/datastore/internal/store/mocks",
+        "//central/role/datastore/mocks",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/mocks",
+        "//pkg/declarativeconfig",
+        "//pkg/errox",
+        "//pkg/fixtures",
+        "//pkg/protoassert",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

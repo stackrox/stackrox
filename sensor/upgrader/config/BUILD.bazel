@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = [
+        "config.go",
+        "env.go",
+        "kube_config.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/netutil",
+        "//pkg/pods",
+        "//pkg/sensorupgrader",
+        "//pkg/stringutils",
+        "//pkg/uuid",
+        "//sensor/upgrader/flags",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//visibility:public"],
+)

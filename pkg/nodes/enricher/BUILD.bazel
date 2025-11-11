@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "enricher",
+    srcs = [
+        "creator.go",
+        "enricher.go",
+        "enricher_impl.go",
+        "metrics.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/nodes/enricher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/nodes/converter",
+        "//pkg/scanners",
+        "//pkg/scanners/clairify",
+        "//pkg/scanners/scannerv4",
+        "//pkg/scanners/types",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enricher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "enricher_test",
+    srcs = ["enricher_impl_test.go"],
+    embed = [":enricher"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/metrics",
+        "//pkg/scanners/types",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_sync//semaphore",
+        "@org_uber_go_mock//gomock",
+    ],
+)

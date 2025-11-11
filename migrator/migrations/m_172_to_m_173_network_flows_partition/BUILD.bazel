@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_172_to_m_173_network_flows_partition",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_172_to_m_173_network_flows_partition",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/loghelper",
+        "//migrator/migrations/m_172_to_m_173_network_flows_partition/schema",
+        "//migrator/migrations/m_172_to_m_173_network_flows_partition/stores/previous",
+        "//migrator/migrations/m_172_to_m_173_network_flows_partition/stores/updated",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_172_to_m_173_network_flows_partition",
+    visibility = ["//visibility:public"],
+)

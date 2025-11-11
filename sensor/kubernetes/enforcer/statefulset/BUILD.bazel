@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "statefulset",
+    srcs = [
+        "node_constraint.go",
+        "zero_replica.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/retry",
+        "//sensor/kubernetes/enforcer/common",
+        "@io_k8s_api//apps/v1beta1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":statefulset",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "formats",
+    srcs = [
+        "format.go",
+        "registry.go",
+        "registry_singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/formats",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb/v2backuprestore/common",
+        "//generated/api/v1:api",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":formats",
+    visibility = ["//visibility:public"],
+)

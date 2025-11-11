@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "compatible",
+    srcs = ["s3compatible.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/plugins/s3/compatible",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/externalbackups/plugins",
+        "//central/externalbackups/plugins/s3/common",
+        "//central/externalbackups/plugins/types",
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compatible",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "compatible_test",
+    srcs = ["s3compatible_test.go"],
+    embed = [":compatible"],
+    deps = [
+        "//central/externalbackups/plugins/s3/common",
+        "//central/externalbackups/plugins/s3/testdata",
+        "//central/externalbackups/plugins/types",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

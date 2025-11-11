@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/externalbackups/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/externalbackups/datastore",
+        "//central/externalbackups/manager",
+        "//central/externalbackups/service/internal",
+        "//central/integrationhealth/reporter",
+        "//central/systeminfo/listener",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/endpoints",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/integrationhealth",
+        "//pkg/logging",
+        "//pkg/protoconv/schedule",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/secrets",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

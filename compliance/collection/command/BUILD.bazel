@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "command",
+    srcs = ["command.go"],
+    importpath = "github.com/stackrox/rox/compliance/collection/command",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compliance/collection/file",
+        "//generated/internalapi/compliance",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":command",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "command_test",
+    srcs = ["command_test.go"],
+    embed = [":command"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

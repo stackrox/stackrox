@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "migrations",
+    srcs = [
+        "migration_version.go",
+        "paths.go",
+        "rollback.go",
+        "seq_num.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/migrations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/migrations/internal",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@in_yaml_go_yaml_v3//:yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":migrations",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "migrations_test",
+    srcs = ["migration_version_test.go"],
+    embed = [":migrations"],
+    deps = [
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

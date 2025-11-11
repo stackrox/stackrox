@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fieldmap",
+    srcs = [
+        "field_map.go",
+        "field_visitor.go",
+        "map_search_tag_to_fields.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/fieldmap",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/protocompat"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldmap",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fieldmap_test",
+    srcs = ["map_search_tag_to_fields_test.go"],
+    embed = [":fieldmap"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

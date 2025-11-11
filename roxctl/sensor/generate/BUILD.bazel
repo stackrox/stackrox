@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generate",
+    srcs = [
+        "collection_method.go",
+        "generate.go",
+        "k8s.go",
+        "openshift.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/sensor/generate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/cluster",
+        "//pkg/errox",
+        "//pkg/istioutils",
+        "//pkg/pointers",
+        "//pkg/search",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/util",
+        "//roxctl/sensor/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generate_test",
+    srcs = ["generate_test.go"],
+    embed = [":generate"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/utils",
+        "//pkg/version/testutils",
+        "//roxctl/common/environment",
+        "//roxctl/common/environment/mocks",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_grpc//test/bufconn",
+    ],
+)

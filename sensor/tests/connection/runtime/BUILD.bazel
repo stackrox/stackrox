@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "runtime_test",
+    srcs = ["runtime_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//sensor/debugger/collector",
+        "//sensor/tests/helper",
+        "//sensor/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

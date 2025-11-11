@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "evidence_records.go",
+        "mock_data.go",
+        "policy.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/framework/mocks",
+        "//generated/storage",
+        "//pkg/booleanpolicy/fieldnames",
+        "//pkg/stringutils",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "memlimit",
+    srcs = ["memlimit.go"],
+    importpath = "github.com/stackrox/rox/pkg/memlimit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/size",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":memlimit",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "memlimit_test",
+    srcs = ["memlimit_test.go"],
+    embed = [":memlimit"],
+    deps = [
+        "//pkg/size",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utils",
+    srcs = ["health.go"],
+    importpath = "github.com/stackrox/rox/central/declarativeconfig/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/declarativeconfig/types",
+        "//generated/storage",
+        "//pkg/declarativeconfig",
+        "//pkg/errox",
+        "//pkg/protocompat",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utils_test",
+    srcs = ["health_test.go"],
+    embed = [":utils"],
+    deps = [
+        "//central/declarativeconfig/types",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

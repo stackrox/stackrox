@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "complianceoperatorremediationsv2",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/pipelines/complianceoperatorremediationsv2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/complianceoperator/v2/remediations/datastore",
+        "//central/convert/internaltov2storage",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//generated/internalapi/central",
+        "//pkg/centralsensor",
+        "//pkg/features",
+        "//pkg/metrics",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperatorremediationsv2",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "complianceoperatorremediationsv2_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":complianceoperatorremediationsv2"],
+    deps = [
+        "//central/complianceoperator/v2/remediations/datastore/mocks",
+        "//central/convert/testutils",
+        "//generated/internalapi/central",
+        "//pkg/features",
+        "//pkg/fixtures/fixtureconsts",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

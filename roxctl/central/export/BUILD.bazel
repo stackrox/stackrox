@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "export",
+    srcs = ["export.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/export",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/central/export/deployments",
+        "//roxctl/central/export/images",
+        "//roxctl/central/export/nodes",
+        "//roxctl/central/export/pods",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":export",
+    visibility = ["//visibility:public"],
+)

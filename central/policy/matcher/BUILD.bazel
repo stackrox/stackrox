@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "matcher",
+    srcs = [
+        "cluster.go",
+        "deployment.go",
+        "matcher.go",
+        "namespace.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/policy/matcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/scopecomp",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":matcher",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "matcher_test",
+    srcs = [
+        "cluster_test.go",
+        "deployment_test.go",
+        "namespace_test.go",
+    ],
+    embed = [":matcher"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

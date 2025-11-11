@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policy",
+    srcs = [
+        "policy.go",
+        "policy_errors.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/summaries/policy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "policy_test",
+    srcs = ["policy_test.go"],
+    embed = [":policy"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

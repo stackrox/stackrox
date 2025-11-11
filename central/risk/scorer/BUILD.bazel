@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scorer",
+    srcs = ["test_utils.go"],
+    importpath = "github.com/stackrox/rox/central/risk/scorer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/images/types",
+        "//pkg/protoconv",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scorer",
+    visibility = ["//visibility:public"],
+)

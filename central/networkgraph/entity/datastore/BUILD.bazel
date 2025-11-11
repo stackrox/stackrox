@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/entity/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/networkgraph/config/datastore",
+        "//central/networkgraph/entity/datastore/internal/store",
+        "//central/networkgraph/entity/datastore/internal/store/postgres",
+        "//central/networkgraph/entity/networktree",
+        "//central/sensor/service/connection",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/logging",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/externalsrcs",
+        "//pkg/networkgraph/tree",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastore_bench_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/networkgraph/config/datastore/mocks",
+        "//central/networkgraph/entity/datastore/internal/store/postgres",
+        "//central/networkgraph/entity/networktree",
+        "//central/sensor/service/connection",
+        "//generated/storage",
+        "//pkg/net",
+        "//pkg/networkgraph/testutils",
+        "//pkg/postgres/pgtest",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sac/testconsts",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

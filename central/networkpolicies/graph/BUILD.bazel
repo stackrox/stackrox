@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "graph",
+    srcs = [
+        "diff.go",
+        "evaluator.go",
+        "graph_builder.go",
+        "match.go",
+        "netpol_util.go",
+        "node.go",
+        "port.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkpolicies/graph",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/namespace/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/labels",
+        "//pkg/logging",
+        "//pkg/netutil",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/tree",
+        "//pkg/protoconv/k8s",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/set",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":graph",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "graph_test",
+    srcs = [
+        "bench_test.go",
+        "diff_test.go",
+        "evaluator_test.go",
+        "graph_builder_test.go",
+        "netpol_util_test.go",
+        "port_test.go",
+    ],
+    embed = [":graph"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/labels",
+        "//pkg/networkgraph",
+        "//pkg/networkgraph/tree",
+        "//pkg/protoassert",
+        "//pkg/protoconv/networkpolicy",
+        "//pkg/set",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+    ],
+)

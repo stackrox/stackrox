@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "restore",
+    srcs = ["postgres.go"],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/restore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":restore",
+    visibility = ["//visibility:public"],
+)

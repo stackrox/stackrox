@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "telemetry",
+    srcs = [
+        "cache.go",
+        "gauges.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/telemetry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/installation/store",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/branding",
+        "//pkg/env",
+        "//pkg/metrics",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":telemetry",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "telemetry_test",
+    srcs = ["cache_test.go"],
+    embed = [":telemetry"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

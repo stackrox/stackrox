@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "component",
+    srcs = [
+        "multiplier.go",
+        "vulnerabilities.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/multipliers/component",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/multipliers",
+        "//central/risk/scorer/vulns",
+        "//generated/storage",
+        "//pkg/scancomponent",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":component",
+    visibility = ["//visibility:public"],
+)

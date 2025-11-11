@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "channelmultiplexer",
+    srcs = ["channelmultiplexer.go"],
+    importpath = "github.com/stackrox/rox/pkg/channelmultiplexer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":channelmultiplexer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "channelmultiplexer_test",
+    srcs = ["channelmultiplexer_test.go"],
+    embed = [":channelmultiplexer"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

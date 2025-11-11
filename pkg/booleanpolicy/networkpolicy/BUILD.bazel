@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "networkpolicy",
+    srcs = ["networkpolicy.go"],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/labels",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":networkpolicy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "networkpolicy_test",
+    srcs = ["networkpolicy_test.go"],
+    embed = [":networkpolicy"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

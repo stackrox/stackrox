@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tlsconfig",
+    srcs = [
+        "env.go",
+        "manager.go",
+        "manager_impl.go",
+        "tlsconfig.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/tlsconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/cryptoutils",
+        "//pkg/env",
+        "//pkg/fileutils",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/mtls/certwatch",
+        "//pkg/mtls/verifier",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/x509utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tlsconfig",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tlsconfig_test",
+    srcs = [
+        "manager_impl_test.go",
+        "tlsconfig_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":tlsconfig"],
+    deps = [
+        "//pkg/certgen",
+        "//pkg/clientconn",
+        "//pkg/mtls",
+        "//pkg/namespaces",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

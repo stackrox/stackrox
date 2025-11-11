@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "msgfmt",
+    srcs = ["stringfmt.go"],
+    importpath = "github.com/stackrox/rox/pkg/compliance/msgfmt",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msgfmt",
+    visibility = ["//visibility:public"],
+)

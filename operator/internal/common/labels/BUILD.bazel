@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "labels",
+    srcs = ["labels.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/common/labels",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//pkg/labels",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/meta",
+        "@io_k8s_cli_runtime//pkg/resource",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@sh_helm_helm_v3//pkg/kube",
+        "@sh_helm_helm_v3//pkg/postrender",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":labels",
+    visibility = ["//operator:__subpackages__"],
+)
+
+go_test(
+    name = "labels_test",
+    srcs = ["labels_test.go"],
+    embed = [":labels"],
+)

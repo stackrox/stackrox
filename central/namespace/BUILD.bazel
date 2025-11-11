@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "namespace",
+    srcs = ["resolver.go"],
+    importpath = "github.com/stackrox/rox/central/namespace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/namespace/datastore",
+        "//central/networkpolicies/datastore",
+        "//central/secret/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":namespace",
+    visibility = ["//visibility:public"],
+)

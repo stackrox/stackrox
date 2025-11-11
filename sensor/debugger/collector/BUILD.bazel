@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "collector",
+    srcs = [
+        "common.go",
+        "fake_collector.go",
+        "network_flows_client.go",
+        "signals_client.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/debugger/collector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/sensor",
+        "//pkg/clientconn",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//metadata",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":collector",
+    visibility = ["//visibility:public"],
+)

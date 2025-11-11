@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check121",
+    srcs = [
+        "check.go",
+        "messages.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/pcidss32/check121",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//pkg/compliance/framework",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check121",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check121_test",
+    srcs = ["check_test.go"],
+    embed = [":check121"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/framework/mocks",
+        "//generated/storage",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "delegator",
+    srcs = ["delegator.go"],
+    importpath = "github.com/stackrox/rox/central/delegatedregistryconfig/delegator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/delegatedregistryconfig/datastore",
+        "//central/delegatedregistryconfig/util/connection",
+        "//central/metrics",
+        "//central/role/sachelper",
+        "//central/sensor/service/connection",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/delegatedregistry",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/images/utils",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/urlfmt",
+        "//pkg/waiter",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":delegator",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "delegator_test",
+    srcs = ["delegator_test.go"],
+    embed = [":delegator"],
+    deps = [
+        "//central/delegatedregistryconfig/datastore/mocks",
+        "//central/role/sachelper/mocks",
+        "//central/sensor/service/connection/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "//pkg/waiter/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

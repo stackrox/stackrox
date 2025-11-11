@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "internaltostorage",
+    srcs = ["virtual_machine.go"],
+    importpath = "github.com/stackrox/rox/central/convert/internaltostorage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internaltostorage",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "internaltostorage_test",
+    srcs = ["virtual_machine_test.go"],
+    embed = [":internaltostorage"],
+    deps = [
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

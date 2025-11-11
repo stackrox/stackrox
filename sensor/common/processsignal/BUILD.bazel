@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "processsignal",
+    srcs = [
+        "enricher.go",
+        "pipeline.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/processsignal",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/channelmultiplexer",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/process/filter",
+        "//pkg/process/normalize",
+        "//pkg/protocompat",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "//sensor/common",
+        "//sensor/common/clusterentities",
+        "//sensor/common/detector",
+        "//sensor/common/message",
+        "//sensor/common/metrics",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processsignal",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "processsignal_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":processsignal"],
+    deps = [
+        "//generated/storage",
+        "//pkg/process/filter",
+        "//sensor/common",
+        "//sensor/common/clusterentities",
+        "//sensor/common/detector/mocks",
+        "//sensor/common/message",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

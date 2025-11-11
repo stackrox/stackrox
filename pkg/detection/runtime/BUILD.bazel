@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runtime",
+    srcs = [
+        "detector.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/detection/runtime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/alert/convert",
+        "//pkg/booleanpolicy",
+        "//pkg/booleanpolicy/augmentedobjs",
+        "//pkg/detection",
+        "//pkg/kubernetes",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runtime",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "runtime_test",
+    srcs = ["detector_test.go"],
+    embed = [":runtime"],
+    deps = [
+        "//generated/storage",
+        "//pkg/detection",
+        "//pkg/protocompat",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

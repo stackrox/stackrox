@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "devmode",
+    srcs = [
+        "binary-restart.go",
+        "devmode.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/devmode",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/debughandler",
+        "//pkg/devbuild",
+        "//pkg/env",
+        "//pkg/k8scfgwatch",
+        "//pkg/logging",
+        "//pkg/osutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":devmode",
+    visibility = ["//visibility:public"],
+)

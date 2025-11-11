@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unmarshalreplace",
+    srcs = ["analyzer.go"],
+    importpath = "github.com/stackrox/rox/tools/roxvet/analyzers/unmarshalreplace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/set",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/analysis/passes/inspect",
+        "@org_golang_x_tools//go/ast/inspector",
+        "@org_golang_x_tools//go/types/typeutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unmarshalreplace",
+    visibility = ["//visibility:public"],
+)

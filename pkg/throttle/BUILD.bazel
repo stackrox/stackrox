@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "throttle",
+    srcs = ["drop_throttle.go"],
+    importpath = "github.com/stackrox/rox/pkg/throttle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sync",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":throttle",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "throttle_test",
+    srcs = ["drop_throttle_test.go"],
+    embed = [":throttle"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

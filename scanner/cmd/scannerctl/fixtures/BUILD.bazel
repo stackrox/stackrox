@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fixtures",
+    srcs = ["fixtures.go"],
+    embedsrcs = ["images.json"],
+    importpath = "github.com/stackrox/rox/scanner/cmd/scannerctl/fixtures",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_google_go_containerregistry//pkg/name"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fixtures",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fixtures_test",
+    srcs = ["fixtures_test.go"],
+    embed = [":fixtures"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

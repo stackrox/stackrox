@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "kubernetes",
+    srcs = [
+        "common.go",
+        "control_plane_config.go",
+        "etcd.go",
+        "kubelet_command.go",
+        "master_api_server.go",
+        "master_config.go",
+        "master_controller_manager.go",
+        "master_scheduler.go",
+        "policies_admission_control.go",
+        "policies_general.go",
+        "policies_network_cni.go",
+        "policies_pod_security.go",
+        "policies_rbac.go",
+        "policies_secrets_management.go",
+        "worker_node_config.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/kubernetes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/checks/common",
+        "//pkg/compliance/checks/standards",
+        "//pkg/compliance/framework",
+        "//pkg/compliance/msgfmt",
+        "//pkg/set",
+        "@in_yaml_go_yaml_v3//:yaml",
+        "@io_k8s_apiserver//pkg/apis/apiserver/v1:apiserver",
+        "@io_k8s_kubelet//config/v1beta1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kubernetes",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "kubernetes_test",
+    srcs = [
+        "control_plane_config_test.go",
+        "etcd_test.go",
+        "master_api_server_test.go",
+        "master_config_test.go",
+        "worker_node_config_test.go",
+    ],
+    embed = [":kubernetes"],
+    deps = [
+        "//generated/internalapi/compliance",
+        "//generated/storage",
+        "//pkg/compliance/checks/common",
+        "//pkg/compliance/checks/standards",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

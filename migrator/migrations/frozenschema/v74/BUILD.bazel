@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "frozenschema",
+    srcs = [
+        "collections.go",
+        "permission_sets.go",
+        "policies.go",
+        "policy_categories.go",
+        "policy_category_edges.go",
+        "report_configurations.go",
+        "simple_access_scopes.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/frozenschema/v74",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+        "//pkg/search",
+        "@com_github_lib_pq//:pq",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":frozenschema",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "cluster_permission_evaluator.go",
+        "common.go",
+        "namespace_permission_evaluator.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/rbac/utils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/rbac/k8srole/datastore",
+        "//central/rbac/k8srolebinding/datastore",
+        "//generated/storage",
+        "//pkg/k8srbac",
+        "//pkg/logging",
+        "//pkg/postgres/schema",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utils",
+    visibility = ["//visibility:public"],
+)

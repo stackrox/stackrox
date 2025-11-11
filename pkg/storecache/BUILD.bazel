@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "storecache",
+    srcs = [
+        "cache.go",
+        "map_backed_cache_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/storecache",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sync"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":storecache",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "storecache_test",
+    srcs = ["map_backed_cache_impl_test.go"],
+    embed = [":storecache"],
+    deps = ["@com_github_stretchr_testify//suite"],
+)

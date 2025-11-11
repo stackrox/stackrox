@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_193_to_m_194_policy_updates_for_4_3",
+    srcs = ["migration.go"],
+    embedsrcs = [
+        "policies_before_and_after/after/exec-iptables-root.json",
+        "policies_before_and_after/after/process_uid_zero.json",
+        "policies_before_and_after/before/exec-iptables-root.json",
+        "policies_before_and_after/before/process_uid_zero.json",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_193_to_m_194_policy_updates_for_4_3",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_193_to_m_194_policy_updates_for_4_3/schema",
+        "//migrator/migrations/policymigrationhelper",
+        "//migrator/types",
+        "@com_github_pkg_errors//:errors",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_193_to_m_194_policy_updates_for_4_3",
+    visibility = ["//visibility:public"],
+)

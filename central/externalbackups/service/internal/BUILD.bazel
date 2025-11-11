@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = ["auth.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/service/internal",
+    visibility = ["//central/externalbackups/service:__subpackages__"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/auth/permissions",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/sac/resources",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//central/externalbackups/service:__subpackages__"],
+)

@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "registry",
+    srcs = [
+        "lazy_tls_factory.go",
+        "lazy_tls_image_registry.go",
+        "registry_store.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/registry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/docker/config",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/openshift",
+        "//pkg/registries",
+        "//pkg/registries/docker",
+        "//pkg/registries/rhel",
+        "//pkg/registries/types",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/tlscheck",
+        "//pkg/tlscheckcache",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "//sensor/common/cloudproviders/gcp",
+        "//sensor/common/registry/metrics",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":registry",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "registry_test",
+    srcs = [
+        "lazy_tls_factory_test.go",
+        "lazy_tls_image_registry_test.go",
+        "registry_store_test.go",
+    ],
+    embed = [":registry"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/concurrency",
+        "//pkg/docker/config",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/images/types",
+        "//pkg/images/utils",
+        "//pkg/openshift",
+        "//pkg/protoassert",
+        "//pkg/registries",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+        "//pkg/registries/types/mocks",
+        "//pkg/sync",
+        "//pkg/testutils",
+        "//pkg/tlscheckcache",
+        "//sensor/common/registry/metrics",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

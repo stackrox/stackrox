@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "certs",
+    srcs = ["typed_service_certificates.go"],
+    importpath = "github.com/stackrox/rox/pkg/protoconv/certs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/certgen",
+        "//pkg/mtls",
+        "//pkg/services",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "certs_test",
+    srcs = ["typed_service_certificates_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":certs"],
+    embedsrcs = [
+        "testdata/Makefile",
+        "testdata/README.md",
+        "testdata/bogus-cert.pem",
+        "testdata/ca-cert.pem",
+        "testdata/collector-cert.pem",
+        "testdata/collector-key.pem",
+        "testdata/sensor-cert.pem",
+        "testdata/sensor-key.pem",
+    ],
+    deps = [
+        "//generated/storage",
+        "//pkg/protoutils",
+        "//pkg/utils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

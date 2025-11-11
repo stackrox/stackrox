@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = ["types.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/store/mocks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/deduperkey",
+        "//sensor/common/clusterentities",
+        "//sensor/common/rbac",
+        "//sensor/common/registry",
+        "//sensor/common/selector",
+        "//sensor/common/service",
+        "//sensor/common/store",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//visibility:public"],
+)

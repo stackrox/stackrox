@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tlscheck",
+    srcs = [
+        "custom_verifier.go",
+        "tlscheck.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/tlscheck",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/httputil/proxy",
+        "//pkg/netutil",
+        "//pkg/urlfmt",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tlscheck",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tlscheck_test",
+    srcs = ["tlscheck_test.go"],
+    embed = [":tlscheck"],
+    deps = [
+        "//pkg/retry",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

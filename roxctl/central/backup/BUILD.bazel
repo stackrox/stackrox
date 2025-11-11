@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backup",
+    srcs = ["backup.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/backup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/fileutils",
+        "//pkg/httputil",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "//roxctl/central/db/transfer",
+        "//roxctl/common/download",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backup",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "backup_test",
+    srcs = ["backup_test.go"],
+    embed = [":backup"],
+    deps = [
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

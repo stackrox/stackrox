@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protomock",
+    srcs = ["mock_matcher.go"],
+    importpath = "github.com/stackrox/rox/pkg/protomock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/protoutils",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protomock",
+    visibility = ["//visibility:public"],
+)

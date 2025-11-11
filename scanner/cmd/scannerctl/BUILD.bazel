@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "scannerctl_lib",
+    srcs = [
+        "main.go",
+        "sbom.go",
+        "scale.go",
+        "scan.go",
+        "vm.go",
+    ],
+    importpath = "github.com/stackrox/rox/scanner/cmd/scannerctl",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//generated/internalapi/scanner/v4:scanner",
+        "//pkg/env",
+        "//pkg/jsonutil",
+        "//pkg/mtls",
+        "//pkg/scannerv4/client",
+        "//pkg/sync",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "//scanner/cmd/scannerctl/authn",
+        "//scanner/cmd/scannerctl/fixtures",
+        "//scanner/indexer",
+        "//scanner/internal/version",
+        "@com_github_google_go_containerregistry//pkg/authn",
+        "@com_github_google_go_containerregistry//pkg/name",
+        "@com_github_google_go_containerregistry//pkg/v1/remote",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_spf13_pflag//:pflag",
+        "@org_golang_x_sys//unix",
+    ],
+)
+
+go_binary(
+    name = "scannerctl",
+    embed = [":scannerctl_lib"],
+    visibility = ["//visibility:public"],
+)

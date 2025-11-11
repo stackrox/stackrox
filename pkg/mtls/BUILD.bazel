@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mtls",
+    srcs = [
+        "ca.go",
+        "cert_info.go",
+        "cn.go",
+        "crypto.go",
+        "defs.go",
+        "env.go",
+        "issue_options.go",
+        "verification_options.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/mtls",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/namespaces",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "//pkg/x509utils",
+        "@com_github_cloudflare_cfssl//config",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_cloudflare_cfssl//log",
+        "@com_github_cloudflare_cfssl//signer",
+        "@com_github_cloudflare_cfssl//signer/local",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mtls",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mtls_test",
+    srcs = [
+        "ca_test.go",
+        "cn_test.go",
+    ],
+    embed = [":mtls"],
+    deps = [
+        "//generated/storage",
+        "@com_github_cloudflare_cfssl//csr",
+        "@com_github_cloudflare_cfssl//initca",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dberrors",
+    srcs = ["errors.go"],
+    importpath = "github.com/stackrox/rox/pkg/dberrors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dberrors",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "dberrors_test",
+    srcs = ["errors_test.go"],
+    embed = [":dberrors"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)

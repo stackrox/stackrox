@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backgroundtasks",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/backgroundtasks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/sync",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backgroundtasks",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "backgroundtasks_test",
+    srcs = ["manager_test.go"],
+    embed = [":backgroundtasks"],
+    deps = [
+        "//pkg/concurrency",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

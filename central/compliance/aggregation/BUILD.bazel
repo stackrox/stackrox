@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "aggregation",
+    srcs = [
+        "aggregation.go",
+        "singleton.go",
+        "sort.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/aggregation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/compliance/datastore",
+        "//central/compliance/datastore/types",
+        "//central/compliance/standards",
+        "//central/compliance/standards/index",
+        "//central/deployment/datastore",
+        "//central/namespace/datastore",
+        "//central/node/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/postgres/schema",
+        "//pkg/search",
+        "//pkg/search/options/deployments",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":aggregation",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "aggregation_test",
+    srcs = [
+        "aggregation_test.go",
+        "sort_test.go",
+    ],
+    embed = [":aggregation"],
+    deps = [
+        "//central/compliance/standards",
+        "//central/compliance/standards/metadata",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

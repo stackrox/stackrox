@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusterhealth",
+    srcs = ["status.go"],
+    importpath = "github.com/stackrox/rox/pkg/clusterhealth",
+    visibility = ["//visibility:public"],
+    deps = ["//generated/storage"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusterhealth",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clusterhealth_test",
+    srcs = ["status_test.go"],
+    embed = [":clusterhealth"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

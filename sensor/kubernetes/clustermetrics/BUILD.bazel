@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clustermetrics",
+    srcs = ["cluster_metrics.go"],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/clustermetrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//sensor/common",
+        "//sensor/common/message",
+        "//sensor/common/metrics",
+        "//sensor/common/unimplemented",
+        "//sensor/kubernetes/complianceoperator",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clustermetrics",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "clustermetrics_test",
+    srcs = ["cluster_metrics_test.go"],
+    embed = [":clustermetrics"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/protoassert",
+        "//sensor/common",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

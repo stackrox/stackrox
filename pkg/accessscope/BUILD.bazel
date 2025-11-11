@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "accessscope",
+    srcs = ["validate.go"],
+    importpath = "github.com/stackrox/rox/pkg/accessscope",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/sac/effectiveaccessscope",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@io_k8s_apimachinery//pkg/labels",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":accessscope",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "accessscope_test",
+    srcs = ["validate_test.go"],
+    embed = [":accessscope"],
+    deps = [
+        "//generated/storage",
+        "//pkg/labels",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "opts",
+    srcs = ["options.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudsources/opts",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":opts",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "distroctx",
+    srcs = ["distro_context.go"],
+    importpath = "github.com/stackrox/rox/central/graphql/resolvers/distroctx",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":distroctx",
+    visibility = ["//visibility:public"],
+)

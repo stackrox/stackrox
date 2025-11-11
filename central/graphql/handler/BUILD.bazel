@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "handler",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/central/graphql/handler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/graphql/resolvers",
+        "//central/graphql/resolvers/loaders",
+        "//central/metrics",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":handler",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "handler_test",
+    srcs = [
+        "clusters_test.go",
+        "deployments_test.go",
+        "handler_test.go",
+        "namespace_test.go",
+        "search_test.go",
+    ],
+    embed = [":handler"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/deployment/datastore/mocks",
+        "//central/graphql/resolvers",
+        "//central/graphql/resolvers/loaders",
+        "//central/namespace/datastore/mocks",
+        "//central/networkpolicies/datastore/mocks",
+        "//central/processindicator/datastore/mocks",
+        "//central/rbac/k8srole/datastore/mocks",
+        "//central/rbac/k8srolebinding/datastore/mocks",
+        "//central/secret/datastore/mocks",
+        "//central/views/deployments",
+        "//central/views/deployments/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/grpc/authz/allow",
+        "//pkg/protocompat",
+        "//pkg/search",
+        "//pkg/search/paginated",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

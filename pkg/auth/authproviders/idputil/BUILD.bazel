@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "idputil",
+    srcs = ["state.go"],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/idputil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/netutil",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":idputil",
+    visibility = ["//visibility:public"],
+)

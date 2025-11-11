@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "enforcer",
+    srcs = ["enforcer.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/enforcer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/enforcers",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//sensor/common",
+        "//sensor/common/message",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enforcer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "enforcer_test",
+    srcs = ["enforcer_test.go"],
+    embed = [":enforcer"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/protoassert",
+    ],
+)

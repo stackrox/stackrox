@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloudsources",
+    srcs = ["client.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudsources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/cloudsources/ocm",
+        "//pkg/cloudsources/opts",
+        "//pkg/cloudsources/paladin",
+        "//pkg/errox",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cloudsources",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "privilege_escalation.go",
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/apitoken/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/apitoken/backend",
+        "//central/apitoken/creation",
+        "//central/role",
+        "//central/role/datastore",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/defaults/accesscontrol",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/protocompat",
+        "//pkg/sac/resources",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = [
+        "privilege_escalation_test.go",
+        "service_impl_test.go",
+    ],
+    embed = [":service"],
+    deps = [
+        "//central/role",
+        "//central/role/datastore/mocks",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/testutils/roletest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

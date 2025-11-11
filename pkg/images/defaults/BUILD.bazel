@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "defaults",
+    srcs = [
+        "env.go",
+        "flavor.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/images/defaults",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":defaults",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "defaults_test",
+    srcs = ["flavor_test.go"],
+    embed = [":defaults"],
+    deps = [
+        "//pkg/buildinfo",
+        "//pkg/version/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

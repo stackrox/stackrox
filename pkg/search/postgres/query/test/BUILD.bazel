@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test",
+    srcs = ["test.go"],
+    importpath = "github.com/stackrox/rox/pkg/search/postgres/query/test",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test",
+    visibility = ["//visibility:public"],
+)

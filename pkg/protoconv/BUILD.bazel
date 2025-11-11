@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protoconv",
+    srcs = ["time.go"],
+    importpath = "github.com/stackrox/rox/pkg/protoconv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/timestamp",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoconv",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protoconv_test",
+    srcs = ["time_test.go"],
+    embed = [":protoconv"],
+    deps = [
+        "//pkg/protocompat",
+        "//pkg/timestamp",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_212_to_m_213_add_container_start_column_to_indicators",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/schema",
+        "//migrator/migrations/m_212_to_m_213_add_container_start_column_to_indicators/store",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/search",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_212_to_m_213_add_container_start_column_to_indicators",
+    visibility = ["//visibility:public"],
+)

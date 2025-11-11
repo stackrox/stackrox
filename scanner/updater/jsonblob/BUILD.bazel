@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "jsonblob",
+    srcs = ["jsonblob.go"],
+    importpath = "github.com/stackrox/rox/scanner/updater/jsonblob",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_quay_claircore//:claircore",
+        "@com_github_quay_claircore//libvuln/driver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jsonblob",
+    visibility = ["//visibility:public"],
+)

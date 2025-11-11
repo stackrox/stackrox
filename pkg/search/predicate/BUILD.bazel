@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "predicate",
+    srcs = [
+        "base_predicates.go",
+        "constant_predicates.go",
+        "linkable_predicates.go",
+        "options_map.go",
+        "predicate.go",
+        "timestamp_predicate.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search/predicate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/search",
+        "//pkg/search/fieldmap",
+        "//pkg/search/predicate/basematchers",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":predicate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "predicate_test",
+    srcs = ["predicate_test.go"],
+    embed = [":predicate"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/search",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

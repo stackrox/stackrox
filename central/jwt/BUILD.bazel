@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jwt",
+    srcs = ["jwt.go"],
+    importpath = "github.com/stackrox/rox/central/jwt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/auth/m2m",
+        "//central/role/datastore",
+        "//pkg/auth/tokens",
+        "//pkg/errox",
+        "//pkg/expiringcache",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jwt",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "jwt_test",
+    srcs = ["jwt_test.go"],
+    embed = [":jwt"],
+    deps = [
+        "//central/auth/m2m/mocks",
+        "//generated/storage",
+        "//pkg/auth/tokens",
+        "//pkg/errox",
+        "//pkg/expiringcache",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pruner",
+    srcs = [
+        "pruner.go",
+        "pruner_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/processindicator/pruner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/processindicator",
+        "@com_github_roaringbitmap_roaring//:roaring",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pruner",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pruner_test",
+    srcs = ["pruner_test.go"],
+    embed = [":pruner"],
+    deps = [
+        "//central/processindicator",
+        "//generated/storage",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

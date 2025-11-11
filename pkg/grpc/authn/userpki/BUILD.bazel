@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "userpki",
+    srcs = [
+        "extractor.go",
+        "identity.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authn/userpki",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/requestinfo",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/sac",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":userpki",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "userpki_test",
+    srcs = ["extractor_test.go"],
+    embed = [":userpki"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/grpc/requestinfo",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

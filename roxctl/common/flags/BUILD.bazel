@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "flags",
+    srcs = [
+        "annotations.go",
+        "api_token_file.go",
+        "confirm.go",
+        "debug.go",
+        "endpoint.go",
+        "env_flag.go",
+        "file_contents.go",
+        "file_map.go",
+        "hide.go",
+        "imageFlavor.go",
+        "no_color.go",
+        "opt_bool.go",
+        "password.go",
+        "retry.go",
+        "settings_var.go",
+        "timeout.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/common/flags",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//image",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/errox",
+        "//pkg/images/defaults",
+        "//pkg/set",
+        "//pkg/utils",
+        "//roxctl/common/io",
+        "//roxctl/common/logger",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_spf13_pflag//:pflag",
+        "@io_k8s_utils//pointer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":flags",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "flags_test",
+    srcs = [
+        "endpoint_test.go",
+        "env_flag_test.go",
+    ],
+    embed = [":flags"],
+    deps = [
+        "//pkg/env",
+        "//pkg/pointers",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

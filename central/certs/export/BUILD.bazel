@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "export",
+    srcs = ["backup.go"],
+    importpath = "github.com/stackrox/rox/central/certs/export",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb/v2backuprestore/backup/generators",
+        "//central/globaldb/v2backuprestore/backup/generators/cas",
+        "//central/systeminfo/listener",
+        "//pkg/backup",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":export",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "command",
+    srcs = ["upgrade.go"],
+    importpath = "github.com/stackrox/rox/tools/policyutil/command",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/booleanpolicy/policyversion",
+        "//pkg/jsonutil",
+        "//pkg/utils",
+        "//tools/policyutil/common",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":command",
+    visibility = ["//visibility:public"],
+)

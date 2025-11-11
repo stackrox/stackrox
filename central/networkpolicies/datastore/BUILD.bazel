@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkpolicies/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/networkpolicies/datastore/internal/store",
+        "//central/networkpolicies/datastore/internal/store/postgres",
+        "//central/networkpolicies/datastore/internal/undodeploymentstore",
+        "//central/networkpolicies/datastore/internal/undodeploymentstore/postgres",
+        "//central/networkpolicies/datastore/internal/undostore",
+        "//central/networkpolicies/datastore/internal/undostore/postgres",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/stringutils",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastore_impl_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/networkpolicies/datastore/internal/store/mocks",
+        "//central/networkpolicies/datastore/internal/undodeploymentstore/mocks",
+        "//central/networkpolicies/datastore/internal/undostore/mocks",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/protocompat",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

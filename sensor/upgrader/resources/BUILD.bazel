@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resources",
+    srcs = [
+        "metadata.go",
+        "purpose.go",
+        "purpose_string.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/resources",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_client_go//discovery",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resources",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resources_test",
+    srcs = ["metadata_test.go"],
+    embed = [":resources"],
+    deps = [
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)

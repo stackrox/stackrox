@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "eventpipeline",
+    srcs = [
+        "pipeline.go",
+        "pipeline_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/eventpipeline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/sync",
+        "//sensor/common",
+        "//sensor/common/config",
+        "//sensor/common/detector",
+        "//sensor/common/internalmessage",
+        "//sensor/common/message",
+        "//sensor/common/reprocessor",
+        "//sensor/common/store/resolver",
+        "//sensor/kubernetes/client",
+        "//sensor/kubernetes/eventpipeline/component",
+        "//sensor/kubernetes/eventpipeline/output",
+        "//sensor/kubernetes/eventpipeline/resolver",
+        "//sensor/kubernetes/listener",
+        "//sensor/kubernetes/listener/resources",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eventpipeline",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "eventpipeline_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":eventpipeline"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/protoassert",
+        "//pkg/sync",
+        "//sensor/common",
+        "//sensor/common/detector/mocks",
+        "//sensor/common/message",
+        "//sensor/common/reprocessor/mocks",
+        "//sensor/kubernetes/eventpipeline/component",
+        "//sensor/kubernetes/eventpipeline/component/mocks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

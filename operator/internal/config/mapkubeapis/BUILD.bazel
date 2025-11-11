@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mapkubeapis",
+    srcs = ["embed_map.go"],
+    embedsrcs = ["Map.yaml"],
+    importpath = "github.com/stackrox/rox/operator/internal/config/mapkubeapis",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//pkg/sync",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mapkubeapis",
+    visibility = ["//operator:__subpackages__"],
+)

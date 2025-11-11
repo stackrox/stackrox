@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "profiling",
+    srcs = [
+        "fifo_dir.go",
+        "profiling.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/profiling",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":profiling",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "profiling_test",
+    srcs = [
+        "fifo_dir_test.go",
+        "profiling_test.go",
+    ],
+    embed = [":profiling"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

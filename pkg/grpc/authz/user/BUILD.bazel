@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "user",
+    srcs = [
+        "role.go",
+        "user.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authz/user",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":user",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "user_test",
+    srcs = ["user_test.go"],
+    embed = [":user"],
+    deps = [
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/auth/permissions/utils",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authn/mocks",
+        "//pkg/sac",
+        "//pkg/testutils/roletest",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

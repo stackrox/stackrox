@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "check-workflow-run_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/tools/check-workflow-run",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_google_go_github_v60//:github"],
+)
+
+go_binary(
+    name = "check-workflow-run",
+    embed = [":check-workflow-run_lib"],
+    visibility = ["//visibility:public"],
+)

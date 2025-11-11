@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "autobool",
+    srcs = ["autobool.go"],
+    importpath = "github.com/stackrox/rox/roxctl/pflag/autobool",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common",
+        "@com_github_spf13_pflag//:pflag",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":autobool",
+    visibility = ["//visibility:public"],
+)

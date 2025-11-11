@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "report",
+    srcs = ["report.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/report",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/jsonutil",
+        "//pkg/stringutils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":report",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "report_test",
+    srcs = ["report_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":report"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_201_to_m_202_vuln_request_v1_to_v2",
+    srcs = [
+        "migration.go",
+        "migration_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/schema",
+        "//migrator/migrations/m_201_to_m_202_vuln_request_v1_to_v2/store",
+        "//migrator/types",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_201_to_m_202_vuln_request_v1_to_v2",
+    visibility = ["//visibility:public"],
+)

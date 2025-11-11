@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "common",
+    srcs = ["common.go"],
+    importpath = "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+    deps = [
+        "//generated/storage",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = ["common_test.go"],
+    embed = [":common"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "create",
+    srcs = ["create.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/userpki/create",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders/userpki",
+        "//pkg/errox",
+        "//pkg/roxctl/common",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":create",
+    visibility = ["//visibility:public"],
+)

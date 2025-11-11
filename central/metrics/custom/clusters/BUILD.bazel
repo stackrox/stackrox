@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "clusters",
+    srcs = [
+        "labels.go",
+        "tracker.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom/clusters",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/metrics/custom/tracker",
+        "//generated/storage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":clusters",
+    visibility = ["//visibility:public"],
+)

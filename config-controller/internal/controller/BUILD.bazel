@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "controller",
+    srcs = ["policy_controller.go"],
+    importpath = "github.com/stackrox/rox/config-controller/internal/controller",
+    visibility = ["//config-controller:__subpackages__"],
+    deps = [
+        "//config-controller/api/v1alpha1",
+        "//config-controller/pkg/client",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/controller/controllerutil",
+        "@io_k8s_sigs_controller_runtime//pkg/event",
+        "@io_k8s_sigs_controller_runtime//pkg/predicate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":controller",
+    visibility = ["//config-controller:__subpackages__"],
+)

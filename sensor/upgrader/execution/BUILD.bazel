@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "execution",
+    srcs = [
+        "execute.go",
+        "executor.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/execution",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/k8sutil",
+        "//pkg/kubernetes",
+        "//pkg/logging",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/plan",
+        "//sensor/upgrader/resources",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":execution",
+    visibility = ["//visibility:public"],
+)

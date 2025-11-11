@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "logger",
+    srcs = ["log.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/logger",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common/io",
+        "//roxctl/common/printer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":logger",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "logger_test",
+    srcs = ["log_test.go"],
+    embed = [":logger"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//roxctl/common/io",
+            "//roxctl/common/printer",
+            "@com_github_fatih_color//:color",
+            "@com_github_stretchr_testify//assert",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//roxctl/common/io",
+            "//roxctl/common/printer",
+            "@com_github_fatih_color//:color",
+            "@com_github_stretchr_testify//assert",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//roxctl/common/io",
+            "//roxctl/common/printer",
+            "@com_github_fatih_color//:color",
+            "@com_github_stretchr_testify//assert",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//roxctl/common/io",
+            "//roxctl/common/printer",
+            "@com_github_fatih_color//:color",
+            "@com_github_stretchr_testify//assert",
+        ],
+        "//conditions:default": [],
+    }),
+)

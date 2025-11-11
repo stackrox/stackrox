@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "volumes",
+    srcs = [
+        "azure_disk.go",
+        "azure_file.go",
+        "cephfs.go",
+        "cinder.go",
+        "common.go",
+        "config.go",
+        "ebs.go",
+        "emptydir.go",
+        "gcepersistent.go",
+        "git.go",
+        "gluster.go",
+        "hostpath.go",
+        "nfs.go",
+        "persistent.go",
+        "rbd.go",
+        "secret.go",
+        "unimplemented.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/protoconv/resources/volumes",
+    visibility = ["//visibility:public"],
+    deps = ["@io_k8s_api//core/v1:core"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":volumes",
+    visibility = ["//visibility:public"],
+)

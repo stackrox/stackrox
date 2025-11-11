@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "debughandler",
+    srcs = [
+        "actions.go",
+        "server.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/debughandler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/debug",
+        "//pkg/devbuild",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":debughandler",
+    visibility = ["//visibility:public"],
+)

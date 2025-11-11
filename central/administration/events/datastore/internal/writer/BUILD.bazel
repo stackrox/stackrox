@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "writer",
+    srcs = [
+        "writer.go",
+        "writer_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/administration/events/datastore/internal/writer",
+    visibility = ["//central/administration/events/datastore:__subpackages__"],
+    deps = [
+        "//central/administration/events/datastore/internal/store",
+        "//generated/storage",
+        "//pkg/administration/events",
+        "//pkg/protoutils",
+        "//pkg/sliceutils",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":writer",
+    visibility = ["//central/administration/events/datastore:__subpackages__"],
+)

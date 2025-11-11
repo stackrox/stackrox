@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "output",
+    srcs = [
+        "output.go",
+        "output_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/output",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/concurrency",
+        "//sensor/common/detector",
+        "//sensor/common/message",
+        "//sensor/common/metrics",
+        "//sensor/kubernetes/eventpipeline/component",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":output",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "output_test",
+    srcs = ["output_test.go"],
+    embed = [":output"],
+    deps = [
+        "//generated/internalapi/central",
+        "//sensor/common/detector/mocks",
+        "//sensor/common/message",
+        "//sensor/kubernetes/eventpipeline/component",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

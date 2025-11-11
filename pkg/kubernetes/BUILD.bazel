@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "kubernetes",
+    srcs = [
+        "annotations.go",
+        "apiversions.go",
+        "component.go",
+        "configmaps.go",
+        "event.go",
+        "namespaces.go",
+        "pull_secret.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/kubernetes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errox",
+        "//pkg/images/utils",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/urlfmt",
+        "@io_k8s_api//admission/v1:admission",
+        "@io_k8s_api//autoscaling/v1:autoscaling",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/serializer",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":kubernetes",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "kubernetes_test",
+    srcs = [
+        "annotations_test.go",
+        "apiversions_test.go",
+        "namespaces_test.go",
+        "pull_secret_test.go",
+    ],
+    embed = [":kubernetes"],
+    deps = [
+        "//pkg/maputil",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

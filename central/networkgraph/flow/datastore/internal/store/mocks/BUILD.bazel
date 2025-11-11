@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mocks",
+    srcs = [
+        "cluster.go",
+        "flow.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/mocks",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+    deps = [
+        "//central/networkgraph/flow/datastore/internal/store",
+        "//generated/storage",
+        "//pkg/timestamp",
+        "@org_uber_go_mock//gomock",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mocks",
+    visibility = ["//central/networkgraph/flow/datastore:__subpackages__"],
+)

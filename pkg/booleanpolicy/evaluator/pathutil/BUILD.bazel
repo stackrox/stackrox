@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pathutil",
+    srcs = [
+        "augmented_obj.go",
+        "augmented_obj_meta.go",
+        "filter_linked.go",
+        "meta_path.go",
+        "path.go",
+        "testutil.go",
+        "traverse.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pathutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pathutil_test",
+    srcs = [
+        "augmented_obj_meta_test.go",
+        "augmented_obj_test.go",
+        "filter_linked_test.go",
+        "path_test.go",
+    ],
+    embed = [":pathutil"],
+    deps = [
+        "//generated/storage",
+        "//pkg/sliceutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

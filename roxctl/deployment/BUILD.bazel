@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deployment",
+    srcs = ["deployment.go"],
+    importpath = "github.com/stackrox/rox/roxctl/deployment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/deployment/check",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployment",
+    visibility = ["//visibility:public"],
+)
