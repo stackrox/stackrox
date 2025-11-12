@@ -434,6 +434,8 @@ type FileActivity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Process   *ProcessSignal         `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
+	// The hostname/name of the node where the file activity occurred
+	Node string `protobuf:"bytes,10,opt,name=node,proto3" json:"node,omitempty"`
 	// Types that are valid to be assigned to File:
 	//
 	//	*FileActivity_Creation
@@ -490,6 +492,13 @@ func (x *FileActivity) GetProcess() *ProcessSignal {
 		return x.Process
 	}
 	return nil
+}
+
+func (x *FileActivity) GetNode() string {
+	if x != nil {
+		return x.Node
+	}
+	return ""
 }
 
 func (x *FileActivity) GetFile() isFileActivity_File {
@@ -637,10 +646,12 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\tFileWrite\x124\n" +
 	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"@\n" +
 	"\bFileOpen\x124\n" +
-	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"\xe1\x03\n" +
+	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"\xf5\x03\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12/\n" +
-	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x122\n" +
+	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x12\x12\n" +
+	"\x04node\x18\n" +
+	" \x01(\tR\x04node\x122\n" +
 	"\bcreation\x18\x03 \x01(\v2\x14.sensor.FileCreationH\x00R\bcreation\x12,\n" +
 	"\x06unlink\x18\x04 \x01(\v2\x12.sensor.FileUnlinkH\x00R\x06unlink\x12,\n" +
 	"\x06rename\x18\x05 \x01(\v2\x12.sensor.FileRenameH\x00R\x06rename\x12>\n" +
