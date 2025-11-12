@@ -40,6 +40,16 @@ func (ds *datastoreImpl) UpsertDeclarativeConfig(ctx context.Context, configHeal
 	return ds.store.Upsert(ctx, configHealth)
 }
 
+func (ds *datastoreImpl) UpsertDeclarativeConfigs(ctx context.Context, configHealths []*storage.DeclarativeConfigHealth) error {
+	if err := ds.verifyDeclarativeContext(ctx); err != nil {
+		return err
+	}
+	if len(configHealths) == 0 {
+		return nil
+	}
+	return ds.store.UpsertMany(ctx, configHealths)
+}
+
 func (ds *datastoreImpl) RemoveDeclarativeConfig(ctx context.Context, id string) error {
 	if err := ds.verifyDeclarativeContext(ctx); err != nil {
 		return err
