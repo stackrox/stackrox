@@ -1,57 +1,44 @@
-package relay
+package sender
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 )
 
-func TestVMRelay(t *testing.T) {
-	suite.Run(t, new(relayTestSuite))
+func TestSender(t *testing.T) {
+	suite.Run(t, new(senderTestSuite))
 }
 
-type relayTestSuite struct {
+type senderTestSuite struct {
 	suite.Suite
 
 	ctx context.Context
 }
 
-func (s *relayTestSuite) SetupTest() {
+func (s *senderTestSuite) SetupTest() {
 	s.ctx = context.Background()
 }
 
-func (s *relayTestSuite) TestParseIndexReport() {
-	data := []byte("malformed-data")
-	parsedIndexReport, err := parseIndexReport(data)
-	s.Require().Error(err)
-	s.Require().Nil(parsedIndexReport)
-
-	validIndexReport := &v1.IndexReport{VsockCid: "42"}
-	data, err = proto.Marshal(validIndexReport)
-	s.Require().NoError(err)
-	parsedIndexReport, err = parseIndexReport(data)
-	s.Require().NoError(err)
-	s.Require().True(proto.Equal(validIndexReport, parsedIndexReport))
-}
-
-func (s *relayTestSuite) TestSendReportToSensor_HandlesCanceledContext() {
+func (s *senderTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
 	client := newMockSensorClient()
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
+	err := SendReportToSensor(ctx, &v1.IndexReport{}, client)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
 
-func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
+func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	cases := map[string]struct {
 		err         error
 		respSuccess bool
@@ -85,7 +72,7 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := sendReportToSensor(ctx, &v1.IndexReport{}, client)
+			err := SendReportToSensor(ctx, &v1.IndexReport{}, client)
 			s.Require().Error(err)
 
 			retried := len(client.capturedRequests) > 1
@@ -94,17 +81,31 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 }
 
-func (s *relayTestSuite) TestValidateVsockCID() {
-	// Reported CID is 42
-	indexReport := v1.IndexReport{VsockCid: "42"}
+type mockSensorClient struct {
+	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
+	delay            time.Duration
+	returnError      error
+	respSuccess      bool
+}
 
-	// Real (connection) CID is 99 - does not match, should return error
-	connVsockCID := uint32(99)
-	err := validateReportedVsockCID(&indexReport, connVsockCID)
-	s.Require().Error(err)
+func newMockSensorClient() *mockSensorClient {
+	return &mockSensorClient{
+		respSuccess: true,
+	}
+}
 
-	// Real (connection) CID is 42 - matches, should return nil
-	connVsockCID = uint32(42)
-	err = validateReportedVsockCID(&indexReport, connVsockCID)
-	s.Require().NoError(err)
+func (m *mockSensorClient) withError(err error) *mockSensorClient {
+	m.returnError = err
+	return m
+}
+
+func (m *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
+	m.respSuccess = false
+	return m
+}
+
+func (m *mockSensorClient) UpsertVirtualMachineIndexReport(_ context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	m.capturedRequests = append(m.capturedRequests, req)
+	time.Sleep(m.delay)
+	return &sensor.UpsertVirtualMachineIndexReportResponse{Success: m.respSuccess}, m.returnError
 }
