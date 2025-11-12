@@ -71,9 +71,9 @@ function NodeComponentsTable({ data }: NodeComponentsTableProps) {
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
-                    <Th sort={getSortParams('Type')}>Type</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
+                    <Th sort={getSortParams('Type')}>Type</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -82,13 +82,13 @@ function NodeComponentsTable({ data }: NodeComponentsTableProps) {
                     return (
                         <Tr key={name}>
                             <Td dataLabel="Component">{name}</Td>
-                            <Td dataLabel="Type">{source}</Td>
                             <Td dataLabel="Version">{version}</Td>
                             <Td dataLabel="CVE fixed in">
                                 {fixedByVersion || (
                                     <VulnerabilityFixableIconText isFixable={false} />
                                 )}
                             </Td>
+                            <Td dataLabel="Type">{source}</Td>
                         </Tr>
                     );
                 })}
