@@ -651,6 +651,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
