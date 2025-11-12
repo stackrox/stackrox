@@ -23,8 +23,9 @@ function SearchFilterStatuses({
         const hadAllOption = (statusesSelected ?? []).length === 0;
         const isSelectAll = selections.includes(optionAll) && !hadAllOption;
         const validStatuses = selections.filter((s) => s !== optionAll && isStatus(s));
+        const allOptionsSelected = validStatuses.length === statuses.length;
 
-        if (isSelectAll || validStatuses.length === 0) {
+        if (isSelectAll || validStatuses.length === 0 || allOptionsSelected) {
             setStatusesSelected(undefined);
             return;
         }
@@ -32,17 +33,19 @@ function SearchFilterStatuses({
         setStatusesSelected(validStatuses);
     }
 
-    const options = statuses.map((status) => (
-        <SelectOption key={status} value={status}>
-            {getStatusText(status)}
-        </SelectOption>
-    ));
-    options.push(
-        <Divider key="Divider" />,
+    const options = [
         <SelectOption key="All" value={optionAll}>
             All statuses
-        </SelectOption>
-    );
+        </SelectOption>,
+        <Divider key="Divider" />,
+    ];
+    statuses.forEach((status) => {
+        options.push(
+            <SelectOption key={status} value={status}>
+                {getStatusText(status)}
+            </SelectOption>
+        );
+    });
 
     return (
         <CheckboxSelect

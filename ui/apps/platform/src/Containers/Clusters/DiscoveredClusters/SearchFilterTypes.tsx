@@ -23,8 +23,9 @@ function SearchFilterTypes({
         const hadAllOption = (typesSelected ?? []).length === 0;
         const isSelectAll = selections.includes(optionAll) && !hadAllOption;
         const validTypes = selections.filter((s) => s !== optionAll && isType(s));
+        const allOptionsSelected = validTypes.length === types.length;
 
-        if (isSelectAll || validTypes.length === 0) {
+        if (isSelectAll || validTypes.length === 0 || allOptionsSelected) {
             setTypesSelected(undefined);
             return;
         }
@@ -32,17 +33,19 @@ function SearchFilterTypes({
         setTypesSelected(validTypes);
     }
 
-    const options = types.map((type) => (
-        <SelectOption key={type} value={type}>
-            {getTypeText(type)}
-        </SelectOption>
-    ));
-    options.push(
-        <Divider key="Divider" />,
+    const options = [
         <SelectOption key="All" value={optionAll}>
             All types
-        </SelectOption>
-    );
+        </SelectOption>,
+        <Divider key="Divider" />,
+    ];
+    types.forEach((type) => {
+        options.push(
+            <SelectOption key={type} value={type}>
+                {getTypeText(type)}
+            </SelectOption>
+        );
+    });
 
     return (
         <CheckboxSelect
