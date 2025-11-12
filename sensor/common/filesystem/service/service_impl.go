@@ -26,6 +26,7 @@ func NewService(pipeline *pipeline.Pipeline, activityChan chan *sensorAPI.FileAc
 		pipeline:     pipeline,
 		activityChan: activityChan,
 		stoppers:     set.NewSet[concurrency.Stopper](),
+		stopping:     false,
 	}
 
 	return srv
@@ -37,12 +38,14 @@ type serviceImpl struct {
 	activityChan chan *sensorAPI.FileActivity
 	stoppers     set.Set[concurrency.Stopper]
 	stopperLock  sync.Mutex
+	stopping     bool
 }
 
 func (s *serviceImpl) Stop() {
 	// Take a snapshot of stoppers while holding the lock
 	var stoppersList []concurrency.Stopper
 	concurrency.WithLock(&s.stopperLock, func() {
+		s.stopping = true
 		stoppersList = s.stoppers.AsSlice()
 	})
 
@@ -82,13 +85,24 @@ func (s *serviceImpl) RemoveStopper(stopper concurrency.Stopper) {
 	})
 }
 
+func (s *serviceImpl) AddStopper(stopper concurrency.Stopper) bool {
+	return concurrency.WithLock1[bool](&s.stopperLock, func() bool {
+		if s.stopping {
+			return false
+		}
+		s.stoppers.Add(stopper)
+		return true
+	})
+}
+
 func (s *serviceImpl) Communicate(stream sensor.FileActivityService_CommunicateServer) error {
-	// Create a stopper for this agent connection
 	stopper := concurrency.NewStopper()
 
-	concurrency.WithLock(&s.stopperLock, func() {
-		s.stoppers.Add(stopper)
-	})
+	// Create a stopper for this agent connection
+	added := s.AddStopper(stopper)
+	if !added {
+		return nil
+	}
 
 	defer s.RemoveStopper(stopper)
 
