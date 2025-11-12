@@ -771,7 +771,7 @@ module.exports = [
         },
     },
     {
-        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
@@ -790,29 +790,7 @@ module.exports = [
         },
     },
     {
-        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Workflow/**', // deprecated
-        ],
-
-        // languageOptions from previous configuration object
-
-        // Key of plugin is namespace of its rules.
-        plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
-            limited: pluginLimited,
-        },
-        rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
-            'limited/no-qualified-name-react': 'error',
-            'limited/no-absolute-path-within-container-in-import': 'error',
-            'limited/no-relative-path-to-src-in-import': 'error',
-        },
-    },
-    {
-        files: ['**/*.{js,jsx,ts,tsx}'],
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
@@ -839,14 +817,49 @@ module.exports = [
             react: pluginReact,
         },
         rules: {
-            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
-            'limited/no-default-import-react': 'error',
+            'limited/no-qualified-name-react': 'error',
             'react/jsx-uses-react': 'off',
             'react/react-in-jsx-scope': 'off',
         },
     },
     {
-        files: ['src/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/*.{js,jsx}', // deprecated
             'src/Components/Menu.tsx', // deprecated
@@ -897,7 +910,7 @@ module.exports = [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
-            'src/Containers/Login/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
             'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
             'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
             'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
