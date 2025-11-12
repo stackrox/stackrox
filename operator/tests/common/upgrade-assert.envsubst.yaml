@@ -3,19 +3,6 @@ kind: Central
 metadata:
   name: stackrox-central-services
 status:
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "False"
-    type: Irreconcilable
-  - status: "False"
-    type: Paused
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "False"
-    type: ReleaseFailed
   productVersion: ${PRODUCT_VERSION}
 ---
 apiVersion: platform.stackrox.io/v1alpha1
@@ -24,19 +11,6 @@ metadata:
   name: stackrox-secured-cluster-services
 status:
   clusterName: testing-cluster
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "False"
-    type: Irreconcilable
-  - status: "False"
-    type: Paused
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "False"
-    type: ReleaseFailed
   productVersion: ${PRODUCT_VERSION}
 # Note: when adding/removing entries in this file, see the comment about timeout near the place
 # where `kuttl assert` is invoked on this file.
