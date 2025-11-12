@@ -679,6 +679,7 @@ type CentralComponentStatus struct {
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
 //+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.reconciledVersion`
 //+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.spec.central.adminPasswordSecret.name`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
