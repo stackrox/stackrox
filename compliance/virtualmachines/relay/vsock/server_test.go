@@ -12,7 +12,7 @@ import (
 func TestSemaphore(t *testing.T) {
 	ctx := context.Background()
 
-	vsockServer := &ServerImpl{
+	vsockServer := &serverImpl{
 		semaphore:        semaphore.NewWeighted(1),
 		semaphoreTimeout: 5 * time.Millisecond,
 	}
