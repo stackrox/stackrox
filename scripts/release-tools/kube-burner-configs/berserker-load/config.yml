@@ -23,7 +23,7 @@ jobs:
     churnDuration: 1000h
     churnDelay: 10m
     churnPercent: 80
-    maxWaitTimeout: 8m
+    maxWaitTimeout: 12m
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
