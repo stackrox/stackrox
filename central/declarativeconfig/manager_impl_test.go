@@ -536,7 +536,8 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		// Return context and nil tx - we'll update the code to handle this gracefully in tests
 		return ctx, nil, nil
 	})
-	mockHealthDS.EXPECT().GetDeclarativeConfig(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
+	// Mock the bulk GetDeclarativeConfigs call used for batch registration
+	mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).Return(nil, nil).AnyTimes()
 
 	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
 		Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
