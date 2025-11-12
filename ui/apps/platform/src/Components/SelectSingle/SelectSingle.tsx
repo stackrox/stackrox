@@ -38,7 +38,7 @@ function SelectSingle({
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '100%',
+    maxHeight = '50vh',
     maxWidth = '100%',
     variant = 'default',
     className,
