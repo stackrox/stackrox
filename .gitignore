@@ -12,6 +12,7 @@ monitoring/grafana/rawcaptures
 
 # Test output
 /junit-reports/
+*.test
 
 # Makefile cruft
 deps
