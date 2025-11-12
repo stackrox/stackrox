@@ -194,6 +194,9 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 
 	transformedConfigurations := make(map[reflect.Type][]protocompat.Message, len(configurations))
 	var transformationErrors *multierror.Error
+	// Collect all health statuses to register in batch (reduces DB round-trips from N to 1-2)
+	var healthStatusesToRegister []*storage.DeclarativeConfigHealth
+
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
 		if err != nil {
@@ -203,12 +206,18 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		}
 		for protoType, protoMessages := range transformedConfig {
 			transformedConfigurations[protoType] = append(transformedConfigurations[protoType], protoMessages...)
-			// Register health status for all new messages. Existing messages will not be re-registered.
-			m.registerHealthForMessagesWithContext(ctx, handlerID, protoMessages...)
+			// Collect health statuses for batch registration (instead of registering one-by-one)
+			for _, message := range protoMessages {
+				health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handlerID, nil, m.idExtractor, m.nameExtractor)
+				healthStatusesToRegister = append(healthStatusesToRegister, health)
+			}
 		}
 	}
 	m.updateDeclarativeConfigHealthWithContext(ctx, declarativeConfigUtils.HealthStatusForHandler(handlerID,
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
+
+	// Batch register all collected health statuses (1-2 DB calls instead of N)
+	m.batchRegisterHealthStatusesWithContext(ctx, healthStatusesToRegister)
 
 	// Acquire mutex ONLY to update the in-memory map, then release immediately.
 	// This minimal lock scope prevents holding the mutex while doing DB operations,
@@ -451,17 +460,6 @@ func (m *managerImpl) updateDeclarativeConfigHealthWithContext(ctx context.Conte
 	}
 }
 
-func (m *managerImpl) registerHealthForMessages(handler string, messages ...protocompat.Message) {
-	m.registerHealthForMessagesWithContext(m.reconciliationCtx, handler, messages...)
-}
-
-func (m *managerImpl) registerHealthForMessagesWithContext(ctx context.Context, handler string, messages ...protocompat.Message) {
-	for _, message := range messages {
-		health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, nil, m.idExtractor, m.nameExtractor)
-		m.registerDeclarativeConfigHealthWithContext(ctx, health)
-	}
-}
-
 func (m *managerImpl) registerDeclarativeConfigHealth(healthStatus *storage.DeclarativeConfigHealth) {
 	m.registerDeclarativeConfigHealthWithContext(m.reconciliationCtx, healthStatus)
 }
@@ -480,4 +478,42 @@ func (m *managerImpl) registerDeclarativeConfigHealthWithContext(ctx context.Con
 
 	// Irrespective if we received an error to retrieve the health status, attempt to upsert it.
 	m.updateDeclarativeConfigHealthWithContext(ctx, healthStatus)
+}
+
+// batchRegisterHealthStatusesWithContext registers multiple health statuses efficiently by batching DB operations.
+// This reduces the number of DB round-trips from N (one per health status) to 1-2 calls total.
+// This is critical when running with a single DB connection to avoid holding the connection for too long.
+func (m *managerImpl) batchRegisterHealthStatusesWithContext(ctx context.Context, healthStatuses []*storage.DeclarativeConfigHealth) {
+	if len(healthStatuses) == 0 {
+		return
+	}
+
+	// Build a set of IDs we want to register
+	healthIDsToRegister := set.NewStringSet()
+	healthByID := make(map[string]*storage.DeclarativeConfigHealth, len(healthStatuses))
+	for _, health := range healthStatuses {
+		healthIDsToRegister.Add(health.GetId())
+		healthByID[health.GetId()] = health
+	}
+
+	// Bulk check which ones already exist (1 DB call instead of N)
+	existingHealths, err := m.declarativeConfigHealthDS.GetDeclarativeConfigs(ctx)
+	if err != nil {
+		log.Errorf("Failed to retrieve existing declarative config healths for batch registration: %v", err)
+		// Continue anyway and try to register - individual upserts will handle duplicates
+	} else {
+		// Remove IDs that already exist - we don't want to override them
+		for _, existingHealth := range existingHealths {
+			if healthIDsToRegister.Contains(existingHealth.GetId()) {
+				healthIDsToRegister.Remove(existingHealth.GetId())
+			}
+		}
+	}
+
+	// Register only the new health statuses
+	for healthID := range healthIDsToRegister {
+		if health, ok := healthByID[healthID]; ok {
+			m.updateDeclarativeConfigHealthWithContext(ctx, health)
+		}
+	}
 }
