@@ -481,7 +481,7 @@ func (m *managerImpl) registerDeclarativeConfigHealthWithContext(ctx context.Con
 }
 
 // batchRegisterHealthStatusesWithContext registers multiple health statuses efficiently by batching DB operations.
-// This reduces the number of DB round-trips from N (one per health status) to 1-2 calls total.
+// This reduces the number of DB round-trips from 2N (N gets + N upserts) to just 2 calls total (1 bulk get + 1 bulk upsert).
 // This is critical when running with a single DB connection to avoid holding the connection for too long.
 func (m *managerImpl) batchRegisterHealthStatusesWithContext(ctx context.Context, healthStatuses []*storage.DeclarativeConfigHealth) {
 	if len(healthStatuses) == 0 {
@@ -510,10 +510,17 @@ func (m *managerImpl) batchRegisterHealthStatusesWithContext(ctx context.Context
 		}
 	}
 
-	// Register only the new health statuses
+	// Batch upsert all new health statuses (1 DB call instead of N)
+	var healthsToUpsert []*storage.DeclarativeConfigHealth
 	for healthID := range healthIDsToRegister {
 		if health, ok := healthByID[healthID]; ok {
-			m.updateDeclarativeConfigHealthWithContext(ctx, health)
+			healthsToUpsert = append(healthsToUpsert, health)
+		}
+	}
+
+	if len(healthsToUpsert) > 0 {
+		if err := m.declarativeConfigHealthDS.UpsertDeclarativeConfigs(ctx, healthsToUpsert); err != nil {
+			log.Errorf("Failed to batch upsert declarative config healths: %v", err)
 		}
 	}
 }
