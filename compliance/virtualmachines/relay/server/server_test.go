@@ -1,4 +1,4 @@
-package vsock
+package server
 
 import (
 	"context"
@@ -12,22 +12,22 @@ import (
 func TestSemaphore(t *testing.T) {
 	ctx := context.Background()
 
-	vsockServer := &serverImpl{
+	srv := &server{
 		semaphore:        semaphore.NewWeighted(1),
 		semaphoreTimeout: 5 * time.Millisecond,
 	}
 
 	// First should succeed
-	err := vsockServer.AcquireSemaphore(ctx)
+	err := srv.acquireSemaphore(ctx)
 	require.NoError(t, err)
 
 	// Second should time out
-	err = vsockServer.AcquireSemaphore(ctx)
+	err = srv.acquireSemaphore(ctx)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to acquire semaphore")
 
 	// After releasing once, a new acquire should succeed
-	vsockServer.ReleaseSemaphore()
-	err = vsockServer.AcquireSemaphore(ctx)
+	srv.releaseSemaphore()
+	err = srv.acquireSemaphore(ctx)
 	require.NoError(t, err)
 }
