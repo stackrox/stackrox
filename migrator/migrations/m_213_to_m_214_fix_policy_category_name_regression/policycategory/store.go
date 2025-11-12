@@ -5,14 +5,11 @@ package policycategory
 import (
 	"context"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -69,8 +66,8 @@ func New(db postgres.DB) Store {
 		pkGetter,
 		insertIntoPolicyCategories,
 		copyFromPolicyCategories,
-		metricsSetAcquireDBConnDuration,
-		metricsSetPostgresOperationDurationTime,
+		nil,
+		nil,
 		targetResource,
 		pgSearch.GetDefaultSort(search.PolicyCategoryName.String(), false),
 		PolicyCategoriesSchema.OptionsMap,
@@ -81,14 +78,6 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storeType) string {
 	return obj.GetId()
-}
-
-func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, storeName)
-}
-
-func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) error {
