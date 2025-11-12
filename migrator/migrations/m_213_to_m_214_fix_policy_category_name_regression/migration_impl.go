@@ -46,7 +46,7 @@ func migrate(database *types.Databases) error {
 		var categoryIds []string
 		for _, category := range currentCategories {
 			categoryIds = append(categoryIds, category.GetId())
-			if len(uppercaseRegex.FindAllStringIndex(category.GetName(), -1)) >= len(uppercaseRegex.FindAllStringIndex(currentCandidate.Name, -1)) {
+			if len(uppercaseRegex.FindAllStringIndex(category.GetName(), -1)) >= len(uppercaseRegex.FindAllStringIndex(currentCandidate.GetName(), -1)) {
 				currentCandidate = category
 			}
 		}
