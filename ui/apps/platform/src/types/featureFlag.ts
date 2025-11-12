@@ -2,6 +2,7 @@
 // However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
+    | 'ROX_CVE_FIX_TIMESTAMP'
     | 'ROX_CISA_KEV'
     | 'ROX_FLATTEN_IMAGE_DATA'
     | 'ROX_NODE_INDEX_ENABLED'
