@@ -39,7 +39,7 @@ func TestCentralStatusPredicate_OwnedConditionsUnchanged_ShouldAllow(t *testing.
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -70,7 +70,7 @@ func TestCentralStatusPredicate_AvailableChanged_ShouldBlock(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -101,7 +101,7 @@ func TestCentralStatusPredicate_ProgressingChanged_ShouldBlock(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -132,7 +132,7 @@ func TestCentralStatusPredicate_BothOwnedChanged_ShouldBlock(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -165,7 +165,7 @@ func TestCentralStatusPredicate_HelmConditionChanged_ShouldAllow(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -198,7 +198,7 @@ func TestCentralStatusPredicate_ObservedGenerationChanged_ShouldAllow(t *testing
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -242,7 +242,7 @@ func TestCentralStatusPredicate_NilObjects_ShouldNotBlock(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := predicate.Update(event.UpdateEvent{
+			result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 				ObjectOld: tt.old,
 				ObjectNew: tt.new,
 			})
@@ -257,7 +257,7 @@ func TestCentralStatusPredicate_NilObjects_ShouldNotBlock(t *testing.T) {
 func TestCentralStatusPredicate_BothNil_ShouldNotBlock(t *testing.T) {
 	predicate := TypedCentralStatusPredicate{}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: nil,
 		ObjectNew: nil,
 	})
@@ -294,7 +294,7 @@ func TestCentralStatusPredicate_SpecChanged_ShouldAllow(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
@@ -321,7 +321,7 @@ func TestCentralStatusPredicate_NoConditions_ShouldAllow(t *testing.T) {
 		},
 	}
 
-	result := predicate.Update(event.UpdateEvent{
+	result := predicate.Update(event.TypedUpdateEvent[*platform.Central]{
 		ObjectOld: old,
 		ObjectNew: new,
 	})
