@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { useDispatch } from 'react-redux';
 import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
-import { Link } from 'react-router-dom-v5-compat';
 
 import useMetadata from 'hooks/useMetadata';
 import { actions } from 'reducers/feedback';
