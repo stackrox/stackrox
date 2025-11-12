@@ -18,7 +18,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -34,8 +33,6 @@ import (
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
-	networkFlowsTable = pkgSchema.NetworkFlowsTableName
-
 	// The store now uses a serial primary key id so that the store can quickly insert rows.  As such, in order
 	// to get the most recent row or a count of distinct rows we need to do a self join to match the fields AND
 	// the largest Flow_id.  The Flow_id is not included in the object and is purely handled by postgres.  Since flows
