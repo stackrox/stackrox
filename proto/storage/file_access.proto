@@ -61,4 +61,8 @@ message FileAccess {
   // The process that performed the action. May contain deployment/namespace
   // information.
   ProcessIndicator process = 5;
+
+  // Node information
+  string node_name = 6; // @gotags: search:"Node,hidden"
+  string node_id = 7; // @gotags: search:"Node ID,hidden"
 }

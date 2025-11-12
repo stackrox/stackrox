@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 var (
@@ -23,17 +24,19 @@ type Pipeline struct {
 
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
+	nodeStore       store.NodeStore
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, nodeStore store.NodeStore, activityChan chan *sensorAPI.FileActivity) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
 		activityChan:    activityChan,
 		clusterEntities: clusterEntities,
+		nodeStore:       nodeStore,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
 	}
@@ -46,6 +49,11 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	access := &storage.FileAccess{
 		Process: p.getIndicator(fs.GetProcess()),
+	}
+
+	// Enrich with node info
+	if fs.GetProcess().GetContainerId() == "" {
+		p.enrichWithNodeInfo(access, fs.GetNode())
 	}
 
 	switch fs.GetFile().(type) {
@@ -130,7 +138,8 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	}
 
 	if process.GetContainerId() == "" {
-		// TODO(ROX-31434): populate node info and return otherwise
+		// Process is running on the host (not in a container)
+		// Node info will be populated in enrichWithNodeInfo for FileAccess
 		return pi
 	}
 
@@ -151,6 +160,22 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	}
 
 	return pi
+}
+
+func (p *Pipeline) enrichWithNodeInfo(fileAccess *storage.FileAccess, node string) {
+	if node == "" {
+		log.Debug("Node not available for host process file activity")
+		return
+	}
+
+	nodeInfo := p.nodeStore.GetNode(node)
+	if nodeInfo == nil {
+		log.Warnf("Node %s not found in node store", node)
+		return
+	}
+
+	fileAccess.NodeName = nodeInfo.GetName()
+	fileAccess.NodeId = nodeInfo.GetId()
 }
 
 func (p *Pipeline) Stop() {
