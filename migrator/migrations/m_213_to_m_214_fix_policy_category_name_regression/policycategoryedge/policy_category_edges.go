@@ -3,8 +3,6 @@
 package policycategoryedge
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policy"
 	"github.com/stackrox/rox/migrator/migrations/m_213_to_m_214_fix_policy_category_name_regression/policycategory"
 
@@ -28,14 +26,7 @@ var (
 	// PolicyCategoryEdgesSchema is the go schema for table `policy_category_edges`.
 	PolicyCategoryEdgesSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.Policy":         policy.PoliciesSchema,
-			"storage.PolicyCategory": policycategory.PolicyCategoriesSchema,
-		}
 
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORY_EDGE, "policycategoryedge", (*storage.PolicyCategoryEdge)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_POLICY_CATEGORY_EDGE,
