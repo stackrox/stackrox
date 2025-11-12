@@ -187,7 +187,6 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	g.removeInvalidAPITokens()
-	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()

@@ -18,7 +18,7 @@ enum SearchCategory {
   IMAGE_COMPONENT_EDGE = 23;
   POLICIES = 3;
   DEPLOYMENTS = 4;
-  ACTIVE_COMPONENT = 30;
+  reserved 30;
   PODS = 25;
   SECRETS = 5;
   PROCESS_INDICATORS = 6;
