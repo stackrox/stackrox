@@ -13,7 +13,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
-- ROX-31365: Fixed an issue that could cause DB connection exhaustion when many sensor try to reconnect at the same time
+- ROX-31138: Resolved an issue where automatically re-scanned images failed to suppress deferred CVEs in the web UI portal, causing the CVEs to reappear in results and reports.
+- ROX-31554: Fixed an issue where Central would panic and terminate Sensor connections, when a Sensor sent an event type unknown to Central. This occurred specifically when a Sensor version 4.9 was paired with Central version 4.7 or 4.8 on a cluster using OpenShift Virtualization. This fix ensures Central operates normally under these conditions and has also been applied to Central 4.9 to improve future compatibility with Sensors.
+- ROX-31365: Fixed an issue that could cause database connection exhaustion when many Sensors try to reconnect at the same time.
 
 ## [4.8.5]
 
