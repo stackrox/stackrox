@@ -651,6 +651,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// The version of the reconciled release.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=3
+	ReconciledVersion string `json:"reconciledVersion,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -673,6 +677,7 @@ type CentralComponentStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.reconciledVersion`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
