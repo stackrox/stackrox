@@ -25,34 +25,34 @@ type Server interface {
 	Stop()
 }
 
-type ServerImpl struct {
+type serverImpl struct {
 	listener         *vsock.Listener
 	port             uint32
 	semaphore        *semaphore.Weighted
 	semaphoreTimeout time.Duration
 }
 
-var _ Server = (*ServerImpl)(nil)
+var _ Server = (*serverImpl)(nil)
 
-func NewServer() *ServerImpl {
+func NewServer() Server {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
-	return &ServerImpl{
+	return &serverImpl{
 		port:             uint32(port),
 		semaphore:        semaphore.NewWeighted(int64(maxConcurrentConnections)),
 		semaphoreTimeout: semaphoreTimeout,
 	}
 }
 
-func (s *ServerImpl) Accept() (net.Conn, error) {
+func (s *serverImpl) Accept() (net.Conn, error) {
 	if s.listener == nil {
 		return nil, fmt.Errorf("vsock server has not been started on port %d", s.port)
 	}
 	return s.listener.Accept()
 }
 
-func (s *ServerImpl) AcquireSemaphore(parentCtx context.Context) error {
+func (s *serverImpl) AcquireSemaphore(parentCtx context.Context) error {
 	semCtx, cancel := context.WithTimeout(parentCtx, s.semaphoreTimeout)
 	defer cancel()
 
@@ -74,12 +74,12 @@ func (s *ServerImpl) AcquireSemaphore(parentCtx context.Context) error {
 	return nil
 }
 
-func (s *ServerImpl) ReleaseSemaphore() {
+func (s *serverImpl) ReleaseSemaphore() {
 	s.semaphore.Release(1)
 	metrics.VsockSemaphoreHoldingSize.Dec()
 }
 
-func (s *ServerImpl) Start() error {
+func (s *serverImpl) Start() error {
 	log.Debugf("Starting vsock server on port %d", s.port)
 	l, err := vsock.ListenContextID(vsock.Host, s.port, nil)
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *ServerImpl) Start() error {
 	return nil
 }
 
-func (s *ServerImpl) Stop() {
+func (s *serverImpl) Stop() {
 	log.Infof("Stopping vsock server on port %d", s.port)
 	if s.listener != nil {
 		if err := s.listener.Close(); err != nil {
