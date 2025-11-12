@@ -88,6 +88,42 @@ func matchDeclarativeConfigHealth(int *storage.DeclarativeConfigHealth) gomock.M
 	}
 }
 
+// Custom gomock.Matcher for slice of DeclarativeConfigHealth that checks each element
+type declarativeConfigHealthSliceMatcher struct {
+	expected []*storage.DeclarativeConfigHealth
+}
+
+func (m *declarativeConfigHealthSliceMatcher) Matches(x interface{}) bool {
+	healths, ok := x.([]*storage.DeclarativeConfigHealth)
+	if !ok {
+		return false
+	}
+
+	if len(healths) != len(m.expected) {
+		return false
+	}
+
+	// Check each health status using the existing matcher
+	for i, expectedHealth := range m.expected {
+		matcher := matchDeclarativeConfigHealth(expectedHealth)
+		if !matcher.Matches(healths[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (m *declarativeConfigHealthSliceMatcher) String() string {
+	return fmt.Sprintf("slice with %d health statuses", len(m.expected))
+}
+
+func matchDeclarativeConfigHealthSlice(expected []*storage.DeclarativeConfigHealth) gomock.Matcher {
+	return &declarativeConfigHealthSliceMatcher{
+		expected: expected,
+	}
+}
+
 func TestReconcileTransformedMessages_Success(t *testing.T) {
 	controller := gomock.NewController(t)
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
@@ -539,15 +575,19 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 	// Mock the bulk GetDeclarativeConfigs call used for batch registration
 	mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).Return(nil, nil).AnyTimes()
 
-	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
-		Name:         "test-name in config map my-cool-config-map",
-		ResourceType: storage.DeclarativeConfigHealth_ROLE,
-		ResourceName: "test-name",
-		Status:       storage.DeclarativeConfigHealth_HEALTHY,
-		ErrorMessage: "",
+	// Expect batch upsert with the role health status
+	mockHealthDS.EXPECT().UpsertDeclarativeConfigs(gomock.Any(), matchDeclarativeConfigHealthSlice([]*storage.DeclarativeConfigHealth{
+		{
+			Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
+			Name:         "test-name in config map my-cool-config-map",
+			ResourceType: storage.DeclarativeConfigHealth_ROLE,
+			ResourceName: "test-name",
+			Status:       storage.DeclarativeConfigHealth_HEALTHY,
+			ErrorMessage: "",
+		},
 	}))
 
+	// Expect individual upsert for the config map health status
 	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
 		Id:           declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String(),
 		Name:         "Config Map my-cool-config-map",
