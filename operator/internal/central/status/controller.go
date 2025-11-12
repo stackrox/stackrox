@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/common"
 )
 
 // Reconciler reconciles deployment status and Helm reconciliation state into the Central CR status.
@@ -58,7 +59,7 @@ func (r *Reconciler) runReconciliationFlow(ctx context.Context, log logr.Logger,
 	// Update condition "Progressing".
 	progressingChanged := r.updateProgressing(ctx, central)
 	if progressingChanged {
-		progCond := getCondition(central.Status.Conditions, "Progressing")
+		progCond := common.GetCondition(central.Status.Conditions, "Progressing")
 		if progCond != nil {
 			log.Info("Progressing condition updated", "status", progCond.Status, "reason", progCond.Reason)
 		}
@@ -67,7 +68,7 @@ func (r *Reconciler) runReconciliationFlow(ctx context.Context, log logr.Logger,
 	// Update condition "Available".
 	availableChanged := r.updateAvailable(ctx, central)
 	if availableChanged {
-		availCond := getCondition(central.Status.Conditions, "Available")
+		availCond := common.GetCondition(central.Status.Conditions, "Available")
 		if availCond != nil {
 			log.Info("Available condition updated", "status", availCond.Status, "reason", availCond.Reason)
 		}
@@ -260,9 +261,11 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	// Watch Central CRs with predicate to filter status-only updates
 	err = c.Watch(
 		source.Kind(mgr.GetCache(), &platform.Central{},
 			&handler.TypedEnqueueRequestForObject[*platform.Central]{},
+			common.TypedCentralStatusPredicate{},
 		),
 	)
 	if err != nil {
