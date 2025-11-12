@@ -655,6 +655,9 @@ type CentralStatus struct {
 	// The version of the reconciled release.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=3
 	ReconciledVersion string `json:"reconciledVersion,omitempty"`
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
