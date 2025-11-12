@@ -87,7 +87,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
-	// Customizations to apply on all Central Services components.
+	// Customizations to apply on all Secured Cluster Services components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
