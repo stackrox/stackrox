@@ -39,7 +39,7 @@ function SelectSingle({
     menuAppendTo = undefined,
     footer,
     maxHeight = '300px',
-    maxWidth = '30ch',
+    maxWidth = '100%',
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {

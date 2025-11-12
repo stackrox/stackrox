@@ -22,9 +22,9 @@ import (
 
 // SensorCAHashExtension is an extension that computes and caches the CA hash for Secured Clusters,
 // enabling declarative rollout restarts when the CA changes.
-func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
+func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
-		logger = logger.WithName("sensor-ca-hash")
+		log = log.WithName("sensor-ca-hash")
 
 		// Clean up render cache entry if CR is being deleted.
 		if obj.GetDeletionTimestamp() != nil {
@@ -39,7 +39,7 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 
 		// Runtime TLS secrets are not stored atomically, check if they are consistent.
 		if fromRuntimeSecret {
-			secretsConsistent, err := verifyAllTLSSecretsMatchCA(ctx, client, direct, obj.GetNamespace(), sensorHash, logger)
+			secretsConsistent, err := verifyAllTLSSecretsMatchCA(ctx, client, direct, obj.GetNamespace(), sensorHash, log)
 			if err != nil {
 				return err
 			}

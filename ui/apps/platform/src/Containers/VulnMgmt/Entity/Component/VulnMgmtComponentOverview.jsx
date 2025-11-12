@@ -37,7 +37,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
 
-    const { fixedIn, version, priority, topVuln, id, location, vulnCount, activeState } = safeData;
+    const { fixedIn, version, priority, topVuln, id, location, vulnCount } = safeData;
     const operatingSystem = safeData?.operatingSystem;
 
     const metadataKeyValuePairs = [
@@ -68,16 +68,6 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         key: 'Fixed In',
         value: fixedIn || (vulnCount === 0 ? 'N/A' : 'Not Fixable'),
     });
-
-    // check if this component is scoped to an image higher up in the hierarchy
-    const hasDeploymentAsAncestor = workflowState.getSingleAncestorOfType(entityTypes.DEPLOYMENT);
-    // if scoped under an image, try to show component Location
-    if (hasDeploymentAsAncestor) {
-        metadataKeyValuePairs.push({
-            key: 'Active status',
-            value: activeState?.state ?? 'Undetermined',
-        });
-    }
 
     const componentStats = [<RiskScore key="risk-score" score={priority} />];
     if (topVuln) {

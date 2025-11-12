@@ -23,7 +23,7 @@ type TableModalProps = {
     setValue: (value: ClientPolicyValue) => void;
     value: ClientPolicyValue;
     readOnly?: boolean;
-    rows: { id: string; link: string }[];
+    rows: (SignatureIntegration & { link: string })[];
     columns: IntegrationTableColumnDescriptor<SignatureIntegration>[];
     typeText: string;
 };

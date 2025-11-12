@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/simplecache"
 )
@@ -44,7 +45,7 @@ type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
-	GetClustersForSAC() ([]*storage.Cluster, error)
+	GetClustersForSAC() ([]effectiveaccessscope.Cluster, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error

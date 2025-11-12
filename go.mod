@@ -10,8 +10,8 @@ require (
 	cloud.google.com/go/storage v1.57.1
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.1
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0
 	github.com/BurntSushi/toml v1.5.0
@@ -89,12 +89,12 @@ require (
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
-	github.com/olekukonko/tablewriter v1.1.0
+	github.com/olekukonko/tablewriter v1.1.1
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.481
+	github.com/openshift-online/ocm-sdk-go v0.1.482
 	github.com/openshift/api v0.0.0-20250320115527-3aa9dd5b9002
 	github.com/openshift/client-go v0.0.0-20250324153519-f0faeb0f2f2e
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -142,15 +142,15 @@ require (
 	golang.org/x/crypto v0.43.0
 	golang.org/x/mod v0.29.0
 	golang.org/x/net v0.46.0
-	golang.org/x/oauth2 v0.32.0
-	golang.org/x/sync v0.17.0
+	golang.org/x/oauth2 v0.33.0
+	golang.org/x/sync v0.18.0
 	golang.org/x/sys v0.37.0
 	golang.org/x/term v0.36.0
 	golang.org/x/text v0.30.0
 	golang.org/x/time v0.14.0
 	golang.org/x/tools v0.37.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.255.0
+	google.golang.org/api v0.256.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4
 	google.golang.org/grpc v1.76.0
@@ -171,7 +171,7 @@ require (
 	k8s.io/kubectl v0.33.5
 	k8s.io/kubelet v0.32.9
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	kubevirt.io/api v1.6.2
+	kubevirt.io/api v1.6.3
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/e2e-framework v0.6.0
@@ -198,7 +198,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.5.0 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0 // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.29.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.53.0 // indirect
@@ -254,6 +254,9 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
+	github.com/clipperhouse/displaywidth v0.3.1 // indirect
+	github.com/clipperhouse/stringish v0.1.1 // indirect
+	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/cockroachdb/crlib v0.0.0-20250617202621-0794c595bbe6 // indirect
@@ -342,7 +345,7 @@ require (
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.7 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -388,7 +391,7 @@ require (
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.23 // indirect
@@ -414,11 +417,12 @@ require (
 	github.com/np-guard/models v0.5.7 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.0.9 // indirect
+	github.com/olekukonko/ll v0.1.2 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.436 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.436 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.437 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.437 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
@@ -432,7 +436,6 @@ require (
 	github.com/quay/claircore/updater/driver v1.0.0 // indirect
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -501,7 +504,7 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251103181224-f26f9409b101 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/ranking"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -25,7 +27,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
-	GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -97,8 +99,8 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 // GetNamespacesForSAC retrieves namespaces matching the request
-func (b *datastoreImpl) GetNamespacesForSAC() ([]*storage.NamespaceMetadata, error) {
-	return b.store.GetAllFromCacheForSAC(), nil
+func (b *datastoreImpl) GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error) {
+	return storagetoeffectiveaccessscope.Namespaces(b.store.GetAllFromCacheForSAC()), nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {

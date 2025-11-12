@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-    PageSection,
     Breadcrumb,
-    Divider,
     BreadcrumbItem,
+    Divider,
+    PageSection,
     Skeleton,
     Tab,
     TabTitleText,
@@ -23,10 +23,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import DeploymentPageHeader, {
-    DeploymentMetadata,
-    deploymentMetadataFragment,
-} from './DeploymentPageHeader';
+import DeploymentPageHeader, { deploymentMetadataFragment } from './DeploymentPageHeader';
+import type { DeploymentMetadata } from './DeploymentPageHeader';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
