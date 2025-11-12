@@ -84,28 +84,32 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 type mockSensorClient struct {
 	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
 	delay            time.Duration
-	returnError      error
-	respSuccess      bool
+	err              error
+	response         *sensor.UpsertVirtualMachineIndexReportResponse
 }
 
 func newMockSensorClient() *mockSensorClient {
 	return &mockSensorClient{
-		respSuccess: true,
+		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
 	}
 }
 
 func (m *mockSensorClient) withError(err error) *mockSensorClient {
-	m.returnError = err
+	m.err = err
 	return m
 }
 
 func (m *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
-	m.respSuccess = false
+	m.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
 	return m
 }
 
-func (m *mockSensorClient) UpsertVirtualMachineIndexReport(_ context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
-	m.capturedRequests = append(m.capturedRequests, req)
-	time.Sleep(m.delay)
-	return &sensor.UpsertVirtualMachineIndexReportResponse{Success: m.respSuccess}, m.returnError
+func (m *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	select {
+	case <-time.After(m.delay):
+		m.capturedRequests = append(m.capturedRequests, req)
+		return m.response, m.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
