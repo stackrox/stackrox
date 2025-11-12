@@ -663,6 +663,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"file: FileAccess_File",
 		"hostname: String!",
 		"moved: FileAccess_File",
+		"nodeId: String!",
+		"nodeName: String!",
 		"operation: FileAccess_Operation!",
 		"process: ProcessIndicator",
 		"timestamp: Time",
@@ -7995,6 +7997,16 @@ func (resolver *fileAccessResolver) Hostname(ctx context.Context) string {
 func (resolver *fileAccessResolver) Moved(ctx context.Context) (*fileAccess_FileResolver, error) {
 	value := resolver.data.GetMoved()
 	return resolver.root.wrapFileAccess_File(value, true, nil)
+}
+
+func (resolver *fileAccessResolver) NodeId(ctx context.Context) string {
+	value := resolver.data.GetNodeId()
+	return value
+}
+
+func (resolver *fileAccessResolver) NodeName(ctx context.Context) string {
+	value := resolver.data.GetNodeName()
+	return value
 }
 
 func (resolver *fileAccessResolver) Operation(ctx context.Context) string {
