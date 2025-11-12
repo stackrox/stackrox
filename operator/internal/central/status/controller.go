@@ -73,6 +73,12 @@ func (r *Reconciler) runReconciliationFlow(ctx context.Context, log logr.Logger,
 		}
 	}
 
+	// If nothing changed, skip the status update.
+	if !progressingChanged && !availableChanged {
+		log.V(1).Info("No status changes detected, skipping update")
+		return nil
+	}
+
 	// Update status subresource.
 	// Conflicts are handled by the retry mechanism in the Reconcile function.
 	log.Info("Updating Central status")
