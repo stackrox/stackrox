@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,7 +26,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
-	"gorm.io/gorm"
 )
 
 const (
@@ -1047,51 +1045,6 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 }
 
 //// Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing
-func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
-	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
-}
-
-func dropTableNodes(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
-	dropTableNodesTaints(ctx, db)
-	dropTableNodesComponents(ctx, db)
-	dropTableNodeCVEs(ctx, db)
-	dropTableNodeComponentEdges(ctx, db)
-	dropTableComponentCVEEdges(ctx, db)
-}
-
-func dropTableNodesTaints(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
-}
-
-func dropTableNodesComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
-}
-
-func dropTableNodeCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
-}
-
-func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
-}
-
-func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
-}
-
-// Destroy drops all node tree tables.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNodes(ctx, db)
-}
 
 func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")

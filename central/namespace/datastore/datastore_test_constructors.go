@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"testing"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -12,11 +11,8 @@ import (
 )
 
 // NewTestDataStore returns a new DataStore instance.
-func NewTestDataStore(t testing.TB, testDB *pgtest.TestPostgres, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
-	ctx := context.Background()
-	pgStore.Destroy(ctx, testDB.DB)
-
-	storage := pgStore.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
+func NewTestDataStore(_ testing.TB, testDB *pgtest.TestPostgres, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
+	storage := pgStore.New(testDB)
 	return New(storage, deploymentDataStore, namespaceRanker)
 }
 
