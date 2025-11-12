@@ -16,7 +16,7 @@ const CodeViewerThemeContext = createContext<
     ['light' | 'dark', Dispatch<SetStateAction<'light' | 'dark'>>] | undefined
 >(undefined);
 
-export const CodeViewerThemeProvider = ({ children }) => {
+export const CodeViewerThemeProvider = ({ children }: { children: ReactNode }) => {
     const [state, setState] = useState<'light' | 'dark'>('light');
 
     return (
