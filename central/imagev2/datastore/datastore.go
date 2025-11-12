@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
+	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,6 +32,8 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
+
+	GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error)
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
