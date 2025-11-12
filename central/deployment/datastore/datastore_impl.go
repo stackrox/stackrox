@@ -430,27 +430,26 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 			}
 		}
 		return images, nil
-	} else {
-		imgs, err := ds.images.GetImagesBatch(ctx, imageIDs)
-		if err != nil {
-			return nil, err
-		}
-		// Join the images to the container indices
-		imageMap := make(map[string]*storage.Image)
-		for _, i := range imgs {
-			imageMap[i.GetId()] = i
-		}
-		images := make([]*storage.Image, 0, len(deployment.GetContainers()))
-		for _, c := range deployment.GetContainers() {
-			img, ok := imageMap[c.GetImage().GetId()]
-			if ok {
-				images = append(images, img)
-			} else {
-				images = append(images, types.ToImage(c.GetImage()))
-			}
-		}
-		return images, nil
 	}
+	imgs, err := ds.images.GetImagesBatch(ctx, imageIDs)
+	if err != nil {
+		return nil, err
+	}
+	// Join the images to the container indices
+	imageMap := make(map[string]*storage.Image)
+	for _, i := range imgs {
+		imageMap[i.GetId()] = i
+	}
+	images := make([]*storage.Image, 0, len(deployment.GetContainers()))
+	for _, c := range deployment.GetContainers() {
+		img, ok := imageMap[c.GetImage().GetId()]
+		if ok {
+			images = append(images, img)
+		} else {
+			images = append(images, types.ToImage(c.GetImage()))
+		}
+	}
+	return images, nil
 }
 
 func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {
