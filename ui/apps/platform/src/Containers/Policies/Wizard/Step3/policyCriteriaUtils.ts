@@ -1,4 +1,4 @@
-import type { Policy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 
 /**
  * Extracts the group path from a field name like:
@@ -47,7 +47,7 @@ function extractValueIndex(fieldName: string): number {
 export function getAvailableOptionsForField<T extends { value: string }>(
     options: T[],
     fieldName: string,
-    values: Policy
+    values: Pick<ClientPolicy, 'policySections'>
 ): T[] {
     const alreadySelected = new Set<string>();
     const groupPath = getGroupPathFromFieldName(fieldName);

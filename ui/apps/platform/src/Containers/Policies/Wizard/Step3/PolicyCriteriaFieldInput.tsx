@@ -10,7 +10,7 @@ import {
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import type { Policy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 
 import type { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
@@ -31,7 +31,7 @@ function PolicyCriteriaFieldInput({
     const [field, , helper] = useField(name);
     const { value } = field;
     const { setValue } = helper;
-    const { values } = useFormikContext<Policy>();
+    const { values } = useFormikContext<ClientPolicy>();
 
     function handleChangeValue(val: string | string[] | boolean | number) {
         setValue({ value: val });
