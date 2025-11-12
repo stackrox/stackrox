@@ -17,9 +17,9 @@ const _Purpose_name = "StateResourceBundleResource"
 var _Purpose_index = [...]uint8{0, 13, 27}
 
 func (i Purpose) String() string {
-	i -= 1
-	if i < 0 || i >= Purpose(len(_Purpose_index)-1) {
-		return "Purpose(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_Purpose_index)-1 {
+		return "Purpose(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Purpose_name[_Purpose_index[i]:_Purpose_index[i+1]]
+	return _Purpose_name[_Purpose_index[idx]:_Purpose_index[idx+1]]
 }
