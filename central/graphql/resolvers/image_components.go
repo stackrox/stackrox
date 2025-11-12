@@ -37,7 +37,6 @@ func init() {
 	utils.Must(
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageComponent", []string{
-			"activeState(query: String): ActiveState",
 			"deploymentCount(query: String, scopeQuery: String): Int!",
 			"deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!",
 			"fixedBy: String!",
@@ -74,7 +73,6 @@ func init() {
 // Values may come from either an embedded component context, or a top level component context.
 // NOTE: This list is and should remain alphabetically ordered
 type ImageComponentResolver interface {
-	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	FixedBy(ctx context.Context) string
@@ -245,11 +243,6 @@ func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery
 /*
 Sub Resolver Functions
 */
-
-func (resolver *imageComponentV2Resolver) ActiveState(_ context.Context, _ RawQuery) (*activeStateResolver, error) {
-	// No longer supported as scanner V4 does not support it.
-	return &activeStateResolver{}, nil
-}
 
 func (resolver *imageComponentV2Resolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "DeploymentCount")

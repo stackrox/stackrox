@@ -12,9 +12,6 @@ var (
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", enabled)
 
-	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
-	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
-
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
 
