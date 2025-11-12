@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/rules/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,6 +23,9 @@ type DataStore interface {
 	Delete(ctx context.Context, id string) error
 	GetRulesByName(ctx context.Context, name string) ([]*storage.ComplianceOperatorRule, error)
 	ExistsByName(ctx context.Context, name string) (bool, error)
+
+	// Begin starts a database transaction and returns a context with the transaction
+	Begin(ctx context.Context) (context.Context, *postgres.Tx, error)
 }
 
 // NewDatastore returns the datastore wrapper for compliance operator rules
@@ -135,4 +139,9 @@ func (d *datastoreImpl) ExistsByName(ctx context.Context, name string) (bool, er
 	defer d.ruleLock.RUnlock()
 	val, ok := d.rulesByName[name]
 	return ok && len(val) != 0, nil
+}
+
+// Begin starts a database transaction and returns a context with the transaction
+func (d *datastoreImpl) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	return d.store.Begin(ctx)
 }

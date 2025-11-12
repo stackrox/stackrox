@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/profiles/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -21,6 +22,9 @@ type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorProfile) error) error
 	Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error
 	Delete(ctx context.Context, id string) error
+
+	// Begin starts a database transaction and returns a context with the transaction
+	Begin(ctx context.Context) (context.Context, *postgres.Tx, error)
 }
 
 // NewDatastore returns the datastore wrapper for compliance operator profiles
@@ -58,4 +62,9 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles write")
 	}
 	return d.store.Delete(ctx, id)
+}
+
+// Begin starts a database transaction and returns a context with the transaction
+func (d *datastoreImpl) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	return d.store.Begin(ctx)
 }
