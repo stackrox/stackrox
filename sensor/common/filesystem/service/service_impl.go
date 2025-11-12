@@ -86,15 +86,13 @@ func (s *serviceImpl) RemoveStopper(stopper concurrency.Stopper) {
 }
 
 func (s *serviceImpl) AddStopper(stopper concurrency.Stopper) bool {
-	added := false
-	concurrency.WithLock(&s.stopperLock, func() {
-		if !s.stopping {
-			s.stoppers.Add(stopper)
-			added = true
+	return concurrency.WithLock1[bool](&s.stopperLock, func() bool {
+		if s.stopping {
+			return false
 		}
+		s.stoppers.Add(stopper)
+		return true
 	})
-
-	return added
 }
 
 func (s *serviceImpl) Communicate(stream sensor.FileActivityService_CommunicateServer) error {
