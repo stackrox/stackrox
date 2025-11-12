@@ -451,6 +451,7 @@ type PostgresIndexOptions struct {
 	IndexType     string
 	IndexCategory string
 	IndexPriority string
+	IndexOption   string
 }
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field

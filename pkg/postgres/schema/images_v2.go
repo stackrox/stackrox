@@ -99,7 +99,7 @@ type ImagesV2 struct {
 // ImagesV2Layers holds the Gorm model for Postgres table `images_v2_layers`.
 type ImagesV2Layers struct {
 	ImagesV2ID  string   `gorm:"column:images_v2_id;type:varchar;primaryKey"`
-	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:imagesv2layers_idx,type:btree"`
+	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:imagesv2layers_idx,type:btree,option:CONCURRENTLY"`
 	Instruction string   `gorm:"column:instruction;type:varchar"`
 	Value       string   `gorm:"column:value;type:varchar"`
 	ImagesV2Ref ImagesV2 `gorm:"foreignKey:images_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

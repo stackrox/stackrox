@@ -44,7 +44,7 @@ const (
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:networkpolicies_sac_filter,type:btree"`
-	Namespace  string `gorm:"column:namespace;type:varchar;index:networkpolicies_sac_filter,type:btree"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid;index:networkpolicies_sac_filter,type:btree,option:CONCURRENTLY"`
+	Namespace  string `gorm:"column:namespace;type:varchar;index:networkpolicies_sac_filter,type:btree,option:CONCURRENTLY"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

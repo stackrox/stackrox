@@ -65,7 +65,7 @@ type TestStructs struct {
 // TestStructsNesteds holds the Gorm model for Postgres table `test_structs_nesteds`.
 type TestStructsNesteds struct {
 	TestStructsKey1 string      `gorm:"column:test_structs_key1;type:varchar;primaryKey"`
-	Idx             int         `gorm:"column:idx;type:integer;primaryKey;index:teststructsnesteds_idx,type:btree"`
+	Idx             int         `gorm:"column:idx;type:integer;primaryKey;index:teststructsnesteds_idx,type:btree,option:CONCURRENTLY"`
 	Nested          string      `gorm:"column:nested;type:varchar"`
 	IsNested        bool        `gorm:"column:isnested;type:bool"`
 	Int64           int64       `gorm:"column:int64;type:bigint"`

@@ -73,7 +73,7 @@ type ReportConfigurations struct {
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.
 type ReportConfigurationsNotifiers struct {
 	ReportConfigurationsID  string               `gorm:"column:report_configurations_id;type:varchar;primaryKey"`
-	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree"`
+	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree,option:CONCURRENTLY"`
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
