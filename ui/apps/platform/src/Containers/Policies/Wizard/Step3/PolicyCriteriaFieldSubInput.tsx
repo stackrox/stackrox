@@ -9,18 +9,20 @@ type PolicyCriteriaFieldSubInputProps = {
     subComponent: SubComponent;
     readOnly?: boolean;
     name: string;
+    isInRowLayout?: boolean;
 };
 
 function PolicyCriteriaFieldSubInput({
     subComponent,
     readOnly = false,
     name,
+    isInRowLayout = false,
 }: PolicyCriteriaFieldSubInputProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { setValue } = helper;
 
-    function handleSelectChange(name: string, value: string) {
+    function handleSelectChange(_name: string, value: string) {
         setValue(value);
     }
 
@@ -52,12 +54,13 @@ function PolicyCriteriaFieldSubInput({
                     data-testid="policy-criteria-value-number-input"
                 />
             );
-        case 'select':
+        case 'select': {
+            const formGroupClass = isInRowLayout ? '' : 'pf-v5-u-flex-1 pf-v5-u-w-0';
             return (
                 <FormGroup
                     label={subComponent.label}
                     fieldId={name}
-                    className="pf-v5-u-flex-1 pf-v5-u-w-0"
+                    className={formGroupClass}
                     data-testid="policy-criteria-value-select"
                 >
                     <SelectSingle
@@ -80,6 +83,30 @@ function PolicyCriteriaFieldSubInput({
                     </SelectSingle>
                 </FormGroup>
             );
+        }
+        case 'row': {
+            return (
+                <div className="pf-v5-u-display-flex pf-v5-u-w-100">
+                    {subComponent.children.map((child, index) => {
+                        // Row children must have subpath (not nested rows)
+                        const childSubpath = (child as { subpath: string }).subpath;
+                        // Use subpath as key since it's stable and unique per row
+                        return (
+                            <div
+                                key={childSubpath}
+                                className={`pf-v5-u-flex pf-v5-u-flex-1 ${index > 0 ? 'pf-v5-u-ml-md' : ''}`}
+                            >
+                                <PolicyCriteriaFieldSubInput
+                                    subComponent={child}
+                                    readOnly={readOnly}
+                                    name={`${name}.${childSubpath}`}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
     }
     /* eslint-enable default-case */
 }

@@ -208,7 +208,11 @@ export type DescriptorOption = {
     value: string;
 };
 
-export type SubComponent = TextSubComponent | NumberSubComponent | SelectSubComponent;
+export type SubComponent =
+    | TextSubComponent
+    | NumberSubComponent
+    | SelectSubComponent
+    | RowSubComponent;
 
 export type BaseSubComponent = {
     subpath: string;
@@ -231,6 +235,11 @@ export type SelectSubComponent = {
     type: 'select';
     options: DescriptorOption[];
 } & BaseSubComponent;
+
+export type RowSubComponent = {
+    type: 'row';
+    children: SubComponent[];
+};
 
 type BaseDescriptor = {
     label?: string;
@@ -671,18 +680,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         type: 'group',
         subComponents: [
             {
-                type: 'text',
-                label: 'Key',
-                placeholder: 'Any',
-                subpath: 'key',
-            },
-            {
-                type: 'text',
-                label: 'Value',
-                placeholder: 'Any',
-                subpath: 'value',
-            },
-            {
                 type: 'select',
                 options: Object.keys(envVarSrcLabels).map((key) => ({
                     label: envVarSrcLabels[key],
@@ -691,6 +688,23 @@ export const policyCriteriaDescriptors: Descriptor[] = [
                 label: 'Value from',
                 placeholder: 'Select one',
                 subpath: 'source',
+            },
+            {
+                type: 'row',
+                children: [
+                    {
+                        type: 'text',
+                        label: 'Key',
+                        placeholder: 'Any',
+                        subpath: 'key',
+                    },
+                    {
+                        type: 'text',
+                        label: 'Value',
+                        placeholder: 'Any',
+                        subpath: 'value',
+                    },
+                ],
             },
         ],
         canBooleanLogic: true,

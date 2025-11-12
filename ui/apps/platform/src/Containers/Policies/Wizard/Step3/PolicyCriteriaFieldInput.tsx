@@ -162,18 +162,40 @@ function PolicyCriteriaFieldInput({
             );
         case 'group': {
             /* eslint-disable react/no-array-index-key */
-            return (
+            const hasRowType = descriptor.subComponents?.some((sub) => sub.type === 'row');
+            const wrapper = hasRowType ? (
+                <div className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-gap-md">
+                    {descriptor.subComponents?.map((subComponent, index) => {
+                        const subInputName =
+                            subComponent.type === 'row' ? name : `${name}.${subComponent.subpath}`;
+                        return (
+                            <div
+                                key={index}
+                                className={`pf-v5-u-w-100 ${index > 0 ? 'pf-v5-u-mt-md' : ''}`}
+                            >
+                                <PolicyCriteriaFieldSubInput
+                                    subComponent={subComponent}
+                                    readOnly={readOnly}
+                                    name={subInputName}
+                                    isInRowLayout
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
                 <>
                     {descriptor.subComponents?.map((subComponent, index) => (
                         <PolicyCriteriaFieldSubInput
                             key={index}
                             subComponent={subComponent}
                             readOnly={readOnly}
-                            name={`${name}.${subComponent.subpath}`}
+                            name={`${name}.${(subComponent as { subpath: string }).subpath}`}
                         />
                     ))}
                 </>
             );
+            return wrapper;
             /* eslint-enable react/no-array-index-key */
         }
         case 'tableModal': {
