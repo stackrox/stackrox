@@ -4,7 +4,6 @@ package policycategory
 
 import (
 	"context"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 
 	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -151,23 +149,3 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTablePolicyCategories(ctx, db)
-}
-
-func dropTablePolicyCategories(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy_categories CASCADE")
-
-}
-
-// endregion Used for testing
