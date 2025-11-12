@@ -2,9 +2,11 @@ package status
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
@@ -59,6 +61,15 @@ func (r *Reconciler) runReconciliationFlow(ctx context.Context, log logr.Logger,
 		progCond := getCondition(central.Status.Conditions, "Progressing")
 		if progCond != nil {
 			log.Info("Progressing condition updated", "status", progCond.Status, "reason", progCond.Reason)
+		}
+	}
+
+	// Update condition "Available".
+	availableChanged := r.updateAvailable(ctx, central)
+	if availableChanged {
+		availCond := getCondition(central.Status.Conditions, "Available")
+		if availCond != nil {
+			log.Info("Available condition updated", "status", availCond.Status, "reason", availCond.Reason)
 		}
 	}
 
@@ -122,6 +133,72 @@ func (r *Reconciler) determineProgressingState(central *platform.Central) (bool,
 
 	// No signs of active reconciliation.
 	return false, "ReconcileSuccessful", "Reconciliation completed successfully"
+}
+
+// updateAvailable updates the Available condition based on deployment readiness.
+// Returns true if the condition changed.
+func (r *Reconciler) updateAvailable(ctx context.Context, central *platform.Central) bool {
+	log := log.FromContext(ctx)
+
+	// List all deployments owned by this Central.
+	deployments := &appsv1.DeploymentList{}
+	err := r.List(ctx, deployments,
+		ctrlClient.InNamespace(central.Namespace),
+		ctrlClient.MatchingLabels{
+			"app.kubernetes.io/instance": central.Name,
+			"app.stackrox.io/managed-by": "operator",
+		},
+	)
+	if err != nil {
+		log.Error(err, "Failed to list deployments")
+		return false
+	}
+
+	available, reason, message := r.determineAvailableState(deployments.Items)
+
+	var changed bool
+	central.Status.Conditions, changed = updateCondition(
+		central.Status.Conditions,
+		"Available",
+		available,
+		reason,
+		message,
+	)
+
+	return changed
+}
+
+// determineAvailableState checks if all deployments are available.
+func (r *Reconciler) determineAvailableState(deployments []appsv1.Deployment) (bool, platform.ConditionReason, string) {
+	if len(deployments) == 0 {
+		return false, "NoDeployments", "No deployments found"
+	}
+
+	allReady := true
+	notReadyCount := 0
+	for _, dep := range deployments {
+		if !isDeploymentReady(&dep) {
+			allReady = false
+			notReadyCount++
+		}
+	}
+
+	if allReady {
+		return true, "DeploymentsReady", "All deployments are ready"
+	}
+
+	return false, "DeploymentsNotReady",
+		fmt.Sprintf("%d of %d deployments are not ready", notReadyCount, len(deployments))
+}
+
+// isDeploymentReady checks if a deployment has all replicas available.
+func isDeploymentReady(dep *appsv1.Deployment) bool {
+	for _, cond := range dep.Status.Conditions {
+		if cond.Type == appsv1.DeploymentAvailable {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
 
 // updateCondition updates or adds a condition in the conditions list.
