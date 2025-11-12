@@ -1,5 +1,4 @@
-import React from 'react';
-import { Td, Thead, Tr, Tbody, Th, Table } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { CveComponentRow } from '../aggregateUtils';
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';

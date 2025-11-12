@@ -1,4 +1,3 @@
-import React from 'react';
 import { Divider, SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
@@ -51,6 +50,7 @@ function SearchFilterTypes({
             selections={typesSelected ?? [optionAll]}
             onChange={onSelect}
             ariaLabel="Type filter menu items"
+            toggleAriaLabel="Type filter menu toggle"
             placeholderText="Filter by type"
             isDisabled={isDisabled}
         >

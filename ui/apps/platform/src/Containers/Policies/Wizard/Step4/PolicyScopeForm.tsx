@@ -1,27 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { useFormikContext } from 'formik';
 import {
+    Alert,
+    Button,
+    Chip,
+    ChipGroup,
+    Divider,
     Flex,
     FlexItem,
-    Title,
-    Button,
-    Divider,
-    Grid,
-    GridItem,
     FormGroup,
     FormHelperText,
+    Grid,
+    GridItem,
     HelperText,
     HelperTextItem,
-    Select,
-    SelectOption,
-    SelectList,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    ChipGroup,
-    Chip,
+    Title,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
@@ -44,6 +45,7 @@ function PolicyScopeForm(): ReactElement {
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
+    const hasNodeEventSource = values.eventSource === 'NODE_EVENT';
     const hasBuildLifecycle = values.lifecycleStages.includes('BUILD');
     const hasDeployOrRuntimeLifecycle =
         values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
@@ -58,6 +60,8 @@ function PolicyScopeForm(): ReactElement {
 
     // Check if we have any content to show
     const hasResults = filteredImages?.length > 0 || shouldShowCreateOption;
+
+    const isAllScopingDisabled = hasNodeEventSource;
 
     function addNewInclusionScope() {
         setFieldValue('scope', [...scope, {}]);
@@ -130,6 +134,15 @@ function PolicyScopeForm(): ReactElement {
                 </div>
             </FlexItem>
             <Divider component="div" />
+            {isAllScopingDisabled && (
+                <Alert
+                    className="pf-v5-u-mt-lg pf-v5-u-mx-lg"
+                    isInline
+                    variant="info"
+                    title="The selected event source does not support scoping."
+                    component="p"
+                />
+            )}
             <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
@@ -141,7 +154,11 @@ function PolicyScopeForm(): ReactElement {
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button variant="secondary" onClick={addNewInclusionScope}>
+                        <Button
+                            variant="secondary"
+                            onClick={addNewInclusionScope}
+                            isDisabled={isAllScopingDisabled}
+                        >
                             Add inclusion scope
                         </Button>
                     </FlexItem>
@@ -178,7 +195,7 @@ function PolicyScopeForm(): ReactElement {
                     <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                         <Button
                             variant="secondary"
-                            isDisabled={!hasDeployOrRuntimeLifecycle}
+                            isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
                             onClick={addNewExclusionDeploymentScope}
                         >
                             Add exclusion scope
@@ -231,7 +248,11 @@ function PolicyScopeForm(): ReactElement {
                                     onClick={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
                                     innerRef={toggleRef}
                                     isExpanded={isExcludeImagesOpen}
-                                    isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
+                                    isDisabled={
+                                        hasAuditLogEventSource ||
+                                        !hasBuildLifecycle ||
+                                        isAllScopingDisabled
+                                    }
                                     className="pf-v5-u-w-100"
                                 >
                                     <TextInputGroup isPlain>

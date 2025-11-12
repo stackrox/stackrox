@@ -1,5 +1,5 @@
 import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
-import { Select, MenuToggle, SelectList, MenuFooter } from '@patternfly/react-core';
+import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
 import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
 
 import useSelectToggleState from './useSelectToggleState';

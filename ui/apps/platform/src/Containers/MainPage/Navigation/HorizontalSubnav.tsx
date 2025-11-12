@@ -2,28 +2,28 @@ import { useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
-    Nav,
     Dropdown,
     DropdownItem,
     DropdownList,
     MenuToggle,
-    NavItemSeparator,
+    Nav,
     NavItem,
+    NavItemSeparator,
     NavList,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 
 import {
-    vulnerabilitiesNodeCvesPath,
-    vulnerabilitiesUserWorkloadsPath,
-    vulnerabilitiesPlatformPath,
-    vulnerabilitiesAllImagesPath,
-    vulnerabilitiesInactiveImagesPath,
-    vulnerabilitiesImagesWithoutCvesPath,
     violationsFullViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
+    vulnerabilitiesAllImagesPath,
+    vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesInactiveImagesPath,
+    vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesPlatformPath,
+    vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';

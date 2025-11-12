@@ -138,10 +138,7 @@ const file_api_v1_cve_service_proto_rawDesc = "" +
 	"\x04cves\x18\x01 \x03(\tR\x04cves\x125\n" +
 	"\bduration\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bdurationJ\x04\b\x02\x10\x03\"*\n" +
 	"\x14UnsuppressCVERequest\x12\x12\n" +
-	"\x04cves\x18\x01 \x03(\tR\x04cves2\xc3\x01\n" +
-	"\x0fImageCVEService\x12T\n" +
-	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*2\x16/v1/imagecves/suppress\x12Z\n" +
-	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/imagecves/unsuppress2\xc0\x01\n" +
+	"\x04cves\x18\x01 \x03(\tR\x04cves2\xc0\x01\n" +
 	"\x0eNodeCVEService\x12S\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/nodecves/suppress\x12Y\n" +
 	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/nodecves/unsuppress2\xc9\x01\n" +
@@ -171,20 +168,16 @@ var file_api_v1_cve_service_proto_goTypes = []any{
 }
 var file_api_v1_cve_service_proto_depIdxs = []int32{
 	2, // 0: v1.SuppressCVERequest.duration:type_name -> google.protobuf.Duration
-	0, // 1: v1.ImageCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 2: v1.ImageCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	0, // 3: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 4: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	0, // 5: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 6: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	3, // 7: v1.ImageCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 8: v1.ImageCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	3, // 9: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 10: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	3, // 11: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 12: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	7, // [7:13] is the sub-list for method output_type
-	1, // [1:7] is the sub-list for method input_type
+	0, // 1: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1, // 2: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	0, // 3: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1, // 4: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	3, // 5: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
+	3, // 6: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	3, // 7: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
+	3, // 8: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -204,7 +197,7 @@ func file_api_v1_cve_service_proto_init() {
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   2,
 		},
 		GoTypes:           file_api_v1_cve_service_proto_goTypes,
 		DependencyIndexes: file_api_v1_cve_service_proto_depIdxs,

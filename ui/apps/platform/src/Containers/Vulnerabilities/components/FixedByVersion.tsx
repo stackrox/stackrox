@@ -1,4 +1,3 @@
-import React from 'react';
 import { Flex } from '@patternfly/react-core';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 

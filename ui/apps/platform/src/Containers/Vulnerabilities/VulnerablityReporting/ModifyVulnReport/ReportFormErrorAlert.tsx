@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Alert } from '@patternfly/react-core';
 
 function ReportFormErrorAlert({ error }) {
-    const alertRef = React.useRef<HTMLInputElement>(null);
+    const alertRef = useRef<HTMLInputElement>(null);
 
     // When an error occurs, scroll the message into view
     useEffect(() => {

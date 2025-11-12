@@ -1,4 +1,3 @@
-import React from 'react';
 import { defaultColumnClassName, defaultHeaderClassName, wrapClassName } from 'Components/Table';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';

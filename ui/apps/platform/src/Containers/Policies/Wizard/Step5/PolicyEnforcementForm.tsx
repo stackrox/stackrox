@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -7,14 +7,14 @@ import {
     Flex,
     Form,
     FormGroup,
+    FormHelperText,
     Grid,
     GridItem,
+    HelperText,
+    HelperTextItem,
     Radio,
     Switch,
     Title,
-    FormHelperText,
-    HelperText,
-    HelperTextItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 

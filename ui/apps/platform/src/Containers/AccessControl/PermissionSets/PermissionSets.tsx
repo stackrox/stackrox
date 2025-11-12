@@ -30,7 +30,7 @@ import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
-import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
+import { getCompletePermissionSet, getNewPermissionSet } from './permissionSets.utils';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';

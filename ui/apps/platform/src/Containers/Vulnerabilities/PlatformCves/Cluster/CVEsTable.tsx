@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { Text } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';

@@ -13,7 +13,6 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -71,10 +70,6 @@ type GraphQLImageVulnerabilityV2TestSuite struct {
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) SetupSuite() {
-	if !features.FlattenCVEData.Enabled() {
-		s.T().Skip()
-	}
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())

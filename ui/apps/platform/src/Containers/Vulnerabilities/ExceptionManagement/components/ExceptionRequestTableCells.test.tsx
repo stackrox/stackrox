@@ -2,7 +2,7 @@ import type {
     BaseVulnerabilityException,
     VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
-import { getShouldUseUpdatedRequest, getRequestedAction } from './ExceptionRequestTableCells';
+import { getRequestedAction, getShouldUseUpdatedRequest } from './ExceptionRequestTableCells';
 import type { RequestContext } from './ExceptionRequestTableCells';
 
 const baseException: BaseVulnerabilityException = {

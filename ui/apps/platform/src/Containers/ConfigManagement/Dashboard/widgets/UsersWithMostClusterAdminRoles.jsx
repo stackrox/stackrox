@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql } from '@apollo/client';
 import Loader from 'Components/Loader';
 import { Link, useLocation } from 'react-router-dom-v5-compat';

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import type { Location } from 'react-router-dom-v5-compat';

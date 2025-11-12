@@ -93,6 +93,11 @@ func (s *NetworkEntitiesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkEntitys))
 
+	foundNetworkEntitys, missing, err := store.GetMany(ctx, networkEntityIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), networkEntitys, foundNetworkEntitys)
+
 	networkEntityCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkEntityCount)

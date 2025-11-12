@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
-import { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
+import type { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestQuery from 'hooks/useRestQuery';

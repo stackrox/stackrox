@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';

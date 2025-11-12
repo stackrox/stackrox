@@ -12,7 +12,7 @@ import {
 import pluralize from 'pluralize';
 import IntegrationsHealth from './IntegrationsHealth';
 import type { IntegrationMergedItem } from '../utils/integrations';
-import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+import { ErrorIcon, SpinnerIcon, healthIconMap } from '../CardHeaderIcons';
 
 type IntegrationHealthWidgetVisualProps = {
     integrationText: string;

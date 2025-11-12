@@ -1,9 +1,9 @@
 import type { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import {
     EmptyState,
-    EmptyStateIcon,
     EmptyStateBody,
     EmptyStateHeader,
+    EmptyStateIcon,
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 

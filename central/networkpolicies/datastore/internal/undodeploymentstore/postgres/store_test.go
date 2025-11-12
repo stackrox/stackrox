@@ -93,6 +93,11 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, networkPolicyApplicationUndoDeploymentRecords))
 
+	foundNetworkPolicyApplicationUndoDeploymentRecords, missing, err := store.GetMany(ctx, networkPolicyApplicationUndoDeploymentRecordIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), networkPolicyApplicationUndoDeploymentRecords, foundNetworkPolicyApplicationUndoDeploymentRecords)
+
 	networkPolicyApplicationUndoDeploymentRecordCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, networkPolicyApplicationUndoDeploymentRecordCount)

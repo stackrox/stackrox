@@ -8,7 +8,6 @@ import (
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -44,7 +43,6 @@ func Singleton() GarbageCollector {
 			processBaselineDatastore.Singleton(),
 			networkFlowsDataStore.Singleton(),
 			configDatastore.Singleton(),
-			imageComponentDatastore.Singleton(),
 			imageComponentV2Datastore.Singleton(),
 			riskDataStore.Singleton(),
 			vulnReqDataStore.Singleton(),

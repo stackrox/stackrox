@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-    withDragNode,
-    withSelection,
-    ModelKind,
-    withPanZoom,
     GraphComponent,
-    withDndDrop,
-    nodeDragSourceSpec,
-    graphDropTargetSpec,
+    ModelKind,
     NODE_DRAG_TYPE,
+    graphDropTargetSpec,
+    nodeDragSourceSpec,
+    withDndDrop,
+    withDragNode,
+    withPanZoom,
+    withSelection,
 } from '@patternfly/react-topology';
 import type { ComponentFactory } from '@patternfly/react-topology';
 import StyleNode from './StyleNode';

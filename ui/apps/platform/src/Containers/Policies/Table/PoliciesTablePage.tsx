@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { AlertGroup, AlertActionCloseButton, Divider, Button, Alert } from '@patternfly/react-core';
+import { Alert, AlertActionCloseButton, AlertGroup, Button, Divider } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 
 import { policiesBasePath } from 'routePaths';
+import PageTitle from 'Components/PageTitle';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import {
-    getPolicies,
-    reassessPolicies,
     deletePolicies,
     exportPolicies,
+    getPolicies,
+    reassessPolicies,
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
 import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
@@ -206,6 +207,7 @@ function PoliciesTablePage({
 
     return (
         <>
+            <PageTitle title="Policy Management - Policies" />
             <PolicyManagementHeader currentTabTitle="Policies" />
             <Divider component="div" />
             <TabNavSubHeader

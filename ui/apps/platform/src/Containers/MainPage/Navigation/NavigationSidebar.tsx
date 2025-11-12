@@ -49,7 +49,7 @@ import {
 
 import NavigationContent from './NavigationContent';
 import NavigationItem from './NavigationItem';
-import { isActiveLink, filterNavDescriptions } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
 import type { ChildDescription, NavDescription } from './utils';
 
 import './NavigationSidebar.css';

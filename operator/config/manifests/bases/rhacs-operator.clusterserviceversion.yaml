@@ -114,7 +114,7 @@ spec:
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
       - description: |-
-          Specifies if Telemetry is enabled.
+          Specifies whether Telemetry is enabled.
           The default is: true.
         displayName: Enabled
         path: central.telemetry.enabled
@@ -151,7 +151,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: |-
-          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
           The default is: Enabled.
         displayName: Network Policies
         path: network.policies
@@ -395,7 +395,7 @@ spec:
         path: overlays[0].name
       - description: |-
           Verbatim value to add, delete or replace.
-          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated as a literal string instead.
           At least one of Value and Verbatim must be empty.
         displayName: Verbatim
         path: overlays[0].patches[0].verbatim
@@ -557,7 +557,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
-          Stores persistent data on a directory on the host. This is not recommended, and should only
+          Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: central.db.persistence.hostPath
@@ -568,7 +568,7 @@ spec:
         displayName: Path
         path: central.persistence.hostPath.path
       - description: |-
-          Stores persistent data on a directory on the host. This is not recommended, and should only
+          Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: scannerV4.db.persistence.hostPath
@@ -897,7 +897,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: |-
-          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          To provide security at the network level, the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
           The default is: Enabled.
         displayName: Network Policies
         path: network.policies
@@ -919,7 +919,7 @@ spec:
       - description: |-
           The method for system-level data collection. CORE_BPF is recommended.
           If you select "NoCollection", you will not be able to see any information about network activity
-          and process executions. The remaining settings in these section will not have any effect.
+          and process executions. The remaining settings in this section will not have any effect.
           The value is a subject of conversion by the operator if needed, e.g. to
           remove deprecated methods.
           The default is: CORE_BPF.
@@ -1069,7 +1069,7 @@ spec:
         path: overlays[0].name
       - description: |-
           Verbatim value to add, delete or replace.
-          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          Same as Value, but the content is not interpreted as YAML and is treated as a literal string instead.
           At least one of Value and Verbatim must be empty.
         displayName: Verbatim
         path: overlays[0].patches[0].verbatim
@@ -1215,7 +1215,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
-          Stores persistent data on a directory on the host. This is not recommended, and should only
+          Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: scannerV4.db.persistence.hostPath

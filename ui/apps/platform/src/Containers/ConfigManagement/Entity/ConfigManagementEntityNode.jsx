@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -9,8 +9,8 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
+import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';

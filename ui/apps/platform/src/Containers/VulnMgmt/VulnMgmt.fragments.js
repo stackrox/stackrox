@@ -169,13 +169,6 @@ export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
             }
         }
         vulnerabilityState
-        activeState {
-            state
-            activeContexts {
-                containerName
-                imageId
-            }
-        }
         imageComponentCount(query: $query)
         deploymentCount(query: $query)
         discoveredAtImage(query: $query)
@@ -277,12 +270,6 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
         publishedOn
         severity
         summary
-        activeState(query: $query) {
-            state
-            activeContexts {
-                containerName
-            }
-        }
         discoveredAtImage(query: $scopeQuery)
         deploymentCount(query: $query)
         imageCount(query: $query)
@@ -667,12 +654,6 @@ export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
         topVuln: topImageVulnerability {
             cvss
             scoreVersion
-        }
-        activeState(query: $scopeQuery) {
-            state
-            activeContexts {
-                containerName
-            }
         }
         imageCount(query: $query)
         deploymentCount(query: $query)

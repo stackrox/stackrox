@@ -1,9 +1,9 @@
 import {
-    portExposureLabels,
     envVarSrcLabels,
-    rbacPermissionLabels,
-    policyCriteriaCategories,
     mountPropagationLabels,
+    policyCriteriaCategories,
+    portExposureLabels,
+    rbacPermissionLabels,
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
@@ -128,6 +128,22 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
     label: verb,
     value: verb,
 }));
+
+const fileOperationOptions: DescriptorOption[] = [
+    'OPEN',
+    'CREATE',
+    'UNLINK',
+    'RENAME',
+    'PERMISSION_CHANGE',
+    'OWNERSHIP_CHANGE',
+].map((operation) => ({ label: operation, value: operation }));
+
+const fileActivityPathOptions: DescriptorOption[] = [
+    '/etc/passwd',
+    '/etc/ssh/sshd_config',
+    '/etc/shadow',
+    '/etc/sudoers',
+].map((path) => ({ label: path, value: path }));
 
 const subComponentsForContainerMemory: SubComponent[] = [
     {
@@ -1475,6 +1491,30 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
+    {
+        label: 'Mounted file path',
+        name: 'Mounted File Path',
+        shortName: 'Mounted file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
+    {
+        label: 'File operation',
+        name: 'File Operation',
+        shortName: 'File operation',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileOperationOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
 ];
 
 export const auditLogDescriptor: Descriptor[] = [
@@ -1591,6 +1631,31 @@ export const auditLogDescriptor: Descriptor[] = [
             { text: 'True', value: true },
             { text: 'False', value: false },
         ],
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+];
+
+export const nodeEventDescriptor: Descriptor[] = [
+    {
+        label: 'Node file path',
+        name: 'Node File Path',
+        shortName: 'Node file path',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select a file path',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
+        label: 'File operation',
+        name: 'File Operation',
+        shortName: 'File operation',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select an option',
+        options: fileOperationOptions,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

@@ -9,19 +9,19 @@ import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import type { ClusterScopeObject } from 'services/RolesService';
 import type { NotifierIntegration } from 'types/notifier.proto';
 import type {
+    ClientPolicy,
     EnforcementAction,
     LifecycleStage,
+    ListPolicy,
+    Policy,
+    PolicyDeploymentExclusion,
     PolicyEventSource,
     PolicyExcludedDeployment,
     PolicyExclusion,
-    Policy,
-    ClientPolicy,
-    ValueObj,
-    PolicyScope,
     PolicyGroup,
-    PolicyDeploymentExclusion,
     PolicyImageExclusion,
-    ListPolicy,
+    PolicyScope,
+    ValueObj,
 } from 'types/policy.proto';
 import type { SearchFilter } from 'types/search';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -29,9 +29,10 @@ import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
 
 import {
-    policyCriteriaDescriptors,
     auditLogDescriptor,
     imageSigningCriteriaName,
+    nodeEventDescriptor,
+    policyCriteriaDescriptors,
 } from './Wizard/Step3/policyCriteriaDescriptors';
 import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
@@ -688,13 +689,19 @@ export function getLifeCyclesUpdates<
     return changedValues;
 }
 
+const eventSourceToDescriptorsMap: Readonly<Record<PolicyEventSource, Descriptor[]>> = {
+    NOT_APPLICABLE: policyCriteriaDescriptors,
+    DEPLOYMENT_EVENT: policyCriteriaDescriptors,
+    AUDIT_LOG_EVENT: auditLogDescriptor,
+    NODE_EVENT: nodeEventDescriptor,
+};
+
 export function getPolicyDescriptors(
     isFeatureFlagEnabled: (string) => boolean,
     eventSource: PolicyEventSource,
     lifecycleStages: LifecycleStage[]
 ) {
-    const unfilteredDescriptors =
-        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyCriteriaDescriptors;
+    const unfilteredDescriptors = eventSourceToDescriptorsMap[eventSource];
 
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
         const { featureFlagDependency } = unfilteredDescriptor;

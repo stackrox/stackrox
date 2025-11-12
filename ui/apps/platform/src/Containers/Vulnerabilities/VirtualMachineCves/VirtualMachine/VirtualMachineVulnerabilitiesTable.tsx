@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';

@@ -11,41 +11,44 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-var clusters = []*storage.Cluster{
-	{
-		Id:   uuid.NewV4().String(),
-		Name: "remote",
-	},
-	{
-		Id:   uuid.NewV4().String(),
-		Name: "secured",
-	},
-}
+var (
+	clusters = []effectiveaccessscope.Cluster{
+		&storage.Cluster{
+			Id:   uuid.NewV4().String(),
+			Name: "remote",
+		},
+		&storage.Cluster{
+			Id:   uuid.NewV4().String(),
+			Name: "secured",
+		},
+	}
 
-var namespaces = []*storage.NamespaceMetadata{
-	remoteNS,
-	securedNS,
-}
+	namespaces = []effectiveaccessscope.Namespace{
+		remoteNS,
+		securedNS,
+	}
 
-var remoteNS = &storage.NamespaceMetadata{
-	Id:          "namespace1",
-	Name:        "ns1",
-	ClusterId:   clusters[0].GetId(),
-	ClusterName: "remote",
-}
+	remoteNS = &storage.NamespaceMetadata{
+		Id:          "namespace1",
+		Name:        "ns1",
+		ClusterId:   clusters[0].GetId(),
+		ClusterName: "remote",
+	}
 
-var securedNS = &storage.NamespaceMetadata{
-	Id:          "namespace2",
-	Name:        "ns2",
-	ClusterId:   clusters[1].GetId(),
-	ClusterName: "secured",
-}
+	securedNS = &storage.NamespaceMetadata{
+		Id:          "namespace2",
+		Name:        "ns2",
+		ClusterId:   clusters[1].GetId(),
+		ClusterName: "secured",
+	}
+)
 
 func getMatchNoneQuery() *v1.Query {
 	return &v1.Query{

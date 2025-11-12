@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Divider, DropdownItem } from '@patternfly/react-core';
 import { generatePath, useNavigate } from 'react-router-dom-v5-compat';

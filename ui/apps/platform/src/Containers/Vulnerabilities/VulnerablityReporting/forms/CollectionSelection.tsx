@@ -1,39 +1,43 @@
-import React, { useMemo, useState, ReactElement, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import type {
+    FocusEvent,
+    FocusEventHandler,
+    FormEvent,
+    MouseEvent as ReactMouseEvent,
+    ReactElement,
+    Ref,
+} from 'react';
 import {
     Button,
     Flex,
     FlexItem,
-    Select,
-    SelectOption,
-    SelectList,
+    MenuFooter,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
+    Spinner,
     TextInputGroup,
     TextInputGroupMain,
-    MenuFooter,
-    Spinner,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
-import {
-    Collection,
-    CollectionSlim,
-    getCollection,
-    listCollections,
-} from 'services/CollectionsService';
+import { getCollection, listCollections } from 'services/CollectionsService';
+import type { Collection, CollectionSlim } from 'services/CollectionsService';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
-import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 
-import CollectionsFormModal, {
-    CollectionFormModalAction,
-} from 'Containers/Collections/CollectionsFormModal';
+import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
+import type { CollectionFormModalAction } from 'Containers/Collections/CollectionsFormModal';
 import type { ClientCollection } from 'Containers/Collections/types';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
+
+import type { ReportScope } from './useReportFormValues';
 
 const COLLECTION_PAGE_SIZE = 10;
 
@@ -42,7 +46,7 @@ type CollectionSelectionProps = {
     id: string;
     selectedScope: ReportScope | null;
     onChange: (selection: CollectionSlim | null) => void;
-    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    onBlur?: FocusEventHandler<HTMLDivElement>;
     onValidateField: (field: string) => void;
 };
 
@@ -136,7 +140,7 @@ function CollectionSelection({
     }
 
     function onScopeChange(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         scopeId: string | number | undefined
     ) {
         const selectedCollection = sortedCollections.find(
@@ -162,7 +166,7 @@ function CollectionSelection({
         }
     }
 
-    function onSearchChange(_event: React.FormEvent<HTMLInputElement>, value: string) {
+    function onSearchChange(_event: FormEvent<HTMLInputElement>, value: string) {
         setSearch(value);
         onValidateField(id);
         ensureOpen();
@@ -176,7 +180,7 @@ function CollectionSelection({
     }
 
     // Clears the search text when the user clicks away from the dropdown
-    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+    function handleBlur(event: FocusEvent<HTMLDivElement>) {
         setSearch('');
         onBlur?.(event);
     }
@@ -213,7 +217,7 @@ function CollectionSelection({
         );
     }, [selectedScope?.id, sortedCollections]);
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             variant="typeahead"

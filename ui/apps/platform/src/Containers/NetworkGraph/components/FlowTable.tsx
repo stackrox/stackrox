@@ -1,5 +1,5 @@
-import { ToolbarContent, ToolbarItem, Pagination } from '@patternfly/react-core';
-import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn } from '@patternfly/react-table';
+import { Pagination, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';

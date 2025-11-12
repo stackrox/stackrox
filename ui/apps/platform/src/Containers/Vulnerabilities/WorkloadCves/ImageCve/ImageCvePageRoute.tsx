@@ -1,14 +1,12 @@
-import React from 'react';
-
 import { hideColumnIf } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 
 import {
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
 } from '../../searchFilterConfig';
 import ImageCvePage from './ImageCvePage';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';

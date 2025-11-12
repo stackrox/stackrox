@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ReactElement, RefObject } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {

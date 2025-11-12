@@ -3,11 +3,11 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
 import {
-    visitPolicies,
+    cloneFirstPolicyFromTable,
     doPolicyRowAction,
     editFirstPolicyFromTable,
-    cloneFirstPolicyFromTable,
     goToStep3,
+    visitPolicies,
 } from '../../helpers/policies';
 import { hasFeatureFlag } from '../../helpers/features';
 

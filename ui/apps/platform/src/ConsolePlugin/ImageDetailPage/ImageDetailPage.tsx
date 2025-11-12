@@ -1,4 +1,3 @@
-import React from 'react';
 import { NamespaceBar, useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 
 import { ALL_NAMESPACES_KEY } from 'ConsolePlugin/constants';

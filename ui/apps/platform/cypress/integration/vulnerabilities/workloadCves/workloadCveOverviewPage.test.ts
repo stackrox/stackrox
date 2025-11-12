@@ -5,8 +5,8 @@ import { graphql } from '../../../constants/apiEndpoints';
 import {
     applyDefaultFilters,
     applyLocalSeverityFilters,
-    interactAndWaitForImageList,
     interactAndWaitForDeploymentList,
+    interactAndWaitForImageList,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -18,11 +18,11 @@ import {
     verifyColumnManagement,
 } from '../../../helpers/tableHelpers';
 import {
-    getRouteMatcherMapForGraphQL,
     expectRequestedSort,
-    interceptAndWatchRequests,
-    interceptAndOverridePermissions,
+    getRouteMatcherMapForGraphQL,
     interceptAndOverrideFeatureFlags,
+    interceptAndOverridePermissions,
+    interceptAndWatchRequests,
 } from '../../../helpers/request';
 
 const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');

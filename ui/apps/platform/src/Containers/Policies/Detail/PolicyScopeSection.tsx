@@ -1,9 +1,8 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { Title, Grid, GridItem, Card, CardBody, List, ListItem } from '@patternfly/react-core';
+import { Card, CardBody, Grid, GridItem, List, ListItem, Title } from '@patternfly/react-core';
 
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-import type { PolicyScope, PolicyExclusion } from 'types/policy.proto';
+import type { PolicyExclusion, PolicyScope } from 'types/policy.proto';
 import Restriction from './Restriction';
 import ExcludedDeployment from './ExcludedDeployment';
 import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils';

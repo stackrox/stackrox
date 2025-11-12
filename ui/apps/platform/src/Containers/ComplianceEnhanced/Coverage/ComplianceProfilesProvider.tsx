@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext } from 'react';
+import { createContext, useCallback, useContext } from 'react';
 import type { ReactNode } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';

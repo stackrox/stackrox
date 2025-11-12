@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -186,33 +187,41 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// VirtualMachine Watcher and Informers
+	// We should track virtual machines only if the feature is enabled and CRDs are available.
+	shouldTrackVirtualMachines := features.VirtualMachines.Enabled()
 	var virtualMachineInstanceInformer cache.SharedIndexInformer
-	vmWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
-	vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
-	if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
-		log.Errorf("Unable to add the Resource to the VirtualMachine CRD Watcher: %v", err)
-	}
 
-	vmCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
-		allResourcesAvailable(),
-		k.pubSub,
-		"VirtualMachine resources have been updated. Connection will restart to force reconciliation with Central")
+	// Leaving this check explicitely here for clarity, that we don't want to
+	// call this code when the feature is disabled.
+	if features.VirtualMachines.Enabled() {
+		vmWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+		vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
+		if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
+			log.Errorf("Unable to add the Resource to the VirtualMachine CRD Watcher: %v", err)
+		}
 
-	virtualMachineIsAvailable, err := vmAvailabilityChecker.Available(k.client)
-	if err != nil {
-		log.Errorf("Failed to check the availability of Virtual Machine resources: %v", err)
-	}
-	if virtualMachineIsAvailable {
-		log.Info("Initializing virtual machine informers")
-		virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
-		// Override the vmCrdHandlerFn to only handle when the resources become unavailable
-		vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
-			resourcesUnavailable(),
+		vmCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
+			allResourcesAvailable(),
 			k.pubSub,
-			"VirtualMachine resources have been removed. Connection will restart to force reconciliation with Central")
-	}
-	if err := vmWatcher.Watch(vmCrdHandlerFn); err != nil {
-		log.Errorf("Failed to start watching the VirtualMachine CRDs: %v", err)
+			"VirtualMachine resources have been updated. Connection will restart to force reconciliation with Central")
+
+		shouldTrackVirtualMachines, err = vmAvailabilityChecker.Available(k.client)
+		if err != nil {
+			log.Errorf("Failed to check the availability of Virtual Machine resources: %v", err)
+		}
+
+		if shouldTrackVirtualMachines {
+			log.Info("Initializing virtual machine informers")
+			virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
+			// Override the vmCrdHandlerFn to only handle when the resources become unavailable
+			vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
+				resourcesUnavailable(),
+				k.pubSub,
+				"VirtualMachine resources have been removed. Connection will restart to force reconciliation with Central")
+		}
+		if err := vmWatcher.Watch(vmCrdHandlerFn); err != nil {
+			log.Errorf("Failed to start watching the VirtualMachine CRDs: %v", err)
+		}
 	}
 
 	// This call to clusterID.Get might block if a cluster ID is initially unavailable, which is okay.
@@ -313,7 +322,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if virtualMachineIsAvailable {
+	if shouldTrackVirtualMachines {
 		// We sync first the VirtualMachineInstances
 		// This is because if both informers are racing in the sync, we could
 		// send duplicate update events during sync
@@ -326,7 +335,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
 
-	if virtualMachineIsAvailable {
+	if shouldTrackVirtualMachines {
 		// At this point the VirtualMachineInstances should be synced
 		log.Info("Syncing virtual machines")
 		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
