@@ -18,7 +18,8 @@ func ReconcileProductVersionStatusExtension(version string) extensions.Reconcile
 		statusUpdater(func(uSt *unstructured.Unstructured) bool {
 			productVersionChanged := updateProductVersion(uSt, version)
 			reconciledVersionChanged := updateReconciledVersion(uSt, version)
-			return productVersionChanged || reconciledVersionChanged
+			observedGenChanged := updateObservedGeneration(uSt, obj.GetGeneration())
+			return productVersionChanged || reconciledVersionChanged || observedGenChanged
 		})
 		return nil
 	}
@@ -57,6 +58,26 @@ func updateReconciledVersion(uSt *unstructured.Unstructured, version string) boo
 
 	// Set reconciledVersion to the deployed release version
 	if err := unstructured.SetNestedField(uSt.Object, deployedVersion, "reconciledVersion"); err != nil {
+		return false
+	}
+	return true
+}
+
+func updateObservedGeneration(uSt *unstructured.Unstructured, generation int64) bool {
+	// Get the current observedGeneration
+	currentObservedGen, _, _ := unstructured.NestedInt64(uSt.Object, "observedGeneration")
+
+	// Only update if generation changed
+	if currentObservedGen == generation {
+		return false
+	}
+
+	if uSt.Object == nil {
+		uSt.Object = make(map[string]interface{})
+	}
+
+	// Set observedGeneration to the current generation
+	if err := unstructured.SetNestedField(uSt.Object, generation, "observedGeneration"); err != nil {
 		return false
 	}
 	return true
