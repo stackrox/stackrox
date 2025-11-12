@@ -491,8 +491,10 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return utils.ShouldErr(errInvalidOperation)
 	}
 
-	tx, ok := postgres.TxFromContext(ctx)
-	if !ok {
+	// Check if we are already in transaction.
+	// If not let's create one.
+	tx, wasTxInCtx := postgres.TxFromContext(ctx)
+	if !wasTxInCtx {
 		conn, err := s.acquireConn(ctx, ops.UpsertAll)
 		if err != nil {
 			return err
@@ -506,7 +508,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
 		// Only rollback if we created the transaction
-		if !ok {
+		if !wasTxInCtx {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				return errors.Wrap(rollbackErr, "could not rollback transaction")
 			}
@@ -515,7 +517,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	}
 
 	// Only commit if we created the transaction
-	if !ok {
+	if !wasTxInCtx {
 		if err := tx.Commit(ctx); err != nil {
 			return errors.Wrap(err, "could not commit transaction")
 		}
