@@ -13,6 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
+var (
+	uppercaseRegex = regexp.MustCompile("[A-Z]")
+)
+
 func migrate(database *types.Databases) error {
 	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, policycategory.CreateTablePolicyCategoriesStmt)
 	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, policy.CreateTablePoliciesStmt)
@@ -37,13 +41,12 @@ func migrate(database *types.Databases) error {
 		return err
 	}
 
-	uppercaseRegex := regexp.MustCompile("[A-Z]")
 	for categoryNameLower, currentCategories := range categories {
 		currentCandidate := &storage.PolicyCategory{}
 		var categoryIds []string
 		for _, category := range currentCategories {
 			categoryIds = append(categoryIds, category.GetId())
-			if len(uppercaseRegex.FindAllStringIndex(category.Name, -1)) >= len(uppercaseRegex.FindAllStringIndex(currentCandidate.Name, -1)) {
+			if len(uppercaseRegex.FindAllStringIndex(category.GetName(), -1)) >= len(uppercaseRegex.FindAllStringIndex(currentCandidate.Name, -1)) {
 				currentCandidate = category
 			}
 		}
@@ -57,6 +60,9 @@ func migrate(database *types.Databases) error {
 			return err
 		}
 		err = edgesStore.UpsertMany(database.DBCtx, edgesToUpdate)
+		if err != nil {
+			return err
+		}
 		_, err = db.Exec(database.DBCtx, "DELETE FROM policy_categories WHERE LOWER(name) = $1 AND id != $2", categoryNameLower, currentCandidate.GetId())
 		if err != nil {
 			return err
