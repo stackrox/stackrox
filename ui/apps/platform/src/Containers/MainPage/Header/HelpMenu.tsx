@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { useDispatch } from 'react-redux';
 import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
+import { Link } from 'react-router-dom-v5-compat';
 
 import useMetadata from 'hooks/useMetadata';
 import { actions } from 'reducers/feedback';
@@ -34,8 +35,12 @@ function HelpMenu(): ReactElement {
             )}
         >
             <DropdownList>
-                <DropdownItem to={apidocsPath}>API Reference (v1)</DropdownItem>
-                <DropdownItem to={apidocsPathV2}>API Reference (v2)</DropdownItem>
+                <DropdownItem component={(props) => <Link {...props} to={apidocsPath} />}>
+                    API Reference (v1)
+                </DropdownItem>
+                <DropdownItem component={(props) => <Link {...props} to={apidocsPathV2} />}>
+                    API Reference (v2)
+                </DropdownItem>
                 <DropdownItem
                     component="button"
                     onClick={() => dispatch(actions.setFeedbackModalVisibility(true))}
