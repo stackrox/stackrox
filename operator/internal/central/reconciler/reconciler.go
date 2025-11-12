@@ -54,12 +54,19 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPostExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+7)
+	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
+	// to prevent unnecessary Helm dry-runs.
+	predicates := []pkgReconciler.Option{
+		pkgReconciler.WithPredicate(common.CentralStatusPredicate{}),
+	}
+
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+7)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, postExtensions...)
+	opts = append(opts, predicates...)
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 
