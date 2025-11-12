@@ -161,7 +161,16 @@ func (m *managerImpl) Gather() phonehome.GatherFunc {
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
 func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents [][]byte) {
-	// Start transaction BEFORE acquiring mutex to ensure we have a DB connection
+	// Operate the whole function under a single lock.
+	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
+	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
+	// IMPORTANT: Acquire mutex BEFORE starting transaction to avoid deadlocks when running with a single DB connection.
+	// With one connection, if thread A holds the connection and waits for mutex while thread B holds mutex and waits
+	// for connection, we get a deadlock. This order matches the pattern used throughout the codebase (see network flow store).
+	m.transformedMessagesMutex.Lock()
+	defer m.transformedMessagesMutex.Unlock()
+
+	// Start transaction AFTER acquiring mutex to ensure no deadlocks with single DB connection
 	ctx, tx, err := m.declarativeConfigHealthDS.Begin(m.reconciliationCtx)
 	if err != nil {
 		log.Errorf("Failed to begin transaction for declarative config update: %v", err)
@@ -177,12 +186,6 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 			}
 		}
 	}()
-
-	// Operate the whole function under a single lock.
-	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
-	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
-	m.transformedMessagesMutex.Lock()
-	defer m.transformedMessagesMutex.Unlock()
 
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
