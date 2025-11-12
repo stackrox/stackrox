@@ -209,7 +209,7 @@ func (r *Relay) handleVsockConnection(conn net.Conn) error {
 		return errors.Wrapf(err, "sending report to sensor (vsock CID: %s)", indexReport.GetVsockCid())
 	}
 
-	log.Debugf("Finished handling vsock connection from %s", conn.RemoteAddr())
+	log.Infof("Finished handling vsock connection from %s", conn.RemoteAddr())
 
 	return nil
 }
