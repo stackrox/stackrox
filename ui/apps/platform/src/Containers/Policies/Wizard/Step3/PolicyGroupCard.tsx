@@ -73,6 +73,10 @@ function PolicyGroupCard({
     const headerLongText =
         group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
 
+    const fieldOptions = 'options' in descriptor ? descriptor.options : [];
+    const isAddValueDisabled =
+        descriptor.type === 'select' && group.values.length >= fieldOptions.length;
+
     return (
         <>
             <Card isFlat isCompact data-testid="policy-criteria-group-card">
@@ -188,7 +192,12 @@ function PolicyGroupCard({
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    title="Add value of policy field"
+                                    isDisabled={isAddValueDisabled}
+                                    title={
+                                        isAddValueDisabled
+                                            ? 'All options for this field have been selected'
+                                            : 'Add value of policy field'
+                                    }
                                 >
                                     <PlusIcon />
                                 </Button>
