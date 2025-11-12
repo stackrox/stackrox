@@ -617,7 +617,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	if features.FlattenImageData.Enabled() {
-		imageResults, err := g.imagesV2.SearchRawImages(pruningCtx, qb)
+		imageResults, err := g.imagesV2.GetImageIDsAndDigests(pruningCtx, qb)
 		if err != nil {
 			log.Error(err)
 			return
@@ -626,7 +626,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 
 		imagesToPrune := make([]string, 0, len(imageResults))
 		for _, result := range imageResults {
-			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageID, result.GetId()).ProtoQuery()
+			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageID, result.ImageID).ProtoQuery()
 			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
 			if err != nil {
 				log.Errorf("[Image pruning] searching deployments: %v", err)
@@ -636,7 +636,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 				continue
 			}
 
-			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.GetDigest()).ProtoQuery()
+			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.Digest).ProtoQuery()
 			podResults, err := g.pods.Search(pruningCtx, q2)
 			if err != nil {
 				log.Errorf("[Image pruning] searching pods: %v", err)
@@ -645,7 +645,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			if len(podResults) != 0 {
 				continue
 			}
-			imagesToPrune = append(imagesToPrune, result.GetId())
+			imagesToPrune = append(imagesToPrune, result.ImageID)
 		}
 		if len(imagesToPrune) > 0 {
 			log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
