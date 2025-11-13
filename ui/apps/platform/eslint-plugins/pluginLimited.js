@@ -27,7 +27,7 @@ const rules = {
         meta: {
             type: 'problem',
             docs: {
-                description: 'Feature flag must match pattern and occur in ascending order',
+                description: 'Feature flag must match pattern and occur in alphabetical order',
             },
             schema: [],
         },
