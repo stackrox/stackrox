@@ -51,7 +51,7 @@ message FileActivity {
   google.protobuf.Timestamp timestamp = 1;
   ProcessSignal process = 2;
   // The hostname/name of the node where the file activity occurred
-  string node = 10;
+  string hostname = 10;
   oneof file {
     FileCreation creation = 3;
     FileUnlink unlink = 4;

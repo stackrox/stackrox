@@ -1037,12 +1037,9 @@
           "$ref": "#/definitions/storageProcessIndicator",
           "description": "The process that performed the action. May contain deployment/namespace\ninformation."
         },
-        "nodeName": {
+        "hostname": {
           "type": "string",
-          "title": "Node information"
-        },
-        "nodeId": {
-          "type": "string"
+          "title": "The hostname/name of the node where the file activity occurred"
         }
       },
       "description": "FileAccess contains fields related to arbitrary file accesses\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."

@@ -51,11 +51,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		Process: p.getIndicator(fs.GetProcess()),
 	}
 
-	// Enrich with node info
-	if fs.GetProcess().GetContainerId() == "" {
-		p.enrichWithNodeInfo(access, fs.GetNode())
-	}
-
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
@@ -139,7 +134,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 
 	if process.GetContainerId() == "" {
 		// Process is running on the host (not in a container)
-		// Node info will be populated in enrichWithNodeInfo for FileAccess
 		return pi
 	}
 
@@ -162,22 +156,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	return pi
 }
 
-func (p *Pipeline) enrichWithNodeInfo(fileAccess *storage.FileAccess, node string) {
-	if node == "" {
-		log.Debug("Node not available for host process file activity")
-		return
-	}
-
-	nodeInfo := p.nodeStore.GetNode(node)
-	if nodeInfo == nil {
-		log.Warnf("Node %s not found in node store", node)
-		return
-	}
-
-	fileAccess.NodeName = nodeInfo.GetName()
-	fileAccess.NodeId = nodeInfo.GetId()
-}
-
 func (p *Pipeline) Stop() {
 	p.stopper.Client().Stop()
 	<-p.stopper.Client().Stopped().Done()
@@ -195,6 +173,21 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
+
+			if event.GetProcess().GetContainerName() != "" {
+			    // Do deployment based detection but for now just log
+			    log.Infof("Container FS event = %+v", event)
+			} else {
+			    node := p.nodeStore.GetNode(event.GetHostname())
+			    if node == nil {
+			        log.Warnf("Node %s not found in node store", event.GetHostname())
+			        continue
+			    }
+
+			    // Do node based detection but for now just log
+			    log.Infof("Node FS event on %s = %+v", node.GetName(), event)
+			}
+
 			// TODO: Send event to detector
 			log.Infof("event= %+v", event)
 		}

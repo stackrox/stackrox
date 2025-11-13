@@ -101,9 +101,8 @@ type FileAccess struct {
 	// The process that performed the action. May contain deployment/namespace
 	// information.
 	Process *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
-	// Node information
-	NodeName      string `protobuf:"bytes,6,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty" search:"File Access Node,hidden"` // @gotags: search:"File Access Node,hidden"
-	NodeId        string `protobuf:"bytes,7,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" search:"File Access Node ID,hidden"`       // @gotags: search:"File Access Node ID,hidden"
+	// The hostname/name of the node where the file activity occurred
+	Hostname      string `protobuf:"bytes,6,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,16 +172,9 @@ func (x *FileAccess) GetProcess() *ProcessIndicator {
 	return nil
 }
 
-func (x *FileAccess) GetNodeName() string {
+func (x *FileAccess) GetHostname() string {
 	if x != nil {
-		return x.NodeName
-	}
-	return ""
-}
-
-func (x *FileAccess) GetNodeId() string {
-	if x != nil {
-		return x.NodeId
+		return x.Hostname
 	}
 	return ""
 }
@@ -335,16 +327,15 @@ var File_storage_file_access_proto protoreflect.FileDescriptor
 
 const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xb7\x05\n" +
+	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x9d\x05\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
 	"\toperation\x18\x02 \x01(\x0e2\x1d.storage.FileAccess.OperationR\toperation\x12.\n" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
-	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1b\n" +
-	"\tnode_name\x18\x06 \x01(\tR\bnodeName\x12\x17\n" +
-	"\anode_id\x18\a \x01(\tR\x06nodeId\x1ax\n" +
+	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1ax\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +

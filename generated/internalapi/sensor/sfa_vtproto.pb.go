@@ -172,7 +172,7 @@ func (m *FileActivity) CloneVT() *FileActivity {
 	r := new(FileActivity)
 	r.Timestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Timestamp).CloneVT())
 	r.Process = m.Process.CloneVT()
-	r.Node = m.Node
+	r.Hostname = m.Hostname
 	if m.File != nil {
 		r.File = m.File.(interface{ CloneVT() isFileActivity_File }).CloneVT()
 	}
@@ -447,7 +447,7 @@ func (this *FileActivity) EqualVT(that *FileActivity) bool {
 	if !this.Process.EqualVT(that.Process) {
 		return false
 	}
-	if this.Node != that.Node {
+	if this.Hostname != that.Hostname {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1061,10 +1061,10 @@ func (m *FileActivity) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if len(m.Node) > 0 {
-		i -= len(m.Node)
-		copy(dAtA[i:], m.Node)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Node)))
+	if len(m.Hostname) > 0 {
+		i -= len(m.Hostname)
+		copy(dAtA[i:], m.Hostname)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Hostname)))
 		i--
 		dAtA[i] = 0x52
 	}
@@ -1406,7 +1406,7 @@ func (m *FileActivity) SizeVT() (n int) {
 	if vtmsg, ok := m.File.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
-	l = len(m.Node)
+	l = len(m.Hostname)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -2783,7 +2783,7 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2811,7 +2811,7 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Node = string(dAtA[iNdEx:postIndex])
+			m.Hostname = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4122,7 +4122,7 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4154,7 +4154,7 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Node = stringValue
+			m.Hostname = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
