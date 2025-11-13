@@ -57,7 +57,7 @@ function BySeveritySummaryCard({
         <Card className={className} isCompact isFullHeight>
             <CardTitle>{title}</CardTitle>
             <CardBody>
-                <Grid className="pf-v5-u-pl-sm">
+                <Grid className="pf-v6-u-pl-sm">
                     {severitiesDescendingCriticality.map((severity) => {
                         const querySeverityKey = severityToQuerySeverityKeys[severity];
                         const count = severityCounts[querySeverityKey];
@@ -71,7 +71,7 @@ function BySeveritySummaryCard({
                         return (
                             <GridItem key={severity} span={6}>
                                 <Flex
-                                    className="pf-v5-u-pt-sm"
+                                    className="pf-v6-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >

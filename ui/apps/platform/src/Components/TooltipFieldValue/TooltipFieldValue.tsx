@@ -26,7 +26,7 @@ export const WarningIcon = (props: SVGIconProps) => (
 type IconType = 'danger' | 'warning';
 
 function getIcon(type?: IconType): ReactElement | null {
-    const className = 'pf-v5-u-display-inline pf-v5-u-ml-sm';
+    const className = 'pf-v6-u-display-inline pf-v6-u-ml-sm';
 
     switch (type) {
         case 'danger':

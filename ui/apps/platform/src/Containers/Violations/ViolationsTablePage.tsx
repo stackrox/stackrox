@@ -267,7 +267,7 @@ function ViolationsTablePage(): ReactElement {
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     spaceItems={{ default: 'spaceItemsNone' }}
-                    className="pf-v5-u-flex-grow-1"
+                    className="pf-v6-u-flex-grow-1"
                 >
                     <Title headingLevel="h1">{title}</Title>
                     <Popover
@@ -282,7 +282,7 @@ function ViolationsTablePage(): ReactElement {
                     </Popover>
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
                 <Tabs
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {

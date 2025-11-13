@@ -225,7 +225,7 @@ function RuleGroups({
                                     variant="link"
                                     isInline
                                     isDisabled={!!errors?.length}
-                                    icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
+                                    icon={<PlusCircleIcon className="pf-v6-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
                                             roleName: '',

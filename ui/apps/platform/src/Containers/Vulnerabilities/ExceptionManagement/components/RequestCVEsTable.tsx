@@ -107,7 +107,7 @@ function RequestCVEsTable({
         <PageSection hasBodyWrapper={false}>
             <Flex direction={{ default: 'column' }}>
                 <Toolbar>
-                    <ToolbarContent className="pf-v5-u-justify-content-space-between">
+                    <ToolbarContent className="pf-v6-u-justify-content-space-between">
                         <ToolbarItem variant="label">
                             <Title headingLevel="h2">
                                 {countQuery.data?.imageCVECount || 0} results found

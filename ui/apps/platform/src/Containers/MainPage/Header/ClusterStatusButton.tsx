@@ -10,8 +10,8 @@ import {
 
 import { clustersBasePath } from 'routePaths';
 
-const thClassName = 'font-400 pf-v5-u-pr-md pf-v5-u-text-align-left';
-const tdClassName = 'pf-v5-u-text-align-right';
+const thClassName = 'font-400 pf-v6-u-pr-md pf-v6-u-text-align-left';
+const tdClassName = 'pf-v6-u-text-align-right';
 
 type ClusterStatusButtonProps = {
     degraded?: number;

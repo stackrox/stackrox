@@ -25,7 +25,7 @@ function ViewLinks({ searchResult, searchResultCategoryMap }: ViewLinksProps): R
                     <FlexItem key={linkText}>
                         <Link
                             to={safeGeneratePath(basePath, searchResult, basePath)}
-                            className="pf-v5-u-text-nowrap"
+                            className="pf-v6-u-text-nowrap"
                         >
                             {linkText}
                         </Link>

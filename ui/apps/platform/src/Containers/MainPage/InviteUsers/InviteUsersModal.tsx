@@ -218,7 +218,7 @@ function InviteUsersModal(): ReactElement | null {
                         component="p"
                         variant="warning"
                         isInline
-                        className="pf-v5-u-mb-lg"
+                        className="pf-v6-u-mb-lg"
                     >
                         <Content component="p">
                             You must have at least one auth provider in order to invite users.
@@ -239,7 +239,7 @@ function InviteUsersModal(): ReactElement | null {
                                 component="p"
                                 variant="danger"
                                 isInline
-                                className="pf-v5-u-mb-lg"
+                                className="pf-v6-u-mb-lg"
                             >
                                 <Content component="p">The following error occurred:</Content>
                                 <Content component="p">{apiError?.message}</Content>

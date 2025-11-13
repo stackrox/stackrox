@@ -87,7 +87,7 @@ function SearchFilterChips({
                     return null;
                 }
                 return (
-                    <FlexItem key={searchFilterName} className="pf-v5-u-pt-xs">
+                    <FlexItem key={searchFilterName} className="pf-v6-u-pt-xs">
                         <LabelGroup
                             categoryName={displayName}
                             isClosable

@@ -128,12 +128,12 @@ function ClusterLabelsTable({
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
                                     Invalid label key
                                 </p>
                             )}
                             {validatedKey === ValidatedOptions.warning && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-warning-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-warning-color-100">
                                     You will replace an existing label which has the same key
                                 </p>
                             )}
@@ -147,7 +147,7 @@ function ClusterLabelsTable({
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
-                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
                                     {valueInput.length === 0
                                         ? 'Label value is required'
                                         : 'Invalid label value'}

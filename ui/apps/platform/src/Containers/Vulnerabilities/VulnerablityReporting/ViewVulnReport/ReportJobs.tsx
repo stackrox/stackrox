@@ -152,7 +152,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             </SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
-                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                         <Switch
                             id="view-only-my-jobs"
                             label="View only my jobs"
@@ -181,19 +181,19 @@ function ReportJobs({ reportId }: ReportJobsProps) {
             </Toolbar>
             <Divider component="div" />
             {error && (
-                <Bullseye className="pf-v5-u-background-color-100">
+                <Bullseye className="pf-v6-u-background-color-100">
                     <EmptyStateTemplate
                         title="Error loading report jobs"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v5-u-danger-color-100"
+                        iconClassName="pf-v6-u-danger-color-100"
                     >
                         {error}
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
             {isLoading && !reportSnapshots && (
-                <Bullseye className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                <Bullseye className="pf-v6-u-background-color-100 pf-v6-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
@@ -278,7 +278,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v5-u-danger-color-100">
+                                    <span className="pf-v6-u-danger-color-100">
                                         Delete download
                                     </span>
                                 ),
@@ -326,7 +326,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={5}>
                                         <ExpandableRowContent>
-                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md">
+                                            <Card className="pf-v6-u-m-md pf-v6-u-p-md">
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails
@@ -338,7 +338,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ReportParametersDetails
@@ -348,7 +348,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <NotifierConfigurationView
@@ -383,7 +383,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ScheduleDetails formValues={formValues} />
@@ -412,7 +412,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             variant="danger"
                             title={deleteDownloadError}
                             component="p"
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                         />
                     )}
                 </AlertGroup>

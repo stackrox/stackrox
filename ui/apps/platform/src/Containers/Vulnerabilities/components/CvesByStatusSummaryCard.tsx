@@ -92,13 +92,13 @@ function CvesByStatusSummaryCard({
         <Card isCompact isFullHeight>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
-                <Grid className="pf-v5-u-pl-sm">
+                <Grid className="pf-v6-u-pl-sm">
                     {statusDisplays.map(({ status, Icon, text }) => {
                         const isHidden = hiddenStatuses.has(status);
                         return (
                             <GridItem key={status} span={12}>
                                 <Flex
-                                    className="pf-v5-u-pt-sm"
+                                    className="pf-v6-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >

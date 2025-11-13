@@ -211,13 +211,13 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsSm' }}
-                    className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
+                    className="pf-v6-u-p-md pf-v6-u-pb-sm pf-v6-u-mb-0"
                 >
                     <FlexItem>
                         <Title headingLevel="h2" id={labelledById}>
                             Generated network policies
                         </Title>
-                        <Content component="p" className="pf-v5-u-font-weight-bold">
+                        <Content component="p" className="pf-v6-u-font-weight-bold">
                             Scope of baseline:
                         </Content>
                     </FlexItem>
@@ -254,7 +254,7 @@ function NetworkPolicySimulatorSidePanel({
                                         }
                                     >
                                         <button
-                                            className="pf-v5-u-color-200 pf-v5-u-pr-md"
+                                            className="pf-v6-u-color-200 pf-v6-u-pr-md"
                                             type="button"
                                             aria-label="More info on comparing changes"
                                         >
@@ -305,7 +305,7 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-v5-u-p-lg pf-v5-u-mb-0"
+                    className="pf-v6-u-p-lg pf-v6-u-mb-0"
                 >
                     <FlexItem>
                         <Title headingLevel="h2" id={labelledById}>
@@ -315,7 +315,7 @@ function NetworkPolicySimulatorSidePanel({
                 </Flex>
                 <Divider component="div" />
                 <Stack hasGutter>
-                    <StackItem className="pf-v5-u-p-md">
+                    <StackItem className="pf-v6-u-p-md">
                         <Alert
                             variant={simulator.error ? 'danger' : 'success'}
                             isInline
@@ -361,7 +361,7 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-v5-u-p-lg pf-v5-u-mb-0"
+                    className="pf-v6-u-p-lg pf-v6-u-mb-0"
                 >
                     <FlexItem>
                         <Title headingLevel="h2" id={labelledById}>
@@ -371,7 +371,7 @@ function NetworkPolicySimulatorSidePanel({
                 </Flex>
                 <Divider component="div" />
                 <Stack hasGutter>
-                    <StackItem className="pf-v5-u-p-md">
+                    <StackItem className="pf-v6-u-p-md">
                         <Alert
                             variant={simulator.error ? 'danger' : 'success'}
                             isInline
@@ -414,12 +414,12 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex
                     direction={{ default: 'column' }}
                     spaceItems={{ default: 'spaceItemsSm' }}
-                    className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
+                    className="pf-v6-u-p-md pf-v6-u-pb-sm pf-v6-u-mb-0"
                 >
                     <Title headingLevel="h2" id={labelledById}>
                         Generate network policies
                     </Title>
-                    <Content component="p" className="pf-v5-u-font-weight-bold">
+                    <Content component="p" className="pf-v6-u-font-weight-bold">
                         Scope of baseline:
                     </Content>
                     <NetworkPoliciesGenerationScope
@@ -448,7 +448,7 @@ function NetworkPolicySimulatorSidePanel({
                     id="Simulate_network_policies"
                     hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
                 >
-                    <div className="pf-v5-u-p-lg pf-v5-u-h-100">
+                    <div className="pf-v6-u-p-lg pf-v6-u-h-100">
                         <Stack hasGutter>
                             <StackItem>
                                 <Stack hasGutter>

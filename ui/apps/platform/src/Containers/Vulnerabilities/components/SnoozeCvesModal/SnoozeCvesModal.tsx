@@ -65,7 +65,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
             actions={[
                 <Button
                     key="perform-modal-action"
-                    className="pf-v5-u-display-flex pf-v5-u-align-items-center"
+                    className="pf-v6-u-display-flex pf-v6-u-align-items-center"
                     isLoading={isSubmitting}
                     isDisabled={isSubmitting || isSuccess}
                     onClick={submitForm}

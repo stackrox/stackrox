@@ -169,7 +169,7 @@ function CollectionsFormPage({
     if (error) {
         content = (
             <>
-                <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
+                <Breadcrumb className="pf-v6-u-my-xs pf-v6-u-px-lg pf-v6-u-py-md">
                     <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
                 </Breadcrumb>
                 <Divider component="div" />
@@ -219,7 +219,7 @@ function CollectionsFormPage({
                 getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>
-                        <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
+                        <Breadcrumb className="pf-v6-u-my-xs pf-v6-u-px-lg pf-v6-u-py-md">
                             <BreadcrumbItemLink to={collectionsBasePath}>
                                 Collections
                             </BreadcrumbItemLink>
@@ -227,11 +227,11 @@ function CollectionsFormPage({
                         </Breadcrumb>
                         <Divider component="div" />
                         <Flex
-                            className="pf-v5-u-p-lg"
+                            className="pf-v6-u-p-lg"
                             direction={{ default: 'column', md: 'row' }}
                             alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
                         >
-                            <Title className="pf-v5-u-flex-grow-1" headingLevel="h1">
+                            <Title className="pf-v6-u-flex-grow-1" headingLevel="h1">
                                 {pageName}
                             </Title>
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
@@ -266,7 +266,7 @@ function CollectionsFormPage({
                                             </DropdownItem>
                                         </MenuDropdown>
                                         <Divider
-                                            className="pf-v5-u-px-xs"
+                                            className="pf-v6-u-px-xs"
                                             orientation={{ default: 'vertical' }}
                                         />
                                     </>
@@ -286,7 +286,7 @@ function CollectionsFormPage({
                         <div ref={configErrorAlertElem}>
                             {configError && (
                                 <Alert
-                                    className="pf-v5-u-m-md"
+                                    className="pf-v6-u-m-md"
                                     title={configError.message}
                                     component="p"
                                     variant="danger"
@@ -308,7 +308,7 @@ function CollectionsFormPage({
     return (
         <PageSection
             hasBodyWrapper={false}
-            className="pf-v5-u-h-100"
+            className="pf-v6-u-h-100"
             padding={{ default: 'noPadding' }}
         >
             <PageTitle title={getPageTitle(pageAction, data)} />

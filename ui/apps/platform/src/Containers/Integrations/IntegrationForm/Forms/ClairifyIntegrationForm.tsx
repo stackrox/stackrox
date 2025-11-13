@@ -94,7 +94,7 @@ function ClairifyIntegrationForm({
                     component="p"
                     variant={'warning'}
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
                     <Content component="p">
                         StackRox Scanner will be removed in a future release.

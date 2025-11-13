@@ -207,7 +207,7 @@ function ComplianceLevelsByStandard() {
                             ? 'No standards selected'
                             : 'No results available.'
                     }
-                    className="pf-v5-u-h-100"
+                    className="pf-v6-u-h-100"
                     variant="xs"
                 >
                     <EmptyStateBody>

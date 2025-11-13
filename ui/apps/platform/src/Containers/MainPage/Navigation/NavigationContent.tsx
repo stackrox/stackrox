@@ -31,7 +31,7 @@ function NavigationContent({ children, variant }: NavigationContentProps): React
     return (
         <>
             <span>{children}</span>
-            <span className="pf-v5-u-ml-sm">{badgeMap[variant]}</span>
+            <span className="pf-v6-u-ml-sm">{badgeMap[variant]}</span>
         </>
     );
 }

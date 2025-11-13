@@ -37,7 +37,7 @@ function SystemConfigDetails({
         <>
             <PageSection hasBodyWrapper={false} data-testid="platform-components-config">
                 <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                    <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                    <Title headingLevel="h2" className="pf-v6-u-mb-md">
                         Platform components configuration
                     </Title>
                     <Popover
@@ -54,7 +54,7 @@ function SystemConfigDetails({
                             variant="plain"
                             isInline
                             aria-label="Show platform components config info"
-                            className="pf-v5-u-p-0"
+                            className="pf-v6-u-p-0"
                         />
                     </Popover>
                 </Flex>
@@ -62,14 +62,14 @@ function SystemConfigDetails({
                     Define platform components using namespaces to segment platform security
                     findings from user workloads
                 </Content>
-                <div className="pf-v5-u-mt-lg">
+                <div className="pf-v6-u-mt-lg">
                     <PlatformComponentsConfigDetails
                         platformComponentConfig={systemConfig.platformComponentConfig}
                     />
                 </div>
             </PageSection>
             <PageSection hasBodyWrapper={false} data-testid="private-data-retention-config">
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                <Title headingLevel="h2" className="pf-v6-u-mb-md">
                     Private data retention configuration
                 </Title>
                 <PrivateConfigDataRetentionDetails
@@ -78,7 +78,7 @@ function SystemConfigDetails({
                 />
             </PageSection>
             <PageSection hasBodyWrapper={false} data-testid="private-prometheus-config">
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                <Title headingLevel="h2" className="pf-v6-u-mb-md">
                     Prometheus metrics configuration
                 </Title>
                 <Content component="p">
@@ -93,7 +93,7 @@ function SystemConfigDetails({
                 </Grid>
             </PageSection>
             <PageSection hasBodyWrapper={false} data-testid="public-config">
-                <Title headingLevel="h2" className="pf-v5-u-mb-md">
+                <Title headingLevel="h2" className="pf-v6-u-mb-md">
                     Public configuration
                 </Title>
                 <Grid hasGutter>

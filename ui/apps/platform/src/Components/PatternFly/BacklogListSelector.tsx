@@ -63,7 +63,7 @@ function BacklogTable<Item>({
                 <>
                     {label}
                     {showBadge && (
-                        <Badge className="pf-v5-u-ml-sm" isRead>
+                        <Badge className="pf-v6-u-ml-sm" isRead>
                             {items.length}
                         </Badge>
                     )}
@@ -85,7 +85,7 @@ function BacklogTable<Item>({
                                         variant="link"
                                         onClick={() => listAction(item)}
                                         icon={actionIcon}
-                                        className="pf-v5-u-text-nowrap"
+                                        className="pf-v6-u-text-nowrap"
                                         isInline
                                     >
                                         {buttonText}

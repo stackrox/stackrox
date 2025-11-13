@@ -75,7 +75,7 @@ function EditVulnReportPage() {
         <>
             <PageTitle title="Create vulnerability report" />
             <ReportFormErrorAlert error={saveError} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
@@ -85,7 +85,7 @@ function EditVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h1">Edit report</Title>
                     </FlexItem>

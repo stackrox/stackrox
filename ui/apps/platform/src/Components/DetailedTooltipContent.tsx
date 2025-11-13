@@ -30,10 +30,10 @@ function DetailedTooltipContent({
     } as CSSProperties;
 
     return (
-        <div className={`pf-v5-u-max-height ${extraClassName}`} style={styleConstant}>
+        <div className={`pf-v6-u-max-height ${extraClassName}`} style={styleConstant}>
             <div>
                 <Content
-                    className="pf-v5-u-font-weight-bold"
+                    className="pf-v6-u-font-weight-bold"
                     component={ContentVariants.h3}
                     data-testid="tooltip-title"
                 >

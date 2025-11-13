@@ -50,7 +50,7 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
             <PageSection
                 hasBodyWrapper={false}
                 component="div"
-                className="pf-v5-u-py-md pf-v5-u-px-xl"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
             >
                 <Content component="p">
                     Review the signature verification results for this image
@@ -59,10 +59,10 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
             <Divider component="div" />
             <PageSection
                 hasBodyWrapper={false}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
-                <div className="pf-v5-u-background-color-100 pf-v5-u-pt-sm">
+                <div className="pf-v6-u-background-color-100 pf-v6-u-pt-sm">
                     <Table borders={false} variant="compact">
                         <Thead noWrap>
                             <Tr>

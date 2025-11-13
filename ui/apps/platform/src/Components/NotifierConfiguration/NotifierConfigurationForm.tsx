@@ -108,7 +108,7 @@ function NotifierConfigurationForm({
                         customSubject,
                     });
                     return (
-                        <li key={keyFor(index)} className="pf-v5-u-mb-md">
+                        <li key={keyFor(index)} className="pf-v6-u-mb-md">
                             <Card>
                                 <CardTitle>
                                     <Flex
@@ -187,7 +187,7 @@ function NotifierConfigurationForm({
                                         }}
                                         setNotifiers={setNotifiers}
                                     />
-                                    <div className="pf-v5-u-mt-md">
+                                    <div className="pf-v6-u-mt-md">
                                         <FormLabelGroup
                                             label="Email template"
                                             labelIcon={

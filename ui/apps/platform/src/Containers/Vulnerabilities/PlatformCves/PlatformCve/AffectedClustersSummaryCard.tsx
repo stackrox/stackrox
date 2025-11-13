@@ -14,7 +14,7 @@ function AffectedClustersSummaryCard({
             <CardTitle>Affected clusters</CardTitle>
             <CardBody>
                 <Grid>
-                    <GridItem span={12} className="pf-v5-u-pt-sm">
+                    <GridItem span={12} className="pf-v6-u-pt-sm">
                         {affectedClusterCount} / {totalClusterCount} affected clusters
                     </GridItem>
                 </Grid>

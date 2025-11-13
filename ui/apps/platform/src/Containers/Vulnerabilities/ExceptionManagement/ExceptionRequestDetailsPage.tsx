@@ -188,7 +188,7 @@ function ExceptionRequestDetailsPage() {
                     please submit a new request
                 </Alert>
             )}
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
                         Exception management
@@ -229,12 +229,12 @@ function ExceptionRequestDetailsPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
                 {isApprovedPendingUpdate && (
                     <Tabs
                         activeKey={selectedContext}
                         onSelect={handleTabClick}
-                        className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
+                        className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
                     >
                         <Tab
                             eventKey="PENDING_UPDATE"

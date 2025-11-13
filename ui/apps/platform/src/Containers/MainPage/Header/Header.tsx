@@ -28,7 +28,7 @@ function Header(): ReactElement {
             <Banners />
 
             <MastheadMain>
-                <MastheadToggle className="pf-v5-u-pl-lg">
+                <MastheadToggle className="pf-v6-u-pl-lg">
                     <PageToggleButton isHamburgerButton variant="plain"></PageToggleButton>
                 </MastheadToggle>
                 <MastheadBrand data-codemods>
@@ -37,7 +37,7 @@ function Header(): ReactElement {
                     </MastheadLogo>
                 </MastheadBrand>
             </MastheadMain>
-            <MastheadContent className="pf-v5-u-flex-grow-1 pf-v5-u-justify-content-flex-end pf-v5-u-pr-lg">
+            <MastheadContent className="pf-v6-u-flex-grow-1 pf-v6-u-justify-content-flex-end pf-v6-u-pr-lg">
                 <MastheadToolbar />
             </MastheadContent>
         </Masthead>

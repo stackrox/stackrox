@@ -180,7 +180,7 @@ function AuthProviders(): ReactElement {
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <MenuDropdown
-                                    toggleClassName="auth-provider-dropdown pf-v5-u-ml-md"
+                                    toggleClassName="auth-provider-dropdown pf-v6-u-ml-md"
                                     toggleText="Create auth provider"
                                     toggleVariant="primary"
                                     onSelect={onClickCreate}

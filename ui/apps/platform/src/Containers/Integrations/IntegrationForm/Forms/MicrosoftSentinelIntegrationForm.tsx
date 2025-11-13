@@ -281,7 +281,7 @@ function MicrosoftSentinelIntegrationForm({
                         <CardBody>
                             <ToggleGroup
                                 aria-label="Authentication method selection"
-                                className="pf-v5-u-pb-md"
+                                className="pf-v6-u-pb-md"
                             >
                                 <ToggleGroupItem
                                     text="Use secret"

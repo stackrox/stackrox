@@ -187,7 +187,7 @@ function ConfigReportsTab() {
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
-                    className="pf-v5-u-py-lg pf-v5-u-px-lg"
+                    className="pf-v6-u-py-lg pf-v6-u-px-lg"
                 >
                     <Content component="p">
                         Configure reports, define collections, and assign delivery destinations to
@@ -205,10 +205,10 @@ function ConfigReportsTab() {
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <PageSection hasBodyWrapper={false} isCenterAligned>
                     <Card>
-                        <CardBody className="pf-v5-u-p-0">
+                        <CardBody className="pf-v6-u-p-0">
                             <Toolbar>
                                 <ToolbarContent>
-                                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                                         <SearchInput
                                             placeholder="Filter by report name"
                                             value={searchValue}
@@ -256,7 +256,7 @@ function ConfigReportsTab() {
                                 </ToolbarContent>
                             </Toolbar>
                             {isLoading && !reportConfigurations && (
-                                <div className="pf-v5-u-p-md">
+                                <div className="pf-v6-u-p-md">
                                     <Bullseye>
                                         <Spinner />
                                     </Bullseye>
@@ -462,7 +462,7 @@ function ConfigReportsTab() {
                                                     <span
                                                         className={
                                                             !isReportStatusPending
-                                                                ? 'pf-v5-u-danger-color-100'
+                                                                ? 'pf-v6-u-danger-color-100'
                                                                 : ''
                                                         }
                                                     >
@@ -570,7 +570,7 @@ function ConfigReportsTab() {
                                 numSuccessfulDeletions
                             )}`}
                             component="p"
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                         />
                     )}
                     {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
@@ -586,7 +586,7 @@ function ConfigReportsTab() {
                                 variant="danger"
                                 title={`Failed to delete "${report.name}"`}
                                 component="p"
-                                className="pf-v5-u-mb-sm"
+                                className="pf-v6-u-mb-sm"
                             >
                                 {deleteResult.error}
                             </Alert>

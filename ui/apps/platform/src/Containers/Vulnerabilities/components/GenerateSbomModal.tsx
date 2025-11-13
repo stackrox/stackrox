@@ -59,7 +59,7 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
             variant="medium"
             header={
                 <Flex
-                    className="pf-v5-u-mr-md"
+                    className="pf-v6-u-mr-md"
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                 >

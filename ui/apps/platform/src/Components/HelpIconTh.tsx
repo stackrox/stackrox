@@ -26,7 +26,7 @@ function HelpIconTh({ children, sort, popoverContent }: HelpIconThProps) {
                             variant="plain"
                             isInline
                             aria-label="Show table column info"
-                            className="pf-v5-u-p-0"
+                            className="pf-v6-u-p-0"
                         />
                     </Popover>
                 </FlexItem>

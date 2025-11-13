@@ -55,7 +55,7 @@ function TimestampedEventCard<T>({
                         columnModifier={{
                             default: '2Col',
                         }}
-                        className="pf-v5-u-my-md"
+                        className="pf-v6-u-my-md"
                     >
                         <DescriptionListItem
                             term="First occurrence"

@@ -62,8 +62,8 @@ function PolicyOverview({
                 </DescriptionList>
                 {notifierIds?.length !== 0 && (
                     <>
-                        <Divider component="div" className="pf-v5-u-mt-md" />
-                        <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
+                        <Divider component="div" className="pf-v6-u-mt-md" />
+                        <Title headingLevel="h3" className="pf-v6-u-pt-md pf-v6-u-pb-sm">
                             Notifiers
                         </Title>
                         <Grid hasGutter sm={12} md={6}>
@@ -82,8 +82,8 @@ function PolicyOverview({
                         </Grid>
                     </>
                 )}
-                <Divider component="div" className="pf-v5-u-mt-md" />
-                <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
+                <Divider component="div" className="pf-v6-u-mt-md" />
+                <Title headingLevel="h3" className="pf-v6-u-mb-md pf-v6-u-pt-lg">
                     MITRE ATT&CK
                 </Title>
                 <MitreAttackVectorsViewContainer

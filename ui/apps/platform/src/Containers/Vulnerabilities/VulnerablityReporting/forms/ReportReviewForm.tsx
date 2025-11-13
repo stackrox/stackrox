@@ -22,7 +22,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormProps): ReactEl
     return (
         <>
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
@@ -32,10 +32,10 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormProps): ReactEl
             <PageSection
                 hasBodyWrapper={false}
                 padding={{ default: 'noPadding' }}
-                className="pf-v5-u-py-lg pf-v5-u-px-lg"
+                className="pf-v6-u-py-lg pf-v6-u-px-lg"
             >
                 <ReportParametersDetails headingLevel={headingLevel} formValues={formValues} />
-                <Divider component="div" className="pf-v5-u-py-md" />
+                <Divider component="div" className="pf-v6-u-py-md" />
                 <NotifierConfigurationView
                     headingLevel={headingLevel}
                     customBodyDefault={defaultEmailBody}
@@ -57,7 +57,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormProps): ReactEl
                         />
                     )}
                 />
-                <Divider component="div" className="pf-v5-u-py-md" />
+                <Divider component="div" className="pf-v6-u-py-md" />
                 <ScheduleDetails formValues={formValues} />
             </PageSection>
         </>

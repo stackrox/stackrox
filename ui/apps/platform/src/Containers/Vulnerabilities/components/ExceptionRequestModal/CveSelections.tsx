@@ -25,7 +25,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
 
     return (
         <>
-            <div className="pf-v5-u-mb-md">
+            <div className="pf-v6-u-mb-md">
                 <Alert
                     title="Include or exclude selected CVEs"
                     component="p"
@@ -42,7 +42,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                     return (
                         <ListItem
                             key={cve}
-                            className={!isSelected ? 'pf-v5-u-background-color-200' : ''}
+                            className={!isSelected ? 'pf-v6-u-background-color-200' : ''}
                         >
                             <Flex direction={{ default: 'column' }}>
                                 <Flex direction={{ default: 'row' }}>

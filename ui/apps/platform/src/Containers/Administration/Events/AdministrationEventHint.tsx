@@ -48,7 +48,7 @@ function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactE
                 Array.isArray(lineOrList) ? (
                     <List key={lineOrListIndex}>
                         {lineOrList.map((listItem, listItemIndex) => (
-                            <ListItem key={listItemIndex} className="pf-v5-u-mt-0">
+                            <ListItem key={listItemIndex} className="pf-v6-u-mt-0">
                                 {listItem}
                             </ListItem>
                         ))}

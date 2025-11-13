@@ -36,7 +36,7 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
                             included in the platform definition by default.
                         </Content>
                         <Divider component="div" />
-                        <Content component="small" className="pf-v5-u-color-200">
+                        <Content component="small" className="pf-v6-u-color-200">
                             Namespaces match (Regex)
                         </Content>
                         <CodeBlock>
@@ -45,7 +45,7 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
                             </div>
                         </CodeBlock>
                         {rule?.namespaceRule.regex !== '' && (
-                            <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
+                            <StackItem className="pf-v6-u-text-align-center pf-v6-u-mt-sm">
                                 <Button variant="link" isInline onClick={toggleModal}>
                                     View more
                                 </Button>

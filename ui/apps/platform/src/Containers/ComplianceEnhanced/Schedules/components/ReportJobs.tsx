@@ -201,7 +201,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                             onChange={onReportJobStatusFilterChange}
                         />
                     </ToolbarItem>
-                    <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
+                    <ToolbarItem className="pf-v6-u-flex-grow-1" alignSelf="center">
                         <MyJobsFilter
                             isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
                             onMyJobsFilterChange={onMyJobsFilterChange}
@@ -247,7 +247,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                                         reportStatus={snapshot.reportStatus}
                                         isDownloadAvailable={snapshot.isDownloadAvailable}
                                     />
-                                    <Divider component="div" className="pf-v5-u-my-md" />
+                                    <Divider component="div" className="pf-v6-u-my-md" />
                                     <ConfigDetails scanConfig={snapshot.reportData} />
                                 </CardBody>
                             </Card>
@@ -269,7 +269,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                             variant="danger"
                             title={deleteDownloadError}
                             component="p"
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                         />
                     )}
                 </AlertGroup>

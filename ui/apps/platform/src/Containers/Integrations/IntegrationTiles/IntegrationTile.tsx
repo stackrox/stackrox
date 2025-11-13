@@ -44,20 +44,20 @@ function IntegrationTile({
                             hasNoOffset: false,
                             className: undefined,
                         }}
-                        className="pf-v5-u-mb-lg"
+                        className="pf-v6-u-mb-lg"
                     >
                         <>
                             <img src={image} alt="" style={{ height: '100px' }} />
                         </>
                     </CardHeader>
-                    <CardTitle className="pf-v5-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                    <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
                         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                             <Truncate position="middle" content={label} />
                             {isTechPreview && <TechPreviewLabel />}
                         </Flex>
                     </CardTitle>
                     {categories && (
-                        <CardFooter className="pf-v5-u-color-200">{categories}</CardFooter>
+                        <CardFooter className="pf-v6-u-color-200">{categories}</CardFooter>
                     )}
                 </Card>
             </Link>

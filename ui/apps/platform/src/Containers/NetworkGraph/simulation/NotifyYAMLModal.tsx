@@ -115,7 +115,7 @@ function NotifyYAMLModal({
                     variant="danger"
                     title={errorMessage}
                     component="p"
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 />
             )}
             {content}

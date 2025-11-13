@@ -52,10 +52,10 @@ function PolicyCategoriesListSection({
                 <Flex
                     spaceItems={{ default: 'spaceItemsNone' }}
                     alignItems={{ default: 'alignItemsStretch' }}
-                    className="pf-v5-u-h-100"
+                    className="pf-v6-u-h-100"
                 >
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <PageSection hasBodyWrapper={false} isFilled className="pf-v5-u-h-100">
+                        <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-h-100">
                             <Flex direction={{ default: 'column' }}>
                                 <Title headingLevel="h2">
                                     <Flex

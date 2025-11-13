@@ -31,7 +31,7 @@ const labelIconClusterLabelSelector = (
         isContentLeftAligned
         maxWidth="24rem"
     >
-        <div className="pf-v5-c-button pf-m-plain pf-m-smallest pf-v5-u-ml-sm">
+        <div className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -45,7 +45,7 @@ const labelIconNamespaceLabelSelector = (
         isContentLeftAligned
         maxWidth="24rem"
     >
-        <div className="pf-v5-c-button pf-m-plain pf-m-smallest pf-v5-u-ml-sm">
+        <div className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -186,13 +186,13 @@ function LabelSelectorCard({
                     },
                 })}
             >
-                <CardTitle className="pf-v5-u-font-size-sm">
+                <CardTitle className="pf-v6-u-font-size-sm">
                     {title}
                     {labelIconLabelSelector}
                 </CardTitle>
             </CardHeader>
             <CardBody>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v6-u-pb-sm">
                     <FlexItem>
                         <strong>Rules</strong>
                     </FlexItem>
@@ -215,7 +215,7 @@ function LabelSelectorCard({
                         <Tbody
                             className={
                                 labelSelectorsKey === 'namespaceLabelSelectors'
-                                    ? 'pf-v5-u-background-color-200'
+                                    ? 'pf-v6-u-background-color-200'
                                     : ''
                             }
                         >
@@ -254,7 +254,7 @@ function LabelSelectorCard({
                     </Table>
                 )}
                 {hasAction && (
-                    <Toolbar className="pf-v5-u-pb-0" inset={{ default: 'insetNone' }}>
+                    <Toolbar className="pf-v6-u-pb-0" inset={{ default: 'insetNone' }}>
                         {isLabelSelectorActive ? (
                             <ToolbarContent>
                                 <ToolbarItem>
@@ -262,7 +262,7 @@ function LabelSelectorCard({
                                         key="Add rule"
                                         variant="link"
                                         isInline
-                                        icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
+                                        icon={<PlusCircleIcon className="pf-v6-u-mr-sm" />}
                                         onClick={onAddRequirement}
                                         isDisabled={indexRequirementActive !== -1}
                                     >

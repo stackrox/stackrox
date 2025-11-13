@@ -149,7 +149,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
-                className="pf-v5-u-p-lg"
+                className="pf-v6-u-p-lg"
             >
                 <Title headingLevel="h2">Lifecycle</Title>
                 <div>
@@ -172,7 +172,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             <Flex
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsNone' }}
-                className="pf-v5-u-px-lg pf-v5-u-pt-lg"
+                className="pf-v6-u-px-lg pf-v6-u-pt-lg"
             >
                 <Alert
                     variant="info"
@@ -180,12 +180,12 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     isInline
                     title="How policies work in each lifecycle stage"
                     component="p"
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                 >
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
-                        className="pf-v5-u-pt-sm"
+                        className="pf-v6-u-pt-sm"
                     >
                         <p>
                             <strong>Build stage</strong> policies can inspect only images built in
@@ -213,7 +213,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             the offending pod. Enforcement is not available for the policies
                             inspecting sensitive operations via the Kubernetes audit log.
                         </p>
-                        <div className="pf-v5-u-pt-md">
+                        <div className="pf-v6-u-pt-md">
                             Learn more about policy{' '}
                             <ExternalLink>
                                 <a
@@ -233,7 +233,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                 </Alert>
             </Flex>
             <Form>
-                <div className="pf-v5-u-px-lg">
+                <div className="pf-v6-u-px-lg">
                     <FormLabelGroup
                         label="Lifecycle stages"
                         fieldId="lifecycleStages"
@@ -244,7 +244,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             'Choose the lifecycle stage to which your policy is applicable.'
                         }
                     >
-                        <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
+                        <Flex direction={{ default: 'row' }} className="pf-v6-u-pb-sm">
                             <Radio
                                 label="Build"
                                 isChecked={isBuild}
@@ -303,7 +303,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
                         isRequired={isRuntime}
-                        className="pf-v5-u-pt-lg"
+                        className="pf-v6-u-pt-lg"
                     >
                         <Flex direction={{ default: 'row' }}>
                             <Radio

@@ -156,7 +156,7 @@ function ClusterSelection({
     return (
         <>
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Clusters</Title>
                     </FlexItem>
@@ -164,7 +164,7 @@ function ClusterSelection({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
+            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
                 <Alert
                     title="At least one cluster must be in a Healthy state to proceed with the schedule."
                     variant="info"

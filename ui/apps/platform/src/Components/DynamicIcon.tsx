@@ -14,7 +14,7 @@ export function DynamicIcon(props: SVGIconProps) {
 }
 
 export function DynamicColumnIcon() {
-    return <DynamicIcon className="pf-v5-u-display-inline pf-v5-u-ml-sm" />;
+    return <DynamicIcon className="pf-v6-u-display-inline pf-v6-u-ml-sm" />;
 }
 
 export function DynamicTableLabel() {

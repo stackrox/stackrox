@@ -74,10 +74,10 @@ describe('Compliance Schedules', () => {
 
         // check empty state message and call-to-action
         cy.get('h2:contains("No scan schedules")');
-        cy.get('.pf-v5-c-empty-state__content a:contains("Create scan schedule")').click();
+        cy.get('.pf-v6-c-empty-state__content a:contains("Create scan schedule")').click();
         cy.location('search').should('eq', '?action=create');
 
-        cy.get('.pf-v5-c-wizard__footer button:contains("Cancel")').click();
+        cy.get('.pf-v6-c-wizard__footer button:contains("Cancel")').click();
     });
 
     it('should have have a form to add a new scan config', () => {
@@ -93,7 +93,7 @@ describe('Compliance Schedules', () => {
         cy.get(`h1:contains("Create scan schedule")`);
 
         // Step 0, should start out with disabled Back button
-        cy.get('.pf-v5-c-wizard__footer button:contains("Back")').should('be.disabled');
+        cy.get('.pf-v6-c-wizard__footer button:contains("Back")').should('be.disabled');
 
         // Step 1, check empty fields
         getInputByLabel('Name').click().blur();

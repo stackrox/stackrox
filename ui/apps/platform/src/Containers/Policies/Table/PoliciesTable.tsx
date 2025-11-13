@@ -208,7 +208,7 @@ function PoliciesTable({
             <PageSection hasBodyWrapper={false} isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v6-u-w-100">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -219,7 +219,7 @@ function PoliciesTable({
                                 defaultAttribute={'Name'}
                             />
                         </ToolbarItem>
-                        <ToolbarItem className="pf-v5-u-w-100">
+                        <ToolbarItem className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={handleChangeSearchFilter}
@@ -519,7 +519,7 @@ function PoliciesTable({
                                                                         key={
                                                                             notifierCountWithLabelString
                                                                         }
-                                                                        className="pf-v5-u-text-nowrap"
+                                                                        className="pf-v6-u-text-nowrap"
                                                                     >
                                                                         {
                                                                             notifierCountWithLabelString
@@ -606,7 +606,7 @@ function PoliciesTable({
                     <FlexItem>
                         <strong>Important</strong>: If you are committing the saved custom resource
                         to a source control repository, replace the policy name in the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        <code className="pf-v6-u-font-family-monospace">policyName</code> field to
                         avoid overwriting existing policies.
                     </FlexItem>
                 </Flex>

@@ -39,7 +39,7 @@ function VulnReportingLayout() {
             <PageSection
                 hasBodyWrapper={false}
                 padding={{ default: 'noPadding' }}
-                className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
+                className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
             >
                 <Tabs activeKey={activeTabIndex} onSelect={onTabSelect}>
                     {tabs.map((tab, index) => (

@@ -433,7 +433,7 @@ function S3CompatibleIntegrationForm({
                                         <Content component="p">
                                             Defines the bucket URL addressing:
                                         </Content>
-                                        <List className="pf-v5-u-py-sm">
+                                        <List className="pf-v6-u-py-sm">
                                             <ListItem>
                                                 Virtual-hosted-style buckets are addressed as
                                                 https://&#60;bucket&#62;.&#60;endpoint&#62

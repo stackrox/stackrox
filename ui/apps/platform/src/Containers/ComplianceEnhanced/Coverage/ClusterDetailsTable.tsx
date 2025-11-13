@@ -87,8 +87,8 @@ function ClusterDetailsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
+                    <ToolbarGroup className="pf-v6-u-w-100">
+                        <ToolbarItem className="pf-v6-u-flex-1">
                             <CompoundSearchFilter
                                 config={searchFilterConfig}
                                 searchFilter={searchFilter}
@@ -111,7 +111,7 @@ function ClusterDetailsTable({
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
@@ -181,7 +181,7 @@ function ClusterDetailsTable({
                                                 <div style={{ display: 'grid' }}>
                                                     <Content
                                                         component={ContentVariants.small}
-                                                        className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                        className="pf-v6-u-color-200 pf-v6-u-text-truncate"
                                                     >
                                                         {rationale}
                                                     </Content>

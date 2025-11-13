@@ -96,7 +96,7 @@ function PlatformCvePage() {
     return (
         <>
             <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
                         Kubernetes components
@@ -113,7 +113,7 @@ function PlatformCvePage() {
                         direction={{ default: 'column' }}
                         alignItems={{ default: 'alignItemsFlexStart' }}
                     >
-                        <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+                        <Title headingLevel="h1" className="pf-v6-u-mb-sm">
                             {cveMetadata.cve}
                         </Title>
                         {cveMetadata.firstDiscoveredTime && (
@@ -143,9 +143,9 @@ function PlatformCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-flex-grow-1">
                 <AdvancedFiltersToolbar
-                    className="pf-v5-u-pb-0 pf-v5-u-px-sm"
+                    className="pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     cveStatusFilterField="CLUSTER CVE FIXABLE"
@@ -180,8 +180,8 @@ function PlatformCvePage() {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
-                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1 pf-v6-u-p-lg">
+                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <Title headingLevel="h2">

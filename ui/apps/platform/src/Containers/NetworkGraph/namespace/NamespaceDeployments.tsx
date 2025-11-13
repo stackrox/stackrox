@@ -34,7 +34,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
     });
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             <Stack hasGutter>
                 <StackItem>
                     <SearchInput

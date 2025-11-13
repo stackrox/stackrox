@@ -179,7 +179,7 @@ function EffectiveAccessScopeTable({
                 <TreeRowWrapper
                     key={namespaceId}
                     row={{ props: namespaceProps }}
-                    className="pf-v5-u-background-color-200"
+                    className="pf-v6-u-background-color-200"
                 >
                     <Td
                         dataLabel="Namespace name"
@@ -251,12 +251,12 @@ function EffectiveAccessScopeTable({
 
     return (
         <>
-            <Flex className="pf-v5-u-pt-sm pf-v5-u-pb-sm pf-v5-u-pl-lg">
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
+            <Flex className="pf-v6-u-pt-sm pf-v6-u-pb-sm pf-v6-u-pl-lg">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v6-u-pb-sm">
                     <FlexItem>
                         <label
                             htmlFor="Cluster_filter"
-                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
+                            className="pf-v6-u-font-size-sm pf-v6-u-text-nowrap"
                         >
                             Cluster filter:
                         </label>
@@ -273,11 +273,11 @@ function EffectiveAccessScopeTable({
                         <Badge isRead>{`${clusterFilterCount} / ${clusters.length}`}</Badge>
                     </FlexItem>
                 </Flex>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v6-u-pb-sm">
                     <FlexItem>
                         <label
                             htmlFor="Namespace_filter"
-                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
+                            className="pf-v6-u-font-size-sm pf-v6-u-text-nowrap"
                         >
                             Namespace filter:
                         </label>

@@ -247,7 +247,7 @@ function ImagePageVulnerabilities({
             <PageSection
                 hasBodyWrapper={false}
                 component="div"
-                className="pf-v5-u-py-md pf-v5-u-px-xl"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
             >
                 <Content component="p">
                     Review and triage vulnerability data scanned on this image
@@ -257,7 +257,7 @@ function ImagePageVulnerabilities({
             <PageSection
                 hasBodyWrapper={false}
                 id={vulnStateTabContentId}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {showVulnerabilityStateTabs && (
@@ -269,9 +269,9 @@ function ImagePageVulnerabilities({
                         }}
                     />
                 )}
-                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
+                <div className="pf-v6-u-px-sm pf-v6-u-background-color-100">
                     <AdvancedFiltersToolbar
-                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                        className="pf-v6-u-pt-lg pf-v6-u-pb-0"
                         searchFilterConfig={searchFilterConfig}
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter, searchPayload) => {
@@ -287,7 +287,7 @@ function ImagePageVulnerabilities({
                         {additionalToolbarItems}
                     </AdvancedFiltersToolbar>
                 </div>
-                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
+                <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100">
                     <SummaryCardLayout error={error} isLoading={loading}>
                         <SummaryCard
                             data={data?.image}
@@ -312,8 +312,8 @@ function ImagePageVulnerabilities({
                         />
                     </SummaryCardLayout>
                     <Divider />
-                    <div className="pf-v5-u-p-lg">
-                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                    <div className="pf-v6-u-p-lg">
+                        <Split hasGutter className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -361,7 +361,7 @@ function ImagePageVulnerabilities({
                                         </MenuDropdown>
                                     </SplitItem>
                                     <Divider
-                                        className="pf-v5-u-px-lg"
+                                        className="pf-v6-u-px-lg"
                                         orientation={{ default: 'vertical' }}
                                     />
                                 </>

@@ -220,14 +220,14 @@ const SystemConfigForm = ({
 
     return (
         <Flex>
-            <FlexItem grow={{ default: 'grow' }} className="pf-v5-u-p-lg">
+            <FlexItem grow={{ default: 'grow' }} className="pf-v6-u-p-lg">
                 {typeof errorMessage === 'string' && (
                     <Alert
                         variant="danger"
                         isInline
                         title="Failed to save system configuration"
                         component="p"
-                        className="pf-v5-u-mb-md"
+                        className="pf-v6-u-mb-md"
                     >
                         {errorMessage}
                     </Alert>
@@ -423,7 +423,7 @@ const SystemConfigForm = ({
                                 isRequired
                                 fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
                             >
-                                <Split hasGutter className="pf-v5-u-align-items-center">
+                                <Split hasGutter className="pf-v6-u-align-items-center">
                                     <SplitItem isFilled>
                                         <TextInput
                                             isRequired
@@ -860,7 +860,7 @@ const SystemConfigForm = ({
                                     </CardHeader>
                                     <Divider component="div" />
                                     <CardBody>
-                                        <p className="pf-v5-u-mb-sm">
+                                        <p className="pf-v6-u-mb-sm">
                                             Online telemetry data collection allows Red Hat to use
                                             anonymized information to enhance your user experience.
                                             Consult the documentation to see what is collected, and
@@ -875,13 +875,13 @@ const SystemConfigForm = ({
             </FlexItem>
             <FlexItem
                 style={{ position: 'sticky', bottom: 0, zIndex: 100 }}
-                className="pf-v5-u-w-100 pf-v5-u-background-color-100"
+                className="pf-v6-u-w-100 pf-v6-u-background-color-100"
             >
                 <Divider component="div" />
                 <Flex
                     justifyContent={{ default: 'justifyContentFlexStart' }}
                     spaceItems={{ default: 'spaceItemsMd' }}
-                    className="pf-v5-u-mx-lg pf-v5-u-p-md"
+                    className="pf-v6-u-mx-lg pf-v6-u-p-md"
                 >
                     <FlexItem>
                         <Button

@@ -33,7 +33,7 @@ function ProfileDetailsHeader({
     if (isLoading) {
         return (
             <Flex
-                className="pf-v5-u-p-md pf-v5-u-background-color-100"
+                className="pf-v6-u-p-md pf-v6-u-background-color-100"
                 direction={{ default: 'column' }}
             >
                 <Title headingLevel="h2">{profileName}</Title>
@@ -47,7 +47,7 @@ function ProfileDetailsHeader({
 
         return (
             <Flex
-                className="pf-v5-u-p-md pf-v5-u-background-color-100"
+                className="pf-v6-u-p-md pf-v6-u-background-color-100"
                 direction={{ default: 'column' }}
             >
                 <Flex
@@ -67,13 +67,13 @@ function ProfileDetailsHeader({
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Content component="p" className="pf-v5-u-font-size-sm">
+                    <Content component="p" className="pf-v6-u-font-size-sm">
                         {title}
                     </Content>
                 </FlexItem>
                 <FlexItem>
                     <ExpandableSection
-                        className="pf-v5-u-font-size-sm"
+                        className="pf-v6-u-font-size-sm"
                         isExpanded={isExpanded}
                         toggleText={isExpanded ? 'Show less' : 'Show more'}
                         truncateMaxLines={5}

@@ -30,12 +30,12 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
             ]}
         >
             <Flex
-                className="pf-v5-u-mt-md"
+                className="pf-v6-u-mt-md"
                 direction={{ default: 'column', md: 'row' }}
                 flexWrap={{ default: 'nowrap' }}
             >
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
-                    <Content component="p" className="pf-v5-u-font-weight-bold">
+                    <Content component="p" className="pf-v6-u-font-weight-bold">
                         Existing network policies
                     </Content>
                     <NetworkPoliciesYAML
@@ -44,7 +44,7 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
                     />
                 </Flex>
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
-                    <Content component="p" className="pf-v5-u-font-weight-bold">
+                    <Content component="p" className="pf-v6-u-font-weight-bold">
                         Generated network policies
                     </Content>
                     <NetworkPoliciesYAML

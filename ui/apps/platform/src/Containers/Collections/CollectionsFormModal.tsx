@@ -92,7 +92,7 @@ function CollectionsFormModal({
 
     if (error) {
         content = (
-            <Bullseye className="pf-v5-u-p-2xl">
+            <Bullseye className="pf-v6-u-p-2xl">
                 <CollectionLoadError
                     title="There was an error loading this collection"
                     error={error}
@@ -102,7 +102,7 @@ function CollectionsFormModal({
         modalTitle = 'Collection error';
     } else if (isLoading) {
         content = (
-            <Bullseye className="pf-v5-u-p-2xl">
+            <Bullseye className="pf-v6-u-p-2xl">
                 <Spinner />
             </Bullseye>
         );
@@ -163,7 +163,7 @@ function CollectionsFormModal({
             width="90vw"
             hasNoBodyWrapper
             header={
-                <Flex className="pf-v5-u-pb-md" alignItems={{ default: 'alignItemsCenter' }}>
+                <Flex className="pf-v6-u-pb-md" alignItems={{ default: 'alignItemsCenter' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                         <Title headingLevel="h2">{modalTitle}</Title>
                     </FlexItem>
@@ -173,7 +173,7 @@ function CollectionsFormModal({
         >
             {configError && (
                 <Alert
-                    className="pf-v5-u-mx-lg pf-v5-u-mb-md"
+                    className="pf-v6-u-mx-lg pf-v6-u-mb-md"
                     title={configError.message}
                     component="p"
                     variant="danger"
