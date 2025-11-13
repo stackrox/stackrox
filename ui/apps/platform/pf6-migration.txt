@@ -20,4 +20,8 @@ npm install \
 
 npx @patternfly/pf-codemods@latest . --v6 --fix
 
+npm run lint:fix
+
+npm install victory
+
 
