@@ -208,7 +208,7 @@ func TestCentralStatusPredicate_ObservedGenerationChanged_ShouldAllow(t *testing
 	}
 }
 
-func TestCentralStatusPredicate_NilObjects_ShouldBlock(t *testing.T) {
+func TestCentralStatusPredicate_NilObjects_ShouldNotBlock(t *testing.T) {
 	predicate := TypedCentralStatusPredicate{}
 
 	tests := []struct {
@@ -247,14 +247,14 @@ func TestCentralStatusPredicate_NilObjects_ShouldBlock(t *testing.T) {
 				ObjectNew: tt.new,
 			})
 
-			if result {
-				t.Errorf("Expected predicate to block update when objects are nil: %s", tt.name)
+			if !result {
+				t.Errorf("Expected predicate to not block update when objects are nil: %s", tt.name)
 			}
 		})
 	}
 }
 
-func TestCentralStatusPredicate_BothNil_ShouldBlock(t *testing.T) {
+func TestCentralStatusPredicate_BothNil_ShouldNotBlock(t *testing.T) {
 	predicate := TypedCentralStatusPredicate{}
 
 	result := predicate.Update(event.UpdateEvent{
@@ -262,8 +262,8 @@ func TestCentralStatusPredicate_BothNil_ShouldBlock(t *testing.T) {
 		ObjectNew: nil,
 	})
 
-	if result {
-		t.Error("Expected predicate to block update when both objects are nil")
+	if !result {
+		t.Error("Expected predicate to not block update when both objects are nil")
 	}
 }
 
