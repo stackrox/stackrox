@@ -100,6 +100,8 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]s
 			oidc.ClientIDConfigKey:                  authProviderConfig.OIDCConfig.ClientID,
 			oidc.ClientSecretConfigKey:              authProviderConfig.OIDCConfig.ClientSecret,
 			oidc.DisableOfflineAccessScopeConfigKey: strconv.FormatBool(authProviderConfig.OIDCConfig.DisableOfflineAccessScope),
+			oidc.DontUseClientSecretConfigKey:       strconv.FormatBool(authProviderConfig.OIDCConfig.DoNotUseClientSecret),
+			oidc.ExtraScopesConfigKey:               authProviderConfig.OIDCConfig.ExtraScopes,
 		}, nil
 	case iap.TypeName:
 		return map[string]string{
