@@ -102,8 +102,8 @@ type FileAccess struct {
 	// information.
 	Process *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
 	// Node information
-	NodeName      string `protobuf:"bytes,6,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty" search:"Node,hidden"` // @gotags: search:"Node,hidden"
-	NodeId        string `protobuf:"bytes,7,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" search:"Node ID,hidden"`       // @gotags: search:"Node ID,hidden"
+	NodeName      string `protobuf:"bytes,6,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty" search:"File Access Node,hidden"` // @gotags: search:"File Access Node,hidden"
+	NodeId        string `protobuf:"bytes,7,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" search:"File Access Node ID,hidden"`       // @gotags: search:"File Access Node ID,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
