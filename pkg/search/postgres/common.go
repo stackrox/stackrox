@@ -1097,8 +1097,8 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := preparedQuery.AsSQL()
 
-	tx, ok := postgres.TxFromContext(ctx)
-	if !ok {
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
 		tx, err = db.Begin(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating transaction")
@@ -1107,7 +1107,7 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 
 	// We have to ensure that cleanup function is called if exit early.
 	cleanupFunc := func() {
-		if ok {
+		if parentTxExists {
 			return
 		}
 		ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
