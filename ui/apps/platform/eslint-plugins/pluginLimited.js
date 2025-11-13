@@ -22,7 +22,7 @@ const rules = {
 
     'feature-flags': {
         // Feature flag must match pattern and occur in alphabetical order
-        // to minimize merge conflicts when multiple people add strings.
+        // to minimize merge conflicts when multiple people add or delete strings.
         // Omit fix function because type union might have comments.
         meta: {
             type: 'problem',
