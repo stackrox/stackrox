@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router-dom-v5-compat';
 import { ChartThemeColor, getTheme } from '@patternfly/react-charts/victory';
-import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts';
+import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts/victory';
 import merge from 'lodash/merge';
 
 import { policySeverityColorMap } from 'constants/severityColors';
