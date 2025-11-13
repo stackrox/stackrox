@@ -1,0 +1,19 @@
+npm uninstall \
+  @patternfly/react-core \
+  @patternfly/react-icons \
+  @patternfly/react-styles \
+  @patternfly/react-table \
+  @patternfly/react-topology \
+  @patternfly/react-component-groups \
+  @patternfly/react-user-feedback \
+  @patternfly/react-charts
+
+npm install \
+  @patternfly/react-core@^6.4.0 \
+  @patternfly/react-icons@^6.4.0 \
+  @patternfly/react-styles@^6.4.0 \
+  @patternfly/react-table@^6.4.0 \
+  @patternfly/react-topology@^6.4.0 \
+  @patternfly/react-component-groups@^6.4.0 \
+  @patternfly/react-user-feedback@^6.2.0 \
+  @patternfly/react-charts@^8.4.0
