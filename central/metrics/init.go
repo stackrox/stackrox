@@ -41,5 +41,7 @@ func init() {
 		pruningDurationHistogramVec,
 		storeCacheOperationHistogramVec,
 		msgToSensorNotSentCounter,
+		bulkProcessBaselineCallCounter,
+		elementsImpactedCounter,
 	)
 }
