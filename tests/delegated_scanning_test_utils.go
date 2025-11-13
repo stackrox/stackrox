@@ -478,7 +478,7 @@ func addDirectoryToTar(srcPath string, tw *tar.Writer) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer utils.IgnoreError(f.Close)
 
 		_, err = io.Copy(tw, f)
 		return err
