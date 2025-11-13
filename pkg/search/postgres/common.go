@@ -803,7 +803,7 @@ func (t *tracedRows) Err() error {
 	return t.Rows.Err()
 }
 
-func tracedQuery(ctx context.Context, pool postgres.DB, sql string, args ...interface{}) (*tracedRows, error) {
+func tracedQuery(ctx context.Context, pool postgres.Queryable, sql string, args ...interface{}) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
 	return &tracedRows{
@@ -1051,7 +1051,7 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 	return tag.RowsAffected(), err
 }
 
-func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
+func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.Queryable) (*tracedRows, error) {
 	preparedQuery, err := prepareQuery(ctx, schema, q)
 	if err != nil {
 		return nil, err
@@ -1065,7 +1065,7 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
 }
 
-func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.Queryable, callback func(obj PT) error) error {
 	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
 		return retryableGetRows(ctx, schema, q, db)
 	})
@@ -1097,13 +1097,21 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 
 	queryStr := preparedQuery.AsSQL()
 
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating transaction")
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		tx, err = db.Begin(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating transaction")
+		}
 	}
 
 	// We have to ensure that cleanup function is called if exit early.
 	cleanupFunc := func() {
+		if parentTxExists {
+			return
+		}
+		ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
+		defer cancel()
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
@@ -1168,7 +1176,7 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 		}
 
 		if rowsAffected != cursorBatchSize {
-			return nil
+			return ctx.Err()
 		}
 	}
 }
