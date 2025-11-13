@@ -190,6 +190,7 @@ func (p *Pipeline) run() {
 
 				// Do node based detection but for now just log
 				log.Infof("Node FS event on %s = %+v", node.GetName(), event)
+				p.detector.ProcessFileAccess(p.msgCtx, event)
 			}
 
 			// TODO: Send event to detector
