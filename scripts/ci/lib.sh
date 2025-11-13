@@ -85,6 +85,13 @@ handle_dangling_processes() {
 
     local psline pid ppid
     ps -e -O ppid | while read -r pid ppid psline; do
+        # Example output:
+        #     PID    PPID S TTY          TIME COMMAND
+        #       1       0 S ?        00:00:00 /tmp/entrypoint-wrapper/entrypoint-wrapper /tools/entrypoint
+        # [...]
+        #  179283      25 R ?        00:00:00 ps -e -O ppid
+
+        # trim leading whitespace
         psline="$pid $ppid $psline"
         if [[ "$pid" == "PID" ]]; then
             # Ignoring header
