@@ -29,6 +29,7 @@ export type ResourceName =
     | 'Node'
     | 'Secret'
     | 'ServiceAccount'
+    | 'VirtualMachine'
     | 'VulnerabilityManagementApprovals'
     | 'VulnerabilityManagementRequests'
     | 'WatchedImage'
