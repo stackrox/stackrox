@@ -465,7 +465,7 @@ func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 		}
 	}
 
-	if tx, ok := postgres.TxFromContext(ctx); ok {
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
 		batchResults := postgres.BatchResultsFromPgx(tx.SendBatch(ctx, batch))
 		if err := batchResults.Close(); err != nil {
 			return errors.Wrap(err, "closing batch on transaction")
@@ -493,8 +493,8 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 
 	// Check if we are already in transaction.
 	// If not let's create one.
-	tx, wasTxInCtx := postgres.TxFromContext(ctx)
-	if !wasTxInCtx {
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
 		conn, err := s.acquireConn(ctx, ops.UpsertAll)
 		if err != nil {
 			return err
@@ -508,7 +508,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 
 	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
 		// Only rollback if we created the transaction
-		if !wasTxInCtx {
+		if !parentTxExists {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				return errors.Wrap(rollbackErr, "could not rollback transaction")
 			}
@@ -517,7 +517,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	}
 
 	// Only commit if we created the transaction
-	if !wasTxInCtx {
+	if !parentTxExists {
 		if err := tx.Commit(ctx); err != nil {
 			return errors.Wrap(err, "could not commit transaction")
 		}
