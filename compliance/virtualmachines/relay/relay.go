@@ -35,5 +35,6 @@ func NewRelay(conn grpc.ClientConnInterface) (*Relay, error) {
 
 func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
+	// The server handles shutdown by closing its listener when ctx is cancelled
 	return r.server.Run(ctx, r.handler.Handle)
 }

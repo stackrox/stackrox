@@ -1,5 +1,6 @@
-// Package handler provides vsock-specific connection handling for virtual machine index reports.
-// It coordinates reading, validating, and forwarding VM index reports to the sensor component.
+// Package handler provides handling logic for connections carrying virtual machine index reports.
+// It coordinates reading, validating, and forwarding VM index reports to sensor.
+// The validation is vsock-specific, since we ensure the reported vsock CID matches the real vsock CID.
 package handler
 
 import (
@@ -22,14 +23,11 @@ import (
 
 var log = logging.LoggerForModule()
 
-// Handler processes connections by reading index reports, validating them, and sending them to sensor.
 type Handler struct {
 	connectionReadTimeout time.Duration
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 }
 
-// New creates a new Handler with the provided sensor client.
-// The handler uses a fixed 10-second timeout for reading from connections.
 func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) *Handler {
 	return &Handler{
 		connectionReadTimeout: 10 * time.Second,
@@ -37,20 +35,6 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) *Handler {
 	}
 }
 
-// Handle processes a vsock connection containing a VM index report.
-//
-// The function:
-// - Extracts and validates the vsock CID from the connection
-// - Reads and parses the index report data
-// - Validates the reported vsock CID matches the connection's CID (prevents spoofing)
-// - Forwards the report to the sensor component
-//
-// Caller contract:
-// - ctx must not be nil and should be canceled when the connection should be terminated
-// - conn must be a valid vsock connection (implements net.Conn with vsock.Addr)
-// - The caller is responsible for closing the connection
-//
-// Returns nil on success, or an error if any step fails.
 func (h *Handler) Handle(ctx context.Context, conn net.Conn) error {
 	log.Infof("Handling connection from %s", conn.RemoteAddr())
 
@@ -106,9 +90,8 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-// validateReportedVsockCID checks the vsock CID in the indexReport against the one extracted from the vsock connection
+// validateReportedVsockCID prevents spoofing by ensuring the reported CID matches the connection's CID
 func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
-	// Ensure the reported vsock CID is correct, to prevent spoofing
 	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()
 		return errors.Errorf("mismatch between reported (%s) and real (%d) vsock CIDs", indexReport.GetVsockCid(), connVsockCID)
