@@ -187,16 +187,14 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		imgV2 := types.ToImageV2(image)
 		enrichResult, err := s.imageEnricherV2.EnrichImage(ctx, enrichmentContext, imgV2)
 		if err != nil {
-			if err != nil {
-				if env.AdministrationEventsAdHocScans.BooleanSetting() {
-					log.Errorw("Enriching image",
-						logging.ImageName(image.GetName().GetFullName()),
-						logging.Err(err),
-						logging.Bool("ad_hoc", true),
-					)
-				}
-				return nil, err
+			if env.AdministrationEventsAdHocScans.BooleanSetting() {
+				log.Errorw("Enriching image",
+					logging.ImageName(image.GetName().GetFullName()),
+					logging.Err(err),
+					logging.Bool("ad_hoc", true),
+				)
 			}
+			return nil, err
 		}
 		if enrichResult.ImageUpdated {
 			imgV2.Digest = utils.GetSHAV2(imgV2)
@@ -216,16 +214,14 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		img = types.ToImage(image)
 		enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 		if err != nil {
-			if err != nil {
-				if env.AdministrationEventsAdHocScans.BooleanSetting() {
-					log.Errorw("Enriching image",
-						logging.ImageName(image.GetName().GetFullName()),
-						logging.Err(err),
-						logging.Bool("ad_hoc", true),
-					)
-				}
-				return nil, err
+			if env.AdministrationEventsAdHocScans.BooleanSetting() {
+				log.Errorw("Enriching image",
+					logging.ImageName(image.GetName().GetFullName()),
+					logging.Err(err),
+					logging.Bool("ad_hoc", true),
+				)
 			}
+			return nil, err
 		}
 		if enrichResult.ImageUpdated {
 			img.Id = utils.GetSHA(img)
