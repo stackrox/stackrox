@@ -2,17 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
     Button,
+    Content,
     Divider,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     SearchInput,
     SelectOption,
     Skeleton,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
@@ -152,15 +150,7 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader
-                    icon={
-                        <EmptyStateIcon
-                            style={{ color: 'var(--pf-v5-global--danger-color--200)' }}
-                            icon={ExclamationCircleIcon}
-                        />
-                    }
-                />
+            <EmptyState icon={ExclamationCircleIcon} variant="xs">
                 <EmptyStateFooter>
                     <Flex
                         spaceItems={{ default: 'spaceItemsMd' }}
@@ -176,8 +166,7 @@ function CollectionResults({
         );
     } else if (!selectorRulesExist) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader icon={<EmptyStateIcon icon={ListIcon} />} />
+            <EmptyState icon={ListIcon} variant="xs">
                 <EmptyStateFooter>
                     <p>
                         Add selector rules or attach existing collections to view resource matches
@@ -231,16 +220,15 @@ function CollectionResults({
             <div className="pf-v5-u-p-lg pf-v5-u-display-flex pf-v5-u-align-items-center">
                 <div className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
                     <Title headingLevel="h2">Collection results</Title>
-                    <Text>See a preview of current matches.</Text>
+                    <Content component="p">See a preview of current matches.</Content>
                 </div>
                 <Button
+                    icon={<SyncAltIcon />}
                     variant="plain"
                     onClick={refreshResults}
                     title="Refresh results"
                     isDisabled={isRefreshingResults}
-                >
-                    <SyncAltIcon />
-                </Button>
+                />
                 {headerContent}
             </div>
             <Divider />

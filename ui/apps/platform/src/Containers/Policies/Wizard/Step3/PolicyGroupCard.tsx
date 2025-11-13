@@ -79,7 +79,7 @@ function PolicyGroupCard({
 
     return (
         <>
-            <Card isFlat isCompact data-testid="policy-criteria-group-card">
+            <Card isCompact data-testid="policy-criteria-group-card">
                 <CardHeader
                     actions={{
                         actions: (
@@ -107,13 +107,12 @@ function PolicyGroupCard({
                                             component="div"
                                         />
                                         <Button
+                                            icon={<TrashIcon />}
                                             variant="plain"
                                             className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                             onClick={onDeleteGroup}
                                             title="Delete policy field"
-                                        >
-                                            <TrashIcon />
-                                        </Button>
+                                        />
                                     </>
                                 )}
                             </>
@@ -190,6 +189,7 @@ function PolicyGroupCard({
                                 className="pf-v5-u-pt-sm"
                             >
                                 <Button
+                                    icon={<PlusIcon />}
                                     onClick={handleAddValue}
                                     variant="plain"
                                     isDisabled={isAddValueDisabled}

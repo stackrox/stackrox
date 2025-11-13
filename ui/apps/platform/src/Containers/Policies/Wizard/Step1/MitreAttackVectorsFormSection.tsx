@@ -157,13 +157,12 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                         tacticId={tacticId}
                                     />
                                     <Button
+                                        icon={<TrashIcon />}
                                         aria-label="Delete tactic"
                                         className="pf-v5-u-flex-shrink-0"
                                         onClick={() => handleDeleteTactic(tacticId)}
                                         variant="plain"
-                                    >
-                                        <TrashIcon />
-                                    </Button>
+                                    />
                                 </Flex>
                                 <p className="description">{tacticDescription}</p>
                                 <ul className="pf-v5-c-tree-view__list mitre-techniques-list">
@@ -197,6 +196,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                             techniqueId={techniqueId}
                                                         />
                                                         <Button
+                                                            icon={<TrashIcon />}
                                                             aria-label="Delete technique"
                                                             className="pf-v5-u-flex-shrink-0"
                                                             onClick={() => {
@@ -206,9 +206,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                                                 );
                                                             }}
                                                             variant="plain"
-                                                        >
-                                                            <TrashIcon />
-                                                        </Button>
+                                                        />
                                                     </Flex>
                                                     <p className="description">
                                                         {techniqueDescription}

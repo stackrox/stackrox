@@ -305,7 +305,7 @@ function NetworkGraphPageContent() {
                 />
             )}
             <PageTitle title="Network Graph" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Toolbar
                     className="network-graph-selector-bar"
                     data-testid="network-graph-selector-bar"
@@ -324,11 +324,7 @@ function NetworkGraphPageContent() {
                             />
                         </ToolbarGroup>
                         {(hasWriteAccessForBlocks || hasReadAccessForNetworkPolicy) && (
-                            <ToolbarGroup
-                                variant="button-group"
-                                align={{ default: 'alignRight' }}
-                                spaceItems={{ default: 'spaceItemsMd' }}
-                            >
+                            <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                                 {hasWriteAccessForBlocks && (
                                     <ToolbarItem>
                                         <Button
@@ -356,7 +352,7 @@ function NetworkGraphPageContent() {
             <Divider component="div" />
             {hasClusterNamespaceSelected && (
                 <>
-                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <Toolbar data-testid="network-graph-toolbar">
                             <ToolbarContent>
                                 <ToolbarGroup variant="filter-group">
@@ -395,7 +391,7 @@ function NetworkGraphPageContent() {
                                 </ToolbarGroup>
                                 {hasReadAccessForNetworkPolicy && (
                                     <ToolbarGroup
-                                        align={{ default: 'alignRight' }}
+                                        align={{ default: 'alignEnd' }}
                                         className="pf-v5-u-align-self-center"
                                     >
                                         <Divider
@@ -421,7 +417,11 @@ function NetworkGraphPageContent() {
                     <Divider component="div" />
                 </>
             )}
-            <PageSection className="network-graph" padding={{ default: 'noPadding' }}>
+            <PageSection
+                hasBodyWrapper={false}
+                className="network-graph"
+                padding={{ default: 'noPadding' }}
+            >
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

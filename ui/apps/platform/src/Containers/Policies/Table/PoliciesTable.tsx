@@ -205,7 +205,7 @@ function PoliciesTable({
     // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <PageSection isFilled id="policies-table">
+            <PageSection hasBodyWrapper={false} isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarItem className="pf-v5-u-w-100">
@@ -228,11 +228,7 @@ function PoliciesTable({
                                 )}
                             />
                         </ToolbarItem>
-                        <ToolbarGroup
-                            align={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            variant="button-group"
-                        >
+                        <ToolbarGroup align={{ default: 'alignEnd' }} variant="action-group">
                             {hasWriteAccessForPolicy && (
                                 <ToolbarItem>
                                     <MenuDropdown
@@ -323,7 +319,7 @@ function PoliciesTable({
                                 </Tooltip>
                             </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 isCompact
                                 isDisabled

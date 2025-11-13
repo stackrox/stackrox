@@ -4,8 +4,6 @@ import {
     Button,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FormGroup,
     Icon,
@@ -45,11 +43,15 @@ function BacklogTable<Item>({
     const actionIcon =
         type === 'selected' ? (
             <Icon>
-                <MinusCircleIcon color="var(--pf-v5-global--danger-color--200)" />
+                <MinusCircleIcon
+                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--200 */
+                />
             </Icon>
         ) : (
             <Icon>
-                <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
+                <PlusCircleIcon
+                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                />
             </Icon>
         );
 
@@ -94,8 +96,7 @@ function BacklogTable<Item>({
                     </Tbody>
                 </Table>
             ) : (
-                <EmptyState variant="xs">
-                    <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+                <EmptyState icon={CubesIcon} variant="xs">
                     <EmptyStateFooter>
                         <p>No items remaining</p>
                     </EmptyStateFooter>

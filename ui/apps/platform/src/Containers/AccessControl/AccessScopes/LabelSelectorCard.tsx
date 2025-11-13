@@ -165,7 +165,7 @@ function LabelSelectorCard({
     }
 
     return (
-        <Card isCompact isFlat>
+        <Card isCompact>
             <CardHeader
                 {...(hasAction && {
                     actions: {
@@ -269,7 +269,7 @@ function LabelSelectorCard({
                                         Add rule
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarGroup align={{ default: 'alignRight' }}>
+                                <ToolbarGroup align={{ default: 'alignEnd' }}>
                                     <ToolbarItem>
                                         <Button
                                             variant="primary"

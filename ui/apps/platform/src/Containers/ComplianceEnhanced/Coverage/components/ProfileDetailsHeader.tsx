@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { MouseEvent } from 'react';
 import {
+    Content,
     ExpandableSection,
     Flex,
     FlexItem,
     Label,
     LabelGroup,
     Skeleton,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -67,7 +67,9 @@ function ProfileDetailsHeader({
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Text className="pf-v5-u-font-size-sm">{title}</Text>
+                    <Content component="p" className="pf-v5-u-font-size-sm">
+                        {title}
+                    </Content>
                 </FlexItem>
                 <FlexItem>
                     <ExpandableSection

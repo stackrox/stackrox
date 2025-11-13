@@ -40,7 +40,7 @@ function PolicyOverview({
         name,
     } = policy;
     return (
-        <Card isFlat>
+        <Card>
             {isReview && (
                 <CardHeader>
                     <Title headingLevel="h2" size="lg">
@@ -69,7 +69,7 @@ function PolicyOverview({
                         <Grid hasGutter sm={12} md={6}>
                             {notifierIds?.map((notifierId) => (
                                 <GridItem key={notifierId}>
-                                    <Card isFlat>
+                                    <Card>
                                         <CardBody>
                                             <Notifier
                                                 notifierId={notifierId}

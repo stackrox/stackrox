@@ -2,9 +2,9 @@ import { useCallback, useMemo } from 'react';
 import {
     Card,
     CardBody,
+    Content,
     PageSection,
     Pagination,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -145,13 +145,13 @@ function ViewBasedReportsTab() {
     return (
         <>
             <PageTitle title="Vulnerability reporting - View-based reports" />
-            <PageSection variant="light">
-                <Text>
+            <PageSection hasBodyWrapper={false}>
+                <Content component="p">
                     Check job status and download view-based reports in CSV format. Requests are
                     purged according to retention settings.
-                </Text>
+                </Content>
             </PageSection>
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Card>
                     <CardBody className="pf-v5-u-p-0">
                         <Toolbar>
@@ -176,7 +176,7 @@ function ViewBasedReportsTab() {
                                         onMyJobsFilterChange={onMyJobsFilterChange}
                                     />
                                 </ToolbarItem>
-                                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                     {/* TODO: Change this to determinate pagination pattern */}
                                     <Pagination
                                         toggleTemplate={({ firstIndex, lastIndex }) => (

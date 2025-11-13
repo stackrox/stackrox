@@ -112,7 +112,7 @@ function NodeCvePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewCvePath}>Node CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -123,11 +123,11 @@ function NodeCvePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <CvePageHeader data={cveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-flex-grow-1">
                 <AdvancedFiltersToolbar
                     className="pf-v5-u-pt-lg pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}

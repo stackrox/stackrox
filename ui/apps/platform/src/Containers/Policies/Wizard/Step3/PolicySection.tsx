@@ -59,13 +59,14 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
 
     return (
         <>
-            <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
+            <Card isCompact className={!readOnly ? 'policy-section-card' : ''}>
                 <CardHeader
                     {...(!readOnly && {
                         actions: {
                             actions: (
                                 <>
                                     <Button
+                                        icon={isEditingName ? <CheckIcon /> : <PencilAltIcon />}
                                         variant="plain"
                                         className="pf-v5-u-px-sm"
                                         onClick={() => setIsEditingName(!isEditingName)}
@@ -74,21 +75,18 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                                 ? 'Save name of policy section'
                                                 : 'Edit name of policy section'
                                         }
-                                    >
-                                        {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
-                                    </Button>
+                                    />
                                     <Divider
                                         component="div"
                                         orientation={{ default: 'vertical' }}
                                     />
                                     <Button
+                                        icon={<TrashIcon />}
                                         variant="plain"
                                         className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                         title="Delete policy section"
                                         onClick={onDeleteSection}
-                                    >
-                                        <TrashIcon />
-                                    </Button>
+                                    />
                                 </>
                             ),
                             hasNoOffset: true,

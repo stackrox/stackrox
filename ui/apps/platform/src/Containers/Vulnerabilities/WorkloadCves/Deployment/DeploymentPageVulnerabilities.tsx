@@ -235,6 +235,7 @@ function DeploymentPageVulnerabilities({
     return (
         <>
             <PageSection
+                hasBodyWrapper={false}
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"

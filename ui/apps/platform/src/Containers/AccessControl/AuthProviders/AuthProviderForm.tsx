@@ -307,12 +307,9 @@ function AuthProviderForm({
                         </ToolbarItem>
                     )}
                     {isActionable && (
-                        <ToolbarGroup
-                            align={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
+                        <ToolbarGroup align={{ default: 'alignEnd' }}>
                             {hasAction ? (
-                                <ToolbarGroup variant="button-group">
+                                <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Button
                                             variant="primary"
@@ -336,7 +333,7 @@ function AuthProviderForm({
                                     </ToolbarItem>
                                 </ToolbarGroup>
                             ) : (
-                                <ToolbarGroup variant="button-group">
+                                <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Link
                                             to="/main/access-control/auth-providers"
@@ -581,6 +578,7 @@ function AuthProviderForm({
                                                         {!isDisabled && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete required attribute"
                                                                     style={{
@@ -590,9 +588,7 @@ function AuthProviderForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                         {!isUserResource(
@@ -601,15 +597,14 @@ function AuthProviderForm({
                                                             <FlexItem>
                                                                 <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
                                                                     <Button
+                                                                        icon={<InfoCircleIcon />}
                                                                         variant="plain"
                                                                         aria-label="Information button"
                                                                         style={{
                                                                             transform:
                                                                                 'translate(0, 42px)',
                                                                         }}
-                                                                    >
-                                                                        <InfoCircleIcon />
-                                                                    </Button>
+                                                                    />
                                                                 </Tooltip>
                                                             </FlexItem>
                                                         )}
@@ -696,6 +691,7 @@ function AuthProviderForm({
                                                     {!isDisabled && (
                                                         <FlexItem>
                                                             <Button
+                                                                icon={<TrashIcon />}
                                                                 variant="plain"
                                                                 aria-label="Delete claim mapping"
                                                                 style={{
@@ -704,9 +700,7 @@ function AuthProviderForm({
                                                                 onClick={() =>
                                                                     arrayHelpers.remove(index)
                                                                 }
-                                                            >
-                                                                <TrashIcon />
-                                                            </Button>
+                                                            />
                                                         </FlexItem>
                                                     )}
                                                     {!isUserResource(
@@ -715,15 +709,14 @@ function AuthProviderForm({
                                                         <FlexItem>
                                                             <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
                                                                 <Button
+                                                                    icon={<InfoCircleIcon />}
                                                                     variant="plain"
                                                                     aria-label="Information button"
                                                                     style={{
                                                                         transform:
                                                                             'translate(0, 42px)',
                                                                     }}
-                                                                >
-                                                                    <InfoCircleIcon />
-                                                                </Button>
+                                                                />
                                                             </Tooltip>
                                                         </FlexItem>
                                                     )}

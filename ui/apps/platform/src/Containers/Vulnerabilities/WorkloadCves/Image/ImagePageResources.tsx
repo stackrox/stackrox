@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import {
     Bullseye,
+    Content,
     Divider,
     ExpandableSection,
     PageSection,
     Pagination,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import type { Pagination as PaginationParam } from 'services/types';
@@ -86,11 +86,16 @@ function ImagePageResources({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Navigate to resources associated with this image</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v5-u-py-md pf-v5-u-px-xl"
+            >
+                <Content component="p">Navigate to resources associated with this image</Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
@@ -115,7 +120,7 @@ function ImagePageResources({
                         style={
                             {
                                 '--pf-v5-c-expandable-section__content--MarginTop':
-                                    'var(--pf-v5-global--spacer--xs)',
+                                    'var(--pf-t--global--spacer--xs)',
                             } as CSSProperties
                         }
                     >

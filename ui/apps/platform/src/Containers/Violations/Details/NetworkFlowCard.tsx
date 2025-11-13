@@ -28,7 +28,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
 
     return (
         <div className="pf-v5-u-mb-md">
-            <Card isExpanded={isExpanded} isFlat>
+            <Card isExpanded={isExpanded}>
                 <CardHeader
                     onExpand={onExpand}
                     toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}

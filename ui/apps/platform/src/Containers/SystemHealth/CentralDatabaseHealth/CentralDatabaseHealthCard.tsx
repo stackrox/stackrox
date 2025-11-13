@@ -4,9 +4,9 @@ import {
     CardBody,
     CardHeader,
     CardTitle,
+    Content,
     Flex,
     FlexItem,
-    Text,
 } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -89,14 +89,18 @@ function CentralDatabaseHealthCard(): ReactElement {
             {databaseHealthInfo.status === 'unhealthy' && (
                 <CardBody>
                     {databaseHealthInfo.messages.map((message) => (
-                        <Text key={message}>{message}</Text>
+                        <Content component="p" key={message}>
+                            {message}
+                        </Content>
                     ))}
                 </CardBody>
             )}
             {error && (
                 <CardBody>
-                    <Text>There was an error querying the database status:</Text>
-                    <Text>{getAxiosErrorMessage(error)}</Text>
+                    <Content component="p">
+                        There was an error querying the database status:
+                    </Content>
+                    <Content component="p">{getAxiosErrorMessage(error)}</Content>
                 </CardBody>
             )}
         </Card>

@@ -56,7 +56,7 @@ function TableEntityToolbar({
                             </ToolbarItem>
                         )}
                     </ToolbarGroup>
-                    <ToolbarGroup align={{ default: 'alignLeft' }}>
+                    <ToolbarGroup align={{ default: 'alignStart' }}>
                         {children}
                         <ToolbarItem variant="pagination">
                             <Pagination

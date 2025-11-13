@@ -3,11 +3,11 @@ import {
     Masthead,
     MastheadBrand,
     MastheadContent,
+    MastheadLogo,
     MastheadMain,
     MastheadToggle,
     PageToggleButton,
 } from '@patternfly/react-core';
-import { BarsIcon } from '@patternfly/react-icons';
 
 import BrandLogo from 'Components/PatternFly/BrandLogo';
 import Banners from '../Banners/Banners';
@@ -26,14 +26,15 @@ function Header(): ReactElement {
             <Notifications />
             <PublicConfigHeader />
             <Banners />
-            <MastheadToggle className="pf-v5-u-pl-lg">
-                <PageToggleButton variant="plain">
-                    <BarsIcon />
-                </PageToggleButton>
-            </MastheadToggle>
+
             <MastheadMain>
-                <MastheadBrand>
-                    <BrandLogo />
+                <MastheadToggle className="pf-v5-u-pl-lg">
+                    <PageToggleButton isHamburgerButton variant="plain"></PageToggleButton>
+                </MastheadToggle>
+                <MastheadBrand data-codemods>
+                    <MastheadLogo data-codemods>
+                        <BrandLogo />
+                    </MastheadLogo>
                 </MastheadBrand>
             </MastheadMain>
             <MastheadContent className="pf-v5-u-flex-grow-1 pf-v5-u-justify-content-flex-end pf-v5-u-pr-lg">

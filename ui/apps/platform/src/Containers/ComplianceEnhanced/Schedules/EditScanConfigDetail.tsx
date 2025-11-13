@@ -39,7 +39,7 @@ function EditScanConfigDetail({
     return (
         <>
             <PageTitle title="Edit Compliance Scan Schedule Details" />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -50,7 +50,7 @@ function EditScanConfigDetail({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 {!isLoading && !error && scanConfig && (
                     <Flex
                         alignItems={{ default: 'alignItemsCenter' }}
@@ -63,7 +63,7 @@ function EditScanConfigDetail({
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection isCenterAligned>
+            <PageSection hasBodyWrapper={false} isCenterAligned>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />
@@ -81,7 +81,11 @@ function EditScanConfigDetail({
                     )
                 )}
                 {!isLoading && scanConfig && (
-                    <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+                    <PageSection
+                        hasBodyWrapper={false}
+                        padding={{ default: 'noPadding' }}
+                        isCenterAligned
+                    >
                         <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
                     </PageSection>
                 )}

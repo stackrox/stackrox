@@ -38,7 +38,7 @@ function PolicyCategoriesPage(): ReactElement {
     const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
 
     let listContent = (
-        <PageSection variant="light" isFilled id="policies-table-loading">
+        <PageSection hasBodyWrapper={false} isFilled id="policies-table-loading">
             <Bullseye>
                 <Spinner />
             </Bullseye>
@@ -47,7 +47,7 @@ function PolicyCategoriesPage(): ReactElement {
 
     if (errorMessage) {
         listContent = (
-            <PageSection variant="light" isFilled id="policies-table-error">
+            <PageSection hasBodyWrapper={false} isFilled id="policies-table-error">
                 <Bullseye>
                     <Alert variant="danger" title={errorMessage} component="p" />
                 </Bullseye>
@@ -90,7 +90,7 @@ function PolicyCategoriesPage(): ReactElement {
             <PageTitle title="Policy management - Policy categories" />
             <PolicyManagementHeader currentTabTitle="Policy categories" />
             <Divider component="div" />
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
                         <ToolbarItem>
@@ -99,7 +99,7 @@ function PolicyCategoriesPage(): ReactElement {
                             </div>
                         </ToolbarItem>
                         {hasWriteAccessForPolicy && (
-                            <ToolbarItem align={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignEnd' }}>
                                 <Flex>
                                     <Button
                                         variant="primary"

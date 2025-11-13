@@ -28,7 +28,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                         {scope.map((restriction, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
-                                <Card isFlat>
+                                <Card>
                                     <CardBody>
                                         <Restriction
                                             clusters={clusters}
@@ -50,7 +50,7 @@ function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): Rea
                         {excludedDeploymentScopes.map((excludedDeployment, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
-                                <Card isFlat>
+                                <Card>
                                     <CardBody>
                                         <ExcludedDeployment
                                             clusters={clusters}

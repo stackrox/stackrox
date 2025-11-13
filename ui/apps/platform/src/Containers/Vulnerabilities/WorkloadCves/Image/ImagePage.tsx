@@ -168,7 +168,7 @@ function ImagePage({
 
     if (error) {
         mainContent = (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Bullseye>
                     <EmptyStateTemplate
                         title={getAxiosErrorMessage(error)}
@@ -183,7 +183,7 @@ function ImagePage({
         const sha = imageData?.id;
         mainContent = (
             <>
-                <PageSection variant="light">
+                <PageSection hasBodyWrapper={false}>
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
@@ -262,6 +262,7 @@ function ImagePage({
                     )}
                 </PageSection>
                 <PageSection
+                    hasBodyWrapper={false}
                     className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                     padding={{ default: 'noPadding' }}
                 >
@@ -333,7 +334,7 @@ function ImagePage({
     return (
         <>
             <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
                         Images

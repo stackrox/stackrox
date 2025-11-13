@@ -148,6 +148,7 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
                 value={externalText}
             />
             <Button
+                icon={<ArrowRightIcon />}
                 aria-label="Apply condition and number input to search"
                 isDisabled={!validateExternalText(externalText)}
                 onClick={() => {
@@ -155,9 +156,7 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
                     onSearch(joinConditionText(conditionKey, internalText));
                 }}
                 variant="control"
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </>
     );
 }

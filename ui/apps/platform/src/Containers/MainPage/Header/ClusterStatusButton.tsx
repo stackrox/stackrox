@@ -62,8 +62,10 @@ const ClusterStatusButton = ({
 
     // On masthead, black text on white background like a dropdown menu.
     const styleTooltip = {
-        '--pf-v5-c-tooltip__content--Color': 'var(--pf-v5-global--Color--100)',
-        '--pf-v5-c-tooltip__content--BackgroundColor': 'var(--pf-v5-global--BackgroundColor--100)',
+        '--pf-v5-c-tooltip__content--Color':
+            'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--Color--100 */,
+        '--pf-v5-c-tooltip__content--BackgroundColor':
+            'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--BackgroundColor--100 */,
     } as CSSProperties;
 
     // Using aria-label for accessibility instead of title to avoid two tooltips.

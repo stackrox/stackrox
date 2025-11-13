@@ -7,7 +7,7 @@ export type VirtualMachinePageDetailsProps = {
 
 function VirtualMachinePageDetails({ virtualMachineId }: VirtualMachinePageDetailsProps) {
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <EmptyStateTemplate title="Virtual Machine Details" headingLevel="h2">
                 Virtual machine details content will be implemented here for {virtualMachineId}.
             </EmptyStateTemplate>

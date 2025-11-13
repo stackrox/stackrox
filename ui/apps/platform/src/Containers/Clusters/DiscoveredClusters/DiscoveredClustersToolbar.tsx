@@ -119,7 +119,7 @@ function DiscoveredClustersToolbar({
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                     <ToolbarItem variant="pagination">
                         <Pagination
                             isCompact

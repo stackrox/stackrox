@@ -2,13 +2,13 @@ import { useCallback, useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Divider,
     PageSection,
     Skeleton,
     Tab,
     TabTitleText,
     Tabs,
-    Text,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
@@ -101,7 +101,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     return (
         <>
             <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
                         Deployments
@@ -126,7 +126,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                 />
             ) : (
                 <>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         {metadataRequest.error && (
                             <TableErrorComponent
                                 error={metadataRequest.error}
@@ -136,6 +136,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                         <DeploymentPageHeader data={metadataRequest.data?.deployment} />
                     </PageSection>
                     <PageSection
+                        hasBodyWrapper={false}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                         padding={{ default: 'noPadding' }}
                     >
@@ -155,14 +156,14 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
                                 <PageSection
+                                    hasBodyWrapper={false}
                                     component="div"
-                                    variant="light"
                                     className="pf-v5-u-py-md pf-v5-u-px-xl"
                                 >
-                                    <Text>
+                                    <Content component="p">
                                         Review and triage vulnerability data scanned for images
                                         within this deployment
-                                    </Text>
+                                    </Content>
                                 </PageSection>
                                 <Divider component="div" />
                                 <DeploymentPageVulnerabilities

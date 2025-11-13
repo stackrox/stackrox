@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import { Divider, Text, TextVariants } from '@patternfly/react-core';
+import { Content, ContentVariants, Divider } from '@patternfly/react-core';
 
 export type DetailedTooltipContentProps = {
     title: string;
@@ -32,13 +32,13 @@ function DetailedTooltipContent({
     return (
         <div className={`pf-v5-u-max-height ${extraClassName}`} style={styleConstant}>
             <div>
-                <Text
+                <Content
                     className="pf-v5-u-font-weight-bold"
-                    component={TextVariants.h3}
+                    component={ContentVariants.h3}
                     data-testid="tooltip-title"
                 >
                     {title}
-                </Text>
+                </Content>
                 {!!subtitle && <span data-testid="tooltip-subtitle">{subtitle}</span>}
             </div>
             <Divider />

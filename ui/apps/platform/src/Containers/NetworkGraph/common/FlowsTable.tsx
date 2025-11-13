@@ -13,12 +13,11 @@ import {
 import type { IAction } from '@patternfly/react-table';
 import {
     Button,
+    Content,
+    ContentVariants,
     Flex,
     FlexItem,
     Icon,
-    Text,
-    TextContent,
-    TextVariants,
     Tooltip,
 } from '@patternfly/react-core';
 import {
@@ -75,9 +74,15 @@ function getBaselineSimulatedRowStyle(
 ): CSSProperties {
     let customStyle: CSSProperties;
     if (baselineSimulationDiffState === 'ADDED') {
-        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--green-50)' };
+        customStyle = {
+            backgroundColor:
+                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--green-50 */,
+        };
     } else if (baselineSimulationDiffState === 'REMOVED') {
-        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--red-50)' };
+        customStyle = {
+            backgroundColor:
+                'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--palette--red-50 */,
+        };
     } else {
         customStyle = {};
     }
@@ -103,9 +108,11 @@ function ExtraneousFlowsRow({
                         <FlexItem>
                             <div>+ {numExtraneousEgressFlows} allowed flows</div>
                             <div>
-                                <TextContent>
-                                    <Text component={TextVariants.small}>Across this cluster</Text>
-                                </TextContent>
+                                <Content>
+                                    <Content component={ContentVariants.small}>
+                                        Across this cluster
+                                    </Content>
+                                </Content>
                             </div>
                         </FlexItem>
                     </Flex>
@@ -298,11 +305,11 @@ function FlowsTable({
                                             </Button>
                                         </div>
                                         <div>
-                                            <TextContent>
-                                                <Text component={TextVariants.small}>
+                                            <Content>
+                                                <Content component={ContentVariants.small}>
                                                     {getFlowSubtext(row)}
-                                                </Text>
-                                            </TextContent>
+                                                </Content>
+                                            </Content>
                                         </div>
                                     </FlexItem>
                                     {row.isAnomalous && (

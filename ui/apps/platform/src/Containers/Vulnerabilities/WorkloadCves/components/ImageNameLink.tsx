@@ -55,15 +55,14 @@ function ImageNameLink({ name, id }: ImageNameLinkProps) {
                     content={<div>{copyIconTooltip}</div>}
                 >
                     <Button
+                        icon={<OutlinedCopyIcon />}
                         className="pf-v5-u-pt-xs"
                         id={`copy-image-name-button-${id}`}
                         aria-label={'Copy image name'}
                         type="button"
                         variant="plain"
                         onClick={copyImageName}
-                    >
-                        <OutlinedCopyIcon />
-                    </Button>
+                    />
                 </Tooltip>
             </FlexItem>
         </Flex>

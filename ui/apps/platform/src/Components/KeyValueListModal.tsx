@@ -6,10 +6,10 @@ import {
     FlexItem,
     List,
     ListItem,
-    Modal,
     SearchInput,
     pluralize,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import useModal from 'hooks/useModal';
 

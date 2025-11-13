@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Chart, ChartAxis, ChartBar, ChartContainer, ChartLabel } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartLabel,
+} from '@patternfly/react-charts/victory';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 

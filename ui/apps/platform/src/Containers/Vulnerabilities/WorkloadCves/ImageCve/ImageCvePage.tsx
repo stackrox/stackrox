@@ -383,7 +383,7 @@ function ImageCvePage({
             <PageTitle
                 title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
@@ -396,7 +396,7 @@ function ImageCvePage({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {metadataRequest.error ? (
                     <TableErrorComponent
                         error={metadataRequest.error}
@@ -410,6 +410,7 @@ function ImageCvePage({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
             >

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import {
+    Content,
     Divider,
     DropdownItem,
     Flex,
@@ -7,7 +8,6 @@ import {
     Pagination,
     Split,
     SplitItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -244,11 +244,18 @@ function ImagePageVulnerabilities({
                     onClose={closeModals}
                 />
             )}
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Review and triage vulnerability data scanned on this image</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v5-u-py-md pf-v5-u-px-xl"
+            >
+                <Content component="p">
+                    Review and triage vulnerability data scanned on this image
+                </Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"

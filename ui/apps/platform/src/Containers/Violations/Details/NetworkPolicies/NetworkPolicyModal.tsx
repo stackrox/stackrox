@@ -1,4 +1,5 @@
-import { Button, Flex, Modal } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import download from 'utils/download';

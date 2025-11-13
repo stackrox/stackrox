@@ -92,16 +92,19 @@ function RequirementRow({
                                 {isRequirementActive && isEditableOperator && (
                                     <Tooltip content="Delete value">
                                         <Button
+                                            icon={
+                                                <Icon>
+                                                    <MinusCircleIcon
+                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                                    />
+                                                </Icon>
+                                            }
                                             aria-label="Delete value"
                                             variant="plain"
                                             className="pf-m-smallest pf-v5-u-mr-sm"
                                             isDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
-                                        >
-                                            <Icon>
-                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                            </Icon>
-                                        </Button>
+                                        />
                                     </Tooltip>
                                 )}
                             </span>
@@ -125,16 +128,19 @@ function RequirementRow({
                                 {isRequirementActive && (
                                     <Tooltip content="Add value (press Enter)">
                                         <Button
+                                            icon={
+                                                <Icon>
+                                                    <PlusCircleIcon
+                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                                    />
+                                                </Icon>
+                                            }
                                             aria-label="Add value (press Enter)"
                                             variant="plain"
                                             className="pf-m-smallest pf-v5-u-mr-sm"
                                             isDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
-                                        >
-                                            <Icon>
-                                                <PlusCircleIcon color="var(--pf-v5-global--primary-color--100)" />
-                                            </Icon>
-                                        </Button>
+                                        />
                                     </Tooltip>
                                 )}
                             </span>
@@ -158,28 +164,32 @@ function RequirementRow({
                         <>
                             <Tooltip key="OK" content="OK">
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <CheckCircleIcon
+                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                            />
+                                        </Icon>
+                                    }
                                     aria-label="OK"
                                     variant="plain"
                                     className="pf-m-smallest pf-v5-u-mr-sm"
                                     isDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
-                                >
-                                    <Icon>
-                                        <CheckCircleIcon color="var(--pf-v5-global--primary-color--100)" />
-                                    </Icon>
-                                </Button>
+                                />
                             </Tooltip>
                             <Tooltip key="Cancel" content="Cancel">
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
+                                        </Icon>
+                                    }
                                     aria-label="Cancel"
                                     variant="plain"
                                     className="pf-m-smallest"
                                     onClick={handleRequirementCancel}
-                                >
-                                    <Icon>
-                                        <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
-                                    </Icon>
-                                </Button>
+                                />
                             </Tooltip>
                         </>
                     ) : (
@@ -187,30 +197,36 @@ function RequirementRow({
                             {isEditableOperator && (
                                 <Tooltip key="Edit rule" content="Edit rule">
                                     <Button
+                                        icon={
+                                            <Icon>
+                                                <PencilAltIcon
+                                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                                />
+                                            </Icon>
+                                        }
                                         aria-label="Edit rule"
                                         variant="plain"
                                         className="pf-m-smallest pf-v5-u-mr-sm"
                                         isDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
-                                    >
-                                        <Icon>
-                                            <PencilAltIcon color="var(--pf-v5-global--primary-color--100)" />
-                                        </Icon>
-                                    </Button>
+                                    />
                                 </Tooltip>
                             )}
                             <Tooltip key="Delete rule" content="Delete rule">
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <MinusCircleIcon
+                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                            />
+                                        </Icon>
+                                    }
                                     aria-label="Delete rule"
                                     variant="plain"
                                     className="pf-m-smallest"
                                     isDisabled={activity === 'DISABLED'}
                                     onClick={handleRequirementDelete}
-                                >
-                                    <Icon>
-                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                    </Icon>
-                                </Button>
+                                />
                             </Tooltip>
                         </>
                     )}

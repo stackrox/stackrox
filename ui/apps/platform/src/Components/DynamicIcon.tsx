@@ -5,7 +5,10 @@ import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 export function DynamicIcon(props: SVGIconProps) {
     return (
         <Icon>
-            <FilterIcon color="var(--pf-v5-global--palette--blue-300)" {...props} />
+            <FilterIcon
+                color="var(--pf-t--temp--dev--tbd)"
+                /* CODEMODS: original v5 color was --pf-v5-global--palette--blue-300 */ {...props}
+            />
         </Icon>
     );
 }

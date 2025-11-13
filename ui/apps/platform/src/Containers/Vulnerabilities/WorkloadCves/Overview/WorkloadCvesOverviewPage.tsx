@@ -3,12 +3,12 @@ import {
     Button,
     Card,
     CardBody,
+    Content,
     Divider,
     Flex,
     FlexItem,
     PageSection,
     Popover,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
@@ -315,8 +315,8 @@ function WorkloadCvesOverviewPage() {
         <>
             <PageTitle title={`${pageTitle} Overview`} />
             <PageSection
+                hasBodyWrapper={false}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
-                variant="light"
             >
                 <Flex
                     direction={{
@@ -336,9 +336,11 @@ function WorkloadCvesOverviewPage() {
                             aria-label="More information about the current page"
                             bodyContent={pageTitleDescription}
                         >
-                            <Button title="Page description" variant="plain">
-                                <OutlinedQuestionCircleIcon />
-                            </Button>
+                            <Button
+                                icon={<OutlinedQuestionCircleIcon />}
+                                title="Page description"
+                                variant="plain"
+                            />
                         </Popover>
                     )}
                 </Flex>
@@ -357,9 +359,14 @@ function WorkloadCvesOverviewPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
+            <PageSection
+                hasBodyWrapper={false}
+                id={vulnStateTabContentId}
+                padding={{ default: 'noPadding' }}
+            >
                 {isViewingWithCves ? (
                     <PageSection
+                        hasBodyWrapper={false}
                         padding={{ default: 'noPadding' }}
                         component="div"
                         className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
@@ -369,14 +376,14 @@ function WorkloadCvesOverviewPage() {
                 ) : (
                     <Divider component="div" />
                 )}
-                <PageSection variant="light" component="div">
-                    <Text component="p">
+                <PageSection hasBodyWrapper={false} component="div">
+                    <Content component="p">
                         {isViewingWithCves
                             ? descriptionForVulnerabilityStateMap[currentVulnerabilityState]
                             : 'View images and deployments that do not have detected vulnerabilities'}
-                    </Text>
+                    </Content>
                 </PageSection>
-                <PageSection isCenterAligned>
+                <PageSection hasBodyWrapper={false} isCenterAligned>
                     <Card>
                         <CardBody>
                             <VulnerabilitiesOverview

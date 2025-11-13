@@ -1,4 +1,4 @@
-import { Divider, Flex, FlexItem, Label, PageSection, Text } from '@patternfly/react-core';
+import { Content, Divider, Flex, FlexItem, Label, PageSection } from '@patternfly/react-core';
 import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -47,11 +47,18 @@ function getStatusMessage({ status, description }: SignatureVerificationResult) 
 function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificationProps) {
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Review the signature verification results for this image</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v5-u-py-md pf-v5-u-px-xl"
+            >
+                <Content component="p">
+                    Review the signature verification results for this image
+                </Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
+                hasBodyWrapper={false}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >

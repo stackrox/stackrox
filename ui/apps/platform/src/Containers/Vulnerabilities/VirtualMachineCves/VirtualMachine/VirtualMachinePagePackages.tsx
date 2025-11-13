@@ -121,7 +121,7 @@ function VirtualMachinePagePackages({
     };
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarGroup className="pf-v5-u-w-100">

@@ -113,7 +113,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>

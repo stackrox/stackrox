@@ -149,7 +149,7 @@ function GenericWebhookIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -360,6 +360,7 @@ function GenericWebhookIntegrationForm({
                                                         {isEditable && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete header key/value pair"
                                                                     style={{
@@ -369,9 +370,7 @@ function GenericWebhookIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>
@@ -469,6 +468,7 @@ function GenericWebhookIntegrationForm({
                                                         {isEditable && (
                                                             <FlexItem>
                                                                 <Button
+                                                                    icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete extra field key/value pair"
                                                                     style={{
@@ -478,9 +478,7 @@ function GenericWebhookIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>

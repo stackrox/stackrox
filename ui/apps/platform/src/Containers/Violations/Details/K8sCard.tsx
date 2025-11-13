@@ -33,7 +33,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
 
     return (
         <div className="pf-v5-u-pb-md">
-            <Card isExpanded={isExpanded} isFlat>
+            <Card isExpanded={isExpanded}>
                 <CardHeader
                     onExpand={onExpand}
                     toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}

@@ -16,7 +16,9 @@ export type NoEntitiesIconTextProps = {
 function NoEntitiesIconText({ text, isTextOnly }: NoEntitiesIconTextProps): ReactElement {
     const icon = (
         <Icon>
-            <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
+            <ExclamationTriangleIcon
+                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+            />
         </Icon>
     );
 

@@ -162,7 +162,7 @@ function PolicyDetail({
 
     return (
         <>
-            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
+            <PageSection hasBodyWrapper={false} isFilled id="policy-page" className="pf-v5-u-pb-0">
                 <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{name}</BreadcrumbItem>
@@ -179,7 +179,7 @@ function PolicyDetail({
                                 <Label color="green">Enabled</Label>
                             )}
                         </ToolbarItem>
-                        <ToolbarItem align={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignEnd' }}>
                             <MenuDropdown
                                 popperProps={{
                                     position: 'end',
@@ -242,7 +242,7 @@ function PolicyDetail({
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            <PageSection variant="light" isFilled className="pf-v5-u-pt-0">
+            <PageSection hasBodyWrapper={false} isFilled className="pf-v5-u-pt-0">
                 {requestError}
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Policy details

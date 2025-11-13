@@ -71,7 +71,11 @@ function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return (
             <IconText
-                icon={<ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />}
+                icon={
+                    <ExclamationCircleIcon
+                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                    />
+                }
                 text={message}
             />
         );

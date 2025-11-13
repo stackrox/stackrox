@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, FlexItem, Modal } from '@patternfly/react-core';
+import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';

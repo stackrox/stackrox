@@ -34,7 +34,7 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
     }
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Container configuration</CardTitle>
             <CardBody>{content}</CardBody>
         </Card>

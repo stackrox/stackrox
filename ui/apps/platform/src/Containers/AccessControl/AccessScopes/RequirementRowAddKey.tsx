@@ -71,19 +71,20 @@ function RequirementRowAddKey({
                     <span className="pf-v5-u-flex-shrink-0">
                         <Tooltip content="Requirement key OK (press tab or enter)">
                             <Button
+                                icon={
+                                    <Icon>
+                                        <ArrowCircleDownIcon
+                                            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                            style={{ transform: 'rotate(-90deg)' }}
+                                        />
+                                    </Icon>
+                                }
                                 aria-label="Requirement key OK (press tab or enter)"
                                 variant="plain"
                                 className="pf-m-smallest pf-v5-u-ml-sm"
                                 isDisabled={isDisabledOK}
                                 onClick={onClickRequirementKeyOK}
-                            >
-                                <Icon>
-                                    <ArrowCircleDownIcon
-                                        color="var(--pf-v5-global--primary-color--100)"
-                                        style={{ transform: 'rotate(-90deg)' }}
-                                    />
-                                </Icon>
-                            </Button>
+                            />
                         </Tooltip>
                     </span>
                 </div>
@@ -96,15 +97,16 @@ function RequirementRowAddKey({
             <Td dataLabel="Action" className="pf-v5-u-text-align-right">
                 <Tooltip key="Cancel" content="Cancel">
                     <Button
+                        icon={
+                            <Icon>
+                                <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
+                            </Icon>
+                        }
                         aria-label="Cancel"
                         variant="plain"
                         className="pf-m-smallest"
                         onClick={handleRequirementKeyCancel}
-                    >
-                        <Icon>
-                            <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
-                        </Icon>
-                    </Button>
+                    />
                 </Tooltip>
             </Td>
         </Tr>

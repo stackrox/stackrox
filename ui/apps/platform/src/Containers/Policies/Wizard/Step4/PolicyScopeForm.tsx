@@ -4,8 +4,6 @@ import { useFormikContext } from 'formik';
 import {
     Alert,
     Button,
-    Chip,
-    ChipGroup,
     Divider,
     Flex,
     FlexItem,
@@ -15,6 +13,8 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    Label,
+    LabelGroup,
     MenuToggle,
     Select,
     SelectList,
@@ -24,6 +24,7 @@ import {
     TextInputGroupUtilities,
     Title,
 } from '@patternfly/react-core';
+
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
@@ -266,11 +267,12 @@ function PolicyScopeForm(): ReactElement {
                                             placeholder="Select images to exclude"
                                         >
                                             {excludedImageNames.length > 0 && (
-                                                <ChipGroup>
+                                                <LabelGroup>
                                                     {excludedImageNames.map((image) => (
-                                                        <Chip
+                                                        <Label
+                                                            variant="outline"
                                                             key={image}
-                                                            onClick={(event) => {
+                                                            onClose={(event) => {
                                                                 event.stopPropagation();
                                                                 handleChangeMultiSelect(
                                                                     event,
@@ -279,14 +281,15 @@ function PolicyScopeForm(): ReactElement {
                                                             }}
                                                         >
                                                             {image}
-                                                        </Chip>
+                                                        </Label>
                                                     ))}
-                                                </ChipGroup>
+                                                </LabelGroup>
                                             )}
                                         </TextInputGroupMain>
                                         <TextInputGroupUtilities>
                                             {excludedImageNames.length > 0 && (
                                                 <Button
+                                                    icon={<TimesIcon />}
                                                     variant="plain"
                                                     onClick={(event) => {
                                                         event.stopPropagation();
@@ -294,9 +297,7 @@ function PolicyScopeForm(): ReactElement {
                                                         setFilterValue('');
                                                     }}
                                                     aria-label="Clear input value"
-                                                >
-                                                    <TimesIcon />
-                                                </Button>
+                                                />
                                             )}
                                         </TextInputGroupUtilities>
                                     </TextInputGroup>

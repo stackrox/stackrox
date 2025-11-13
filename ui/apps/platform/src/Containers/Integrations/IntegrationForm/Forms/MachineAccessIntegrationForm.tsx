@@ -122,7 +122,7 @@ function MachineAccessIntegrationForm({
                     {alertRoles}
                 </Alert>
             )}
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -254,6 +254,13 @@ function MachineAccessIntegrationForm({
                                                                 >
                                                                     {
                                                                         <Button
+                                                                            icon={
+                                                                                <HelpIcon
+                                                                                    style={{
+                                                                                        color: 'black',
+                                                                                    }}
+                                                                                />
+                                                                            }
                                                                             type="button"
                                                                             aria-label="More info for name field"
                                                                             className="pf-v5-c-form__group-label-help"
@@ -262,13 +269,7 @@ function MachineAccessIntegrationForm({
                                                                                     'transparent',
                                                                             }}
                                                                             isInline
-                                                                        >
-                                                                            <HelpIcon
-                                                                                style={{
-                                                                                    color: 'black',
-                                                                                }}
-                                                                            />
-                                                                        </Button>
+                                                                        ></Button>
                                                                     }
                                                                 </Popover>
                                                             }
@@ -342,6 +343,7 @@ function MachineAccessIntegrationForm({
                                                     {isEditable && (
                                                         <FlexItem>
                                                             <Button
+                                                                icon={<TrashIcon />}
                                                                 variant="plain"
                                                                 aria-label="Delete rule"
                                                                 style={{
@@ -350,9 +352,7 @@ function MachineAccessIntegrationForm({
                                                                 onClick={() =>
                                                                     arrayHelpers.remove(index)
                                                                 }
-                                                            >
-                                                                <TrashIcon />
-                                                            </Button>
+                                                            />
                                                         </FlexItem>
                                                     )}
                                                 </Flex>

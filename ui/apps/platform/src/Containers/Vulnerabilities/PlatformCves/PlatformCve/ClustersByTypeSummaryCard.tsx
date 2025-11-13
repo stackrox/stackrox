@@ -30,7 +30,7 @@ function ClustersByTypeSummaryCard({ clusterCounts }: ClustersByTypeSummaryCardP
     const totalCount = generic + kubernetes + openshift + openshift4;
 
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>Clusters by type</CardTitle>
             <CardBody>
                 {totalCount > 0 ? (

@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-    Bullseye,
-    EmptyState,
-    EmptyStateHeader,
-    SelectOption,
-    Stack,
-    StackItem,
-} from '@patternfly/react-core';
+import { Bullseye, EmptyState, SelectOption, Stack, StackItem } from '@patternfly/react-core';
 import type { DropEvent } from '@patternfly/react-core';
 import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
@@ -47,9 +40,11 @@ function ViewActiveYAMLs({
     if (networkPolicies.length === 0) {
         return (
             <Bullseye>
-                <EmptyState variant="xs">
-                    <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
-                </EmptyState>
+                <EmptyState
+                    headingLevel="h4"
+                    titleText="No network policies"
+                    variant="xs"
+                ></EmptyState>
             </Bullseye>
         );
     }

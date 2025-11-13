@@ -133,7 +133,7 @@ function ExceptionRequestDetailsPage() {
 
     if (error) {
         return (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <TableErrorComponent
                     error={error}
                     message="An error occurred. Try refreshing again"
@@ -188,7 +188,7 @@ function ExceptionRequestDetailsPage() {
                     please submit a new request
                 </Alert>
             )}
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
                         Exception management
@@ -197,7 +197,7 @@ function ExceptionRequestDetailsPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex>
                     <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
@@ -229,7 +229,7 @@ function ExceptionRequestDetailsPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection className="pf-v5-u-p-0">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0">
                 {isApprovedPendingUpdate && (
                     <Tabs
                         activeKey={selectedContext}
@@ -249,13 +249,13 @@ function ExceptionRequestDetailsPage() {
                     </Tabs>
                 )}
                 <TabContent id={tabContentId}>
-                    <PageSection>
+                    <PageSection hasBodyWrapper={false}>
                         <RequestOverview
                             exception={vulnerabilityException}
                             context={selectedContext}
                         />
                     </PageSection>
-                    <PageSection>
+                    <PageSection hasBodyWrapper={false}>
                         <RequestCVEsTable
                             cves={relevantCVEs}
                             scope={scope}

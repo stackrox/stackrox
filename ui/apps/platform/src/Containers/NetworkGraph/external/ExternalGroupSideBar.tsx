@@ -2,12 +2,12 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Button,
+    Content,
     Divider,
     Flex,
     FlexItem,
     Stack,
     StackItem,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -74,9 +74,9 @@ function ExternalGroupSideBar({
                         <Title headingLevel="h2" id={labelledById}>
                             {externalGroupNode?.label}
                         </Title>
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             Connected entities outside your cluster
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>

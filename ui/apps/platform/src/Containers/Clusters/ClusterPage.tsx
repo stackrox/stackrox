@@ -294,14 +294,14 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     return (
         <>
             <PageTitle title="Cluster" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{selectedClusterName}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <Flex
                         direction={{ default: 'row' }}

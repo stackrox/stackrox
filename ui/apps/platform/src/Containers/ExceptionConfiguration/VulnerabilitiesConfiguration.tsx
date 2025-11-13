@@ -3,6 +3,7 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     Button,
+    Content,
     Divider,
     Flex,
     Form,
@@ -16,7 +17,6 @@ import {
     Split,
     SplitItem,
     Switch,
-    Text,
     TextInput,
     Title,
 } from '@patternfly/react-core';
@@ -87,7 +87,6 @@ function NumericSetting({
                     <Switch
                         id={`${fieldId}.enabled`}
                         label="Enabled"
-                        labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
                         onChange={(e) => handleChange(e)}
@@ -117,7 +116,6 @@ function BooleanSetting({
                     <Switch
                         id={fieldId}
                         label="Enabled"
-                        labelOff="Disabled"
                         isChecked={isSettingEnabled}
                         isDisabled={isDisabled}
                         onChange={(e) => handleChange(e)}
@@ -248,7 +246,9 @@ function VulnerabilitiesConfiguration({
             <div className="pf-v5-u-py-md pf-v5-u-px-md pf-v5-u-px-lg-on-xl">
                 <Split className="pf-v5-u-align-items-center">
                     <SplitItem isFilled>
-                        <Text>Configure exception behavior for vulnerabilities</Text>
+                        <Content component="p">
+                            Configure exception behavior for vulnerabilities
+                        </Content>
                     </SplitItem>
                     {hasWriteAccessForPage && (
                         <SplitItem>
@@ -265,7 +265,7 @@ function VulnerabilitiesConfiguration({
                 </Split>
             </div>
             <Divider component="div" />
-            <PageSection variant="light" component="div">
+            <PageSection hasBodyWrapper={false} component="div">
                 <Title headingLevel="h2">Configure exception times</Title>
                 <Form className="pf-v5-u-py-lg">
                     <Grid hasGutter>

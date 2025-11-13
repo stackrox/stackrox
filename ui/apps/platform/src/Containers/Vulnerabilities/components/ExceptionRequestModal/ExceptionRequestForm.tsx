@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import {
     Button,
+    Content,
     Flex,
     Form,
     FormGroup,
     Tab,
     TabContent,
     Tabs,
-    Text,
     TextArea,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
@@ -121,7 +121,7 @@ function ExceptionRequestForm({
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsLg' }}
                     >
-                        <Text>{formHeaderText}</Text>
+                        <Content component="p">{formHeaderText}</Content>
                         {showExpiryField && <ExpiryField formik={formik} />}
                         {showScopeField && (
                             <ExceptionScopeField

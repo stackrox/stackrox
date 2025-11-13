@@ -1,6 +1,7 @@
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Divider,
     Flex,
     Label,
@@ -10,7 +11,6 @@ import {
     Skeleton,
     Split,
     SplitItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -96,7 +96,7 @@ function PlatformCvePage() {
     return (
         <>
             <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
                         Kubernetes components
@@ -107,7 +107,7 @@ function PlatformCvePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 {cveMetadata ? (
                     <Flex
                         direction={{ default: 'column' }}
@@ -124,7 +124,7 @@ function PlatformCvePage() {
                                 </Label>
                             </LabelGroup>
                         )}
-                        <Text>{cveMetadata.clusterVulnerability.summary}</Text>
+                        <Content component="p">{cveMetadata.clusterVulnerability.summary}</Content>
                         <ExternalLink>
                             <a
                                 href={cveMetadata.clusterVulnerability.link}
@@ -143,7 +143,7 @@ function PlatformCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-flex-grow-1">
                 <AdvancedFiltersToolbar
                     className="pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}

@@ -213,7 +213,7 @@ function DeploymentBaseline({ deployment, deploymentId, onNodeSelect }: Deployme
                                 <FlowsTableHeaderText type="baseline" numFlows={numBaselines} />
                             </ToolbarItem>
                             {hasWriteAccessForActions && (
-                                <ToolbarItem align={{ default: 'alignRight' }}>
+                                <ToolbarItem align={{ default: 'alignEnd' }}>
                                     <FlowsBulkActions
                                         type="baseline"
                                         selectedRows={selectedRows}

@@ -7,6 +7,7 @@ import {
     CardBody,
     CardHeader,
     CardTitle,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -22,7 +23,6 @@ import {
     Split,
     SplitItem,
     Switch,
-    Text,
     TextArea,
     TextInput,
     Title,
@@ -447,7 +447,7 @@ const SystemConfigForm = ({
                                         />
                                     </SplitItem>
                                     <SplitItem>
-                                        <Text>MB</Text>
+                                        <Content component="p">MB</Content>
                                     </SplitItem>
                                 </Split>
                                 <FormHelperText>
@@ -552,7 +552,7 @@ const SystemConfigForm = ({
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>
                         <GridItem sm={12} md={6}>
-                            <Card isFlat data-testid="header-config">
+                            <Card data-testid="header-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -560,7 +560,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.header.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.header?.enabled
                                                     }
@@ -666,7 +665,7 @@ const SystemConfigForm = ({
                             </Card>
                         </GridItem>
                         <GridItem sm={12} md={6}>
-                            <Card isFlat data-testid="footer-config">
+                            <Card data-testid="footer-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -674,7 +673,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.footer.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.footer?.enabled
                                                     }
@@ -780,7 +778,7 @@ const SystemConfigForm = ({
                             </Card>
                         </GridItem>
                         <GridItem md={6}>
-                            <Card isFlat data-testid="login-notice-config">
+                            <Card data-testid="login-notice-config">
                                 <CardHeader
                                     actions={{
                                         actions: (
@@ -788,7 +786,6 @@ const SystemConfigForm = ({
                                                 <Switch
                                                     id="publicConfig.loginNotice.enabled"
                                                     label="Enabled"
-                                                    labelOff="Disabled"
                                                     isChecked={
                                                         values?.publicConfig?.loginNotice?.enabled
                                                     }
@@ -832,7 +829,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         {isTelemetryConfigured && (
                             <GridItem md={6}>
-                                <Card isFlat data-testid="telemetry-config">
+                                <Card data-testid="telemetry-config">
                                     <CardHeader
                                         actions={{
                                             actions: (
@@ -840,7 +837,6 @@ const SystemConfigForm = ({
                                                     <Switch
                                                         id="publicConfig.telemetry.enabled"
                                                         label="Enabled"
-                                                        labelOff="Disabled"
                                                         isChecked={
                                                             values?.publicConfig?.telemetry?.enabled
                                                         }

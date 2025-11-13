@@ -67,8 +67,8 @@ function ExceptionRequestsPage() {
         <>
             <PageTitle title="Exception Management" />
             <PageSection
+                hasBodyWrapper={false}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
-                variant="light"
             >
                 <Flex direction={{ default: 'column' }}>
                     <Title headingLevel="h1">Exception management</Title>
@@ -77,7 +77,7 @@ function ExceptionRequestsPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}

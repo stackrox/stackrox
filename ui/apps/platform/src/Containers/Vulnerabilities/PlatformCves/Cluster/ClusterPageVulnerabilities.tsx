@@ -1,4 +1,5 @@
 import {
+    Content,
     Divider,
     Flex,
     PageSection,
@@ -6,7 +7,6 @@ import {
     Skeleton,
     Split,
     SplitItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -75,10 +75,20 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Review and triage vulnerability data scanned on this cluster</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v5-u-py-md pf-v5-u-px-xl"
+            >
+                <Content component="p">
+                    Review and triage vulnerability data scanned on this cluster
+                </Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+            >
                 <AdvancedFiltersToolbar
                     className="pf-v5-u-pb-0 pf-v5-u-px-sm"
                     searchFilter={searchFilter}

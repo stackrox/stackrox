@@ -125,7 +125,7 @@ function CoveragesPage() {
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 {isLoadingScanConfigProfiles ? (
                     <Bullseye>
                         <Spinner />
@@ -178,7 +178,7 @@ function CoveragesPage() {
                             )}
                         </Flex>
                         <Divider component="div" />
-                        <PageSection variant="light" className="pf-v5-u-p-0" component="div">
+                        <PageSection hasBodyWrapper={false} className="pf-v5-u-p-0" component="div">
                             <Toolbar>
                                 <ToolbarContent>
                                     <ToolbarGroup className="pf-v5-u-w-100">

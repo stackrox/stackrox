@@ -1,0 +1,539 @@
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/AccessControl-DEeCtDbR.js
+  1:3827  error  --pf-v5-c-list--li--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/CvssFormatted-D1zSDdwv.js
+  1:3574  error  --pf-v5-c-table--cell--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/DashboardPage-DkugAjD6.js
+  123:5545  error  --pf-v5-c-page__main-section--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/Td-BazNLGHE.js
+  1:24745  error  --pf-v5-c-table__sticky-cell--Left is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+  1:24792  error  --pf-v5-c-table__sticky-cell--Right is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/UserPage-DJPF2h2i.js
+  1:1275  error  --pf-v5-c-table--m-compact--cell--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+  1:1357  error  --pf-v5-c-table--m-compact--cell--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+  1:2711  error  --pf-v5-c-page__main-section--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens        @patternfly/pf-codemods/tokens-update
+  1:2756  error  --pf-v5-c-page__main-section--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens      @patternfly/pf-codemods/tokens-update
+  1:2803  error  --pf-v5-c-page__main-section--PaddingBottom is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens     @patternfly/pf-codemods/tokens-update
+  1:2851  error  --pf-v5-c-page__main-section--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens       @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/WorkloadCvesPage-Duo8ERam.js
+   33:1039  error  --pf-v5-c-expandable-section__content--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens                 @patternfly/pf-codemods/tokens-update
+  148:5371  error  --pf-v5-c-list--li--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens                                    @patternfly/pf-codemods/tokens-update
+  406:1137  error  --pf-v5-c-expandable-section__content--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens                 @patternfly/pf-codemods/tokens-update
+  446:5866  error  --pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/download-Cp-TcQVV.js
+  13:45893  error  --pf-v5-c-code-block__content--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens     @patternfly/pf-codemods/tokens-update
+  13:45941  error  --pf-v5-c-code-block__content--PaddingBottom is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+  13:45992  error  --pf-v5-c-code-block__content--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens    @patternfly/pf-codemods/tokens-update
+  13:46041  error  --pf-v5-c-code-block__content--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/index-BRhIMbWz.js
+  69:34357  error  --pf-v5-c-label__content--Color is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/build/static/patternfly-DA2h5dpG.js
+  7:120515  error  --pf-v5-c-chip__text--MaxWidth is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/CheckboxSelect.tsx
+  3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  3:45  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/CodeViewer.tsx
+  41:5  error  --pf-v5-c-code-block__content--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens     @patternfly/pf-codemods/tokens-update
+  42:5  error  --pf-v5-c-code-block__content--PaddingBottom is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+  43:5  error  --pf-v5-c-code-block__content--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens    @patternfly/pf-codemods/tokens-update
+  44:5  error  --pf-v5-c-code-block__content--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/CompoundSearchFilter/components/ConditionText.tsx
+  3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  6:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/CompoundSearchFilter/components/SearchFilterAutocomplete.tsx
+  3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  7:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/CompoundSearchFilter/components/SimpleSelect.tsx
+  3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  3:22  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/EmailTemplate/EmailTemplateForm.tsx
+   63:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  107:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/EmailTemplate/EmailTemplateModal.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/ExpandRowTh.tsx
+  6:31  error  --pf-v5-c-table--cell--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/PatternFly/CheckboxSelect.tsx
+  10:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  15:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/PatternFly/FormLabelGroup.tsx
+  39:21  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/PatternFly/MenuDropdown.tsx
+  3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  3:20  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/ReportJob/PartialReportModal.tsx
+  6:2  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/SelectSingle/SelectSingle.tsx
+  2:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  2:34  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Components/TypeaheadSelect/TypeaheadSelect.tsx
+  11:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  14:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AccessControlRouteNotFound.tsx
+  8:16  error  --pf-v5-c-list--li--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AccessScopes/AccessScopeForm.tsx
+  186:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AccessScopes/AccessScopes.tsx
+  189:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"  @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AccessScopes/LabelInclusion.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AuthProviders/AuthProviderForm.tsx
+  449:41  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AuthProviders/AuthProviders.tsx
+  271:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"  @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AuthProviders/ConfigurationFormFields.tsx
+  118:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  152:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  211:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  245:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  290:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  341:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  387:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  452:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  498:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  545:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  582:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  619:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  673:33  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  700:33  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/AuthProviders/RuleGroups.tsx
+  120:49  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  148:49  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  183:49  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/PermissionSets/PermissionSetForm.tsx
+  171:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/PermissionSets/PermissionSets.tsx
+  216:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"  @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/Roles/RoleForm.tsx
+  164:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/AccessControl/Roles/Roles.tsx
+  263:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"  @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Administration/Events/AdministrationEventsToolbar.tsx
+  3:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Audit/ListeningEndpoints/ListeningEndpointsPage.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+   9:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                      @patternfly/pf-codemods/pagination-warn-markup-changed
+  10:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/DelegateScanning/Components/DelegatedRegistriesTable.tsx
+    3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling                                   @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+    9:5   warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                                                  @patternfly/pf-codemods/popper-update-appendTo-default
+  138:41  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/DelegateScanning/Components/DelegatedScanningSettings.tsx
+   3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling                                   @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  11:5   warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                                                  @patternfly/pf-codemods/popper-update-appendTo-default
+  83:21  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/DiscoveredClusters/DiscoveredClustersToolbar.tsx
+  3:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/DynamicConfigurationForm.tsx
+   62:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+   98:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  103:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  142:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  146:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/InitBundles/InitBundleForm.tsx
+  194:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/InitBundles/SecureClusterModal.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Clusters/StaticConfigurationForm.tsx
+  172:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  176:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  213:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Collections/CollectionForm.tsx
+  359:41  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Collections/CollectionsTable.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Collections/RuleSelector/ByLabelSelector.tsx
+  173:53  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Collections/RuleSelector/ByNameSelector.tsx
+  145:45  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/CheckDetailsPage.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/CheckDetailsTable.tsx
+  3:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/ClusterDetailsTable.tsx
+  4:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/ProfileChecksTable.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/ProfileClustersTable.tsx
+  2:19  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/ProfilesToggleGroup.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Coverage/components/ScanConfigurationSelect.tsx
+  3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  8:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Schedules/ScanConfigsTablePage.tsx
+  18:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Schedules/ViewScanConfigDetail.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Schedules/components/ReportJobs.tsx
+  8:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ComplianceEnhanced/Schedules/components/ScanConfigClustersTable.tsx
+  4:26  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Dashboard/ClusterSelect.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  10:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Dashboard/DashboardPage.tsx
+  87:33  error  --pf-v5-c-page__main-section--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Dashboard/NamespaceSelect.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  10:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ExceptionConfiguration/ExceptionConfigurationPage.tsx
+  1:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/ExceptionConfiguration/VulnerabilitiesConfiguration.tsx
+  77:33  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Integrations/IntegrationForm/FormLabelGroup.tsx
+  38:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  40:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/MachineAccessIntegrationForm.tsx
+  194:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  329:69  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Integrations/IntegrationsListPage/IntegrationsListPage.tsx
+  121:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"  @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MainPage/AcsFeedbackModal.tsx
+  4:1  warning  FeedbackModal no longer internally references a scss stylesheet. You may have to import "Feedback.css" located in the dist "@patternfly/react-user-feedback/dist/esm/Feedback/Feedback.css" to maintain styling on FeedbackModal  @patternfly/pf-codemods/user-feedback-warn-changes
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MainPage/Header/CLIDownloadMenu.tsx
+  5:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  6:5  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MainPage/Header/HelpMenu.tsx
+  5:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  5:19  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MainPage/Navigation/HorizontalSubnav.tsx
+  4:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  5:5  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MainPage/Navigation/NavigationContent.tsx
+  9:5  error  --pf-v5-c-label__content--Color is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/MitreAttackVectors/MitreAttackVectorsView.tsx
+  49:12  warning  Selectable styling attribute (`pf-m-selectable`) has been removed on the list items of the TreeView component. You should update selectors, tests and snapshot tests which are relying on the `pf-m-selectable` class  @patternfly/pf-codemods/treeView-warn-selectable-styling-modifier-removed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/common/AdvancedFlowsFilter/AdvancedFlowsFilter.tsx
+  3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  9:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/components/CIDRFormRow.tsx
+  37:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  52:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/components/DeploymentSelector.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  19:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/components/FlowBulkDropdown.tsx
+  2:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  5:5  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/components/FlowTable.tsx
+  1:10  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/components/NamespaceSelector.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  18:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/deployment/DeploymentSideBar.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/external/EntityDetails.tsx
+  9:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/external/ExternalIpsTable.tsx
+  6:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/namespace/NamespaceDeployments.tsx
+  6:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/namespace/NamespaceSideBar.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/simulation/DeploymentScopeModal.tsx
+  5:2  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/NetworkGraph/simulation/NetworkPolicySimulatorSidePanel.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Modal/RenamePolicySection.tsx
+  50:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Table/PoliciesTable.tsx
+  11:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/PolicyWizard.tsx
+  169:21  warning  The default WizardFooter now uses an ActionList wrapped around our Button components, rather than just our Button components  @patternfly/pf-codemods/wizardFooter-warn-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step1/MitreTacticSelect.tsx
+  2:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  6:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step1/MitreTechniqueSelect.tsx
+  3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  8:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step1/PolicyCategoriesSelectField.tsx
+    3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling                                   @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+   10:2   warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                                                  @patternfly/pf-codemods/popper-update-appendTo-default
+  168:21  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step2/PolicyBehaviorForm.tsx
+  338:33  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step3/PolicyCriteriaModal.tsx
+  195:25  warning  Selectable styling attribute (`pf-m-selectable`) has been removed on the list items of the TreeView component. You should update selectors, tests and snapshot tests which are relying on the `pf-m-selectable` class  @patternfly/pf-codemods/treeView-warn-selectable-styling-modifier-removed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step4/PolicyScopeForm.tsx
+    4:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling                                   @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+   17:2   warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                                                  @patternfly/pf-codemods/popper-update-appendTo-default
+  334:33  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Policies/Wizard/Step5/PolicyEnforcementForm.tsx
+  98:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/PolicyCategories/CreatePolicyCategoryModal.tsx
+  102:37  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/PolicyCategories/PolicyCategorySidePanel.tsx
+  96:41  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/SystemConfig/Form/PlatformComponentsConfigForm.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/SystemConfig/Form/SystemConfigForm.tsx
+  455:41  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/SystemHealth/DiagnosticBundle/DiagnosticBundleForm.tsx
+    3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling                                   @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+   15:2   warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                                                  @patternfly/pf-codemods/popper-update-appendTo-default
+  186:29  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+  221:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/User/UserPage.jsx
+  32:5  error  --pf-v5-c-page__main-section--PaddingTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens     @patternfly/pf-codemods/tokens-update
+  33:5  error  --pf-v5-c-page__main-section--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+  34:5  error  --pf-v5-c-page__main-section--PaddingBottom is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+  35:5  error  --pf-v5-c-page__main-section--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens    @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/User/UserPermissionsForRolesTable.tsx
+  8:5  error  --pf-v5-c-table--m-compact--cell--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens   @patternfly/pf-codemods/tokens-update
+  9:5  error  --pf-v5-c-table--m-compact--cell--PaddingRight is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Violations/Details/ViolationDetailsPage.tsx
+    5:1   warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+  114:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+  122:25  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+  132:29  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+  139:29  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+  154:29  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+  165:29  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Violations/ViolationsTablePage.tsx
+    3:1   warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+  310:13  warning  Classes from the `variant` prop will now only be applied to PageSection when the `type` prop has a value of "default"                                                                              @patternfly/pf-codemods/pageSection-warn-variantClasses-applied
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Violations/ViolationsTablePanel.tsx
+   3:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  10:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                      @patternfly/pf-codemods/pagination-warn-markup-changed
+  11:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/VulnMgmt/List/Cves/CveToPolicyShortForm.jsx
+  114:29  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/ApprovedDeferrals.tsx
+  2:23  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/ApprovedFalsePositives.tsx
+  2:23  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/DeniedRequests.tsx
+  2:23  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/ExceptionRequestDetailsPage.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/ExceptionRequestsPage.tsx
+  1:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/PendingRequests.tsx
+  2:23  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/ExceptionManagement/components/RequestCVEsTable.tsx
+  4:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/NodeCves/Node/NodePage.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/NodeCves/Node/NodePageVulnerabilities.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/NodeCves/NodeCve/NodeCvePage.tsx
+  7:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/PlatformCves/Cluster/ClusterPage.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/PlatformCves/Cluster/ClusterPageVulnerabilities.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/PlatformCves/PlatformCve/PlatformCvePage.tsx
+  9:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VirtualMachineCves/Overview/VirtualMachinesCvesTable.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VirtualMachineCves/VirtualMachine/VirtualMachinePage.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VirtualMachineCves/VirtualMachine/VirtualMachinePagePackages.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VirtualMachineCves/VirtualMachine/VirtualMachinePageVulnerabilities.tsx
+  5:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobs.tsx
+  21:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ViewVulnReportPage.tsx
+  4:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/VulnReports/ConfigReportsTab.tsx
+  18:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/VulnReports/ViewBasedReportsTab.tsx
+  6:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/VulnReports/VulnReportingLayout.tsx
+  1:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/VulnerablityReporting/forms/CollectionSelection.tsx
+  10:1  warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  16:5  warning  The default value of appendTo on Select has been updated to `document.body`                                                                                                                 @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Deployment/DeploymentPage.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Deployment/DeploymentPageResources.tsx
+   7:5   warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                                                                                               @patternfly/pf-codemods/pagination-warn-markup-changed
+  12:15  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                                                                                               @patternfly/pf-codemods/pagination-warn-markup-changed
+  92:33  error    --pf-v5-c-expandable-section__content--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Deployment/DeploymentPageVulnerabilities.tsx
+   6:5   warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+  18:15  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Image/ImagePage.tsx
+  3:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Image/ImagePageResources.tsx
+    7:5   warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                                                                                               @patternfly/pf-codemods/pagination-warn-markup-changed
+   12:15  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle                                                                                                                                               @patternfly/pf-codemods/pagination-warn-markup-changed
+  117:33  error    --pf-v5-c-expandable-section__content--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/Image/ImagePageVulnerabilities.tsx
+   7:5   warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+  18:15  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/ImageCve/ImageCvePage.tsx
+   9:5   warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+  25:15  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/NamespaceView/NamespaceViewPage.tsx
+  8:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/WatchedImages/WatchedImagesForm.tsx
+  70:25  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/WatchedImages/WatchedImagesTable.tsx
+  41:29  error  --pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/components/CreateReportDropdown.tsx
+  3:1   warning  We now recommend passing any icon to the `icon` prop instead of passing it as children, such as for plain, icon only toggles. Passing an icon as children will result in incorrect styling  @patternfly/pf-codemods/menuToggle-warn-iconOnly-toggle
+  3:10  warning  The default value of appendTo on Dropdown has been updated to `document.body`                                                                                                               @patternfly/pf-codemods/popper-update-appendTo-default
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/components/VerifiedSignatureLabel.tsx
+  26:16  error  --pf-v5-c-list--li--MarginTop is an old CSS token. About half of our tokens have been replaced with newer ones. To find a suitable replacement token, check our new documentation https://staging-v6.patternfly.org/tokens/all-patternfly-tokens  @patternfly/pf-codemods/tokens-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/WorkloadCves/components/VulnerabilityStateTabs.tsx
+  1:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/components/ExceptionRequestModal/ExceptionRequestForm.tsx
+  2:1  warning  The markup for the Tabs scroll buttons has been updated. They are now rendered with a div wrapper, use our Button component, and no longer have adjusted styling when the `isSubtab` prop is true  @patternfly/pf-codemods/tabs-update-markup
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/components/ExceptionRequestModal/ExceptionScopeField.tsx
+  79:21  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/components/ExceptionRequestModal/ExpiryField.tsx
+  149:29  warning  The `screenReaderText` prop on HelperTextItem has been updated, and will now render only when the `variant` prop has a value other than "default". Previously the prop was rendered only when the `isDynamic` prop was true  @patternfly/pf-codemods/helperTextItem-warn-screenReaderText-update
+
+/Users/dvail/go/src/github.com/stackrox/stackrox/ui/apps/platform/src/Containers/Vulnerabilities/components/TableEntityToolbar.tsx
+  4:5  warning  The markup for Pagination has changed. There is now a wrapper element rendered around the PaginationOptionsMenu toggle  @patternfly/pf-codemods/pagination-warn-markup-changed
+
+✖ 242 problems (39 errors, 203 warnings)
+

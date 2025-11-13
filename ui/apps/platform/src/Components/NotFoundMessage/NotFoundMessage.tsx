@@ -6,7 +6,6 @@ import {
     EmptyState,
     EmptyStateBody,
     EmptyStateFooter,
-    EmptyStateHeader,
 } from '@patternfly/react-core';
 
 export type NotFoundMessageProps = {
@@ -28,8 +27,7 @@ const NotFoundMessage = ({
     const isLinkVisible = actionText && url;
     return (
         <Bullseye className="pf-v5-u-flex-grow-1">
-            <EmptyState>
-                <EmptyStateHeader titleText={title} headingLevel="h1" />
+            <EmptyState headingLevel="h1" titleText={title}>
                 <EmptyStateFooter>
                     {message && <EmptyStateBody>{message}</EmptyStateBody>}
                     {isButtonVisible && (

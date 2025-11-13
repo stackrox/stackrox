@@ -54,7 +54,7 @@ const ViolationsBreadcrumbs = ({
 
     return (
         <>
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb className="pf-v5-u-mb-0 pf-v5-u-pl-0">
                     {topLevelBreadcrumb}
                     {subPageBreadcrumb}

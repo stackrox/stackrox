@@ -60,7 +60,7 @@ function NodePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - Node ${nodeName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewPath}>Nodes</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -72,7 +72,7 @@ function NodePage() {
             </PageSection>
             <Divider component="div" />
             {error ? (
-                <PageSection variant="light">
+                <PageSection hasBodyWrapper={false}>
                     <Bullseye>
                         <EmptyStateTemplate
                             title={getAxiosErrorMessage(error)}
@@ -84,10 +84,10 @@ function NodePage() {
                 </PageSection>
             ) : (
                 <>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <NodePageHeader data={data?.node} />
                     </PageSection>
-                    <PageSection padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(e, key) => {
@@ -109,6 +109,7 @@ function NodePage() {
                         </Tabs>
                     </PageSection>
                     <PageSection
+                        hasBodyWrapper={false}
                         isFilled
                         padding={{ default: 'noPadding' }}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import {
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
     EmptyState,
-    EmptyStateHeader,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -14,7 +14,6 @@ import {
     LabelGroup,
     Stack,
     StackItem,
-    TextContent,
     Title,
 } from '@patternfly/react-core';
 
@@ -61,9 +60,9 @@ function DetailSection({ title, children }) {
             isExpanded={isExpanded}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
-                <TextContent>
+                <Content>
                     <Title headingLevel="h2">{title}</Title>
-                </TextContent>
+                </Content>
             }
         >
             <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
@@ -295,12 +294,11 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No ports available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No ports available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>
@@ -318,12 +316,11 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant="xs">
-                                <EmptyStateHeader
-                                    titleText="No containers available"
-                                    headingLevel="h4"
-                                />
-                            </EmptyState>
+                            <EmptyState
+                                headingLevel="h4"
+                                titleText="No containers available"
+                                variant="xs"
+                            ></EmptyState>
                         )}
                     </DetailSection>
                 </li>

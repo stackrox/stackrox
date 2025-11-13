@@ -160,7 +160,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title={`${pageTitle} - Namespace view`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
                         {pageTitle}
@@ -169,7 +169,7 @@ function NamespaceViewPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
@@ -181,7 +181,7 @@ function NamespaceViewPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
@@ -189,7 +189,7 @@ function NamespaceViewPage() {
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
                                     <span>

@@ -42,7 +42,7 @@ function TimestampedEventCard<T>({
     const lastOccurrenceTimestamp = Math.max(...timestamps);
 
     return (
-        <Card isFlat isExpanded={isExpanded}>
+        <Card isExpanded={isExpanded}>
             <CardHeader
                 onExpand={onExpand}
                 toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}

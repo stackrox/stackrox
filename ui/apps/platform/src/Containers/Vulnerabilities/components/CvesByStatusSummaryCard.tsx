@@ -2,10 +2,10 @@ import {
     Card,
     CardBody,
     CardTitle,
+    Content,
     Flex,
     Grid,
     GridItem,
-    Text,
     pluralize,
 } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
@@ -71,7 +71,8 @@ const statusDisplays = [
     },
 ] as const;
 
-const disabledColor100 = 'var(--pf-v5-global--disabled-color--100)';
+const disabledColor100 =
+    'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--disabled-color--100 */
 
 const statusHiddenText = {
     Fixable: 'Fixable hidden',
@@ -88,7 +89,7 @@ function CvesByStatusSummaryCard({
     hiddenStatuses,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-v5-u-pl-sm">
@@ -102,7 +103,8 @@ function CvesByStatusSummaryCard({
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
                                     <Icon />
-                                    <Text
+                                    <Content
+                                        component="p"
                                         style={{
                                             color: isHidden ? disabledColor100 : 'inherit',
                                         }}
@@ -110,7 +112,7 @@ function CvesByStatusSummaryCard({
                                         {isHidden
                                             ? statusHiddenText[status]
                                             : text(cveStatusCounts)}
-                                    </Text>
+                                    </Content>
                                 </Flex>
                             </GridItem>
                         );

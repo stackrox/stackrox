@@ -151,19 +151,20 @@ function ByNameSelector({
                             </div>
                             {!isDisabled && (
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <TrashIcon
+                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--Color--dark-200 */
+                                                className="pf-v5-u-flex-shrink-1"
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                        </Icon>
+                                    }
                                     className="rule-selector-delete-value-button"
                                     aria-label={`Delete ${value}`}
                                     variant="plain"
                                     onClick={() => onDeleteValue(index)}
-                                >
-                                    <Icon>
-                                        <TrashIcon
-                                            color="var(--pf-v5-global--Color--dark-200)"
-                                            className="pf-v5-u-flex-shrink-1"
-                                            style={{ cursor: 'pointer' }}
-                                        />
-                                    </Icon>
-                                </Button>
+                                />
                             )}
                         </div>
                     );

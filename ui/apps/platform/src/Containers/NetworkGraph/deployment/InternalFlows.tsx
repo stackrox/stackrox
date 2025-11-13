@@ -183,7 +183,7 @@ function InternalFlows({
                             <FlowsTableHeaderText type={edgeState} numFlows={totalFlows} />
                         </ToolbarItem>
                         {hasWriteAccessForActions && (
-                            <ToolbarItem align={{ default: 'alignRight' }}>
+                            <ToolbarItem align={{ default: 'alignEnd' }}>
                                 <FlowsBulkActions
                                     type="active"
                                     selectedRows={selectedRows}

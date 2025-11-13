@@ -6,11 +6,11 @@ import {
     Divider,
     Flex,
     FlexItem,
-    Modal,
     Spinner,
     Title,
     Truncate,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { useMediaQuery } from 'react-responsive';
 
