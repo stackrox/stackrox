@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Dispatch, ReactElement, SetStateAction } from 'react';
-import { Alert, Bullseye, Button, Modal, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Spinner } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import useTableSelection from 'hooks/useTableSelection';

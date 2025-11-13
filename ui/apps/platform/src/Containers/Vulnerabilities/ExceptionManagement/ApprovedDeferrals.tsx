@@ -85,7 +85,7 @@ function ApprovedDeferrals() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -95,7 +95,7 @@ function ApprovedDeferrals() {
     }
 
     return (
-        <PageSection>
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Exception Management - Approved Deferrals" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -104,7 +104,7 @@ function ApprovedDeferrals() {
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
             >
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         toggleTemplate={({ firstIndex, lastIndex }) => (
                             <span>

@@ -10,8 +10,8 @@ import {
     Flex,
     List,
     ListItem,
-    Modal,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import useAnalytics, { REVOKE_INIT_BUNDLE } from 'hooks/useAnalytics';
 import { revokeClusterInitBundles } from 'services/ClustersService';

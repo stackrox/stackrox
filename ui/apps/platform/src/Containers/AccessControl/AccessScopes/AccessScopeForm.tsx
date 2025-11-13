@@ -208,7 +208,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                         <FormGroup
                             label="Allowed resources"
                             fieldId="effectiveAccessScope"
-                            labelIcon={labelIconEffectiveAccessScope}
+                            labelHelp={labelIconEffectiveAccessScope}
                         >
                             <EffectiveAccessScopeTable
                                 counterComputing={counterComputing}
@@ -225,7 +225,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                         <FormGroup
                             label="Label selection rules"
                             fieldId="labelInclusion"
-                            labelIcon={labelIconLabelInclusion}
+                            labelHelp={labelIconLabelInclusion}
                         >
                             <LabelInclusion
                                 clusterLabelSelectors={values.rules.clusterLabelSelectors}

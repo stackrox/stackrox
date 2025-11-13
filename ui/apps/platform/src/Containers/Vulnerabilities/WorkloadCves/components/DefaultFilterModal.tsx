@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Checkbox, Form, FormGroup, Modal } from '@patternfly/react-core';
+import { Button, Checkbox, Form, FormGroup } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import cloneDeep from 'lodash/cloneDeep';
 import { FormikProvider, useFormik } from 'formik';
 import { Globe } from 'react-feather';

@@ -180,7 +180,7 @@ function SearchPage(): ReactElement {
     });
 
     return (
-        <PageSection variant="light" id="search-page">
+        <PageSection hasBodyWrapper={false} id="search-page">
             <PageTitle title={pageTitleItems.join(' - ')} />
             <Stack hasGutter>
                 <StackItem>

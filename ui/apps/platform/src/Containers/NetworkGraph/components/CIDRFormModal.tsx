@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FormikProvider, useFormik } from 'formik';
-import { Alert, Bullseye, Button, Flex, Modal, Spinner } from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Flex, Spinner } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
 
 import { isValidCidrBlock } from 'utils/urlUtils';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
+import { Alert, Button, Content, Flex } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import { cancelVulnerabilityException } from 'services/VulnerabilityExceptionService';
 import type { VulnerabilityException } from 'services/VulnerabilityExceptionService';
@@ -69,7 +70,7 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
                         title="Cancelling the request will return the CVEs to the 'Observed' status."
                         component="p"
                     >
-                        <Text>CVE count: {exception.cves.length}</Text>
+                        <Content component="p">CVE count: {exception.cves.length}</Content>
                     </Alert>
                 </Flex>
             </Modal>

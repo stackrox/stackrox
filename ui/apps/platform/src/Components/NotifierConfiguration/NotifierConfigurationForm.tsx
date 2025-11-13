@@ -121,6 +121,7 @@ function NotifierConfigurationForm({
                                         </FlexItem>
                                         <FlexItem>
                                             <Button
+                                                icon={<TrashIcon />}
                                                 variant="plain"
                                                 aria-label="Delete delivery destination"
                                                 onClick={() => {
@@ -147,9 +148,7 @@ function NotifierConfigurationForm({
                                                         onDeleteLastNotifierConfiguration();
                                                     }
                                                 }}
-                                            >
-                                                <TrashIcon />
-                                            </Button>
+                                            />
                                         </FlexItem>
                                     </Flex>
                                 </CardTitle>
@@ -208,12 +207,13 @@ function NotifierConfigurationForm({
                                                     }
                                                 >
                                                     <Button
+                                                        icon={
+                                                            <HelpIcon aria-label="More info for email template field" />
+                                                        }
                                                         variant="plain"
                                                         aria-label="More info for email template field"
                                                         aria-describedby={`${fieldId}.customSubject`}
-                                                    >
-                                                        <HelpIcon aria-label="More info for email template field" />
-                                                    </Button>
+                                                    />
                                                 </Tooltip>
                                             }
                                             fieldId={`${fieldId}.customSubject`}

@@ -1,15 +1,15 @@
 import {
     Button,
     ClipboardCopy,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Flex,
-    Modal,
-    Text,
     pluralize,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import differenceInCalendarDays from 'date-fns/difference_in_calendar_days';
 
 import {
@@ -102,7 +102,9 @@ function CompletedExceptionRequestModal({
             ]}
         >
             <Flex direction={{ default: 'column' }}>
-                <Text>Use this link to share and discuss your request with your approver.</Text>
+                <Content component="p">
+                    Use this link to share and discuss your request with your approver.
+                </Content>
                 <ClipboardCopy isReadOnly hoverTip="Copy" clickTip="Copied">
                     {exceptionRequestURL}
                 </ClipboardCopy>

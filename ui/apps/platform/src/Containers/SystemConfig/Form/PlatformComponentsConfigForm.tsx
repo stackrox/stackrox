@@ -6,23 +6,23 @@ import {
     CardBody,
     CardHeader,
     CardTitle,
+    Content,
     Divider,
     Flex,
     FlexItem,
     FormGroup,
     FormSection,
     Grid,
-    Modal,
     Stack,
     Tab,
     TabTitleText,
     Tabs,
-    Text,
     TextArea,
     TextInput,
     Title,
     Tooltip,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { PlusCircleIcon, RedoAltIcon, TrashIcon } from '@patternfly/react-icons';
 import type { FormikErrors } from 'formik';
 import type { Values } from './formTypes';
@@ -55,7 +55,7 @@ function PlatformComponentsConfigForm({
         <>
             <FormSection>
                 <Title headingLevel="h2">Platform components configuration</Title>
-                <Card isFlat>
+                <Card>
                     <Tabs
                         activeKey={activeTabKey}
                         onSelect={handleTabClick}
@@ -65,11 +65,11 @@ function PlatformComponentsConfigForm({
                         <Tab eventKey={0} title={<TabTitleText>Core system</TabTitleText>}>
                             <div className="pf-v5-u-p-md">
                                 <Title headingLevel="h3">Core system components</Title>
-                                <Text>
+                                <Content component="p">
                                     Core system components are not customizable and are set by the
                                     system. These definitions may change over time as the system is
                                     upgraded.
-                                </Text>
+                                </Content>
                                 <Divider component="div" className="pf-v5-u-py-md" />
                                 <FormGroup
                                     label="Namespace rules (Regex)"
@@ -95,7 +95,7 @@ function PlatformComponentsConfigForm({
                         >
                             <div className="pf-v5-u-p-md">
                                 <Title headingLevel="h3">Red Hat layered products</Title>
-                                <Text>
+                                <Content component="p">
                                     Components found in Red Hat layered and partner product
                                     namespaces are included in the platform definition by default.
                                     Enter one or more namespaces using regex, separated by | (pipe
@@ -111,7 +111,7 @@ function PlatformComponentsConfigForm({
                                         RE2 syntax reference
                                     </Button>
                                     .
-                                </Text>
+                                </Content>
                                 <Alert
                                     variant="info"
                                     component="p"
@@ -147,12 +147,11 @@ function PlatformComponentsConfigForm({
                                     <FlexItem>
                                         <Tooltip content={<div>Reset to default definition</div>}>
                                             <Button
+                                                icon={<RedoAltIcon />}
                                                 variant="plain"
                                                 aria-label="Reset to default definition"
                                                 onClick={toggleModal}
-                                            >
-                                                <RedoAltIcon />
-                                            </Button>
+                                            />
                                         </Tooltip>
                                     </FlexItem>
                                 </Flex>
@@ -161,7 +160,7 @@ function PlatformComponentsConfigForm({
                         <Tab eventKey={2} title={<TabTitleText>Custom components</TabTitleText>}>
                             <div className="pf-v5-u-p-md">
                                 <Title headingLevel="h3">Custom platform components</Title>
-                                <Text>
+                                <Content component="p">
                                     Extend the platform definition by defining namespaces for
                                     additional applications and products. Enter one or more
                                     namespaces using regex, separated by | (pipe symbol). For more
@@ -177,13 +176,14 @@ function PlatformComponentsConfigForm({
                                         RE2 syntax reference
                                     </Button>
                                     .
-                                </Text>
+                                </Content>
                                 <Divider component="div" className="pf-v5-u-py-md" />
                                 <Grid hasGutter md={6}>
                                     {values.platformComponentConfigRules.customRules.map(
                                         (_customRule, index) => {
                                             const headerActions = (
                                                 <Button
+                                                    icon={<TrashIcon />}
                                                     variant="plain"
                                                     aria-label="Remove custom component"
                                                     onClick={() => {
@@ -196,9 +196,7 @@ function PlatformComponentsConfigForm({
                                                             'platformComponentConfigRules.customRules'
                                                         );
                                                     }}
-                                                >
-                                                    <TrashIcon />
-                                                </Button>
+                                                />
                                             );
                                             return (
                                                 // @TODO: Consider a more appropriate way to handle the keys

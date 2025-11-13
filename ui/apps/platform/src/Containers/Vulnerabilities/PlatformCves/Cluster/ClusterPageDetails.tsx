@@ -2,6 +2,7 @@ import {
     Bullseye,
     Card,
     CardBody,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -9,7 +10,6 @@ import {
     Flex,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -48,10 +48,18 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>View details about this cluster</Text>
+            <PageSection
+                hasBodyWrapper={false}
+                component="div"
+                className="pf-v5-u-py-md pf-v5-u-px-xl"
+            >
+                <Content component="p">View details about this cluster</Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+            >
                 <Card>
                     <CardBody>
                         {error ? (

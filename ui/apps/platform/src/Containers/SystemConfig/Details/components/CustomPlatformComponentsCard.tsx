@@ -5,14 +5,14 @@ import {
     CardBody,
     CardTitle,
     CodeBlock,
+    Content,
     Divider,
-    Modal,
     Stack,
     StackItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { PlatformComponentRule } from 'types/config.proto';
 
@@ -29,24 +29,24 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
 
     return (
         <>
-            <Card isFlat>
+            <Card>
                 <CardTitle>Custom components</CardTitle>
                 <CardBody>
                     <Stack hasGutter>
-                        <Text>
+                        <Content component="p">
                             Extend the platform definition by defining namespaces for additional
                             applications and products.
-                        </Text>
+                        </Content>
                         <Divider component="div" />
-                        <Text component="small" className="pf-v5-u-color-200">
+                        <Content component="small" className="pf-v5-u-color-200">
                             Namespaces match (Regex)
-                        </Text>
+                        </Content>
                         {customRules.length === 0 && <CodeBlock>None</CodeBlock>}
                         {customRules.length >= 1 && (
                             <CodeBlock>
-                                <Text component="small" className="pf-v5-u-color-200">
+                                <Content component="small" className="pf-v5-u-color-200">
                                     {customRules[0].name}
-                                </Text>
+                                </Content>
                                 <div className="truncate-multiline">
                                     {customRules[0].namespaceRule.regex}
                                 </div>
@@ -77,9 +77,9 @@ function CustomPlatformComponentsCard({ customRules }: CustomPlatformComponentsC
                     {customRules.map((rule) => {
                         return (
                             <CodeBlock key={rule.name}>
-                                <Text component="small" className="pf-v5-u-color-200">
+                                <Content component="small" className="pf-v5-u-color-200">
                                     {rule.name}
-                                </Text>
+                                </Content>
                                 <div>{rule.namespaceRule.regex}</div>
                             </CodeBlock>
                         );

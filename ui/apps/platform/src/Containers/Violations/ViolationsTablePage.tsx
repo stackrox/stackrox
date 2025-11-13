@@ -4,6 +4,7 @@ import {
     Alert,
     Bullseye,
     Button,
+    Content,
     Flex,
     PageSection,
     Popover,
@@ -11,7 +12,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
@@ -260,7 +260,7 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
-            <PageSection variant="light" id="violations-table">
+            <PageSection hasBodyWrapper={false} id="violations-table">
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -272,13 +272,15 @@ function ViolationsTablePage(): ReactElement {
                         aria-label="More information about the current page"
                         bodyContent={description}
                     >
-                        <Button title="Page description" variant="plain">
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
+                        <Button
+                            icon={<OutlinedQuestionCircleIcon />}
+                            title="Page description"
+                            variant="plain"
+                        />
                     </Popover>
                 </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
                 <Tabs
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
@@ -306,10 +308,12 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection variant="light">
-                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            <PageSection hasBodyWrapper={false}>
+                <Content component="p">
+                    {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
+                </Content>
             </PageSection>
-            <PageSection variant="default" id={tabContentId}>
+            <PageSection hasBodyWrapper={false} variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
                         <Spinner size="xl" />
@@ -325,7 +329,7 @@ function ViolationsTablePage(): ReactElement {
                     </Bullseye>
                 )}
                 {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <ViolationsTablePanel
                             violations={currentPageAlerts}
                             violationsCount={alertCount}

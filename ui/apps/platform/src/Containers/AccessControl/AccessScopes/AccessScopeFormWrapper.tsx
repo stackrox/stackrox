@@ -135,7 +135,7 @@ function AccessScopeFormWrapper({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
@@ -164,7 +164,7 @@ function AccessScopeFormWrapper({
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
+                        <ToolbarGroup variant="action-group">
                             <ToolbarItem>
                                 <Button
                                     variant="primary"

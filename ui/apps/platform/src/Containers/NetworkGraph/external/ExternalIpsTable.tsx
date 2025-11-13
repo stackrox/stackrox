@@ -69,7 +69,7 @@ function ExternalIpsTable({
             <Divider />
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             itemCount={totalEntities}
                             page={page}

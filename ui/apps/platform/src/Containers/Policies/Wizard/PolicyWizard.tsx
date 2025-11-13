@@ -147,7 +147,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                     policy will be automatically overwritten during the next resync.
                 </Alert>
             )}
-            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
+            <PageSection hasBodyWrapper={false} isFilled id="policy-page" className="pf-v5-u-pb-0">
                 <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
@@ -159,7 +159,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                 <Divider component="div" />
             </PageSection>
             <PageSection
-                variant="light"
+                hasBodyWrapper={false}
                 isFilled
                 hasOverflowScroll
                 padding={{ default: 'noPadding' }}

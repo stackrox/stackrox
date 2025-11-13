@@ -3,6 +3,7 @@ import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
     Bullseye,
+    Content,
     Flex,
     FlexItem,
     Spinner,
@@ -12,7 +13,6 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -177,12 +177,13 @@ function DeploymentSideBar({
                         >
                             {deployment?.name}
                         </Title>
-                        <Text
+                        <Content
+                            component="p"
                             className="pf-v5-u-font-size-sm pf-v5-u-color-200"
                             data-testid="drawer-subtitle"
                         >
                             in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>

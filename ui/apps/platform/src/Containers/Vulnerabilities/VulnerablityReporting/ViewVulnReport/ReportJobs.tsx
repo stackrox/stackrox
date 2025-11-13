@@ -15,6 +15,7 @@ import {
     Bullseye,
     Button,
     Card,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -22,7 +23,6 @@ import {
     SelectOption,
     Spinner,
     Switch,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -156,12 +156,11 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         <Switch
                             id="view-only-my-jobs"
                             label="View only my jobs"
-                            labelOff="View only my jobs"
                             isChecked={showOnlyMyJobs}
                             onChange={(_event, checked: boolean) => handleChange(checked)}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -224,7 +223,9 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                             title="No report jobs found"
                                             headingLevel="h2"
                                         >
-                                            <Text>Clear any search value and try again</Text>
+                                            <Content component="p">
+                                                Clear any search value and try again
+                                            </Content>
                                             <Button
                                                 variant="link"
                                                 onClick={() => {
@@ -325,7 +326,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={5}>
                                         <ExpandableRowContent>
-                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
+                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md">
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails

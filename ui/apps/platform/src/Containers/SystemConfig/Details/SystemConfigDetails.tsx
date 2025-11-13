@@ -1,12 +1,12 @@
 import type { ReactElement } from 'react';
 import {
     Button,
+    Content,
     Flex,
     Grid,
     GridItem,
     PageSection,
     Popover,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
@@ -35,7 +35,7 @@ function SystemConfigDetails({
 
     return (
         <>
-            <PageSection data-testid="platform-components-config">
+            <PageSection hasBodyWrapper={false} data-testid="platform-components-config">
                 <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <Title headingLevel="h2" className="pf-v5-u-mb-md">
                         Platform components configuration
@@ -50,26 +50,25 @@ function SystemConfigDetails({
                         }
                     >
                         <Button
+                            icon={<OutlinedQuestionCircleIcon />}
                             variant="plain"
                             isInline
                             aria-label="Show platform components config info"
                             className="pf-v5-u-p-0"
-                        >
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
+                        />
                     </Popover>
                 </Flex>
-                <Text>
+                <Content component="p">
                     Define platform components using namespaces to segment platform security
                     findings from user workloads
-                </Text>
+                </Content>
                 <div className="pf-v5-u-mt-lg">
                     <PlatformComponentsConfigDetails
                         platformComponentConfig={systemConfig.platformComponentConfig}
                     />
                 </div>
             </PageSection>
-            <PageSection data-testid="private-data-retention-config">
+            <PageSection hasBodyWrapper={false} data-testid="private-data-retention-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Private data retention configuration
                 </Title>
@@ -78,22 +77,22 @@ function SystemConfigDetails({
                     privateConfig={systemConfig?.privateConfig}
                 />
             </PageSection>
-            <PageSection data-testid="private-prometheus-config">
+            <PageSection hasBodyWrapper={false} data-testid="private-prometheus-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Prometheus metrics configuration
                 </Title>
-                <Text>
+                <Content component="p">
                     The following Prometheus metrics are exposed on the API endpoint at the{' '}
                     <code>/metrics</code> path. Scrape requests require permissions to view
                     Administration resources and are subject for the scoped access control.
-                </Text>
+                </Content>
                 <Grid hasGutter>
                     <PrivateConfigPrometheusMetricsDetails
                         privateConfig={systemConfig?.privateConfig}
                     />
                 </Grid>
             </PageSection>
-            <PageSection data-testid="public-config">
+            <PageSection hasBodyWrapper={false} data-testid="public-config">
                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                     Public configuration
                 </Title>

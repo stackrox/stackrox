@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import {
-    Button,
-    FileUpload,
-    Flex,
-    FlexItem,
-    ModalBoxBody,
-    ModalBoxFooter,
-    Title,
-} from '@patternfly/react-core';
+import { Button, FileUpload, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 
 import type { ListPolicy } from 'types/policy.proto';
 

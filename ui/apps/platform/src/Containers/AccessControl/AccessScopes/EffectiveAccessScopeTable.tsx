@@ -138,6 +138,7 @@ function EffectiveAccessScopeTable({
                     />
                     {Object.keys(clusterLabels).length > 1 && (
                         <Button
+                            icon={isExpandedLabels[clusterId] ? <AngleDownIcon /> : <AngleUpIcon />}
                             variant="plain"
                             aria-label="Expand or collapse cluster labels"
                             style={styleExpandCollapseButton}
@@ -147,9 +148,7 @@ function EffectiveAccessScopeTable({
                                     [clusterId]: !isExpandedLabels[clusterId],
                                 });
                             }}
-                        >
-                            {isExpandedLabels[clusterId] ? <AngleDownIcon /> : <AngleUpIcon />}
-                        </Button>
+                        />
                     )}
                 </Td>
             </TreeRowWrapper>
@@ -226,6 +225,13 @@ function EffectiveAccessScopeTable({
                         />
                         {Object.keys(namespaceLabels).length > 1 && (
                             <Button
+                                icon={
+                                    isExpandedLabels[namespaceId] ? (
+                                        <AngleDownIcon />
+                                    ) : (
+                                        <AngleUpIcon />
+                                    )
+                                }
                                 variant="plain"
                                 aria-label="Expand or collapse namespace labels"
                                 style={styleExpandCollapseButton}
@@ -235,13 +241,7 @@ function EffectiveAccessScopeTable({
                                         [namespaceId]: !isExpandedLabels[namespaceId],
                                     });
                                 }}
-                            >
-                                {isExpandedLabels[namespaceId] ? (
-                                    <AngleDownIcon />
-                                ) : (
-                                    <AngleUpIcon />
-                                )}
-                            </Button>
+                            />
                         )}
                     </Td>
                 </TreeRowWrapper>
@@ -303,7 +303,9 @@ function EffectiveAccessScopeTable({
                             <Th
                                 modifier="fitContent"
                                 className={
-                                    counterComputing === 0 ? '' : '--pf-v5-global--Color--200'
+                                    counterComputing === 0
+                                        ? ''
+                                        : '--pf-t--temp--dev--tbd' /* CODEMODS: original v5 color was --pf-v5-global--Color--200 */
                                 }
                             >
                                 Allowed

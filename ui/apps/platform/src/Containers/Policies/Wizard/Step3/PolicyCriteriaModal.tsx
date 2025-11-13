@@ -3,15 +3,13 @@ import {
     Button,
     Flex,
     FlexItem,
-    Modal,
-    ModalBoxBody,
-    ModalBoxFooter,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
     TreeView,
     TreeViewSearch,
 } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import type { TreeViewDataItem } from '@patternfly/react-core';
 import { kebabCase } from 'lodash';
 
@@ -154,7 +152,7 @@ function PolicyCriteriaModal({
     const toolbar = (
         <Toolbar style={{ padding: 0 }}>
             <ToolbarContent style={{ padding: 0 }}>
-                <ToolbarItem widths={{ default: '100%' }}>
+                <ToolbarItem>
                     <TreeViewSearch
                         onSearch={onSearch}
                         id="input-search"

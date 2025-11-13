@@ -207,7 +207,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                             onMyJobsFilterChange={onMyJobsFilterChange}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -241,7 +241,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
                 renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
                         <>
-                            <Card isFlat>
+                            <Card>
                                 <CardBody>
                                     <JobDetails
                                         reportStatus={snapshot.reportStatus}

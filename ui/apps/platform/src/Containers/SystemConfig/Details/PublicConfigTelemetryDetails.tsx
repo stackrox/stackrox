@@ -14,7 +14,7 @@ const PublicConfigTelemetryDetails = ({
     const isEnabled = publicConfig?.telemetry?.enabled !== false;
 
     return (
-        <Card isFlat data-testid="telemetry-config">
+        <Card data-testid="telemetry-config">
             <CardHeader
                 actions={{
                     actions: (

@@ -91,7 +91,7 @@ function CheckDetailsTable({
                                 onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
                                 page={page}

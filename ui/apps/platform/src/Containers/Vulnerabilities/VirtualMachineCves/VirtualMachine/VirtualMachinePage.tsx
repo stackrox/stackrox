@@ -3,13 +3,13 @@ import { useParams } from 'react-router-dom-v5-compat';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Divider,
     PageSection,
     Skeleton,
     Tab,
     TabContent,
     Tabs,
-    Text,
 } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -95,7 +95,7 @@ function VirtualMachinePage() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
@@ -111,14 +111,14 @@ function VirtualMachinePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <VirtualMachinePageHeader
                     virtualMachineData={virtualMachineData}
                     isLoading={isLoading}
                     error={error}
                 />
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_, key) => {
@@ -138,17 +138,18 @@ function VirtualMachinePage() {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection variant="light" padding={{ default: 'padding' }}>
-                <Text>
-                    <Text>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'padding' }}>
+                <Content component="p">
+                    <Content component="p">
                         {activeTabKey === vulnTabKey &&
                             'Prioritize and remediate observed CVEs for this virtual machine'}
                         {activeTabKey === packagesTabKey &&
                             'View all packages from this virtual machine'}
-                    </Text>
-                </Text>
+                    </Content>
+                </Content>
             </PageSection>
             <PageSection
+                hasBodyWrapper={false}
                 isFilled
                 padding={{ default: 'padding' }}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"

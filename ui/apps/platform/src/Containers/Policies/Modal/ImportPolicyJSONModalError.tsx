@@ -1,12 +1,6 @@
 import type { ReactElement } from 'react';
-import {
-    Alert,
-    Button,
-    List,
-    ListItem,
-    ModalBoxBody,
-    ModalBoxFooter,
-} from '@patternfly/react-core';
+import { Alert, Button, List, ListItem } from '@patternfly/react-core';
+import { ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 

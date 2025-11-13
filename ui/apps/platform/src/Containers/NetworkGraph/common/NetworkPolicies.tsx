@@ -7,7 +7,6 @@ import {
     Button,
     Divider,
     EmptyState,
-    EmptyStateHeader,
     SelectOption,
     Spinner,
     Stack,
@@ -118,9 +117,11 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             <>
                 {policyErrorBanner}
                 <Bullseye>
-                    <EmptyState variant="xs">
-                        <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
-                    </EmptyState>
+                    <EmptyState
+                        headingLevel="h4"
+                        titleText="No network policies"
+                        variant="xs"
+                    ></EmptyState>
                 </Bullseye>
             </>
         );

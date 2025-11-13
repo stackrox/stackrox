@@ -64,7 +64,7 @@ function ClusterPage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - Cluster ${clusterName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={platformCvesClusterOverviewPath}>
                         Clusters
@@ -78,7 +78,7 @@ function ClusterPage() {
             </PageSection>
             <Divider component="div" />
             {error ? (
-                <PageSection variant="light">
+                <PageSection hasBodyWrapper={false}>
                     <Bullseye>
                         <EmptyStateTemplate
                             title={getAxiosErrorMessage(error)}
@@ -90,10 +90,10 @@ function ClusterPage() {
                 </PageSection>
             ) : (
                 <>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <ClusterPageHeader data={data?.cluster} />
                     </PageSection>
-                    <PageSection padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(e, key) => {
@@ -115,6 +115,7 @@ function ClusterPage() {
                         </Tabs>
                     </PageSection>
                     <PageSection
+                        hasBodyWrapper={false}
                         isFilled
                         padding={{ default: 'noPadding' }}
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"

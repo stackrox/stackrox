@@ -5,6 +5,7 @@ import {
     Button,
     Checkbox,
     CodeBlockAction,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -16,7 +17,6 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import type { DropEvent } from '@patternfly/react-core';
@@ -217,7 +217,9 @@ function NetworkPolicySimulatorSidePanel({
                         <Title headingLevel="h2" id={labelledById}>
                             Generated network policies
                         </Title>
-                        <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>
+                        <Content component="p" className="pf-v5-u-font-weight-bold">
+                            Scope of baseline:
+                        </Content>
                     </FlexItem>
                     <NetworkPoliciesGenerationScope
                         scopeHierarchy={scopeHierarchy}
@@ -417,7 +419,9 @@ function NetworkPolicySimulatorSidePanel({
                     <Title headingLevel="h2" id={labelledById}>
                         Generate network policies
                     </Title>
-                    <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>
+                    <Content component="p" className="pf-v5-u-font-weight-bold">
+                        Scope of baseline:
+                    </Content>
                     <NetworkPoliciesGenerationScope
                         scopeHierarchy={scopeHierarchy}
                         scopeDeploymentCount={scopeDeploymentCount}
@@ -454,12 +458,12 @@ function NetworkPolicySimulatorSidePanel({
                                         </Title>
                                     </StackItem>
                                     <StackItem>
-                                        <Text>
+                                        <Content component="p">
                                             Generate a set of recommended network policies based on
                                             your cluster&apos;s traffic. Only deployments that are
                                             part of the current scope will be included in generated
                                             policies.
-                                        </Text>
+                                        </Content>
                                     </StackItem>
                                     <StackItem>
                                         <Checkbox
@@ -493,12 +497,12 @@ function NetworkPolicySimulatorSidePanel({
                                         </Title>
                                     </StackItem>
                                     <StackItem>
-                                        <Text>
+                                        <Content component="p">
                                             Upload your network policies to quickly preview your
                                             environment under different policy configurations and
                                             time windows. When ready, apply the network policies
                                             directly or share them with your team.
-                                        </Text>
+                                        </Content>
                                     </StackItem>
                                     <StackItem>
                                         <UploadYAMLButton

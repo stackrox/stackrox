@@ -149,7 +149,9 @@ function CollectionsFormPage({
                         </Button>
                         {collectionErrorId === id ? (
                             <Tooltip content="This collection forms a loop with its parent and cannot be attached">
-                                <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                <ExclamationCircleIcon
+                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                />
                             </Tooltip>
                         ) : null}
                     </Flex>
@@ -304,7 +306,11 @@ function CollectionsFormPage({
     }
 
     return (
-        <PageSection className="pf-v5-u-h-100" padding={{ default: 'noPadding' }}>
+        <PageSection
+            hasBodyWrapper={false}
+            className="pf-v5-u-h-100"
+            padding={{ default: 'noPadding' }}
+        >
             <PageTitle title={getPageTitle(pageAction, data)} />
             {content}
             {modalCollectionId && (

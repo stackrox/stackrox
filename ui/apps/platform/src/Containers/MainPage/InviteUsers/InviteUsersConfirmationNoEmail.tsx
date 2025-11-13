@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Alert, ClipboardCopy, Text } from '@patternfly/react-core';
+import { Alert, ClipboardCopy, Content } from '@patternfly/react-core';
 import { Link } from 'react-router-dom-v5-compat';
 
 import { accessControlBasePath } from 'routePaths';
@@ -26,17 +26,17 @@ function InviteUsersConfirmationNoEmail({
                     isInline
                     className="pf-v5-u-mb-lg"
                 >
-                    <Text>
+                    <Content component="p">
                         You must enter at least one email that does not yet have a rule in the
                         system.
-                    </Text>
-                    <Text>
+                    </Content>
+                    <Content component="p">
                         Visit the{' '}
                         <Link onClick={onClose} to={`${accessControlBasePath}/auth-providers`}>
                             auth provider
                         </Link>{' '}
                         section to check which users already have rules.
-                    </Text>
+                    </Content>
                 </Alert>
             ) : (
                 <>
@@ -48,14 +48,14 @@ function InviteUsersConfirmationNoEmail({
                             isInline
                             className="pf-v5-u-mb-lg"
                         >
-                            <Text className="pf-v5-u-mb-md">
+                            <Content component="p" className="pf-v5-u-mb-md">
                                 The following users could not be invited because their emails
                                 already have rules applied to them.
-                            </Text>
-                            <Text className="pf-v5-u-mb-md">
+                            </Content>
+                            <Content component="p" className="pf-v5-u-mb-md">
                                 {emailBuckets.existingEmails.join(', ')}
-                            </Text>
-                            <Text>
+                            </Content>
+                            <Content component="p">
                                 Visit the{' '}
                                 <Link
                                     onClick={onClose}
@@ -64,16 +64,16 @@ function InviteUsersConfirmationNoEmail({
                                     auth provider
                                 </Link>{' '}
                                 section to check these rules.
-                            </Text>
+                            </Content>
                         </Alert>
                     )}
-                    <Text className="pf-v5-u-mb-sm">
+                    <Content component="p" className="pf-v5-u-mb-sm">
                         New rules have been created, but invitation emails could not be sent. Use
                         the text below to manually send emails to your invitees.
-                    </Text>
-                    <Text className="pf-v5-u-mb-lg">
+                    </Content>
+                    <Content component="p" className="pf-v5-u-mb-lg">
                         Role: <strong>{role}</strong>
-                    </Text>
+                    </Content>
                     <ClipboardCopy
                         isReadOnly
                         isExpanded

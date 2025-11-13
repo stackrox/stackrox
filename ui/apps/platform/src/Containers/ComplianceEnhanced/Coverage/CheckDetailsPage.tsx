@@ -157,7 +157,7 @@ function CheckDetailsPage() {
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink
                         to={generatePathWithScanConfig(coverageProfileChecksPath, {
@@ -180,7 +180,7 @@ function CheckDetailsPage() {
                 setSelectedScanConfigName={setSelectedScanConfigName}
             />
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <CheckDetailsHeader
                     checkName={checkName}
                     checkStatsResponse={checkStatsResponse}
@@ -207,7 +207,7 @@ function CheckDetailsPage() {
                     tabContentId={tabContentIdForDetails}
                 />
             </Tabs>
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 {activeTabKey === RESULTS_TAB && (
                     <CheckDetailsTable
                         checkResultsCount={checkResultsResponse?.totalCount ?? 0}
@@ -225,7 +225,7 @@ function CheckDetailsPage() {
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (
-                    <PageSection variant="light" component="div" id={tabContentIdForDetails}>
+                    <PageSection hasBodyWrapper={false} component="div" id={tabContentIdForDetails}>
                         <CheckDetailsInfo
                             checkDetails={checkDetailsResponse}
                             isLoading={isLoadingCheckDetails}

@@ -37,7 +37,7 @@ function AnnouncementBanner(): ReactElement | null {
         return (
             <Banner
                 className="pf-v5-u-display-flex pf-v5-u-justify-content-center pf-v5-u-align-items-center"
-                variant={'blue'}
+                color={'blue'}
                 style={{ whiteSpace: 'normal' }}
             >
                 <span className="pf-v5-u-text-align-center">

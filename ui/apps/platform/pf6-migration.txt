@@ -17,3 +17,7 @@ npm install \
   @patternfly/react-component-groups@^6.4.0 \
   @patternfly/react-user-feedback@^6.2.0 \
   @patternfly/react-charts@^8.4.0
+
+npx @patternfly/pf-codemods@latest . --v6 --fix
+
+

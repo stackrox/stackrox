@@ -118,7 +118,7 @@ function SyslogIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll aria-label="Syslog Form Section">
+            <PageSection hasBodyWrapper={false}  isFilled hasOverflowScroll aria-label="Syslog Form Section">
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
@@ -333,7 +333,7 @@ function SyslogIntegrationForm({
                                                         </FlexItem>
                                                         {isEditable && (
                                                             <FlexItem>
-                                                                <Button
+                                                                <Button icon={<TrashIcon />}
                                                                     variant="plain"
                                                                     aria-label="Delete extra field key/value pair"
                                                                     style={{
@@ -343,9 +343,7 @@ function SyslogIntegrationForm({
                                                                     onClick={() =>
                                                                         arrayHelpers.remove(index)
                                                                     }
-                                                                >
-                                                                    <TrashIcon />
-                                                                </Button>
+                                                                 />
                                                             </FlexItem>
                                                         )}
                                                     </Flex>

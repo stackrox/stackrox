@@ -72,7 +72,8 @@ function CollectionFormDrawer({
                     panelContent={
                         <DrawerPanelContent
                             style={{
-                                borderLeft: 'var(--pf-v5-global--BorderColor--100) 1px solid',
+                                borderLeft:
+                                    'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--BorderColor--100 */,
                                 maxWidth: isInlineDrawer ? '40%' : 'unset',
                             }}
                         >

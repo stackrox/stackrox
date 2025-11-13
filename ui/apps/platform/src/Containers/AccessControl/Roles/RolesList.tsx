@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { Alert, Button, Modal, PageSection, Title, pluralize } from '@patternfly/react-core';
+import { Alert, Button, PageSection, Title, pluralize } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import usePermissions from 'hooks/usePermissions';
@@ -90,7 +91,7 @@ function RolesList({
         : roles;
 
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (

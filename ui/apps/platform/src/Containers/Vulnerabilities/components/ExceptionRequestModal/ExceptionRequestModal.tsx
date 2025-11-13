@@ -1,4 +1,5 @@
-import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
+import { Alert, pluralize } from '@patternfly/react-core';
+import { Modal, ModalBoxBody } from '@patternfly/react-core/deprecated';
 import type { FormikHelpers } from 'formik';
 import dateFns from 'date-fns';
 

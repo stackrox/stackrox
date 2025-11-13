@@ -37,7 +37,7 @@ function IntegrationTile({
     return (
         <GalleryItem>
             <Link to={linkTo} data-testid="integration-tile">
-                <Card isSelectable isCompact isFlat style={styleCard}>
+                <Card isSelectable isCompact style={styleCard}>
                     <CardHeader
                         actions={{
                             actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,

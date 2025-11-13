@@ -157,7 +157,7 @@ function ViewVulnReportPage() {
             </AlertGroup>
             {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageTitle title="View vulnerability report" />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
@@ -166,7 +166,7 @@ function ViewVulnReportPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">{reportConfiguration.name}</Title>
@@ -236,7 +236,7 @@ function ViewVulnReportPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
                 <Tabs
                     activeKey={selectedTab}
                     onSelect={(_e, tab) => {
@@ -258,7 +258,7 @@ function ViewVulnReportPage() {
                 </Tabs>
             </PageSection>
             {selectedTab === 'CONFIGURATION_DETAILS' && (
-                <PageSection isCenterAligned id={configDetailsTabId}>
+                <PageSection hasBodyWrapper={false} isCenterAligned id={configDetailsTabId}>
                     <Card>
                         <CardBody>
                             <ReportParametersDetails
@@ -294,7 +294,7 @@ function ViewVulnReportPage() {
                 </PageSection>
             )}
             {selectedTab === 'ALL_REPORT_JOBS' && (
-                <PageSection isCenterAligned id={allReportJobsTabId}>
+                <PageSection hasBodyWrapper={false} isCenterAligned id={allReportJobsTabId}>
                     <ReportJobs reportId={reportId} />
                 </PageSection>
             )}

@@ -74,7 +74,7 @@ function EmailNotifierForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
                 <Form isWidthLimited>
                     <FormLabelGroup
                         label="Integration name"

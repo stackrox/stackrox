@@ -250,7 +250,7 @@ function ViolationsTablePanel({
                         </Title>
                     </ToolbarItem>
                     {hasActions && (
-                        <ToolbarItem align={{ default: 'alignRight' }}>
+                        <ToolbarItem align={{ default: 'alignEnd' }}>
                             <Select
                                 isOpen={isSelectOpen}
                                 onOpenChange={setIsSelectOpen}
@@ -278,7 +278,7 @@ function ViolationsTablePanel({
                             </Select>
                         </ToolbarItem>
                     )}
-                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
+                    <ToolbarItem align={{ default: 'alignEnd' }} variant="pagination">
                         <Pagination
                             itemCount={violationsCount}
                             page={currentPage}
@@ -290,7 +290,12 @@ function ViolationsTablePanel({
                 </ToolbarContent>
             </Toolbar>
             <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
+            <PageSection
+                hasBodyWrapper={false}
+                isFilled
+                padding={{ default: 'noPadding' }}
+                hasOverflowScroll
+            >
                 <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>

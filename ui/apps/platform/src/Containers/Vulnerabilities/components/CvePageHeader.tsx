@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Flex, Label, LabelGroup, List, ListItem, Text, Title } from '@patternfly/react-core';
+import { Content, Flex, Label, LabelGroup, List, ListItem, Title } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -100,7 +100,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
             {labels.length !== 0 && <LabelGroup numLabels={labels.length}>{labels}</LabelGroup>}
             {topDistro && (
                 <>
-                    <Text>{topDistro.summary}</Text>
+                    <Content component="p">{topDistro.summary}</Content>
                     <List isPlain>
                         {prioritizedDistros.map((distro) => (
                             <ListItem key={distro.operatingSystem}>

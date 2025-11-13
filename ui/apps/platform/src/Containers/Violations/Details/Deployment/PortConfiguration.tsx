@@ -29,7 +29,7 @@ function PortConfiguration({ deployment }: PortConfigurationProps): ReactElement
     }
 
     return (
-        <Card isFlat>
+        <Card>
             <CardTitle component="h3">Port configuration</CardTitle>
             <CardBody>{content}</CardBody>
         </Card>

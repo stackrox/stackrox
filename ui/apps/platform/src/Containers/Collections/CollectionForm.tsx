@@ -6,8 +6,6 @@ import {
     Button,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     ExpandableSection,
     ExpandableSectionToggle,
     Flex,
@@ -74,8 +72,7 @@ function AttachedCollectionTable({
             </Tbody>
         </Table>
     ) : (
-        <EmptyState>
-            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+        <EmptyState icon={CubesIcon}>
             <EmptyStateFooter>
                 <p>There are no other collections attached to this collection</p>
             </EmptyStateFooter>

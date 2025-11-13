@@ -20,10 +20,10 @@ function ExceptionConfigurationPage() {
     return (
         <>
             <PageTitle title="Exception configuration" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">Exception configuration</Title>
             </PageSection>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={category}
                     onSelect={(e, value) => setCategory(value)}

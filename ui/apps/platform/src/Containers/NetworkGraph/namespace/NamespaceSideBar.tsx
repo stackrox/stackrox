@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import {
+    Content,
     Flex,
     FlexItem,
     Stack,
@@ -8,7 +9,6 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import uniq from 'lodash/uniq';
@@ -92,11 +92,11 @@ function NamespaceSideBar({
                         <Title headingLevel="h2" id={labelledById}>
                             {namespaceNode?.label}
                         </Title>
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             in &quot;
                             {cluster}
                             &quot;
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
+    Content,
     Divider,
     Flex,
     FlexItem,
     Stack,
     StackItem,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -80,9 +80,9 @@ function GenericEntitiesSideBar({
                         <Title headingLevel="h2" id={labelledById}>
                             {entityNode?.label}
                         </Title>
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             {sidebarTitle}
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>

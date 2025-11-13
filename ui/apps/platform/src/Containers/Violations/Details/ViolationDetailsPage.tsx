@@ -95,7 +95,7 @@ function ViolationDetailsPage(): ReactElement {
     return (
         <>
             <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">{title}</Title>
                 <Title
                     headingLevel="h2"
@@ -111,7 +111,11 @@ function ViolationDetailsPage(): ReactElement {
                     )}
                 </LabelGroup>
             </PageSection>
-            <PageSection variant="default" padding={{ default: 'noPadding' }}>
+            <PageSection
+                hasBodyWrapper={false}
+                variant="default"
+                padding={{ default: 'noPadding' }}
+            >
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}
@@ -119,7 +123,7 @@ function ViolationDetailsPage(): ReactElement {
                     className="pf-v5-u-background-color-100 pf-v5-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
-                        <PageSection variant="default">
+                        <PageSection hasBodyWrapper={false} variant="default">
                             <ViolationDetails
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
@@ -129,14 +133,14 @@ function ViolationDetailsPage(): ReactElement {
                     </Tab>
                     {enforcement && (
                         <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <EnforcementDetails alert={alert} enforcement={enforcement} />
                             </PageSection>
                         </Tab>
                     )}
                     {isDeploymentAlert(alert) && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 {hasReadAccessForDeployment ? (
                                     <DeploymentTabWithReadAccessForDeployment
                                         alertDeployment={alert.deployment}
@@ -151,7 +155,7 @@ function ViolationDetailsPage(): ReactElement {
                     )}
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <Title headingLevel="h3" className="pf-v5-u-mb-md">
                                     Policy overview
                                 </Title>
@@ -162,7 +166,7 @@ function ViolationDetailsPage(): ReactElement {
                     )}
                     {isDeploymentAlert(alert) && hasReadAccessForNetworkPolicy && (
                         <Tab eventKey={4} title={<TabTitleText>Network policies</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <NetworkPolicies
                                     clusterId={alert.deployment.clusterId}
                                     namespaceName={alert.deployment.namespace}

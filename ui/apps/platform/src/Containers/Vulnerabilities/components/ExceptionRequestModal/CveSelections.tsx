@@ -1,5 +1,5 @@
 import { Link, generatePath } from 'react-router-dom-v5-compat';
-import { Alert, Button, Flex, FlexItem, List, ListItem, Text } from '@patternfly/react-core';
+import { Alert, Button, Content, Flex, FlexItem, List, ListItem } from '@patternfly/react-core';
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -80,7 +80,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                                         )}
                                     </FlexItem>
                                 </Flex>
-                                <Text>{summary}</Text>
+                                <Content component="p">{summary}</Content>
                             </Flex>
                         </ListItem>
                     );

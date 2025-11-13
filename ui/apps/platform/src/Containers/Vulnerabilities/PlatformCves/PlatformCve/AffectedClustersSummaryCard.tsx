@@ -10,7 +10,7 @@ function AffectedClustersSummaryCard({
     totalClusterCount,
 }: AffectedClustersSummaryCardProps) {
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>Affected clusters</CardTitle>
             <CardBody>
                 <Grid>

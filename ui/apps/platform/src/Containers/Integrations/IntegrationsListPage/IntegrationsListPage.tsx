@@ -6,7 +6,6 @@ import {
     Divider,
     Flex,
     PageSection,
-    PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
 import { connect } from 'react-redux';
@@ -96,14 +95,14 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant={PageSectionVariants.light} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">
                     {isSignatureIntegration ? 'Signature' : ''} Integrations
                 </Title>
@@ -119,7 +118,7 @@ function IntegrationsListPage({
                     </Title>
                 )}
             </PageSection>
-            <PageSection variant="default">
+            <PageSection hasBodyWrapper={false} variant="default">
                 <IntegrationsTable
                     integrations={integrations}
                     hasMultipleDelete

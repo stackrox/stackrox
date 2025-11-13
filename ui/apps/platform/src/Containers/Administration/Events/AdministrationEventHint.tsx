@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { List, ListItem, Text } from '@patternfly/react-core';
+import { Content, List, ListItem } from '@patternfly/react-core';
 
 /*
  * Split hint string for conditional rendering in component:
@@ -56,7 +56,9 @@ function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactE
                 ) : lineOrList === '' ? (
                     <br key={lineOrListIndex} />
                 ) : (
-                    <Text key={lineOrListIndex}>{lineOrList}</Text>
+                    <Content component="p" key={lineOrListIndex}>
+                        {lineOrList}
+                    </Content>
                 )
             )}
         </div>

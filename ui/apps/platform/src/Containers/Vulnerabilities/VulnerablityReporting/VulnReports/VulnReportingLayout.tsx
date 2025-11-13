@@ -33,11 +33,11 @@ function VulnReportingLayout() {
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">Vulnerability reporting</Title>
             </PageSection>
             <PageSection
-                variant="light"
+                hasBodyWrapper={false}
                 padding={{ default: 'noPadding' }}
                 className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
             >
@@ -52,7 +52,7 @@ function VulnReportingLayout() {
                     ))}
                 </Tabs>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                 <Outlet />
             </PageSection>
         </>

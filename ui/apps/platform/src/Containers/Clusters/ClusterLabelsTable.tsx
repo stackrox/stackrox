@@ -88,7 +88,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-v5-global--warning-color--100)'
+                                    ? 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
                                     : 'transparent',
                         }}
                     >
@@ -102,13 +102,16 @@ function ClusterLabelsTable({
                             <Td dataLabel="Action">
                                 <Tooltip content="Delete value">
                                     <Button
+                                        icon={
+                                            <TimesCircleIcon
+                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                            />
+                                        }
                                         aria-label="Delete value"
                                         variant="plain"
                                         style={{ padding: 0 }}
                                         onClick={() => onDeleteLabel(key)}
-                                    >
-                                        <TimesCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                    </Button>
+                                    />
                                 </Tooltip>
                             </Td>
                         )}
@@ -154,22 +157,23 @@ function ClusterLabelsTable({
                         <Td dataLabel="Action">
                             <Tooltip content={isReplace ? 'Replace label' : 'Add label'}>
                                 <Button
+                                    icon={
+                                        <Icon>
+                                            <PlusCircleIcon
+                                                color={
+                                                    isReplace
+                                                        ? 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+                                                        : 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+                                                }
+                                            />
+                                        </Icon>
+                                    }
                                     aria-label={isReplace ? 'Replace label' : 'Add label'}
                                     variant="plain"
                                     style={{ padding: 0 }}
                                     isDisabled={!isValid}
                                     onClick={() => onAddLabel()}
-                                >
-                                    <Icon>
-                                        <PlusCircleIcon
-                                            color={
-                                                isReplace
-                                                    ? 'var(--pf-v5-global--warning-color--100)'
-                                                    : 'var(--pf-v5-global--success-color--100)'
-                                            }
-                                        />
-                                    </Icon>
-                                </Button>
+                                />
                             </Tooltip>
                         </Td>
                     </Tr>

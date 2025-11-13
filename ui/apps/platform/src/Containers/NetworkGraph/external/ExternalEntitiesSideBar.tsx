@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
 import {
+    Content,
     Divider,
     Flex,
     FlexItem,
     Stack,
     StackItem,
-    Text,
     Title,
     ToggleGroup,
     ToggleGroupItem,
@@ -107,9 +107,9 @@ function ExternalEntitiesSideBar({
                     </FlexItem>
                     <FlexItem>
                         <EntityTitleText text={entityNode?.label} id={labelledById} />
-                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v5-u-font-size-sm pf-v5-u-color-200">
                             Connected entities outside your cluster
-                        </Text>
+                        </Content>
                     </FlexItem>
                 </Flex>
             </StackItem>
