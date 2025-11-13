@@ -444,10 +444,10 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 			upsertedConfig: nil,
 		},
 		"Missing private config gets fully configured when Features activated": {
-			enabledFlags: []string{features.PlatformComponents.EnvVar()},
 			initialConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: nil,
+				PublicConfig:            samplePublicConfig,
+				PlatformComponentConfig: samplePlatformConfig,
+				PrivateConfig:           nil,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -518,7 +518,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 			},
 		},
 		"Configure vulnerability exception management when missing and Feature activated": {
-			enabledFlags: []string{features.PlatformComponents.EnvVar()},
 			initialConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
 				PrivateConfig: &storage.PrivateConfig{
@@ -530,6 +529,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
+				PlatformComponentConfig: samplePlatformConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
