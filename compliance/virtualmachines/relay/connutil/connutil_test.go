@@ -1,4 +1,4 @@
-package connection
+package connutil
 
 import (
 	"io"
@@ -10,15 +10,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestConnection(t *testing.T) {
-	suite.Run(t, new(connectionTestSuite))
+func TestConnutil(t *testing.T) {
+	suite.Run(t, new(connutilTestSuite))
 }
 
-type connectionTestSuite struct {
+type connutilTestSuite struct {
 	suite.Suite
 }
 
-func (s *connectionTestSuite) TestReadFromConn() {
+func (s *connutilTestSuite) TestReadFromConn() {
 	data := []byte("Hello, world!")
 
 	cases := map[string]struct {
