@@ -1,3 +1,5 @@
+// Package handler provides vsock-specific connection handling for virtual machine index reports.
+// It coordinates reading, validating, and forwarding VM index reports to the sensor component.
 package handler
 
 import (
@@ -7,7 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay/connection"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay/connutil"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/vsock"
@@ -26,6 +28,8 @@ type Handler struct {
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 }
 
+// New creates a new Handler with the provided sensor client.
+// The handler uses a fixed 10-second timeout for reading from connections.
 func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) *Handler {
 	return &Handler{
 		connectionReadTimeout: 10 * time.Second,
@@ -33,6 +37,20 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) *Handler {
 	}
 }
 
+// Handle processes a vsock connection containing a VM index report.
+//
+// The function:
+// - Extracts and validates the vsock CID from the connection
+// - Reads and parses the index report data
+// - Validates the reported vsock CID matches the connection's CID (prevents spoofing)
+// - Forwards the report to the sensor component
+//
+// Caller contract:
+// - ctx must not be nil and should be canceled when the connection should be terminated
+// - conn must be a valid vsock connection (implements net.Conn with vsock.Addr)
+// - The caller is responsible for closing the connection
+//
+// Returns nil on success, or an error if any step fails.
 func (h *Handler) Handle(ctx context.Context, conn net.Conn) error {
 	log.Infof("Handling connection from %s", conn.RemoteAddr())
 
@@ -46,7 +64,7 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) error {
 		return errors.Wrapf(err, "sending report to sensor (vsock CID: %s)", indexReport.GetVsockCid())
 	}
 
-	log.Debugf("Finished handling connection from %s", conn.RemoteAddr())
+	log.Infof("Finished handling connection from %s", conn.RemoteAddr())
 
 	return nil
 }
@@ -58,7 +76,7 @@ func (h *Handler) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport,
 	}
 
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
-	data, err := connection.ReadFromConn(conn, maxSizeBytes, h.connectionReadTimeout)
+	data, err := connutil.ReadFromConn(conn, maxSizeBytes, h.connectionReadTimeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading from connection (vsock CID: %d)", vsockCID)
 	}

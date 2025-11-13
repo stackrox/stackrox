@@ -1,4 +1,6 @@
-package connection
+// Package connutil provides utilities for reading from network connections with size and timeout constraints.
+// This package is transport-agnostic and works with any net.Conn implementation.
+package connutil
 
 import (
 	"io"
@@ -12,7 +14,20 @@ import (
 var log = logging.LoggerForModule()
 
 // ReadFromConn reads data from a connection with size and timeout limits.
-// It returns an error if the data exceeds maxSize or if the read times out.
+//
+// The function will:
+// - Set a read deadline on the connection based on the timeout parameter
+// - Read up to maxSize bytes from the connection
+// - Return an error if the data exceeds maxSize or if the read times out
+//
+// Caller contract:
+// - conn must be a valid, open connection
+// - maxSize must be > 0
+// - timeout must be > 0
+// - The caller is responsible for closing the connection
+//
+// Returns the data read (up to maxSize bytes) or an error. Errors include remote address
+// information for debugging.
 func ReadFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
 	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSize, timeout)
 
@@ -27,11 +42,11 @@ func ReadFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 	limitedReader := io.LimitReader(conn, int64(maxSize+1))
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading data from connection")
+		return nil, errors.Wrapf(err, "reading data from connection (remote: %v)", conn.RemoteAddr())
 	}
 
 	if len(data) > maxSize {
-		return nil, errors.Errorf("data size exceeds the limit (%d bytes)", maxSize)
+		return nil, errors.Errorf("data size exceeds the limit (%d bytes, remote: %v)", maxSize, conn.RemoteAddr())
 	}
 
 	return data, nil
