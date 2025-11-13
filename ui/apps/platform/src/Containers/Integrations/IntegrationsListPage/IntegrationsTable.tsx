@@ -8,16 +8,17 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
-import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import type { TableUIState } from 'utils/getTableUIState';
 import { isUserResource } from 'utils/traits.utils';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -36,7 +37,7 @@ function getNewButtonText(type) {
 }
 
 type IntegrationsTableProps = {
-    integrations: Integration[];
+    tableState: TableUIState<Integration>;
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
     onTriggerBackup: (integrationId) => void;
@@ -46,7 +47,7 @@ type IntegrationsTableProps = {
 };
 
 function IntegrationsTable({
-    integrations,
+    tableState,
     hasMultipleDelete,
     onDeleteIntegrations,
     onTriggerBackup,
@@ -57,6 +58,7 @@ function IntegrationsTable({
     const navigate = useNavigate();
     const permissions = useIntegrationPermissions();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
+    const integrations = tableState?.type === 'COMPLETE' ? tableState.data : [];
     const {
         selected,
         allRowsSelected,
@@ -84,6 +86,8 @@ function IntegrationsTable({
     }
 
     const newButtonText = getNewButtonText(type);
+
+    const colSpan = (hasMultipleDelete && !isReadOnly ? 1 : 0) + columns.length + 1;
 
     return (
         <>
@@ -132,32 +136,37 @@ function IntegrationsTable({
                 padding={{ default: 'noPadding' }}
                 variant={PageSectionVariants.light}
             >
-                {integrations.length > 0 ? (
-                    <Table variant="compact" isStickyHeader>
-                        <Thead>
-                            <Tr>
-                                {hasMultipleDelete && !isReadOnly && (
-                                    <Th
-                                        select={{
-                                            onSelect: onSelectAll,
-                                            isSelected: allRowsSelected,
-                                        }}
-                                    />
-                                )}
-                                {columns.map((column) => {
-                                    return (
-                                        <Th key={column.Header} modifier="wrap">
-                                            {column.Header}
-                                        </Th>
-                                    );
-                                })}
-                                <Th>
-                                    <span className="pf-v5-screen-reader">Row actions</span>
-                                </Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            {integrations.map((integration, rowIndex) => {
+                <Table variant="compact" isStickyHeader>
+                    <Thead>
+                        <Tr>
+                            {hasMultipleDelete && !isReadOnly && (
+                                <Th
+                                    select={{
+                                        onSelect: onSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                            )}
+                            {columns.map((column) => {
+                                return (
+                                    <Th key={column.Header} modifier="wrap">
+                                        {column.Header}
+                                    </Th>
+                                );
+                            })}
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
+                        </Tr>
+                    </Thead>
+                    <TbodyUnified
+                        tableState={tableState}
+                        colSpan={colSpan}
+                        emptyProps={{
+                            message: 'No integrations of this type are currently configured',
+                        }}
+                        renderer={({ data }) =>
+                            data.map((integration, rowIndex) => {
                                 const { id } = integration;
                                 const canTriggerBackup =
                                     integration.type === 's3' ||
@@ -241,15 +250,10 @@ function IntegrationsTable({
                                         </Td>
                                     </Tr>
                                 );
-                            })}
-                        </Tbody>
-                    </Table>
-                ) : (
-                    <EmptyStateTemplate
-                        title="No integrations of this type are currently configured."
-                        headingLevel="h3"
+                            })
+                        }
                     />
-                )}
+                </Table>
             </PageSection>
         </>
     );
