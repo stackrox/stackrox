@@ -9,6 +9,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -36,6 +37,7 @@ func Singleton() GarbageCollector {
 		gc = newGarbageCollector(alertDatastore.Singleton(),
 			nodeDatastore.Singleton(),
 			imagesDatastore.Singleton(),
+			imageV2Datastore.Singleton(),
 			clusterDatastore.Singleton(),
 			deploymentDatastore.Singleton(),
 			podDatastore.Singleton(),

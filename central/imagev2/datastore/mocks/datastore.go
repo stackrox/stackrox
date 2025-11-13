@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/imagev2/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -106,6 +107,21 @@ func (m *MockDataStore) GetImage(ctx context.Context, id string) (*storage.Image
 func (mr *MockDataStoreMockRecorder) GetImage(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockDataStore)(nil).GetImage), ctx, id)
+}
+
+// GetImageIDsAndDigests mocks base method.
+func (m *MockDataStore) GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageIDsAndDigests", ctx, q)
+	ret0, _ := ret[0].([]*views.ImageIDAndDigestView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageIDsAndDigests indicates an expected call of GetImageIDsAndDigests.
+func (mr *MockDataStoreMockRecorder) GetImageIDsAndDigests(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIDsAndDigests", reflect.TypeOf((*MockDataStore)(nil).GetImageIDsAndDigests), ctx, q)
 }
 
 // GetImageMetadata mocks base method.
