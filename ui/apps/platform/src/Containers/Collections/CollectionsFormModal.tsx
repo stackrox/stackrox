@@ -74,7 +74,7 @@ function CollectionsFormModal({
     configError,
     setConfigError,
 }: CollectionsFormModalProps) {
-    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 75rem)' }); // --pf-t--global--breakpoint--xl
     const {
         isOpen: isDrawerOpen,
         toggleSelect: toggleDrawer,
