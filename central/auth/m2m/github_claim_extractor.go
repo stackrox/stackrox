@@ -38,7 +38,7 @@ type githubActionClaims struct {
 	WorkflowSHA          string `json:"workflow_sha"`
 }
 
-func (g *githubClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.RoxClaims, error) {
+func (*githubClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.RoxClaims, error) {
 	// This is in-line with the user ID we use for other auth providers, where a mix of username + ID wil be used.
 	// In general, "|" is used as a separator for auth attributes.
 	actorWithID := fmt.Sprintf("%s|%s", claims["actor_id"][0], claims["actor"][0])
@@ -54,7 +54,7 @@ func (g *githubClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tok
 	}, nil
 }
 
-func (g *githubClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]string, error) {
+func (*githubClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]string, error) {
 	// OIDC tokens issued for GitHub Actions have special claims, we'll reuse them.
 	var claims githubActionClaims
 	if err := idToken.Claims(&claims); err != nil {
