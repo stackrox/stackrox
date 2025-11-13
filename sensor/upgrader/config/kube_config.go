@@ -9,7 +9,14 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// errNegativeTimeout is returned when a negative timeout value is provided.
+var errNegativeTimeout = errors.New("timeout must not be negative")
+
+// loadKubeConfig loads the Kubernetes configuration based on the selected source.
 func loadKubeConfig(timeout time.Duration) (*rest.Config, error) {
+	if timeout < 0 {
+		return nil, errNegativeTimeout
+	}
 	switch cs := *flags.KubeConfigSource; cs {
 	case "in-cluster":
 		cfg, err := rest.InClusterConfig()
