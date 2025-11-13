@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -348,41 +347,3 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorScanConfigurationV2(ctx, db)
-}
-
-func dropTableComplianceOperatorScanConfigurationV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2 CASCADE")
-	dropTableComplianceOperatorScanConfigurationV2Profiles(ctx, db)
-	dropTableComplianceOperatorScanConfigurationV2Clusters(ctx, db)
-	dropTableComplianceOperatorScanConfigurationV2Notifiers(ctx, db)
-
-}
-
-func dropTableComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_profiles CASCADE")
-
-}
-
-func dropTableComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_clusters CASCADE")
-
-}
-
-func dropTableComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_notifiers CASCADE")
-
-}
-
-// endregion Used for testing

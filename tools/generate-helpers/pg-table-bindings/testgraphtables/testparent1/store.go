@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -232,29 +231,3 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableTestParent1(ctx, db)
-}
-
-func dropTableTestParent1(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_parent1 CASCADE")
-	dropTableTestParent1Childrens(ctx, db)
-
-}
-
-func dropTableTestParent1Childrens(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_parent1_childrens CASCADE")
-
-}
-
-// endregion Used for testing
