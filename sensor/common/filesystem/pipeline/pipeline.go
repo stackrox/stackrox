@@ -51,11 +51,6 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		Timestamp: fs.GetTimestamp(),
 	}
 
-	// Enrich with node info
-	if fs.GetProcess().GetContainerId() == "" {
-		p.enrichWithNodeInfo(access, fs.GetNode())
-	}
-
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
@@ -164,22 +159,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	}
 
 	return pi
-}
-
-func (p *Pipeline) enrichWithNodeInfo(fileAccess *storage.FileAccess, node string) {
-	if node == "" {
-		log.Debug("Node not available for host process file activity")
-		return
-	}
-
-	nodeInfo := p.nodeStore.GetNode(node)
-	if nodeInfo == nil {
-		log.Warnf("Node %s not found in node store", node)
-		return
-	}
-
-	fileAccess.NodeName = nodeInfo.GetName()
-	fileAccess.NodeId = nodeInfo.GetId()
 }
 
 func (p *Pipeline) Stop() {
