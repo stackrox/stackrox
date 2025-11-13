@@ -14,7 +14,7 @@ var _ claimExtractor = (*genericClaimExtractor)(nil)
 
 type genericClaimExtractor struct{}
 
-func (g *genericClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.RoxClaims, error) {
+func (*genericClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.RoxClaims, error) {
 	friendlyName := getFriendlyName(claims)
 	subject := strings.Join(claims["sub"], ":")
 	userID := utils.IfThenElse(friendlyName == "", subject,
@@ -49,7 +49,7 @@ func getFriendlyName(claims map[string][]string) string {
 	return ""
 }
 
-func (g *genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]string, error) {
+func (*genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]string, error) {
 	var unstructured map[string]interface{}
 	if err := idToken.Claims(&unstructured); err != nil {
 		return nil, errors.Wrap(err, "extracting claims")
