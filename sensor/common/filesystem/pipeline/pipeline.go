@@ -55,6 +55,10 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Hostname = fs.GetHostname()
 	}
 
+	if fs.GetProcess().GetContainerId() == "" {
+		access.Hostname = fs.GetHostname()
+	}
+
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
