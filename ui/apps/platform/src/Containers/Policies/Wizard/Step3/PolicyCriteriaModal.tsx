@@ -9,8 +9,8 @@ import {
     TreeView,
     TreeViewSearch,
 } from '@patternfly/react-core';
-import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import type { TreeViewDataItem } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core/deprecated';
 import { kebabCase } from 'lodash';
 
 import type { PolicyGroup } from 'types/policy.proto';
