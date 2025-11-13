@@ -22,7 +22,6 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
-	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -221,8 +220,6 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore) {
 	// Setup the mocks
 	ctrl := gomock.NewController(s.T())
-	mockComponentDatastore := componentsMocks.NewMockDataStore(ctrl)
-	mockComponentDatastore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
