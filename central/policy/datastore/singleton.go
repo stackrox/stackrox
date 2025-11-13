@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -33,6 +35,7 @@ func initialize() {
 
 	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
 	addDefaults(storage, categoriesDatastore)
+	updatePolicyCategories(ad)
 }
 
 // Singleton provides the interface for non-service external interaction.
@@ -86,4 +89,37 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 
 	}
 	log.Infof("Loaded %d new default Policies", count)
+}
+
+func updatePolicyCategories(s DataStore, categoriesDS categoriesDS.DataStore) {
+	ctx := sac.WithAllAccess(context.Background())
+	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(ctx)
+	if err != nil {
+		utils.Should(err)
+	}
+	trueCategoryNames := make(map[string]string)
+	categoryNames := set.NewStringSet()
+	for _, category := range duplicateCategories {
+		if !category.TrueCategory {
+			categoryNames.Add(category.Name)
+		} else {
+			trueCategoryNames[strings.ToLower(category.Name)] = category.Name
+		}
+	}
+	q := searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyCategoryName, categoryNames.AsSlice()...).ProtoQuery()
+	storedPolicies, err := s.SearchRawPolicies(ctx, q)
+	if err != nil {
+		utils.Should(err)
+	}
+	for _, policy := range storedPolicies {
+		for idx, category := range policy.GetCategories() {
+			if categoryNames.Contains(category) {
+				policy.Categories[idx] = trueCategoryNames[strings.ToLower(category)]
+			}
+		}
+		err = s.UpdatePolicy(ctx, policy)
+		if err != nil {
+			utils.Should(err)
+		}
+	}
 }
