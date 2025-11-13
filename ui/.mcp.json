@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "atlassian": {
+      "command": "./scripts/mcp-atlassian-wrapper.sh"
+    }
+  }
+}
