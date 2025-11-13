@@ -35,7 +35,7 @@ func initialize() {
 
 	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
 	addDefaults(storage, categoriesDatastore)
-	updatePolicyCategories(ad)
+	updatePolicyCategories(ad, categoriesDatastore)
 }
 
 // Singleton provides the interface for non-service external interaction.
