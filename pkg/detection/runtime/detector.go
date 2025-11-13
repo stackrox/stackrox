@@ -113,6 +113,39 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 	return alerts, nil
 }
 
+func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if access != nil {
+			// Check predicate on audit event.
+			if !compiled.AppliesTo(access) {
+				return nil
+			}
+
+			violation, err := compiled.MatchAgainstNodeAndFileAccess(&cacheReceptacle, node, access)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; node file access.",
+					compiled.Policy().GetName())
+			}
+
+			alert := constructFileAccessAlert(compiled.Policy(), node, nil, violation)
+			alerts = append(alerts, alert)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
 // detectForDeployment runs detection on a deployment, returning any generated alerts.
 func (d *detectorImpl) detectForDeployment(
 	enhancedDeployment booleanpolicy.EnhancedDeployment,
