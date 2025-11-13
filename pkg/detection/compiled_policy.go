@@ -24,6 +24,7 @@ type CompiledPolicy interface {
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
 	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
+	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -204,6 +205,21 @@ func (cp *compiledPolicy) setNetworkFlowEventMatcher(policy *storage.Policy) err
 	return nil
 }
 
+func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsEventSource(section, storage.EventSource_NODE_EVENT)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasNodeSection = true
+		nodeMatcher, err := booleanpolicy.BuildNodeEventMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.nodeMatcher = nodeMatcher
+	}
+	return nil
+}
+
 func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 	var numMatchers int
 	if cp.deploymentWithProcessMatcher != nil {
@@ -216,6 +232,9 @@ func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 		numMatchers++
 	}
 	if cp.auditLogEventMatcher != nil {
+		numMatchers++
+	}
+	if cp.nodeMatcher != nil {
 		numMatchers++
 	}
 
@@ -233,11 +252,13 @@ type compiledPolicy struct {
 	deploymentMatcher                booleanpolicy.DeploymentMatcher
 	imageMatcher                     booleanpolicy.ImageMatcher
 	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
+	nodeMatcher                      booleanpolicy.NodeEventMatcher
 
 	hasProcessSection     bool
 	hasKubeEventsSection  bool
 	hasNetworkFlowSection bool
 	hasAuditEventsSection bool
+	hasNodeSection        bool
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -310,6 +331,13 @@ func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against images", cp.Policy().GetName())
 	}
 	return cp.imageMatcher.MatchImage(cache, image)
+}
+
+func (cp *compiledPolicy) MatchAgainstNodeAndFileAccess(cache *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error) {
+	if cp.nodeMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against nodes", cp.Policy().GetName())
+	}
+	return cp.nodeMatcher.MatchNodeWithFileAccess(cache, node, access)
 }
 
 // Policy returns the policy that was compiled.
