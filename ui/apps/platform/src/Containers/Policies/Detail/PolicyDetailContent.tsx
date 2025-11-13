@@ -10,6 +10,7 @@ import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
+import PolicyExplainer from './PolicyExplainer';
 
 type PolicyDetailContentProps = {
     policy: BasePolicy;
@@ -34,6 +35,9 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }}>
                 <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
+                <div className="pf-v5-u-pt-lg">
+                    <PolicyExplainer policy={policy} />
+                </div>
                 <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                     Policy behavior
                 </Title>
