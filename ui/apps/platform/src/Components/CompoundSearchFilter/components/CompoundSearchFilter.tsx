@@ -77,10 +77,10 @@ function CompoundSearchFilter({
             direction={{ default: 'row' }}
             spaceItems={{ default: 'spaceItemsNone' }}
             flexWrap={{ default: 'nowrap' }}
-            className="pf-v5-u-w-100"
+            className="pf-v6-u-w-100"
         >
             <EntitySelector
-                menuToggleClassName="pf-v5-u-flex-shrink-0"
+                menuToggleClassName="pf-v6-u-flex-shrink-0"
                 selectedEntity={currentEntity}
                 onChange={(value) => {
                     const entityName = ensureString(value);
@@ -92,7 +92,7 @@ function CompoundSearchFilter({
                 config={config}
             />
             <AttributeSelector
-                menuToggleClassName="pf-v5-u-flex-shrink-0"
+                menuToggleClassName="pf-v6-u-flex-shrink-0"
                 selectedEntity={currentEntity}
                 selectedAttribute={currentAttribute}
                 onChange={(value) => {

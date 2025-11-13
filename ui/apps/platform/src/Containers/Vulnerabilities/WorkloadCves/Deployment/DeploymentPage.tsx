@@ -101,7 +101,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     return (
         <>
             <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
                         Deployments
@@ -137,7 +137,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     </PageSection>
                     <PageSection
                         hasBodyWrapper={false}
-                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                        className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                         padding={{ default: 'noPadding' }}
                     >
                         <Tabs
@@ -146,19 +146,19 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                 setActiveTabKey(key);
                                 pagination.setPage(1);
                             }}
-                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                            className="pf-v6-u-pl-md pf-v6-u-background-color-100"
                             mountOnEnter
                             unmountOnExit
                         >
                             <Tab
-                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
                                 <PageSection
                                     hasBodyWrapper={false}
                                     component="div"
-                                    className="pf-v5-u-py-md pf-v5-u-px-xl"
+                                    className="pf-v6-u-py-md pf-v6-u-px-xl"
                                 >
                                     <Content component="p">
                                         Review and triage vulnerability data scanned for images
@@ -181,14 +181,14 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                 />
                             </Tab>
                             <Tab
-                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                                 eventKey="Details"
                                 title={<TabTitleText>Details</TabTitleText>}
                             >
                                 <DeploymentPageDetails deploymentId={deploymentId} />
                             </Tab>
                             <Tab
-                                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                                 eventKey="Resources"
                                 title={<TabTitleText>Resources</TabTitleText>}
                             >

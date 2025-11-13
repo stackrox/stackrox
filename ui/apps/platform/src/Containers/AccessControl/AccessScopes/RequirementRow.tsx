@@ -84,11 +84,11 @@ function RequirementRow({
             <Td dataLabel="Values" modifier="breakWord">
                 {isKeyInSet &&
                     values.map((value, indexValue) => (
-                        <div key={value} className="pf-v5-u-display-flex">
-                            <span className="pf-v5-u-flex-basis-0 pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1 pf-v5-u-text-break-word">
+                        <div key={value} className="pf-v6-u-display-flex">
+                            <span className="pf-v6-u-flex-basis-0 pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1 pf-v6-u-text-break-word">
                                 {getValueText(value)}
                             </span>
-                            <span className="pf-v5-u-flex-shrink-0 pf-v5-u-pl-sm">
+                            <span className="pf-v6-u-flex-shrink-0 pf-v6-u-pl-sm">
                                 {isRequirementActive && isEditableOperator && (
                                     <Tooltip content="Delete value">
                                         <Button
@@ -101,7 +101,7 @@ function RequirementRow({
                                             }
                                             aria-label="Delete value"
                                             variant="plain"
-                                            className="pf-m-smallest pf-v5-u-mr-sm"
+                                            className="pf-m-smallest pf-v6-u-mr-sm"
                                             isDisabled={values.length === 1}
                                             onClick={() => handleValueDelete(indexValue)}
                                         />
@@ -112,8 +112,8 @@ function RequirementRow({
                     ))}
                 {isRequirementActive && (
                     <>
-                        <div className="pf-v5-u-display-flex pf-v5-u-align-items-center">
-                            <span className="pf-v5-u-flex-basis-0 pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1">
+                        <div className="pf-v6-u-display-flex pf-v6-u-align-items-center">
+                            <span className="pf-v6-u-flex-basis-0 pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1">
                                 <TextInput
                                     aria-label="Type a value"
                                     value={valueInput}
@@ -124,7 +124,7 @@ function RequirementRow({
                                     className="pf-m-small"
                                 />
                             </span>
-                            <span className="pf-v5-u-flex-shrink-0 pf-v5-u-pl-sm">
+                            <span className="pf-v6-u-flex-shrink-0 pf-v6-u-pl-sm">
                                 {isRequirementActive && (
                                     <Tooltip content="Add value (press Enter)">
                                         <Button
@@ -137,7 +137,7 @@ function RequirementRow({
                                             }
                                             aria-label="Add value (press Enter)"
                                             variant="plain"
-                                            className="pf-m-smallest pf-v5-u-mr-sm"
+                                            className="pf-m-smallest pf-v6-u-mr-sm"
                                             isDisabled={isDisabledAddValue}
                                             onClick={onAddValue}
                                         />
@@ -146,12 +146,12 @@ function RequirementRow({
                             </span>
                         </div>
                         {isInvalidValue && (
-                            <div className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                            <div className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
                                 Invalid label value
                             </div>
                         )}
                         {isDuplicateValue && (
-                            <div className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
+                            <div className="pf-v6-u-font-size-sm pf-v6-u-danger-color-100">
                                 Duplicate label value
                             </div>
                         )}
@@ -159,7 +159,7 @@ function RequirementRow({
                 )}
             </Td>
             {hasAction && (
-                <Td dataLabel="Action" className="pf-v5-u-text-align-right">
+                <Td dataLabel="Action" className="pf-v6-u-text-align-right">
                     {isRequirementActive ? (
                         <>
                             <Tooltip key="OK" content="OK">
@@ -173,7 +173,7 @@ function RequirementRow({
                                     }
                                     aria-label="OK"
                                     variant="plain"
-                                    className="pf-m-smallest pf-v5-u-mr-sm"
+                                    className="pf-m-smallest pf-v6-u-mr-sm"
                                     isDisabled={values.length === 0 || valueInput.length !== 0}
                                     onClick={handleRequirementOK}
                                 />
@@ -206,7 +206,7 @@ function RequirementRow({
                                         }
                                         aria-label="Edit rule"
                                         variant="plain"
-                                        className="pf-m-smallest pf-v5-u-mr-sm"
+                                        className="pf-m-smallest pf-v6-u-mr-sm"
                                         isDisabled={activity === 'DISABLED'}
                                         onClick={handleRequirementEdit}
                                     />

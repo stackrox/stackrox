@@ -200,7 +200,7 @@ function SignatureIntegrationForm({
                     component="p"
                     variant="info"
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem>

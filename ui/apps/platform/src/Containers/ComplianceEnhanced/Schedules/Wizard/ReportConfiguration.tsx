@@ -17,7 +17,7 @@ function ReportConfiguration(): ReactElement {
     return (
         <>
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Flex direction={{ default: 'column' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem>
                         <Title headingLevel="h2">Report</Title>
                     </FlexItem>
@@ -27,7 +27,7 @@ function ReportConfiguration(): ReactElement {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <Form className="pf-v6-u-py-lg pf-v6-u-px-lg">
                 <NotifierConfigurationForm
                     customBodyDefault={getBodyDefault(formik.values.profiles)}
                     customSubjectDefault={getSubjectDefault(

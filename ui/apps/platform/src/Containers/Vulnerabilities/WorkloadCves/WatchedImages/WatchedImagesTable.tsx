@@ -54,7 +54,7 @@ function WatchedImagesTable({
                         {watchedImages.map(({ name }) => (
                             <Tr key={name}>
                                 <Td dataLabel="Image">{name}</Td>
-                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
+                                <Td dataLabel="Row action" className="pf-v6-u-text-align-right">
                                     <Button
                                         variant="link"
                                         isInline

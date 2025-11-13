@@ -50,10 +50,10 @@ function ViewActiveYAMLs({
     }
 
     return (
-        <div className="pf-v5-u-h-100">
+        <div className="pf-v6-u-h-100">
             <Stack>
                 <StackItem>
-                    <div className="pf-v5-u-p-md">
+                    <div className="pf-v6-u-p-md">
                         <SelectSingle
                             id="search-filter-attributes-select"
                             value={selectedNetworkPolicy?.name || ''}

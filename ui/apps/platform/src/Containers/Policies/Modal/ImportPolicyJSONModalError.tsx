@@ -79,7 +79,7 @@ function ImportPolicyJSONModalError({
                         }
                         component="p"
                         variant="danger"
-                        className="pf-v5-u-mt-md"
+                        className="pf-v6-u-mt-md"
                         isInline
                     >
                         <List isPlain>

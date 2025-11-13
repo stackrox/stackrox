@@ -1,7 +1,7 @@
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { PolicySeverity } from 'types/policy.proto';
 
-export const noViolationsClassName = 'pf-v5-u-color-200';
+export const noViolationsClassName = 'pf-v6-u-color-200';
 export const noViolationsColor =
     'var(--pf-t--temp--dev--tbd)'; /* CODEMODS: original v5 color was --pf-v5-global--Color--200 */
 

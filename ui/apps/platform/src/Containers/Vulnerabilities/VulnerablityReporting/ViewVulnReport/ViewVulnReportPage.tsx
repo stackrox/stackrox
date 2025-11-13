@@ -157,7 +157,7 @@ function ViewVulnReportPage() {
             </AlertGroup>
             {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageTitle title="View vulnerability report" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
@@ -167,7 +167,7 @@ function ViewVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'row' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Flex direction={{ default: 'row' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">{reportConfiguration.name}</Title>
                     </FlexItem>
@@ -223,7 +223,7 @@ function ViewVulnReportPage() {
                                 <Divider component="li" key="execution-danger-separator" />
                                 <DropdownItem
                                     key="Delete report"
-                                    className="pf-v5-u-danger-color-100"
+                                    className="pf-v6-u-danger-color-100"
                                     onClick={() => {
                                         openDeleteModal([reportConfiguration.id]);
                                     }}
@@ -236,7 +236,7 @@ function ViewVulnReportPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
                 <Tabs
                     activeKey={selectedTab}
                     onSelect={(_e, tab) => {
@@ -265,7 +265,7 @@ function ViewVulnReportPage() {
                                 headingLevel={headingLevel}
                                 formValues={reportFormValues}
                             />
-                            <Divider component="div" className="pf-v5-u-py-md" />
+                            <Divider component="div" className="pf-v6-u-py-md" />
                             <NotifierConfigurationView
                                 headingLevel={headingLevel}
                                 customBodyDefault={defaultEmailBody}
@@ -287,7 +287,7 @@ function ViewVulnReportPage() {
                                     />
                                 )}
                             />
-                            <Divider component="div" className="pf-v5-u-py-md" />
+                            <Divider component="div" className="pf-v6-u-py-md" />
                             <ScheduleDetails formValues={reportFormValues} />
                         </CardBody>
                     </Card>
@@ -313,7 +313,7 @@ function ViewVulnReportPage() {
                                 variant="danger"
                                 title={`Failed to delete "${reportConfiguration.name}"`}
                                 component="p"
-                                className="pf-v5-u-mb-sm"
+                                className="pf-v6-u-mb-sm"
                             >
                                 {deleteResult.error}
                             </Alert>

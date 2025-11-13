@@ -32,7 +32,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
     }
 
     return (
-        <div className="pf-v5-u-pb-md">
+        <div className="pf-v6-u-pb-md">
             <Card isExpanded={isExpanded}>
                 <CardHeader
                     onExpand={onExpand}
@@ -41,7 +41,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
-                    <CardBody className="pf-v5-u-mt-lg">
+                    <CardBody className="pf-v6-u-mt-lg">
                         <DescriptionList isHorizontal>
                             <DescriptionListItem term="Time" desc={getDateTime(time)} />
                             {keyValueAttrs.attrs.map(({ key, value }) => (

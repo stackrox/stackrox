@@ -71,8 +71,8 @@ function SelectSingle({
             id={id}
             variant={variant}
         >
-            <span className="pf-v5-u-display-flex pf-v5-u-align-items-center">
-                {toggleIcon && <span className="pf-v5-u-mr-sm">{toggleIcon}</span>}
+            <span className="pf-v6-u-display-flex pf-v6-u-align-items-center">
+                {toggleIcon && <span className="pf-v6-u-mr-sm">{toggleIcon}</span>}
                 <span>{getDisplayText()}</span>
             </span>
         </MenuToggle>

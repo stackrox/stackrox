@@ -61,7 +61,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
             <Button
                 variant="link"
                 isInline
-                className="pf-v5-u-primary-color-100"
+                className="pf-v6-u-primary-color-100"
                 onClick={handleModalToggle}
             >
                 {buttonText}
@@ -79,7 +79,7 @@ function PartialReportModal({ failedClusters = [], onDownload }: PartialReportMo
                         cluster logs to diagnose the issue. The following clusters are not included
                         in this report
                     </FlexItem>
-                    <Toolbar className="pf-v5-u-w-100">
+                    <Toolbar className="pf-v6-u-w-100">
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination

@@ -15,7 +15,7 @@ function CoverageEmptyState() {
         <>
             <CoveragesPageHeader />
             <PageSection hasBodyWrapper={false} isFilled>
-                <Bullseye className="pf-v5-u-background-color-100">
+                <Bullseye className="pf-v6-u-background-color-100">
                     <EmptyStateTemplate
                         title="No scan data available"
                         headingLevel="h2"

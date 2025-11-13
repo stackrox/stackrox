@@ -102,7 +102,7 @@ function PolicyScopeCard({
                             <Button
                                 icon={<TrashIcon />}
                                 variant="plain"
-                                className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
                                 onClick={onDelete}
                                 title={`Delete ${type} scope`}
                             />
@@ -111,9 +111,9 @@ function PolicyScopeCard({
                     hasNoOffset: true,
                     className: undefined,
                 }}
-                className="pf-v5-u-p-0"
+                className="pf-v6-u-p-0"
             >
-                <CardTitle className="pf-v5-u-pl-lg">{type} scope</CardTitle>
+                <CardTitle className="pf-v6-u-pl-lg">{type} scope</CardTitle>
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -128,7 +128,7 @@ function PolicyScopeCard({
                                     options={clusterOptions}
                                     placeholder="Select a cluster"
                                     maxHeight="300px"
-                                    className="pf-v5-u-w-100"
+                                    className="pf-v6-u-w-100"
                                 />
                             </FormGroup>
                         </FlexItem>
@@ -156,7 +156,7 @@ function PolicyScopeCard({
                                         placeholder="Select a deployment"
                                         isDisabled={hasAuditLogEventSource}
                                         maxHeight="300px"
-                                        className="pf-v5-u-w-100"
+                                        className="pf-v6-u-w-100"
                                     />
                                 </FormGroup>
                             </FlexItem>

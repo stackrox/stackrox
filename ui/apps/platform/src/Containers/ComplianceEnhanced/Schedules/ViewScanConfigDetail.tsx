@@ -140,7 +140,7 @@ function ViewScanConfigDetail({
     return (
         <>
             <PageTitle title="Compliance Scan Schedule Details" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -156,7 +156,7 @@ function ViewScanConfigDetail({
                     <>
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
+                            className="pf-v6-u-py-lg pf-v6-u-px-lg"
                         >
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
@@ -180,7 +180,7 @@ function ViewScanConfigDetail({
                                 component="p"
                                 variant={alertObj.type}
                                 isInline
-                                className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
+                                className="pf-v6-u-mb-lg pf-v6-u-mx-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
                                 {alertObj.children}
@@ -189,7 +189,7 @@ function ViewScanConfigDetail({
                     </>
                 )}
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
                 <Tabs
                     activeKey={activeScanConfigTab}
                     onSelect={(_e, tab) => {

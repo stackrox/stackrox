@@ -63,14 +63,14 @@ function PlatformComponentsConfigForm({
                         role="region"
                     >
                         <Tab eventKey={0} title={<TabTitleText>Core system</TabTitleText>}>
-                            <div className="pf-v5-u-p-md">
+                            <div className="pf-v6-u-p-md">
                                 <Title headingLevel="h3">Core system components</Title>
                                 <Content component="p">
                                     Core system components are not customizable and are set by the
                                     system. These definitions may change over time as the system is
                                     upgraded.
                                 </Content>
-                                <Divider component="div" className="pf-v5-u-py-md" />
+                                <Divider component="div" className="pf-v6-u-py-md" />
                                 <FormGroup
                                     label="Namespace rules (Regex)"
                                     fieldId="platformComponentConfigRules.coreSystemRule.namespaceRule.regex"
@@ -93,7 +93,7 @@ function PlatformComponentsConfigForm({
                             eventKey={1}
                             title={<TabTitleText>Red Hat layered products</TabTitleText>}
                         >
-                            <div className="pf-v5-u-p-md">
+                            <div className="pf-v6-u-p-md">
                                 <Title headingLevel="h3">Red Hat layered products</Title>
                                 <Content component="p">
                                     Components found in Red Hat layered and partner product
@@ -117,12 +117,12 @@ function PlatformComponentsConfigForm({
                                     component="p"
                                     isInline
                                     title="All customization will be preserved after a central upgrade."
-                                    className="pf-v5-u-mt-md"
+                                    className="pf-v6-u-mt-md"
                                 >
                                     Use the reset button to revert all changes back to the default
                                     definition.
                                 </Alert>
-                                <Divider component="div" className="pf-v5-u-py-md" />
+                                <Divider component="div" className="pf-v6-u-py-md" />
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <FlexItem flex={{ default: 'flex_1' }}>
                                         <FormGroup
@@ -158,7 +158,7 @@ function PlatformComponentsConfigForm({
                             </div>
                         </Tab>
                         <Tab eventKey={2} title={<TabTitleText>Custom components</TabTitleText>}>
-                            <div className="pf-v5-u-p-md">
+                            <div className="pf-v6-u-p-md">
                                 <Title headingLevel="h3">Custom platform components</Title>
                                 <Content component="p">
                                     Extend the platform definition by defining namespaces for
@@ -177,7 +177,7 @@ function PlatformComponentsConfigForm({
                                     </Button>
                                     .
                                 </Content>
-                                <Divider component="div" className="pf-v5-u-py-md" />
+                                <Divider component="div" className="pf-v6-u-py-md" />
                                 <Grid hasGutter md={6}>
                                     {values.platformComponentConfigRules.customRules.map(
                                         (_customRule, index) => {
@@ -273,7 +273,7 @@ function PlatformComponentsConfigForm({
                                             'platformComponentConfigRules.customRules'
                                         );
                                     }}
-                                    className={`${values.platformComponentConfigRules.customRules.length !== 0 && 'pf-v5-u-mt-md'}`}
+                                    className={`${values.platformComponentConfigRules.customRules.length !== 0 && 'pf-v6-u-mt-md'}`}
                                 >
                                     Add custom platform component
                                 </Button>

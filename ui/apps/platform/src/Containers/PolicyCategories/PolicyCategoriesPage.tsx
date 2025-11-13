@@ -90,11 +90,11 @@ function PolicyCategoriesPage(): ReactElement {
             <PageTitle title="Policy management - Policy categories" />
             <PolicyManagementHeader currentTabTitle="Policy categories" />
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
                         <ToolbarItem>
-                            <div className="pf-v5-u-font-size-sm">
+                            <div className="pf-v6-u-font-size-sm">
                                 Manage categories for your policies.
                             </div>
                         </ToolbarItem>

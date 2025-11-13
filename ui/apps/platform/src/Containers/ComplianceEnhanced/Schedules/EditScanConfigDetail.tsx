@@ -39,7 +39,7 @@ function EditScanConfigDetail({
     return (
         <>
             <PageTitle title="Edit Compliance Scan Schedule Details" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -54,7 +54,7 @@ function EditScanConfigDetail({
                 {!isLoading && !error && scanConfig && (
                     <Flex
                         alignItems={{ default: 'alignItemsCenter' }}
-                        className="pf-v5-u-py-lg pf-v5-u-px-lg"
+                        className="pf-v6-u-py-lg pf-v6-u-px-lg"
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h1">Edit {scanConfig.scanName}</Title>

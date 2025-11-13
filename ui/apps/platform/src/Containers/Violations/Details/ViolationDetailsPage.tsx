@@ -99,7 +99,7 @@ function ViolationDetailsPage(): ReactElement {
                 <Title headingLevel="h1">{title}</Title>
                 <Title
                     headingLevel="h2"
-                    className="pf-v5-u-mb-sm"
+                    className="pf-v6-u-mb-sm"
                 >{`in "${entityName}" ${displayedResourceType}`}</Title>
                 <LabelGroup numLabels={2} aria-label="Violation state and resolution">
                     <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
@@ -120,7 +120,7 @@ function ViolationDetailsPage(): ReactElement {
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-v5-u-background-color-100 pf-v5-u-pl-lg"
+                    className="pf-v6-u-background-color-100 pf-v6-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection hasBodyWrapper={false} variant="default">
@@ -156,10 +156,10 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection hasBodyWrapper={false} variant="default">
-                                <Title headingLevel="h3" className="pf-v5-u-mb-md">
+                                <Title headingLevel="h3" className="pf-v6-u-mb-md">
                                     Policy overview
                                 </Title>
-                                <Divider component="div" className="pf-v5-u-pb-md" />
+                                <Divider component="div" className="pf-v6-u-pb-md" />
                                 <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>

@@ -24,4 +24,7 @@ npm run lint:fix
 
 npm install victory
 
+npx @patternfly/class-name-updater . --v6 --fix
+
+npx @patternfly/css-vars-updater . --v6 --fix
 

@@ -103,7 +103,7 @@ function EntityDetails({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                <Flex direction={{ default: 'row' }} className="pf-v6-u-p-md pf-v6-u-mb-0">
                     <FlexItem>
                         <ExternalEntitiesIcon />
                     </FlexItem>
@@ -116,7 +116,7 @@ function EntityDetails({
                                 <EntityTitleText text={externalIPName} id={externalIPName} />
                             </BreadcrumbItem>
                         </Breadcrumb>
-                        <Content component="p" className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-color-200">
                             Connected entities outside your cluster
                         </Content>
                     </FlexItem>
@@ -124,7 +124,7 @@ function EntityDetails({
             </StackItem>
             <Divider component="hr" />
             <StackItem isFilled style={{ overflow: 'auto' }}>
-                <Stack className="pf-v5-u-p-md">
+                <Stack className="pf-v6-u-p-md">
                     <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
@@ -200,7 +200,7 @@ function EntityDetails({
                                                         <div>
                                                             <Content
                                                                 component="small"
-                                                                className="pf-v5-u-color-200 pf-v5-u-text-truncate"
+                                                                className="pf-v6-u-color-200 pf-v6-u-text-truncate"
                                                             >
                                                                 in &quot;
                                                                 {deployment.namespace}

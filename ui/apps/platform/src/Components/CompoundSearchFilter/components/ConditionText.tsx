@@ -109,7 +109,7 @@ function ConditionText({ inputProps, onSearch }: ConditionTextProps) {
 
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
-            className="pf-v5-u-flex-shrink-0"
+            className="pf-v6-u-flex-shrink-0"
             aria-label="Condition selector toggle"
             ref={toggleRef}
             onClick={onToggleClick}

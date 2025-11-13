@@ -78,7 +78,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListGroup>
                     )}
                     <DescriptionListGroup>
-                        <DescriptionListTerm className="pf-v5-u-text-nowrap">
+                        <DescriptionListTerm className="pf-v6-u-text-nowrap">
                             Auth provider
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>
@@ -88,7 +88,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
             <PageSection hasBodyWrapper={false} style={stylePageSection} isFilled>
                 <Flex>
                     <FlexItem>
-                        <div className="pf-v5-u-background-color-200">
+                        <div className="pf-v6-u-background-color-200">
                             <Nav aria-label="Roles">
                                 <NavList>
                                     <NavItem isActive={isUserPathActive}>

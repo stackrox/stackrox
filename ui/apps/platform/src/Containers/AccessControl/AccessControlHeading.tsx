@@ -24,7 +24,7 @@ function AccessControlHeading({
                 <Title headingLevel="h1">Access Control</Title>
             </PageSection>
             {isNavHidden || (
-                <PageSection hasBodyWrapper={false} className="pf-v5-u-px-sm pf-v5-u-py-0">
+                <PageSection hasBodyWrapper={false} className="pf-v6-u-px-sm pf-v6-u-py-0">
                     <AccessControlNav entityType={entityType} />
                 </PageSection>
             )}

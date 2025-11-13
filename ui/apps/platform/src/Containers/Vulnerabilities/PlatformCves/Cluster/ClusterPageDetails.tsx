@@ -51,14 +51,14 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
             <PageSection
                 hasBodyWrapper={false}
                 component="div"
-                className="pf-v5-u-py-md pf-v5-u-px-xl"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
             >
                 <Content component="p">View details about this cluster</Content>
             </PageSection>
             <PageSection
                 hasBodyWrapper={false}
                 isFilled
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
             >
                 <Card>
                     <CardBody>
@@ -68,7 +68,7 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
                                     title="There was an error loading the cluster details"
                                     headingLevel="h2"
                                     icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v5-u-danger-color-100"
+                                    iconClassName="pf-v6-u-danger-color-100"
                                 >
                                     {getAxiosErrorMessage(error)}
                                 </EmptyStateTemplate>

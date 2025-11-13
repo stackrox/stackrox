@@ -8,7 +8,7 @@ type TabNavSubHeaderProps = {
 
 function TabNavSubHeader({ description, actions }: TabNavSubHeaderProps): ReactElement {
     return (
-        <PageSection hasBodyWrapper={false} className="pf-v5-u-py-0">
+        <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
             <Toolbar inset={{ default: 'insetNone' }}>
                 <ToolbarContent>
                     <ToolbarItem alignSelf="center">{description}</ToolbarItem>

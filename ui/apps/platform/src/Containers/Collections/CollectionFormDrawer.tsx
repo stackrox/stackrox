@@ -94,11 +94,11 @@ function CollectionFormDrawer({
                         </DrawerPanelContent>
                     }
                 >
-                    <DrawerContentBody className="pf-v5-u-background-color-100 pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+                    <DrawerContentBody className="pf-v6-u-background-color-100 pf-v6-u-display-flex pf-v6-u-flex-direction-column">
                         {headerContent}
                         {isCollectionParseError(initialData) ? (
                             <UnsupportedCollectionState
-                                className="pf-v5-u-pt-xl"
+                                className="pf-v6-u-pt-xl"
                                 errors={initialData.errors}
                             />
                         ) : (

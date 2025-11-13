@@ -40,7 +40,7 @@ const PlatformComponentsConfigDetails = ({
                                 included in the platform definition by default.
                             </Content>
                             <Divider component="div" />
-                            <Content component="small" className="pf-v5-u-color-200">
+                            <Content component="small" className="pf-v6-u-color-200">
                                 Namespaces match (Regex)
                             </Content>
                             <CodeBlock>{coreSystemRule?.namespaceRule?.regex || 'None'}</CodeBlock>

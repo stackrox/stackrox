@@ -47,8 +47,8 @@ function TableEntityToolbar({
             {filterToolbar}
             <Divider component="div" />
             <Toolbar>
-                <ToolbarContent className="pf-v5-u-justify-content-space-between">
-                    <ToolbarGroup className="pf-v5-u-flex-grow-1">
+                <ToolbarContent className="pf-v6-u-justify-content-space-between">
+                    <ToolbarGroup className="pf-v6-u-flex-grow-1">
                         <ToolbarItem>{entityToggleGroup}</ToolbarItem>
                         {isFiltered && (
                             <ToolbarItem alignSelf="center">

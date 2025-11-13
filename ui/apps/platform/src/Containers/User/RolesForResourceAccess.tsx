@@ -33,7 +33,7 @@ function RolesForResourceAccess({ roleNames }: RolesForResourceAccessProps): Rea
         return (
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                 {forbiddenIcon}
-                <span className="pf-v5-u-text-nowrap">No roles</span>
+                <span className="pf-v6-u-text-nowrap">No roles</span>
             </Flex>
         );
     }

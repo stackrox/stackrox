@@ -63,7 +63,7 @@ function CredentialExpiryBanner({
     );
 
     return (
-        <Banner className="pf-v5-u-text-align-center" color={getBannerVariant(type)}>
+        <Banner className="pf-v6-u-text-align-center" color={getBannerVariant(type)}>
             {message}
         </Banner>
     );

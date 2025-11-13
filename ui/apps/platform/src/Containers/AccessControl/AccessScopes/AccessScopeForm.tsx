@@ -37,7 +37,7 @@ const labelIconEffectiveAccessScope = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-v5-c-button pf-m-plain pf-m-small">
+        <div className="pf-v6-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -54,7 +54,7 @@ const labelIconLabelInclusion = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-v5-c-button pf-m-plain pf-m-small">
+        <div className="pf-v6-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -204,7 +204,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
                 >
-                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v6-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Allowed resources"
                             fieldId="effectiveAccessScope"
@@ -221,7 +221,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                             />
                         </FormGroup>
                     </FlexItem>
-                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v6-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Label selection rules"
                             fieldId="labelInclusion"

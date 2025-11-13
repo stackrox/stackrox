@@ -12,7 +12,7 @@ function CreateScanConfigPage(): ReactElement {
     return (
         <>
             <PageTitle title="Compliance Scan Configuration" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -22,7 +22,7 @@ function CreateScanConfigPage(): ReactElement {
             </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Title headingLevel="h1" className="pf-v5-u-py-lg pf-v5-u-px-lg">
+                <Title headingLevel="h1" className="pf-v6-u-py-lg pf-v6-u-px-lg">
                     Create scan schedule
                 </Title>
             </PageSection>

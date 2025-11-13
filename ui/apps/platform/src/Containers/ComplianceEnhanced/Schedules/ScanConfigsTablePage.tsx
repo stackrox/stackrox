@@ -348,7 +348,7 @@ function ScanConfigsTablePage({
                             component="p"
                             variant={alertObj.type}
                             isInline
-                            className="pf-v5-u-mb-lg"
+                            className="pf-v6-u-mb-lg"
                             actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                         >
                             {alertObj.children}
@@ -422,7 +422,7 @@ function ScanConfigsTablePage({
                                             variant="danger"
                                             title="Failed to delete"
                                             component="p"
-                                            className="pf-v5-u-mb-sm"
+                                            className="pf-v6-u-mb-sm"
                                         >
                                             {deleteError.toString()}
                                         </Alert>

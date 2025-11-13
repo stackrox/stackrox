@@ -184,7 +184,7 @@ export function RequestComment({ comment }: RequestCommentProps) {
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Content component="p" className="pf-v5-u-font-weight-bold">
+                <Content component="p" className="pf-v6-u-font-weight-bold">
                     {comment.user.name}
                 </Content>
                 <Content component={ContentVariants.small}>

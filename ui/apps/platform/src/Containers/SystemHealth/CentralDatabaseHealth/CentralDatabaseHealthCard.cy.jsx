@@ -12,8 +12,8 @@ function patchDatabaseStatusResponse(overrides = {}) {
     });
 }
 
-const cardHeader = '.pf-v5-c-card__header';
-const cardBody = '.pf-v5-c-card__body';
+const cardHeader = '.pf-v6-c-card__header';
+const cardBody = '.pf-v6-c-card__body';
 
 describe(Cypress.spec.relative, () => {
     it('should not show a warning as the baseline', () => {

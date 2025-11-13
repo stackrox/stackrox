@@ -225,7 +225,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                             variant={formCallout.type}
                             title={formCallout.message}
                             component="p"
-                            className="pf-v5-u-mb-md"
+                            className="pf-v6-u-mb-md"
                         />
                     )}
                     <Flex fullWidth={{ default: 'fullWidth' }}>

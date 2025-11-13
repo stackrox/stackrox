@@ -66,7 +66,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
             <PageSection
                 hasBodyWrapper={false}
                 component="div"
-                className="pf-v5-u-py-md pf-v5-u-px-xl"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
             >
                 <Content component="p">
                     Navigate to resources associated with this deployment
@@ -75,7 +75,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
             <Divider component="div" />
             <PageSection
                 hasBodyWrapper={false}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -101,7 +101,7 @@ function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageRes
                             } as CSSProperties
                         }
                     >
-                        <div className="pf-v5-u-background-color-100 pf-v5-u-pt-sm">
+                        <div className="pf-v6-u-background-color-100 pf-v6-u-pt-sm">
                             <Pagination
                                 itemCount={imageCount}
                                 page={page}

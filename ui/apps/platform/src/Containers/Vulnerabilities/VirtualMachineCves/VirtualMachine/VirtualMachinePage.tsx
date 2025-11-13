@@ -95,7 +95,7 @@ function VirtualMachinePage() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
@@ -124,7 +124,7 @@ function VirtualMachinePage() {
                     onSelect={(_, key) => {
                         onTabChange(key);
                     }}
-                    className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                    className="pf-v6-u-pl-md pf-v6-u-background-color-100"
                 >
                     <Tab
                         eventKey={vulnTabKey}
@@ -152,7 +152,7 @@ function VirtualMachinePage() {
                 hasBodyWrapper={false}
                 isFilled
                 padding={{ default: 'padding' }}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                 aria-label={activeTabKey}
                 role="tabpanel"
                 tabIndex={0}

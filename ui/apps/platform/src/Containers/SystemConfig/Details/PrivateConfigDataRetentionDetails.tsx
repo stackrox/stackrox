@@ -44,7 +44,7 @@ function DataRetentionValue({
         }
     }
 
-    return <span className="pf-v5-u-font-size-xl pf-v5-u-font-weight-bold">{content}</span>;
+    return <span className="pf-v6-u-font-size-xl pf-v6-u-font-weight-bold">{content}</span>;
 }
 
 export type PrivateConfigDataRetentionDetailsProps = {
@@ -59,7 +59,7 @@ const PrivateConfigDataRetentionDetails = ({
     return (
         <Grid hasGutter md={6}>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>All runtime violations</CardTitle>
                     <CardBody>
                         <DataRetentionValue
@@ -70,7 +70,7 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>Runtime violations for deleted deployments</CardTitle>
                     <CardBody>
                         <DataRetentionValue
@@ -81,7 +81,7 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>Resolved deploy-phase violations</CardTitle>
                     <CardBody>
                         <DataRetentionValue
@@ -92,7 +92,7 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>Attempted deploy-phase violations</CardTitle>
                     <CardBody>
                         <DataRetentionValue
@@ -103,7 +103,7 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>Attempted runtime violations</CardTitle>
                     <CardBody>
                         <DataRetentionValue
@@ -116,7 +116,7 @@ const PrivateConfigDataRetentionDetails = ({
                 </Card>
             </GridItem>
             <GridItem>
-                <Card className="pf-v5-u-h-100">
+                <Card className="pf-v6-u-h-100">
                     <CardTitle>
                         <Tooltip content={<div>Images no longer active</div>} position="auto">
                             <div>Images no longer deployed or watched</div>
@@ -162,7 +162,7 @@ const PrivateConfigDataRetentionDetails = ({
                                                 specific cases:
                                             </p>
                                             <ul
-                                                className="pf-v5-u-ml-md pf-v5-u-mt-md"
+                                                className="pf-v6-u-ml-md pf-v6-u-mt-md"
                                                 style={{ listStyleType: 'disclosure-closed ' }}
                                             >
                                                 <li>

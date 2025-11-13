@@ -25,7 +25,7 @@ function ProcessCardContent({ process }) {
                 alignItems={{ default: 'alignItemsFlexStart' }}
             >
                 <Divider component="div" />
-                <span className="pf-v5-u-background-color-warning pf-v5-u-px-md pf-v5-u-py-sm">
+                <span className="pf-v6-u-background-color-warning pf-v6-u-px-md pf-v6-u-py-sm">
                     {execFilePath}
                 </span>
             </Flex>
@@ -33,13 +33,13 @@ function ProcessCardContent({ process }) {
                 columnModifier={{
                     default: '2Col',
                 }}
-                className="pf-v5-u-my-md"
+                className="pf-v6-u-my-md"
             >
                 <DescriptionListItem term="Container ID" desc={containerId} />
                 <DescriptionListItem term="Time" desc={timeFormat} />
                 <DescriptionListItem term="User ID" desc={uid} />
             </DescriptionList>
-            <DescriptionList className="pf-v5-u-mb-md">
+            <DescriptionList className="pf-v6-u-mb-md">
                 <DescriptionListItem term="Arguments" desc={args} />
             </DescriptionList>
             {ancestors}

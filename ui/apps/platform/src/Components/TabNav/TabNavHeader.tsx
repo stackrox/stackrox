@@ -14,7 +14,7 @@ function TabNavHeader({ mainTitle, currentTabTitle, tabLinks }: TabNavHeaderProp
             <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">{mainTitle}</Title>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-px-sm pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-px-sm pf-v6-u-py-0">
                 <TabNav currentTabTitle={currentTabTitle} tabLinks={tabLinks} />
             </PageSection>
         </>

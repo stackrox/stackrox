@@ -174,10 +174,10 @@ function NodeCvesOverviewPage() {
             <Divider component="div" />
             <PageSection
                 hasBodyWrapper={false}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-row pf-v6-u-align-items-center"
             >
-                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
-                    <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
+                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v6-u-flex-grow-1">
+                    <Flex direction={{ default: 'column' }} className="pf-v6-u-flex-grow-1">
                         <Title headingLevel="h1">Node CVEs</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
@@ -191,7 +191,7 @@ function NodeCvesOverviewPage() {
                 </Flex>
             </PageSection>
             {scannerV4NodeScanResultsPossible && (
-                <PageSection hasBodyWrapper={false} className="pf-v5-u-pt-0">
+                <PageSection hasBodyWrapper={false} className="pf-v6-u-pt-0">
                     <Alert
                         isInline
                         variant="info"

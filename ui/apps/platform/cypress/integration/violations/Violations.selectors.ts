@@ -1,19 +1,19 @@
 export const selectors = {
     actions: {
-        btn: 'td .pf-v5-c-menu-toggle[aria-label="Kebab toggle"]', // via ActionsColumn element
+        btn: 'td .pf-v6-c-menu-toggle[aria-label="Kebab toggle"]', // via ActionsColumn element
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',
         resolveBtn: 'button:contains("Mark as resolved")',
         resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
     },
     details: {
-        title: 'h1.pf-v5-c-title',
-        subtitle: 'h2.pf-v5-c-title',
-        tabs: 'li.pf-v5-c-tabs__item',
-        violationTab: 'li.pf-v5-c-tabs__item:contains("Violation")',
-        enforcementTab: 'li.pf-v5-c-tabs__item:contains("Enforcement")',
-        deploymentTab: 'li.pf-v5-c-tabs__item:contains("Deployment")',
-        policyTab: 'li.pf-v5-c-tabs__item:contains("Policy")',
-        networkPoliciesTab: 'li.pf-v5-c-tabs__item:contains("Network policies")',
+        title: 'h1.pf-v6-c-title',
+        subtitle: 'h2.pf-v6-c-title',
+        tabs: 'li.pf-v6-c-tabs__item',
+        violationTab: 'li.pf-v6-c-tabs__item:contains("Violation")',
+        enforcementTab: 'li.pf-v6-c-tabs__item:contains("Enforcement")',
+        deploymentTab: 'li.pf-v6-c-tabs__item:contains("Deployment")',
+        policyTab: 'li.pf-v6-c-tabs__item:contains("Policy")',
+        networkPoliciesTab: 'li.pf-v6-c-tabs__item:contains("Network policies")',
     },
     enforcement: {
         detailMessage: '[aria-label="Enforcement detail message"]',

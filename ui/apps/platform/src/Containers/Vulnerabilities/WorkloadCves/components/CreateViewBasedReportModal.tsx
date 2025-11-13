@@ -111,7 +111,7 @@ function CreateViewBasedReportModal({
                         variant="success"
                         isInline
                         title="Report generation started successfully"
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         component="p"
                     >
                         {message.reportID && (
@@ -150,7 +150,7 @@ function CreateViewBasedReportModal({
                         variant="danger"
                         isInline
                         title={message.value}
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         component="p"
                     />
                 )}

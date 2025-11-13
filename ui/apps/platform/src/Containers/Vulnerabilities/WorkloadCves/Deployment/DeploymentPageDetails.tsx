@@ -90,14 +90,14 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
             <PageSection
                 hasBodyWrapper={false}
                 component="div"
-                className="pf-v5-u-py-md pf-v5-u-px-xl"
+                className="pf-v6-u-py-md pf-v6-u-px-xl"
             >
                 <Content component="p">View details about this deployment</Content>
             </PageSection>
             <Divider component="div" />
             <PageSection
                 hasBodyWrapper={false}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                 component="div"
             >
                 {error && (
@@ -112,7 +112,7 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                     </Bullseye>
                 )}
                 {deploymentDetailsData && (
-                    <Card className="pf-v5-u-m-md pf-v5-u-p-md">
+                    <Card className="pf-v6-u-m-md pf-v6-u-p-md">
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsLg' }}

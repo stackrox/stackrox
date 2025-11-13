@@ -63,7 +63,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
                 />
             }
         >
-            <Button variant="link" className="pf-v5-u-p-0">
+            <Button variant="link" className="pf-v6-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
             </Button>
         </Popover>

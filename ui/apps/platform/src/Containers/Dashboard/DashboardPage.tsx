@@ -77,7 +77,7 @@ function DashboardPage() {
                     {hasReadAccessForCluster && hasReadAccessForNamespace && (
                         <FlexItem
                             grow={{ default: 'grow' }}
-                            className="pf-v5-u-display-flex pf-v5-u-justify-content-flex-end"
+                            className="pf-v6-u-display-flex pf-v6-u-justify-content-flex-end"
                         >
                             <ScopeBar />
                         </FlexItem>

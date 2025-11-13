@@ -45,7 +45,7 @@ function EmailTemplateForm({
     const variantForSubject = errors.customSubject && touched.customSubject ? 'error' : 'default';
 
     return (
-        <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" onSubmit={handleSubmit}>
+        <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" onSubmit={handleSubmit}>
             <FormGroup label="Email subject" fieldId="customSubject">
                 <TextInput
                     id="customSubject"
@@ -68,7 +68,7 @@ function EmailTemplateForm({
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Content>
-                            <Content component="p" className="pf-v5-u-font-size-sm">
+                            <Content component="p" className="pf-v6-u-font-size-sm">
                                 {values.customSubject.length} / {maxCustomSubjectLength} characters
                             </Content>
                         </Content>
@@ -76,7 +76,7 @@ function EmailTemplateForm({
                     {!isReadOnly && (
                         <FlexItem>
                             <Button
-                                className="pf-v5-u-mt-sm"
+                                className="pf-v6-u-mt-sm"
                                 variant="link"
                                 isInline
                                 size="sm"
@@ -112,7 +112,7 @@ function EmailTemplateForm({
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Content>
-                            <Content component="p" className="pf-v5-u-font-size-sm">
+                            <Content component="p" className="pf-v6-u-font-size-sm">
                                 {values.customBody.length} / {maxCustomBodyLength} characters
                             </Content>
                         </Content>
@@ -120,7 +120,7 @@ function EmailTemplateForm({
                     {!isReadOnly && (
                         <FlexItem>
                             <Button
-                                className="pf-v5-u-mt-sm"
+                                className="pf-v6-u-mt-sm"
                                 variant="link"
                                 isInline
                                 size="sm"

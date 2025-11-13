@@ -316,7 +316,7 @@ function WorkloadCvesOverviewPage() {
             <PageTitle title={`${pageTitle} Overview`} />
             <PageSection
                 hasBodyWrapper={false}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-row pf-v6-u-align-items-center"
             >
                 <Flex
                     direction={{
@@ -328,7 +328,7 @@ function WorkloadCvesOverviewPage() {
                     spaceItems={{
                         default: 'spaceItemsNone',
                     }}
-                    className="pf-v5-u-flex-grow-1"
+                    className="pf-v6-u-flex-grow-1"
                 >
                     <Title headingLevel="h1">{pageTitle}</Title>
                     {pageTitleDescription && (
@@ -369,7 +369,7 @@ function WorkloadCvesOverviewPage() {
                         hasBodyWrapper={false}
                         padding={{ default: 'noPadding' }}
                         component="div"
-                        className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
+                        className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
                     >
                         <VulnerabilityStateTabs onChange={onVulnerabilityStateChange} />
                     </PageSection>

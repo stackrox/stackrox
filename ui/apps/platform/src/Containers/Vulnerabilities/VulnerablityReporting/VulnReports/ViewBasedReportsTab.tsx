@@ -153,7 +153,7 @@ function ViewBasedReportsTab() {
             </PageSection>
             <PageSection hasBodyWrapper={false}>
                 <Card>
-                    <CardBody className="pf-v5-u-p-0">
+                    <CardBody className="pf-v6-u-p-0">
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem alignItems="center">
@@ -170,7 +170,7 @@ function ViewBasedReportsTab() {
                                         onChange={onReportJobStatusFilterChange}
                                     />
                                 </ToolbarItem>
-                                <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
+                                <ToolbarItem className="pf-v6-u-flex-grow-1" alignSelf="center">
                                     <MyJobsFilter
                                         isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
                                         onMyJobsFilterChange={onMyJobsFilterChange}

@@ -80,7 +80,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         <>
             <Button
                 variant="secondary"
-                className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center"
+                className="pf-v6-u-display-inline-flex pf-v6-u-align-items-center"
                 onClick={handleModalToggle}
                 countOptions={{
                     isRead: true,
@@ -88,7 +88,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
                     className: 'custom-badge-unread',
                 }}
             >
-                <Globe height="20px" width="20px" className="pf-v5-u-mr-sm" />
+                <Globe height="20px" width="20px" className="pf-v6-u-mr-sm" />
                 <span>Default filters</span>
             </Button>
             <Modal

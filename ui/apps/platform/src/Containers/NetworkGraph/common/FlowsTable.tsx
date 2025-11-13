@@ -128,13 +128,13 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
         return (
             <Tooltip content={<div>Anomalous external flow</div>}>
-                <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
+                <ExclamationCircleIcon className="pf-v6-u-danger-color-100" />
             </Tooltip>
         );
     }
     return (
         <Tooltip content={<div>Anomalous internal flow</div>}>
-            <ExclamationTriangleIcon className="pf-v5-u-warning-color-100" />
+            <ExclamationTriangleIcon className="pf-v6-u-warning-color-100" />
         </Tooltip>
     );
 }
@@ -279,14 +279,14 @@ function FlowsTable({
                                     {row.baselineSimulationDiffState === 'ADDED' && (
                                         <Tooltip content={<div>Baseline added</div>}>
                                             <Icon size="sm">
-                                                <PlusIcon className="pf-v5-u-success-color-200" />
+                                                <PlusIcon className="pf-v6-u-success-color-200" />
                                             </Icon>
                                         </Tooltip>
                                     )}
                                     {row.baselineSimulationDiffState === 'REMOVED' && (
                                         <Tooltip content={<div>Baseline removed</div>}>
                                             <Icon size="sm">
-                                                <MinusIcon className="pf-v5-u-danger-color-200" />
+                                                <MinusIcon className="pf-v6-u-danger-color-200" />
                                             </Icon>
                                         </Tooltip>
                                     )}

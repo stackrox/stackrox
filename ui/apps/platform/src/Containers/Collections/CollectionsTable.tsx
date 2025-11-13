@@ -99,7 +99,7 @@ function CollectionsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                         <SearchInput
                             aria-label="Search by name"
                             placeholder="Search by name"

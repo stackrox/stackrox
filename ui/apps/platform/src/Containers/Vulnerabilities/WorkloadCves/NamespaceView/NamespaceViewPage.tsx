@@ -160,7 +160,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title={`${pageTitle} - Namespace view`} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
                         {pageTitle}
@@ -174,7 +174,7 @@ function NamespaceViewPage() {
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
                 >
-                    <Title headingLevel="h1" className="pf-v5-u-mb-sm">
+                    <Title headingLevel="h1" className="pf-v6-u-mb-sm">
                         Namespace view
                     </Title>
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
@@ -206,7 +206,7 @@ function NamespaceViewPage() {
                                 isCompact
                             />
                         </ToolbarItem>
-                        <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
+                        <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                             <SearchFilterChips
                                 searchFilter={searchFilter}
                                 onFilterChange={onFilterChange}

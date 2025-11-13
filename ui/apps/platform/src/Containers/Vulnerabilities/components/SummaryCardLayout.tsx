@@ -55,7 +55,7 @@ export function SummaryCardLayout({
 }: SummaryCardLayoutProps): ReactElement {
     return (
         <LoadingContext.Provider value={{ isLoading }}>
-            <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+            <div className="pf-v6-u-background-color-100 pf-v6-u-p-lg">
                 {error ? (
                     <Alert title={errorAlertTitle} component="p" isInline variant="danger">
                         {getAxiosErrorMessage(error)}

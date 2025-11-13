@@ -68,7 +68,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         icon={isEditingName ? <CheckIcon /> : <PencilAltIcon />}
                                         variant="plain"
-                                        className="pf-v5-u-px-sm"
+                                        className="pf-v6-u-px-sm"
                                         onClick={() => setIsEditingName(!isEditingName)}
                                         title={
                                             isEditingName
@@ -83,7 +83,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         icon={<TrashIcon />}
                                         variant="plain"
-                                        className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                        className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
                                         title="Delete policy section"
                                         onClick={onDeleteSection}
                                     />
@@ -93,14 +93,14 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             className: undefined,
                         },
                     })}
-                    className="policy-section-card-header pf-v5-u-p-0"
+                    className="policy-section-card-header pf-v6-u-p-0"
                 >
-                    <CardTitle className="pf-v5-u-display-flex pf-v5-u-align-self-stretch">
+                    <CardTitle className="pf-v6-u-display-flex pf-v6-u-align-self-stretch">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
                             flexWrap={{ default: 'nowrap' }}
                         >
-                            <FlexItem className="pf-v5-u-pl-md">{sectionIndex + 1}</FlexItem>
+                            <FlexItem className="pf-v6-u-pl-md">{sectionIndex + 1}</FlexItem>
                             <Divider component="div" orientation={{ default: 'vertical' }} />
                             <FlexItem>
                                 {isEditingName ? (
@@ -112,7 +112,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     />
                                 ) : (
                                     <div
-                                        className="pf-v5-u-py-sm"
+                                        className="pf-v6-u-py-sm"
                                         data-testid="policy-section-name"
                                     >
                                         {sectionName}
@@ -127,7 +127,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                         <PolicySectionValidationError
                             sectionIndex={sectionIndex}
                             errors={errors.policySections}
-                            className="pf-v5-u-mb-md"
+                            className="pf-v6-u-mb-md"
                         />
                     )}
                     {policyGroups.map((group, groupIndex) => {
@@ -156,7 +156,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                     )}
                     {showPolicyCriteriaModal && !readOnly && (
                         <Flex
-                            className="pf-v5-u-mt-md"
+                            className="pf-v6-u-mt-md"
                             justifyContent={{ default: 'justifyContentCenter' }}
                         >
                             <FlexItem>

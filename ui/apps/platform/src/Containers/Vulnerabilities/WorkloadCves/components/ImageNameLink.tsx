@@ -43,7 +43,7 @@ function ImageNameLink({ name, id }: ImageNameLinkProps) {
                 <Link to={urlBuilder.imageDetails(id, vulnerabilityState)}>
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
-                <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>
+                <span className="pf-v6-u-color-200 pf-v6-u-font-size-sm">in {registry}</span>
             </Flex>
             <FlexItem>
                 <Tooltip
@@ -56,7 +56,7 @@ function ImageNameLink({ name, id }: ImageNameLinkProps) {
                 >
                     <Button
                         icon={<OutlinedCopyIcon />}
-                        className="pf-v5-u-pt-xs"
+                        className="pf-v6-u-pt-xs"
                         id={`copy-image-name-button-${id}`}
                         aria-label={'Copy image name'}
                         type="button"

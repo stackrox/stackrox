@@ -130,7 +130,7 @@ function ManageStandardsModal({
                     component="p"
                     variant="danger"
                     isInline
-                    className="pf-v5-u-mt-lg"
+                    className="pf-v6-u-mt-lg"
                 >
                     {errorMessage}
                 </Alert>

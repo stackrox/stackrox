@@ -311,8 +311,8 @@ function NetworkGraphPageContent() {
                     data-testid="network-graph-selector-bar"
                 >
                     <ToolbarContent>
-                        <ToolbarGroup variant="filter-group" className="pf-v5-u-align-self-center">
-                            <Title headingLevel="h1" className="pf-v5-u-screen-reader">
+                        <ToolbarGroup variant="filter-group" className="pf-v6-u-align-self-center">
+                            <Title headingLevel="h1" className="pf-v6-u-screen-reader">
                                 Network Graph
                             </Title>
                             <NetworkBreadcrumbs
@@ -372,8 +372,8 @@ function NetworkGraphPageContent() {
                                     </ToolbarItem>
                                 </ToolbarGroup>
                                 <Divider orientation={{ default: 'vertical' }} />
-                                <ToolbarGroup className="pf-v5-u-flex-grow-1">
-                                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                                <ToolbarGroup className="pf-v6-u-flex-grow-1">
+                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                                         <NetworkSearch
                                             selectedCluster={clusterFromUrl.name}
                                             selectedNamespaces={namespacesFromUrl}
@@ -392,13 +392,13 @@ function NetworkGraphPageContent() {
                                 {hasReadAccessForNetworkPolicy && (
                                     <ToolbarGroup
                                         align={{ default: 'alignEnd' }}
-                                        className="pf-v5-u-align-self-center"
+                                        className="pf-v6-u-align-self-center"
                                     >
                                         <Divider
                                             component="div"
                                             orientation={{ default: 'vertical' }}
                                         />
-                                        <ToolbarItem className="pf-v5-u-color-200">
+                                        <ToolbarItem className="pf-v6-u-color-200">
                                             <NodeUpdateSection
                                                 isLoading={isLoading}
                                                 lastUpdatedTime={lastUpdatedTime}

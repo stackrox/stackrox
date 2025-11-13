@@ -65,7 +65,7 @@ function DetailSection({ title, children }) {
                 </Content>
             }
         >
-            <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
+            <div className="pf-v6-u-px-sm pf-v6-u-pb-md">{children}</div>
         </ExpandableSection>
     );
 }
@@ -86,7 +86,7 @@ function DeploymentDetails({
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             <ul>
                 <li>
                     <DetailSection title="Network security">
@@ -188,7 +188,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
@@ -281,7 +281,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Port configurations">
                         {deployment.ports.length ? (
                             <Stack hasGutter>
@@ -303,7 +303,7 @@ function DeploymentDetails({
                     </DetailSection>
                 </li>
                 <li>
-                    <Divider className="pf-v5-u-mb-sm" />
+                    <Divider className="pf-v6-u-mb-sm" />
                     <DetailSection title="Container configurations">
                         {deployment.containers.length ? (
                             <Stack hasGutter>

@@ -127,9 +127,9 @@ function PolicyScopeForm(): ReactElement {
     // @TODO: Consider using a custom component for the multi-select typeahead dropdown. PolicyCategoriesSelectField.tsx is a good example too.
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-            <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
+            <FlexItem flex={{ default: 'flex_1' }} className="pf-v6-u-p-lg">
                 <Title headingLevel="h2">Scope</Title>
-                <div className="pf-v5-u-mt-sm">
+                <div className="pf-v6-u-mt-sm">
                     Create scopes to restrict or exclude your policy from entities within your
                     environment.
                 </div>
@@ -137,24 +137,24 @@ function PolicyScopeForm(): ReactElement {
             <Divider component="div" />
             {isAllScopingDisabled && (
                 <Alert
-                    className="pf-v5-u-mt-lg pf-v5-u-mx-lg"
+                    className="pf-v6-u-mt-lg pf-v6-u-mx-lg"
                     isInline
                     variant="info"
                     title="The selected event source does not support scoping."
                     component="p"
                 />
             )}
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Restrict by scope</Title>
-                        <div className="pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mt-sm">
                             Use Restrict by scope to enable this policy only for a specific cluster,
                             namespace, or deployment label. You can add multiple scopes and also use
                             regular expressions (RE2 syntax) for namespaces and deployment labels.
                         </div>
                     </FlexItem>
-                    <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                    <FlexItem className="pf-v6-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                         <Button
                             variant="secondary"
                             onClick={addNewInclusionScope}
@@ -182,18 +182,18 @@ function PolicyScopeForm(): ReactElement {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Exclude by scope</Title>
-                        <div className="pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mt-sm">
                             Use Exclude by scope to exclude entities from your policy. This function
                             is only available for Deploy and Runtime lifecycle stages. You can add
                             multiple scopes and also use regular expressions (RE2 syntax) for
                             namespaces and deployment labels.
                         </div>
                     </FlexItem>
-                    <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
+                    <FlexItem className="pf-v6-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
                         <Button
                             variant="secondary"
                             isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
@@ -222,10 +222,10 @@ function PolicyScopeForm(): ReactElement {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <FlexItem flex={{ default: 'flex_1' }}>
                     <Title headingLevel="h3">Exclude images</Title>
-                    <div className="pf-v5-u-mt-sm">
+                    <div className="pf-v6-u-mt-sm">
                         The exclude images setting only applies when you check images in a
                         continuous integration system (the Build lifecycle stage). It won&apos;t
                         have any effect if you use this policy to check running deployments (the
@@ -254,7 +254,7 @@ function PolicyScopeForm(): ReactElement {
                                         !hasBuildLifecycle ||
                                         isAllScopingDisabled
                                     }
-                                    className="pf-v5-u-w-100"
+                                    className="pf-v6-u-w-100"
                                 >
                                     <TextInputGroup isPlain>
                                         <TextInputGroupMain

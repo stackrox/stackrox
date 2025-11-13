@@ -245,7 +245,7 @@ function ViolationsTablePanel({
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2" className="pf-v5-u-color-100">
+                        <Title headingLevel="h2" className="pf-v6-u-color-100">
                             {pluralize(violationsCount, 'result')} found
                         </Title>
                     </ToolbarItem>

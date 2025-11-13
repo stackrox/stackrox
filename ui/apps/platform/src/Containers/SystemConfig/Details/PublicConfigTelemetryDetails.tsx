@@ -38,7 +38,7 @@ const PublicConfigTelemetryDetails = ({
             </CardHeader>
             <Divider component="div" />
             <CardBody>
-                <p className="pf-v5-u-mb-sm">
+                <p className="pf-v6-u-mb-sm">
                     Online telemetry data collection allows Red Hat to use anonymized information to
                     enhance your user experience. Consult the documentation to see what is
                     collected, and for information about how to opt out.

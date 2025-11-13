@@ -157,7 +157,7 @@ function CheckDetailsPage() {
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink
                         to={generatePathWithScanConfig(coverageProfileChecksPath, {
@@ -194,7 +194,7 @@ function CheckDetailsPage() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
+                className="pf-v6-u-pl-md pf-v6-u-background-color-100 pf-v6-u-flex-shrink-0"
             >
                 <Tab
                     eventKey={RESULTS_TAB}

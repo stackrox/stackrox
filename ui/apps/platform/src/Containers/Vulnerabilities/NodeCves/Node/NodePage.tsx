@@ -60,7 +60,7 @@ function NodePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - Node ${nodeName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v5-u-py-md">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewPath}>Nodes</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -78,7 +78,7 @@ function NodePage() {
                             title={getAxiosErrorMessage(error)}
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
-                            iconClassName="pf-v5-u-danger-color-100"
+                            iconClassName="pf-v6-u-danger-color-100"
                         />
                     </Bullseye>
                 </PageSection>
@@ -94,7 +94,7 @@ function NodePage() {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                            className="pf-v6-u-pl-md pf-v6-u-background-color-100"
                         >
                             <Tab
                                 eventKey={vulnTabKey}
@@ -112,7 +112,7 @@ function NodePage() {
                         hasBodyWrapper={false}
                         isFilled
                         padding={{ default: 'noPadding' }}
-                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                        className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                         aria-label={activeTabKey}
                         role="tabpanel"
                         tabIndex={0}

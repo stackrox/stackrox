@@ -157,7 +157,7 @@ function GoogleIntegrationForm({
                     component="p"
                     variant={'warning'}
                     isInline
-                    className="pf-v5-u-mb-lg"
+                    className="pf-v6-u-mb-lg"
                 >
                     <Content component="p">
                         Google Container Registry will be removed in a future release.
