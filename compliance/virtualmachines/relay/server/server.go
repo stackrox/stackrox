@@ -1,3 +1,6 @@
+// Package server provides a generic connection server with concurrency control.
+// It accepts connections from a net.Listener, manages concurrent connection processing
+// with semaphore-based limits, and delegates actual connection handling to injected handlers.
 package server
 
 import (
@@ -16,9 +19,9 @@ import (
 var log = logging.LoggerForModule()
 
 // ConnectionHandler is a function that processes an accepted connection.
+// Implementations should handle errors internally; returned errors are logged but don't stop the server.
 type ConnectionHandler func(ctx context.Context, conn net.Conn) error
 
-// Server is a generic server that accepts connections, manages concurrency, and delegates processing to a handler.
 type Server interface {
 	Run(ctx context.Context, handler ConnectionHandler) error
 }
@@ -32,7 +35,9 @@ type server struct {
 
 var _ Server = (*server)(nil)
 
-// New creates a new generic connection server.
+// New creates a connection server. Concurrency limits are read from env vars
+// VirtualMachinesMaxConcurrentVsockConnections and VirtualMachinesConcurrencyTimeout.
+// The server takes ownership of the listener and closes it when Run() returns.
 func New(listener net.Listener) Server {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
@@ -44,6 +49,8 @@ func New(listener net.Listener) Server {
 	}
 }
 
+// Run accepts connections until ctx is canceled. Handler errors are logged but don't stop the server.
+// Transient accept errors are retried after 1 second to avoid making failures invisible.
 func (s *server) Run(ctx context.Context, handler ConnectionHandler) error {
 	log.Info("Starting relay server")
 

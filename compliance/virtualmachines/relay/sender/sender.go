@@ -1,3 +1,4 @@
+// Package sender handles sending index reports to sensor and retrying on errors
 package sender
 
 import (

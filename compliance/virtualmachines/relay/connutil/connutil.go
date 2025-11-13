@@ -13,21 +13,6 @@ import (
 
 var log = logging.LoggerForModule()
 
-// ReadFromConn reads data from a connection with size and timeout limits.
-//
-// The function will:
-// - Set a read deadline on the connection based on the timeout parameter
-// - Read up to maxSize bytes from the connection
-// - Return an error if the data exceeds maxSize or if the read times out
-//
-// Caller contract:
-// - conn must be a valid, open connection
-// - maxSize must be > 0
-// - timeout must be > 0
-// - The caller is responsible for closing the connection
-//
-// Returns the data read (up to maxSize bytes) or an error. Errors include remote address
-// information for debugging.
 func ReadFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
 	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSize, timeout)
 

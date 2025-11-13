@@ -1,3 +1,5 @@
+// Package vsock provides utilities for working with vsock (VM sockets) connections.
+// It handles vsock-specific operations like creating listeners and extracting context IDs.
 package vsock
 
 import (
@@ -9,7 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
-// ExtractVsockCIDFromConnection extracts the vsock context ID from a vsock connection.
+// ExtractVsockCIDFromConnection extracts and validates the vsock context ID.
+// Rejects CIDs ≤2 which are reserved (0=ANY, 1=LOCAL, 2=HOST per vsock spec).
 func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	remoteAddr, ok := conn.RemoteAddr().(*vsock.Addr)
 	if !ok {
@@ -25,7 +28,8 @@ func ExtractVsockCIDFromConnection(conn net.Conn) (uint32, error) {
 	return remoteAddr.ContextID, nil
 }
 
-// NewListener creates a new vsock listener on the configured port.
+// NewListener creates a vsock listener on the host context ID (vsock.Host) using the port
+// from VirtualMachinesVsockPort env var. Caller must close the returned listener.
 func NewListener() (net.Listener, error) {
 	port := env.VirtualMachinesVsockPort.IntegerSetting()
 	listener, err := vsock.ListenContextID(vsock.Host, uint32(port), nil)
