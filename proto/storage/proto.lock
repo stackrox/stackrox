@@ -8268,12 +8268,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "path",
+                    "name": "mounted_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "host_path",
+                    "name": "node_path",
                     "type": "string"
                   },
                   {

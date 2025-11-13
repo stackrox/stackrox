@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -33,6 +35,13 @@ func FieldMetadataSingleton() *FieldMetadata {
 		fieldMetadataInstance = initializeFieldMetadata()
 	})
 	return &fieldMetadataInstance
+}
+
+// ResetFieldMetadataSingleton is for testing purposes only, and can be
+// used to ensure that criteria are added / removed when feature flags
+// are enabled / disabled respectively.
+func ResetFieldMetadataSingleton(_ *testing.T) {
+	fieldMetadataInstanceInit = sync.Once{}
 }
 
 type option int
@@ -874,6 +883,19 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.SensitiveFileActivity.Enabled() {
+		f.registerFieldMetadata(fieldnames.NodeFilePath,
+			querybuilders.ForFieldLabel(search.NodeFilePath), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				// TODO(ROX-31449): change to an absolute path regex when arbitrary
+				// paths are supported
+				return allowedFilePathRegex
+			},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]RuntimeFieldType{FileAccess}, negationForbidden,
+		)
+	}
 
 	return f
 }

@@ -16,7 +16,7 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 
 	pathSet := set.NewStringSet()
 	for _, fa := range accesses {
-		pathSet.Add(fa.GetFile().GetPath())
+		pathSet.Add(fa.GetFile().GetMountedPath())
 	}
 
 	var sb strings.Builder
@@ -27,7 +27,7 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation)
 				sb.WriteString("; ")
 			}
 			fmt.Fprintf(&sb, "'%v' accessed (%v) by %v",
-				fa.GetFile().GetPath(),
+				fa.GetFile().GetMountedPath(),
 				fa.GetOperation(),
 				fa.GetProcess().GetSignal().GetName())
 		}
