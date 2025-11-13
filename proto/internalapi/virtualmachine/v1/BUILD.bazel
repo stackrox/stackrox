@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "v1_proto",
+    srcs = [
+        "index_report.proto",
+        "virtual_machine.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["//internalapi/scanner/v4:v4_proto"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    importpath = "./internalapi/virtualmachine/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:public"],
+    deps = ["//internalapi/scanner/v4:index_report_proto"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachine",
+    visibility = ["//visibility:public"],
+)

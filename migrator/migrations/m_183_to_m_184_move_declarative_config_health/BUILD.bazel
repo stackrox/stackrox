@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_183_to_m_184_move_declarative_config_health",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_183_to_m_184_move_declarative_config_health/declarativeconfig/schema",
+        "//migrator/migrations/m_183_to_m_184_move_declarative_config_health/declarativeconfig/store",
+        "//migrator/migrations/m_183_to_m_184_move_declarative_config_health/integrationhealth/store",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/utils",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_183_to_m_184_move_declarative_config_health",
+    visibility = ["//visibility:public"],
+)

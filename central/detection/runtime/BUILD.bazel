@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runtime",
+    srcs = [
+        "detector.go",
+        "detector_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/detection/runtime",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/detection",
+        "//central/policy/datastore",
+        "//pkg/detection",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runtime",
+    visibility = ["//visibility:public"],
+)

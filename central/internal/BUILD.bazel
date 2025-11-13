@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "route.go",
+        "server.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/internal",
+    visibility = ["//central:__subpackages__"],
+    deps = [
+        "//pkg/env",
+        "//pkg/grpc/metrics",
+        "//pkg/mtls",
+        "@com_github_nytimes_gziphandler//:gziphandler",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//central:__subpackages__"],
+)

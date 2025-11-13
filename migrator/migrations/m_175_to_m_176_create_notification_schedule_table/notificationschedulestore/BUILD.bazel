@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "notificationschedulestore",
+    srcs = ["postgres_plugin.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_175_to_m_176_create_notification_schedule_table/notificationschedulestore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/metrics",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":notificationschedulestore",
+    visibility = ["//visibility:public"],
+)

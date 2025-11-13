@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "getbundle",
+    srcs = ["get_bundle.go"],
+    importpath = "github.com/stackrox/rox/roxctl/sensor/getbundle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/apiparams",
+        "//pkg/istioutils",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/sensor/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":getbundle",
+    visibility = ["//visibility:public"],
+)

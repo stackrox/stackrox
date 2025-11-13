@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "certrepo",
+    srcs = [
+        "repo_interface.go",
+        "service_certificates_repository.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//sensor/utils",
+        "@com_github_hashicorp_go_multierror//:go-multierror",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes/typed/core/v1:core",
+        "@org_golang_x_net//context",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":certrepo",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "certrepo_test",
+    srcs = ["service_certificates_repository_test.go"],
+    embed = [":certrepo"],
+    deps = [
+        "//generated/storage",
+        "//pkg/labels",
+        "//pkg/mtls",
+        "//pkg/protoassert",
+        "//sensor/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes/fake",
+        "@io_k8s_client_go//kubernetes/typed/core/v1:core",
+        "@io_k8s_client_go//kubernetes/typed/core/v1/fake",
+        "@io_k8s_client_go//testing",
+    ],
+)

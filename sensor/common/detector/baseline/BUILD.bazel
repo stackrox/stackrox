@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "baseline",
+    srcs = [
+        "baseline.go",
+        "optimized_baseline.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/detector/baseline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/processbaseline",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_cespare_xxhash//:xxhash",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":baseline",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "baseline_test",
+    srcs = [
+        "baseline_bench_test.go",
+        "baseline_test.go",
+    ],
+    embed = [":baseline"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

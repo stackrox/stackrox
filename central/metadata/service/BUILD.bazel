@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metadata/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/metadata/centralcapabilities",
+        "//central/systeminfo/store/postgres",
+        "//central/tlsconfig",
+        "//generated/api/v1:api",
+        "//pkg/buildinfo",
+        "//pkg/centralsensor",
+        "//pkg/cryptoutils",
+        "//pkg/errox",
+        "//pkg/grpc",
+        "//pkg/grpc/authn",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/allow",
+        "//pkg/grpc/authz/or",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//pkg/postgres",
+        "//pkg/postgres/pgconfig",
+        "//pkg/sync",
+        "//pkg/version",
+        "@com_github_google_certificate_transparency_go//tls",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

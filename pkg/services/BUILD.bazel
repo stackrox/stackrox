@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "services",
+    srcs = ["convert.go"],
+    importpath = "github.com/stackrox/rox/pkg/services",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/stringutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":services",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "services_test",
+    srcs = ["convert_test.go"],
+    embed = [":services"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

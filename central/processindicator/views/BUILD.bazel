@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "views",
+    srcs = ["risk_evaluation_view.go"],
+    importpath = "github.com/stackrox/rox/central/processindicator/views",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":views",
+    visibility = ["//visibility:public"],
+)

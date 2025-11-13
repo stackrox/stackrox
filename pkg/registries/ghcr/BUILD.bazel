@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ghcr",
+    srcs = ["ghcr.go"],
+    importpath = "github.com/stackrox/rox/pkg/registries/ghcr",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/registries/docker",
+        "//pkg/registries/types",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ghcr",
+    visibility = ["//visibility:public"],
+)

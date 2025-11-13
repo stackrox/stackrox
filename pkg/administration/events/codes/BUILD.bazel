@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codes",
+    srcs = ["codes.go"],
+    importpath = "github.com/stackrox/rox/pkg/administration/events/codes",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":codes",
+    visibility = ["//visibility:public"],
+)

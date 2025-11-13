@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "image_vulnerabilities",
+    srcs = [
+        "labels.go",
+        "tracker.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/deployment/datastore",
+        "//central/metrics/custom/tracker",
+        "//central/platform/matcher",
+        "//generated/storage",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":image_vulnerabilities",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "image_vulnerabilities_test",
+    srcs = ["tracker_test.go"],
+    embed = [":image_vulnerabilities"],
+    deps = [
+        "//central/deployment/datastore/mocks",
+        "//central/metrics",
+        "//central/metrics/custom/tracker",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/authproviders",
+        "//pkg/grpc/authn/basic",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

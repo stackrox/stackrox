@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "check444",
+    srcs = [
+        "check.go",
+        "messages.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/compliance/checks/nist800-190/check444",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/checks/common",
+        "//central/compliance/framework",
+        "//generated/storage",
+        "//pkg/compliance/framework",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":check444",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "check444_test",
+    srcs = ["check_test.go"],
+    embed = [":check444"],
+    deps = [
+        "//central/compliance/framework",
+        "//central/compliance/framework/mocks",
+        "//generated/storage",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

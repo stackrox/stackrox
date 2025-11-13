@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "imagecveflat",
+    srcs = [
+        "db_response.go",
+        "singleton.go",
+        "types.go",
+        "view_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/views/imagecveflat",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/globaldb",
+        "//central/views",
+        "//central/views/common",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/contextutil",
+        "//pkg/env",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/postgres/schema",
+        "//pkg/postgres/walker",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/search/postgres",
+        "//pkg/search/postgres/aggregatefunc",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imagecveflat",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "whoami",
+    srcs = ["whoami.go"],
+    importpath = "github.com/stackrox/rox/roxctl/central/whoami",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/utils",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/flags",
+        "//roxctl/common/util",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":whoami",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "whoami_test",
+    srcs = ["whoami_test.go"],
+    embed = [":whoami"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/utils",
+        "//roxctl/common/environment/mocks",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//test/bufconn",
+    ],
+)

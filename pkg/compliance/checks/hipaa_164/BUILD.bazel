@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hipaa_164",
+    srcs = ["all.go"],
+    importpath = "github.com/stackrox/rox/pkg/compliance/checks/hipaa_164",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/compliance/checks/hipaa_164/check308a3iib",
+        "//pkg/compliance/checks/hipaa_164/check308a4",
+        "//pkg/compliance/checks/hipaa_164/check312e1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":hipaa_164",
+    visibility = ["//visibility:public"],
+)

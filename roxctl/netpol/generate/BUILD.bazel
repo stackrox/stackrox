@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "generate",
+    srcs = [
+        "command.go",
+        "generate.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/netpol/generate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errox",
+        "//pkg/protoconv/networkpolicy",
+        "//roxctl/common/environment",
+        "//roxctl/common/npg",
+        "//roxctl/common/printer",
+        "//roxctl/netpol/resources",
+        "@com_github_np_guard_cluster_topology_analyzer_v2//pkg/analyzer",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_spf13_cobra//:cobra",
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/util/validation",
+        "@io_k8s_cli_runtime//pkg/resource",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "generate_test",
+    srcs = ["generate_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":generate"],
+    deps = [
+        "//pkg/errox",
+        "//roxctl/common/environment/mocks",
+        "//roxctl/common/npg",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/protoutils",
+        "//pkg/sync",
+        "//sensor/common",
+        "//sensor/common/admissioncontroller",
+        "//sensor/common/compliance",
+        "//sensor/common/message",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//visibility:public"],
+)

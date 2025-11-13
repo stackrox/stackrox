@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "checks.go",
+        "manager.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/compliance/datastore",
+        "//central/compliance/framework",
+        "//central/compliance/standards",
+        "//central/compliance/standards/metadata",
+        "//central/complianceoperator/checkresults/datastore",
+        "//central/complianceoperator/profiles/datastore",
+        "//central/complianceoperator/rules/datastore",
+        "//central/complianceoperator/scans/datastore",
+        "//central/complianceoperator/scansettingbinding/datastore",
+        "//generated/storage",
+        "//pkg/compliance/framework",
+        "//pkg/logging",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_complianceascode_compliance_operator//pkg/apis/compliance/v1alpha1",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)

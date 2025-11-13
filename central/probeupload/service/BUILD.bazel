@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/probeupload/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/probesources",
+        "//central/probeupload/manager",
+        "//generated/api/v1:api",
+        "//pkg/auth/permissions",
+        "//pkg/env",
+        "//pkg/grpc",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/grpc/authz/perrpc",
+        "//pkg/grpc/authz/user",
+        "//pkg/grpc/routes",
+        "//pkg/httputil",
+        "//pkg/logging",
+        "//pkg/probeupload",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//visibility:public"],
+)

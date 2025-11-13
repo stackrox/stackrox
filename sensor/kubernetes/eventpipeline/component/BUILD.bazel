@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "component",
+    srcs = [
+        "component.go",
+        "message.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//sensor/common/message",
+        "//sensor/common/store/resolver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":component",
+    visibility = ["//visibility:public"],
+)

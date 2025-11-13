@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pipeconn",
+    srcs = ["pipe_listener.go"],
+    importpath = "github.com/stackrox/rox/pkg/netutil/pipeconn",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/concurrency"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pipeconn",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pipeconn_test",
+    srcs = ["pipe_listener_test.go"],
+    embed = [":pipeconn"],
+    deps = [
+        "//pkg/binenc",
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

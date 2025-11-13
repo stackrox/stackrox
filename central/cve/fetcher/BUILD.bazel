@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fetcher",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+        "orchestrator.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/cve/fetcher",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/clustercveedge/datastore",
+        "//central/cve/cluster/datastore",
+        "//central/cve/converter/utils",
+        "//central/cve/converter/v2:converter",
+        "//central/cve/matcher",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/scanners",
+        "//pkg/scanners/clairify",
+        "//pkg/scanners/types",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/throttle",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fetcher",
+    visibility = ["//visibility:public"],
+)

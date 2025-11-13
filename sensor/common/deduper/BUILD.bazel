@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deduper",
+    srcs = ["deduper.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/deduper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//pkg/alert",
+        "//pkg/deduperkey",
+        "//pkg/logging",
+        "//pkg/sensor/event",
+        "//pkg/sensor/hash",
+        "//pkg/set",
+        "//sensor/common/managedcentral",
+        "//sensor/common/messagestream",
+        "//sensor/common/metrics",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deduper",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deduper_test",
+    srcs = ["deduper_test.go"],
+    embed = [":deduper"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/storage",
+        "//pkg/deduperkey",
+        "//sensor/common/messagestream",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

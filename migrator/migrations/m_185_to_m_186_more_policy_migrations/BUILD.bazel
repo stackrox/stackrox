@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_185_to_m_186_more_policy_migrations",
+    srcs = ["migration.go"],
+    embedsrcs = [
+        "policies_before_and_after/after/add_instruction.json",
+        "policies_before_and_after/after/apk.json",
+        "policies_before_and_after/after/apt.json",
+        "policies_before_and_after/after/automount_service_account_token.json",
+        "policies_before_and_after/after/dnf.json",
+        "policies_before_and_after/after/exec-dnf.json",
+        "policies_before_and_after/after/exec-remote-copy.json",
+        "policies_before_and_after/after/host_network.json",
+        "policies_before_and_after/after/no_resources_specified.json",
+        "policies_before_and_after/after/pod_exec.json",
+        "policies_before_and_after/after/privileged.json",
+        "policies_before_and_after/after/restricted_host_ports.json",
+        "policies_before_and_after/after/root_user.json",
+        "policies_before_and_after/after/secret_env.json",
+        "policies_before_and_after/before/add_instruction.json",
+        "policies_before_and_after/before/apk.json",
+        "policies_before_and_after/before/apt.json",
+        "policies_before_and_after/before/automount_service_account_token.json",
+        "policies_before_and_after/before/dnf.json",
+        "policies_before_and_after/before/exec-dnf.json",
+        "policies_before_and_after/before/exec-remote-copy.json",
+        "policies_before_and_after/before/host_network.json",
+        "policies_before_and_after/before/no_resources_specified.json",
+        "policies_before_and_after/before/pod_exec.json",
+        "policies_before_and_after/before/privileged.json",
+        "policies_before_and_after/before/restricted_host_ports.json",
+        "policies_before_and_after/before/root_user.json",
+        "policies_before_and_after/before/secret_env.json",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_185_to_m_186_more_policy_migrations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_185_to_m_186_more_policy_migrations/policypostgresstore",
+        "//migrator/migrations/policymigrationhelper",
+        "//migrator/types",
+        "//pkg/postgres",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_185_to_m_186_more_policy_migrations",
+    visibility = ["//visibility:public"],
+)

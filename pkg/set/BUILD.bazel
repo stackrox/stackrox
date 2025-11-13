@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "set",
+    srcs = [
+        "common.go",
+        "set.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/set",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":set",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "set_test",
+    srcs = [
+        "frozen_set_test.go",
+        "set_bench_test.go",
+        "set_test.go",
+    ],
+    embed = [":set"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

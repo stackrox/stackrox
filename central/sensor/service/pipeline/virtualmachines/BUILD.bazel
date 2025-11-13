@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "virtualmachines",
+    srcs = ["pipeline.go"],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/virtualmachines",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/convert/internaltostorage",
+        "//central/metrics",
+        "//central/sensor/service/common",
+        "//central/sensor/service/pipeline",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//central/virtualmachine/datastore",
+        "//generated/internalapi/central",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//pkg/centralsensor",
+        "//pkg/metrics",
+        "//pkg/search",
+        "//pkg/set",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":virtualmachines",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "virtualmachines_test",
+    srcs = ["pipeline_test.go"],
+    embed = [":virtualmachines"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/convert/internaltostorage",
+        "//central/sensor/service/pipeline/reconciliation",
+        "//central/virtualmachine/datastore/mocks",
+        "//generated/internalapi/central",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/errox",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/protomock",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

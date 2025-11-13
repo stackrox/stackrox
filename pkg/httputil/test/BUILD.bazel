@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "test_test",
+    srcs = ["rest_test.go"],
+    deps = [
+        "//generated/storage",
+        "//pkg/fixtures",
+        "//pkg/httputil",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

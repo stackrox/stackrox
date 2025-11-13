@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "admissioncontrol",
+    srcs = [
+        "config.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/admissioncontrol",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/sensor",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":admissioncontrol",
+    visibility = ["//visibility:public"],
+)

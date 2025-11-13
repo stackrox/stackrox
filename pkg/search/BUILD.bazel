@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "search",
+    srcs = [
+        "autocomplete_query_parser.go",
+        "derivationtype_string.go",
+        "fields.go",
+        "general_query_parser.go",
+        "map.go",
+        "options.go",
+        "options_map.go",
+        "options_multimap.go",
+        "parser.go",
+        "query_builder.go",
+        "querymodifier_string.go",
+        "queryutils.go",
+        "result.go",
+        "searcher.go",
+        "walker.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/search",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/conv",
+        "//pkg/errox",
+        "//pkg/generic",
+        "//pkg/logging",
+        "//pkg/postgres",
+        "//pkg/protocompat",
+        "//pkg/protoreflect",
+        "//pkg/search/enumregistry",
+        "//pkg/search/postgres/aggregatefunc",
+        "//pkg/set",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":search",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "search_test",
+    srcs = [
+        "autocomplete_query_parser_test.go",
+        "general_query_parser_test.go",
+        "parser_test.go",
+        "querybuilder_test.go",
+        "queryutils_test.go",
+        "result_test.go",
+    ],
+    embed = [":search"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/buildinfo",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

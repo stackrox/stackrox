@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reconciliation",
+    srcs = [
+        "perform.go",
+        "reconciliation.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/errorhelpers",
+        "//pkg/logging",
+        "//pkg/reflectutils",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reconciliation",
+    visibility = ["//visibility:public"],
+)

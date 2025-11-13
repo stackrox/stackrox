@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "data",
+    srcs = [
+        "central.go",
+        "cluster.go",
+        "data.go",
+        "process.go",
+        "rox_component.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/telemetry/data",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_google_grpc//codes"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":data",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "data_test",
+    srcs = ["data_test.go"],
+    embed = [":data"],
+    deps = [
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

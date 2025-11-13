@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metrics",
+    srcs = ["singleton.go"],
+    importpath = "github.com/stackrox/rox/central/grpc/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/metrics",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metrics",
+    visibility = ["//visibility:public"],
+)

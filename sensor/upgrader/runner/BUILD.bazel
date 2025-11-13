@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runner",
+    srcs = [
+        "flags.go",
+        "metadata_transfer.go",
+        "run.go",
+        "runner.go",
+        "stages.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/runner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/logging",
+        "//pkg/sensorupgrader",
+        "//pkg/utils",
+        "//sensor/upgrader/bundle",
+        "//sensor/upgrader/cleanup",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/execution",
+        "//sensor/upgrader/plan",
+        "//sensor/upgrader/preflight",
+        "//sensor/upgrader/snapshot",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runner",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "runner_test",
+    srcs = ["workflows_test.go"],
+    embed = [":runner"],
+    deps = [
+        "//pkg/sensorupgrader",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

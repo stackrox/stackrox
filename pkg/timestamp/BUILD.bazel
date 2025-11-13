@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "timestamp",
+    srcs = ["microts.go"],
+    importpath = "github.com/stackrox/rox/pkg/timestamp",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_google_protobuf//types/known/timestamppb"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":timestamp",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "timestamp_test",
+    srcs = ["microts_test.go"],
+    embed = [":timestamp"],
+    deps = [
+        "//pkg/protocompat",
+        "@com_github_stretchr_testify//assert",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "queue",
+    srcs = ["queue.go"],
+    importpath = "github.com/stackrox/rox/pkg/queue",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/concurrency",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/sync",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":queue",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "queue_test",
+    srcs = ["queue_test.go"],
+    embed = [":queue"],
+    deps = [
+        "//pkg/sync",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

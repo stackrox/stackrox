@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "getters",
+    srcs = [
+        "alert.go",
+        "alert_mock.go",
+        "process_baselines.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/getters",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/search",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":getters",
+    visibility = ["//visibility:public"],
+)

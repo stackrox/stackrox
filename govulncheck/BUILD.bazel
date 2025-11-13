@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "govulncheck_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/govulncheck",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "govulncheck",
+    embed = [":govulncheck_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "govulncheck_test",
+    srcs = ["main_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":govulncheck_lib"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8s",
+    srcs = [
+        "protocol.go",
+        "quantity.go",
+        "selector.go",
+        "taints.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/protoconv/k8s",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/logging",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":k8s",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "k8s_test",
+    srcs = ["quantity_test.go"],
+    embed = [":k8s"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/api/resource",
+    ],
+)

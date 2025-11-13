@@ -1,0 +1,67 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "manager.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/activecomponent/updater",
+        "//central/deployment/datastore",
+        "//central/image/datastore",
+        "//central/imageintegration",
+        "//central/imageintegration/store",
+        "//central/imagev2/datastore",
+        "//central/metrics",
+        "//central/node/datastore",
+        "//central/ranking",
+        "//central/risk/datastore",
+        "//central/risk/scorer/component",
+        "//central/risk/scorer/component/singleton",
+        "//central/risk/scorer/deployment",
+        "//central/risk/scorer/image",
+        "//central/risk/scorer/node",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/images/integration",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/scancomponent",
+        "//pkg/scanners/types",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "manager_test",
+    srcs = ["manager_test.go"],
+    embed = [":manager"],
+    deps = [
+        "//central/image/datastore/mocks",
+        "//central/imageintegration/store",
+        "//central/imagev2/datastore/mocks",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/images/integration",
+        "//pkg/images/integration/mocks",
+        "//pkg/scanners/mocks",
+        "//pkg/scanners/types",
+        "//pkg/scanners/types/mocks",
+        "//pkg/testutils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_mock//gomock",
+    ],
+)

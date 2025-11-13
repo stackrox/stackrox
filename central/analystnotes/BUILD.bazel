@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "analystnotes",
+    srcs = ["types.go"],
+    importpath = "github.com/stackrox/rox/central/analystnotes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/stringutils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":analystnotes",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "v2_proto",
+    srcs = [
+        "common.proto",
+        "compliance_common.proto",
+        "compliance_integration_service.proto",
+        "compliance_profile_service.proto",
+        "compliance_results_service.proto",
+        "compliance_results_stats_service.proto",
+        "compliance_rule_service.proto",
+        "compliance_scan_configuration_service.proto",
+        "pagination.proto",
+        "report_service.proto",
+        "scan_component.proto",
+        "search_query.proto",
+        "user.proto",
+        "virtual_machine_service.proto",
+        "vuln_exception_service.proto",
+        "vuln_state.proto",
+        "vulnerability.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v2:v2_proto",
+        "//google/api:api_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_proto_library(
+    name = "v2_go_proto",
+    compilers = [
+        "@io_bazel_rules_go//proto:go_grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "./api/v2",
+    proto = ":v2_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v2:common_proto",
+        "//api/v2:compliance_common_proto",
+        "//api/v2:pagination_proto",
+        "//api/v2:report_service_proto",
+        "//api/v2:scan_component_proto",
+        "//api/v2:search_query_proto",
+        "//api/v2:user_proto",
+        "//api/v2:vuln_state_proto",
+        "//api/v2:vulnerability_proto",
+        "//google/api:annotations_proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":api",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "authorizer",
+    srcs = ["builtin_scoped_authorizer.go"],
+    importpath = "github.com/stackrox/rox/central/sac/authorizer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/namespace/datastore",
+        "//central/role",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/observe",
+        "//pkg/sac/resources",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":authorizer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "authorizer_test",
+    srcs = ["builtin_scoped_authorizer_test.go"],
+    embed = [":authorizer"],
+    deps = [
+        "//central/role",
+        "//generated/storage",
+        "//pkg/auth/permissions",
+        "//pkg/buildinfo",
+        "//pkg/sac",
+        "//pkg/sac/effectiveaccessscope",
+        "//pkg/sac/observe",
+        "//pkg/sac/resources",
+        "//pkg/testutils/roletest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

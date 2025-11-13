@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "events",
+    srcs = [
+        "converter.go",
+        "domain.go",
+        "event.go",
+        "hints.go",
+        "stream.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/administration/events",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/resources",
+        "//pkg/concurrency",
+        "//pkg/errox",
+        "//pkg/protocompat",
+        "//pkg/stringutils",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":events",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "events_test",
+    srcs = ["event_test.go"],
+    embed = [":events"],
+    deps = [
+        "//pkg/errox",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

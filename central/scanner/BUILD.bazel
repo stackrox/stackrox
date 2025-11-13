@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "scanner",
+    srcs = ["handler.go"],
+    importpath = "github.com/stackrox/rox/central/scanner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/images/defaults",
+        "//pkg/mtls",
+        "//pkg/renderer",
+        "//pkg/stringutils",
+        "//pkg/zip",
+        "@com_github_distribution_reference//:reference",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":scanner",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "scanner_test",
+    srcs = ["handler_test.go"],
+    embed = [":scanner"],
+    deps = [
+        "//generated/storage",
+        "//pkg/apiparams",
+        "//pkg/images/defaults",
+        "//pkg/mtls/testutils",
+        "//pkg/testutils",
+        "//pkg/version/testutils",
+        "@com_github_stretchr_testify//suite",
+    ],
+)

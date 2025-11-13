@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cvssv2",
+    srcs = ["cvss.go"],
+    importpath = "github.com/stackrox/rox/pkg/cvss/cvssv2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/mathutil",
+        "@com_github_facebookincubator_nvdtools//cvss2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cvssv2",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cvssv2_test",
+    srcs = ["cvss_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":cvssv2"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

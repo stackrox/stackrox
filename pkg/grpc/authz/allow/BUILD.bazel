@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "allow",
+    srcs = ["allow.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authz/allow",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/grpc/authz"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":allow",
+    visibility = ["//visibility:public"],
+)

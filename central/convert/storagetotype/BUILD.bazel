@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "storagetotype",
+    srcs = ["discovered_clusters.go"],
+    importpath = "github.com/stackrox/rox/central/convert/storagetotype",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/cloudsources/discoveredclusters",
+        "//pkg/protocompat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":storagetotype",
+    visibility = ["//visibility:public"],
+)

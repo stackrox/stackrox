@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgreshelper",
+    srcs = ["test.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/postgreshelper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/postgres",
+        "//pkg/postgres/pgtest",
+        "//pkg/postgres/pgtest/conn",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgreshelper",
+    visibility = ["//visibility:public"],
+)

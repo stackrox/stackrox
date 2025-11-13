@@ -1,0 +1,58 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "image",
+    srcs = [
+        "interfaces.go",
+        "service_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/common/image",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/centralsensor",
+        "//pkg/concurrency",
+        "//pkg/grpc",
+        "//pkg/grpc/authz/idcheck",
+        "//pkg/logging",
+        "//pkg/registries/types",
+        "//pkg/registrymirror",
+        "//sensor/common",
+        "//sensor/common/image/cache",
+        "//sensor/common/message",
+        "//sensor/common/scan",
+        "//sensor/common/trace",
+        "//sensor/common/unimplemented",
+        "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//:grpc",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":image",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "image_test",
+    srcs = ["service_impl_test.go"],
+    embed = [":image"],
+    deps = [
+        "//generated/api/v1:api",
+        "//generated/internalapi/sensor",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/expiringcache/mocks",
+        "//pkg/protoassert",
+        "//sensor/common",
+        "//sensor/common/image/cache",
+        "//sensor/common/image/mocks",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

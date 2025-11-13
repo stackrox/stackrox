@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "manager",
+    srcs = [
+        "deduper.go",
+        "manager.go",
+        "metrics.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/hash/manager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/hash/datastore",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/alert",
+        "//pkg/concurrency",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/metrics",
+        "//pkg/sac",
+        "//pkg/sensor/event",
+        "//pkg/sensor/hash",
+        "//pkg/sync",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":manager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "manager_test",
+    srcs = ["deduper_test.go"],
+    embed = [":manager"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/internalapi/scanner/v4:scanner",
+        "//generated/internalapi/virtualmachine/v1:virtualmachine",
+        "//generated/storage",
+        "//pkg/sensor/event",
+        "//pkg/sensor/hash",
+        "//pkg/uuid",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

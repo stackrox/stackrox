@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "cmd_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/stackrox/rox/operator/cmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//operator/api/v1alpha1",
+        "//operator/internal/central/reconciler",
+        "//operator/internal/common/labels",
+        "//operator/internal/securedcluster/reconciler",
+        "//operator/internal/utils",
+        "//pkg/buildinfo",
+        "//pkg/env",
+        "//pkg/profiling",
+        "//pkg/version",
+        "@com_github_go_logr_zapr//:zapr",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/labels",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/selection",
+        "@io_k8s_apimachinery//pkg/util/runtime",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//plugin/pkg/client/auth",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/cache",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/healthz",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/filters",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "cmd",
+    embed = [":cmd_lib"],
+    visibility = ["//visibility:public"],
+)

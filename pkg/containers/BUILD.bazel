@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "containers",
+    srcs = [
+        "detection.go",
+        "ports.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/containers",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":containers",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "containers_test",
+    srcs = [
+        "detection_test.go",
+        "ports_test.go",
+    ],
+    embed = [":containers"],
+    deps = [
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "discoveredclusters",
+    srcs = ["discovered_cluster.go"],
+    importpath = "github.com/stackrox/rox/pkg/cloudsources/discoveredclusters",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/stringutils",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":discoveredclusters",
+    visibility = ["//visibility:public"],
+)

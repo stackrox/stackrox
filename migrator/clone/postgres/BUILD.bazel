@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "db_clone_manager.go",
+        "db_clone_manager_impl.go",
+    ],
+    importpath = "github.com/stackrox/rox/migrator/clone/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//migrator/clone/metadata",
+        "//migrator/postgres/gorm",
+        "//migrator/version",
+        "//pkg/env",
+        "//pkg/logging",
+        "//pkg/migrations",
+        "//pkg/postgres",
+        "//pkg/postgres/pgadmin",
+        "//pkg/postgres/pgconfig",
+        "//pkg/sac",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/version",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":postgres",
+    visibility = ["//visibility:public"],
+)

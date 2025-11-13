@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bad-ca",
+    srcs = ["ca.go"],
+    embedsrcs = [
+        "self-signed.invalid.crt",
+        "untrusted-root.invalid.crt",
+    ],
+    importpath = "github.com/stackrox/rox/tests/bad-ca",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bad-ca",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,73 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "compliancemanager",
+    srcs = [
+        "manager.go",
+        "manager_impl.go",
+        "singleton.go",
+        "utils.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/cluster/datastore",
+        "//central/complianceoperator/v2/checkresults/datastore",
+        "//central/complianceoperator/v2/integration/datastore",
+        "//central/complianceoperator/v2/profiles/datastore",
+        "//central/complianceoperator/v2/scanconfigurations/datastore",
+        "//central/complianceoperator/v2/scans/datastore",
+        "//central/convert/internaltov2storage",
+        "//central/sensor/service/connection",
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/protoconv/schedule",
+        "//pkg/protoutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_adhocore_gronx//:gronx",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":compliancemanager",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "compliancemanager_test",
+    srcs = ["manager_impl_test.go"],
+    embed = [":compliancemanager"],
+    deps = [
+        "//central/cluster/datastore/mocks",
+        "//central/complianceoperator/v2/checkresults/datastore/mocks",
+        "//central/complianceoperator/v2/integration/datastore/mocks",
+        "//central/complianceoperator/v2/profiles/datastore/mocks",
+        "//central/complianceoperator/v2/scanconfigurations/datastore/mocks",
+        "//central/complianceoperator/v2/scans/datastore/mocks",
+        "//central/convert/internaltov2storage",
+        "//central/sensor/service/connection/mocks",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/sac/testconsts",
+        "//pkg/sac/testutils",
+        "//pkg/search",
+        "//pkg/set",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

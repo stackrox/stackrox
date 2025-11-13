@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "frozenschema",
+    srcs = ["groups.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_173_to_m_174_group_unique_constraint/frozenschema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/walker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":frozenschema",
+    visibility = ["//visibility:public"],
+)

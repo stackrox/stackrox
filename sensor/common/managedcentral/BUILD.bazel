@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "managedcentral",
+    srcs = ["managed.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/managedcentral",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/sync"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":managedcentral",
+    visibility = ["//visibility:public"],
+)

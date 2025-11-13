@@ -1,0 +1,137 @@
+# Bazel configuration for StackRox
+# This file configures Bazel build behavior for the StackRox project
+
+# ============================================================================
+# Common Settings
+# ============================================================================
+
+# Use Bzlmod (modern module system) - better dependency resolution
+common --enable_bzlmod
+common --noenable_workspace
+
+# Import user-specific settings if they exist
+try-import %workspace%/.bazelrc.user
+
+# ============================================================================
+# Build Settings
+# ============================================================================
+
+# Show detailed error messages
+build --verbose_failures
+build --show_result=10
+
+# Use multiple jobs for parallelization
+build --jobs=auto
+
+# Enable persistent workers for better performance
+build --worker_sandboxing=false
+
+# ============================================================================
+# Caching
+# ============================================================================
+
+# Enable disk cache for local builds
+build --disk_cache=~/.cache/bazel/stackrox
+
+# Enable compression for remote cache (if/when we set one up)
+build --remote_cache_compression
+
+# ============================================================================
+# Platform Settings
+# ============================================================================
+
+# By default, let Bazel auto-detect the host platform for tools
+# We'll specify explicit platforms when building binaries for deployment
+
+# Platform-specific configurations for cross-compilation
+build:linux_amd64 --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
+build:linux_arm64 --platforms=@io_bazel_rules_go//go/toolchain:linux_arm64
+build:linux_ppc64le --platforms=@io_bazel_rules_go//go/toolchain:linux_ppc64le
+build:linux_s390x --platforms=@io_bazel_rules_go//go/toolchain:linux_s390x
+build:darwin_amd64 --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64
+build:darwin_arm64 --platforms=@io_bazel_rules_go//go/toolchain:darwin_arm64
+build:windows_amd64 --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64
+
+# ============================================================================
+# Go Settings
+# ============================================================================
+
+# Enable race detector for tests
+test --features=race
+
+# Code coverage settings
+coverage --combined_report=lcov
+coverage --experimental_use_llvm_covmap
+
+# ============================================================================
+# Development Configurations
+# ============================================================================
+
+# Fast configuration for local development
+# Skips optimizations, enables caching
+build:fast --compilation_mode=fastbuild
+build:fast --spawn_strategy=local
+build:fast --watchfs
+
+# Debug configuration
+build:debug --compilation_mode=dbg
+build:debug --strip=never
+build:debug --copt=-g
+
+# Release configuration
+build:release --compilation_mode=opt
+build:release --stamp
+build:release --workspace_status_command=$(pwd)/tools/bazel/workspace_status.sh
+
+# ============================================================================
+# CI Configuration
+# ============================================================================
+
+# Settings for CI builds
+build:ci --show_timestamps
+build:ci --announce_rc
+build:ci --color=no
+build:ci --curses=no
+build:ci --progress_report_interval=10
+build:ci --test_output=errors
+build:ci --test_summary=detailed
+build:ci --verbose_failures
+
+# ============================================================================
+# Performance Optimizations
+# ============================================================================
+
+# Reuse sandbox directories for better performance
+build --experimental_reuse_sandbox_directories
+
+# In-memory optimizations
+build --experimental_inmemory_jdeps_files
+build --experimental_inmemory_dotd_files
+
+# ============================================================================
+# Test Settings
+# ============================================================================
+
+# Test output settings
+test --test_output=errors
+test --test_summary=terse
+
+# Test environment
+test --test_env=GOTRACEBACK=all
+
+# ============================================================================
+# Remote Cache (Optional - for future use)
+# ============================================================================
+
+# Uncomment and configure when setting up remote cache
+# build:remote --remote_cache=grpc://your-cache-server:9092
+# build:remote --remote_timeout=60s
+# build:remote --remote_default_exec_properties=OSFamily=Linux
+
+# ============================================================================
+# Convenience Aliases
+# ============================================================================
+
+# Alias for running all tests
+# bazel test --config=all //...
+

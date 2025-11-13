@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "servicecerttoken",
+    srcs = ["client_creds.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/common/authn/servicecerttoken",
+        "//pkg/httputil",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//credentials",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":servicecerttoken",
+    visibility = ["//visibility:public"],
+)

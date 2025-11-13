@@ -1,0 +1,54 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "reprocessor",
+    srcs = [
+        "reprocessor.go",
+        "reprocessor_impl.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/platform/reprocessor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/alert/utils",
+        "//central/config/datastore",
+        "//central/deployment/datastore",
+        "//central/platform/matcher",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/features",
+        "//pkg/logging",
+        "//pkg/sac",
+        "//pkg/search",
+        "//pkg/sync",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_sync//semaphore",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reprocessor",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "reprocessor_test",
+    srcs = ["reprocessor_impl_test.go"],
+    embed = [":reprocessor"],
+    deps = [
+        "//central/alert/datastore/mocks",
+        "//central/config/datastore/mocks",
+        "//central/deployment/datastore/mocks",
+        "//central/platform/matcher",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/sac",
+        "@com_github_stretchr_testify//suite",
+        "@org_golang_x_sync//semaphore",
+        "@org_uber_go_mock//gomock",
+    ],
+)

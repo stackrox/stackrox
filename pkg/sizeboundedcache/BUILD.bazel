@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sizeboundedcache",
+    srcs = ["size_bounded_cache.go"],
+    importpath = "github.com/stackrox/rox/pkg/sizeboundedcache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "//pkg/sync",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sizeboundedcache",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sizeboundedcache_test",
+    srcs = ["size_bounded_cache_test.go"],
+    embed = [":sizeboundedcache"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

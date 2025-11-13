@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testdata",
+    srcs = ["testdata.go"],
+    importpath = "github.com/stackrox/rox/central/externalbackups/plugins/s3/testdata",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/externalbackups/plugins/s3/common",
+        "//generated/storage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testdata",
+    visibility = ["//visibility:public"],
+)

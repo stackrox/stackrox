@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mode",
+    srcs = ["interactive_mode.go"],
+    importpath = "github.com/stackrox/rox/roxctl/common/mode",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/concurrency"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mode",
+    visibility = ["//visibility:public"],
+)

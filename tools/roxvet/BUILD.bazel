@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "roxvet_lib",
+    srcs = ["roxvet.go"],
+    importpath = "github.com/stackrox/rox/tools/roxvet",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//tools/roxvet/analyzers/donotcompareproto",
+        "//tools/roxvet/analyzers/dontprintferr",
+        "//tools/roxvet/analyzers/filepathwalk",
+        "//tools/roxvet/analyzers/godoccapitalizationmismatch",
+        "//tools/roxvet/analyzers/gogoprotofunctions",
+        "//tools/roxvet/analyzers/importpackagenames",
+        "//tools/roxvet/analyzers/migrationreferencedschema",
+        "//tools/roxvet/analyzers/needlessformat",
+        "//tools/roxvet/analyzers/protoclone",
+        "//tools/roxvet/analyzers/protoptrs",
+        "//tools/roxvet/analyzers/regexes",
+        "//tools/roxvet/analyzers/sortslices",
+        "//tools/roxvet/analyzers/storeinterface",
+        "//tools/roxvet/analyzers/structuredlogs",
+        "//tools/roxvet/analyzers/testtags",
+        "//tools/roxvet/analyzers/uncheckedifassign",
+        "//tools/roxvet/analyzers/undeferredmutexunlocks",
+        "//tools/roxvet/analyzers/unmarshalreplace",
+        "//tools/roxvet/analyzers/unusedroxctlargs",
+        "//tools/roxvet/analyzers/validateimports",
+        "@org_golang_x_tools//go/analysis/unitchecker",
+    ],
+)
+
+go_binary(
+    name = "roxvet",
+    embed = [":roxvet_lib"],
+    visibility = ["//visibility:public"],
+)

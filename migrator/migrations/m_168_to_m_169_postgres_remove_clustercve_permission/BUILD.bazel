@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "m_168_to_m_169_postgres_remove_clustercve_permission",
+    srcs = ["migration.go"],
+    importpath = "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//migrator/migrations",
+        "//migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore",
+        "//migrator/types",
+        "//pkg/postgres",
+        "//pkg/sac",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":m_168_to_m_169_postgres_remove_clustercve_permission",
+    visibility = ["//visibility:public"],
+)

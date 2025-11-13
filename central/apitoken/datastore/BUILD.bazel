@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "datastore",
+    srcs = [
+        "datastore.go",
+        "datastore_impl.go",
+        "singleton.go",
+        "telemetry.go",
+        "types.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/apitoken/datastore",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/apitoken/datastore/internal/schedulestore/postgres",
+        "//central/apitoken/datastore/internal/store",
+        "//central/apitoken/datastore/internal/store/postgres",
+        "//central/globaldb",
+        "//generated/api/v1:api",
+        "//generated/storage",
+        "//pkg/postgres",
+        "//pkg/postgres/pgutils",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "//pkg/search",
+        "//pkg/sync",
+        "//pkg/telemetry/phonehome",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":datastore",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "datastore_test",
+    srcs = ["datastore_test.go"],
+    embed = [":datastore"],
+    deps = [
+        "//central/apitoken/datastore/internal/store/mocks",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "//pkg/sac",
+        "//pkg/sac/resources",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)

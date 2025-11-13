@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stream",
+    srcs = [
+        "singleton.go",
+        "stream.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/administration/events/stream",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/administration/events",
+        "//pkg/concurrency",
+        "//pkg/metrics",
+        "//pkg/queue",
+        "//pkg/sync",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stream",
+    visibility = ["//visibility:public"],
+)

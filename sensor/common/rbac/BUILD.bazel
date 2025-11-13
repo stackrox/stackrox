@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rbac",
+    srcs = ["namespaced_service_account.go"],
+    importpath = "github.com/stackrox/rox/sensor/common/rbac",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rbac",
+    visibility = ["//visibility:public"],
+)

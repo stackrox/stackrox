@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reconciler",
+    srcs = ["reconciler.go"],
+    importpath = "github.com/stackrox/rox/operator/internal/central/reconciler",
+    visibility = ["//operator:__subpackages__"],
+    deps = [
+        "//image",
+        "//operator/api/v1alpha1",
+        "//operator/internal/central/common",
+        "//operator/internal/central/extensions",
+        "//operator/internal/central/values/translation",
+        "//operator/internal/common/extensions",
+        "//operator/internal/common/rendercache",
+        "//operator/internal/legacy",
+        "//operator/internal/proxy",
+        "//operator/internal/reconciler",
+        "//operator/internal/route",
+        "//operator/internal/utils",
+        "//operator/internal/values/translation",
+        "//pkg/version",
+        "@com_github_operator_framework_helm_operator_plugins//pkg/reconciler",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/source",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":reconciler",
+    visibility = ["//operator:__subpackages__"],
+)

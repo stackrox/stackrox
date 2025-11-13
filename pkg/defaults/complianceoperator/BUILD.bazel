@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "complianceoperator",
+    srcs = ["benchmarks.go"],
+    embedsrcs = [
+        "files/bsi-benchmark-2022.json",
+        "files/cis-benchmark-1-4.json",
+        "files/cis-benchmark-1-5.json",
+        "files/cis-benchmark-1-7.json",
+        "files/disa-stig-benchmark-v1r1.json",
+        "files/disa-stig-benchmark-v2r1.json",
+        "files/disa-stig-benchmark-v2r2.json",
+        "files/e8-benchmark.json",
+        "files/nerc-benchmark.json",
+        "files/nist-high-benchmark-revision-4.json",
+        "files/nist-moderate-benchmark-revision-4.json",
+        "files/pci-benchmark-3-2-1.json",
+        "files/pci-benchmark-4-0.json",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/defaults/complianceoperator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/errorhelpers",
+        "//pkg/features",
+        "//pkg/jsonutil",
+        "//pkg/logging",
+        "//pkg/utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":complianceoperator",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = [
+        "central_env.go",
+        "get_bundle.go",
+        "resolve_id_or_name.go",
+    ],
+    importpath = "github.com/stackrox/rox/roxctl/sensor/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/apiparams",
+        "//pkg/buildinfo",
+        "//pkg/errox",
+        "//pkg/images/defaults",
+        "//pkg/roxctl/common",
+        "//pkg/search",
+        "//pkg/uuid",
+        "//roxctl/common",
+        "//roxctl/common/environment",
+        "//roxctl/common/zipdownload",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":util",
+    visibility = ["//visibility:public"],
+)

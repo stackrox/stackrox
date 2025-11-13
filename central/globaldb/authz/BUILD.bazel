@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "authz",
+    srcs = ["authz.go"],
+    importpath = "github.com/stackrox/rox/central/globaldb/authz",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/user",
+        "//pkg/sac/resources",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":authz",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "saml",
+    srcs = [
+        "backend_factory_impl.go",
+        "backend_impl.go",
+        "entity_descriptors.go",
+        "insecure_http_client.go",
+        "metadata.go",
+        "settings.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/auth/authproviders/saml",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/auth/authproviders",
+        "//pkg/auth/authproviders/idputil",
+        "//pkg/auth/tokens",
+        "//pkg/grpc/requestinfo",
+        "//pkg/httputil",
+        "//pkg/httputil/proxy",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "@com_github_cloudflare_cfssl//helpers",
+        "@com_github_pkg_errors//:errors",
+        "@com_github_russellhaering_gosaml2//:gosaml2",
+        "@com_github_russellhaering_gosaml2//types",
+        "@com_github_russellhaering_goxmldsig//:goxmldsig",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":saml",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "saml_test",
+    srcs = ["entity_descriptors_test.go"],
+    embed = [":saml"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

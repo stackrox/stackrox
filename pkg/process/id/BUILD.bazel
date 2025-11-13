@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "id",
+    srcs = ["id.go"],
+    importpath = "github.com/stackrox/rox/pkg/process/id",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/storage",
+        "//pkg/uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":id",
+    visibility = ["//visibility:public"],
+)

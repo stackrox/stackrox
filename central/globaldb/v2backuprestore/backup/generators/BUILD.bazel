@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "generators",
+    srcs = [
+        "directory.go",
+        "file.go",
+        "path_map.go",
+        "stream.go",
+        "zip.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/utils",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generators",
+    visibility = ["//visibility:public"],
+)

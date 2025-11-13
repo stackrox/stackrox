@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "validation",
+    srcs = [
+        "singleton.go",
+        "validate.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/reports/validation",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifier/datastore",
+        "//central/reports/common",
+        "//central/reports/config/datastore",
+        "//central/reports/scheduler/v2/reportgenerator",
+        "//central/reports/snapshot/datastore",
+        "//central/resourcecollection/datastore",
+        "//central/vulnmgmt/vulnerabilityrequest/common",
+        "//generated/api/v2:api",
+        "//generated/storage",
+        "//pkg/env",
+        "//pkg/errorhelpers",
+        "//pkg/errox",
+        "//pkg/grpc/authn",
+        "//pkg/sac",
+        "//pkg/stringutils",
+        "//pkg/sync",
+        "//pkg/uuid",
+        "@com_github_pkg_errors//:errors",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":validation",
+    visibility = ["//visibility:public"],
+)

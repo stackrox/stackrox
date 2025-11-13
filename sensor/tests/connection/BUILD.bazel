@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "connection_test",
+    srcs = ["connection_test.go"],
+    deps = [
+        "//generated/internalapi/central",
+        "//generated/storage",
+        "//sensor/tests/helper",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_sigs_e2e_framework//klient/k8s",
+    ],
+)

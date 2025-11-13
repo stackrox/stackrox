@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deployment",
+    srcs = [
+        "scorer.go",
+        "singleton.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/scorer/deployment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/alert/datastore",
+        "//central/processbaseline/evaluator",
+        "//central/risk/datastore",
+        "//central/risk/getters",
+        "//central/risk/multipliers/deployment",
+        "//central/risk/multipliers/image",
+        "//generated/storage",
+        "//pkg/logging",
+        "//pkg/sync",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deployment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deployment_test",
+    srcs = ["scorer_test.go"],
+    embed = [":deployment"],
+    deps = [
+        "//central/processbaseline/evaluator/mocks",
+        "//central/risk/getters",
+        "//central/risk/multipliers/deployment",
+        "//central/risk/multipliers/image",
+        "//central/risk/scorer",
+        "//central/risk/scorer/image",
+        "//generated/storage",
+        "//pkg/protoassert",
+        "@com_github_stretchr_testify//assert",
+        "@org_uber_go_mock//gomock",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "routes",
+    srcs = [
+        "debug.go",
+        "errors.go",
+        "routes.go",
+    ],
+    importpath = "github.com/stackrox/rox/pkg/grpc/routes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/env",
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/deny",
+        "//pkg/grpc/errors",
+        "//pkg/httputil",
+        "//pkg/postgres/pgconfig",
+        "@com_github_nytimes_gziphandler//:gziphandler",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":routes",
+    visibility = ["//visibility:public"],
+)

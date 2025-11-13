@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mock",
+    srcs = ["mock.go"],
+    importpath = "github.com/stackrox/rox/pkg/telemetry/phonehome/segment/mock",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mock",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mock_test",
+    srcs = ["mock_test.go"],
+    deps = [
+        ":mock",
+        "//pkg/telemetry/phonehome/segment",
+        "//pkg/telemetry/phonehome/telemeter",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

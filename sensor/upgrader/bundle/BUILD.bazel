@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bundle",
+    srcs = [
+        "contents.go",
+        "context.go",
+        "dynamic_objects.go",
+        "fetch.go",
+        "fetcher.go",
+        "instantiate.go",
+        "instantiator.go",
+        "load.go",
+        "tracked_contents.go",
+    ],
+    importpath = "github.com/stackrox/rox/sensor/upgrader/bundle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//generated/api/v1:api",
+        "//pkg/errorhelpers",
+        "//pkg/httputil",
+        "//pkg/jsonutil",
+        "//pkg/k8sutil",
+        "//pkg/k8sutil/k8sobjects",
+        "//pkg/logging",
+        "//pkg/pods",
+        "//pkg/set",
+        "//pkg/utils",
+        "//sensor/upgrader/common",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/util/yaml",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bundle",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "bundle_test",
+    srcs = [
+        "fetcher_test.go",
+        "instantiator_test.go",
+    ],
+    embed = [":bundle"],
+    deps = [
+        "//pkg/fixtures/fixtureconsts",
+        "//pkg/httputil",
+        "//pkg/k8sutil",
+        "//pkg/utils",
+        "//sensor/upgrader/config",
+        "//sensor/upgrader/upgradectx",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)

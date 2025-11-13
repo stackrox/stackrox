@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "image",
+    srcs = [
+        "component_count.go",
+        "image_age.go",
+        "multiplier.go",
+        "risky_component.go",
+        "vulnerabilities.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/risk/multipliers/image",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/risk/multipliers",
+        "//central/risk/scorer/vulns",
+        "//generated/storage",
+        "//pkg/protoconv",
+        "//pkg/scancomponent",
+        "//pkg/set",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":image",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "image_test",
+    srcs = [
+        "component_count_test.go",
+        "image_age_test.go",
+        "risky_component_test.go",
+        "vulnerabilities_test.go",
+    ],
+    embed = [":image"],
+    deps = [
+        "//central/risk/multipliers",
+        "//generated/storage",
+        "//pkg/features",
+        "//pkg/protoassert",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

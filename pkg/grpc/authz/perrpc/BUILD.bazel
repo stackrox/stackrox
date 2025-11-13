@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "perrpc",
+    srcs = ["per_rpc.go"],
+    importpath = "github.com/stackrox/rox/pkg/grpc/authz/perrpc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/grpc/authz",
+        "//pkg/grpc/authz/deny",
+        "//pkg/logging",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":perrpc",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "awssh",
+    srcs = [
+        "client.go",
+        "mapping.go",
+        "notifier.go",
+    ],
+    importpath = "github.com/stackrox/rox/central/notifiers/awssh",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//central/notifiers/utils",
+        "//generated/storage",
+        "//pkg/administration/events/codes",
+        "//pkg/administration/events/option",
+        "//pkg/concurrency",
+        "//pkg/cryptoutils/cryptocodec",
+        "//pkg/env",
+        "//pkg/httputil/proxy",
+        "//pkg/logging",
+        "//pkg/notifiers",
+        "//pkg/protocompat",
+        "//pkg/protoconv",
+        "//pkg/set",
+        "//pkg/utils",
+        "//pkg/uuid",
+        "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+        "@com_github_aws_aws_sdk_go_v2_service_securityhub//:securityhub",
+        "@com_github_aws_aws_sdk_go_v2_service_securityhub//types",
+        "@com_github_aws_smithy_go//:smithy-go",
+        "@com_github_pkg_errors//:errors",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":awssh",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "awssh_test",
+    srcs = [
+        "mapping_test.go",
+        "notifier_test.go",
+    ],
+    embed = [":awssh"],
+    deps = [
+        "//central/notifiers/awssh/mocks",
+        "//generated/storage",
+        "//pkg/concurrency",
+        "//pkg/defaults/policies",
+        "//pkg/logging",
+        "//pkg/protocompat",
+        "//pkg/set",
+        "//pkg/stringutils",
+        "//pkg/uuid",
+        "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2_service_securityhub//:securityhub",
+        "@com_github_aws_aws_sdk_go_v2_service_securityhub//types",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_stretchr_testify//suite",
+        "@org_uber_go_mock//gomock",
+    ],
+)
