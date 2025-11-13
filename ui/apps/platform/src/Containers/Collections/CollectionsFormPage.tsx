@@ -64,7 +64,7 @@ function CollectionsFormPage({
     pageAction,
 }: CollectionsFormPageProps) {
     const navigate = useNavigate();
-    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 75rem)' }); // --pf-t--global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
     const { analyticsTrack } = useAnalytics();

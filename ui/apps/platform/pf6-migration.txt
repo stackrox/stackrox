@@ -28,3 +28,4 @@ npx @patternfly/class-name-updater . --v6 --fix
 
 npx @patternfly/css-vars-updater . --v6 --fix
 
+- Manually change pixel breakpoint equiv to rems
