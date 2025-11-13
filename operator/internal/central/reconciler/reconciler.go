@@ -60,13 +60,15 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPredicate(common.CentralStatusPredicate{}),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+7)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(postExtensions)+len(predicates)+9)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, postExtensions...)
 	opts = append(opts, predicates...)
+	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
+	opts = append(opts, pkgReconciler.WithExternallyManagedStatusConditions("Available", "Progressing"))
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 
