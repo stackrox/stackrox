@@ -85,7 +85,7 @@ func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*st
 
 func (f *fakeDS) Begin(ctx context.Context) (context.Context, datastore.Tx, error) {
 	tx := mocks.NewMockTx(f.mockCtrl)
-	tx.EXPECT().Commit(gomock.Any()).Return(nil)
+	tx.EXPECT().Commit(gomock.Any()).Return(nil).Times(1)
 	return ctx, tx, nil
 }
 
