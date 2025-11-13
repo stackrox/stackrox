@@ -62,7 +62,6 @@ message FileAccess {
   // information.
   ProcessIndicator process = 5;
 
-  // Node information
-  string node_name = 6; // @gotags: search:"File Access Node,hidden"
-  string node_id = 7; // @gotags: search:"File Access Node ID,hidden"
+  // The hostname/name of the node where the file activity occurred
+  string hostname = 6;
 }
