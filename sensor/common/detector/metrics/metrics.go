@@ -173,6 +173,15 @@ var (
 		Help:      "A counter that tracks the number of ADD and REMOVE operations on the deployment buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
+	// DetectorFileAccessQueueOperations keeps track of the operations of the
+	// detection file access buffer.
+	DetectorFileAccessQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_file_access_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the file access buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{"Operation"})
+
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -195,6 +204,14 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_deployment_queue_dropped_total",
 		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
+	})
+
+	// DetectorFileAccessDroppedCount keeps track of the number of file accesses dropped in the detector.
+	DetectorFileAccessDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_file_access_queue_dropped_total",
+		Help:      "A counter of the total number of file accesses that were dropped if the detector buffer was full",
 	})
 
 	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -330,5 +347,7 @@ func init() {
 		scanAndSetCall,
 		DetectorDeploymentQueueOperations,
 		DetectorDeploymentDroppedCount,
+		DetectorFileAccessQueueOperations,
+		DetectorFileAccessDroppedCount,
 	)
 }
