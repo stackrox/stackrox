@@ -1,0 +1,101 @@
+package dispatcher
+
+import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+)
+
+type Option func(*dispatcher)
+
+func WithLaneConfigs(laneConfigs []pubsub.LaneConfig) Option {
+	return func(ps *dispatcher) {
+		if len(laneConfigs) <= 0 {
+			return
+		}
+		ps.laneConfigs = laneConfigs
+	}
+}
+
+func NewDispatcher(opts ...Option) (*dispatcher, error) {
+	ps := &dispatcher{
+		lanes: make(map[pubsub.LaneID]pubsub.Lane),
+	}
+	for _, opt := range opts {
+		opt(ps)
+	}
+	if err := ps.createLanes(); err != nil {
+		return nil, err
+	}
+	if len(ps.lanes) == 0 {
+		return nil, errors.New("no lanes configured")
+	}
+	return ps, nil
+}
+
+type dispatcher struct {
+	// TODO: Consider using a frozen structure to avoid mutexes
+	laneLock    sync.RWMutex
+	lanes       map[pubsub.LaneID]pubsub.Lane
+	laneConfigs []pubsub.LaneConfig
+}
+
+func (d *dispatcher) Publish(event pubsub.Event) error {
+	if event == nil {
+		return errors.New("trying to publish a 'nil' event")
+	}
+	lane, err := d.getLane(event.Lane())
+	if err != nil {
+		return errors.Wrap(err, "unable to find lane for the given event")
+	}
+	return lane.Publish(event)
+}
+
+func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+	d.laneLock.RLock()
+	defer d.laneLock.RUnlock()
+	errList := errorhelpers.NewErrorList("register consumer")
+	for _, lane := range d.lanes {
+		if err := d.registerConsumerToLane(topic, lane, callback); err != nil {
+			errList.AddErrors(err)
+		}
+	}
+	return errList.ToError()
+}
+
+func (d *dispatcher) Stop() {
+	d.laneLock.RLock()
+	defer d.laneLock.RUnlock()
+	for _, lane := range d.lanes {
+		lane.Stop()
+	}
+}
+
+func (d *dispatcher) getLane(id pubsub.LaneID) (pubsub.Lane, error) {
+	d.laneLock.RLock()
+	defer d.laneLock.RUnlock()
+	lane, ok := d.lanes[id]
+	if !ok {
+		return nil, errors.Errorf("unexpected lane %q", id.String())
+	}
+	return lane, nil
+}
+
+func (d *dispatcher) registerConsumerToLane(topic pubsub.Topic, lane pubsub.Lane, callback pubsub.EventCallback) error {
+	return lane.RegisterConsumer(topic, callback)
+}
+
+func (d *dispatcher) createLanes() error {
+	d.laneLock.Lock()
+	defer d.laneLock.Unlock()
+	errList := errorhelpers.NewErrorList("create lanes")
+	for _, config := range d.laneConfigs {
+		if _, ok := d.lanes[config.LaneID()]; ok {
+			errList.AddError(errors.Errorf("duplicated lane %q configured", config.LaneID().String()))
+			continue
+		}
+		d.lanes[config.LaneID()] = config.NewLane()
+	}
+	return errList.ToError()
+}
