@@ -753,8 +753,20 @@ module.exports = [
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
     },
-    // Limited rules have ignores for specific files or folders.
-    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    // Limited rules have specific files or have ignores for specific files or folders.
+    {
+        files: ['src/types/featureFlag.ts'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/feature-flags': 'error',
+        },
+    },
     {
         files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: ['src/Containers/Compliance/**'],
