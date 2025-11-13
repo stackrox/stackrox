@@ -93,6 +93,10 @@ func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.S
 	clonedQuery := q.CloneVT()
 	selectSelects := []*v1.QuerySelect{
 		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
 	}
 	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
 
@@ -101,8 +105,9 @@ func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.S
 		return nil, err
 	}
 
-	// Populate Name field from FieldValues for each result
+	// Populate Name and Location fields from FieldValues for each result
 	for i := range results {
+
 		if results[i].FieldValues != nil {
 			if nameVal, ok := results[i].FieldValues[strings.ToLower(search.PolicyName.String())]; ok {
 				results[i].Name = nameVal
@@ -402,35 +407,6 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 	return q
 }
 
-// convertAlert returns proto search result from an alert object and the internal search result
-func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
-	entityInfo := alert.GetCommonEntityInfo()
-	var entityName string
-	switch entity := alert.GetEntity().(type) {
-	case *storage.ListAlert_Resource:
-		entityName = entity.Resource.GetName()
-	case *storage.ListAlert_Deployment:
-		entityName = entity.Deployment.GetName()
-	}
-	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
-	var location string
-	if entityInfo.GetNamespace() != "" {
-		location = fmt.Sprintf("/%s/%s/%s/%s",
-			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
-	} else {
-		location = fmt.Sprintf("/%s/%s/%s",
-			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
-	}
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ALERTS,
-		Id:             alert.GetId(),
-		Name:           alert.GetPolicy().GetName(),
-		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       location,
-	}
-}
-
 // AlertSearchResultConverter implements search.SearchResultConverter for alert search results.
 // This enables single-pass query construction for SearchResult protos.
 type AlertSearchResultConverter struct{}
@@ -440,9 +416,38 @@ func (c *AlertSearchResultConverter) BuildName(result *search.Result) string {
 }
 
 func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string {
-	return result.Location
+	fv := result.FieldValues
+	clusterName := fv[strings.ToLower(search.Cluster.String())]
+	namespace := fv[strings.ToLower(search.Namespace.String())]
+	deploymentName := fv[strings.ToLower(search.DeploymentName.String())]
+	resourceName := fv[strings.ToLower(search.ResourceName.String())]
+
+	var entityName, resourceType string
+	if deploymentName != "" {
+		entityName = deploymentName
+		resourceType = "Deployment"
+	} else if resourceName != "" {
+		entityName = resourceName
+		resourceType = "Resource"
+	}
+
+	var location string
+	if entityName != "" {
+		if namespace != "" {
+			location = fmt.Sprintf("/%s/%s/%s/%s",
+				clusterName, namespace, resourceType, entityName)
+		} else {
+			location = fmt.Sprintf("/%s/%s/%s",
+				clusterName, resourceType, entityName)
+		}
+	}
+	return location
 }
 
 func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_ALERTS
+}
+
+func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
+	return result.Score
 }
