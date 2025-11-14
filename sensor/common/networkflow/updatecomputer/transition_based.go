@@ -246,7 +246,7 @@ func limitCacheSize[T any](cache []T, maxSize int, isClosed func(T) bool) ([]T, 
 		}
 	}
 
-	return cache[:idx], discarded
+	return cache[:idx], len(cache) - idx
 }
 
 // limitCacheSizeWithMetrics wraps limitCacheSize and records dropped items as a metric.
