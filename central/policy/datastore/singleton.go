@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -49,6 +50,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	// This is unrelated to default policies, but since we're already looping through all the policies here,
 	// this was a good place to add it.
 	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
+	fmt.Printf("Duplicate categories: %v", duplicateCategories)
 	if err != nil {
 		panic(err)
 	}
@@ -58,6 +60,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
 		}
 	}
+	fmt.Printf("True category names: %v", lowerCategoryNameToProperName)
 	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
 	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
@@ -68,6 +71,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		}
 		for idx, category := range p.GetCategories() {
 			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
+				fmt.Printf("Found a category: %v", category)
 				p.Categories[idx] = correctCategory
 				toReupsert = append(toReupsert, p)
 			}
@@ -77,6 +81,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("To reupsert policies: %v", toReupsert)
 	err = s.UpsertMany(sac.WithAllAccess(context.Background()), toReupsert)
 	if err != nil {
 		panic(err)
