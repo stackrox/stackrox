@@ -304,7 +304,7 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 	defer conn.Release()
 
 	// Start a transaction
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return 0, err
 	}
