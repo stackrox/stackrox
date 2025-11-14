@@ -20,6 +20,68 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'feature-flags': {
+        // Feature flag must match pattern and occur in alphabetical order
+        // to minimize merge conflicts when multiple people add or delete strings.
+        // Omit fix function because type union might have comments.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Feature flag must match pattern and occur in alphabetical order',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSLiteralType(node) {
+                    const ancestors = context.sourceCode.getAncestors(node);
+                    if (
+                        typeof node.literal?.value === 'string' &&
+                        ancestors.length >= 2 &&
+                        ancestors[ancestors.length - 1].type === 'TSUnionType' &&
+                        ancestors[ancestors.length - 2].type === 'TSTypeAliasDeclaration'
+                    ) {
+                        const ancestor1 = ancestors[ancestors.length - 1];
+                        const ancestor2 = ancestors[ancestors.length - 2];
+                        if (ancestor2.id?.name === 'FeatureFlagEnvVar') {
+                            const { value } = node.literal;
+                            if (!value.match(/^ROX(_[A-Z\d]+)+$/)) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Feature flags must match pattern: ROX_ONE_OR_MORE_WORDS',
+                                });
+                            } else if (
+                                Array.isArray(ancestor1.types) &&
+                                ancestor1.types.every(
+                                    (type) => typeof type?.literal?.value === 'string'
+                                )
+                            ) {
+                                const { types } = ancestor1;
+                                const indexOfNode = types.indexOf(node);
+                                if (indexOfNode >= 0) {
+                                    // Quadratic complexity to identify particular feature flag
+                                    // seems acceptable for expected number of feature flags.
+                                    const indexFirstNotInAlphabeticalOrder = types.findIndex(
+                                        (type, index) =>
+                                            index !== 0 &&
+                                            types[index - 1].literal.value > type.literal.value
+                                    );
+                                    if (indexOfNode === indexFirstNotInAlphabeticalOrder) {
+                                        context.report({
+                                            node,
+                                            message:
+                                                'Feature flags must occur in alphabetical order',
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'react-export-default': {
         // Prevent mistaken assumptions about results from Find in Files.
         meta: {

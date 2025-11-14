@@ -184,6 +184,8 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
+    Add string in alphabetical order on its own line to minimize merge conflicts when multiple people add or delete strings.
+
 2. To include frontend code when the feature flag is enabled, do any of the following:
 
     * Add `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
