@@ -2,6 +2,8 @@ package datastore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -26,6 +28,7 @@ var (
 
 func initialize() {
 	storage := policyStore.New(globaldb.GetPostgres())
+	fmt.Println("in policy singleton initializer")
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
@@ -37,6 +40,7 @@ func initialize() {
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
+	fmt.Println("in policy singleton")
 	once.Do(initialize)
 	return ad
 }
@@ -45,15 +49,43 @@ func Singleton() DataStore {
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
+	// This is unrelated to default policies, but since we're already looping through all the policies here,
+	// this was a good place to add it.
+	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
+	fmt.Printf("Duplicate categories: %v \n", duplicateCategories)
+	if err != nil {
+		panic(err)
+	}
+	lowerCategoryNameToProperName := make(map[string]string)
+	for _, category := range duplicateCategories {
+		if category.TrueCategory {
+			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
+		}
+	}
+	fmt.Printf("True category names: %v \n", lowerCategoryNameToProperName)
+	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
-	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
+	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		for idx, category := range p.GetCategories() {
+			fmt.Println("Currently looking at", strings.ToLower(category))
+			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
+				fmt.Printf("Found a category: %v", category)
+				p.Categories[idx] = correctCategory
+				toReupsert = append(toReupsert, p)
+			}
+		}
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("To reupsert policies: %v", toReupsert)
+	err = s.UpsertMany(sac.WithAllAccess(context.Background()), toReupsert)
 	if err != nil {
 		panic(err)
 	}

@@ -3,9 +3,11 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
+	"github.com/stackrox/rox/central/policycategory/views"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -322,6 +324,33 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	}
 	delete(ds.categoryNameIDMap, category.GetName())
 	return nil
+}
+
+func (ds *datastoreImpl) GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error) {
+	res := make([]*views.DuplicateCategoryView, 0)
+	seenCategories := make(map[string][]*storage.PolicyCategory)
+	err := ds.storage.GetByQueryFn(ctx, searchPkg.EmptyQuery(), func(category *storage.PolicyCategory) error {
+		if _, found := seenCategories[strings.ToLower(category.GetName())]; !found {
+			seenCategories[strings.ToLower(category.GetName())] = make([]*storage.PolicyCategory, 0)
+		}
+		seenCategories[strings.ToLower(category.GetName())] = append(seenCategories[strings.ToLower(category.GetName())], category)
+		return nil
+	})
+	for _, categories := range seenCategories {
+		if len(categories) == 1 {
+			// Not a duplicate so we can just skip it
+			continue
+		}
+		for _, category := range categories {
+			// Append the category to the duplicates, and also set TrueCategory to be true if the category is the one we're after
+			res = append(res, &views.DuplicateCategoryView{
+				Id:           category.GetId(),
+				Name:         category.GetName(),
+				TrueCategory: ds.categoryNameIDMap[category.GetName()] == category.GetId(),
+			})
+		}
+	}
+	return res, err
 }
 
 // convertCategory returns proto search result from a category object and the internal search result
