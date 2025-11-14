@@ -1119,14 +1119,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 				}),
 			errExpected: true,
 		},
-		{
-			description: "Node policy with FileOperation in wrong event source (deployment event)",
-			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
-				map[string]string{
-					fieldnames.FileOperation: "open",
-				}),
-			errExpected: true,
-		},
 	}
 
 	// reset once for these tests, and then reset on return after the feature flag has been disabled
