@@ -570,7 +570,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 				ProtoQuery()
 			expectedResults := []search.Result{
 				{
-					ID: img.Id,
+					ID: img.GetId(),
 					FieldValues: map[string]string{
 						search.ImageRegistry.String(): img.GetName().GetRegistry(),
 						search.ImageRemote.String():   img.GetName().GetRemote(),
