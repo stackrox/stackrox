@@ -63,9 +63,15 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
 		}
 		// set predicates
-		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
+		// Only add deployment predicate for deployment-based runtime events, not for node events
+		if policy.GetEventSource() != storage.EventSource_NODE_EVENT {
+			compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
+		}
 		if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
+		}
+		if policy.GetEventSource() == storage.EventSource_NODE_EVENT {
+			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
 		}
 	}
 
@@ -98,7 +104,8 @@ func (cp *compiledPolicy) noMatchersSet() bool {
 		cp.imageMatcher == nil &&
 		cp.deploymentWithProcessMatcher == nil &&
 		cp.kubeEventsMatcher == nil &&
-		cp.deploymentWithNetworkFlowMatcher == nil
+		cp.deploymentWithNetworkFlowMatcher == nil &&
+		cp.nodeMatcher == nil
 }
 
 func (cp *compiledPolicy) setBuildTimeMatchers(policy *storage.Policy) error {
@@ -124,6 +131,14 @@ func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
 		err := cp.setAuditLogEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
+		}
+		return nil
+	}
+
+	if policy.GetEventSource() == storage.EventSource_NODE_EVENT {
+		err := cp.setNodeEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building node event matcher for policy %q", policy.GetName())
 		}
 		return nil
 	}
@@ -464,4 +479,12 @@ func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
 	}
 
 	return auditEventMatchesScopes(auditEvent, cp.scopes) && !auditEventMatchesExclusions(auditEvent, cp.exclusions)
+}
+
+// Predicate for file access events on nodes.
+type fileAccessPredicate struct{}
+
+func (cp *fileAccessPredicate) AppliesTo(input interface{}) bool {
+	_, isFileAccess := input.(*storage.FileAccess)
+	return isFileAccess
 }
