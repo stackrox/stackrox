@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
 )
 
 func TestImageDataStoreWithPostgres(t *testing.T) {
@@ -46,6 +47,7 @@ type ImagePostgresDataStoreTestSuite struct {
 
 	ctx                context.Context
 	db                 postgres.DB
+	gormDB             *gorm.DB
 	datastore          DataStore
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
@@ -54,29 +56,34 @@ type ImagePostgresDataStoreTestSuite struct {
 
 func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.ctx = context.Background()
+
+	source := pgtest.GetConnectionString(s.T())
+	config, err := postgres.ParseConfig(source)
+	s.Require().NoError(err)
+
+	pool, err := postgres.New(s.ctx, config)
+	s.NoError(err)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	s.db = pool
 }
 
 func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
-	s.db = pgtest.ForT(s.T())
+	pgStore.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	store := pgStore.New(s.db, false, concurrency.NewKeyFence())
-	s.datastore = NewWithPostgres(store, s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
-	componentStorage := imageComponentPostgres.New(s.db)
+	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
-	cveStorage := imageCVEPostgres.New(s.db)
+	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	cveDataStore := imageCVEDS.New(cveStorage, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 }
 
-func (s *ImagePostgresDataStoreTestSuite) TearDownTest() {
-	s.db.Close()
-}
-
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
 	s.db.Close()
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
