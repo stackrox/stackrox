@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,8 +39,6 @@ var (
 		"openshift-release-dev/ocp-release",
 		"openshift-release-dev/ocp-v4.0-art-dev",
 	)
-
-	log = logging.LoggerForModule()
 )
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
