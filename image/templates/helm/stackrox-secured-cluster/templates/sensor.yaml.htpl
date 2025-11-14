@@ -249,6 +249,9 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: sensor-bound-sa-token
           mountPath: /var/run/secrets/openshift/serviceaccount
+        - name: spire-workload-api
+          mountPath: /spire-workload-api
+          readOnly: true
         {{- end }}
         [<- if not .KubectlOutput >]
         - name: helm-cluster-config
@@ -307,6 +310,10 @@ spec:
               path: token
               audience: openshift
               expirationSeconds: 3600
+      - name: spire-workload-api
+        csi:
+          driver: csi.spiffe.io
+          readOnly: true
       {{- end }}
       [<- if not .KubectlOutput >]
       - name: helm-cluster-config
