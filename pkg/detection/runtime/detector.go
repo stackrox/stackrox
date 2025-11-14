@@ -80,7 +80,7 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 		}
 
 		if access != nil {
-			// Check predicate on audit event.
+			// Check predicate on file access.
 			if !compiled.AppliesTo(access) {
 				return nil
 			}
@@ -92,7 +92,9 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 			}
 
 			alert := constructFileAccessAlert(compiled.Policy(), node, nil, violation)
-			alerts = append(alerts, alert)
+			if alert != nil {
+				alerts = append(alerts, alert)
+			}
 		}
 
 		return nil
