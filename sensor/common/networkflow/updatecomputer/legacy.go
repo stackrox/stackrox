@@ -118,14 +118,10 @@ func (l *Legacy) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indica
 }
 
 // Only implemented for transition based update computer
-func (l *Legacy) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
-	return
-}
+func (l *Legacy) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {}
 
 // Only implemented for transition based update computer
-func (l *Legacy) OnSendEndpointsFailure(unsentConns []*storage.NetworkEndpoint) {
-	return
-}
+func (l *Legacy) OnSendEndpointsFailure(unsentConns []*storage.NetworkEndpoint) {}
 
 func (l *Legacy) PeriodicCleanup(_ time.Time, _ time.Duration) {}
 
