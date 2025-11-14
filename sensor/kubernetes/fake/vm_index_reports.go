@@ -2,13 +2,16 @@ package fake
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 )
 
@@ -104,54 +107,39 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 			return
 		}
 	}
-	log.Debugf("VM store is set (store=%p), populating fake VMs", w.vmStore)
+	log.Debugf("VM store is set (store=%p), waiting for Central to be reachable", w.vmStore)
 
-	// Populate fake VMs now that store is set
+	// Wait for Central to be reachable (WorkloadManager receives SensorComponentEventCentralReachable via Notify())
+	// This is more reliable than polling for capabilities, as it properly handles connection retries.
+	log.Debugf("Waiting for Central to be reachable...")
+	select {
+	case <-ctx.Done():
+		return
+	case <-w.centralReachable.Done():
+		// Central is reachable, verify capability is also set
+		if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+			log.Warnf("Central is reachable but VirtualMachinesSupported capability not set. VM reports may fail.")
+		} else {
+			log.Debugf("Central is reachable and VM capability is available")
+		}
+	case <-time.After(readinessCheckInterval * time.Duration(maxCapabilityWaitAttempts)):
+		log.Errorf("Timeout waiting for Central to be reachable after %v. VM reports will not be sent. This may indicate that the connection to Central failed or SensorComponentEventCentralReachable was not received.", readinessCheckInterval*time.Duration(maxCapabilityWaitAttempts))
+		return
+	}
+	log.Infof("Central is reachable, populating fake VMs")
+
+	// Populate fake VMs now that Central is reachable and we're ready to send reports
+	// populateFakeVMs is synchronous and includes verification, so VMs should be available immediately after it returns
 	w.populateFakeVMs()
 
-	// Verify VMs are populated before starting report generation
-	// Use polling here since we need to check store contents, not just readiness
+	// Quick verification that at least the first VM is present
+	// This is a sanity check - populateFakeVMs should have already verified the VMs
 	firstVsockCID := vmBaseVSOCKCID
-	attempts := 0
-	for w.vmStore.GetFromCID(firstVsockCID) == nil {
-		attempts++
-		if attempts > maxVMStoreWaitAttempts {
-			log.Errorf("Timeout waiting for VM store to be populated after %d attempts. Store=%p.", maxVMStoreWaitAttempts, w.vmStore)
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(readinessCheckInterval):
-			if attempts%10 == 0 {
-				log.Debugf("Waiting for VM store to be populated (checking vsockCID %d, attempt %d/%d)", firstVsockCID, attempts, maxVMStoreWaitAttempts)
-			}
-		}
+	if w.vmStore.GetFromCID(firstVsockCID) == nil {
+		log.Errorf("VM store population failed: first VM (vsockCID %d) not found after populateFakeVMs returned. Store=%p.", firstVsockCID, w.vmStore)
+		return
 	}
-	log.Infof("VM store populated (found vsockCID %d), waiting for Central VM capability", firstVsockCID)
-
-	// Wait for Central to advertise VirtualMachinesSupported capability
-	// This is necessary because capabilities are set when CentralHello is received,
-	// which happens asynchronously during the gRPC stream handshake in initialSync().
-	// Capabilities are set in centralcaps.Set() when CentralHello is processed.
-	// Note: We use polling here because centralcaps doesn't provide a notification mechanism
-	capabilityAttempts := 0
-	for !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
-		capabilityAttempts++
-		if capabilityAttempts > maxCapabilityWaitAttempts {
-			log.Errorf("Timeout waiting for Central VM capability after %d attempts (%v). VM reports will not be sent. This may indicate that CentralHello was not received or processed correctly.", maxCapabilityWaitAttempts, readinessCheckInterval*time.Duration(maxCapabilityWaitAttempts))
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(readinessCheckInterval):
-			if capabilityAttempts%capabilityLogInterval == 0 {
-				log.Debugf("Waiting for Central VM capability (attempt %d/%d)", capabilityAttempts, maxCapabilityWaitAttempts)
-			}
-		}
-	}
-	log.Infof("Central VM capability available, starting VM index report generation")
+	log.Infof("VM store populated (found vsockCID %d), starting VM index report generation", firstVsockCID)
 
 	// Now start the actual report generation loop
 	w.manageVMIndexReports(ctx)
@@ -159,17 +147,41 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 
 func (w *WorkloadManager) manageVMIndexReports(ctx context.Context) {
 	// This function assumes VMs are already populated in the store
-	// It just starts generating reports
+	// It starts a goroutine for each VM, each sending reports at the configured interval
 
 	vmPool := newVMPool(w.workload.VMIndexReportWorkload.NumVMs)
-	ticker := time.NewTicker(w.workload.VMIndexReportWorkload.ReportInterval)
-	defer ticker.Stop()
+	reportInterval := w.workload.VMIndexReportWorkload.ReportInterval
+	numVMs := w.workload.VMIndexReportWorkload.NumVMs
 
-	log.Infof("Starting VM index report generation: %d VMs, interval %s, %d packages, %d repos",
-		w.workload.VMIndexReportWorkload.NumVMs,
-		w.workload.VMIndexReportWorkload.ReportInterval,
+	// Calculate total rate for logging
+	totalRate := float64(numVMs) / reportInterval.Seconds()
+	log.Infof("Starting VM index report generation: %d VMs, interval %s per VM, %d packages, %d repos",
+		numVMs,
+		reportInterval,
 		w.workload.VMIndexReportWorkload.NumPackages,
 		w.workload.VMIndexReportWorkload.NumRepositories)
+	log.Infof("Total report rate: %.0f reports/second (%.2f reports/second per VM)",
+		totalRate, totalRate/float64(numVMs))
+
+	// Start a goroutine for each VM
+	var wg sync.WaitGroup
+	for i := 0; i < numVMs; i++ {
+		vm := vmPool.vms[i]
+		wg.Add(1)
+		go func(vm *vmInfo) {
+			defer wg.Done()
+			w.manageVMReportsForSingleVM(ctx, vm, reportInterval)
+		}(vm)
+	}
+
+	// Wait for all goroutines to finish (when context is cancelled)
+	wg.Wait()
+	log.Debugf("All VM report generation goroutines stopped")
+}
+
+func (w *WorkloadManager) manageVMReportsForSingleVM(ctx context.Context, vm *vmInfo, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -178,12 +190,21 @@ func (w *WorkloadManager) manageVMIndexReports(ctx context.Context) {
 		case <-ticker.C:
 		}
 
-		vm := vmPool.getRoundRobin()
+		// Check context again before attempting to send (in case it was cancelled during tick)
+		if ctx.Err() != nil {
+			return
+		}
+
 		report := generateFakeIndexReport(vm,
 			w.workload.VMIndexReportWorkload.NumPackages,
 			w.workload.VMIndexReportWorkload.NumRepositories)
 
 		if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
+			// Handle shutdown gracefully: if handler is stopped or context is cancelled, exit silently
+			if errors.Is(err, errox.InvariantViolation) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return
+			}
+			// Log other errors (e.g., capability not supported, VM not found) at error level
 			log.Errorf("Failed to send VM index report for %s: %v", vm.id, err)
 		} else {
 			log.Debugf("Sent VM index report for %s (vsockCID: %d)", vm.id, vm.vsockCID)

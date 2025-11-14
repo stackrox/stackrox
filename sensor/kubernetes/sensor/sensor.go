@@ -216,6 +216,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
 			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
 			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
+			// Register WorkloadManager as a Notifiable so it receives SensorComponentEvent notifications
+			s.AddNotifiable(cfg.workloadManager)
 		}
 	}
 

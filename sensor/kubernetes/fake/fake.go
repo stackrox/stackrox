@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -116,8 +117,9 @@ type WorkloadManager struct {
 	vmStore              *vmStore.VirtualMachineStore
 
 	// Signals for readiness (replaces polling loops)
-	vmHandlerReady concurrency.Signal
-	vmStoreReady   concurrency.Signal
+	vmHandlerReady   concurrency.Signal
+	vmStoreReady     concurrency.Signal
+	centralReachable concurrency.Signal
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -234,6 +236,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		servicesInitialized: concurrency.NewSignal(),
 		vmHandlerReady:      concurrency.NewSignal(),
 		vmStoreReady:        concurrency.NewSignal(),
+		centralReachable:    concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
 
@@ -280,6 +283,18 @@ func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
 	log.Debugf("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
 }
 
+// Notify implements common.Notifiable to receive Sensor component event notifications
+func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		log.Debugf("WorkloadManager: Central is reachable, signaling VM report generation can start")
+		w.centralReachable.Signal()
+	case common.SensorComponentEventOfflineMode:
+		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
+		w.centralReachable.Reset()
+	}
+}
+
 const (
 	// VM population constants
 	vmReverifyDelay  = 200 * time.Millisecond
@@ -289,7 +304,7 @@ const (
 
 	// Readiness wait constants
 	readinessCheckInterval    = 100 * time.Millisecond
-	maxVMStoreWaitAttempts    = 50  // 5 seconds max wait
+	maxVMStoreWaitAttempts    = 150 // 15 seconds max wait
 	maxCapabilityWaitAttempts = 100 // 10 seconds max wait
 	capabilityLogInterval     = 10  // Log every 10 attempts (every second)
 )
@@ -327,8 +342,14 @@ func (w *WorkloadManager) createFakeVMs(num int) []uint32 {
 			Running:   true,
 			GuestOS:   "linux",
 		}
-		if w.vmStore.AddOrUpdate(info) == nil {
-			log.Errorf("failed to AddOrUpdate VM %s", info.ID)
+		result := w.vmStore.AddOrUpdate(info)
+		if result == nil {
+			log.Errorf("failed to AddOrUpdate VM %s (info=%p, vsock=%p, cid=%d)", info.ID, info, vsock, cid)
+			continue
+		}
+		// Immediately verify the VM was stored correctly
+		if retrieved := w.vmStore.GetFromCID(cid); retrieved == nil {
+			log.Errorf("VM %s (CID %d) not found immediately after AddOrUpdate", info.ID, cid)
 			continue
 		}
 		cids = append(cids, cid)
