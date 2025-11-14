@@ -1,8 +1,8 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_IMAGE=ubi9
 ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi9-minimal
 ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
@@ -32,13 +32,13 @@ ARG ROX_PRODUCT_BRANDING
 ARG TARGET_ARCH=amd64
 
 LABEL name="main" \
-      vendor="StackRox" \
-      maintainer="https://stackrox.io/" \
-      summary="The StackRox Kubernetes Security Platform" \
-      description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
-      version="${LABEL_VERSION}" \
-      release="${LABEL_RELEASE}" \
-      quay.expires-after="${QUAY_TAG_EXPIRATION}"
+    vendor="StackRox" \
+    maintainer="https://stackrox.io/" \
+    summary="The StackRox Kubernetes Security Platform" \
+    description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
+    version="${LABEL_VERSION}" \
+    release="${LABEL_RELEASE}" \
+    quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
