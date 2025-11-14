@@ -48,7 +48,7 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	access := &storage.FileAccess{
-		Process: p.getIndicator(fs.GetProcess()),
+		Process:  p.getIndicator(fs.GetProcess()),
 		Hostname: fs.GetHostname(),
 	}
 
