@@ -10,7 +10,6 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	policyStore "github.com/stackrox/rox/central/policy/store"
-	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
@@ -26,7 +25,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestPolicyDataStoreWithPostgres(t *testing.T) {
@@ -38,7 +36,6 @@ type PolicyPostgresDataStoreTestSuite struct {
 
 	ctx            context.Context
 	db             postgres.DB
-	gormDB         *gorm.DB
 	mockClusterDS  *clusterDSMocks.MockDataStore
 	mockNotifierDS *notifierDSMocks.MockDataStore
 
@@ -50,30 +47,18 @@ type PolicyPostgresDataStoreTestSuite struct {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
-
 	s.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-
-	pool, err := postgres.New(s.ctx, config)
-	s.NoError(err)
-	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-	s.db = pool
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(s.ctx, s.db)
-	categoryPostgres.Destroy(s.ctx, s.db)
-	edgePostgres.Destroy(s.ctx, s.db)
+	s.db = pgtest.ForT(s.T())
 
 	s.mockClusterDS = clusterDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
-	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	categoryStorage := categoryPostgres.New(s.db)
 
-	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
+	edgeStorage := edgePostgres.New(s.db)
 
 	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
@@ -84,9 +69,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
 }
 
-func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
+func (s *PolicyPostgresDataStoreTestSuite) TearDownTest() {
 	s.db.Close()
-	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
