@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/sac"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,7 +34,6 @@ func initialize() {
 
 	ad = New(storage, clusterDatastore, notifierDatastore, categoriesDatastore)
 	addDefaults(storage, categoriesDatastore)
-	updatePolicyCategories(ad, categoriesDatastore)
 }
 
 // Singleton provides the interface for non-service external interaction.
@@ -48,15 +46,38 @@ func Singleton() DataStore {
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
 func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
+	// This is unrelated to default policies, but since we're already looping through all the policies here,
+	// this was a good place to add it.
+	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
+	if err != nil {
+		panic(err)
+	}
+	lowerCategoryNameToProperName := make(map[string]string)
+	for _, category := range duplicateCategories {
+		if category.TrueCategory {
+			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
+		}
+	}
+	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
-	err := s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
+	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
 		policyIDSet.Add(p.GetId())
 		// Unrelated to adding/checking default policies, this was put here to prevent looping through all policies a second time
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		for idx, category := range p.GetCategories() {
+			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
+				p.Categories[idx] = correctCategory
+				toReupsert = append(toReupsert, p)
+			}
+		}
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
+	err = s.UpsertMany(sac.WithAllAccess(context.Background()), toReupsert)
 	if err != nil {
 		panic(err)
 	}
@@ -89,37 +110,4 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 
 	}
 	log.Infof("Loaded %d new default Policies", count)
-}
-
-func updatePolicyCategories(s DataStore, categoriesDS categoriesDS.DataStore) {
-	ctx := sac.WithAllAccess(context.Background())
-	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(ctx)
-	if err != nil {
-		utils.Should(err)
-	}
-	trueCategoryNames := make(map[string]string)
-	categoryNames := set.NewStringSet()
-	for _, category := range duplicateCategories {
-		if !category.TrueCategory {
-			categoryNames.Add(category.Name)
-		} else {
-			trueCategoryNames[strings.ToLower(category.Name)] = category.Name
-		}
-	}
-	q := searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyCategoryName, categoryNames.AsSlice()...).ProtoQuery()
-	storedPolicies, err := s.SearchRawPolicies(ctx, q)
-	if err != nil {
-		utils.Should(err)
-	}
-	for _, policy := range storedPolicies {
-		for idx, category := range policy.GetCategories() {
-			if categoryNames.Contains(category) {
-				policy.Categories[idx] = trueCategoryNames[strings.ToLower(category)]
-			}
-		}
-		err = s.UpdatePolicy(ctx, policy)
-		if err != nil {
-			utils.Should(err)
-		}
-	}
 }
