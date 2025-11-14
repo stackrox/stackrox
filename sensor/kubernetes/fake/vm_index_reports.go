@@ -126,9 +126,36 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 		log.Errorf("Timeout waiting for Central to be reachable after %v. VM reports will not be sent. This may indicate that the connection to Central failed or SensorComponentEventCentralReachable was not received.", readinessCheckInterval*time.Duration(maxCapabilityWaitAttempts))
 		return
 	}
-	log.Infof("Central is reachable, populating fake VMs")
+	log.Infof("Central is reachable, waiting for listener restart to complete before populating fake VMs")
 
-	// Populate fake VMs now that Central is reachable and we're ready to send reports
+	// CRITICAL RACE CONDITION FIX:
+	// When SensorComponentEventCentralReachable is received, the event pipeline (in pipeline_impl.go:Notify)
+	// synchronously stops and restarts the listener. This restart sequence:
+	//   1. Calls listener.Stop() which triggers CleanupStores() - clearing ALL stores including VM store
+	//   2. Creates a new context
+	//   3. Calls listener.StartWithContext() to restart the listener
+	//
+	// The WorkloadManager receives the same SensorComponentEventCentralReachable event and immediately
+	// starts populating VMs. This creates a race condition:
+	//   - If populateFakeVMs() runs BEFORE listener.Stop() → VMs get added, then immediately cleared
+	//   - If populateFakeVMs() runs AFTER listener.Stop() but BEFORE listener.StartWithContext() → VMs get cleared
+	//   - If populateFakeVMs() runs AFTER listener.StartWithContext() → VMs persist correctly
+	//
+	// The listener restart happens synchronously in the event pipeline's Notify() handler, so a short
+	// delay ensures the restart sequence completes before we populate VMs. The 2s delay is chosen
+	// to be longer than typical listener restart time (~100-200ms) to provide a safety margin. This
+	// is acceptable for fake workload code (not production).
+	const listenerRestartDelay = 2 * time.Second
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(listenerRestartDelay):
+		// Listener restart should be complete now
+	}
+
+	log.Infof("Populating fake VMs after listener restart delay")
+
+	// Populate fake VMs now that Central is reachable and listener restart has completed
 	// populateFakeVMs is synchronous and includes verification, so VMs should be available immediately after it returns
 	w.populateFakeVMs()
 
