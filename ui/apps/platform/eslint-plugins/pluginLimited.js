@@ -48,7 +48,8 @@ const rules = {
                             if (!value.match(/^ROX(_[A-Z\d]+)+$/)) {
                                 context.report({
                                     node,
-                                    message: 'Feature flags must match /^ROX(_[A-Z]+)+$/ pattern',
+                                    message:
+                                        'Feature flags must match pattern: ROX_ONE_OR_MORE_WORDS',
                                 });
                             } else if (
                                 Array.isArray(ancestor1.types) &&
