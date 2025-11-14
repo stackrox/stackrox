@@ -49,10 +49,7 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	access := &storage.FileAccess{
 		Process: p.getIndicator(fs.GetProcess()),
-	}
-
-	if fs.GetProcess().GetContainerId() == "" {
-		access.Hostname = fs.GetHostname()
+		Hostname: fs.GetHostname(),
 	}
 
 	switch fs.GetFile().(type) {
@@ -178,6 +175,7 @@ func (p *Pipeline) run() {
 			}
 			event := p.translate(fs)
 
+			// TODO: Send event to detector
 			if event.GetProcess().GetContainerName() != "" {
 				// Do deployment based detection but for now just log
 				log.Infof("Container FS event = %+v", event)
@@ -191,9 +189,6 @@ func (p *Pipeline) run() {
 				// Do node based detection but for now just log
 				log.Infof("Node FS event on %s = %+v", node.GetName(), event)
 			}
-
-			// TODO: Send event to detector
-			log.Infof("event= %+v", event)
 		}
 	}
 }

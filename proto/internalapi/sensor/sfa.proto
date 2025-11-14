@@ -50,8 +50,6 @@ message FileOpen {
 message FileActivity {
   google.protobuf.Timestamp timestamp = 1;
   ProcessSignal process = 2;
-  // The hostname/name of the node where the file activity occurred
-  string hostname = 10;
   oneof file {
     FileCreation creation = 3;
     FileUnlink unlink = 4;
@@ -61,4 +59,6 @@ message FileActivity {
     FileOpen open = 8;
     FileWrite write = 9;
   }
+  // The hostname/name of the node where the file activity occurred
+  string hostname = 10;
 }
