@@ -167,6 +167,7 @@ class PostClusterTest(StoreArtifacts):
             "proxies",
             "squid",
             "kube-system",
+            "olm",
             "prefetch-images",
             "default",
         ]
