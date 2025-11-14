@@ -114,6 +114,10 @@ type WorkloadManager struct {
 	networkManager       manager.Manager
 	vmIndexReportHandler index.Handler
 	vmStore              *vmStore.VirtualMachineStore
+
+	// Signals for readiness (replaces polling loops)
+	vmHandlerReady concurrency.Signal
+	vmStoreReady   concurrency.Signal
 }
 
 // WorkloadManagerConfig WorkloadManager's configuration
@@ -228,6 +232,8 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		containerPool:       config.containerPool,
 		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
+		vmHandlerReady:      concurrency.NewSignal(),
+		vmStoreReady:        concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
 
@@ -262,87 +268,111 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 // SetVMIndexReportHandler sets the handler that will accept VM index reports
 func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 	w.vmIndexReportHandler = handler
+	w.vmHandlerReady.Signal()
 }
 
 // SetVMStore sets the VirtualMachineStore
 // Note: populateFakeVMs is now called in manageVMIndexReportsWithPopulation
 func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
-	log.Infof("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
+	log.Debugf("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
 	w.vmStore = store
-	log.Infof("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
+	w.vmStoreReady.Signal()
+	log.Debugf("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
 }
 
-// populateFakeVMs creates and registers fake VMs in the store
+const (
+	// VM population constants
+	vmReverifyDelay  = 200 * time.Millisecond
+	maxReverifyByCID = 5
+	maxReverifyByID  = 3
+	vmBaseVSOCKCID   = uint32(1000)
+
+	// Readiness wait constants
+	readinessCheckInterval    = 100 * time.Millisecond
+	maxVMStoreWaitAttempts    = 50  // 5 seconds max wait
+	maxCapabilityWaitAttempts = 100 // 10 seconds max wait
+	capabilityLogInterval     = 10  // Log every 10 attempts (every second)
+)
+
+// populateFakeVMs orchestrates the three phases of VM population and verification
 func (w *WorkloadManager) populateFakeVMs() {
-	log.Infof("populateFakeVMs called: vmStore=%p, NumVMs=%d", w.vmStore, w.workload.VMIndexReportWorkload.NumVMs)
-	if w.vmStore == nil {
-		log.Warnf("populateFakeVMs: vmStore is nil, returning early")
-		return
-	}
-	if w.workload.VMIndexReportWorkload.NumVMs == 0 {
-		log.Warnf("populateFakeVMs: NumVMs is 0, returning early")
+	if w.vmStore == nil || w.workload.VMIndexReportWorkload.NumVMs == 0 {
+		log.Warnf("populateFakeVMs: nothing to do (store=%p, numVMs=%d)",
+			w.vmStore, w.workload.VMIndexReportWorkload.NumVMs)
 		return
 	}
 
 	numVMs := w.workload.VMIndexReportWorkload.NumVMs
 	log.Infof("Populating VirtualMachineStore with %d fake VMs", numVMs)
 
-	for i := 0; i < numVMs; i++ {
-		vmID := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
-		vsockCIDValue := uint32(1000 + i)
-		// Allocate VSOCKCID on heap to ensure it persists
-		vsockCID := new(uint32)
-		*vsockCID = vsockCIDValue
-		vmInfo := &virtualmachine.Info{
-			ID:        vmID,
+	cids := w.createFakeVMs(numVMs)
+	w.verifyVMs(cids)
+	w.reverifyAfterDelay(cids, vmReverifyDelay, maxReverifyByCID, maxReverifyByID)
+
+	log.Infof("Successfully populated VirtualMachineStore with %d fake VMs", numVMs)
+}
+
+// createFakeVMs generates the VM entries and returns their VSOCK CIDs
+func (w *WorkloadManager) createFakeVMs(num int) []uint32 {
+	cids := make([]uint32, 0, num)
+	for i := 0; i < num; i++ {
+		cid := vmBaseVSOCKCID + uint32(i)
+		vsock := new(uint32)
+		*vsock = cid
+		info := &virtualmachine.Info{
+			ID:        virtualmachine.VMID(fmt.Sprintf("vm-%d", i)),
 			Name:      fmt.Sprintf("fake-vm-%d", i),
 			Namespace: "default",
-			VSOCKCID:  vsockCID,
+			VSOCKCID:  vsock,
 			Running:   true,
 			GuestOS:   "linux",
 		}
-		result := w.vmStore.AddOrUpdate(vmInfo)
-		if result == nil {
-			log.Errorf("AddOrUpdate returned nil for VM %s", vmID)
+		if w.vmStore.AddOrUpdate(info) == nil {
+			log.Errorf("failed to AddOrUpdate VM %s", info.ID)
 			continue
 		}
+		cids = append(cids, cid)
+	}
+	return cids
+}
 
-		// Verify the VM was added correctly
-		verifyVM := w.vmStore.GetFromCID(vsockCIDValue)
-		if verifyVM == nil {
-			log.Errorf("Failed to verify VM with vsockCID %d was added to store (VM ID: %s)", vsockCIDValue, vmID)
+// verifyVMs checks that each CID was immediately persisted
+func (w *WorkloadManager) verifyVMs(cids []uint32) {
+	for _, cid := range cids {
+		if w.vmStore.GetFromCID(cid) == nil {
+			log.Errorf("initial verify failed for CID %d", cid)
+		}
+	}
+}
+
+// reverifyAfterDelay sleeps, then rechecks up to maxCheckByCID using GetFromCID and maxCheckByID using Get(ID)
+func (w *WorkloadManager) reverifyAfterDelay(cids []uint32, delay time.Duration,
+	maxCheckByCID, maxCheckByID int) {
+
+	log.Debugf("Re-verifying VMs after %v delay...", delay)
+	time.Sleep(delay)
+
+	for i, cid := range cids {
+		if i >= maxCheckByCID {
+			break
+		}
+		vm := w.vmStore.GetFromCID(cid)
+		if vm == nil {
+			log.Errorf("post-delay verify missing CID %d", cid)
+		} else {
+			log.Debugf("post-delay got CID %d → ID=%s", cid, vm.ID)
 		}
 	}
 
-	log.Infof("Successfully populated VirtualMachineStore with %d fake VMs", numVMs)
-
-	// Wait a bit and verify again to check if VMs persist
-	time.Sleep(200 * time.Millisecond)
-	log.Infof("Re-verifying VMs after 200ms delay...")
-
-	// Final verification - check a few VMs and log at INFO level for debugging
-	for i := 0; i < min(5, numVMs); i++ {
-		vsockCID := uint32(1000 + i)
-		vm := w.vmStore.GetFromCID(vsockCID)
+	for i := 0; i < maxCheckByID && i < len(cids); i++ {
+		id := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
+		vm := w.vmStore.Get(id)
 		if vm == nil {
-			log.Errorf("Verification failed: VM with vsockCID %d not found in store after delay", vsockCID)
+			log.Errorf("post-delay missing ID %s", id)
+		} else if vm.VSOCKCID != nil {
+			log.Debugf("post-delay verified ID %s → CID=%d", id, *vm.VSOCKCID)
 		} else {
-			log.Infof("Verified VM with vsockCID %d: ID=%s, Name=%s", vsockCID, vm.ID, vm.Name)
-		}
-	}
-
-	// Also verify by ID to ensure VMs are in the store
-	for i := 0; i < min(3, numVMs); i++ {
-		vmID := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
-		vm := w.vmStore.Get(vmID)
-		if vm == nil {
-			log.Errorf("Verification failed: VM with ID %s not found in store after delay", vmID)
-		} else {
-			if vm.VSOCKCID != nil {
-				log.Infof("Verified VM by ID %s: vsockCID=%d (pointer=%p)", vmID, *vm.VSOCKCID, vm.VSOCKCID)
-			} else {
-				log.Warnf("Verified VM by ID %s but VSOCKCID is nil", vmID)
-			}
+			log.Warnf("post-delay verified ID %s but VSOCKCID is nil", id)
 		}
 	}
 }

@@ -66,46 +66,66 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 		return
 	}
 
-	// Wait for handler to be set
-	for w.vmIndexReportHandler == nil {
+	// Wait for handler to be set using Signal
+	// Check if already set first to handle race condition where it's set before we start waiting
+	if w.vmIndexReportHandler == nil {
+		log.Debugf("Waiting for VM index report handler to be set")
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(100 * time.Millisecond):
-			log.Infof("Waiting for VM index report handler to be set, retrying in 100ms")
+		case <-w.vmHandlerReady.Done():
+			// Handler was set, verify it's not nil
+			if w.vmIndexReportHandler == nil {
+				log.Errorf("Received handler ready signal but handler is still nil")
+				return
+			}
+		case <-time.After(readinessCheckInterval * time.Duration(maxVMStoreWaitAttempts)):
+			log.Errorf("Timeout waiting for VM index report handler after %v", readinessCheckInterval*time.Duration(maxVMStoreWaitAttempts))
+			return
 		}
 	}
-	log.Infof("VM index report handler set")
+	log.Debugf("VM index report handler set")
 
-	// Wait for store to be set
-	for w.vmStore == nil {
+	// Wait for store to be set using Signal
+	// Check if already set first to handle race condition where it's set before we start waiting
+	if w.vmStore == nil {
+		log.Debugf("Waiting for VM store to be set")
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(100 * time.Millisecond):
-			log.Infof("Waiting for VM store to be set, retrying in 100ms")
+		case <-w.vmStoreReady.Done():
+			// Store was set, verify it's not nil
+			if w.vmStore == nil {
+				log.Errorf("Received store ready signal but store is still nil")
+				return
+			}
+		case <-time.After(readinessCheckInterval * time.Duration(maxVMStoreWaitAttempts)):
+			log.Errorf("Timeout waiting for VM store after %v", readinessCheckInterval*time.Duration(maxVMStoreWaitAttempts))
+			return
 		}
 	}
-	log.Infof("VM store is set (store=%p), populating fake VMs", w.vmStore)
+	log.Debugf("VM store is set (store=%p), populating fake VMs", w.vmStore)
 
 	// Populate fake VMs now that store is set
 	w.populateFakeVMs()
 
 	// Verify VMs are populated before starting report generation
-	firstVsockCID := uint32(1000)
-	maxWaitAttempts := 50 // 5 seconds max wait
+	// Use polling here since we need to check store contents, not just readiness
+	firstVsockCID := vmBaseVSOCKCID
 	attempts := 0
 	for w.vmStore.GetFromCID(firstVsockCID) == nil {
 		attempts++
-		if attempts > maxWaitAttempts {
-			log.Errorf("Timeout waiting for VM store to be populated after %d attempts. Store=%p.", maxWaitAttempts, w.vmStore)
+		if attempts > maxVMStoreWaitAttempts {
+			log.Errorf("Timeout waiting for VM store to be populated after %d attempts. Store=%p.", maxVMStoreWaitAttempts, w.vmStore)
 			return
 		}
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(100 * time.Millisecond):
-			log.Infof("Waiting for VM store to be populated (checking vsockCID %d, attempt %d/%d), retrying in 100ms", firstVsockCID, attempts, maxWaitAttempts)
+		case <-time.After(readinessCheckInterval):
+			if attempts%10 == 0 {
+				log.Debugf("Waiting for VM store to be populated (checking vsockCID %d, attempt %d/%d)", firstVsockCID, attempts, maxVMStoreWaitAttempts)
+			}
 		}
 	}
 	log.Infof("VM store populated (found vsockCID %d), waiting for Central VM capability", firstVsockCID)
@@ -114,21 +134,20 @@ func (w *WorkloadManager) manageVMIndexReportsWithPopulation(ctx context.Context
 	// This is necessary because capabilities are set when CentralHello is received,
 	// which happens asynchronously during the gRPC stream handshake in initialSync().
 	// Capabilities are set in centralcaps.Set() when CentralHello is processed.
-	maxCapabilityWaitAttempts := 100 // 10 seconds max wait (initialSync can take a few seconds)
+	// Note: We use polling here because centralcaps doesn't provide a notification mechanism
 	capabilityAttempts := 0
 	for !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		capabilityAttempts++
 		if capabilityAttempts > maxCapabilityWaitAttempts {
-			log.Errorf("Timeout waiting for Central VM capability after %d attempts (10s). VM reports will not be sent. This may indicate that CentralHello was not received or processed correctly.", maxCapabilityWaitAttempts)
+			log.Errorf("Timeout waiting for Central VM capability after %d attempts (%v). VM reports will not be sent. This may indicate that CentralHello was not received or processed correctly.", maxCapabilityWaitAttempts, readinessCheckInterval*time.Duration(maxCapabilityWaitAttempts))
 			return
 		}
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(100 * time.Millisecond):
-			if capabilityAttempts%10 == 0 {
-				// Log every second to avoid spam
-				log.Infof("Waiting for Central VM capability (attempt %d/%d), retrying in 100ms", capabilityAttempts, maxCapabilityWaitAttempts)
+		case <-time.After(readinessCheckInterval):
+			if capabilityAttempts%capabilityLogInterval == 0 {
+				log.Debugf("Waiting for Central VM capability (attempt %d/%d)", capabilityAttempts, maxCapabilityWaitAttempts)
 			}
 		}
 	}
