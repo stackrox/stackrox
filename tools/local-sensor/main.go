@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
@@ -399,6 +400,8 @@ func main() {
 		}()
 	}
 
+	// CreateSensor will set up the workload manager handlers (SetSignalHandlers, SetVMIndexReportHandler, SetVMStore)
+	// if workloadManager is not nil and VirtualMachines feature is enabled
 	s, err := sensor.CreateSensor(sensorConfig)
 	if err != nil {
 		panic(err)
@@ -484,7 +487,7 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 	}
 
 	initialMessages := []*central.MsgToSensor{
-		message.SensorHello("00000000-0000-4000-A000-000000000000"),
+		message.SensorHello("00000000-0000-4000-A000-000000000000", string(centralsensor.VirtualMachinesSupported)),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
