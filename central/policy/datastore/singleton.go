@@ -28,6 +28,7 @@ var (
 
 func initialize() {
 	storage := policyStore.New(globaldb.GetPostgres())
+	fmt.Println("in policy singleton initializer")
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
@@ -39,6 +40,7 @@ func initialize() {
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
+	fmt.Println("in policy singleton")
 	once.Do(initialize)
 	return ad
 }
