@@ -104,7 +104,7 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
         name: '',
         awsSecurityHub: {
             accountId: '',
-            region: '',
+            region: 'us-east-1',
             credentials: {
                 accessKeyId: '',
                 secretAccessKey: '',
@@ -215,7 +215,6 @@ function AwsSecurityHubIntegrationForm({
                             handleSelect={setFieldValue}
                             isDisabled={!isEditable}
                             placeholderText="Choose one..."
-                            onBlur={handleBlur}
                         >
                             {regionOptions.map((option) => (
                                 <SelectOption key={option.value} value={option.value}>
