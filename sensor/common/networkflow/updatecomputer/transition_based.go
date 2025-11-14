@@ -489,6 +489,18 @@ func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses m
 	}
 }
 
+func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+	if features.NetworkFlowBatching.Enabled() {
+		c.cachedUpdatesConn = append(unsentConns, c.cachedUpdatesConn...)
+	}
+}
+
+func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+	if features.NetworkFlowBatching.Enabled() {
+		c.cachedUpdatesEp = append(unsentEps, c.cachedUpdatesEp...)
+	}
+}
+
 func (c *TransitionBased) updateLastCleanup(now time.Time) {
 	c.lastCleanupMutex.Lock()
 	defer c.lastCleanupMutex.Unlock()
