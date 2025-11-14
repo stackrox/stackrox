@@ -207,8 +207,11 @@ func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(vm *virtualmachine.Info) *u
 		vm.VSOCKCID = prev.VSOCKCID
 	}
 	// Upsert VSOCKCID info
+	// CRITICAL: We must use the heap-allocated pointer returned by addOrUpdateVSOCKInfoNoLock,
+	// not the original vm.VSOCKCID pointer, which may point to a local variable that goes out of scope.
+	// This prevents dangling pointer bugs where the stored VM.VSOCKCID points to invalid memory.
 	if vm.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+		return s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	}
 	return vm.VSOCKCID
 }
