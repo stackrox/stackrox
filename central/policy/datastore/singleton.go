@@ -52,7 +52,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	// This is unrelated to default policies, but since we're already looping through all the policies here,
 	// this was a good place to add it.
 	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
-	fmt.Printf("Duplicate categories: %v", duplicateCategories)
+	fmt.Printf("Duplicate categories: %v \n", duplicateCategories)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
 		}
 	}
-	fmt.Printf("True category names: %v", lowerCategoryNameToProperName)
+	fmt.Printf("True category names: %v \n", lowerCategoryNameToProperName)
 	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
 	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
@@ -72,6 +72,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
 		for idx, category := range p.GetCategories() {
+			fmt.Println("Currently looking at", strings.ToLower(category))
 			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
 				fmt.Printf("Found a category: %v", category)
 				p.Categories[idx] = correctCategory
