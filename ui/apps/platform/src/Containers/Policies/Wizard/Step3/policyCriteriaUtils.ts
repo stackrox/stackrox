@@ -6,7 +6,7 @@ import type { ClientPolicy } from 'types/policy.proto';
  *
  * @returns Object with indices, or null if the field name doesn't match the expected pattern
  */
-function parseFieldName(
+function parsePolicySectionFieldIndices(
     fieldName: string
 ): { sectionIndex: number; groupIndex: number; valueIndex: number } | null {
     const match = fieldName.match(
@@ -38,7 +38,7 @@ export function getAvailableOptionsForField<T extends { value: string }>(
     fieldName: string,
     values: Pick<ClientPolicy, 'policySections'>
 ): T[] {
-    const indices = parseFieldName(fieldName);
+    const indices = parsePolicySectionFieldIndices(fieldName);
     if (!indices) {
         return options;
     }
