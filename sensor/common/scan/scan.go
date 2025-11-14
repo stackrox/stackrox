@@ -31,7 +31,6 @@ import (
 
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
-	imageScanLowerBound         = 10
 )
 
 var (
@@ -99,17 +98,23 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
-	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
-	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
-	images.SetSensorScanSemaphoreLimit(float64(activeScanSemaLimit), "sensor")
-	images.SetSensorScanSemaphoreLimit(float64(adHocSemaLimit), "central")
+
+	activeScanLimit, adHocScanLimit := scanLimits(
+		env.MaxParallelImageScanInternal.IntegerSetting(),
+		env.MaxParallelAdHocScan.IntegerSetting(),
+	)
+
+	log.Infof("Local simultaneous active deployment scan limit: %d, ad hoc scan limit: %d", activeScanLimit, adHocScanLimit)
+
+	images.SetSensorScanSemaphoreLimit(float64(activeScanLimit), "sensor")
+	images.SetSensorScanSemaphoreLimit(float64(adHocScanLimit), "central")
 
 	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(activeScanSemaLimit)),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocSemaLimit)),
+		scanSemaphore:             semaphore.NewWeighted(int64(activeScanLimit)),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocScanLimit)),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -517,4 +522,23 @@ func validateRequest(req *LocalScanRequest) error {
 	}
 
 	return nil
+}
+
+// scanLimits calculates the maximum number of allowed simultaneous local
+// scans for active deployments and ad hoc requests.
+func scanLimits(maxParallelScans, maxAdHocScans int) (int, int) {
+	// Max parallel scans minimum is 2: 1 active deployment scan + 1 ad hoc scan.
+	maxParallelScans = max(2, maxParallelScans) // minimum of 2
+
+	// Max ad hoc scans must be at least 1 and lower then max parallel scans to allow
+	// for at least 1 active deployment scan.
+	maxAdHocScans = max(1, maxAdHocScans) // minimum of 1
+	if maxAdHocScans >= maxParallelScans {
+		maxAdHocScans = maxParallelScans - 1
+	}
+
+	// At this point we know that max parallel scans are greater than max ad hoc scans.
+	maxActiveScanLimit := maxParallelScans - maxAdHocScans
+
+	return maxActiveScanLimit, maxAdHocScans
 }
