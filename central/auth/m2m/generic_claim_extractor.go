@@ -58,7 +58,13 @@ func (*genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]stri
 	claims := make(map[string][]string, len(unstructured)+2)
 	claims["sub"] = []string{idToken.Subject}
 	claims["aud"] = idToken.Audience
+	parse(unstructured, claims, "")
+	return claims, nil
+}
+
+func parse(unstructured map[string]interface{}, claims map[string][]string, pfx string) {
 	for key, value := range unstructured {
+		key = pfx + key
 		switch value := value.(type) {
 		case string:
 			claims[key] = []string{value}
@@ -70,9 +76,10 @@ func (*genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]stri
 					claims[key] = append(claims[key], s)
 				}
 			}
+		case map[string]interface{}:
+			parse(value, claims, key+".")
 		default:
-			log.Debugf("Dropping value %v for claim %s since its a nested claim or a non-string type %T", value, key, value)
+			log.Debugf("Dropping value %v for claim %s since its a non-supported type %T", value, key, value)
 		}
 	}
-	return claims, nil
 }

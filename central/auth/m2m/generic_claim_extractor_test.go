@@ -100,6 +100,42 @@ func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
 				Name: "test-subject-empty",
 			},
 		},
+		{
+			subject: "test-k8s",
+			unstructured: map[string]interface{}{
+				"aud": []string{"https://example.com"},
+				"exp": 1763119831,
+				"iat": 1763116231,
+				"iss": "https://example.com",
+				"jti": "6a5e8681-3b2a-44f2-9462-ecf16f52c779",
+				"kubernetes.io": map[string]interface{}{
+					"namespace": "stackrox",
+					"serviceaccount": map[string]interface{}{
+						"name": "config-controller",
+						"uid":  "3cd68f8a-7e72-44e7-af17-b283e7027980",
+					},
+				},
+				"nbf": 1763116231,
+				"sub": "system:serviceaccount:stackrox:config-controller",
+			},
+			roxClaims: tokens.RoxClaims{
+				ExternalUser: &tokens.ExternalUserClaim{
+					UserID:   "system:serviceaccount:stackrox:config-controller",
+					FullName: "system:serviceaccount:stackrox:config-controller",
+					Attributes: map[string][]string{
+						"sub": {"system:serviceaccount:stackrox:config-controller"},
+						"aud": {"https://example.com"},
+						"iss": {"https://example.com"},
+						"jti": {"6a5e8681-3b2a-44f2-9462-ecf16f52c779"},
+
+						"kubernetes.io.namespace":           {"stackrox"},
+						"kubernetes.io.serviceaccount.name": {"config-controller"},
+						"kubernetes.io.serviceaccount.uid":  {"3cd68f8a-7e72-44e7-af17-b283e7027980"},
+					},
+				},
+				Name: "system:serviceaccount:stackrox:config-controller",
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
