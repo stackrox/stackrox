@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
-	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -258,31 +256,6 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 		return 0, err
 	}
 	return deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, query))
-}
-
-// ActiveState shows the activeness of a component in a deployment context.
-func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, _ PaginatedQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnMgmt.Enabled() {
-		return &activeStateResolver{}, nil
-	}
-	deploymentID := deploymentctx.FromContext(ctx)
-	if deploymentID == "" {
-		return nil, nil
-	}
-	if eicr.data.GetSource() != storage.SourceType_OS {
-		return &activeStateResolver{root: eicr.root, state: Undetermined}, nil
-	}
-
-	acID := acConverter.ComposeID(deploymentID, scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion(), eicr.os))
-	found, err := eicr.root.ActiveComponent.Exists(ctx, acID)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return &activeStateResolver{root: eicr.root, state: Inactive}, nil
-	}
-
-	return &activeStateResolver{root: eicr.root, state: Active, activeComponentIDs: []string{acID}}, nil
 }
 
 // Nodes are the nodes that contain the Component.

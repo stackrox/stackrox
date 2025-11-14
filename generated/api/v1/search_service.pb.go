@@ -34,7 +34,6 @@ const (
 	SearchCategory_IMAGE_COMPONENT_EDGE             SearchCategory = 23
 	SearchCategory_POLICIES                         SearchCategory = 3
 	SearchCategory_DEPLOYMENTS                      SearchCategory = 4
-	SearchCategory_ACTIVE_COMPONENT                 SearchCategory = 30
 	SearchCategory_PODS                             SearchCategory = 25
 	SearchCategory_SECRETS                          SearchCategory = 5
 	SearchCategory_PROCESS_INDICATORS               SearchCategory = 6
@@ -114,7 +113,6 @@ var (
 		23: "IMAGE_COMPONENT_EDGE",
 		3:  "POLICIES",
 		4:  "DEPLOYMENTS",
-		30: "ACTIVE_COMPONENT",
 		25: "PODS",
 		5:  "SECRETS",
 		6:  "PROCESS_INDICATORS",
@@ -191,7 +189,6 @@ var (
 		"IMAGE_COMPONENT_EDGE":             23,
 		"POLICIES":                         3,
 		"DEPLOYMENTS":                      4,
-		"ACTIVE_COMPONENT":                 30,
 		"PODS":                             25,
 		"SECRETS":                          5,
 		"PROCESS_INDICATORS":               6,
@@ -1917,7 +1914,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\x97\r\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\x87\r\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -1928,8 +1925,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x0fIMAGE_VULN_EDGE\x10\x1b\x12\x18\n" +
 	"\x14IMAGE_COMPONENT_EDGE\x10\x17\x12\f\n" +
 	"\bPOLICIES\x10\x03\x12\x0f\n" +
-	"\vDEPLOYMENTS\x10\x04\x12\x14\n" +
-	"\x10ACTIVE_COMPONENT\x10\x1e\x12\b\n" +
+	"\vDEPLOYMENTS\x10\x04\x12\b\n" +
 	"\x04PODS\x10\x19\x12\v\n" +
 	"\aSECRETS\x10\x05\x12\x16\n" +
 	"\x12PROCESS_INDICATORS\x10\x06\x12\x0e\n" +
@@ -1998,7 +1994,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x13IMAGE_COMPONENTS_V2\x10J\x12\x1c\n" +
 	"\x18IMAGE_VULNERABILITIES_V2\x10K\x12\r\n" +
 	"\tIMAGES_V2\x10L\x12\x14\n" +
-	"\x10VIRTUAL_MACHINES\x10M\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x10VIRTUAL_MACHINES\x10M\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +

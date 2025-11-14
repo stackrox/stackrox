@@ -17,7 +17,6 @@ var typeRegistry = make(map[string]string)
 func init() {
 	// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 	for s, r := range map[protocompat.Message]permissions.ResourceHandle{
-		&storage.ActiveComponent{}:                              resources.Deployment,
 		&storage.AdministrationEvent{}:                          resources.Administration,
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,
 		&storage.AuthProvider{}:                                 resources.Access,

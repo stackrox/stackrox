@@ -1,7 +1,6 @@
 package manager
 
 import (
-	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
@@ -38,8 +37,6 @@ func initialize() {
 		ranking.NamespaceRanker(),
 		ranking.ComponentRanker(),
 		ranking.NodeComponentRanker(),
-
-		acUpdater.Singleton(),
 
 		imageintegration.Set(),
 	)
