@@ -1,20 +1,17 @@
 import type { ClientPolicy } from 'types/policy.proto';
 
 /**
- * Extracts the group path from a field name like:
- * "policySections[0].policyGroups[1].values[2]" -> "policySections[0].policyGroups[1]"
+ * Parses a field name to extract section, group, and value indices.
+ * Example: "policySections[0].policyGroups[1].values[2]" -> { sectionIndex: 0, groupIndex: 1, valueIndex: 2 }
+ *
+ * @returns Object with indices, or null if the field name doesn't match the expected pattern
  */
-function getGroupPathFromFieldName(fieldName: string): string | null {
-    const match = fieldName.match(/^(policySections\[\d+\]\.policyGroups\[\d+\])\.values\[\d+\]$/);
-    return match ? match[1] : null;
-}
-
-/**
- * Parses a group path to extract section and group indices.
- * Example: "policySections[0].policyGroups[1]" -> { sectionIndex: 0, groupIndex: 1 }
- */
-function parseGroupPath(groupPath: string): { sectionIndex: number; groupIndex: number } | null {
-    const match = groupPath.match(/policySections\[(\d+)\]\.policyGroups\[(\d+)\]/);
+function parseFieldName(
+    fieldName: string
+): { sectionIndex: number; groupIndex: number; valueIndex: number } | null {
+    const match = fieldName.match(
+        /^policySections\[(\d+)\]\.policyGroups\[(\d+)\]\.values\[(\d+)\]$/
+    );
     if (!match) {
         return null;
     }
@@ -22,16 +19,8 @@ function parseGroupPath(groupPath: string): { sectionIndex: number; groupIndex: 
     return {
         sectionIndex: parseInt(match[1], 10),
         groupIndex: parseInt(match[2], 10),
+        valueIndex: parseInt(match[3], 10),
     };
-}
-
-/**
- * Extracts the value index from a field name.
- * Example: "policySections[0].policyGroups[1].values[2]" -> 2
- */
-function extractValueIndex(fieldName: string): number {
-    const match = fieldName.match(/\.values\[(\d+)\]/);
-    return match ? parseInt(match[1], 10) : -1;
 }
 
 /**
@@ -49,24 +38,18 @@ export function getAvailableOptionsForField<T extends { value: string }>(
     fieldName: string,
     values: Pick<ClientPolicy, 'policySections'>
 ): T[] {
-    const alreadySelected = new Set<string>();
-    const groupPath = getGroupPathFromFieldName(fieldName);
-    if (!groupPath) {
-        return options;
-    }
-
-    const indices = parseGroupPath(groupPath);
+    const indices = parseFieldName(fieldName);
     if (!indices) {
         return options;
     }
 
-    const { sectionIndex, groupIndex } = indices;
+    const { sectionIndex, groupIndex, valueIndex } = indices;
     const group = values.policySections[sectionIndex]?.policyGroups[groupIndex];
     if (!group) {
         return options;
     }
 
-    const valueIndex = extractValueIndex(fieldName);
+    const alreadySelected = new Set<string>();
     group.values.forEach((val, idx) => {
         if (idx !== valueIndex && val.value && typeof val.value === 'string') {
             alreadySelected.add(val.value);
