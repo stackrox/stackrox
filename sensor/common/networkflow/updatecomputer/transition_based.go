@@ -149,45 +149,42 @@ func NewTransitionBased() *TransitionBased {
 func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
-	if len(current) == 0 {
-		// Received an empty map with current state. This may happen because:
-		// - Some items were discarded during the enrichment process, so none made it through.
-		// - This command was run on an empty map.
-		// In this case, the current updates would be empty.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		return c.cachedUpdatesConn
-	}
-	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
-	h := xxhash.New()
-	for conn, currTS := range current {
-		key := conn.BinaryKey(h)
+	if len(current) > 0 {
+		// Process each enriched connection individually, categorize the transition, and generate an update if needed.
+		h := xxhash.New()
+		for conn, currTS := range current {
+			key := conn.BinaryKey(h)
 
-		// Check if this connection has been closed recently.
-		prevTsFound, prevTS := c.lookupPrevTimestamp(key)
-		// Based on the categorization, calculate the transition and determine if an update should be sent.
-		update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, c.connectionsDeduper, &c.connectionsDeduperMutex)
-		updateMetrics(update, transition, ee)
-		// Each transition may require updating the deduper.
-		action := getConnectionDeduperAction(transition)
-		switch action {
-		case deduperActionAdd:
-			c.connectionsDeduper.Add(key)
-		case deduperActionRemove:
-			c.connectionsDeduper.Remove(key)
-		default: // noop
+			// Check if this connection has been closed recently.
+			prevTsFound, prevTS := c.lookupPrevTimestamp(key)
+			// Based on the categorization, calculate the transition and determine if an update should be sent.
+			update, transition := categorizeUpdate(prevTS, currTS, prevTsFound, key, c.connectionsDeduper, &c.connectionsDeduperMutex)
+			updateMetrics(update, transition, ee)
+			// Each transition may require updating the deduper.
+			action := getConnectionDeduperAction(transition)
+			switch action {
+			case deduperActionAdd:
+				c.connectionsDeduper.Add(key)
+			case deduperActionRemove:
+				c.connectionsDeduper.Remove(key)
+			default: // noop
+			}
+			if update {
+				c.storeClosedConnectionTimestamp(key, currTS, c.closedConnRememberDuration)
+				updates = append(updates, conn.ToProto(currTS))
+			}
 		}
-		if update {
-			c.storeClosedConnectionTimestamp(key, currTS, c.closedConnRememberDuration)
-			updates = append(updates, conn.ToProto(currTS))
+		// Store into cache in case sending to Central fails.
+		c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
+		c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
+		// Limit cache size, prioritizing closed connections over open ones
+		if features.NetworkFlowCacheLimiting.Enabled() {
+			c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
 		}
 	}
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
-	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
-	// Limit cache size, prioritizing closed connections over open ones
-	if features.NetworkFlowCacheLimiting.Enabled() {
-		c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
-	}
+	// When len(current) == 0, we skip processing new connections but still apply batching
+	// to the cache (which may contain backlog from offline mode or previous failures).
+	// This ensures we respect ROX_GRPC_MAX_MESSAGE_SIZE even when recovering from offline mode.
 	if features.NetworkFlowBatching.Enabled() {
 		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
 			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
@@ -345,68 +342,64 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 ) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
-	if len(enrichedEndpointsProcesses) == 0 {
-		// Received an empty map with current state. This may happen because:
-		// - Some items were discarded during the enrichment process, so none made it through.
-		// - This command was run on an empty map.
-		// In this case, the current updates would be empty.
-		// The `cachedUpdates` already contains past updates collected during offline mode, so no action needed.
-		return c.cachedUpdatesEp, c.cachedUpdatesProc
-	}
 	plopEnabled := env.ProcessesListeningOnPort.BooleanSetting()
 
 	var epUpdates []*storage.NetworkEndpoint
 	var procUpdates []*storage.ProcessListeningOnPortFromSensor
 
-	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
-	h := xxhash.New()
-	for ep, p := range enrichedEndpointsProcesses {
-		currTS := p.LastSeen
-		epBinaryKey := ep.BinaryKey(h)
-		// Check if this endpoint has a process.
-		var procBinaryKey indicator.BinaryHash
-		// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
-		// There is currently no way to get the old processIndicator, so we don't inform Central about the old being closed.
-		// If that is needed, this can be added in the future.
-		if p.ProcessListening != nil {
-			procBinaryKey = p.ProcessListening.BinaryKey(h)
-		}
-		// Based on the categorization, we calculate the transition and whether an update should be sent.
-		sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epBinaryKey, procBinaryKey, c.deduperHasEndpointAndProcess)
-		updateMetrics(sendEndpointUpdate, transition, EndpointEnrichedEntity)
-		updateMetrics(sendProcessUpdate, transition, ProcessEnrichedEntity)
+	if len(enrichedEndpointsProcesses) > 0 {
+		// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
+		h := xxhash.New()
+		for ep, p := range enrichedEndpointsProcesses {
+			currTS := p.LastSeen
+			epBinaryKey := ep.BinaryKey(h)
+			// Check if this endpoint has a process.
+			var procBinaryKey indicator.BinaryHash
+			// If process was replaced (ep1->proc1 changed to ep1->proc2), the `procInd` would be the new process indicator.
+			// There is currently no way to get the old processIndicator, so we don't inform Central about the old being closed.
+			// If that is needed, this can be added in the future.
+			if p.ProcessListening != nil {
+				procBinaryKey = p.ProcessListening.BinaryKey(h)
+			}
+			// Based on the categorization, we calculate the transition and whether an update should be sent.
+			sendEndpointUpdate, sendProcessUpdate, transition, dAction := categorizeEndpointUpdate(currTS, epBinaryKey, procBinaryKey, c.deduperHasEndpointAndProcess)
+			updateMetrics(sendEndpointUpdate, transition, EndpointEnrichedEntity)
+			updateMetrics(sendProcessUpdate, transition, ProcessEnrichedEntity)
 
-		switch dAction {
-		case deduperActionAdd, deduperActionUpdateProcess:
-			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				c.endpointsDeduper[epBinaryKey] = procBinaryKey
-			})
-		case deduperActionRemove:
-			concurrency.WithLock(&c.endpointsDeduperMutex, func() {
-				delete(c.endpointsDeduper, epBinaryKey)
-			})
-		default: // noop
+			switch dAction {
+			case deduperActionAdd, deduperActionUpdateProcess:
+				concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+					c.endpointsDeduper[epBinaryKey] = procBinaryKey
+				})
+			case deduperActionRemove:
+				concurrency.WithLock(&c.endpointsDeduperMutex, func() {
+					delete(c.endpointsDeduper, epBinaryKey)
+				})
+			default: // noop
+			}
+			if sendEndpointUpdate {
+				epUpdates = append(epUpdates, ep.ToProto(currTS))
+			}
+			if plopEnabled && sendProcessUpdate && p.ProcessListening != nil {
+				procUpdates = append(procUpdates, p.ProcessListening.ToProto(currTS))
+			}
 		}
-		if sendEndpointUpdate {
-			epUpdates = append(epUpdates, ep.ToProto(currTS))
-		}
-		if plopEnabled && sendProcessUpdate && p.ProcessListening != nil {
-			procUpdates = append(procUpdates, p.ProcessListening.ToProto(currTS))
-		}
-	}
 
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(epUpdates))
-	c.cachedUpdatesEp = append(c.cachedUpdatesEp, epUpdates...)
-	if plopEnabled {
-		c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(procUpdates))
-		c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
+		// Store into cache in case sending to Central fails.
+		c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(epUpdates))
+		c.cachedUpdatesEp = append(c.cachedUpdatesEp, epUpdates...)
+		if plopEnabled {
+			c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(procUpdates))
+			c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
+		}
+		// Limit cache size, prioritizing closed endpoints over open ones
+		if features.NetworkFlowCacheLimiting.Enabled() {
+			c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
+		}
 	}
-	// Limit cache size, prioritizing closed endpoints over open ones
-	if features.NetworkFlowCacheLimiting.Enabled() {
-		c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
-	}
-	// Return concatenated past and current updates.
+	// When len(enrichedEndpointsProcesses) == 0, we skip processing new endpoints but still apply batching
+	// to the cache (which may contain backlog from offline mode or previous failures).
+	// This ensures we respect ROX_GRPC_MAX_MESSAGE_SIZE even when recovering from offline mode.
 	if features.NetworkFlowBatching.Enabled() {
 		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
 			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
