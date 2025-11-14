@@ -72,7 +72,7 @@ type Detector interface {
 // New returns a new detector
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore) Detector {
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
@@ -122,6 +122,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
+		nodeStore:           nodeStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
 		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
@@ -161,6 +162,7 @@ type detectorImpl struct {
 
 	enricher            *enricher
 	deploymentStore     store.DeploymentStore
+	nodeStore           store.NodeStore
 	serviceAccountStore store.ServiceAccountStore
 	extSrcsStore        externalsrcs.Store
 	baselineEval        baseline.Evaluator
@@ -856,7 +858,12 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 		}
 		item.Deployment = deployment
 	} else {
-		// look-up node and add to the item
+		node := d.nodeStore.GetNode(access.GetHostname())
+		if node == nil {
+			log.Warnf("Node %+v does not exist in store", access.GetHostname())
+			return
+		}
+		item.Node = node
 	}
 
 	d.fileAccessQueue.Push(item)
@@ -886,6 +893,7 @@ func (d *detectorImpl) processFileAccess() {
 				// No need to process runtime alerts that have no violations
 				continue
 			}
+
 			alertResults := &central.AlertResults{
 				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
 				Alerts:       alerts,
