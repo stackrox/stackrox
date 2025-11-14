@@ -13,13 +13,13 @@ func (*kubeClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.
 	if len(claims["sub"]) == 0 {
 		return tokens.RoxClaims{}, errox.InvalidArgs.New("no sub claim found")
 	}
-	if len(claims["uid"]) == 0 {
-		return tokens.RoxClaims{}, errox.InvalidArgs.New("no uid claim found")
+	if len(claims["kubernetes.io.serviceaccount.uid"]) == 0 {
+		return tokens.RoxClaims{}, errox.InvalidArgs.New("no kubernetes.io.serviceaccount.uid claim found")
 	}
 	sub := claims["sub"][0]
 	return tokens.RoxClaims{
 		ExternalUser: &tokens.ExternalUserClaim{
-			UserID:     claims["uid"][0],
+			UserID:     claims["kubernetes.io.serviceaccount.uid"][0],
 			FullName:   sub,
 			Attributes: claims,
 		},
