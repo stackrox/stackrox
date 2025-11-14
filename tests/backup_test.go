@@ -31,9 +31,9 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	setupDeployment(t, "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1", deploymentName)
-	defer teardownDeploymentWithoutCheck(t, deploymentName)
-	waitForDeployment(t, deploymentName)
+	setupDeploymentInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1", deploymentName, "default")
+	defer teardownDeploymentWithoutCheck(t, deploymentName, "default")
+	waitForDeploymentInCentral(t, deploymentName)
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {

@@ -663,7 +663,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		t := ts.T()
 
 		// Do an initial teardown in case a deployment is lingering from a previous test.
-		teardownDeployment(t, deployName)
+		teardownDeployment(t, deployName, "default")
 
 		// Since we cannot 'force' a scan when deploying an image, we first delete
 		// the image to help ensure a fresh scan is executed. Otherwise Sensor
@@ -686,7 +686,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 
 		// Only perform teardown on success so that logs can be captured on failure.
 		logf(t, "Tearing down deployment %q", deployName)
-		teardownDeploymentWithoutCheck(t, deployName)
+		teardownDeploymentWithoutCheck(t, deployName, "default")
 	}
 
 	ts.Run("scan deployed image", func() {
@@ -838,7 +838,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			}
 
 			// Do an initial teardown in case a deployment is lingering from a previous test.
-			teardownDeployment(t, tc.deployName)
+			teardownDeployment(t, tc.deployName, "default")
 
 			// Because we cannot 'force' a scan for deployments, we explicitly delete the image
 			// so that it is removed from Sensor scan cache.
@@ -862,7 +862,10 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 
 			// Only perform teardown on success so that logs can be captured on failure.
 			logf(t, "Tearing down deployment %q", tc.deployName)
-			teardownDeployment(t, tc.deployName)
+			// Wait for deployment to be fully ready before deletion to avoid race conditions
+			// where deletion is issued while pods are still starting up.
+			waitForDeploymentReadyInK8s(t, tc.deployName, "default")
+			teardownDeployment(t, tc.deployName, "default")
 		})
 	}
 }
