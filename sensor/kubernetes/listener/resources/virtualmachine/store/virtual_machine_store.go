@@ -111,7 +111,11 @@ func (s *VirtualMachineStore) OnNamespaceDeleted(namespace string) {
 func (s *VirtualMachineStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.virtualMachines[id].Copy()
+	vm := s.virtualMachines[id]
+	if vm == nil {
+		return nil
+	}
+	return vm.Copy()
 }
 
 // Has returns true if the store contains the VirtualMachine with the given ID
@@ -127,7 +131,11 @@ func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	if !ok {
 		return nil
 	}
-	return s.virtualMachines[uid].Copy()
+	vm := s.virtualMachines[uid]
+	if vm == nil {
+		return nil
+	}
+	return vm.Copy()
 }
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *virtualmachine.Info) {
@@ -173,9 +181,10 @@ func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID,
 	}
 	s.idToCID[id] = *vsockCID
 	s.cidToID[*vsockCID] = id
-	// copy value before return
-	val := *vsockCID
-	return &val
+	// Allocate on the heap to avoid dangling pointer (same issue as in AddOrUpdate)
+	valPtr := new(uint32)
+	*valPtr = *vsockCID
+	return valPtr
 }
 
 func (s *VirtualMachineStore) removeVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) {
