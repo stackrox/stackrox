@@ -2,7 +2,6 @@ package fake
 
 import (
 	"fmt"
-	"sync"
 )
 
 type vmInfo struct {
@@ -12,9 +11,7 @@ type vmInfo struct {
 }
 
 type vmPool struct {
-	vms    []*vmInfo
-	nextVM int
-	mu     sync.Mutex
+	vms []*vmInfo
 }
 
 func newVMPool(numVMs int) *vmPool {
@@ -29,12 +26,4 @@ func newVMPool(numVMs int) *vmPool {
 		}
 	}
 	return pool
-}
-
-func (p *vmPool) getRoundRobin() *vmInfo {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	vm := p.vms[p.nextVM]
-	p.nextVM = (p.nextVM + 1) % len(p.vms)
-	return vm
 }
