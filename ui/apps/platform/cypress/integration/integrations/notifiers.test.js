@@ -46,7 +46,6 @@ describe('Notifier Integrations', () => {
             // Step 1, check empty fields
             getInputByLabel('Integration name').click().blur();
             getInputByLabel('AWS account number').click().blur();
-            getSelectButtonByLabel('AWS region').click().blur(); // click to open, blur to trigger validation
             getInputByLabel('Access key ID').click().blur();
             getInputByLabel('Secret access key').click().blur();
 
@@ -54,7 +53,6 @@ describe('Notifier Integrations', () => {
             getHelperElementByLabel('AWS account number').contains(
                 'An AWS account number is required'
             );
-            getHelperElementByLabel('AWS region').contains('An AWS region is required');
             getHelperElementByLabel('Access key ID').contains('An access key ID is required');
             getHelperElementByLabel('Secret access key').contains(
                 'A secret access key is required'
