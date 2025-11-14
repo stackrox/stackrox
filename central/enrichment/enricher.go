@@ -29,11 +29,11 @@ type Enricher interface {
 }
 
 // New creates and returns a new Enricher.
-func New(imageDatastore datastore.DataStore, imageEnricher enricher.ImageEnricher, imageV2Datastore imageV2Datastore.DataStore, imageEnricherV2 enricher.ImageEnricherV2) Enricher {
+func New(imageDatastore datastore.DataStore, imageV2Datastore imageV2Datastore.DataStore, imageEnricher enricher.ImageEnricher, imageEnricherV2 enricher.ImageEnricherV2) Enricher {
 	return &enricherImpl{
 		images:          imageDatastore,
-		imageEnricher:   imageEnricher,
 		imagesV2:        imageV2Datastore,
+		imageEnricher:   imageEnricher,
 		imageEnricherV2: imageEnricherV2,
 	}
 }

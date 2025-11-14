@@ -27,8 +27,8 @@ func initialize() {
 	as = New(
 		clusterDS,
 		enrichment.ImageEnricherSingleton(),
-		imageDatastore.Singleton(),
 		enrichment.ImageEnricherV2Singleton(),
+		imageDatastore.Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),

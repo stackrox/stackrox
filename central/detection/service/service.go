@@ -33,8 +33,8 @@ type Service interface {
 func New(
 	clusters clusterDatastore.DataStore,
 	imageEnricher enricher.ImageEnricher,
-	imageDatastore imageDatastore.DataStore,
 	imageEnricherV2 enricher.ImageEnricherV2,
+	imageDatastore imageDatastore.DataStore,
 	riskManager manager.Manager,
 	deploymentEnricher enrichment.Enricher,
 	buildTimeDetector buildTimeDetection.Detector,
@@ -49,8 +49,8 @@ func New(
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
-		imageDatastore:     imageDatastore,
 		imageEnricherV2:    imageEnricherV2,
+		imageDatastore:     imageDatastore,
 		riskManager:        riskManager,
 		deploymentEnricher: deploymentEnricher,
 		buildTimeDetector:  buildTimeDetector,

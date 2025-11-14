@@ -100,8 +100,8 @@ type serviceImpl struct {
 
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
-	imageDatastore     imageDatastore.DataStore
 	imageEnricherV2    enricher.ImageEnricherV2
+	imageDatastore     imageDatastore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -274,7 +274,9 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		}
 		images = utils.ConvertToV1List(imagesV2)
 	} else {
-		images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
+		var updatedIndices []int
+		var err error
+		images, updatedIndices, _, err = s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 		if err != nil {
 			return nil, err
 		}
