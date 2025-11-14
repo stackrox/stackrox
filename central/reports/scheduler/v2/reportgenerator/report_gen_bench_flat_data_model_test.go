@@ -103,7 +103,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
 		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
-	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
+	collectionStore := collectionPostgres.New(bts.testDB)
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)

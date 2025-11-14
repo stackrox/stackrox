@@ -36,16 +36,9 @@ func TestSingleUUIDIndex(t *testing.T) {
 
 func (s *SingleUUIDIndexSuite) SetupTest() {
 
-	source := pgtest.GetConnectionString(s.T())
-	config, err := postgres.ParseConfig(source)
-	s.Require().NoError(err)
-	s.pool, err = postgres.New(context.Background(), config)
-	s.Require().NoError(err)
+	s.pool = pgtest.ForT(s.T())
 
-	pgStore.Destroy(ctx, s.pool)
-	gormDB := pgtest.OpenGormDB(s.T(), source)
-	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+	s.store = pgStore.New(s.pool)
 }
 
 func (s *SingleUUIDIndexSuite) TearDownTest() {
