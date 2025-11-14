@@ -121,11 +121,18 @@ func (h *handlerImpl) Start() error {
 }
 
 func (h *handlerImpl) Stop() {
-	close(h.indexReports)
+	// Stop the stopper FIRST so Send() will see it as stopped and return early
+	// before we close the channel. This prevents panics from sending on closed channel.
 	if !h.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(h.stopper.Client().Stopped().Wait)
+		h.stopper.Client().Stop()
 	}
-	h.stopper.Client().Stop()
+	// Acquire write lock to prevent concurrent Send() calls from racing with channel close
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	// Now close the channel - this will cause the run() goroutine to exit
+	// (it checks for closed channel on line 146)
+	close(h.indexReports)
 }
 
 // run handles the virtual machine data and forwards it to Central.
