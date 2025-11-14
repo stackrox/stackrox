@@ -74,6 +74,9 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		default:
 			compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
 		}
+		if policy.GetEventSource() == storage.EventSource_NODE_EVENT {
+			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
+		}
 	}
 
 	if policies.AppliesAtDeployTime(policy) {
