@@ -66,15 +66,17 @@ type Detector interface {
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
+	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
 }
 
 // New returns a new detector
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore) Detector {
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
+	fileAccessQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAcessBufferSize)
 	deploymentQueueSize := 0
 	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
 		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
@@ -101,6 +103,14 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		detectorMetrics.DetectorDeploymentDroppedCount,
 	)
 
+	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
+		detectorStopper,
+		"FilesQueue",
+		fileAccessQueueSize,
+		detectorMetrics.DetectorFileAccessQueueOperations,
+		detectorMetrics.DetectorFileAccessDroppedCount,
+	)
+
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -112,6 +122,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
+		nodeStore:           nodeStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
 		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
@@ -131,6 +142,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		networkFlowsQueue: netFlowQueue,
 		indicatorsQueue:   piQueue,
 		deploymentsQueue:  deploymentQueue,
+		fileAccessQueue:   fileAccessQueue,
 	}
 }
 
@@ -150,6 +162,7 @@ type detectorImpl struct {
 
 	enricher            *enricher
 	deploymentStore     store.DeploymentStore
+	nodeStore           store.NodeStore
 	serviceAccountStore store.ServiceAccountStore
 	extSrcsStore        externalsrcs.Store
 	baselineEval        baseline.Evaluator
@@ -172,6 +185,7 @@ type detectorImpl struct {
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
+	fileAccessQueue   *queue.Queue[*queue.FileAccessQueueItem]
 }
 
 func (d *detectorImpl) Name() string {
@@ -185,8 +199,10 @@ func (d *detectorImpl) Start() error {
 	go d.processAlertsForFlowOnEntity()
 	go d.processIndicator()
 	go d.processDeployment()
+	go d.processFileAccess()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
+	d.fileAccessQueue.Start()
 	return nil
 }
 
@@ -821,4 +837,74 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
+}
+
+func (d *detectorImpl) ProcessFileAccess(ctx context.Context, access *storage.FileAccess) {
+	d.pushFileAccess(ctx, access)
+}
+
+func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileAccess) {
+	item := &queue.FileAccessQueueItem{
+		Ctx:    ctx,
+		Access: access,
+	}
+
+	if access.GetProcess().GetDeploymentId() != "" {
+		deployment := d.deploymentStore.GetSnapshot(access.GetProcess().GetDeploymentId())
+		if deployment == nil {
+			log.Debugf("Deployment has already been removed: %+v", access.GetProcess())
+			// Because the file access was already enriched with a deployment, this means the deployment is gone
+			return
+		}
+		item.Deployment = deployment
+	} else {
+		node := d.nodeStore.GetNode(access.GetHostname())
+		if node == nil {
+			log.Warnf("Node %+v does not exist in store", access.GetHostname())
+			return
+		}
+		item.Node = node
+	}
+
+	d.fileAccessQueue.Push(item)
+}
+
+func (d *detectorImpl) processFileAccess() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		case item, ok := <-d.fileAccessQueue.Pull():
+			if !ok {
+				return
+			}
+			if item == nil {
+				continue
+			}
+
+			var alerts []*storage.Alert
+			if item.Node != nil {
+				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
+			} else if item.Deployment != nil {
+				// TODO(ROX-30806): wire up deployment-based detection
+			}
+
+			if len(alerts) == 0 {
+				// No need to process runtime alerts that have no violations
+				continue
+			}
+
+			alertResults := &central.AlertResults{
+				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
+				Alerts:       alerts,
+				Stage:        storage.LifecycleStage_RUNTIME,
+			}
+
+			select {
+			case <-d.alertStopSig.Done():
+				continue
+			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+			}
+		}
+	}
 }

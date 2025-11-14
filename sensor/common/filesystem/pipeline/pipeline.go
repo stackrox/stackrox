@@ -177,23 +177,7 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
-
-			if event.GetProcess().GetContainerName() != "" {
-				// Do deployment based detection but for now just log
-				log.Infof("Container FS event = %+v", event)
-			} else {
-				node := p.nodeStore.GetNode(event.GetHostname())
-				if node == nil {
-					log.Warnf("Node %s not found in node store", event.GetHostname())
-					continue
-				}
-
-				// Do node based detection but for now just log
-				log.Infof("Node FS event on %s = %+v", node.GetName(), event)
-			}
-
-			// TODO: Send event to detector
-			log.Infof("event= %+v", event)
+			p.detector.ProcessFileAccess(p.msgCtx, event)
 		}
 	}
 }
