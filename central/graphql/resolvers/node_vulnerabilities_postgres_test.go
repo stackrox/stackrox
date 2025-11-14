@@ -103,10 +103,6 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	}
 }
 
-func (s *GraphQLNodeVulnerabilityTestSuite) TearDownSuite() {
-	s.testDB.Close()
-}
-
 // permission checks
 
 func (s *GraphQLNodeVulnerabilityTestSuite) TestUnauthorizedNodeVulnerabilityEndpoint() {
