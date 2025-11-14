@@ -23,11 +23,11 @@ var (
 
 // enricherImpl enriches images with data from registries and scanners.
 type enricherImpl struct {
-	imageEnricher enricher.ImageEnricher
-	images        datastore.DataStore
-
+	imageEnricher   enricher.ImageEnricher
 	imageEnricherV2 enricher.ImageEnricherV2
-	imagesV2        imageV2Datastore.DataStore
+
+	images   datastore.DataStore
+	imagesV2 imageV2Datastore.DataStore
 }
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.

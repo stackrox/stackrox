@@ -575,6 +575,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if features.FlattenImageData.Enabled() {
 		imgV2, err := enricher.EnrichImageV2ByName(ctx, s.enricherV2, enrichmentCtx, request.GetImageName())
 		if err != nil {
+			if env.AdministrationEventsAdHocScans.BooleanSetting() {
+				log.Errorw("Enriching image",
+					logging.ImageName(request.GetImageName()),
+					logging.Err(err),
+					logging.Bool("ad_hoc", true),
+				)
+			}
 			return nil, err
 		}
 
@@ -1238,7 +1245,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 
 	if features.FlattenImageData.Enabled() {
-		return s.watchImageV2(ctx, containerImage)
+		return s.watchImageV2(ctx, containerImage, request.GetName())
 	}
 
 	img := types.ToImage(containerImage)
@@ -1289,7 +1296,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	return &v1.WatchImageResponse{NormalizedName: normalizedName}, nil
 }
 
-func (s *serviceImpl) watchImageV2(ctx context.Context, containerImage *storage.ContainerImage) (*v1.WatchImageResponse, error) {
+func (s *serviceImpl) watchImageV2(ctx context.Context, containerImage *storage.ContainerImage, requestedImageName string) (*v1.WatchImageResponse, error) {
 	img := types.ToImageV2(containerImage)
 
 	enrichCtx := enricher.EnrichmentContext{
@@ -1298,6 +1305,13 @@ func (s *serviceImpl) watchImageV2(ctx context.Context, containerImage *storage.
 	}
 	enrichmentResult, err := s.enricherV2.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
+		if env.AdministrationEventsAdHocScans.BooleanSetting() {
+			log.Errorw("Enriching image",
+				logging.ImageName(requestedImageName),
+				logging.Err(err),
+				logging.Bool("ad_hoc", true),
+			)
+		}
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
 			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
