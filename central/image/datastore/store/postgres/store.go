@@ -31,6 +31,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
+	"gorm.io/gorm"
 )
 
 const (
@@ -1218,6 +1219,56 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 }
 
 //// Used for testing
+
+func dropAllTablesInImageTree(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
+	dropTableImagesLayers(ctx, db)
+	dropTableImageComponents(ctx, db)
+	dropTableImageCVEs(ctx, db)
+	dropTableImageCVEEdges(ctx, db)
+	dropTableComponentCVEEdges(ctx, db)
+	dropTableImageComponentEdges(ctx, db)
+}
+
+func dropTableImagesLayers(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
+}
+
+func dropTableImageComponents(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentsTable+" CASCADE")
+}
+
+func dropTableImageCVEs(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEsTable+" CASCADE")
+}
+
+func dropTableImageCVEEdges(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageCVEEdgesTable+" CASCADE")
+}
+
+func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
+}
+
+func dropTableImageComponentEdges(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+imageComponentEdgesTable+" CASCADE")
+}
+
+// Destroy drops image table.
+func Destroy(ctx context.Context, db postgres.DB) {
+	dropAllTablesInImageTree(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
+	return New(db, noUpdateTimestamps, concurrency.NewKeyFence())
+}
 
 // NewForTest returns a new store instance for testing
 func NewForTest(_ testing.TB, db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) store.Store {
