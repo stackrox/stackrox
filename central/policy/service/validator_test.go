@@ -1079,6 +1079,46 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 				}),
 			errExpected: true,
 		},
+		{
+			description: "Node policy with valid FileOperation field but no file path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation and valid NodeFilePath field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+					fieldnames.NodeFilePath:  "/etc/passwd",
+				}),
+		},
+		{
+			description: "Node policy with invalid FileOperation",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "execute",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node policy with FileOperation in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
 	}
 
 	// reset once for these tests, and then reset on return after the feature flag has been disabled
