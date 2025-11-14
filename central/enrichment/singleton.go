@@ -68,7 +68,7 @@ func initialize() {
 	}
 
 	nodeEnricher = pkgNodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
-	depEnricher = New(datastore.Singleton(), imgEnricher, imageV2DataStore.Singleton(), imgEnricherV2)
+	depEnricher = New(datastore.Singleton(), imageV2DataStore.Singleton(), imgEnricher, imgEnricherV2)
 	orchestratorCVEManager = fetcher.SingletonManager()
 	initializeManager()
 }
