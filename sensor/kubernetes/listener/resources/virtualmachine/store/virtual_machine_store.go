@@ -42,8 +42,19 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 	if oldVM != nil {
 		vm.Running = oldVM.Running
 		if oldVM.VSOCKCID != nil {
-			vSockCID := *oldVM.VSOCKCID
-			vm.VSOCKCID = &vSockCID
+			// CRITICAL: We must allocate VSOCKCID on the heap, not create a pointer to a local variable.
+			// The previous implementation did:
+			//   vSockCID := *oldVM.VSOCKCID
+			//   vm.VSOCKCID = &vSockCID  // ❌ DANGEROUS: Pointer to local variable
+			// This creates a dangling pointer because vSockCID is a local variable that goes out of scope
+			// when the function returns. When the stored VM.VSOCKCID is later dereferenced, it points to
+			// invalid memory, causing undefined behavior and potential memory corruption.
+			// The fix allocates on the heap using new(), ensuring the pointer remains valid for the
+			// lifetime of the VM object stored in the map.
+			vSockCIDValue := *oldVM.VSOCKCID
+			vSockCIDPtr := new(uint32)
+			*vSockCIDPtr = vSockCIDValue
+			vm.VSOCKCID = vSockCIDPtr
 		}
 		vm.GuestOS = oldVM.GuestOS
 	}

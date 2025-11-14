@@ -18,7 +18,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -107,9 +110,11 @@ type WorkloadManager struct {
 	originatorCache           *OriginatorCache
 
 	// signals services
-	servicesInitialized concurrency.Signal
-	processes           signal.Pipeline
-	networkManager      manager.Manager
+	servicesInitialized  concurrency.Signal
+	processes            signal.Pipeline
+	networkManager       manager.Manager
+	vmIndexReportHandler index.Handler
+	vmStore              *vmStore.VirtualMachineStore
 
 	// shutdown coordination
 	shutdownCtx    context.Context
@@ -263,6 +268,101 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
+// SetVMIndexReportHandler sets the handler that will accept VM index reports
+func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
+	w.vmIndexReportHandler = handler
+}
+
+// SetVMStore sets the VirtualMachineStore
+// Note: populateFakeVMs is now called in manageVMIndexReportsWithPopulation
+func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
+	log.Infof("SetVMStore called: store=%p, workload.NumVMs=%d", store, w.workload.VMIndexReportWorkload.NumVMs)
+	w.vmStore = store
+	log.Infof("SetVMStore completed (VMs will be populated by manageVMIndexReportsWithPopulation)")
+}
+
+// populateFakeVMs creates and registers fake VMs in the store
+func (w *WorkloadManager) populateFakeVMs() {
+	log.Infof("populateFakeVMs called: vmStore=%p, NumVMs=%d", w.vmStore, w.workload.VMIndexReportWorkload.NumVMs)
+	if w.vmStore == nil {
+		log.Warnf("populateFakeVMs: vmStore is nil, returning early")
+		return
+	}
+	if w.workload.VMIndexReportWorkload.NumVMs == 0 {
+		log.Warnf("populateFakeVMs: NumVMs is 0, returning early")
+		return
+	}
+
+	numVMs := w.workload.VMIndexReportWorkload.NumVMs
+	log.Infof("Populating VirtualMachineStore with %d fake VMs", numVMs)
+
+	for i := 0; i < numVMs; i++ {
+		vmID := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
+		vsockCIDValue := uint32(1000 + i)
+		// Allocate VSOCKCID on heap to ensure it persists
+		vsockCID := new(uint32)
+		*vsockCID = vsockCIDValue
+		vmInfo := &virtualmachine.Info{
+			ID:        vmID,
+			Name:      fmt.Sprintf("fake-vm-%d", i),
+			Namespace: "default",
+			VSOCKCID:  vsockCID,
+			Running:   true,
+			GuestOS:   "linux",
+		}
+		result := w.vmStore.AddOrUpdate(vmInfo)
+		if result == nil {
+			log.Errorf("AddOrUpdate returned nil for VM %s", vmID)
+			continue
+		}
+
+		// Verify the VM was added correctly
+		verifyVM := w.vmStore.GetFromCID(vsockCIDValue)
+		if verifyVM == nil {
+			log.Errorf("Failed to verify VM with vsockCID %d was added to store (VM ID: %s)", vsockCIDValue, vmID)
+		}
+	}
+
+	log.Infof("Successfully populated VirtualMachineStore with %d fake VMs", numVMs)
+
+	// Wait a bit and verify again to check if VMs persist
+	time.Sleep(200 * time.Millisecond)
+	log.Infof("Re-verifying VMs after 200ms delay...")
+
+	// Final verification - check a few VMs and log at INFO level for debugging
+	for i := 0; i < min(5, numVMs); i++ {
+		vsockCID := uint32(1000 + i)
+		vm := w.vmStore.GetFromCID(vsockCID)
+		if vm == nil {
+			log.Errorf("Verification failed: VM with vsockCID %d not found in store after delay", vsockCID)
+		} else {
+			log.Infof("Verified VM with vsockCID %d: ID=%s, Name=%s", vsockCID, vm.ID, vm.Name)
+		}
+	}
+
+	// Also verify by ID to ensure VMs are in the store
+	for i := 0; i < min(3, numVMs); i++ {
+		vmID := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
+		vm := w.vmStore.Get(vmID)
+		if vm == nil {
+			log.Errorf("Verification failed: VM with ID %s not found in store after delay", vmID)
+		} else {
+			if vm.VSOCKCID != nil {
+				log.Infof("Verified VM by ID %s: vsockCID=%d (pointer=%p)", vmID, *vm.VSOCKCID, vm.VSOCKCID)
+			} else {
+				log.Warnf("Verified VM by ID %s but VSOCKCID is nil", vmID)
+			}
+		}
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // Stop gracefully stops all background goroutines managed by WorkloadManager.
 // This should be called before shutting down the process pipeline to prevent
 // sending signals on closed channels.
@@ -386,4 +486,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	w.wg.Add(1)
 	go w.manageFlows(w.shutdownCtx)
+
+	// Start VM index report generation if configured
+	if w.workload.VMIndexReportWorkload.NumVMs > 0 &&
+		w.workload.VMIndexReportWorkload.ReportInterval > 0 {
+		w.wg.Add(1)
+		go w.manageVMIndexReportsWithPopulation(w.shutdownCtx)
+	}
 }
