@@ -20,7 +20,9 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             ? {
                   icon: (
                       <Icon>
-                          <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                          <ExclamationCircleIcon
+                              color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                          />
                       </Icon>
                   ),
                   statusText: 'Unhealthy',
@@ -28,7 +30,9 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
             : {
                   icon: (
                       <Icon>
-                          <CheckCircleIcon color="var(--pf-v5-global--success-color--100)" />
+                          <CheckCircleIcon
+                              color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+                          />
                       </Icon>
                   ),
                   statusText: 'Healthy',
@@ -59,7 +63,7 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
                 />
             }
         >
-            <Button variant="link" className="pf-v5-u-p-0">
+            <Button variant="link" className="pf-v6-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
             </Button>
         </Popover>

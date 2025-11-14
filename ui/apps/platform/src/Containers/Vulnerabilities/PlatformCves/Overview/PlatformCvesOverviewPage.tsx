@@ -156,11 +156,11 @@ function PlatformCvesOverviewPage() {
             <PageTitle title="Kubernetes Components Overview" />
             <Divider component="div" />
             <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
-                variant="light"
+                hasBodyWrapper={false}
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-row pf-v6-u-align-items-center"
             >
-                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
-                    <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
+                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v6-u-flex-grow-1">
+                    <Flex direction={{ default: 'column' }} className="pf-v6-u-flex-grow-1">
                         <Title headingLevel="h1">Kubernetes components</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                     </Flex>
@@ -173,7 +173,7 @@ function PlatformCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection isCenterAligned isFilled>
+            <PageSection hasBodyWrapper={false} isCenterAligned isFilled>
                 <Card>
                     <CardBody>
                         <TableEntityToolbar
@@ -188,7 +188,7 @@ function PlatformCvesOverviewPage() {
                             isFiltered={isFiltered}
                         >
                             {hasLegacySnoozeAbility && (
-                                <ToolbarItem align={{ default: 'alignRight' }}>
+                                <ToolbarItem align={{ default: 'alignEnd' }}>
                                     <MenuDropdown
                                         toggleText="Bulk actions"
                                         isDisabled={selectedCves.size === 0}

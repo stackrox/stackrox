@@ -448,7 +448,7 @@ function ImageVulnerabilitiesTable({
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (
-                                                    <p className="pf-v5-u-mb-md">{summary}</p>
+                                                    <p className="pf-v6-u-mb-md">{summary}</p>
                                                 )}
                                                 {imageMetadata ? (
                                                     <ImageComponentVulnerabilitiesTable

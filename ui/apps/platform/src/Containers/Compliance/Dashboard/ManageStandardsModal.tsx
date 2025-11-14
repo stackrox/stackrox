@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
-import { Alert, Button, Checkbox, Form, Modal } from '@patternfly/react-core';
+import { Alert, Button, Checkbox, Form } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 
 import { ComplianceStandardMetadata, patchComplianceStandard } from 'services/ComplianceService';
@@ -129,7 +130,7 @@ function ManageStandardsModal({
                     component="p"
                     variant="danger"
                     isInline
-                    className="pf-v5-u-mt-lg"
+                    className="pf-v6-u-mt-lg"
                 >
                     {errorMessage}
                 </Alert>

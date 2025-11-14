@@ -43,7 +43,7 @@ function ScannerV4IntegrationBanner() {
     );
 
     return (
-        <Banner variant="blue" className="pf-v5-u-text-align-center">
+        <Banner color="blue" className="pf-v6-u-text-align-center">
             {brandedText} For more information, see {docsLink}
         </Banner>
     );

@@ -1,5 +1,13 @@
 import type { CSSProperties } from 'react';
-import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
+import {
+    Content,
+    Divider,
+    Flex,
+    FlexItem,
+    Gallery,
+    PageSection,
+    Title,
+} from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
 
@@ -40,7 +48,7 @@ function DashboardPage() {
         <>
             {hasReadAccessForSummaryCounts && (
                 <>
-                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
                         <SummaryCounts
                             hasReadAccessForResource={{
                                 Alert: hasReadAccessForAlert,
@@ -55,19 +63,21 @@ function DashboardPage() {
                     <Divider component="div" />
                 </>
             )}
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex
                     direction={{ default: 'column', lg: 'row' }}
                     alignItems={{ default: 'alignItemsFlexStart', lg: 'alignItemsCenter' }}
                 >
                     <FlexItem>
                         <Title headingLevel="h1">Dashboard</Title>
-                        <Text>Review security metrics across all or select resources</Text>
+                        <Content component="p">
+                            Review security metrics across all or select resources
+                        </Content>
                     </FlexItem>
                     {hasReadAccessForCluster && hasReadAccessForNamespace && (
                         <FlexItem
                             grow={{ default: 'grow' }}
-                            className="pf-v5-u-display-flex pf-v5-u-justify-content-flex-end"
+                            className="pf-v6-u-display-flex pf-v6-u-justify-content-flex-end"
                         >
                             <ScopeBar />
                         </FlexItem>
@@ -75,7 +85,7 @@ function DashboardPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <Gallery
                     id="main-dashboard-widget-gallery"
                     style={

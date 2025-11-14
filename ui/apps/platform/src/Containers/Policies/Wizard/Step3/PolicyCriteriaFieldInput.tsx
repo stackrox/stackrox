@@ -111,7 +111,7 @@ function PolicyCriteriaFieldInput({
                 <FormGroup
                     label={descriptor.label}
                     fieldId={descriptor.name}
-                    className="pf-v5-u-flex-1"
+                    className="pf-v6-u-flex-1"
                     data-testid="policy-criteria-value-select"
                 >
                     <SelectSingle
@@ -138,7 +138,7 @@ function PolicyCriteriaFieldInput({
                 <FormGroup
                     label={descriptor.label}
                     fieldId={descriptor.name}
-                    className="pf-v5-u-flex-1"
+                    className="pf-v6-u-flex-1"
                     data-testid="policy-criteria-value-multiselect"
                 >
                     <CheckboxSelect

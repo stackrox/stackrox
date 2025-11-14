@@ -1,13 +1,5 @@
 import type { ReactElement } from 'react';
-import {
-    Button,
-    Divider,
-    Flex,
-    FlexItem,
-    PageSection,
-    PageSectionVariants,
-    Title,
-} from '@patternfly/react-core';
+import { Button, Divider, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
@@ -87,7 +79,7 @@ function IntegrationsTable({
 
     return (
         <>
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Flex>
                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                         <Title headingLevel="h2">
@@ -127,11 +119,7 @@ function IntegrationsTable({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                isFilled
-                padding={{ default: 'noPadding' }}
-                variant={PageSectionVariants.light}
-            >
+            <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'noPadding' }}>
                 {integrations.length > 0 ? (
                     <Table variant="compact" isStickyHeader>
                         <Thead>
@@ -176,7 +164,7 @@ function IntegrationsTable({
                                     },
                                     {
                                         title: (
-                                            <div className="pf-v5-u-danger-color-100">
+                                            <div className="pf-v6-u-danger-color-100">
                                                 Delete Integration
                                             </div>
                                         ),

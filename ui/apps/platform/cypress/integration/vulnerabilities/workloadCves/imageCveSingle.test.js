@@ -81,7 +81,7 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).click();
 
         // Wait for the loading spinner to disappear
-        cy.get('.pf-v5-c-spinner').should('not.exist');
+        cy.get('.pf-v6-c-spinner').should('not.exist');
 
         cy.get(`${selectors.firstTableRow} td[data-label="Namespace"]`).then(([$namespace]) => {
             const namespace = $namespace.innerText;
@@ -106,7 +106,7 @@ describe('Workload CVE Image CVE Single page', () => {
         visitFirstCve();
 
         // Test that the number of components in the top level row matches the table in the expanded row
-        cy.get(`${selectors.firstTableRow} .pf-v5-c-table__toggle button`).click();
+        cy.get(`${selectors.firstTableRow} .pf-v6-c-table__toggle button`).click();
         cy.get(`${selectors.firstTableRow} td[data-label="Affected components"]`).then(
             ([$componentCell]) => {
                 const componentText = $componentCell.innerText;

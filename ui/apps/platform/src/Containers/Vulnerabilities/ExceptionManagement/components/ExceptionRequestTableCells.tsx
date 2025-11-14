@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import {
     Button,
+    Content,
+    ContentVariants,
     Flex,
     FlexItem,
     List,
     ListItem,
-    Modal,
-    Text,
-    TextVariants,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import { exceptionManagementPath } from 'routePaths';
 import {
@@ -184,8 +184,12 @@ export function RequestComment({ comment }: RequestCommentProps) {
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Text className="pf-v5-u-font-weight-bold">{comment.user.name}</Text>
-                <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
+                <Content component="p" className="pf-v6-u-font-weight-bold">
+                    {comment.user.name}
+                </Content>
+                <Content component={ContentVariants.small}>
+                    ({getDateTime(comment.createdAt)})
+                </Content>
             </Flex>
             <FlexItem>{comment.message}</FlexItem>
         </Flex>

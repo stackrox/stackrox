@@ -22,9 +22,9 @@ function PolicyActionsForm() {
         values.eventSource === 'AUDIT_LOG_EVENT' || values.eventSource === 'NODE_EVENT';
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-            <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
+            <FlexItem flex={{ default: 'flex_1' }} className="pf-v6-u-p-lg">
                 <Title headingLevel="h2">Actions</Title>
-                <div className="pf-v5-u-mt-sm">
+                <div className="pf-v6-u-mt-sm">
                     Configure activation state, enforcement, and notifiers of this policy.
                 </div>
                 {isEnforcementDisabled && (
@@ -33,16 +33,16 @@ function PolicyActionsForm() {
                         variant="info"
                         title="The selected event source does not support enforcement."
                         component="p"
-                        className="pf-v5-u-mt-md"
+                        className="pf-v6-u-mt-md"
                     />
                 )}
             </FlexItem>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Activation state</Title>
-                        <div className="pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mt-sm">
                             Select whether to enable or disable the policy.
                         </div>
                     </FlexItem>
@@ -75,11 +75,11 @@ function PolicyActionsForm() {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Enforcement</Title>
-                        <div className="pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mt-sm">
                             Select a method to address violations of this policy
                         </div>
                     </FlexItem>
@@ -89,11 +89,11 @@ function PolicyActionsForm() {
                 </FlexItem>
             </Flex>
             <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+            <Flex direction={{ default: 'column' }} className="pf-v6-u-p-lg">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Notifiers</Title>
-                        <div className="pf-v5-u-mt-sm">
+                        <div className="pf-v6-u-mt-sm">
                             Forward policy violations to external tooling by selecting one or more
                             notifiers from existing integrations.
                         </div>
