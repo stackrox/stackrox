@@ -434,8 +434,6 @@ type FileActivity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Process   *ProcessSignal         `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
-	// The hostname/name of the node where the file activity occurred
-	Hostname string `protobuf:"bytes,10,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	// Types that are valid to be assigned to File:
 	//
 	//	*FileActivity_Creation
@@ -445,7 +443,9 @@ type FileActivity struct {
 	//	*FileActivity_Ownership
 	//	*FileActivity_Open
 	//	*FileActivity_Write
-	File          isFileActivity_File `protobuf_oneof:"file"`
+	File isFileActivity_File `protobuf_oneof:"file"`
+	// The hostname/name of the node where the file activity occurred
+	Hostname      string `protobuf:"bytes,10,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -492,13 +492,6 @@ func (x *FileActivity) GetProcess() *ProcessSignal {
 		return x.Process
 	}
 	return nil
-}
-
-func (x *FileActivity) GetHostname() string {
-	if x != nil {
-		return x.Hostname
-	}
-	return ""
 }
 
 func (x *FileActivity) GetFile() isFileActivity_File {
@@ -569,6 +562,13 @@ func (x *FileActivity) GetWrite() *FileWrite {
 		}
 	}
 	return nil
+}
+
+func (x *FileActivity) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
 }
 
 type isFileActivity_File interface {
@@ -649,9 +649,7 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"\xfd\x03\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12/\n" +
-	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x12\x1a\n" +
-	"\bhostname\x18\n" +
-	" \x01(\tR\bhostname\x122\n" +
+	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x122\n" +
 	"\bcreation\x18\x03 \x01(\v2\x14.sensor.FileCreationH\x00R\bcreation\x12,\n" +
 	"\x06unlink\x18\x04 \x01(\v2\x12.sensor.FileUnlinkH\x00R\x06unlink\x12,\n" +
 	"\x06rename\x18\x05 \x01(\v2\x12.sensor.FileRenameH\x00R\x06rename\x12>\n" +
@@ -660,7 +658,9 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"permission\x12;\n" +
 	"\townership\x18\a \x01(\v2\x1b.sensor.FileOwnershipChangeH\x00R\townership\x12&\n" +
 	"\x04open\x18\b \x01(\v2\x10.sensor.FileOpenH\x00R\x04open\x12)\n" +
-	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05writeB\x06\n" +
+	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05write\x12\x1a\n" +
+	"\bhostname\x18\n" +
+	" \x01(\tR\bhostnameB\x06\n" +
 	"\x04fileB Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
 
 var (
