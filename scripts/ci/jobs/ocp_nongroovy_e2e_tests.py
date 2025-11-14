@@ -14,6 +14,9 @@ from post_tests import PostClusterTest, FinalPost
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 
+# Configure database connection pool
+os.environ["ROX_POSTGRES_MAX_CONNS"] = "1"
+
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 # delegated scanning support in the secured cluster
