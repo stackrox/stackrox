@@ -20,18 +20,21 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	results, err := ds.storage.Search(ctx, edgefields.TransformFixableFieldsQuery(q))
 	if err != nil {
 		return nil, err
 	}
 
-	cves, missingIndices, err := ds.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &ClusterCVEEdgeSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVEEdge, error) {
@@ -97,4 +100,24 @@ func convertOne(obj *storage.ClusterCVEEdge, result *searchPkg.Result) *v1.Searc
 		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+type ClusterCVEEdgeSearchResultConverter struct{}
+
+func (c *ClusterCVEEdgeSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	// Name is already populated from ID
+	return result.Name
+}
+
+func (c *ClusterCVEEdgeSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// ClusterCVEEdge does not have a location
+	return ""
+}
+
+func (c *ClusterCVEEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_CLUSTER_VULN_EDGE
+}
+
+func (c *ClusterCVEEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }
