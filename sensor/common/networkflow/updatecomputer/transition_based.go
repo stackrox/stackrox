@@ -48,9 +48,6 @@ var (
 	ConnectionEnrichedEntity EnrichedEntity = "connection"
 	EndpointEnrichedEntity   EnrichedEntity = "endpoint"
 	ProcessEnrichedEntity    EnrichedEntity = "process"
-
-	NetworkFlowMaxUpdateSize int = env.NetworkFlowMaxUpdateSize.IntegerSetting()
-	NetworkFlowMaxCacheSize  int = env.NetworkFlowMaxCacheSize.IntegerSetting()
 )
 
 // TransitionType describes the type of transition of states - in the previous tick and in the current tick -
@@ -179,13 +176,13 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 		// Limit cache size, prioritizing closed connections over open ones
 		if features.NetworkFlowCacheLimiting.Enabled() {
+			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
 			c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
 		}
 	}
-	// When len(current) == 0, we skip processing new connections but still apply batching
-	// to the cache (which may contain backlog from offline mode or previous failures).
-	// This ensures we respect ROX_GRPC_MAX_MESSAGE_SIZE even when recovering from offline mode.
+
 	if features.NetworkFlowBatching.Enabled() {
+		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
 		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
 			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
 			c.cachedUpdatesConn = c.cachedUpdatesConn[NetworkFlowMaxUpdateSize:]
@@ -394,13 +391,13 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		}
 		// Limit cache size, prioritizing closed endpoints over open ones
 		if features.NetworkFlowCacheLimiting.Enabled() {
+			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
 			c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
 		}
 	}
-	// When len(enrichedEndpointsProcesses) == 0, we skip processing new endpoints but still apply batching
-	// to the cache (which may contain backlog from offline mode or previous failures).
-	// This ensures we respect ROX_GRPC_MAX_MESSAGE_SIZE even when recovering from offline mode.
+
 	if features.NetworkFlowBatching.Enabled() {
+		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
 		if len(c.cachedUpdatesEp) > NetworkFlowMaxUpdateSize {
 			epUpdate := c.cachedUpdatesEp[:NetworkFlowMaxUpdateSize]
 			c.cachedUpdatesEp = c.cachedUpdatesEp[NetworkFlowMaxUpdateSize:]
