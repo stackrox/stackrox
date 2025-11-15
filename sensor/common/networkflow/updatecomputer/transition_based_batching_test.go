@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 // TestTransitionBasedConnectionBatching tests the connection batching behavior.
@@ -157,7 +158,7 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 		assert.Len(t, flows2, 3)
 
 		// Verify the flows are the same (order might differ, but all should be present)
-		assert.ElementsMatch(t, flows, flows2)
+		protoassert.SlicesEqual(t, flows, flows2)
 	})
 
 	t.Run("failure handler preserves cache ordering", func(t *testing.T) {
@@ -189,7 +190,7 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 		require.Len(t, flows3, 3) // Returns [conn12, conn23, conn34]
 
 		// Verify all 3 connections are present
-		assert.ElementsMatch(t, flows3, []*storage.NetworkFlow{
+		protoassert.SlicesEqual(t, flows3, []*storage.NetworkFlow{
 			conn12.ToProto(open),
 			conn23.ToProto(open),
 			conn34.ToProto(open),
@@ -404,7 +405,7 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 		assert.Len(t, eps2, 3)
 
 		// Verify the endpoints are the same (order might differ, but all should be present)
-		assert.ElementsMatch(t, eps, eps2)
+		protoassert.SlicesEqual(t, eps, eps2)
 	})
 }
 
