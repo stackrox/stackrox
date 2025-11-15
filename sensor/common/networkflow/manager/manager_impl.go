@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -311,6 +313,31 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	}
 }
 
+func (m *networkFlowManager) sendToCentralWithRetry(msg *central.MsgFromSensor) bool {
+	retryInterval := 1 * time.Millisecond
+	maxRetryDuration := 100 * time.Millisecond
+
+	deadline := time.Now().Add(maxRetryDuration)
+
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return false
+		case m.sensorUpdates <- message.New(msg):
+			return true
+		default:
+			// Queue is full, check if we should retry
+			if time.Now().After(deadline) {
+				// Exceeded retry duration, give up
+				// The update will be cached for retry on the next cycle
+				return false
+			}
+			// Sleep briefly and retry
+			time.Sleep(retryInterval)
+		}
+	}
+}
+
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	defer m.stopper.Flow().ReportStopped()
 	for {
@@ -414,10 +441,73 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 	m.sendCyclesCompleted.Add(1)
 }
 
+func (m *networkFlowManager) sendBatched(result *enrichmentResult) {
+	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
+
+	// Clear cache and update state before sending (done before the if statement for safety)
+	m.updateComputer.OnStartSendConnections(result.currentConns)
+	m.updateComputer.OnStartSendEndpoints(result.currentEndpointsProcesses)
+
+	if len(result.updatedConns)+len(result.updatedEndpoints) > 0 {
+		batchSize := env.NetworkFlowSendBatchSize.IntegerSetting()
+		if batchSize <= 0 {
+			batchSize = 10000 // fallback to default if invalid
+		}
+
+		connChunks := slices.Collect(slices.Chunk(result.updatedConns, batchSize))
+		epChunks := slices.Collect(slices.Chunk(result.updatedEndpoints, batchSize))
+		maxBatches := max(len(connChunks), len(epChunks))
+
+		var unsentConns []*storage.NetworkFlow
+		var unsentEps []*storage.NetworkEndpoint
+
+		for i := 0; i < maxBatches; i++ {
+			var connBatch []*storage.NetworkFlow
+			var epBatch []*storage.NetworkEndpoint
+
+			if i < len(connChunks) {
+				connBatch = connChunks[i]
+			}
+			if i < len(epChunks) {
+				epBatch = epChunks[i]
+			}
+
+			if !m.sendConnsEps(connBatch, epBatch) {
+				// This batch failed to send, add to unsent
+				unsentConns = append(unsentConns, connBatch...)
+				unsentEps = append(unsentEps, epBatch...)
+			}
+		}
+
+		// Store unsent items in cache for retry
+		if len(unsentConns) > 0 {
+			m.updateComputer.OnSendConnectionsFailure(unsentConns)
+		}
+		if len(unsentEps) > 0 {
+			m.updateComputer.OnSendEndpointsFailure(unsentEps)
+		}
+	}
+
+	if env.ProcessesListeningOnPort.BooleanSetting() && len(result.updatedProcesses) > 0 {
+		if sent := m.sendProcesses(result.updatedProcesses); sent {
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
+		}
+	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+
+	// Increment counter after all send operations complete (including channel operations)
+	m.sendCyclesCompleted.Add(1)
+}
+
 func (m *networkFlowManager) enrichAndSend() {
 	result := m.enrich()
 	m.enrichmentDoneSignal.Signal()
-	m.send(result)
+	if features.NetworkFlowBatching.Enabled() {
+		m.sendBatched(result)
+	} else {
+		m.send(result)
+	}
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
@@ -435,11 +525,16 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	return m.sendToCentral(&central.MsgFromSensor{
+	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	})
+	}
+
+	if features.NetworkFlowBatching.Enabled() {
+		return m.sendToCentralWithRetry(msg)
+	}
+	return m.sendToCentral(msg)
 }
 
 func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListeningOnPortFromSensor) bool {

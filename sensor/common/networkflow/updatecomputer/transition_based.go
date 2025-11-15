@@ -391,6 +391,26 @@ func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses m
 	}
 }
 
+func (c *TransitionBased) OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Clear the cache before sending - the manager now has the items
+	c.cachedUpdatesConn = nil
+}
+
+func (c *TransitionBased) OnStartSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Clear the cache before sending - the manager now has the items
+	c.cachedUpdatesEp = nil
+}
+
+func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+	// Store the unsent items in cache for retry
+	c.cachedUpdatesConn = unsentConns
+}
+
+func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+	// Store the unsent items in cache for retry
+	c.cachedUpdatesEp = unsentEps
+}
+
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if enrichedEndpointsProcesses != nil {

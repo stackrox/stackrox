@@ -2,6 +2,7 @@ package updatecomputer
 
 import (
 	"maps"
+	"slices"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,6 +25,10 @@ type Legacy struct {
 	enrichedEndpointsLastSentState map[indicator.ContainerEndpoint]timestamp.MicroTS
 	enrichedProcessesLastSentState map[indicator.ProcessListening]timestamp.MicroTS
 
+	// cachedUpdates contains a list of updates to Central that cannot be sent at the given moment.
+	cachedUpdatesConn []*storage.NetworkFlow
+	cachedUpdatesEp   []*storage.NetworkEndpoint
+
 	// Mutex to protect the LastSentState maps
 	lastSentStateMutex sync.RWMutex
 }
@@ -34,15 +39,22 @@ func NewLegacy() *Legacy {
 		enrichedConnsLastSentState:     make(map[indicator.NetworkConn]timestamp.MicroTS),
 		enrichedEndpointsLastSentState: make(map[indicator.ContainerEndpoint]timestamp.MicroTS),
 		enrichedProcessesLastSentState: make(map[indicator.ProcessListening]timestamp.MicroTS),
+		cachedUpdatesConn:              make([]*storage.NetworkFlow, 0),
+		cachedUpdatesEp:                make([]*storage.NetworkEndpoint, 0),
 	}
 }
 
 func (l *Legacy) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
-	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkFlow {
+	updates := concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkFlow {
 		return computeUpdates(current, l.enrichedConnsLastSentState, func(conn indicator.NetworkConn, ts timestamp.MicroTS) *storage.NetworkFlow {
 			return (&conn).ToProto(ts)
 		})
 	})
+	// Store into cache in case sending to Central fails.
+	l.cachedUpdatesConn = slices.Grow(l.cachedUpdatesConn, len(updates))
+	l.cachedUpdatesConn = append(l.cachedUpdatesConn, updates...)
+	// Return concatenated past and current updates.
+	return l.cachedUpdatesConn
 }
 
 func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
@@ -59,11 +71,16 @@ func (l *Legacy) ComputeUpdatedEndpointsAndProcesses(enrichedEndpointsProcesses 
 }
 
 func (l *Legacy) computeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
-	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkEndpoint {
+	epUpdates := concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkEndpoint {
 		return computeUpdates(current, l.enrichedEndpointsLastSentState, func(ep indicator.ContainerEndpoint, ts timestamp.MicroTS) *storage.NetworkEndpoint {
 			return (&ep).ToProto(ts)
 		})
 	})
+	// Store into cache in case sending to Central fails.
+	l.cachedUpdatesEp = slices.Grow(l.cachedUpdatesEp, len(epUpdates))
+	l.cachedUpdatesEp = append(l.cachedUpdatesEp, epUpdates...)
+	// Return concatenated past and current updates.
+	return l.cachedUpdatesEp
 }
 
 func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
@@ -82,6 +99,8 @@ func (l *Legacy) computeUpdatedProcesses(current map[indicator.ProcessListening]
 }
 
 func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Clear the cache after successful send
+	l.cachedUpdatesConn = nil
 	if currentConns != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -93,6 +112,8 @@ func (l *Legacy) OnSuccessfulSendConnections(currentConns map[indicator.NetworkC
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
 func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Clear the cache after successful send
+	l.cachedUpdatesEp = nil
 	if enrichedEndpointsProcesses != nil {
 		l.lastSentStateMutex.Lock()
 		defer l.lastSentStateMutex.Unlock()
@@ -101,6 +122,43 @@ func (l *Legacy) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indica
 			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
 		}
 	}
+}
+
+func (l *Legacy) OnStartSendConnections(currentConns map[indicator.NetworkConn]timestamp.MicroTS) {
+	// Clear the cache before sending - the manager now has the items
+	l.cachedUpdatesConn = nil
+
+	// Update lastSentState to track what we've seen (for computing future diffs)
+	if currentConns != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedConnsLastSentState = maps.Clone(currentConns)
+	}
+}
+
+func (l *Legacy) OnStartSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+	// Clear the cache before sending - the manager now has the items
+	l.cachedUpdatesEp = nil
+
+	// Update lastSentState to track what we've seen (for computing future diffs)
+	if enrichedEndpointsProcesses != nil {
+		l.lastSentStateMutex.Lock()
+		defer l.lastSentStateMutex.Unlock()
+		l.enrichedEndpointsLastSentState = make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(enrichedEndpointsProcesses))
+		for endpoint, procWithTS := range enrichedEndpointsProcesses {
+			l.enrichedEndpointsLastSentState[endpoint] = procWithTS.LastSeen
+		}
+	}
+}
+
+func (l *Legacy) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+	// Store the unsent items in cache for retry
+	l.cachedUpdatesConn = unsentConns
+}
+
+func (l *Legacy) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+	// Store the unsent items in cache for retry
+	l.cachedUpdatesEp = unsentEps
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
@@ -127,6 +185,8 @@ func (l *Legacy) ResetState() {
 	l.enrichedConnsLastSentState = nil
 	l.enrichedEndpointsLastSentState = nil
 	l.enrichedProcessesLastSentState = nil
+	l.cachedUpdatesConn = nil
+	l.cachedUpdatesEp = nil
 }
 
 func (l *Legacy) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
@@ -152,6 +212,10 @@ func (l *Legacy) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
 	byteSize.WithLabelValues("lastSent", "conns").Set(float64(connsSize))
 	byteSize.WithLabelValues("lastSent", "endpoints").Set(float64(epSize))
 	byteSize.WithLabelValues("lastSent", "processes").Set(float64(procSize))
+
+	// Size of buffers that hold updates to Central while Sensor is offline
+	lenSize.WithLabelValues("cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(l.cachedUpdatesConn)))
+	lenSize.WithLabelValues("cachedUpdates", string(EndpointEnrichedEntity)).Set(float64(len(l.cachedUpdatesEp)))
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
