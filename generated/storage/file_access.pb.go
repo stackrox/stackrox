@@ -100,7 +100,9 @@ type FileAccess struct {
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The process that performed the action. May contain deployment/namespace
 	// information.
-	Process       *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
+	Process *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
+	// The hostname/name of the node where the file activity occurred
+	Hostname      string `protobuf:"bytes,6,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -168,6 +170,13 @@ func (x *FileAccess) GetProcess() *ProcessIndicator {
 		return x.Process
 	}
 	return nil
+}
+
+func (x *FileAccess) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
 }
 
 type FileAccess_FileMetadata struct {
@@ -318,14 +327,15 @@ var File_storage_file_access_proto protoreflect.FileDescriptor
 
 const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x81\x05\n" +
+	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x9d\x05\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
 	"\toperation\x18\x02 \x01(\x0e2\x1d.storage.FileAccess.OperationR\toperation\x12.\n" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
-	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x1ax\n" +
+	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1ax\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
