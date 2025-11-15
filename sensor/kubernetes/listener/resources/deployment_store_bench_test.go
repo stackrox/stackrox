@@ -29,7 +29,7 @@ type namespaceAndSelector struct {
 // 10k updates without meaningful change. This is to test that
 // we don't do useless clones if the object is the same.
 func BenchmarkBuildDeployments_NoChange(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		b.StopTimer()
 		benchStore = newDeploymentStore()
 		deployment1 := createDeploymentWrap()
@@ -51,7 +51,7 @@ func BenchmarkBuildDeployments_NoChange(b *testing.B) {
 // 10k meaningful updates, which should result in a new deployment
 // object.
 func BenchmarkBuildDeployments_Change(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		b.StopTimer()
 		benchStore = newDeploymentStore()
 		deployment1 := createDeploymentWrap()
@@ -76,7 +76,7 @@ func BenchmarkBuildDeployments_Change(b *testing.B) {
 func BenchmarkDeleteAllDeployments(b *testing.B) {
 	for _, numDeployments := range []int{1000, 5000, 10_000, 25_000} {
 		b.Run(fmt.Sprintf("num_deployments: %d", numDeployments), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				b.StopTimer()
 				benchStore = newDeploymentStore()
 				for i := 0; i < 1000; i++ {
@@ -90,7 +90,7 @@ func BenchmarkDeleteAllDeployments(b *testing.B) {
 }
 
 func BenchmarkFindDeploymentIDsByLabels(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		b.StopTimer()
 		benchStore = newDeploymentStore()
 		for i := 0; i < 1000; i++ {

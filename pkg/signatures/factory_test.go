@@ -131,7 +131,7 @@ func BenchmarkVerifyAgainstSignatureIntegrations(b *testing.B) {
 }
 
 func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.SignatureIntegration, img *storage.Image, b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		VerifyAgainstSignatureIntegrations(context.Background(), integrations, img)
 	}
 }
