@@ -118,13 +118,25 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterID
 	}
 	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 
-	// This returns a dial function, but does not call dial!
-	// Thus, we cannot treat the connection as established and ready at this point.
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(trace.Background(clusterIDHandler), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	// Try SPIRE-based connection first, then fall back to certificate-based mTLS
+	centralConnection, err := tryConnectViaSPIRE(trace.Background(clusterIDHandler), env.CentralEndpoint.Setting())
 	if err != nil {
-		log.Errorf("creating the gRPC client: %v", err)
-		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
+		log.Errorf("SPIRE connection attempt failed: %v", err)
+		f.stopSignal.SignalWithErrorWrap(err, "SPIRE connection failed")
 		return
+	}
+
+	// If SPIRE connection wasn't available or didn't succeed, use traditional mTLS
+	if centralConnection == nil {
+		log.Info("SPIRE not available, using certificate-based mTLS")
+		// This returns a dial function, but does not call dial!
+		// Thus, we cannot treat the connection as established and ready at this point.
+		centralConnection, err = clientconn.AuthenticatedGRPCConnection(trace.Background(clusterIDHandler), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+		if err != nil {
+			log.Errorf("creating the gRPC client: %v", err)
+			f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
+			return
+		}
 	}
 
 	conn.Set(centralConnection)
