@@ -17,7 +17,9 @@ import (
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
+	"github.com/stackrox/rox/scanner/enricher/notaffected"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
@@ -50,6 +52,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["nvd"] = nvdOpts()
 	bundles["epss"] = epssOpts()
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
+	if features.ScannerV4KnownNotAffected.Enabled() {
+		bundles["stackrox-rhel-known-not-affected"] = knownNotAffectedOpts()
+	}
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
@@ -172,6 +177,16 @@ func redhatCSAFOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"stackrox.rhel-csaf": csaf.NewFactory(),
+		}),
+	}
+}
+
+func knownNotAffectedOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"stackrox.rhel-not-affected": notaffected.NewFactory(),
 		}),
 	}
 }

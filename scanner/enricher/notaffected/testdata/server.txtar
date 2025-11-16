@@ -1,0 +1,132 @@
+server/csaf_vex_2025-08-09.tar.zst last-modified:Sat, 09 Aug 2025 12:13:20 GMT\nanother:header
+-- /archive_latest.txt --
+csaf_vex_2025-08-09.tar.zst
+-- /changes.csv etag:something --
+"2024/cve-2024-21613.json","2025-08-14T00:00:00+00:00"
+-- /2024/cve-2024-21613.json --
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright © Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat products and services.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-21613.json"
+      }
+    ],
+    "title": "Junos OS and Junos OS Evolved: A link flap causes patroot memory leak which leads to rpd crash",
+    "tracking": {
+      "current_release_date": "2025-05-28T21:52:15+00:00",
+      "generator": {
+        "date": "2025-05-28T21:52:15+00:00",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "4.6.1"
+        }
+      },
+      "id": "CVE-2024-21613",
+      "initial_release_date": "2024-01-10T17:00:00+00:00",
+      "revision_history": [
+        {
+          "date": "2024-01-10T17:00:00+00:00",
+          "number": "1",
+          "summary": "Initial version"
+        },
+        {
+          "date": "2025-05-23T09:47:16.941075+00:00",
+          "number": "2",
+          "summary": "Current version"
+        },
+        {
+          "date": "2025-05-28T21:52:15+00:00",
+          "number": "3",
+          "summary": "Last generated version"
+        }
+      ],
+      "status": "final",
+      "version": "3"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "vendor",
+        "name": "Red Hat",
+        "product": {
+          "name": "All currently supported Red Hat products",
+          "product_id": "red_hat_products",
+          "product_identification_helper": {
+            "cpe": "cpe:/a:redhat"
+          }
+        }
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2024-21613",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "red_hat_products"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "category": "description",
+          "text": "\nA Missing Release of Memory after Effective Lifetime vulnerability in Routing Protocol Daemon (RPD) of Juniper Networks Junos OS and Junos OS Evolved allows an unauthenticated, adjacent attacker to cause an rpd crash, leading to Denial of Service (DoS).\n\nOn all Junos OS and Junos OS Evolved platforms, when traffic engineering is enabled for OSPF or ISIS, and a link flaps, a patroot memory leak is observed. This memory leak, over time, will lead to an rpd crash and restart.\n\nThe memory usage can be monitored using the below command.\n\nuser@host> show task memory detail | match patroot\nThis issue affects:\n\nJuniper Networks Junos OS\n\n\n\n  *  All versions earlier than 21.2R3-S3;\n  *  21.3 versions earlier than 21.3R3-S5;\n  *  21.4 versions earlier than 21.4R3-S3;\n  *  22.1 versions earlier than 22.1R3;\n  *  22.2 versions earlier than 22.2R3.\n\n\n\n\nJuniper Networks Junos OS Evolved\n\n\n\n  *  All versions earlier than 21.3R3-S5-EVO;\n  *  21.4 versions earlier than 21.4R3-EVO;\n  *  22.1 versions earlier than 22.1R3-EVO;\n  *  22.2 versions earlier than 22.2R3-EVO.\n\n\n\n\n\n\n",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "other",
+          "text": "Red Hat Product Security has determined that this vulnerability does not affect any currently supported Red Hat product. This assessment may evolve based on further analysis and discovery. For more information about this vulnerability and the products it affects, please see the linked references.",
+          "title": "Statement"
+        }
+      ],
+      "product_status": {
+        "known_not_affected": [
+          "red_hat_products"
+        ]
+      },
+      "references": [
+        {
+          "category": "self",
+          "summary": "Canonical URL",
+          "url": "https://access.redhat.com/security/cve/CVE-2024-21613"
+        },
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2024-21613",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2024-21613"
+        }
+      ],
+      "release_date": "2024-01-10T17:00:00+00:00",
+      "title": "Junos OS and Junos OS Evolved: A link flap causes patroot memory leak which leads to rpd crash"
+    }
+  ]
+}
