@@ -357,24 +357,6 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		return
 	}
 
-	var oldScore float32
-	if features.FlattenCVEData.Enabled() {
-		oldScore = e.imageComponentRanker.GetScoreForID(
-			scancomponent.ComponentIDV2(imageComponent, imageID, componentIndex))
-	} else {
-		oldScore = e.imageComponentRanker.GetScoreForID(
-			scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
-	}
-
-	// Image component risk results are currently unused so if the score is the same then no need to upsert
-	if risk.GetScore() == oldScore {
-		return
-	}
-
-	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
-		log.Errorf("Error reprocessing risk for image component %s %s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
-	}
-
 	imageComponent.RiskScore = risk.GetScore()
 	// skip direct upsert here since it is handled during image upsert
 }
@@ -387,18 +369,6 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 	risk := e.nodeComponentScorer.Score(allAccessCtx, scancomponent.NewFromNodeComponent(nodeComponent), os)
 	if risk == nil {
 		return
-	}
-
-	oldScore := e.nodeComponentRanker.GetScoreForID(
-		scancomponent.ComponentID(nodeComponent.GetName(), nodeComponent.GetVersion(), os))
-
-	// Node component risk results are not currently used so if the score is the same then no need to upsert
-	if risk.GetScore() == oldScore {
-		return
-	}
-
-	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
-		log.Errorf("Error reprocessing risk for node component %s %s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
 	}
 
 	nodeComponent.RiskScore = risk.GetScore()

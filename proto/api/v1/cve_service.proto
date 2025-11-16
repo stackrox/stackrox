@@ -29,24 +29,6 @@ message UnsuppressCVERequest {
   repeated string cves = 1;
 }
 
-// ImageCVEService APIs can be used to manage image cves.
-service ImageCVEService {
-  // SuppressCVE suppresses image cves.
-  rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
-    option (google.api.http) = {
-      patch: "/v1/imagecves/suppress"
-      body: "*"
-    };
-  }
-  // UnsuppressCVE unsuppresses image cves.
-  rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
-    option (google.api.http) = {
-      patch: "/v1/imagecves/unsuppress"
-      body: "*"
-    };
-  }
-}
-
 // NodeCVEService APIs can be used to manage node cves.
 service NodeCVEService {
   // SuppressCVE suppresses node cves.

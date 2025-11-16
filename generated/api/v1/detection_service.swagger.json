@@ -1043,11 +1043,13 @@
     "storageFileAccessFile": {
       "type": "object",
       "properties": {
-        "path": {
-          "type": "string"
+        "mountedPath": {
+          "type": "string",
+          "title": "Relevant to deployment-based events, this is the path of a file in the\ncontainer.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: mounted_path will be /tmp/etc/passwd"
         },
-        "hostPath": {
-          "type": "string"
+        "nodePath": {
+          "type": "string",
+          "title": "The path on the node file system. This is relevant to both deployment- and\nnode-based events.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: node_path will be /etc/passwd"
         },
         "meta": {
           "$ref": "#/definitions/FileAccessFileMetadata"

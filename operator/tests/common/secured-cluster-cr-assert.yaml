@@ -79,13 +79,13 @@ webhooks:
   - name: policyeval.stackrox.io
     rules:
       - operations:
-          - CREATE # Due to listenOnCreates
-          - UPDATE # Due to listenOnUpdates
+          - CREATE
+          - UPDATE
     failurePolicy: Ignore
     timeoutSeconds: 12
   - name: k8sevents.stackrox.io
     rules:
       - operations:
-          - CONNECT # Due to listenOnEvents
+          - CONNECT
     failurePolicy: Ignore
     timeoutSeconds: 12

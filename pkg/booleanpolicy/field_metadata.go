@@ -3,6 +3,8 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
+	"slices"
+	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -34,6 +37,13 @@ func FieldMetadataSingleton() *FieldMetadata {
 	return &fieldMetadataInstance
 }
 
+// ResetFieldMetadataSingleton is for testing purposes only, and can be
+// used to ensure that criteria are added / removed when feature flags
+// are enabled / disabled respectively.
+func ResetFieldMetadataSingleton(_ *testing.T) {
+	fieldMetadataInstanceInit = sync.Once{}
+}
+
 type option int
 
 const (
@@ -53,6 +63,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileAccess for a file-based runtime event
+	FileAccess = "fileAccess"
 )
 
 type metadataAndQB struct {
@@ -97,6 +109,20 @@ func (f *FieldMetadata) IsDeploymentEventField(fieldName string) bool {
 // IsAuditLogEventField returns true if the field is an audit log field
 func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
+}
+
+// IsFileEventField returns true if the field is a node event field
+func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
+	return f.FieldIsOfType(fieldName, FileAccess)
+}
+
+func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
+	field := f.fieldsToQB[fieldName]
+	if field == nil {
+		log.Warnf("policy field %s not found", fieldName)
+		return false
+	}
+	return slices.Contains(field.eventSourceContext, eventSource)
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
@@ -857,6 +883,19 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.SensitiveFileActivity.Enabled() {
+		f.registerFieldMetadata(fieldnames.NodeFilePath,
+			querybuilders.ForFieldLabel(search.NodeFilePath), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				// TODO(ROX-31449): change to an absolute path regex when arbitrary
+				// paths are supported
+				return allowedFilePathRegex
+			},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]RuntimeFieldType{FileAccess}, negationForbidden,
+		)
+	}
 
 	return f
 }

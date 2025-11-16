@@ -2,10 +2,10 @@ import uniq from 'lodash/uniq';
 
 import type { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
 import type {
+    DeploymentNetworkEntityInfo,
     ExternalNetworkFlowProperties,
     L4Protocol,
     NetworkEntityInfoType as EntityType,
-    DeploymentNetworkEntityInfo,
 } from 'types/networkFlow.proto';
 import type { GroupedDiffFlows } from 'types/networkPolicyService';
 

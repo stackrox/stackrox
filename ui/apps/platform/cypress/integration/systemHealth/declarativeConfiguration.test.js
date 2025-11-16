@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import {
-    visitSystemHealthWithStaticResponseForCapabilities,
     integrationHealthDeclarativeConfigsAlias,
+    visitSystemHealthWithStaticResponseForCapabilities,
 } from '../../helpers/systemHealth';
 
 describe('System Health Declarative Configuration', () => {

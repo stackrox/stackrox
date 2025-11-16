@@ -11,8 +11,8 @@ import {
     clickCreateNewIntegrationInTable,
     deleteIntegrationInTable,
     saveCreatedIntegrationInForm,
-    testIntegrationInFormWithoutStoredCredentials,
     testIntegrationInFormWithStoredCredentials,
+    testIntegrationInFormWithoutStoredCredentials,
     visitIntegrationsTable,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';

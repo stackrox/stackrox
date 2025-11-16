@@ -9,7 +9,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link, useParams } from 'react-router-dom-v5-compat';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
@@ -41,6 +41,8 @@ type IntegrationsTableProps = {
     onDeleteIntegrations: (integration) => void;
     onTriggerBackup: (integrationId) => void;
     isReadOnly?: boolean;
+    source: IntegrationSource;
+    type: IntegrationType;
 };
 
 function IntegrationsTable({
@@ -49,9 +51,11 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
+    source,
+    type,
 }: IntegrationsTableProps): ReactElement {
+    const navigate = useNavigate();
     const permissions = useIntegrationPermissions();
-    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const {
         selected,
@@ -166,11 +170,8 @@ function IntegrationsTable({
                                         isHidden: !canTriggerBackup,
                                     },
                                     {
-                                        title: (
-                                            <Link to={getPathToEdit(source, type, id)}>
-                                                Edit integration
-                                            </Link>
-                                        ),
+                                        title: 'Edit integration',
+                                        onClick: () => navigate(getPathToEdit(source, type, id)),
                                         isHidden: isAPIToken,
                                     },
                                     {

@@ -29,6 +29,7 @@ function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelec
             value={edgeState}
             handleSelect={handleSelect}
             isDisabled={isDisabled}
+            maxWidth="30ch"
         >
             <SelectOption
                 value="active"

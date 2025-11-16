@@ -21,7 +21,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
@@ -244,25 +243,15 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
+	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
 
-	var images imageDatastore.DataStore
-	if features.FlattenCVEData.Enabled() {
-		images = imageDatastore.NewWithPostgres(
-			imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
-			mockRiskDatastore,
-			ranking.ImageRanker(),
-			ranking.ComponentRanker(),
-		)
-	} else {
-		images = imageDatastore.NewWithPostgres(
-			imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
-			mockRiskDatastore,
-			ranking.NewRanker(),
-			ranking.NewRanker(),
-		)
-	}
+	images := imageDatastore.NewWithPostgres(
+		imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
+		mockRiskDatastore,
+		ranking.ImageRanker(),
+		ranking.ComponentRanker(),
+	)
 
 	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
@@ -321,7 +310,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
+	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
@@ -384,7 +373,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
+	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 	require.NoError(s.T(), err)
 
 	clusterDataStore, err := clusterDatastore.New(
@@ -561,7 +550,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
-				nil, nil, nil, config, nil, nil, nil,
+				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil).(*garbageCollectorImpl)
 
@@ -823,7 +812,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			}
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
-				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
@@ -950,7 +939,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
@@ -1128,7 +1117,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
-				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 

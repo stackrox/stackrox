@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -94,10 +93,6 @@ func (f *filterImpl) withVulnFilter(fn func(vuln *storage.ImageCVEV2) bool) *fil
 }
 
 func TestImageCVEVFlatiew(t *testing.T) {
-	if !features.FlattenCVEData.Enabled() {
-		t.Skip("FlattenCVEData is disabled")
-	}
-
 	suite.Run(t, new(ImageCVEFlatViewTestSuite))
 }
 
@@ -535,7 +530,7 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 							Location:     "",
 							Architecture: "",
 						}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560", 0), 0)},
-					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+					Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 				},
 			}),
 			q: search.NewQueryBuilder().

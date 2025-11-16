@@ -1,5 +1,5 @@
 import type { FocusEventHandler, ReactElement, ReactNode, Ref } from 'react';
-import { Select, MenuToggle, SelectList, MenuFooter } from '@patternfly/react-core';
+import { MenuFooter, MenuToggle, Select, SelectList } from '@patternfly/react-core';
 import type { MenuToggleElement, MenuToggleProps, SelectOptionProps } from '@patternfly/react-core';
 
 import useSelectToggleState from './useSelectToggleState';
@@ -38,8 +38,8 @@ function SelectSingle({
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '300px',
-    maxWidth = '30ch',
+    maxHeight = '50vh',
+    maxWidth = '100%',
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {

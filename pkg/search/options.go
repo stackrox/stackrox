@@ -212,9 +212,9 @@ var (
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
 	// FileActivity Search fields
-	FilePath      = newFieldLabel("File Path")
-	FileHostPath  = newFieldLabel("File Host Path")
-	FileOperation = newFieldLabel("File Operation")
+	MountedFilePath = newFieldLabel("Mounted File Path")
+	NodeFilePath    = newFieldLabel("Node File Path")
+	FileOperation   = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")

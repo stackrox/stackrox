@@ -252,6 +252,7 @@ func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query,
 }
 
 // GetByQuery returns the objects from the store matching the query.
+//
 // Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)

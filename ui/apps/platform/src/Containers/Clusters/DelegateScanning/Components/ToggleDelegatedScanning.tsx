@@ -1,4 +1,3 @@
-import React from 'react';
 import { FormGroup, Radio } from '@patternfly/react-core';
 
 import type { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryConfigService';

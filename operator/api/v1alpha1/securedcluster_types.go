@@ -87,7 +87,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
-	// Customizations to apply on all Central Services components.
+	// Customizations to apply on all Secured Cluster Services components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
@@ -200,7 +200,7 @@ type PolicyEnforcement string
 const (
 	// PolicyEnforcementEnabled means: policy enforcement is enabled.
 	PolicyEnforcementEnabled PolicyEnforcement = "Enabled"
-	// PolicyEnforcementDisabled means: polict enforcement is disabled.
+	// PolicyEnforcementDisabled means: policy enforcement is disabled.
 	PolicyEnforcementDisabled PolicyEnforcement = "Disabled"
 )
 
@@ -209,7 +209,7 @@ const (
 type ImageScanPolicy string
 
 const (
-	// ScanIfMissing means that images which do not have a known scan result should be scanned in scope of an admission request.
+	// ScanIfMissing means that images which do not have a known scan result should be scanned as part of an admission request.
 	ScanIfMissing ImageScanPolicy = "ScanIfMissing"
 	// DoNotScanInline means that images which do not have a known scan result will not be scanned when processing an admission request.
 	DoNotScanInline ImageScanPolicy = "DoNotScanInline"
@@ -225,11 +225,11 @@ func (p ImageScanPolicy) Pointer() *ImageScanPolicy {
 type BypassPolicy string
 
 const (
-	// BypassBreakGlassAnnotation means that admission controller can be bypassed by adding an admission.stackrox.io/break-glass annotation to a resource.
+	// BypassBreakGlassAnnotation means that the admission controller can be bypassed by adding an admission.stackrox.io/break-glass annotation to a resource.
 	// Bypassing the admission controller triggers a policy violation which includes deployment details.
 	// We recommend providing an issue-tracker link or some other reference as the value of this annotation so that others can understand why you bypassed the admission controller.
 	BypassBreakGlassAnnotation BypassPolicy = "BreakGlassAnnotation"
-	// BypassDisabled means that admission controller cannot be bypassed.
+	// BypassDisabled means that the admission controller cannot be bypassed.
 	BypassDisabled BypassPolicy = "Disabled"
 )
 
@@ -278,7 +278,7 @@ type PerNodeSpec struct {
 	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to CORE_BPF if KernelModule or EBPF is used.
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'NoCollection', or 'KernelModule'. Note that the collection method will be switched to CORE_BPF if KernelModule or EBPF is used.
 // +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection;KernelModule
 type CollectionMethod string
 
@@ -347,7 +347,7 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 type CollectorContainerSpec struct {
 	// The method for system-level data collection. CORE_BPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
-	// and process executions. The remaining settings in these section will not have any effect.
+	// and process executions. The remaining settings in this section will not have any effect.
 	// The value is a subject of conversion by the operator if needed, e.g. to
 	// remove deprecated methods.
 	// The default is: CORE_BPF.

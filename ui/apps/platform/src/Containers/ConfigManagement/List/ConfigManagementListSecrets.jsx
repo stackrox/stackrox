@@ -1,15 +1,14 @@
-import React from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import uniq from 'lodash/uniq';
 import pluralize from 'pluralize';
 
 import {
-    defaultHeaderClassName,
     defaultColumnClassName,
+    defaultHeaderClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { SECRETS_QUERY } from 'queries/secret';
 import { secretSortFields } from 'constants/sortFields';

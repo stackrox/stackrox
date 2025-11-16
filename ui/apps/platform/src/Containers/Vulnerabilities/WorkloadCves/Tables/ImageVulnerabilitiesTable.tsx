@@ -1,11 +1,9 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { LabelGroup } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -13,27 +11,26 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 // import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
 import useSet from 'hooks/useSet';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { CveBaseInfo, VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
+import type { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import useMap from 'hooks/useMap';
+import type useMap from 'hooks/useMap';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { TableUIState } from 'utils/getTableUIState';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
+import type { TableUIState } from 'utils/getTableUIState';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 /*
 // Ross CISA KEV
@@ -44,12 +41,14 @@ import {
 } from '../../utils/vulnerabilityUtils';
 */
 import ImageComponentVulnerabilitiesTable, {
-    ImageComponentVulnerability,
-    ImageMetadataContext,
     imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
+import type {
+    ImageComponentVulnerability,
+    ImageMetadataContext,
+} from './ImageComponentVulnerabilitiesTable';
 
-import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
+import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
 // import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV

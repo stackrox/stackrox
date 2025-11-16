@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"slices"
 	"strings"
 	"time"
 
@@ -23,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -172,12 +170,18 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	if len(objs) == 0 {
 		return nil
 	}
-	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	deletes := make([]string, 0, batchSize)
+	{
+		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
+		// Parent deletion cascades to children, so only the top-level parent needs deletion.
+		deletes := make([]string, 0, len(objs))
+		for _, obj := range objs {
+			deletes = append(deletes, obj.GetId())
+		}
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
+		}
+	}
 
 	copyCols := []string{
 		"id",
@@ -218,94 +222,64 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		"serialized",
 	}
 
-	for objBatch := range slices.Chunk(objs, batchSize) {
-		for _, obj := range objBatch {
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
 
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return marshalErr
-			}
-
-			inputRows = append(inputRows, []interface{}{
-				pgutils.NilOrUUID(obj.GetId()),
-				obj.GetPolicy().GetId(),
-				obj.GetPolicy().GetName(),
-				obj.GetPolicy().GetDescription(),
-				obj.GetPolicy().GetDisabled(),
-				obj.GetPolicy().GetCategories(),
-				obj.GetPolicy().GetSeverity(),
-				obj.GetPolicy().GetEnforcementActions(),
-				protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
-				obj.GetPolicy().GetSORTName(),
-				obj.GetPolicy().GetSORTLifecycleStage(),
-				obj.GetPolicy().GetSORTEnforcement(),
-				obj.GetLifecycleStage(),
-				pgutils.NilOrUUID(obj.GetClusterId()),
-				obj.GetClusterName(),
-				obj.GetNamespace(),
-				pgutils.NilOrUUID(obj.GetNamespaceId()),
-				pgutils.NilOrUUID(obj.GetDeployment().GetId()),
-				obj.GetDeployment().GetName(),
-				obj.GetDeployment().GetInactive(),
-				obj.GetImage().GetId(),
-				obj.GetImage().GetName().GetRegistry(),
-				obj.GetImage().GetName().GetRemote(),
-				obj.GetImage().GetName().GetTag(),
-				obj.GetImage().GetName().GetFullName(),
-				obj.GetImage().GetIdV2(),
-				obj.GetNode().GetId(),
-				obj.GetNode().GetName(),
-				obj.GetResource().GetResourceType(),
-				obj.GetResource().GetName(),
-				obj.GetEnforcement().GetAction(),
-				protocompat.NilOrTime(obj.GetTime()),
-				obj.GetState(),
-				obj.GetPlatformComponent(),
-				obj.GetEntityType(),
-				serialized,
-			})
-
-			// Add the ID to be deleted.
-			deletes = append(deletes, obj.GetId())
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return nil, marshalErr
 		}
 
-		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-		// delete for the top level parent
+		return []interface{}{
+			pgutils.NilOrUUID(obj.GetId()),
+			obj.GetPolicy().GetId(),
+			obj.GetPolicy().GetName(),
+			obj.GetPolicy().GetDescription(),
+			obj.GetPolicy().GetDisabled(),
+			obj.GetPolicy().GetCategories(),
+			obj.GetPolicy().GetSeverity(),
+			obj.GetPolicy().GetEnforcementActions(),
+			protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+			obj.GetPolicy().GetSORTName(),
+			obj.GetPolicy().GetSORTLifecycleStage(),
+			obj.GetPolicy().GetSORTEnforcement(),
+			obj.GetLifecycleStage(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetClusterName(),
+			obj.GetNamespace(),
+			pgutils.NilOrUUID(obj.GetNamespaceId()),
+			pgutils.NilOrUUID(obj.GetDeployment().GetId()),
+			obj.GetDeployment().GetName(),
+			obj.GetDeployment().GetInactive(),
+			obj.GetImage().GetId(),
+			obj.GetImage().GetName().GetRegistry(),
+			obj.GetImage().GetName().GetRemote(),
+			obj.GetImage().GetName().GetTag(),
+			obj.GetImage().GetName().GetFullName(),
+			obj.GetImage().GetIdV2(),
+			obj.GetNode().GetId(),
+			obj.GetNode().GetName(),
+			obj.GetResource().GetResourceType(),
+			obj.GetResource().GetName(),
+			obj.GetEnforcement().GetAction(),
+			protocompat.NilOrTime(obj.GetTime()),
+			obj.GetState(),
+			obj.GetPlatformComponent(),
+			obj.GetEntityType(),
+			serialized,
+		}, nil
+	})
 
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-		// clear the inserts and vals for the next batch
-		deletes = deletes[:0]
-
-		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-			return err
-		}
-		// clear the input rows for the next batch
-		inputRows = inputRows[:0]
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, inputRows); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // endregion Helper functions
-
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableAlerts(ctx, db)
-}
-
-func dropTableAlerts(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS alerts CASCADE")
-
-}
-
-// endregion Used for testing

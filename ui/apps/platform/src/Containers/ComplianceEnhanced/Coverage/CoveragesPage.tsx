@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Bullseye,

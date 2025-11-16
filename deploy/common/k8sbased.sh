@@ -31,6 +31,7 @@ function launch_service {
           return 1
         fi
 
+        echo "Deploying $service using Helm (\$OUTPUT_FORMAT=helm)..."
         for _ in {1..5}; do
             if helm_install "$service"; then
                 break
@@ -39,6 +40,7 @@ function launch_service {
             echo "Waiting for helm to respond"
         done
     else
+        echo "Deploying $service using manifests..."
         ${ORCH_CMD} apply -R -f "$dir/$service"
     fi
 }
@@ -342,6 +344,7 @@ function launch_central {
       ${KUBE_COMMAND:-kubectl} create namespace "${central_namespace}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
+      echo "Deploying central using Helm..."
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/scripts/setup.sh"
       fi
@@ -582,7 +585,7 @@ function launch_central {
         echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
-        "${central_scripts_dir}/port-forward.sh" 8000
+        "${central_scripts_dir}/port-forward.sh" "${LOCAL_PORT:-8000}"
     fi
 
     if [[ "${needs_monitoring}" == "true" ]]; then
@@ -876,6 +879,7 @@ function launch_sensor {
         kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
+      echo "Deploying sensor using Helm..."
       helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
@@ -917,7 +921,7 @@ function launch_sensor {
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
       fi
 
-      echo "Deploying Sensor..."
+      echo "Deploying sensor using manifests..."
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 

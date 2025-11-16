@@ -1,12 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
-    Alert,
-    Bullseye,
     Button,
     DropdownItem,
     PageSection,
-    Spinner,
     Text,
     Title,
     Toolbar,
@@ -16,7 +13,6 @@ import {
 } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
@@ -26,47 +22,41 @@ import {
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import SearchFilterInput from 'Components/SearchFilterInput';
-import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchClustersWithRetentionInfo,
     deleteClusters,
-    upgradeClusters,
+    fetchClustersWithRetentionInfo,
     upgradeCluster,
+    upgradeClusters,
 } from 'services/ClustersService';
-import type { SearchCategory } from 'services/SearchService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
     clustersBasePath,
+    clustersClusterRegistrationSecretsPath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
     clustersInitBundlesPath,
-    clustersSecureClusterPath,
     clustersSecureClusterCrsPath,
-    clustersClusterRegistrationSecretsPath,
+    clustersSecureClusterPath,
 } from 'routePaths';
 
 import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
-import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
 import { searchFilterConfig } from './searchFilterConfig';
 
@@ -74,15 +64,11 @@ const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig)
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
-    searchOptions: SearchCategory[];
 };
 
-function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTablePanelProps) {
+function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isClustersPageMigrationEnabled = isFeatureFlagEnabled('ROX_CLUSTERS_PAGE_MIGRATION_UI');
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -111,9 +97,10 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
-    const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorForClustersWithRetentionInfo, setErrorForClustersWithRetentionInfo] = useState<
+        Error | undefined
+    >(undefined);
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
     const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
@@ -168,10 +155,10 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                 .then(({ clusters, clusterIdToRetentionInfo }) => {
                     setCurrentClusters(clusters);
                     setClusterIdToRetentionInfo(clusterIdToRetentionInfo);
-                    setErrorMessage('');
+                    setErrorForClustersWithRetentionInfo(undefined);
                     setHasFetchedClusters(true);
                 })
-                .catch((err) => setErrorMessage(getAxiosErrorMessage(err)))
+                .catch((err) => setErrorForClustersWithRetentionInfo(err))
                 .finally(() => showLoadingSpinner && setIsLoadingVisible(false));
         },
         [restSearch]
@@ -186,45 +173,18 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     const tableState = getTableUIState({
         isLoading: !hasFetchedClusters || isLoadingVisible,
         data: currentClusters,
-        error: errorMessage ? new Error(errorMessage) : undefined,
+        error: errorForClustersWithRetentionInfo,
         searchFilter,
     });
 
-    // Before there is a response:
-    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
-    if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
-        return (
-            <PageSection variant="light">
-                <Bullseye>
-                    {errorMessage ? (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Unable to fetch clusters"
-                            component="p"
-                        >
-                            {errorMessage}
-                        </Alert>
-                    ) : (
-                        <Spinner />
-                    )}
-                </Bullseye>
-            </PageSection>
-        );
-    }
-
     const hasSearchApplied = getHasSearchApplied(searchFilter);
 
-    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
+    // Reconsider whether to factor out minimal common heading.
     //
     // After there is a response, if there are no clusters nor search filter:
-    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
-    if (currentClusters.length === 0 && !hasSearchApplied && !isClustersPageMigrationEnabled) {
+    // Too bad, so sad: flicker because ClustersTable encapsulates spinner.
+    if (currentClusters.length === 0 && !hasSearchApplied) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
-    }
-
-    function setSelectedClusterId(cluster: Cluster) {
-        navigate(`${clustersBasePath}/${cluster.id}`);
     }
 
     function upgradeSingleCluster(id) {
@@ -295,35 +255,24 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
     };
 
     function toggleCluster(id) {
-        const selection = toggleRow(id, checkedClusterIds);
-        setCheckedClusterIds(selection);
+        const selection = checkedClusterIds.includes(id)
+            ? checkedClusterIds.filter((checkedId) => checkedId !== id)
+            : [...checkedClusterIds, id];
 
+        setCheckedClusterIds(selection);
         calculateUpgradeableClusters(selection);
     }
 
     function toggleAllClusters() {
-        const rowsLength = checkedClusterIds.length;
-        const ref = tableRef?.reactTable;
-        const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
+        // If all are selected in the entire table, all become unselected in the table.
+        // If some or none are selected, all become selected on that page.
+        const selection: string[] =
+            checkedClusterIds.length === currentClusters.length
+                ? []
+                : currentClusters.map(({ id }) => id);
         setCheckedClusterIds(selection);
-
         calculateUpgradeableClusters(selection);
     }
-
-    const columnOptions = {
-        clusterIdToRetentionInfo,
-        hasWriteAccessForCluster,
-        metadata,
-        rowActions: {
-            onDeleteHandler,
-            upgradeSingleCluster,
-        },
-    };
-    const clusterColumns = getColumnsForClusters(columnOptions);
-
-    // Because clusters are not paginated, make the list display them all.
-    const pageSize =
-        currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
 
     // After there is a response, if there are clusters or search filter.
     // Conditionally render a subsequent error in addition to most recent successful respnse.
@@ -451,24 +400,13 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                             className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                {isClustersPageMigrationEnabled ? (
-                                    <CompoundSearchFilter
-                                        config={searchFilterConfig}
-                                        searchFilter={searchFilter}
-                                        onSearch={(payload) =>
-                                            onURLSearch(searchFilter, setSearchFilter, payload)
-                                        }
-                                    />
-                                ) : (
-                                    <SearchFilterInput
-                                        className="w-full"
-                                        searchFilter={searchFilter}
-                                        searchOptions={searchOptions}
-                                        searchCategory="CLUSTERS"
-                                        placeholder="Filter clusters"
-                                        handleChangeSearchFilter={setSearchFilter}
-                                    />
-                                )}
+                                <CompoundSearchFilter
+                                    config={searchFilterConfig}
+                                    searchFilter={searchFilter}
+                                    onSearch={(payload) =>
+                                        onURLSearch(searchFilter, setSearchFilter, payload)
+                                    }
+                                />
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
@@ -504,62 +442,31 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
-                        {isClustersPageMigrationEnabled && (
-                            <ToolbarGroup className="pf-v5-u-w-100">
-                                <SearchFilterChips
-                                    searchFilter={searchFilter}
-                                    onFilterChange={setSearchFilter}
-                                    filterChipGroupDescriptors={filterChipGroupDescriptors}
-                                />
-                            </ToolbarGroup>
-                        )}
+                        <ToolbarGroup className="pf-v5-u-w-100">
+                            <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={setSearchFilter}
+                                filterChipGroupDescriptors={filterChipGroupDescriptors}
+                            />
+                        </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                {errorMessage && !isClustersPageMigrationEnabled && (
-                    <Alert
-                        variant="warning"
-                        isInline
-                        title="Unable to fetch clusters"
-                        component="p"
-                    >
-                        {errorMessage}
-                    </Alert>
-                )}
                 {messages.length > 0 && (
                     <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
                         {messages}
                     </div>
                 )}
-                {isClustersPageMigrationEnabled ? (
-                    <ClustersTable
-                        centralVersion={metadata.version}
-                        clusterIdToRetentionInfo={clusterIdToRetentionInfo}
-                        tableState={tableState}
-                        selectedClusterIds={checkedClusterIds}
-                        onClearFilters={() => setSearchFilter({})}
-                        onDeleteCluster={onDeleteHandler}
-                        toggleAllClusters={toggleAllClusters}
-                        toggleCluster={toggleCluster}
-                        upgradeSingleCluster={upgradeSingleCluster}
-                    />
-                ) : (
-                    <CheckboxTable
-                        className="pf-v5-u-background-color-100"
-                        ref={(table) => {
-                            setTableRef(table);
-                        }}
-                        rows={currentClusters}
-                        columns={clusterColumns}
-                        onRowClick={setSelectedClusterId}
-                        toggleRow={toggleCluster}
-                        toggleSelectAll={toggleAllClusters}
-                        selection={checkedClusterIds}
-                        selectedRowId={selectedClusterId}
-                        noDataText="No clusters to show."
-                        minRows={20}
-                        pageSize={pageSize}
-                    />
-                )}
+                <ClustersTable
+                    centralVersion={metadata.version}
+                    clusterIdToRetentionInfo={clusterIdToRetentionInfo}
+                    tableState={tableState}
+                    selectedClusterIds={checkedClusterIds}
+                    onClearFilters={() => setSearchFilter({})}
+                    onDeleteCluster={onDeleteHandler}
+                    toggleAllClusters={toggleAllClusters}
+                    toggleCluster={toggleCluster}
+                    upgradeSingleCluster={upgradeSingleCluster}
+                />
             </PageSection>
             <Dialog
                 className="w-1/3"

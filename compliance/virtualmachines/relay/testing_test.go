@@ -104,11 +104,6 @@ func (c *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, 
 	}
 }
 
-func (c *mockSensorClient) withDelay(delay time.Duration) *mockSensorClient {
-	c.delay = delay
-	return c
-}
-
 func (c *mockSensorClient) withError(err error) *mockSensorClient {
 	c.err = err
 	return c

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 export type TableCellLinkProps = {
@@ -8,9 +8,9 @@ export type TableCellLinkProps = {
 };
 function TableCellLink({ children, pdf, url }: TableCellLinkProps): ReactNode {
     // Prevent row click.
-    function onClick(e) {
+    const onClick: MouseEventHandler<HTMLAnchorElement> = (e) => {
         e.stopPropagation();
-    }
+    };
 
     // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
     if (pdf) {

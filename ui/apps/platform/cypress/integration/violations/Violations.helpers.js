@@ -1,4 +1,4 @@
-import { visitFromLeftNav, visitFromHorizontalNav } from '../../helpers/nav';
+import { visitFromHorizontalNav, visitFromLeftNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 import { readFileFromDownloads } from '../../helpers/file';
