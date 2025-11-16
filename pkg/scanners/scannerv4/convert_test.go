@@ -7,6 +7,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/scanners/storagewrappers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1151,7 +1152,8 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			vuln := &storage.EmbeddedVulnerability{}
-			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
+			vulnWriter := &storagewrappers.EmbeddedVulnerabilityWrapper{EmbeddedVulnerability: vuln}
+			err := setScoresAndScoreVersions(vulnWriter, testcase.cvssMetrics)
 			if testcase.wantErr {
 				assert.Error(t, err)
 				return
