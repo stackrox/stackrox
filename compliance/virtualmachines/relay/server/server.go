@@ -54,6 +54,10 @@ func New(listener net.Listener) Server {
 func (s *server) Run(ctx context.Context, handler ConnectionHandler) error {
 	log.Info("Starting relay server")
 
+	if s.listener == nil {
+		return errors.New("listener is nil")
+	}
+
 	go func() {
 		<-ctx.Done()
 		s.stop()
