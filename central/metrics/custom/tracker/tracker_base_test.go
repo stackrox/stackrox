@@ -574,5 +574,8 @@ func TestTrackerBase_Refresh(t *testing.T) {
 	now := time.Now()
 	g.lastGather = now
 	tracker.Refresh()
-	assert.Equal(t, cfg.period+1, now.Sub(g.lastGather))
+	assert.EventuallyWithT(t,
+		func(collect *assert.CollectT) {
+			assert.Equal(collect, cfg.period+1, now.Sub(g.lastGather))
+		}, time.Minute, 100*time.Millisecond)
 }

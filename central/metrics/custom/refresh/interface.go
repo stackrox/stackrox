@@ -15,8 +15,9 @@ var (
 )
 
 const (
-	Clusters = "health"
-	Expiry   = "cert_exp"
+	Clusters      = "health"
+	Expiry        = "cert_exp"
+	Configuration = "cfg"
 )
 
 // SetSingleton initializes the refresher singleton object.
