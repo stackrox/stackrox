@@ -44,6 +44,7 @@ import {
 } from 'services/ComplianceScanConfigurationService';
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import type { SortOption } from 'types/table';
+import { formatRecurringSchedule } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
@@ -54,10 +55,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import useAnalytics from 'hooks/useAnalytics';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
-import {
-    formatScanSchedule,
-    getTimeWithHourMinuteFromISO8601,
-} from './compliance.scanConfigs.utils';
+import { getTimeWithHourMinuteFromISO8601 } from './compliance.scanConfigs.utils';
 import ScanConfigActionsColumn from './ScanConfigActionsColumn';
 import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
@@ -230,7 +228,7 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Name">
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
-                    <Td dataLabel="Schedule">{formatScanSchedule(scanConfig.scanSchedule)}</Td>
+                    <Td dataLabel="Schedule">{formatRecurringSchedule(scanConfig.scanSchedule)}</Td>
                     <Td dataLabel="Last scanned">
                         {lastExecutedTime
                             ? getTimeWithHourMinuteFromISO8601(lastExecutedTime)
