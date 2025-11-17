@@ -1,25 +1,4 @@
-# Run Affected UI E2E Tests
-
 Identify and execute Cypress e2e tests affected by UI code changes.
-
-## Original Request for posterity - Claude you can ignore this section
-
-Claude lets make you a new skill. This skill is going to be the ability to determine what Cypress e2e tests are affected by a code change in the application. This cannot easily be done statically, as the code that we build is separate from the Cypress test files, which run against a URL endpoint of a fully built and installed ACS instance.
-
-My thinking is this:
-
-1. When code is changed in application files (ui/apps/platform/src/*), or in other files that may affect functionality (e.g. package-lock.json) we determine which pages are affected by that code change.
-2. The pages can be determined by MainPage/Body.tsx and ./routePaths.ts, and most code changes should eventually be traceable to here based on imports.
-3. From the Cypress side, integration tests are found under (ui/apps/platform/cypress/integration) will helpers under (ui/apps/platform/cypress/helpers). These tests will almost always call a `visit()` function that can be used to determine the URL that is being visited.
-4. The combination of the URL from Body.tsx and the URL in integration tests should give us an idea of which tests can be expected to be affected by a code change.
-
-I would like you to create a skill that does the following:
-1. When prompted, you check the diff of the current branch to some target. This might be "changes in the working directory" or "changes compared to `master`" or something else. The goal being find which UI files have changed since some point in the past.
-2. Knowing these changes, efficiently devise a plan to perform the steps above to determine the most likely cypress test files that are affected by the change, that we should run.
-3. Copy all of the text in this initial prompt into the skill, as a reference for our starting point.
-
-END CLAUDE IGNORE
----
 
 ## Execution Steps
 
