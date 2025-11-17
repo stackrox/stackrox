@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -340,15 +339,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 			return err
 		}
 		deployment.PlatformComponent = match
-	}
-
-	if features.FlattenImageData.Enabled() {
-		for _, container := range deployment.GetContainers() {
-			if container.GetImage().GetIdV2() == "" {
-				// IDV2 may not be set if the sensor is running an older version
-				container.Image.IdV2 = utils.NewImageV2ID(container.GetImage().GetName(), container.GetImage().GetId())
-			}
-		}
 	}
 
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
