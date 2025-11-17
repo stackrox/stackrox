@@ -250,3 +250,80 @@ func TestNodeEventMatcherWithMultipleSections(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, violations3.FileAccessViolation, "expected no violations for /tmp/file")
 }
+
+func TestNodeEventMatcherNegatedOperation(t *testing.T) {
+	policy := &storage.Policy{
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		Name:            "Node File Access Policy with Negated Operation",
+		EventSource:     storage.EventSource_NODE_EVENT,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "Section 1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.NodeFilePath,
+						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+					},
+					{
+						FieldName: fieldnames.FileOperation,
+						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
+						Negate:    true,
+					},
+				},
+			},
+		},
+	}
+
+	compiled, err := CompilePolicy(policy)
+	require.NoError(t, err)
+
+	var cache booleanpolicy.CacheReceptacle
+	node := &storage.Node{Id: "node-1", Name: "test-node"}
+
+	access := &storage.FileAccess{
+		File:      &storage.FileAccess_File{NodePath: "/etc/passwd"},
+		Operation: storage.FileAccess_CREATE,
+	}
+
+	violations1, err := compiled.MatchAgainstNodeAndFileAccess(&cache, node, access)
+	require.NoError(t, err)
+	assert.Nil(t, violations1.FileAccessViolation, "expected no violations for /etc/passwd CREATE")
+
+	// change to operation within the accepted set
+	access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
+
+	violations2, err := compiled.MatchAgainstNodeAndFileAccess(&cache, node, access)
+	require.NoError(t, err)
+	assert.NotNil(t, violations2.FileAccessViolation, "expected violations for /etc/passwd OWNERSHIP_CHANGE")
+
+	policy2 := &storage.Policy{
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		Name:            "Node File Access Policy with multiple Negated Operations",
+		EventSource:     storage.EventSource_NODE_EVENT,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "Section 1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.NodeFilePath,
+						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+					},
+					{
+						FieldName: fieldnames.FileOperation,
+						Values:    []*storage.PolicyValue{{Value: "CREATE"}, {Value: "UNLINK"}},
+						Negate:    true,
+					},
+				},
+			},
+		},
+	}
+
+	compiled2, err := CompilePolicy(policy2)
+	require.NoError(t, err)
+
+	violations3, err := compiled2.MatchAgainstNodeAndFileAccess(&cache, node, access)
+	require.NoError(t, err)
+	assert.NotNil(t, violations3.FileAccessViolation, "expected violations for /etc/passwd OWNERSHIP_CHANGE")
+}
