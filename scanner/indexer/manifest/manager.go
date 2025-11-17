@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
 
@@ -73,9 +75,8 @@ type Manager struct {
 	// fullInterval specifies the amount of time between full GC runs.
 	fullInterval time.Duration
 
-	lockAcquired chan struct{}
-	lockCanceled chan struct{}
-	cancelGC     chan struct{}
+	// cancelGC is a signal to cancel all in-progress GC runs.
+	cancelGC chan struct{}
 }
 
 // NewManager creates a manifest manager.
@@ -106,17 +107,18 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 		interval:     interval,
 		fullInterval: fullInterval,
 
-		lockAcquired: make(chan struct{}, 1),
-		lockCanceled: make(chan struct{}, 1),
-		cancelGC:     make(chan struct{}, 1),
+		cancelGC: make(chan struct{}, 1),
 	}
 }
 
 // StartGC attempts to:
-//  1. Acquire a global lock via the provided locker such that only a single Manager runs for a metadataStore
-//  2. Migrate all known manifests not yet part of the garbage collection process
-//  3. Run a full garbage collection
-//  4. Begin periodic garbage collection
+//  1. Acquire a global lock via the provided locker such that only a single Manager in a distributed system runs for a
+//     metadataStore.
+//  2. Migrate all known manifests not yet part of the garbage collection process, then run a full garbage collection.
+//     This process will be retried if not initially successful. Doesn't run after the first successful run for a
+//     particular Manager, but other Managers in a distributed system will re-run the migration.
+//  3. Begin periodic garbage collection with throttles.
+//  4. Begin periodic full garbage collection.
 //
 // The global lock will be acquired before attempting any other work. Additionally, if there are any reasons the lock
 // is released, e.g., context cancellation, network failure, etc, the rest of the garbage collection process is notified
@@ -127,42 +129,51 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 func (m *Manager) StartGC(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "indexer/manifest/Manager.StartGC")
 
-	// Lock coordination
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				// This blocks, but should return if the passed context is
-				// canceled. After that, the first case should be selected.
-				err := m.lockCoordinator(ctx)
-				zlog.Warn(ctx).Err(err).Msg("lock coordination failed. retrying")
-			}
+	// If we don't acquire the lock during the initial attempt, we want to run
+	// the migration and the full garbage collection during one of the interval
+	// attempts. But we only want to either run the migration or whichever
+	// garbage collection method relevant to that particular interval, so we
+	// set up the migration process to ensure it only runs once.
+	migrationDone := false
+	migrateOnce := sync.OnceValue(func() error {
+		// Set any manifests indexed prior to the existence of the manifest_metadata table
+		// to expire immediately.
+		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
+		// TODO(ROX-26995): Consider updating the immediate purge condition.
+		//  It may be possible we want to purge all manifests upon startup for other reasons.
+		err := m.migrateManifests(ctx, time.Now())
+		if err != nil {
+			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
+			//  missing from the metadata table, too.
+			return fmt.Errorf("migrating manifests to metadata store: %w", err)
 		}
-	}()
+		zlog.Debug(ctx).Msg("migrated manifests")
 
-	zlog.Info(ctx).Msg("waiting on initial lock")
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-m.lockAcquired:
-	}
+		if err := m.fullGC(ctx); err != nil {
+			zlog.Error(ctx).Err(err).Msg("errors encountered during initial full manifest GC run")
+		}
+		zlog.Debug(ctx).Msg("full GC after migration completed")
 
-	// Set any manifests indexed prior to the existence of the manifest_metadata table
-	// to expire immediately.
-	// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
-	// TODO(ROX-26995): Consider updating the immediate purge condition.
-	//  It may be possible we want to purge all manifests upon startup for other reasons.
-	err := m.migrateManifests(ctx, time.Now())
-	if err != nil {
-		// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
-		//  missing from the metadata table, too.
-		zlog.Error(ctx).Err(err).Msg("migrating manifests to metadata store")
-	}
+		zlog.Info(ctx).Msg("migration process completed successfully")
+		migrationDone = true
+		return nil
+	})
 
-	if err := m.fullGC(ctx); err != nil {
-		zlog.Error(ctx).Err(err).Msg("errors encountered during initial full manifest GC run")
+	// Start the lock coordination.
+	var lockCtx context.Context
+	var lockReleaseFunc context.CancelFunc
+
+	zlog.Debug(ctx).Msg("attempting initial lock acquisition")
+	lockCtx, lockReleaseFunc = m.locker.TryLock(ctx, gcName)
+	defer lockReleaseFunc()
+	if err := lockCtx.Err(); err != nil {
+		zlog.Info(ctx).Err(err).Msg("did not acquire lock, another manager likely has it")
+		lockReleaseFunc()
+	} else {
+		zlog.Info(ctx).Msg("lock acquired")
+		if err := migrateOnce(); err != nil {
+			return err
+		}
 	}
 
 	interval := m.interval + jitter()
@@ -179,136 +190,77 @@ func (m *Manager) StartGC(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-m.lockCanceled:
-			zlog.Error(ctx).Msg("lost global lock. wait until reestablished")
-			<-m.lockAcquired
-		case <-t.C:
-			if err := m.partialGCWithThrottle(ctx); err != nil {
-				zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
-			}
-
-			interval = m.interval + jitter()
-			t.Reset(interval)
-			zlog.Info(ctx).Msgf("next manifest metadata GC run will be in about %v", interval)
-		case <-tFull.C:
-			if err := m.fullGC(ctx); err != nil {
-				zlog.Error(ctx).Err(err).Msg("errors encountered during full manifest GC run")
-			}
-
-			fullInterval = m.fullInterval + jitter()
-			tFull.Reset(fullInterval)
-			zlog.Info(ctx).Msgf("next full manifest metadata GC run will be in about %v", fullInterval)
-		}
-	}
-}
-
-// lockCoordinator attempts to acquire the global lock based on the intervals
-func (m *Manager) lockCoordinator(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "indexer/manifest/Manager.lockCoordinator")
-
-	var lockCtx context.Context
-	var lockReleaseFunc context.CancelFunc
-
-	zlog.Debug(ctx).Msg("attempting initial lock acquisition")
-	lockCtx, lockReleaseFunc = m.locker.TryLock(ctx, gcName)
-	err := lockCtx.Err()
-	if err == nil {
-		zlog.Info(ctx).Msg("lock acquired")
-		m.lockAcquired <- struct{}{}
-
-		// Since we acquired the lock in the initial acquisition, we can wait
-		// until we lose the lock or until we shut down.
-		select {
-		case <-ctx.Done():
-			lockReleaseFunc()
-			return ctx.Err()
-		case <-lockCtx.Done():
-			lockReleaseFunc()
-			// If the parent context was the one that canceled, we need to back
-			// out of everything.
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			m.lockCanceled <- struct{}{}
-		}
-	} else {
-		zlog.Info(ctx).Err(err).Msg("did not obtain lock")
-		lockReleaseFunc()
-	}
-
-	interval := m.interval + jitter()
-	zlog.Info(ctx).Msgf("next lock acquisition attempt for manifest metadata GC run will be in about %v", interval)
-	t := time.NewTimer(interval)
-	defer t.Stop()
-
-	fullInterval := m.fullInterval + jitter()
-	zlog.Info(ctx).Msgf("next lock acquisition attempt for full manifest metadata GC run will be in about %v", fullInterval)
-	tFull := time.NewTimer(fullInterval)
-	defer tFull.Stop()
-
-	acquired := false
-	for {
-		select {
-		case <-ctx.Done():
-			if lockReleaseFunc != nil {
-				lockReleaseFunc()
-			}
-			return ctx.Err()
-
 		case <-m.cancelGC:
-			if lockReleaseFunc != nil {
-				lockReleaseFunc()
-			}
 			return nil
-
-		// Something went wrong while maintaining the global lock. Try to
-		// acquire the global lock during the next scheduled acquisition
-		// attempt.
+		// Lost the lock. Immediately try to reacquire the lock.
 		case <-lockCtx.Done():
-			if lockReleaseFunc != nil {
+			zlog.Warn(ctx).Msg("lock lost, retrying")
+			lockReleaseFunc()
+			lockCtx, lockReleaseFunc = m.locker.TryLock(ctx, gcName)
+			if err := lockCtx.Err(); err != nil {
+				zlog.Info(ctx).Err(err).Msg("did not acquire lock")
 				lockReleaseFunc()
-			}
-			acquired = false
-			m.lockCanceled <- struct{}{}
-
-		case <-t.C:
-			if acquired {
-				zlog.Info(ctx).Msg("lock is still acquired")
 			} else {
-				zlog.Debug(ctx).Msg("attempting interval lock acquisition")
+				zlog.Info(ctx).Msg("lock acquired")
+			}
+		case <-t.C:
+			// Check if we have the lock.
+			if lockCtx.Err() != nil {
+				zlog.Debug(ctx).Msg("attempting to acquire lock during interval")
 				lockCtx, lockReleaseFunc = m.locker.TryLock(ctx, gcName)
 				if err := lockCtx.Err(); err != nil {
+					zlog.Info(ctx).Err(err).Msg("did not acquire lock, another manager likely has it")
 					lockReleaseFunc()
-					acquired = false
-					zlog.Info(ctx).Err(err).Msg("did not obtain lock")
-				} else {
-					acquired = true
-					zlog.Info(ctx).Msg("lock acquired")
+					// Failed to acquire the lock. Skip GC and reset the timer.
+					goto resetInterval
+				}
+
+				zlog.Info(ctx).Msg("lock maintained")
+			}
+
+			if !migrationDone {
+				if err := migrateOnce(); err != nil {
+					return err
+				}
+			} else {
+				if err := m.partialGCWithThrottle(ctx); err != nil {
+					zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 				}
 			}
 
+		resetInterval:
 			interval = m.interval + jitter()
 			t.Reset(interval)
-			zlog.Info(ctx).Msgf("next lock acquisition attempt for manifest metadata GC run will be in about %v", interval)
+			zlog.Info(ctx).Msgf("next manifest metadata GC attempt will be in about %v", interval)
 		case <-tFull.C:
-			if acquired {
-				zlog.Info(ctx).Msg("lock is still acquired")
-			} else {
-				zlog.Debug(ctx).Msg("attempting full interval lock acquisition")
+			// Check if we have the lock.
+			if lockCtx.Err() != nil {
+				zlog.Debug(ctx).Msg("attempting to acquire lock during full interval")
 				lockCtx, lockReleaseFunc = m.locker.TryLock(ctx, gcName)
 				if err := lockCtx.Err(); err != nil {
+					zlog.Info(ctx).Err(err).Msg("did not acquire lock, another manager likely has it")
 					lockReleaseFunc()
-					acquired = false
-					zlog.Info(ctx).Err(err).Msg("did not obtain lock")
-				} else {
-					acquired = true
-					zlog.Info(ctx).Msg("lock acquired")
+					// Failed to acquire the lock. Skip GC and reset the timer.
+					goto resetFullInterval
+				}
+
+				zlog.Info(ctx).Msg("lock maintained")
+			}
+
+			if !migrationDone {
+				if err := migrateOnce(); err != nil {
+					return err
+				}
+			} else {
+				if err := m.fullGC(ctx); err != nil {
+					zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 				}
 			}
 
+		resetFullInterval:
 			fullInterval = m.fullInterval + jitter()
 			tFull.Reset(fullInterval)
-			zlog.Info(ctx).Msgf("next lock acquisition attempt for full manifest metadata GC run will be in about %v", fullInterval)
+			zlog.Info(ctx).Msgf("next full manifest metadata GC attempt will be in about %v", fullInterval)
 		}
 	}
 }

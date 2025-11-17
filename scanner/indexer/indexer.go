@@ -252,6 +252,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 			if err := manifestManager.StartGC(ctx); err != nil {
 				zlog.Error(ctx).Err(err).Msg("manifest GC failed")
 			}
+			zlog.Info(ctx).Msg("manifest GC has been stopped")
 		}()
 		zlog.Debug(ctx).Msg("reindexing manifest manager GC running")
 	}
