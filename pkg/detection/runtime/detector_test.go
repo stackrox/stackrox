@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -181,147 +183,303 @@ func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
 	}
 }
 
-func (s *RuntimeDetectorTestSuite) TestNodeFileAccessDetection() {
-	policySet := detection.NewPolicySet()
-
-	err := policySet.UpsertPolicy(s.getNodeFileAccessPolicy("/etc/shadow"))
-	s.NoError(err, "upsert policy should succeed")
-
-	d := NewDetector(policySet)
-
+func (s *RuntimeDetectorTestSuite) TestNodeFileAccess() {
 	node := &storage.Node{
-		Id:   "node-123",
-		Name: "test-node",
+		Name: "test-node-1",
+		Id:   "test-node-1",
 	}
 
-	fileAccess := &storage.FileAccess{
-		File: &storage.FileAccess_File{
-			NodePath: "/etc/shadow",
-		},
-		Operation: storage.FileAccess_OPEN,
-		Process: &storage.ProcessIndicator{
-			Signal: &storage.ProcessSignal{Name: "cat"},
-		},
-		Hostname: "test-node",
+	type eventWrapper struct {
+		access      *storage.FileAccess
+		expectAlert bool
 	}
 
-	alerts, err := d.DetectForNodeAndFileAccess(node, fileAccess)
+	for _, tc := range []struct {
+		description string
+		policy      *storage.Policy
+		events      []eventWrapper
+	}{
+		{
+			description: "Node file open policy with matching event",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file open policy with mismatching event (UNLINK)",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					expectAlert: false,
+				},
+			},
+		},
+		{
+			description: "Node file open policy with mismatching event (/tmp/foo)",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+			},
+		},
+		{
+			description: "Node file policy with negated file operation",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, true,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: false, // open is the only event we should ignore
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with multiple operations",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, false,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					expectAlert: false,
+				},
+			},
+		},
+		{
+			description: "Node file policy with multiple negated operations",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, true,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					expectAlert: false,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with multiple files and single operation",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
+				"/etc/passwd", "/etc/shadow",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with multiple files and multiple operations",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}, false,
+				"/etc/passwd", "/etc/shadow",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/shadow", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/tmp/foo", storage.FileAccess_CREATE),
+					expectAlert: false,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+			},
+		},
+		{
+			description: "Node file policy with no operations",
+			policy:      s.getNodeFileAccessPolicy("/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					expectAlert: true,
+				},
+			},
+		},
+	} {
+		s.Run(tc.description, func() {
+			policySet := detection.NewPolicySet()
+			err := policySet.UpsertPolicy(tc.policy)
+			s.NoError(err, "upsert policy should succeed")
 
-	s.NoError(err)
-	s.Len(alerts, 1, "expected one alert for sensitive file access")
-	s.Equal(storage.LifecycleStage_RUNTIME, alerts[0].GetLifecycleStage())
-	s.NotNil(alerts[0].GetNode(), "alert should have node information")
-	s.Equal("node-123", alerts[0].GetNode().GetId())
-	s.Equal("test-node", alerts[0].GetNode().GetName())
-	s.NotNil(alerts[0].GetFileAccessViolation(), "alert should have file access violation")
-	s.Equal("Sensitive File Access on Node", alerts[0].GetPolicy().GetName())
+			d := NewDetector(policySet)
+
+			for _, event := range tc.events {
+				alerts, err := d.DetectForNodeAndFileAccess(node, event.access)
+				s.NoError(err)
+
+				if event.expectAlert {
+					s.Len(alerts, 1, "expected one alert")
+
+					fileAccessViolation := alerts[0].GetFileAccessViolation()
+					s.NotNil(fileAccessViolation, "expected file access violation in alert")
+					s.Len(fileAccessViolation.GetAccesses(), 1, "expected one file access in alert")
+
+					protoassert.Equal(s.T(), event.access, fileAccessViolation.GetAccesses()[0])
+				} else {
+					s.Empty(alerts, "expected no alerts")
+				}
+			}
+		})
+	}
 }
 
-func (s *RuntimeDetectorTestSuite) TestNodeFileAccessNoMatch() {
-	policySet := detection.NewPolicySet()
-
-	err := policySet.UpsertPolicy(s.getNodeFileAccessPolicy("/etc/passwd"))
-	s.NoError(err, "upsert policy should succeed")
-
-	d := NewDetector(policySet)
-
-	node := &storage.Node{
-		Id:   "node-123",
-		Name: "test-node",
+func (s *RuntimeDetectorTestSuite) getNodeFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
+	return &storage.FileAccess{
+		File:      &storage.FileAccess_File{NodePath: path},
+		Operation: operation,
 	}
-
-	// File path that doesn't match the policy
-	fileAccess := &storage.FileAccess{
-		File: &storage.FileAccess_File{
-			NodePath: "/tmp/some-file",
-		},
-		Operation: storage.FileAccess_OPEN,
-		Process: &storage.ProcessIndicator{
-			Signal: &storage.ProcessSignal{Name: "cat"},
-		},
-		Hostname: "test-node",
-	}
-
-	alerts, err := d.DetectForNodeAndFileAccess(node, fileAccess)
-
-	s.NoError(err)
-	s.Len(alerts, 0, "expected no alerts for non-matching file access")
 }
 
-func (s *RuntimeDetectorTestSuite) TestNodeFileAccessDisabledPolicy() {
-	policySet := detection.NewPolicySet()
-
-	policy := s.getNodeFileAccessPolicy("/etc/shadow")
-	policy.Disabled = true
-	err := policySet.UpsertPolicy(policy)
-	s.NoError(err, "upsert policy should succeed")
-
-	d := NewDetector(policySet)
-
-	node := &storage.Node{
-		Id:   "node-123",
-		Name: "test-node",
+func (s *RuntimeDetectorTestSuite) getNodeFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+	var pathValues []*storage.PolicyValue
+	for _, path := range paths {
+		pathValues = append(pathValues, &storage.PolicyValue{
+			Value: path,
+		})
 	}
 
-	fileAccess := &storage.FileAccess{
-		File: &storage.FileAccess_File{
-			NodePath: "/etc/shadow",
-		},
-		Operation: storage.FileAccess_OPEN,
-		Process: &storage.ProcessIndicator{
-			Signal: &storage.ProcessSignal{Name: "cat"},
-		},
-		Hostname: "test-node",
+	var operationValues []*storage.PolicyValue
+	for _, op := range operations {
+		operationValues = append(operationValues, &storage.PolicyValue{
+			Value: op.String(),
+		})
 	}
 
-	alerts, err := d.DetectForNodeAndFileAccess(node, fileAccess)
-
-	s.NoError(err)
-	s.Len(alerts, 0, "expected no alerts for disabled policy")
-}
-
-func (s *RuntimeDetectorTestSuite) TestNodeFileAccessMultiplePaths() {
-	policySet := detection.NewPolicySet()
-
-	// Test policy with multiple file paths
-	policy := s.getNodeFileAccessPolicy("/etc/passwd", "/etc/shadow")
-	err := policySet.UpsertPolicy(policy)
-	s.NoError(err, "upsert policy should succeed")
-
-	d := NewDetector(policySet)
-
-	node := &storage.Node{
-		Id:   "node-123",
-		Name: "test-node",
-	}
-
-	// Test matching /etc/passwd
-	fileAccess := &storage.FileAccess{
-		File: &storage.FileAccess_File{
-			NodePath: "/etc/passwd",
+	return &storage.Policy{
+		Id:            uuid.NewV4().String(),
+		PolicyVersion: "1.1",
+		Name:          "Sensitive File Access on Node",
+		Severity:      storage.Severity_HIGH_SEVERITY,
+		Categories:    []string{"File System"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section 1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.NodeFilePath,
+						Values:    pathValues,
+					},
+					{
+						FieldName: fieldnames.FileOperation,
+						Values:    operationValues,
+						Negate:    negate,
+					},
+				},
+			},
 		},
-		Operation: storage.FileAccess_OPEN,
-		Process: &storage.ProcessIndicator{
-			Signal: &storage.ProcessSignal{Name: "cat"},
-		},
-		Hostname: "test-node",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_NODE_EVENT,
 	}
-
-	alerts, err := d.DetectForNodeAndFileAccess(node, fileAccess)
-	s.NoError(err)
-	s.Len(alerts, 1, "expected one alert for /etc/passwd")
-
-	// Test matching /etc/shadow
-	fileAccess.File.NodePath = "/etc/shadow"
-	alerts, err = d.DetectForNodeAndFileAccess(node, fileAccess)
-	s.NoError(err)
-	s.Len(alerts, 1, "expected one alert for /etc/shadow")
-
-	// Test non-matching file
-	fileAccess.File.NodePath = "/etc/hosts"
-	alerts, err = d.DetectForNodeAndFileAccess(node, fileAccess)
-	s.NoError(err)
-	s.Len(alerts, 0, "expected no alerts for non-matching file")
 }
 
 func (s *RuntimeDetectorTestSuite) getNodeFileAccessPolicy(paths ...string) *storage.Policy {
