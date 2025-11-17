@@ -665,6 +665,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("FileAccess", []string{
 		"file: FileAccess_File",
+		"hostname: String!",
 		"moved: FileAccess_File",
 		"operation: FileAccess_Operation!",
 		"process: ProcessIndicator",
@@ -8040,6 +8041,11 @@ func (resolver *Resolver) wrapFileAccessesWithContext(ctx context.Context, value
 func (resolver *fileAccessResolver) File(ctx context.Context) (*fileAccess_FileResolver, error) {
 	value := resolver.data.GetFile()
 	return resolver.root.wrapFileAccess_File(value, true, nil)
+}
+
+func (resolver *fileAccessResolver) Hostname(ctx context.Context) string {
+	value := resolver.data.GetHostname()
+	return value
 }
 
 func (resolver *fileAccessResolver) Moved(ctx context.Context) (*fileAccess_FileResolver, error) {

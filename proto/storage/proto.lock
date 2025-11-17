@@ -8230,6 +8230,11 @@
                 "id": 5,
                 "name": "process",
                 "type": "ProcessIndicator"
+              },
+              {
+                "id": 6,
+                "name": "hostname",
+                "type": "string"
               }
             ],
             "messages": [
