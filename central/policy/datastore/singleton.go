@@ -74,15 +74,19 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 		var categories []*storage.PolicyCategory
 		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
 		fmt.Println("Inspecting policy", p.GetName())
+		shouldReupsert := false
 		for _, category := range categories {
 			fmt.Println("Currently looking at", strings.ToLower(category.GetName()))
 			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category.GetName())]; found {
 				fmt.Printf("Found a category: %v", category)
 				p.Categories = append(p.Categories, correctCategory)
-				toReupsert = append(toReupsert, p)
+				shouldReupsert = true
 			} else {
 				p.Categories = append(p.Categories, category.GetName())
 			}
+		}
+		if shouldReupsert {
+			toReupsert = append(toReupsert, p)
 		}
 		return nil
 	})
