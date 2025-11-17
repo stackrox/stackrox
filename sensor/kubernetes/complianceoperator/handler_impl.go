@@ -320,6 +320,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
+			if updatedScanSetting == nil {
+				return retry.MakeRetryable(errors.Errorf("updated ScanSetting %q is 'nil'", request.GetScanSettings().GetScanName()))
+			}
 			_, err := resSS.Update(ctx, updatedScanSetting, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 		},
@@ -343,6 +346,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	if ssbObj != nil {
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
+				if updatedScanSettingBinding == nil {
+					return retry.MakeRetryable(errors.Errorf("updated ScanSettingBinding %q is 'nil'", request.GetScanSettings().GetScanName()))
+				}
 				_, err = resSSB.Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
 				return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 			},
@@ -429,6 +435,9 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 	return m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			log.Infof("Rerunning compliance scan %s", complianceScan)
+			if scanObj == nil {
+				return retry.MakeRetryable(errors.Errorf("Scan %q is 'nil'", complianceScan))
+			}
 			_, err = resI.Update(ctx, scanObj, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan)
 		},
@@ -493,6 +502,9 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
+			if obj == nil {
+				return retry.MakeRetryable(errors.Errorf("ScanSetting %q is 'nil'", config.ScanName))
+			}
 			_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
 		},
@@ -670,15 +682,18 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
+				if updatedResource == nil {
+					return retry.MakeRetryable(errors.Errorf("updated %s %q is 'nil'", api.GroupVersionResource(), resource.GetName()))
+				}
 				_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
 				return errors.Wrapf(err, "updating namespace %q", namespace)
 			},
 			func(ctx context.Context) error {
-				resource, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Get(ctx, resource.GetName(), v1.GetOptions{})
+				currentResource, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Get(ctx, resource.GetName(), v1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scans/%s", namespace, resource.GetName())
 				}
-				updatedResource, err = updateFn(resource, req)
+				updatedResource, err = updateFn(currentResource, req)
 				if err != nil {
 					return err
 				}
@@ -887,7 +902,7 @@ type onConflictCall func(context.Context) error
 
 func onConflictErrorWrapper(fn onConflictCall) onRetriableCallError {
 	return func(ctx context.Context, parentErr error) error {
-		if !kubeAPIErr.IsConflict(parentErr) {
+		if !kubeAPIErr.IsConflict(parentErr) && !retry.IsRetryable(parentErr) {
 			return nil
 		}
 		return fn(ctx)
