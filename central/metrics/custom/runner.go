@@ -104,7 +104,8 @@ func (tr trackerRunner) RefreshTracker(prefix string) {
 	for _, t := range tr {
 		if t.Tracker.GetPrefix() == prefix {
 			t.Refresh()
-			return
+			// do not return, as there could be several trackers with the same
+			// prefix. E.g., cfg.
 		}
 	}
 }
