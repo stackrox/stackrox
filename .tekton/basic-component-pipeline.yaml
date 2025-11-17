@@ -49,7 +49,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:b46fc3405916d4f9d2fb2b7d614506d4b55dd71a5db1ff90b4f4459dc9b6e9b8
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1c4a53755099bc1e8b0d5e9413b3e3faa25d62b2e470ccff5d69574d47c97a65
       - name: kind
         value: task
       resolver: bundles
@@ -219,7 +219,7 @@ spec:
       - name: name
         value: determine-image-expiration
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:b46fc3405916d4f9d2fb2b7d614506d4b55dd71a5db1ff90b4f4459dc9b6e9b8
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1c4a53755099bc1e8b0d5e9413b3e3faa25d62b2e470ccff5d69574d47c97a65
       - name: kind
         value: task
       resolver: bundles
@@ -235,7 +235,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:b46fc3405916d4f9d2fb2b7d614506d4b55dd71a5db1ff90b4f4459dc9b6e9b8
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1c4a53755099bc1e8b0d5e9413b3e3faa25d62b2e470ccff5d69574d47c97a65
       - name: kind
         value: task
       resolver: bundles
