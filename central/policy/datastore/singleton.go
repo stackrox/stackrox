@@ -71,6 +71,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		fmt.Println("Inspecting policy", p.GetName())
 		for idx, category := range p.GetCategories() {
 			fmt.Println("Currently looking at", strings.ToLower(category))
 			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
