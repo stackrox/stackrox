@@ -15,7 +15,7 @@ import (
 var log = logging.LoggerForModule()
 
 type Relay struct {
-	handler *handler.Handler
+	handler handler.Handler
 	server  server.Server
 }
 
