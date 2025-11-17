@@ -23,19 +23,26 @@ import (
 
 var log = logging.LoggerForModule()
 
-type Handler struct {
+// Handler processes connections carrying virtual machine index reports.
+type Handler interface {
+	Handle(ctx context.Context, conn net.Conn) error
+}
+
+type handler struct {
 	connectionReadTimeout time.Duration
 	sensorClient          sensor.VirtualMachineIndexReportServiceClient
 }
 
-func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) *Handler {
-	return &Handler{
+var _ Handler = (*handler)(nil)
+
+func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) Handler {
+	return &handler{
 		connectionReadTimeout: 10 * time.Second,
 		sensorClient:          sensorClient,
 	}
 }
 
-func (h *Handler) Handle(ctx context.Context, conn net.Conn) error {
+func (h *handler) Handle(ctx context.Context, conn net.Conn) error {
 	log.Infof("Handling connection from %s", conn.RemoteAddr())
 
 	indexReport, err := h.receiveAndValidateIndexReport(conn)
@@ -53,7 +60,7 @@ func (h *Handler) Handle(ctx context.Context, conn net.Conn) error {
 	return nil
 }
 
-func (h *Handler) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
+func (h *handler) receiveAndValidateIndexReport(conn net.Conn) (*v1.IndexReport, error) {
 	vsockCID, err := vsock.ExtractVsockCIDFromConnection(conn)
 	if err != nil {
 		return nil, errors.Wrap(err, "extracting vsock CID")
