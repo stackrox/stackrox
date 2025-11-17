@@ -327,10 +327,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 		},
 		func(ctx context.Context) error {
-			ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+			tmpSSObj, err := resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
 			}
+			ssObj = tmpSSObj
 			updatedScanSetting, err = updateScanSettingFromUpdateRequest(ssObj, request)
 			if err != nil {
 				return err
@@ -353,10 +354,11 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 				return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 			},
 			func(ctx context.Context) error {
-				ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+				tmpSSBObj, err := resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scansettingbindings/%s", ns, request.GetScanSettings().GetScanName())
 				}
+				ssbObj = tmpSSBObj
 				updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
 				if err != nil {
 					return err
@@ -442,12 +444,14 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan)
 		},
 		func(ctx context.Context) error {
-			complianceScan, scanObj, err = m.getScanForReRun(func() (*unstructured.Unstructured, error) {
+			tmpComplianceScan, tmpScanObj, err := m.getScanForReRun(func() (*unstructured.Unstructured, error) {
 				return resI.Get(ctx, complianceScan, v1.GetOptions{})
 			}, scan.Name)
 			if err != nil {
 				return err
 			}
+			scanObj = tmpScanObj
+			complianceScan = tmpComplianceScan
 			return nil
 		})
 }
@@ -509,12 +513,13 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
 		},
 		func(ctx context.Context) error {
-			obj, err = m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
+			tmpObj, err := m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 				return resI.Get(ctx, config.ScanName, v1.GetOptions{})
 			}, config)
 			if err != nil {
 				return errors.Wrapf(err, "unable to retrieve ScanSetting %s", config.ScanName)
 			}
+			obj = tmpObj
 			return nil
 		})
 
