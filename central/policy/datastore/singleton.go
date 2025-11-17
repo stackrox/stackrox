@@ -48,7 +48,7 @@ func Singleton() DataStore {
 // addDefaults adds the default policies into the postgres table for policies.
 // TODO: ROX-11279: Data migration for postgres should take care of removing default policies in the bolt bucket named removed_default_policies
 // from the policies table in postgres
-func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
+func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullStore DataStore) {
 	// This is unrelated to default policies, but since we're already looping through all the policies here,
 	// this was a good place to add it.
 	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
@@ -71,13 +71,17 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		if p.GetSource() == storage.PolicySource_DECLARATIVE {
 			metrics.IncrementTotalExternalPoliciesGauge()
 		}
+		var categories []*storage.PolicyCategory
+		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
 		fmt.Println("Inspecting policy", p.GetName())
-		for idx, category := range p.GetCategories() {
-			fmt.Println("Currently looking at", strings.ToLower(category))
-			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category)]; found {
+		for _, category := range categories {
+			fmt.Println("Currently looking at", strings.ToLower(category.GetName()))
+			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category.GetName())]; found {
 				fmt.Printf("Found a category: %v", category)
-				p.Categories[idx] = correctCategory
+				p.Categories = append(p.Categories, correctCategory)
 				toReupsert = append(toReupsert, p)
+			} else {
+				p.Categories = append(p.Categories, category.GetName())
 			}
 		}
 		return nil
@@ -86,9 +90,11 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		panic(err)
 	}
 	fmt.Printf("To reupsert policies: %v", toReupsert)
-	err = s.UpsertMany(sac.WithAllAccess(context.Background()), toReupsert)
-	if err != nil {
-		panic(err)
+	for _, policy := range toReupsert {
+		err = fullStore.UpdatePolicy(sac.WithAllAccess(context.Background()), policy)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// Preload the default policies.
