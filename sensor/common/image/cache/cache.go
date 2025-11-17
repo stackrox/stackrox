@@ -2,9 +2,10 @@ package cache
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 )
 
 // Image is a cache for scanned images
@@ -31,7 +32,7 @@ type KeyProvider interface {
 // GetKey generates image cache key from a cache key provider.
 func GetKey(provider KeyProvider) Key {
 	if id := provider.GetId(); id != "" {
-		if features.FlattenImageData.Enabled() {
+		if centralcaps.Has(centralsensor.FlattenImageDataOnCentral) {
 			return Key(utils.NewImageV2ID(provider.GetName(), id))
 		}
 		return Key(id)
@@ -42,7 +43,7 @@ func GetKey(provider KeyProvider) Key {
 // CompareKeys given two KeyProvider, compares if they're equal
 func CompareKeys(a, b KeyProvider) bool {
 	if a.GetId() != "" && b.GetId() != "" {
-		if features.FlattenImageData.Enabled() {
+		if centralcaps.Has(centralsensor.FlattenImageDataOnCentral) {
 			return utils.NewImageV2ID(a.GetName(), a.GetId()) == utils.NewImageV2ID(b.GetName(), b.GetId())
 		}
 		return a.GetId() == b.GetId()

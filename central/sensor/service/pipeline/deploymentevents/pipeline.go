@@ -5,6 +5,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentutils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -172,6 +174,11 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	if err := s.clusterEnrichment.do(ctx, deployment); err != nil {
 		log.Errorf("Couldn't get cluster identity: %s", err)
 		return err
+	}
+
+	if features.FlattenImageData.Enabled() {
+		// IDV2s may not be set if sensor is running an older version
+		deploymentutils.PopulateContainerImageIDV2s(deployment)
 	}
 
 	incrementNetworkGraphEpoch := true
