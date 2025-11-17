@@ -41,7 +41,7 @@ describe('API Tokens', () => {
 
         // Step 2, check valid from and generate
         getInputByLabel('Token name').clear().type(apiTokenName);
-        getSelectButtonByLabel('Role').click();
+        getSelectButtonByLabel('Roles').click();
         getSelectOption('Admin').click();
 
         generateCreatedAuthProvidersIntegrationInForm(integrationType);
