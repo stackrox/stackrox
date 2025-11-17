@@ -887,6 +887,8 @@ func (d *detectorImpl) processFileAccess() {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
 			} else if item.Deployment != nil {
 				// TODO(ROX-30806): wire up deployment-based detection
+				log.Debug("Deployment-based file access detection not yet implemented")
+				continue
 			}
 
 			if len(alerts) == 0 {
