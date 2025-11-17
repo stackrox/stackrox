@@ -555,3 +555,24 @@ func Test_makeProps(t *testing.T) {
 	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
 	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
 }
+
+func TestTrackerBase_Refresh(t *testing.T) {
+	tracker := MakeTrackerBase("test", "telemetry test",
+		testLabelGetters,
+		makeTestGatherFunc(testData))
+
+	md := makeTestMetricDescriptors(t)
+	cfg := &Configuration{
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
+		period:  time.Hour,
+	}
+	tracker.Reconfigure(cfg)
+	g := tracker.getGatherer("test-id", cfg)
+	g.running.Store(false)
+	assert.True(t, g.lastGather.IsZero())
+	now := time.Now()
+	g.lastGather = now
+	tracker.Refresh()
+	assert.Equal(t, cfg.period+1, now.Sub(g.lastGather))
+}

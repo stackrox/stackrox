@@ -99,6 +99,16 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 	}
 }
 
+// RefreshTracker implements the refresh.Refresher interface.
+func (tr trackerRunner) RefreshTracker(prefix string) {
+	for _, t := range tr {
+		if t.Tracker.GetPrefix() == prefix {
+			t.Refresh()
+			return
+		}
+	}
+}
+
 func (tr trackerRunner) initialize(cds configDS.DataStore) {
 	ctx := sac.WithAllAccess(context.Background())
 	systemPrivateConfig, err := cds.GetPrivateConfig(ctx)

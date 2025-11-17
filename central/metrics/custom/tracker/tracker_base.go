@@ -54,6 +54,11 @@ type Tracker interface {
 	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
 	// Reconfigure the tracker with the provided tracker configuration.
 	Reconfigure(*Configuration)
+	// GetPrefix returns the metric prefix.
+	GetPrefix() string
+	// Refresh the data on the next scrape request without waiting for the next
+	// gathering period.
+	Refresh()
 }
 
 // FindingErrorSequence is a sequence of pairs of findings and errors.
@@ -104,6 +109,10 @@ func MakeTrackerBase[F Finding](metricPrefix, description string,
 	}
 }
 
+func (tracker *TrackerBase[F]) GetPrefix() string {
+	return tracker.metricPrefix
+}
+
 // NewConfiguration does not apply the configuration.
 func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.getConfiguration()
@@ -147,6 +156,22 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	tracker.registerMetrics(cfg, cfg.toAdd)
 	// Note: aggregators are recreated lazily in getGatherer() when config
 	// changes, to avoid race conditions with running gatherers.
+}
+
+// Refresh shifts the last gathering time of every gatherer back by period+1.
+func (tracker *TrackerBase[F]) Refresh() {
+	cfg := tracker.getConfiguration()
+	if cfg == nil {
+		return
+	}
+	tracker.gatherers.Range(func(userID, gv any) bool {
+		g := gv.(*gatherer)
+		if g.trySetRunning() {
+			g.lastGather = g.lastGather.Add(-(cfg.period + 1))
+			g.running.Store(false)
+		}
+		return true
+	})
 }
 
 func labelsAsStrings(labels []Label) []string {
