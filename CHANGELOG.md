@@ -9,12 +9,21 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.6]
+
+### Technical Changes
+
+- ROX-31138: Resolved an issue where automatically re-scanned images failed to suppress deferred CVEs in the web UI portal, causing the CVEs to reappear in results and reports.
+- ROX-31554: Fixed an issue where Central would panic and terminate Sensor connections, when a Sensor sent an event type unknown to Central. This occurred specifically when a Sensor version 4.9 was paired with Central version 4.7 or 4.8 on a cluster using OpenShift Virtualization. This fix ensures Central operates normally under these conditions and has also been applied to Central 4.9 to improve future compatibility with Sensors.
+- ROX-31365: Fixed an issue that could cause database connection exhaustion when many Sensors try to reconnect at the same time.
+
 ## [4.8.5]
 
 ### Technical Changes
 
 - ROX-30462: Reduced log level for semaphore acquisition failures from ERROR to DEBUG. This eliminates log spam during Central shutdown when multiple scans are queued in parallel, making it easier to identify actual shutdown issues.
 - ROX-30867: Prevents mutex timeouts and reduces strain on Central and Central-DB during high-volume indicator processing, reducing lock contention and transaction duration when writing large batches of process indicators. Previously, batches of 10K indicators were processed in a single transaction with a held lock, causing timeouts with datasets over 500K indicators.
+- ROX-31088: If Compliance Operator is installed, its version is now correctly reported through telemetry.
 
 ## [4.8.4]
 
