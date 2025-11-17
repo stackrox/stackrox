@@ -148,24 +148,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
 
-		// Less than period since last Gather, gathering ignored:
+		// Gatherers will run after Reconfigure shifted the last gathering:
 		tracker.Gather(ctx)
 		tracker.cleanupWG.Wait()
-		assert.Empty(t, trackedMetricNames)
-
-		{ // Reset lastGather
-			identity, _ := authn.IdentityFromContext(ctx)
-			gRaw, ok := tracker.gatherers.Load(identity.UID())
-			require.True(t, ok)
-			g := gRaw.(*gatherer[testFinding])
-			// Make it temporarily running to avoid data race on lastGather.
-			require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
-			g.lastGather = time.Time{}
-			g.running.Store(false)
-		}
-		tracker.Gather(ctx)
-		tracker.cleanupWG.Wait()
-
 		assert.ElementsMatch(t, slices.Compact(trackedMetricNames), metricNames[1:])
 
 		// Stop and unregister everything:
@@ -768,4 +753,25 @@ func readMetrics(registry metrics.CustomRegistry) string {
 	rec := httptest.NewRecorder()
 	registry.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
 	return rec.Body.String()
+}
+
+func TestTrackerBase_Refresh(t *testing.T) {
+	tracker := MakeTrackerBase("test", "telemetry test",
+		testLabelGetters,
+		makeTestGatherFunc(testData))
+
+	md := makeTestMetricDescriptors(t)
+	cfg := &Configuration{
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
+		period:  time.Hour,
+	}
+	tracker.setConfiguration(cfg)
+	g := tracker.getGatherer("test-id", cfg)
+	g.running.Store(false)
+	assert.True(t, g.lastGather.IsZero())
+	now := time.Now()
+	g.lastGather = now
+	tracker.Refresh()
+	assert.Equal(t, cfg.period+1, now.Sub(g.lastGather))
 }
