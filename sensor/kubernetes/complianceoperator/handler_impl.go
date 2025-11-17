@@ -267,6 +267,15 @@ func conflictErrorOnce(once *sync.Once, api k8sapi.APIResource, name string) err
 	return err
 }
 
+func errorOnce(once *sync.Once) error {
+	var err error
+	once.Do(func() {
+		err = errors.New("fake error")
+	})
+	log.Infof("lvm --> error once: %v", err)
+	return err
+}
+
 func (m *handlerImpl) processUpdateScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) bool {
 	if err := validateUpdateScheduledScanConfigRequest(request); err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
@@ -333,6 +342,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	}
 
 	var ssOnce sync.Once
+	var ssGetOnce sync.Once
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			if updatedScanSetting == nil {
@@ -342,9 +352,14 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 				return err
 			}
 			_, err := resSS.Update(ctx, updatedScanSetting, v1.UpdateOptions{})
+			log.Infof("lvm --> update error: %v", err)
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 		},
 		func(ctx context.Context) error {
+			if err := errorOnce(&ssGetOnce); err != nil {
+				updatedScanSetting = nil
+				return err
+			}
 			ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "unable to get namespaces/%s/scansettings/%s", ns, request.GetScanSettings().GetScanName())
@@ -363,6 +378,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	// Process SSB as an update
 	if ssbObj != nil {
 		var ssbOnce sync.Once
+		var ssbGetOnce sync.Once
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
 				if updatedScanSettingBinding == nil {
@@ -372,9 +388,14 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 					return err
 				}
 				_, err = resSSB.Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
+				log.Infof("lvm --> update error: %v", err)
 				return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 			},
 			func(ctx context.Context) error {
+				if err := errorOnce(&ssbGetOnce); err != nil {
+					updatedScanSettingBinding = nil
+					return err
+				}
 				ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scansettingbindings/%s", ns, request.GetScanSettings().GetScanName())
@@ -455,6 +476,7 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 		return err
 	}
 	var updateOnce sync.Once
+	var getOnce sync.Once
 	return m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			log.Infof("Rerunning compliance scan %s", complianceScan)
@@ -465,9 +487,14 @@ func (m *handlerImpl) reRunScan(scan v1alpha1.ComplianceScanSpecWrapper, ns stri
 				return err
 			}
 			_, err = resI.Update(ctx, scanObj, v1.UpdateOptions{})
+			log.Infof("lvm --> update error: %v", err)
 			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan)
 		},
 		func(ctx context.Context) error {
+			if err := errorOnce(&getOnce); err != nil {
+				scanObj = nil
+				return err
+			}
 			complianceScan, scanObj, err = m.getScanForReRun(func() (*unstructured.Unstructured, error) {
 				return resI.Get(ctx, complianceScan, v1.GetOptions{})
 			}, scan.Name)
@@ -527,6 +554,7 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	}
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 	var updateOnce sync.Once
+	var getOnce sync.Once
 	err = m.callWithRetryWithOnConflictCallback(
 		func(ctx context.Context) error {
 			if obj == nil {
@@ -536,9 +564,14 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 				return err
 			}
 			_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
+			log.Infof("lvm --> update error: %v", err)
 			return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
 		},
 		func(ctx context.Context) error {
+			if err := errorOnce(&getOnce); err != nil {
+				obj = nil
+				return err
+			}
 			obj, err = m.getScanSettingForUpdate(func() (*unstructured.Unstructured, error) {
 				return resI.Get(ctx, config.ScanName, v1.GetOptions{})
 			}, config)
@@ -711,18 +744,25 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 			return err
 		}
 		var updateOnce sync.Once
+		var getOnce sync.Once
+		resourceName := updatedResource.GetName()
 		err = m.callWithRetryWithOnConflictCallback(
 			func(ctx context.Context) error {
 				if updatedResource == nil {
 					return retry.MakeRetryable(errors.Errorf("updated %s %q is 'nil'", api.GroupVersionResource(), resource.GetName()))
 				}
-				if err := conflictErrorOnce(&updateOnce, api, updatedResource.GetName()); err != nil {
+				if err := conflictErrorOnce(&updateOnce, api, resourceName); err != nil {
 					return err
 				}
 				_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
+				log.Infof("lvm --> update error: %v", err)
 				return errors.Wrapf(err, "updating namespace %q", namespace)
 			},
 			func(ctx context.Context) error {
+				if err := errorOnce(&getOnce); err != nil {
+					updatedResource = nil
+					return err
+				}
 				currentResource, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Get(ctx, resource.GetName(), v1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "unable to get namespaces/%s/scans/%s", namespace, resource.GetName())
