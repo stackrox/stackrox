@@ -405,6 +405,28 @@ func (s *RuntimeDetectorTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with all allowed files",
+			policy:      s.getNodeFileAccessPolicy("/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      s.getNodeFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
 	} {
 		s.Run(tc.description, func() {
 			policySet := detection.NewPolicySet()
@@ -419,6 +441,11 @@ func (s *RuntimeDetectorTestSuite) TestNodeFileAccess() {
 
 				if event.expectAlert {
 					s.Len(alerts, 1, "expected one alert")
+
+					alert := alerts[0]
+
+					s.Equal(alert.GetNode().GetName(), node.GetName())
+					s.Equal(alert.GetNode().GetId(), node.GetId())
 
 					fileAccessViolation := alerts[0].GetFileAccessViolation()
 					s.NotNil(fileAccessViolation, "expected file access violation in alert")
