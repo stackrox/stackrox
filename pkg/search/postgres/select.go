@@ -11,8 +11,6 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -42,6 +40,7 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
+//
 // Deprecated: Use RunSelectRequestForSchemaFn
 func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) ([]*T, error) {
 	result := make([]*T, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
@@ -99,13 +98,6 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
-	}
-
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
-		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	parsedQuery := &query{
@@ -251,6 +243,7 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 		SelectPath:   selectPath,
 		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
 		FieldType:    dataType,
+		FieldPath:    strings.ToLower(searchField), // Store the search field name for FieldValues mapping
 		DerivedField: aggrFunc != aggregatefunc.Unset,
 	}
 }

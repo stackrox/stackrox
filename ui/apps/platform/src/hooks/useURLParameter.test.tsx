@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 // import { createMemoryHistory } from 'history';
 import { MemoryRouter as Router, Route } from 'react-router-dom';

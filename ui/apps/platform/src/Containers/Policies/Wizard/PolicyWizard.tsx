@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { FormikProvider, useFormik } from 'formik';
 import {
     Alert,
     Breadcrumb,
-    Title,
     BreadcrumbItem,
     Divider,
     PageSection,
+    Title,
     Wizard,
     WizardStep,
 } from '@patternfly/react-core';

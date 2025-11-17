@@ -16,7 +16,6 @@ function PolicyManagementHeader({ currentTabTitle }: PolicyManagementHeaderProps
             <TabNavHeader
                 currentTabTitle={currentTabTitle}
                 tabLinks={tabLinks}
-                pageTitle="Policy management - Policy categories"
                 mainTitle="Policy management"
             />
         </>

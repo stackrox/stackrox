@@ -5,8 +5,8 @@ import {
     Button,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
     EmptyStateFooter,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
 
 export type NotFoundMessageProps = {

@@ -1,13 +1,13 @@
-import React from 'react';
-import { Alert, Modal, Text, Button, Flex, Form, Radio, FormGroup } from '@patternfly/react-core';
-import { FormikHelpers, useFormik } from 'formik';
+import { Alert, Button, Flex, Form, FormGroup, Modal, Radio, Text } from '@patternfly/react-core';
+import { useFormik } from 'formik';
+import type { FormikHelpers } from 'formik';
 
 import { durations, snoozeDurations } from 'constants/timeWindows';
 import useRestMutation from 'hooks/useRestMutation';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ValueOf } from 'utils/type.utils';
-import { SnoozeAction, SnoozeableCveType } from './useSnoozeCveModal';
+import type { ValueOf } from 'utils/type.utils';
+import type { SnoozeAction, SnoozeableCveType } from './useSnoozeCveModal';
 
 const durationOptions = ['DAY', 'WEEK', 'MONTH', 'UNSET'] as const;
 

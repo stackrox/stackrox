@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
-import type { FocusEvent, ReactElement } from 'react';
+import type { FocusEvent, FormEvent, ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
@@ -50,18 +50,18 @@ function EmailNotifierForm({
 }: EmailNotifierFormProps): ReactElement {
     const [storedUsername, setStoredUsername] = useState('');
     const { allowUnauthenticatedSmtp } = values.notifier.email;
-    function onChange(value, event) {
-        setFieldValue(event.target.id, value);
+    function onChange(value: string, event: FormEvent<HTMLInputElement>) {
+        setFieldValue(event.currentTarget.id, value);
     }
 
-    function updateStartTLSAuthMethodOnChange(value, event) {
-        setFieldValue(event.target.id, value);
+    function updateStartTLSAuthMethodOnChange(value: boolean, event: FormEvent<HTMLInputElement>) {
+        setFieldValue(event.currentTarget.id, value);
         if (value === false && values.notifier.email.startTLSAuthMethod !== 'DISABLED') {
             setFieldValue('notifier.email.startTLSAuthMethod', 'DISABLED');
         }
     }
 
-    function onUpdateUnauthenticatedChange(isChecked) {
+    function onUpdateUnauthenticatedChange(isChecked: boolean) {
         if (isChecked) {
             setStoredUsername(values.notifier.email.username);
             setFieldValue('notifier.email.username', '');

@@ -135,7 +135,9 @@ export function createIntegration(
     const hasUpdatePassword = typeof data.updatePassword === 'boolean';
     const createData = hasUpdatePassword ? data[getJsonFieldBySource(source)] : data;
 
-    return axios.post(getPath(source), createData);
+    return axios.post<IntegrationBase>(getPath(source), createData).then((response) => {
+        return response.data;
+    });
 }
 
 /*

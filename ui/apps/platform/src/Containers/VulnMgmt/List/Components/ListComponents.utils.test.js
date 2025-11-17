@@ -6,10 +6,7 @@ import { WorkflowState } from 'utils/WorkflowState';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
 
-function mockIsFeatureFlagEnabled(flag) {
-    if (flag === 'ROX_ACTIVE_VULN_MGMT') {
-        return true;
-    }
+function mockIsFeatureFlagEnabled() {
     return false;
 }
 

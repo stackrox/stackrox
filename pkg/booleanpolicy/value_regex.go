@@ -3,6 +3,7 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/signatures"
 )
@@ -11,6 +12,17 @@ const (
 	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
 	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
 )
+
+// The following paths are the bare minimum supported for the
+// file activity tech preview. This is to control and minimize the
+// scale/quantity of runtime events, and prove the feature before
+// widening support to an arbitrary list of files.
+var filePathAllowedStrings = []string{
+	"/etc/passwd",
+	"/etc/shadow",
+	"/etc/ssh/sshd_config",
+	"/etc/sudoers",
+}
 
 var (
 	keyValueValueRegex                       = createRegex("[^=]+=.*")
@@ -35,6 +47,7 @@ var (
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	signatureIntegrationIDValueRegex         = createRegex(regexp.QuoteMeta(signatures.SignatureIntegrationIDPrefix) + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+	allowedFilePathRegex                     = createRegex(fmt.Sprintf("(?i:%s)", strings.Join(filePathAllowedStrings, "|")))
 )
 
 func createRegex(s string) *regexp.Regexp {

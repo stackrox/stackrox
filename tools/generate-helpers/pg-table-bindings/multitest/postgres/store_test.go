@@ -93,6 +93,11 @@ func (s *TestStructsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, testStructs))
 
+	foundTestStructs, missing, err := store.GetMany(ctx, testStructIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), testStructs, foundTestStructs)
+
 	testStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testStructCount)

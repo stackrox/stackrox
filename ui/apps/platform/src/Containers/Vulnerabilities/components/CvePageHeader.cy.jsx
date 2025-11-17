@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import CvePageHeader from './CvePageHeader';
 

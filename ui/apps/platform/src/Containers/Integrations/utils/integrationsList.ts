@@ -36,16 +36,23 @@ import { integrationsPath } from 'routePaths';
  *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
+import type { IsCentralCapabilityAvailable } from 'hooks/useCentralCapabilities';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import { integrationSources } from 'types/integration';
 import type {
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
     ImageIntegrationType,
     IntegrationSource,
+    IntegrationType,
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
+// import { allEnabled } from 'utils/featureFlagUtils'; // uncomment when needed
+import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
 
 export type AuthProviderDescriptor = {
     type: AuthProviderType;
@@ -82,18 +89,13 @@ export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
     image: string;
+    centralCapabilityRequirement?: CentralCapabilitiesFlags;
     featureFlagDependency?: FeatureFlagEnvVar[];
 };
 
 export const imageIntegrationsSource: IntegrationSource = 'imageIntegrations';
 
 export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
-    {
-        categories: 'Image Scanner + Node Scanner',
-        image: logo,
-        label: '[DEPRECATED] StackRox Scanner',
-        type: 'clairify',
-    },
     {
         categories: 'Image Scanner + Node Scanner',
         image: logo,
@@ -112,12 +114,6 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         image: aws,
         label: 'Amazon ECR',
         type: 'ecr',
-    },
-    {
-        categories: 'Registry + Scanner',
-        image: googleregistry,
-        label: '[DEPRECATED] Google Container Registry',
-        type: 'google',
     },
     {
         categories: 'Registry',
@@ -142,12 +138,6 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         image: quay,
         label: 'Quay.io',
         type: 'quay',
-    },
-    {
-        categories: 'Scanner',
-        image: clair,
-        label: '[DEPRECATED] CoreOS Clair',
-        type: 'clair',
     },
     {
         categories: 'Scanner',
@@ -178,6 +168,24 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         image: ghcr,
         label: 'GitHub Container Registry',
         type: 'ghcr',
+    },
+    {
+        categories: 'Image Scanner + Node Scanner',
+        image: logo,
+        label: '[DEPRECATED] StackRox Scanner',
+        type: 'clairify',
+    },
+    {
+        categories: 'Scanner',
+        image: clair,
+        label: '[DEPRECATED] CoreOS Clair',
+        type: 'clair',
+    },
+    {
+        categories: 'Registry + Scanner',
+        image: googleregistry,
+        label: '[DEPRECATED] Google Container Registry',
+        type: 'google',
     },
 ];
 
@@ -335,6 +343,73 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
 export function getIntegrationLabel(source: string, type: string): string {
     const descriptorFound = getDescriptors(source).find((descriptor) => descriptor.type === type);
     return descriptorFound ? descriptorFound.label : '';
+}
+
+// Adapted from RouteRequirements and routeRequirementsMap from routePaths.ts file.
+
+type IntegrationsRouteRequirements = {
+    centralCapabilityRequirement?: CentralCapabilitiesFlags;
+    featureFlagRequirements?: FeatureFlagPredicate;
+};
+
+const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRouteRequirements> = {
+    imageIntegrations: {},
+    signatureIntegrations: {},
+    notifiers: {},
+    backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
+    cloudSources: {},
+    authProviders: {},
+};
+
+export type IntegrationsRoutePredicates = {
+    isCentralCapabilityAvailable: IsCentralCapabilityAvailable;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+};
+
+function isIntegrationsRouteEnabled(
+    { isCentralCapabilityAvailable, isFeatureFlagEnabled }: IntegrationsRoutePredicates,
+    { centralCapabilityRequirement, featureFlagRequirements }: IntegrationsRouteRequirements
+) {
+    if (
+        centralCapabilityRequirement &&
+        !isCentralCapabilityAvailable(centralCapabilityRequirement)
+    ) {
+        return false;
+    }
+
+    if (featureFlagRequirements && !featureFlagRequirements(isFeatureFlagEnabled)) {
+        return false;
+    }
+
+    return true;
+}
+
+export function getSourcesEnabled(predicates: IntegrationsRoutePredicates): IntegrationSource[] {
+    return integrationSources.filter((source) =>
+        isIntegrationsRouteEnabled(predicates, integrationSourceRequirementsMap[source])
+    );
+}
+
+export function getTypesEnabled(
+    predicates: IntegrationsRoutePredicates,
+    source: IntegrationSource
+): IntegrationType[] {
+    return getDescriptors(source)
+        .filter((descriptor) => isIntegrationsRouteEnabled(predicates, descriptor))
+        .map(({ type }) => type as IntegrationType);
+}
+
+export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
+    imageIntegrations: 'Image',
+    signatureIntegrations: 'Signature',
+    notifiers: 'Notifier',
+    backups: 'Backup',
+    cloudSources: 'Cloud source',
+    authProviders: 'Authentication',
+};
+
+export function getIntegrationTabPath(source: IntegrationSource) {
+    return `${integrationsPath}/${source}`; // tabs need full instead of relative path
 }
 
 export function getIntegrationsListPath(source: IntegrationSource, type: string) {

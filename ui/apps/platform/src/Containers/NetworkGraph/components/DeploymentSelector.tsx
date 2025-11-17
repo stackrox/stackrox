@@ -10,12 +10,12 @@ import {
     MenuContent,
     MenuFooter,
     MenuGroup,
-    MenuSearch,
     MenuItem,
     MenuList,
+    MenuSearch,
+    MenuSearchInput,
     MenuToggle,
     SearchInput,
-    MenuSearchInput,
     Select,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';

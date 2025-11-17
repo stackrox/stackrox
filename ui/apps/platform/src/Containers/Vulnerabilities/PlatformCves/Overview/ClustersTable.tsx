@@ -1,5 +1,5 @@
 import { pluralize } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 

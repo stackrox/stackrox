@@ -6,7 +6,7 @@ import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPa
 function PolicyManagementPage() {
     return (
         <Routes>
-            <Route index element={<Navigate to="policies" />} />
+            <Route index element={<Navigate to="policies" replace />} />
             <Route path="policies/:policyId?/:command?" element={<PoliciesPage />} />
             <Route path="policy-categories" element={<PolicyCategoriesPage />} />
         </Routes>

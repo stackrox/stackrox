@@ -9,13 +9,13 @@ export type BreadcrumbItemLinkProps = {
 } & BreadcrumbItemProps;
 
 function BreadcrumbItemLink({ children, to, ...rest }: BreadcrumbItemLinkProps): ReactElement {
-    function render({ className, ariaCurrent }) {
+    const render: BreadcrumbItemProps['render'] = ({ className, ariaCurrent }) => {
         return (
             <Link className={className} aria-current={ariaCurrent} to={to}>
                 {children}
             </Link>
         );
-    }
+    };
     return <BreadcrumbItem {...rest} render={render} />;
 }
 

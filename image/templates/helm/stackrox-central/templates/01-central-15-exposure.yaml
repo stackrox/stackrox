@@ -18,6 +18,7 @@ spec:
     targetPort: https
   tls:
     termination: passthrough
+    insecureEdgeTerminationPolicy: Redirect
   to:
     kind: Service
     name: central
@@ -62,6 +63,7 @@ spec:
     targetPort: https
   tls:
     termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
     {{- with $reencryptConfig.tls }}
     {{- if .caCertificate }}
     caCertificate: |

@@ -1,5 +1,3 @@
-import React from 'react';
-
 import type { ClusterHealthStatus } from 'types/cluster.proto';
 
 import {

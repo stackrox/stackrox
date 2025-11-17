@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -176,7 +176,6 @@ function InitBundleForm(): ReactElement {
                                 isDisabled={values.platform !== 'OpenShift'}
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
-                                maxWidth="100%"
                             >
                                 {Object.entries(installationOptions)
                                     .filter(

@@ -248,9 +248,56 @@ func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, rep
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+	createDeploymentViaAPI(t, image, deploymentName, replicas)
+}
+
+// createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
+// Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
+// to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int) {
+	client := createK8sClient(t)
+
+	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
+	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
+	// as those are used to test mirroring functionality and should use their own pull behavior.
+	pullPolicy := coreV1.PullIfNotPresent
+	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
+		pullPolicy = coreV1.PullPolicy(policy)
+		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+	}
+
+	deployment := &appsV1.Deployment{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:   deploymentName,
+			Labels: map[string]string{"app": deploymentName},
+		},
+		Spec: appsV1.DeploymentSpec{
+			Replicas: pointers.Int32(int32(replicas)),
+			Selector: &metaV1.LabelSelector{
+				MatchLabels: map[string]string{"app": deploymentName},
+			},
+			Template: coreV1.PodTemplateSpec{
+				ObjectMeta: metaV1.ObjectMeta{
+					Labels: map[string]string{"app": deploymentName},
+				},
+				Spec: coreV1.PodSpec{
+					Containers: []coreV1.Container{{
+						Name:            deploymentName,
+						Image:           image,
+						ImagePullPolicy: pullPolicy,
+						Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
+					}},
+				},
+			},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	logf(t, "Creating deployment %q with image %q in namespace %q", deploymentName, image, "default")
+	_, err := client.AppsV1().Deployments("default").Create(ctx, deployment, metaV1.CreateOptions{})
+	require.NoError(t, err, "Failed to create deployment %q", deploymentName)
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
@@ -362,11 +409,67 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+	client := createK8sClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
+	// Set explicit propagation policy to ensure ReplicaSets/Pods are deleted
+	deletePolicy := metaV1.DeletePropagationForeground
+	gracePeriod := int64(1)
+
+	logf(t, "Deleting deployment %q via API with propagation policy %s", deploymentName, deletePolicy)
+	err := client.AppsV1().Deployments("default").Delete(ctx, deploymentName, metaV1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+		PropagationPolicy:  &deletePolicy,
+	})
+
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			logf(t, "Deployment %q not found in Kubernetes (already deleted)", deploymentName)
+		} else {
+			require.NoError(t, err, "Failed to delete deployment %q", deploymentName)
+		}
+	} else {
+		logf(t, "Successfully initiated deletion of deployment %q", deploymentName)
+	}
+
+	// Verify deployment is actually deleted from Kubernetes
+	waitForK8sDeploymentDeletion(t, client, deploymentName)
+
+	// Wait for Central to recognize the deletion
 	waitForTermination(t, deploymentName)
+}
+
+// waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone
+func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(30 * time.Second)
+	defer timer.Stop()
+
+	attempt := 0
+	for {
+		select {
+		case <-ticker.C:
+			attempt++
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_, err := client.AppsV1().Deployments("default").Get(ctx, deploymentName, metaV1.GetOptions{})
+			cancel()
+
+			if apiErrors.IsNotFound(err) {
+				logf(t, "Verified: deployment %q deleted from Kubernetes after %d attempt(s)", deploymentName, attempt)
+				return
+			}
+			if err != nil {
+				logf(t, "Error checking deployment %q status (attempt %d): %v", deploymentName, attempt, err)
+				continue
+			}
+			logf(t, "Deployment %q still exists in Kubernetes (attempt %d)", deploymentName, attempt)
+		case <-timer.C:
+			t.Fatalf("Timeout: deployment %s still exists in Kubernetes after 30 seconds", deploymentName)
+		}
+	}
 }
 
 func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {

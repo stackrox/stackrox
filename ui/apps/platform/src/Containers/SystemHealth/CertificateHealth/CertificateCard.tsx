@@ -26,7 +26,7 @@ import {
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getVersionedDocs } from 'utils/versioning';
 
-import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+import { ErrorIcon, SpinnerIcon, healthIconMap } from '../CardHeaderIcons';
 
 type CertificateCardProps = {
     component: CertExpiryComponent;

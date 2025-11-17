@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import useModal from 'hooks/useModal';
 import { deleteReportConfiguration } from 'services/ReportsService';
-import { Empty } from 'services/types';
+import type { Empty } from 'services/types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type SuccessDeleteResult = {

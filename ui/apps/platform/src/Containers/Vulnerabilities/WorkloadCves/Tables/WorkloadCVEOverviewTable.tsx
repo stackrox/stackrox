@@ -1,11 +1,9 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import {
     ActionsColumn,
     ExpandableRowContent,
-    IAction,
     Table,
     Tbody,
     Td,
@@ -13,40 +11,38 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 import { LabelGroup, Text } from '@patternfly/react-core';
 
 // import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
-import useMap from 'hooks/useMap';
-import { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
+import type useMap from 'hooks/useMap';
+import type { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
-import { TableUIState } from 'utils/getTableUIState';
+import type { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
-import {
-    generateVisibilityForColumns,
-    getHiddenColumnCount,
-    ManagedColumns,
-} from 'hooks/useManagedColumns';
-import { VulnerabilitySeverityLabel } from '../../types';
+import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
+import type { ManagedColumns } from 'hooks/useManagedColumns';
+import type { VulnerabilitySeverityLabel } from '../../types';
 // import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils'; // Ross CISA KEV
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
-    getScoreVersionsForTopCVSS,
-    getScoreVersionsForTopNvdCVSS,
-    sortCveDistroList,
     aggregateByCVSS,
-    aggregateByEPSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
+    aggregateByEPSS,
+    getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     getSeveritySortOptions,
+    sortCveDistroList,
 } from '../../utils/sortUtils';
-import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
+import type { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
 // import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV

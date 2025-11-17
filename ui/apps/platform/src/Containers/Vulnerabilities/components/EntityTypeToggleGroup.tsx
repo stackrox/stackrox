@@ -1,9 +1,8 @@
-import React from 'react';
 import { ToggleGroup, ToggleGroupItem, pluralize } from '@patternfly/react-core';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { NonEmptyArray } from 'utils/type.utils';
-import { EntityTab } from '../types';
+import type { NonEmptyArray } from 'utils/type.utils';
+import type { EntityTab } from '../types';
 
 type EntityTypeToggleGroupProps<EntityTabType extends EntityTab> = {
     className?: string;

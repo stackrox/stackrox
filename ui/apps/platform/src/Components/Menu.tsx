@@ -60,7 +60,7 @@ const Menu = ({
         setMenuState(true);
         document.addEventListener('click', hideMenu);
     };
-    const onClickHandler = () => (e) => {
+    const onClickHandler = (): MouseEventHandler<HTMLButtonElement> => (e) => {
         e.stopPropagation();
         if (!isMenuOpen) {
             showMenu();
@@ -106,13 +106,11 @@ const Menu = ({
 
     function renderGroupedOptions(formattedOptions: GroupedMenuOptions) {
         return Object.keys(formattedOptions).map((group) => {
-            return options ? (
+            return (
                 <Fragment key={group}>
                     <div className="p-3 border-b border-primary-300">{group}</div>
-                    <div className="px-2">{renderOptions(options[group])}</div>
+                    <div className="px-2">{renderOptions(formattedOptions[group])}</div>
                 </Fragment>
-            ) : (
-                []
             );
         });
     }

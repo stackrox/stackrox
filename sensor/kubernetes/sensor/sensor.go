@@ -28,6 +28,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	filesystemPipeline "github.com/stackrox/rox/sensor/common/filesystem/pipeline"
+	filesystemService "github.com/stackrox/rox/sensor/common/filesystem/service"
 	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/image/cache"
@@ -227,6 +229,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+	}
+
+	if features.SensitiveFileActivity.Enabled() {
+		activityChan := make(chan *sensorInternal.FileActivity)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), storeProvider.Nodes(), activityChan)
+		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
+		apiServices = append(apiServices, fileSystemService)
 	}
 
 	if features.VirtualMachines.Enabled() {

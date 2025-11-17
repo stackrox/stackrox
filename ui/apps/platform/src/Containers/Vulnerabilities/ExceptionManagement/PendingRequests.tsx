@@ -14,13 +14,13 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 import {
+    RequestCreatedAt,
     RequestExpires,
     RequestIDLink,
+    RequestScope,
     RequestedAction,
     RequestedItems,
-    RequestCreatedAt,
     Requester,
-    RequestScope,
 } from './components/ExceptionRequestTableCells';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
 import { DEFAULT_VM_PAGE_SIZE } from '../constants';

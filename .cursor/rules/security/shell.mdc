@@ -1,0 +1,64 @@
+---
+description: Secure coding rules for Shell/Bash scripts
+globs:
+  - "**/*.sh"
+  - "**/*.bash"
+  - "**/bash/**"
+alwaysApply: false
+---
+
+# Secure coding rules for Shell/Bash
+
+## Input Validation and Sanitization
+
+- Always quote variables to prevent word splitting and globbing issues ("$var" not $var).
+- Validate and sanitize all external input (user input, command-line arguments, environment variables).
+- Use parameter expansion with defaults (${var:-default}) to handle unset variables safely.
+- Check if files exist and have proper permissions before operating on them.
+
+## Command Injection Prevention
+
+- Avoid eval with untrusted input. Never use eval on user-provided data.
+- Use arrays for command arguments instead of string concatenation.
+- Prefer built-in commands over external executables when possible.
+- Use `--` to separate options from arguments (e.g., `rm -- "$file`).
+- Sanitize input before passing to shell commands or system().
+
+## File Operations
+
+- Validate file paths to prevent directory traversal attacks.
+- Use absolute paths or canonicalize paths with `realpath` before operations.
+- Set proper file permissions (umask) and ownership.
+- Use mktemp for temporary files instead of predictable paths.
+- Clean up temporary files in trap handlers (trap cleanup EXIT).
+
+## Error Handling and Logging
+
+- Use `set -e` to exit on errors, `set -u` to error on undefined variables.
+- Use `set -o pipefail` to catch errors in pipelines.
+- Implement proper error handling with trap for cleanup.
+- Log security-relevant events but never log sensitive data (passwords, keys).
+- Validate command exit codes ($?) for critical operations.
+
+## Credentials and Secrets
+
+- Never hardcode passwords, API keys, or credentials in scripts.
+- Use environment variables or secure configuration files for secrets.
+- Restrict script permissions (chmod 700 or 750) for scripts handling sensitive data.
+- Avoid echoing or logging sensitive information.
+- Use secure methods for password input (read -s for silent input).
+
+## Privilege and Permissions
+
+- Run scripts with least privilege necessary. Avoid unnecessary sudo/root.
+- Validate effective UID/GID when privilege is required.
+- Drop privileges after privileged operations are complete.
+- Use sudo with specific commands rather than running entire script as root.
+
+## Code Quality and Security
+
+- Use ShellCheck to identify common bugs and security issues.
+- Disable dangerous options like `set +e` in production scripts.
+- Use `readonly` for constants to prevent modification.
+- Avoid using `source` or `.` with untrusted scripts.
+- Use specific interpreters in shebang (#!/bin/bash not #!/bin/sh if using bash features).

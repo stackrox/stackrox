@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Formik } from 'formik';
-import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
+import { Divider, Flex, Grid, Title } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import type { NotifierIntegration } from 'types/notifier.proto';

@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
-    PageSection,
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Bullseye,
-    Spinner,
-    Divider,
     Button,
+    Divider,
     Flex,
+    PageSection,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    AlertGroup,
-    Alert,
-    AlertActionCloseButton,
 } from '@patternfly/react-core';
 
+import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
@@ -86,6 +87,7 @@ function PolicyCategoriesPage(): ReactElement {
 
     return (
         <>
+            <PageTitle title="Policy management - Policy categories" />
             <PolicyManagementHeader currentTabTitle="Policy categories" />
             <Divider component="div" />
             <PageSection variant="light" className="pf-v5-u-py-0">

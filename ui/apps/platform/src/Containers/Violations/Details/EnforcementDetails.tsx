@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import uniqBy from 'lodash/uniqBy';
-import { Flex, FlexItem, Divider, Card } from '@patternfly/react-core';
+import { Card, Divider, Flex, FlexItem } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';

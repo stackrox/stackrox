@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 
-import { SearchFilter } from 'types/search';
-
-import './FilterDropdowns.css';
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import { searchValueAsArray } from 'utils/searchUtils';
+import type { SearchFilter } from 'types/search';
 
 type CVEStatusDropdownProps<FilterField> = {
     filterField: FilterField;
@@ -16,29 +15,24 @@ function CVEStatusDropdown<FilterField extends 'FIXABLE' | 'CLUSTER CVE FIXABLE'
     searchFilter,
     onSelect,
 }: CVEStatusDropdownProps<FilterField>) {
-    const [cveStatusIsOpen, setCveStatusIsOpen] = useState(false);
+    const selections = searchValueAsArray(searchFilter[filterField]);
 
-    function onCveStatusToggle(isOpen: boolean) {
-        setCveStatusIsOpen(isOpen);
+    function handleItemSelect(selection: string, checked: boolean) {
+        onSelect(filterField, checked, selection);
     }
 
     return (
-        <Select
-            className="vm-filter-toolbar-dropdown"
-            variant="checkbox"
-            aria-label="CVE status filter menu items"
+        <CheckboxSelect
+            selections={selections}
+            onItemSelect={handleItemSelect}
+            ariaLabel="CVE status filter menu items"
             toggleAriaLabel="CVE status filter menu toggle"
-            onToggle={(_event, isOpen: boolean) => onCveStatusToggle(isOpen)}
-            onSelect={(e, selection) => {
-                onSelect(filterField, (e.target as HTMLInputElement).checked, selection as string);
-            }}
-            selections={searchFilter[filterField]}
-            isOpen={cveStatusIsOpen}
             placeholderText="CVE status"
+            className="vm-filter-toolbar-dropdown"
         >
-            <SelectOption key="Fixable" value="Fixable" />
-            <SelectOption key="NotFixable" value="Not fixable" />
-        </Select>
+            <SelectOption value="Fixable">Fixable</SelectOption>
+            <SelectOption value="Not fixable">Not fixable</SelectOption>
+        </CheckboxSelect>
     );
 }
 

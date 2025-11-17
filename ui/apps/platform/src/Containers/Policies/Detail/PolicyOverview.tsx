@@ -1,14 +1,13 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import {
     Card,
     CardBody,
+    CardHeader,
     DescriptionList,
+    Divider,
     Grid,
     GridItem,
     Title,
-    Divider,
-    CardHeader,
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';

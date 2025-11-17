@@ -1,8 +1,8 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import {
+    interactAndWaitForResponses,
     interceptRequests,
     waitForResponses,
-    interactAndWaitForResponses,
 } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 

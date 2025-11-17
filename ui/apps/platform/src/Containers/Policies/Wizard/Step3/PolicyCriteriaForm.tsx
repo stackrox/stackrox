@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -133,7 +132,10 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         className="pf-v5-u-h-100 pf-v5-u-pt-lg"
                         id="policy-criteria-keys-container"
                     >
-                        <PolicyCriteriaKeys keys={filteredDescriptors} />
+                        <PolicyCriteriaKeys
+                            keys={filteredDescriptors}
+                            eventSource={values.eventSource}
+                        />
                     </Flex>
                 )}
             </Flex>

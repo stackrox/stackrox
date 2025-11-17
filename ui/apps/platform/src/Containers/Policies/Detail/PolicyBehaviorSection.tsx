@@ -1,8 +1,7 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import { DescriptionList, Card, CardBody } from '@patternfly/react-core';
+import { Card, CardBody, DescriptionList } from '@patternfly/react-core';
 
-import type { LifecycleStage, PolicyEventSource, EnforcementAction } from 'types/policy.proto';
+import type { EnforcementAction, LifecycleStage, PolicyEventSource } from 'types/policy.proto';
 import DescriptionListItem from 'Components/DescriptionListItem';
 import {
     formatEventSource,

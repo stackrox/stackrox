@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
-    ExpandableSection,
     Badge,
-    Flex,
     DataList,
     DataListCell,
     DataListItem,
     DataListItemCells,
     DataListItemRow,
+    ExpandableSection,
+    Flex,
 } from '@patternfly/react-core';
 
 export type ExpandableLabelSectionProps = {
@@ -21,7 +22,7 @@ export type ExpandableLabelSectionProps = {
 function ExpandableLabelSection({ toggleText, labels }: ExpandableLabelSectionProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const onToggle = (_event: React.MouseEvent, isExpanded: boolean) => {
+    const onToggle = (_event: ReactMouseEvent, isExpanded: boolean) => {
         setIsExpanded(isExpanded);
     };
 

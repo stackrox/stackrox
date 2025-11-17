@@ -209,9 +209,11 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 	return nil
 }
 
+{{ if .GenerateDataModelHelpers -}}
 // Used for Testing
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }
+{{- end }}

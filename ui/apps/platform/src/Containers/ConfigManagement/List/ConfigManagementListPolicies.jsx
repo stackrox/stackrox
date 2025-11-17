@@ -1,15 +1,13 @@
-import React from 'react';
-
 import {
-    defaultHeaderClassName,
     defaultColumnClassName,
+    defaultHeaderClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import TableCellLink from 'Components/TableCellLink';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { entityListDefaultprops, entityListPropTypes } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { policySortFields } from 'constants/sortFields';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';

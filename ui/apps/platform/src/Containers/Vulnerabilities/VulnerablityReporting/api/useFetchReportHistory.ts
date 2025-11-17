@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
-import { ConfiguredReportSnapshot } from 'services/ReportsService.types';
-import { ApiSortOption } from 'types/search';
+import type { ConfiguredReportSnapshot } from 'services/ReportsService.types';
+import type { ApiSortOption } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseFetchReportHistory = {

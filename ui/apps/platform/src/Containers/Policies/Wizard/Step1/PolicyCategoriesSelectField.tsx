@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent, MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
+    Button,
+    Chip,
+    ChipGroup,
     FormGroup,
     FormHelperText,
     HelperText,
     HelperTextItem,
-    Select,
-    SelectOption,
-    SelectList,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    ChipGroup,
-    Chip,
-    Button,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { useField } from 'formik';

@@ -1,7 +1,7 @@
 import { select } from 'd3-selection';
 import { zoom as d3Zoom } from 'd3-zoom';
 
-import { getWidth, getHeight } from 'utils/d3Utils';
+import { getHeight, getWidth } from 'utils/d3Utils';
 import mainViewSelector from 'Components/TimelineGraph/MainView/selectors';
 import timelineZoomSelector from 'Components/TimelineGraph/EventsGraph/ZoomableOverlay/selectors';
 

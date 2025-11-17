@@ -9,9 +9,9 @@ import {
 import { navigateWizardNext } from '../../helpers/wizard';
 
 import {
-    visitComplianceEnhancedSchedulesFromLeftNav,
-    visitComplianceEnhancedScanConfigs,
     complianceEnhancedScanConfigsPath,
+    visitComplianceEnhancedScanConfigs,
+    visitComplianceEnhancedSchedulesFromLeftNav,
 } from './ComplianceEnhanced.helpers';
 
 function interceptAndMockComplianceIntegrations(callback) {

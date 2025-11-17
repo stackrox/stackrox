@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormEvent, ReactElement, RefObject } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';

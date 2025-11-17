@@ -48,8 +48,8 @@ func (m *FileAccess_File) CloneVT() *FileAccess_File {
 		return (*FileAccess_File)(nil)
 	}
 	r := new(FileAccess_File)
-	r.Path = m.Path
-	r.HostPath = m.HostPath
+	r.MountedPath = m.MountedPath
+	r.NodePath = m.NodePath
 	r.Meta = m.Meta.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -72,6 +72,7 @@ func (m *FileAccess) CloneVT() *FileAccess {
 	r.Moved = m.Moved.CloneVT()
 	r.Timestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Timestamp).CloneVT())
 	r.Process = m.Process.CloneVT()
+	r.Hostname = m.Hostname
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -120,10 +121,10 @@ func (this *FileAccess_File) EqualVT(that *FileAccess_File) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Path != that.Path {
+	if this.MountedPath != that.MountedPath {
 		return false
 	}
-	if this.HostPath != that.HostPath {
+	if this.NodePath != that.NodePath {
 		return false
 	}
 	if !this.Meta.EqualVT(that.Meta) {
@@ -158,6 +159,9 @@ func (this *FileAccess) EqualVT(that *FileAccess) bool {
 		return false
 	}
 	if !this.Process.EqualVT(that.Process) {
+		return false
+	}
+	if this.Hostname != that.Hostname {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -272,17 +276,17 @@ func (m *FileAccess_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.HostPath) > 0 {
-		i -= len(m.HostPath)
-		copy(dAtA[i:], m.HostPath)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.HostPath)))
+	if len(m.NodePath) > 0 {
+		i -= len(m.NodePath)
+		copy(dAtA[i:], m.NodePath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.NodePath)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Path) > 0 {
-		i -= len(m.Path)
-		copy(dAtA[i:], m.Path)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Path)))
+	if len(m.MountedPath) > 0 {
+		i -= len(m.MountedPath)
+		copy(dAtA[i:], m.MountedPath)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MountedPath)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -318,6 +322,13 @@ func (m *FileAccess) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Hostname) > 0 {
+		i -= len(m.Hostname)
+		copy(dAtA[i:], m.Hostname)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Hostname)))
+		i--
+		dAtA[i] = 0x32
 	}
 	if m.Process != nil {
 		size, err := m.Process.MarshalToSizedBufferVT(dAtA[:i])
@@ -400,11 +411,11 @@ func (m *FileAccess_File) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Path)
+	l = len(m.MountedPath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.HostPath)
+	l = len(m.NodePath)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -439,6 +450,10 @@ func (m *FileAccess) SizeVT() (n int) {
 	}
 	if m.Process != nil {
 		l = m.Process.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Hostname)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -648,7 +663,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MountedPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -676,11 +691,11 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Path = string(dAtA[iNdEx:postIndex])
+			m.MountedPath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HostPath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NodePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -708,7 +723,7 @@ func (m *FileAccess_File) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HostPath = string(dAtA[iNdEx:postIndex])
+			m.NodePath = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -960,6 +975,38 @@ func (m *FileAccess) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Hostname = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1193,7 +1240,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field MountedPath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1225,11 +1272,11 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Path = stringValue
+			m.MountedPath = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HostPath", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NodePath", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1261,7 +1308,7 @@ func (m *FileAccess_File) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.HostPath = stringValue
+			m.NodePath = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1512,6 +1559,42 @@ func (m *FileAccess) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.Process.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hostname", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Hostname = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

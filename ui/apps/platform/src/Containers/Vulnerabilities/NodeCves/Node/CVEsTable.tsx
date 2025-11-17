@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { pluralize } from '@patternfly/react-core';
-import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -13,8 +13,8 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import {
-    getIsSomeVulnerabilityFixable,
     getHighestVulnerabilitySeverity,
+    getIsSomeVulnerabilityFixable,
 } from '../../utils/vulnerabilityUtils';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import {

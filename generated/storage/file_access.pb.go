@@ -100,7 +100,9 @@ type FileAccess struct {
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The process that performed the action. May contain deployment/namespace
 	// information.
-	Process       *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
+	Process *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
+	// The hostname/name of the node where the file activity occurred
+	Hostname      string `protobuf:"bytes,6,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -168,6 +170,13 @@ func (x *FileAccess) GetProcess() *ProcessIndicator {
 		return x.Process
 	}
 	return nil
+}
+
+func (x *FileAccess) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
 }
 
 type FileAccess_FileMetadata struct {
@@ -247,9 +256,17 @@ func (x *FileAccess_FileMetadata) GetGroup() string {
 }
 
 type FileAccess_File struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Path          string                   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty" search:"File Path"`                         // @gotags: search:"File Path"
-	HostPath      string                   `protobuf:"bytes,2,opt,name=host_path,json=hostPath,proto3" json:"host_path,omitempty"` // @gotags: search: "File Host Path"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Relevant to deployment-based events, this is the path of a file in the
+	// container.
+	// e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
+	// is accessed from within the container: mounted_path will be /tmp/etc/passwd
+	MountedPath string `protobuf:"bytes,1,opt,name=mounted_path,json=mountedPath,proto3" json:"mounted_path,omitempty" search:"Mounted File Path"` // @gotags: search:"Mounted File Path"
+	// The path on the node file system. This is relevant to both deployment- and
+	// node-based events.
+	// e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
+	// is accessed from within the container: node_path will be /etc/passwd
+	NodePath      string                   `protobuf:"bytes,2,opt,name=node_path,json=nodePath,proto3" json:"node_path,omitempty" search:"Node File Path"` // @gotags: search:"Node File Path"
 	Meta          *FileAccess_FileMetadata `protobuf:"bytes,3,opt,name=meta,proto3" json:"meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -285,16 +302,16 @@ func (*FileAccess_File) Descriptor() ([]byte, []int) {
 	return file_storage_file_access_proto_rawDescGZIP(), []int{0, 1}
 }
 
-func (x *FileAccess_File) GetPath() string {
+func (x *FileAccess_File) GetMountedPath() string {
 	if x != nil {
-		return x.Path
+		return x.MountedPath
 	}
 	return ""
 }
 
-func (x *FileAccess_File) GetHostPath() string {
+func (x *FileAccess_File) GetNodePath() string {
 	if x != nil {
-		return x.HostPath
+		return x.NodePath
 	}
 	return ""
 }
@@ -310,23 +327,24 @@ var File_storage_file_access_proto protoreflect.FileDescriptor
 
 const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xf2\x04\n" +
+	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x9d\x05\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
 	"\toperation\x18\x02 \x01(\x0e2\x1d.storage.FileAccess.OperationR\toperation\x12.\n" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
-	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x1ax\n" +
+	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1ax\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\rR\x04mode\x12\x1a\n" +
 	"\busername\x18\x04 \x01(\tR\busername\x12\x14\n" +
-	"\x05group\x18\x05 \x01(\tR\x05group\x1am\n" +
-	"\x04File\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
-	"\thost_path\x18\x02 \x01(\tR\bhostPath\x124\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\x1a|\n" +
+	"\x04File\x12!\n" +
+	"\fmounted_path\x18\x01 \x01(\tR\vmountedPath\x12\x1b\n" +
+	"\tnode_path\x18\x02 \x01(\tR\bnodePath\x124\n" +
 	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"q\n" +
 	"\tOperation\x12\n" +
 	"\n" +

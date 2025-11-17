@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -29,31 +29,33 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
+import type { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
-import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
-import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
-import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
-import { downloadReportByJobId, deleteDownloadableReport } from 'services/ReportsService';
-import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
+import { deleteDownloadableReport, downloadReportByJobId } from 'services/ReportsService';
 import useAuthStatus from 'hooks/useAuthStatus';
 
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
-import { RunState, runStates } from 'types/reportJob';
+import { runStates } from 'types/reportJob';
+import type { RunState } from 'types/reportJob';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
+
+import { getRequestQueryString } from '../api/apiUtils';
+import useFetchReportHistory from '../api/useFetchReportHistory';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
+import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
+import { getReportFormValuesFromConfiguration } from '../utils';
 import JobDetails from './JobDetails';
 
 export type ReportJobsProps = {
@@ -83,7 +85,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
-    const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
+    const [showOnlyMyJobs, setShowOnlyMyJobs] = useState<boolean>(false);
     const expandedRowSet = useSet<string>();
 
     const query = getRequestQueryString({

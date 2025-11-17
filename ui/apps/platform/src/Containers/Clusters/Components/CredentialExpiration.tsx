@@ -1,9 +1,8 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 
-import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDate, getDayOfWeek, getDistanceStrictAsPhrase, getTime } from 'utils/dateUtils';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';

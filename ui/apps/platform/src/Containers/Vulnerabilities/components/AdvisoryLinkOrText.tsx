@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import { Advisory } from 'types/cve.proto';
+import type { Advisory } from 'types/cve.proto';
 
 // https://access.redhat.com/security/updates/advisory
 // Red Hat publishes three types of errata:

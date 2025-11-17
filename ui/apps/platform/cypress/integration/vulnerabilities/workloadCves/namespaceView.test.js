@@ -2,8 +2,8 @@ import withAuth from '../../../helpers/basicAuth';
 
 import {
     interactAndWaitForDeploymentList,
-    visitWorkloadCveOverview,
     visitNamespaceView,
+    visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 

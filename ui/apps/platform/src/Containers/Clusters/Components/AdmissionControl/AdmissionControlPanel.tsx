@@ -1,9 +1,8 @@
-import React from 'react';
 import {
     DescriptionList,
+    DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    DescriptionListDescription,
     List,
     ListItem,
 } from '@patternfly/react-core';

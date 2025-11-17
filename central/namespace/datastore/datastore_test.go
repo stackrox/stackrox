@@ -589,7 +589,7 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases(
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			namespaces, err := s.datastore.GetNamespacesForSAC(s.testContexts[tc.contextKey])
+			namespaces, err := s.datastore.GetNamespacesForSAC()
 			s.NoError(err)
 			s.GreaterOrEqual(len(namespaces), tc.expectMinResults)
 
@@ -600,7 +600,9 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases(
 					if retrievedNs.GetId() == ns.GetId() {
 						found = true
 						if tc.expectPrioritySet {
-							s.GreaterOrEqual(retrievedNs.GetPriority(), int64(0))
+							castedNs, casted := retrievedNs.(*storage.NamespaceMetadata)
+							s.Require().True(casted)
+							s.GreaterOrEqual(castedNs.GetPriority(), int64(0))
 						}
 						break
 					}

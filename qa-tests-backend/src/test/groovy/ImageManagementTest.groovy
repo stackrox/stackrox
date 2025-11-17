@@ -1,13 +1,10 @@
 import static util.Helpers.withRetry
 
-import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
 import objects.GenericNotifier
-import services.CVEService
 import services.ImageService
 import services.PolicyService
 
@@ -184,53 +181,6 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
-    def "Verify CVE snoozing applies to build time detection"() {
-        given:
-        "Create policy looking for a specific CVE applying to build time"
-        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-                .setName("Matching CVE (CVE-2019-14697)")
-                .addLifecycleStages(LifecycleStage.BUILD)
-                .addCategories("Testing")
-                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .addPolicySections(
-                        PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
-                                PolicyOuterClass.PolicyGroup.newBuilder()
-                                        .setFieldName("CVE")
-                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("CVE-2019-14697")
-                                                .build()).build()
-                        ).build()
-                )
-                .clearScope()
-                .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
-                .build()
-        policy = PolicyService.createAndFetchPolicy(policy)
-        def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
-        assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null
-
-        when:
-        "Suppress CVE and check that it violates"
-        def cve = "CVE-2019-14697"
-        CVEService.suppressImageCVE(cve)
-        scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
-        assert scanResults.alertsList.find { y -> y.policy.id == policy.id } == null
-
-        and:
-        "Unsuppress CVE"
-        CVEService.unsuppressImageCVE(cve)
-        scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
-
-        then:
-        "Verify unsuppressing lets the CVE show up again"
-        assert scanResults.alertsList.find { z -> z.policy.id == policy.id } != null
-
-        cleanup:
-        "Delete policy"
-        PolicyService.deletePolicy(policy.id)
-    }
-
-    @Unroll
-    @Tag("BAT")
     def "Verify risk is properly being attributed to scanned images"() {
         when:
         "Scan an image and then grab the image data"
@@ -274,49 +224,6 @@ class ImageManagementTest extends BaseSpecification {
         return image?.getScan()?.getComponentsList().
                 find { it.name == "openssl" }?.
                 getVulnsList().find { it.cve == "CVE-2010-0928" } != null
-    }
-
-    @Unroll
-    @Tag("BAT")
-    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
-    def "Verify image scan results when CVEs are suppressed: "() {
-        given:
-        "Scan image"
-        def image = ImageService.scanImage(TEST_IMAGE, true)
-        assert hasOpenSSLVuln(image)
-
-        image = ImageService.getImage(image.id, true)
-        assert hasOpenSSLVuln(image)
-
-        def cve = "CVE-2010-0928"
-        CVEService.suppressImageCVE(cve)
-
-        when:
-        def scanIncludeSnoozed = ImageService.scanImage(TEST_IMAGE, true)
-        assert hasOpenSSLVuln(scanIncludeSnoozed)
-
-        def scanExcludedSnoozed = ImageService.scanImage(TEST_IMAGE, false)
-        assert !hasOpenSSLVuln(scanExcludedSnoozed)
-
-        def getIncludeSnoozed  = ImageService.getImage(image.id, true)
-        assert hasOpenSSLVuln(getIncludeSnoozed)
-
-        def getExcludeSnoozed  = ImageService.getImage(image.id, false)
-        assert !hasOpenSSLVuln(getExcludeSnoozed)
-
-        CVEService.unsuppressImageCVE(cve)
-
-        def unsuppressedScan = ImageService.scanImage(TEST_IMAGE, false)
-        def unsuppressedGet  = ImageService.getImage(image.id, false)
-
-        then:
-
-        assert hasOpenSSLVuln(unsuppressedScan)
-        assert hasOpenSSLVuln(unsuppressedGet)
-
-        cleanup:
-        // Should be able to call this multiple times safely in case of any failures previously
-        CVEService.unsuppressImageCVE(cve)
     }
 
     @Tag("BAT")

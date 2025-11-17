@@ -1,0 +1,29 @@
+---
+description: Secure coding rules for Kubernetes Operators ⚙️
+globs:
+  - "**/operator*"
+alwaysApply: false
+---
+
+- Restrict access to sensitive resources (e.g., secrets) by using Role-Based Access Control (RBAC) and the Principle of Least Privilege.
+- To minimize cluster and namespace permissions, create dedicated roles for each workload with only the necessary permissions and avoid using wildcards. Never use service accounts with cluster-admin or similar broad privileges.
+- Isolate operator workloads by deploying them in dedicated namespaces. This prevents a compromise from spreading and affecting other workloads in the cluster.
+- Instead of using default service accounts, create dedicated ones with only the minimum necessary permissions for your workload.
+- Store all credentials and sensitive information in Secrets instead of hard-coding them in configuration files or environment variables.
+- Ensure all communications are encrypted with TLS 1.2 or 1.3 (recommended).
+- If using an older TLS version for compatibility, ensure all workloads have updated TLS configurations with weak cipher suites disabled.
+- Define CPU and memory resource requests and limits to prevent resource exhaustion.
+- Establish network policies with a "deny all" default for ingress and egress traffic. Explicitly define specific allow rules to control flow between pods, namespaces, and external services.
+- Use certificates issued by an Openshift trusted CA.
+- Avoid outdated dependencies. Replace deprecated and obsolete libraries with modern alternatives.
+- Avoid or redact sensitive information in logs and error messages.
+- Ensure the audit log captures enough detail for effective incident investigation.
+- If the workload exposes any endpoints (like metrics), add authentication unless they are intended for public access. This is a crucial security practice that protects against future data exposure, even if the endpoint isn't currently handling sensitive information.
+- Use the most restrictive Security Context Constraints (SCCs), such as restricted or restricted-v2, to enforce policies. This disallows privileged containers, prevents containers from running as root or escalating privileges, and denies host breakouts by disabling features like hostPID, hostIPC, hostNetwork, and allowedHostPath.
+- If an operator requires privileged permissions and cannot use restrictive SCCs, consider implementing the following controls as appropriate to mitigate the risk:
+  - Ensure operator containers are mounted as read-only by setting “readOnlyRootFilesystem: true”. This prevents the container from writing to the root filesystem, which is a powerful defense against attackers who try to install malicious code.
+  - Ensures the container process runs as a non-root user by setting “runAsNonRoot: true”.
+  - Configure pods with “allowPrivilegeEscalation: false” to prevent a container from gaining more privileges than its parent process.
+  - Drop all Linux capabilities by setting “capabilities: drop: [ALL]”. This ensures the container operates with the fewest possible permissions, and you can add specific capabilities back if needed.
+  - Use seccomp profiles to control system calls and enforce security policies.
+  - Ensure your workloads are not running privileged. Avoid setting “privileged: true” unless it's an absolute necessity. Instead, consider workloads that can run with lower, more fine-grained permissions.

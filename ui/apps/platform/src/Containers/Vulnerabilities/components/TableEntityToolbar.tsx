@@ -1,14 +1,14 @@
-import React, { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Divider,
-    Toolbar,
-    ToolbarItem,
-    ToolbarContent,
     Pagination,
+    Toolbar,
+    ToolbarContent,
     ToolbarGroup,
+    ToolbarItem,
 } from '@patternfly/react-core';
 
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 
@@ -27,7 +27,7 @@ export type TableEntityToolbarProps = {
      * Any additional children to be rendered in the toolbar.
      *  These will be rendered between the entityToggleGroup and the pagination.
      */
-    children?: React.ReactNode;
+    children?: ReactNode;
 };
 
 /**
@@ -40,7 +40,7 @@ function TableEntityToolbar({
     tableRowCount,
     isFiltered,
     children,
-}: TableEntityToolbarProps) {
+}: TableEntityToolbarProps): ReactElement {
     const { page, perPage, setPage, setPerPage } = pagination;
     return (
         <>

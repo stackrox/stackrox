@@ -8,12 +8,12 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
     clickTab,
-    deploymentswithprocessinfoAlias,
     deploymentscountAlias,
-    visitRiskDeployments,
-    visitRiskDeploymentsWithSearchQuery,
+    deploymentswithprocessinfoAlias,
     viewRiskDeploymentByName,
     viewRiskDeploymentInNetworkGraph,
+    visitRiskDeployments,
+    visitRiskDeploymentsWithSearchQuery,
 } from './Risk.helpers';
 import { selectors as RiskPageSelectors } from './Risk.selectors';
 

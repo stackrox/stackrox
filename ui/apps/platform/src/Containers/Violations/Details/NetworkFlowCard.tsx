@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
     Card,
+    CardBody,
+    CardExpandableContent,
     CardHeader,
     CardTitle,
-    CardExpandableContent,
-    CardBody,
     DescriptionList,
 } from '@patternfly/react-core';
 

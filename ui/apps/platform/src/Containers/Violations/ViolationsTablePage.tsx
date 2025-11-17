@@ -8,15 +8,15 @@ import {
     PageSection,
     Popover,
     Spinner,
-    Title,
-    Tabs,
     Tab,
     TabTitleText,
+    Tabs,
     Text,
+    Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
-import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
+import { fetchAlertCount, fetchAlerts } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';

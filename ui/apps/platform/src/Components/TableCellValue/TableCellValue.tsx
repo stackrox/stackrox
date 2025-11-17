@@ -5,7 +5,7 @@ type TableCellValueProps<T> = {
     row: T;
     column: {
         Header: string;
-        accessor: ((data) => string) | string;
+        accessor: ((data: T) => string) | string;
     };
 };
 

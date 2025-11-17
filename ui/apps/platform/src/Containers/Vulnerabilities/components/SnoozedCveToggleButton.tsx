@@ -1,6 +1,5 @@
-import React from 'react';
 import { Button } from '@patternfly/react-core';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 export type SnoozedCveToggleButtonProps = {
     searchFilter: SearchFilter;

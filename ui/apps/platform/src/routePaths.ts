@@ -3,10 +3,11 @@
  */
 
 import { rbacConfigTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
-import { ResourceName } from 'types/roleResources';
-import { FeatureFlagPredicate, allEnabled } from 'utils/featureFlagUtils';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
+import type { ResourceName } from 'types/roleResources';
+import { allEnabled } from 'utils/featureFlagUtils';
+import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';

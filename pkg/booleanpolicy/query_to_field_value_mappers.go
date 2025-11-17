@@ -50,6 +50,7 @@ var (
 		search.VolumeName:                    newMapper(fieldnames.VolumeName, directMap),
 		search.VolumeSource:                  newMapper(fieldnames.VolumeSource, directMap),
 		search.VolumeType:                    newMapper(fieldnames.VolumeType, directMap),
+		search.NodeFilePath:                  newMapper(fieldnames.NodeFilePath, directMap),
 	}
 )
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Divider, SelectOption } from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
@@ -51,6 +50,7 @@ function SearchFilterStatuses({
             selections={statusesSelected ?? [optionAll]}
             onChange={onSelect}
             ariaLabel="Status filter menu items"
+            toggleAriaLabel="Status filter menu toggle"
             placeholderText="Filter by status"
             isDisabled={isDisabled}
         >

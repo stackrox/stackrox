@@ -1,4 +1,3 @@
-import React from 'react';
 import keyBy from 'lodash/keyBy';
 import { Flex } from '@patternfly/react-core';
 import { useDrop } from 'react-dnd';

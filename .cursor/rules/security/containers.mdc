@@ -1,0 +1,47 @@
+---
+description: Secure coding rules for Stackrox Containers
+globs:
+  - "**/Containerfile"
+  - "**/*Dockerfile*"
+alwaysApply: false
+---
+
+# Secure coding rules for Containers
+
+## Base Image Security
+
+- Use minimal, up-to-date base images from trusted sources (official registries).
+- Prefer distroless or minimal images (Alpine, scratch) to reduce attack surface.
+- Pin specific image versions using digest (sha256) rather than tags.
+- Remove non-essential software and keep essential packages updated.
+- Regularly scan base images for vulnerabilities and update promptly.
+
+## Runtime Security
+
+- Run containers as non-root user (USER directive with non-zero UID).
+- Use read-only root filesystems where possible.
+- Drop all Linux capabilities and add only those required.
+- Set resource limits (CPU, memory) to prevent resource exhaustion.
+- Avoid privileged containers unless absolutely necessary.
+
+## Secret Management
+
+- Never hardcode secrets, credentials, or API keys in Dockerfiles or images.
+- Never include secrets in environment variables visible in image layers.
+- Use build-time secrets with BuildKit's --secret flag for build-time needs.
+- Mount secrets as volumes at runtime rather than embedding in images.
+- Remove sensitive data and build artifacts in the same RUN layer.
+
+## Network Isolation
+
+- Minimize exposed ports and only expose what is necessary.
+- Use specific port numbers rather than ranges.
+- Implement network policies to restrict container communication.
+- Use internal networks for inter-container communication.
+
+## Image Integrity
+
+- Sign container images and verify signatures before deployment.
+- Use image scanning tools (Clair, Trivy, Grype) in CI/CD pipelines.
+- Implement admission controllers to enforce security policies.
+- Regularly audit images for vulnerabilities and compliance.

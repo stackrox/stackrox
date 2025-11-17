@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     Button,
     ClipboardCopy,
@@ -14,10 +13,12 @@ import {
 import differenceInCalendarDays from 'date-fns/difference_in_calendar_days';
 
 import {
-    BaseVulnerabilityException,
-    VulnerabilityDeferralException,
     isDeferralException,
     isFalsePositiveException,
+} from 'services/VulnerabilityExceptionService';
+import type {
+    BaseVulnerabilityException,
+    VulnerabilityDeferralException,
 } from 'services/VulnerabilityExceptionService';
 import { getDate } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';

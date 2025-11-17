@@ -1,12 +1,11 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useField } from 'formik';
 import {
+    FormGroup,
+    SelectOption,
     TextInput,
     ToggleGroup,
     ToggleGroupItem,
-    FormGroup,
-    SelectOption,
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
@@ -121,7 +120,6 @@ function PolicyCriteriaFieldInput({
                         handleSelect={handleChangeSelect}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select an option'}
-                        maxWidth="100%"
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption

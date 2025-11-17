@@ -19,10 +19,10 @@ import { getNodeById } from './utils/networkGraphUtils';
 import type { EdgeState } from './components/EdgeStateSelect';
 import type { DisplayOption } from './components/DisplayOptionsSelect';
 import {
-    createExtraneousNodes,
     createExtraneousEdges,
-    graphModel,
+    createExtraneousNodes,
     getConnectedNodeIds,
+    graphModel,
 } from './utils/modelUtils';
 import {
     cidrBlockBadgeColor,

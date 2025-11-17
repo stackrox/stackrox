@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
-import { Table, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
 import type {
     EffectiveAccessScopeCluster,

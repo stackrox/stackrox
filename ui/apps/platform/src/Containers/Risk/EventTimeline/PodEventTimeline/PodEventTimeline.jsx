@@ -11,7 +11,7 @@ import HeaderWithSubText from 'Components/HeaderWithSubText';
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import TimelineLegend from 'Components/TimelineLegend';
-import ExportMenu from 'Containers/ExportMenu';
+import ExportMenu from '../ExportMenu';
 import EventTypeSelect from '../EventTypeSelect';
 import { getContainerEvents, getPod } from './getContainerEvents';
 import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';

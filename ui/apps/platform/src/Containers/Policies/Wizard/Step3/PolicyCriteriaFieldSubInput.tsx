@@ -1,7 +1,6 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useField } from 'formik';
-import { TextInput, FormGroup, SelectOption } from '@patternfly/react-core';
+import { FormGroup, SelectOption, TextInput } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import type { SubComponent } from './policyCriteriaDescriptors';

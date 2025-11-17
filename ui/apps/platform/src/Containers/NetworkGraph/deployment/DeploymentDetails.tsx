@@ -6,6 +6,7 @@ import {
     DescriptionListTerm,
     Divider,
     EmptyState,
+    EmptyStateHeader,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -15,7 +16,6 @@ import {
     StackItem,
     TextContent,
     Title,
-    EmptyStateHeader,
 } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';

@@ -1,12 +1,12 @@
 import withAuth from '../../../helpers/basicAuth';
 import {
-    visitWorkloadCveOverview,
     selectEntityTab,
-    unwatchAllImages,
     selectUnwatchedImageTextFromTable,
-    watchImageFlowFromModal,
-    unwatchImageFromModal,
     typeAndSelectCustomSearchFilterValue,
+    unwatchAllImages,
+    unwatchImageFromModal,
+    visitWorkloadCveOverview,
+    watchImageFlowFromModal,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 

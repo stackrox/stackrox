@@ -10,7 +10,17 @@ export function ensureJobContextTab(value: unknown): JobContextTab {
     return 'CONFIGURATION_DETAILS';
 }
 
-export function onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL }) {
+export function onDownloadReport({
+    reportJobId,
+    name,
+    completedAt,
+    baseDownloadURL,
+}: {
+    reportJobId: string;
+    name: string;
+    completedAt: string;
+    baseDownloadURL: string;
+}) {
     const filename = `${name}-${completedAt}`;
     const sanitizedFilename = sanitizeFilename(filename);
     return saveFile({

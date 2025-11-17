@@ -655,4 +655,18 @@ module.exports = {
         container: false,
     },
     purge: ['./src/**/*.{js,jsx,ts,tsx}'],
+    // TODO Investigate slight difference with limited purge.
+    // purge: [
+    //     './src/Components/**/*.{js,jsx,ts,tsx}', // deprecated
+    //     './src/Containers/Clusters/**/*.{js,jsx,ts,tsx}', // fix errors, and then delete
+    //     './src/Containers/Compliance/**/*.{js,jsx,ts,tsx}', // deprecated
+    //     './src/Containers/ConfigManagement/**/*.{js,jsx,ts,tsx}',
+    //     './src/Containers/Images/**/*.{js,jsx,ts,tsx}', // deprecated
+    //     './src/Containers/Login/**/*.{js,jsx,ts,tsx}', // fix errors, and then delete
+    //     './src/Containers/MainPage/**/*.{js,jsx,ts,tsx}', // fix errors, and then delete
+    //     './src/Containers/Risk/**/*.{js,jsx,ts,tsx}', // rewrite in PatternFly, and then delete
+    //     './src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete
+    //     './src/Containers/VulnMgmt/**/*.{js,jsx,ts,tsx}', // deprecated
+    //     './src/Containers/Workflow/**/*.{js,jsx,ts,tsx}', // deprecated
+    // ],
 };

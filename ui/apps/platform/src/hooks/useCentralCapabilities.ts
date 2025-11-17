@@ -4,8 +4,12 @@ import { useSelector } from 'react-redux';
 import { selectors } from 'reducers';
 import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 
+export type IsCentralCapabilityAvailable = (
+    centralCapabilityFlag: CentralCapabilitiesFlags
+) => boolean;
+
 type UseCentralCapabilityResult = {
-    isCentralCapabilityAvailable: (centralCapabilityFlag: CentralCapabilitiesFlags) => boolean;
+    isCentralCapabilityAvailable: IsCentralCapabilityAvailable;
 };
 
 function useCentralCapabilities(): UseCentralCapabilityResult {

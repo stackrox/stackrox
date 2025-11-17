@@ -1,9 +1,8 @@
-import React from 'react';
 import { Card, CardBody, CardTitle, Flex, Grid, GridItem, Text } from '@patternfly/react-core';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 
 const severitiesDescendingCriticality = [

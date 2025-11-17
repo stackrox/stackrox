@@ -1,12 +1,11 @@
-import React from 'react';
 import type { ReactElement, Ref } from 'react';
 import {
-    Select,
-    MenuToggle,
-    SelectList,
-    SelectOption,
     Flex,
     FlexItem,
+    MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 

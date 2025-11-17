@@ -1,14 +1,15 @@
-import React from 'react';
 import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
-import { FormikHelpers } from 'formik';
+import type { FormikHelpers } from 'formik';
 import dateFns from 'date-fns';
 
 import {
-    UpdateVulnerabilityExceptionRequest,
-    VulnerabilityException,
     createDeferralVulnerabilityException,
     createFalsePositiveVulnerabilityException,
     updateVulnerabilityException,
+} from 'services/VulnerabilityExceptionService';
+import type {
+    UpdateVulnerabilityExceptionRequest,
+    VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -16,17 +17,16 @@ import useAnalytics, {
     WORKLOAD_CVE_DEFERRAL_EXCEPTION_REQUESTED,
     WORKLOAD_CVE_FALSE_POSITIVE_EXCEPTION_REQUESTED,
 } from 'hooks/useAnalytics';
-import { CveExceptionRequestType } from '../../types';
+import type { CveExceptionRequestType } from '../../types';
 import {
-    DeferralValues,
-    FalsePositiveValues,
-    ScopeContext,
     deferralValidationSchema,
     falsePositiveValidationSchema,
     formValuesToDeferralRequest,
     formValuesToFalsePositiveRequest,
 } from './utils';
-import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
+import type { DeferralValues, FalsePositiveValues, ScopeContext } from './utils';
+import ExceptionRequestForm from './ExceptionRequestForm';
+import type { ExceptionRequestFormProps } from './ExceptionRequestForm';
 
 function normalizeExpiryForAnalytics(
     expiry: DeferralValues['expiry']

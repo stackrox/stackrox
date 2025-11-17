@@ -62,6 +62,25 @@ func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
 	}
 }
 
+// Cluster is the interface for clusters in the access scope computation
+type Cluster interface {
+	GetId() string
+	GetName() string
+	GetLabels() map[string]string
+}
+
+var _ Cluster = (*storage.Cluster)(nil)
+
+// Namespace is the interface for namespaces in the access scope computation
+type Namespace interface {
+	GetClusterName() string
+	GetId() string
+	GetName() string
+	GetLabels() map[string]string
+}
+
+var _ Namespace = (*storage.NamespaceMetadata)(nil)
+
 // UnrestrictedEffectiveAccessScope returns ScopeTree allowing everything
 // implicitly via marking the root Included.
 func UnrestrictedEffectiveAccessScope() *ScopeTree {
@@ -77,7 +96,7 @@ func DenyAllEffectiveAccessScope() *ScopeTree {
 // ComputeEffectiveAccessScope applies a simple access scope to provided
 // clusters and namespaces and yields ScopeTree. Empty access scope rules
 // mean nothing is included.
-func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
+func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []Cluster, namespaces []Namespace, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
 	root := newEffectiveAccessScopeTree(Excluded)
 
 	// Compile scope into cluster and namespace selectors.
@@ -230,7 +249,7 @@ func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {
 // populateStateForCluster adds given cluster as Included or Excluded to root.
 // Only the last observed cluster is considered if multiple ones with the same
 // name exist.
-func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (root *ScopeTree) populateStateForCluster(cluster Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := cluster.GetName()
 
 	// There is no need to check if root is Included as we start with Excluded root.
@@ -351,7 +370,7 @@ func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
 // populateStateForNamespace adds given namespace as Included or Excluded to
 // parent cluster. Only the last observed namespace is considered if multiple
 // ones with the same <cluster name, namespace name> exist.
-func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storage.NamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace Namespace, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := namespace.GetClusterName()
 	namespaceName := namespace.GetName()
 	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)

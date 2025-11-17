@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -40,6 +41,9 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	virtualMachineInstance := &kubeVirtV1.VirtualMachineInstance{}
 	if err := k8sUtils.FromUnstructuredToSpecificTypePointer(obj, virtualMachineInstance); err != nil {
 		log.Errorf("unable to convert 'Unstructured' to 'VirtualMachineInstance': %v", err)

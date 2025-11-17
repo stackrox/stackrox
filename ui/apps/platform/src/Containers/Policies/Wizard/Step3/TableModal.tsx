@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
@@ -23,7 +23,7 @@ type TableModalProps = {
     setValue: (value: ClientPolicyValue) => void;
     value: ClientPolicyValue;
     readOnly?: boolean;
-    rows: { id: string; link: string }[];
+    rows: (SignatureIntegration & { link: string })[];
     columns: IntegrationTableColumnDescriptor<SignatureIntegration>[];
     typeText: string;
 };

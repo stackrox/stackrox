@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,14 @@ var (
 		},
 	}
 )
-var clusters = []*storage.Cluster{
+
+var clusters = []effectiveaccessscope.Cluster{
+	clusterQueen,
+	clusterPinkFloyd,
+	clusterDeepPurple,
+}
+
+var storageClusters = []*storage.Cluster{
 	clusterQueen,
 	clusterPinkFloyd,
 	clusterDeepPurple,
@@ -129,7 +137,18 @@ var (
 	}
 )
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []effectiveaccessscope.Namespace{
+	// Queen
+	namespaceQueenInClusterQueen,
+	namespaceJazzInClusterQueen,
+	namespaceInnuendoInClusterQueen,
+	// Pink Floyd
+	namespaceTheWallInClusterPinkFloyd,
+	// Deep Purple
+	namespaceMachineHeadInClusterDeepPurple,
+}
+
+var storageNamespaces = []*storage.NamespaceMetadata{
 	// Queen
 	namespaceQueenInClusterQueen,
 	namespaceJazzInClusterQueen,
@@ -545,7 +564,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 
 	writeCtx := sac.WithAllAccess(context.Background())
 
-	for _, cluster := range clusters {
+	for _, cluster := range storageClusters {
 		clusterToAdd := cluster.CloneVT()
 		clusterToAdd.Id = ""
 		clusterToAdd.MainImage = "quay.io/rhacs-eng/main:latest"
@@ -555,7 +574,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 		s.storedClusterIDs = append(s.storedClusterIDs, id)
 	}
 
-	for _, namespace := range namespaces {
+	for _, namespace := range storageNamespaces {
 		ns := namespace.CloneVT()
 		ns.Id = getNamespaceID(ns.GetName())
 		ns.ClusterId = s.clusterNameToIDMap[ns.GetClusterName()]

@@ -115,6 +115,37 @@ const rules = {
             };
         },
     },
+    'Route-replace': {
+        // Require replace prop for React Router Navigate element.
+        // If landing path of route (that is, address in left navigation)
+        // redirects to first tab as (default) push,
+        // then browser history has an additional entry
+        // and user must click Back two times instead of expected one time.
+        // Rule allows replace={false} for theoretical case where push is intended.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require replace prop for React Router Navigate element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'Navigate' &&
+                        node.attributes.some((attribute) => attribute.name?.name === 'to') &&
+                        !node.attributes.some((attribute) => attribute.name?.name === 'replace')
+                    ) {
+                        context.report({
+                            node,
+                            message: 'Require that React Router Navigate element has replace prop',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'Td-defaultColumns': {
         // Require that Td element has key and title from defaultColumns configuration.
         // That is, if Td element has props for column management:

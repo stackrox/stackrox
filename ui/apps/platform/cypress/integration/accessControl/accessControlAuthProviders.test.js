@@ -20,15 +20,15 @@ import {
     clickRowActionMenuItemInTable,
     groupsAlias,
     groupsBatchAliasForPOST,
+    inviteNewGroupsBatch,
     rolesAlias,
     saveCreatedAuthProvider,
     saveUpdatedAuthProvider,
-    inviteNewGroupsBatch,
     visitAccessControlEntities,
     visitAccessControlEntitiesWithStaticResponseForPermissions,
     visitAccessControlEntity,
 } from './accessControl.helpers';
-import { selectors, accessModalSelectors } from './accessControl.selectors';
+import { accessModalSelectors, selectors } from './accessControl.selectors';
 
 describe('Access Control Auth providers', () => {
     withAuth();

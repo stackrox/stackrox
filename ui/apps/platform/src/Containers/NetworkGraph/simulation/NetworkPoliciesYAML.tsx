@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 
-import { CodeBlockAction, Button } from '@patternfly/react-core';
+import { Button, CodeBlockAction } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
 import CodeViewer from 'Components/CodeViewer';

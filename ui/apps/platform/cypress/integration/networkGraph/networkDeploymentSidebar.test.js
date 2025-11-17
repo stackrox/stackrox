@@ -1,11 +1,11 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitNetworkGraph,
     checkNetworkGraphEmptyState,
     selectCluster,
-    selectNamespace,
     selectDeployment,
+    selectNamespace,
+    visitNetworkGraph,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';
 

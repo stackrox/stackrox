@@ -1,15 +1,23 @@
 import { useState } from 'react';
-import type { Dispatch, ReactElement, SetStateAction } from 'react';
+import type { Dispatch, FormEvent, MouseEvent, ReactElement, SetStateAction } from 'react';
 import {
+    Badge,
+    Divider,
+    Flex,
+    FlexItem,
+    MenuToggle,
     Select,
     SelectGroup,
+    SelectList,
     SelectOption,
-    SelectPosition,
-} from '@patternfly/react-core/deprecated';
+    TextInputGroup,
+    TextInputGroupMain,
+} from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 
-import useMultiSelect from 'hooks/useMultiSelect';
 import type { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
+import { toggleItemInArray } from 'utils/arrayUtils';
 
 export type AdvancedFlowsFilterProps = {
     filters: AdvancedFlowsFilterType;
@@ -33,83 +41,146 @@ function AdvancedFlowsFilter({
 
     // component state
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-    const {
-        isOpen: isPortsSelectOpen,
-        onToggle: onTogglePortsSelect,
-        onSelect: onSelectPorts,
-    } = useMultiSelect(handlePortsSelect, filters.ports, false);
+    const [portsFilterValue, setPortsFilterValue] = useState('');
+
+    // Calculate total filter count for badge
+    const totalFilterCount =
+        filters.directionality.length + filters.protocols.length + filters.ports.length;
 
     // setters
-    const onFilterDropdownToggle = (isOpen: boolean) => {
-        setIsFilterDropdownOpen(isOpen);
+    const onFilterDropdownToggle = () => {
+        setIsFilterDropdownOpen((prev) => !prev);
     };
-    const onTrafficFilterSelect = (_, selection) => {
-        if (selections.includes(selection)) {
+
+    const onSelect = (
+        _event: MouseEvent<Element, globalThis.MouseEvent> | undefined,
+        selection: string | number | undefined
+    ) => {
+        const value = String(selection);
+
+        // Handle port selection
+        if (allUniquePorts.includes(value)) {
+            setFilters((prevFilters) => {
+                const newPorts = toggleItemInArray(prevFilters.ports, value);
+                return { ...prevFilters, ports: newPorts };
+            });
+            setPortsFilterValue('');
+            return;
+        }
+
+        // Handle traffic filter selection (directionality and protocols)
+        if (selections.includes(value)) {
             setFilters((prevFilters) => {
                 const prevSelection = filtersToSelections(prevFilters);
-                const newSelection = prevSelection.filter((item) => item !== selection);
+                const newSelection = prevSelection.filter((item) => item !== value);
                 const newFilters = selectionsToFilters(newSelection);
                 return newFilters;
             });
         } else {
             setFilters((prevFilters) => {
                 const prevSelection = filtersToSelections(prevFilters);
-                const newSelection = [...prevSelection, selection] as string[];
+                const newSelection = [...prevSelection, value] as string[];
                 const newFilters = selectionsToFilters(newSelection);
                 return newFilters;
             });
         }
     };
-    function handlePortsSelect(selection) {
-        setFilters((prevFilters) => {
-            const newFilters = { ...prevFilters };
-            newFilters.ports = selection;
-            return newFilters;
-        });
-    }
+
+    const onPortsFilterChange = (_event: FormEvent<HTMLInputElement>, value: string) => {
+        setPortsFilterValue(value);
+    };
+
+    // Filter and sort ports based on search input
+    const filtered = allUniquePorts.filter((port) =>
+        port.toLowerCase().includes(portsFilterValue.toLowerCase())
+    );
+    const filteredPorts = filtered.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
     return (
         <Select
-            className="advanced-flows-filters-select"
-            variant="checkbox"
-            onToggle={(_event, isOpen: boolean) => onFilterDropdownToggle(isOpen)}
-            onSelect={onTrafficFilterSelect}
-            selections={selections}
             isOpen={isFilterDropdownOpen}
-            placeholderText="Advanced"
-            aria-labelledby="advanced-flows-filters-select"
-            isGrouped
-            position={SelectPosition.right}
-        >
-            <SelectGroup label="Flow directionality">
-                <SelectOption value="ingress">Ingress (inbound)</SelectOption>
-                <SelectOption value="egress">Egress (outbound)</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Protocols">
-                <SelectOption value="L4_PROTOCOL_TCP">TCP</SelectOption>
-                <SelectOption value="L4_PROTOCOL_UDP">UDP</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Ports">
-                <Select
-                    className="pf-v5-u-px-md"
-                    variant="typeaheadmulti"
-                    toggleAriaLabel="Select ports"
-                    onToggle={onTogglePortsSelect}
-                    onSelect={onSelectPorts}
-                    selections={filters.ports}
-                    isOpen={isPortsSelectOpen}
-                    placeholderText="Select ports"
-                    menuAppendTo="parent"
+            onOpenChange={setIsFilterDropdownOpen}
+            onSelect={onSelect}
+            toggle={(toggleRef) => (
+                <MenuToggle
+                    ref={toggleRef}
+                    onClick={onFilterDropdownToggle}
+                    isExpanded={isFilterDropdownOpen}
+                    className="advanced-flows-filters-select"
                 >
-                    {allUniquePorts.map((port) => {
-                        return (
-                            <SelectOption value={port} key={port}>
+                    <Flex
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
+                        <FlexItem>Advanced</FlexItem>
+                        {totalFilterCount > 0 && <Badge isRead>{totalFilterCount}</Badge>}
+                    </Flex>
+                </MenuToggle>
+            )}
+            popperProps={{ position: 'right' }}
+        >
+            <SelectList style={{ maxHeight: '50vh', overflow: 'auto' }}>
+                <SelectGroup label="Flow directionality">
+                    <SelectOption
+                        value="ingress"
+                        hasCheckbox
+                        isSelected={selections.includes('ingress')}
+                    >
+                        Ingress (inbound)
+                    </SelectOption>
+                    <SelectOption
+                        value="egress"
+                        hasCheckbox
+                        isSelected={selections.includes('egress')}
+                    >
+                        Egress (outbound)
+                    </SelectOption>
+                </SelectGroup>
+                <SelectGroup label="Protocols">
+                    <SelectOption
+                        value="L4_PROTOCOL_TCP"
+                        hasCheckbox
+                        isSelected={selections.includes('L4_PROTOCOL_TCP')}
+                    >
+                        TCP
+                    </SelectOption>
+                    <SelectOption
+                        value="L4_PROTOCOL_UDP"
+                        hasCheckbox
+                        isSelected={selections.includes('L4_PROTOCOL_UDP')}
+                    >
+                        UDP
+                    </SelectOption>
+                </SelectGroup>
+                <SelectGroup label="Ports">
+                    <div className="pf-v5-u-p-md">
+                        <TextInputGroup>
+                            <TextInputGroupMain
+                                value={portsFilterValue}
+                                onChange={onPortsFilterChange}
+                                placeholder="Filter by port"
+                                aria-label="Filter ports"
+                                icon={<SearchIcon />}
+                            />
+                        </TextInputGroup>
+                    </div>
+                    {filteredPorts.length > 0 && <Divider />}
+                    {filteredPorts.length > 0 ? (
+                        filteredPorts.map((port) => (
+                            <SelectOption
+                                key={port}
+                                value={port}
+                                hasCheckbox
+                                isSelected={filters.ports.includes(port)}
+                            >
                                 {port}
                             </SelectOption>
-                        );
-                    })}
-                </Select>
-            </SelectGroup>
+                        ))
+                    ) : (
+                        <SelectOption isDisabled>No matching ports</SelectOption>
+                    )}
+                </SelectGroup>
+            </SelectList>
         </Select>
     );
 }

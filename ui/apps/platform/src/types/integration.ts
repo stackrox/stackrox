@@ -1,12 +1,16 @@
 import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 
-export type IntegrationSource =
-    | 'authProviders'
-    | 'notifiers'
-    | 'imageIntegrations'
-    | 'backups'
-    | 'signatureIntegrations'
-    | 'cloudSources';
+// Render tabs in order of sources.
+export const integrationSources = [
+    'imageIntegrations',
+    'signatureIntegrations',
+    'notifiers',
+    'backups',
+    'cloudSources',
+    'authProviders',
+] as const;
+
+export type IntegrationSource = (typeof integrationSources)[number];
 
 export type IntegrationType =
     | AuthProviderType

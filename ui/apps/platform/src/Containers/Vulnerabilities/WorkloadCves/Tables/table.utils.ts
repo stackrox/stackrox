@@ -3,14 +3,10 @@ import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 
-import {
-    Advisory,
-    CveBaseInfo,
-    VulnerabilitySeverity,
-    isVulnerabilitySeverity,
-} from 'types/cve.proto';
-import { SourceType } from 'types/image.proto';
-import { ApiSortOptionSingle } from 'types/search';
+import { isVulnerabilitySeverity } from 'types/cve.proto';
+import type { Advisory, CveBaseInfo, VulnerabilitySeverity } from 'types/cve.proto';
+import type { SourceType } from 'types/image.proto';
+import type { ApiSortOptionSingle } from 'types/search';
 
 import {
     getHighestVulnerabilitySeverity,

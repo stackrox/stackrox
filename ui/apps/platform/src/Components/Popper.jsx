@@ -2,7 +2,7 @@ import { Component } from 'react';
 import PropTypes from 'prop-types';
 import onClickOutside from 'react-onclickoutside';
 
-import { Manager, Target, Popper } from 'react-popper';
+import { Manager, Popper, Target } from 'react-popper';
 
 class CustomPopper extends Component {
     static propTypes = {

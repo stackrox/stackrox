@@ -29,7 +29,7 @@ body {
 }
 
 /* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
-.pf-v5-c-modal-box a, .pf-v5-c-page__main-section a:not(.pf-v5-c-button) {
+.pf-v5-c-modal-box a, .pf-v5-c-page__main-section a:not(.pf-v5-c-button):not(.pf-v5-c-nav__link) {
     color: var(--pf-v5-global--link--Color) !important;
     -webkit-text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
     text-decoration: var(--pf-v5-global--link--TextDecoration) !important;

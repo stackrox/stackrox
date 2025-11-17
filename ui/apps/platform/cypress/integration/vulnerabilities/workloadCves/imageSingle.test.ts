@@ -16,8 +16,8 @@ import {
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     applyLocalSeverityFilters,
-    typeAndEnterSearchFilterValue,
     selectEntityTab,
+    typeAndEnterSearchFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';

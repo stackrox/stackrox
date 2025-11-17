@@ -1,6 +1,6 @@
-import { ReportStatus } from 'types/reportJob';
-import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
-import { ReportParametersFormValues } from './forms/useReportFormValues';
+import type { ReportStatus } from 'types/reportJob';
+import { getCVEsDiscoveredSinceText, getReportStatusText } from './utils';
+import type { ReportParametersFormValues } from './forms/useReportFormValues';
 
 // @TODO: Consider making a more unique name for general utils file under Vulnerability Reporting
 describe('utils', () => {

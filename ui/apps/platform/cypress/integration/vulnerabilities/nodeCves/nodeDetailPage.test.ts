@@ -26,8 +26,8 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import {
     getNodeMetadataOpname,
-    getNodeVulnerabilitiesOpname,
     getNodeVulnSummaryOpname,
+    getNodeVulnerabilitiesOpname,
     routeMatcherMapForNodePage,
     routeMatcherMapForNodes,
     visitFirstNodeFromOverviewPage,

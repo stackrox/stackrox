@@ -1,4 +1,4 @@
-import { subHours, subWeeks, subMonths } from 'date-fns';
+import { subHours, subMonths, subWeeks } from 'date-fns';
 
 import type { TimeWindow } from 'constants/timeWindows';
 

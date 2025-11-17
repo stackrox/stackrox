@@ -1,4 +1,3 @@
-import React from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom-v5-compat';
 import { renderHook } from '@testing-library/react';
 import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';

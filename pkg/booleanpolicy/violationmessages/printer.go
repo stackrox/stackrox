@@ -89,6 +89,7 @@ var (
 	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
 	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
 	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.HasEgressPolicyCustomTag, augmentedobjs.HasIngressPolicyCustomTag)
+	requiredFileAccessFields    = set.NewFrozenStringSet(search.NodeFilePath.String(), search.MountedFilePath.String(), search.FileOperation.String())
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
@@ -161,6 +162,17 @@ func checkForNetworkPolicyViolation(result *evaluator.Result) bool {
 	return false
 }
 
+func checkForFileAccessViolation(result *evaluator.Result) bool {
+	for _, fieldMap := range result.Matches {
+		for k := range fieldMap {
+			if requiredFileAccessFields.Contains(k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Render creates violation messages based on evaluation results
 func Render(
 	section *storage.PolicySection,
@@ -169,7 +181,8 @@ func Render(
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
 	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
-) ([]*storage.Alert_Violation, bool, bool, bool, bool, error) {
+	fileAccess *storage.FileAccess,
+) ([]*storage.Alert_Violation, bool, bool, bool, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
@@ -191,7 +204,8 @@ func Render(
 	isKubeOrAuditEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
 	isNetworkPolicyViolation := networkPolicy != nil && checkForNetworkPolicyViolation(result)
-	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation {
+	isFileAccessViolation := fileAccess != nil && checkForFileAccessViolation(result)
+	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation && !isFileAccessViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
 
@@ -210,5 +224,5 @@ func Render(
 			Type:    alertType,
 		})
 	}
-	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, isFileAccessViolation, errorList.ToError()
 }

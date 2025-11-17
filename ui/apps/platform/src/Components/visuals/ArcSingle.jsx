@@ -1,4 +1,4 @@
-import { XYPlot, ArcSeries, LabelSeries } from 'react-vis';
+import { ArcSeries, LabelSeries, XYPlot } from 'react-vis';
 import PropTypes from 'prop-types';
 
 const RADIUS = 3;

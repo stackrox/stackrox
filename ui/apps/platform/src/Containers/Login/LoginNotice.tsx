@@ -1,4 +1,3 @@
-import React from 'react';
 import usePublicConfig from 'hooks/usePublicConfig';
 
 export default function LoginNotice() {

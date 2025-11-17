@@ -1,0 +1,16 @@
+---
+description: Secure coding rules for Python projects 🐍
+globs:
+  - "**/*.py"
+  - "**/requirements.txt"
+  - "**/Pipfile"
+  - "**/pyproject.toml"
+alwaysApply: false
+---
+
+- Validate and sanitize all input.
+- Avoid using `eval()`, `exec()` or `pickle` on untrusted data.
+- Do not hardcode secrets in code.
+- Pin exact versions in `requirements.txt` or `pyproject.toml`. Avoid using `*` or `latest`.
+- Avoid shell execution with untrusted input. Use `subprocess.run([...], check=True)` instead of `os.system()`.
+- Handle exceptions securely; avoid exposing debug traces or stack dumps to users.

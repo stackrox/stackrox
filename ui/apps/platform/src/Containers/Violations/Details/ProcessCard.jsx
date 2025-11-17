@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import { getTime } from 'date-fns';
 import {
     Card,
-    CardHeader,
     CardBody,
     CardExpandableContent,
+    CardHeader,
     DescriptionList,
 } from '@patternfly/react-core';
 

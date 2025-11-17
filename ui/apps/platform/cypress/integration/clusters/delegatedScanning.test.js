@@ -4,11 +4,11 @@ import { getInputByLabel } from '../../helpers/formHelpers';
 import { visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
 import {
+    clustersPath,
+    delegatedScanningPath,
+    // saveDelegatedRegistryConfig,
     visitClusters,
     visitDelegateScanning,
-    // saveDelegatedRegistryConfig,
-    delegatedScanningPath,
-    clustersPath,
 } from './Clusters.helpers';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.

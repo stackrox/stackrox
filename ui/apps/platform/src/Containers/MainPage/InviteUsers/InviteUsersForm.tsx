@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Form, TextArea, SelectOption } from '@patternfly/react-core';
+import { Form, SelectOption, TextArea } from '@patternfly/react-core';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import SelectSingle from 'Components/SelectSingle';

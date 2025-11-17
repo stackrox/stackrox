@@ -1,8 +1,8 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
-    interactAndWaitForResponses,
     getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
 } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';

@@ -1,8 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
 import {
+    generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
-    generateNameWithDate,
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';

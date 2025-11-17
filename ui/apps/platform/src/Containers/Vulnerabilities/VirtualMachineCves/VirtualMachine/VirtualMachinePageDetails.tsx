@@ -1,4 +1,3 @@
-import React from 'react';
 import { PageSection } from '@patternfly/react-core';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 

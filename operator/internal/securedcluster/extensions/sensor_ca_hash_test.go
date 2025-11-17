@@ -68,7 +68,7 @@ func TestSensorCAHashExtension_CertificatePriority(t *testing.T) {
 			sc := createTestSecuredCluster()
 			scUnstructured := toUnstructured(t, sc)
 
-			extension := SensorCAHashExtension(client, client, logr.Discard(), renderCache)
+			extension := SensorCAHashExtension(client, client, renderCache)
 			err := extension(context.Background(), scUnstructured, nil, logr.Discard())
 
 			if tt.expectError {
@@ -130,7 +130,7 @@ func TestSensorCAHashExtension_ConsistencyCheck(t *testing.T) {
 			sc := createTestSecuredCluster()
 			scUnstructured := toUnstructured(t, sc)
 
-			extension := SensorCAHashExtension(client, client, logr.Discard(), renderCache)
+			extension := SensorCAHashExtension(client, client, renderCache)
 			err := extension(context.Background(), scUnstructured, nil, logr.Discard())
 
 			if tt.expectError {
@@ -152,7 +152,7 @@ func TestSensorCAHashExtension_DeletionCleanup(t *testing.T) {
 	sc := createTestSecuredCluster()
 	scUnstructured := toUnstructured(t, sc)
 
-	extension := SensorCAHashExtension(client, client, logr.Discard(), renderCache)
+	extension := SensorCAHashExtension(client, client, renderCache)
 
 	err := extension(context.Background(), scUnstructured, nil, logr.Discard())
 	require.NoError(t, err)

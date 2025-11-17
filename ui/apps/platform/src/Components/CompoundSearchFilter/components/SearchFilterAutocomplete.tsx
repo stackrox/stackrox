@@ -1,16 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, Ref } from 'react';
 import {
-    Select,
-    SelectOption,
-    SelectList,
+    Button,
+    Flex,
     MenuToggle,
+    Select,
+    SelectList,
+    SelectOption,
+    Skeleton,
     TextInputGroup,
     TextInputGroupMain,
     TextInputGroupUtilities,
-    Button,
-    Skeleton,
-    Flex,
     debounce,
 } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';

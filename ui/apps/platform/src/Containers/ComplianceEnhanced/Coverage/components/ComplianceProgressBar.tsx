@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Progress, ProgressMeasureLocation, Tooltip } from '@patternfly/react-core';
 
 export type ComplianceProgressBarProps = {

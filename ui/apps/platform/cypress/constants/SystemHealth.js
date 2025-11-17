@@ -2,8 +2,11 @@ export const systemHealthUrl = '/main/system-health';
 
 export const selectors = {
     bundle: {
-        filterByStartingTime: '#filterByStartingTime',
-        startingTimeMessage: '[data-testid="starting-time-message"]',
+        startingDate: '#startingDate',
+        startingTime: '#startingTime',
+        filterByClusters: '#filterByClusters',
+        isDatabaseDiagnosticsOnly: '#isDatabaseDiagnosticsOnly',
+        includeComplianceOperatorResources: '#includeComplianceOperatorResources',
     },
     integrations: {
         errorMessage: '[data-label="Error messsage"]',

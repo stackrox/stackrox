@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, Flex, FlexItem, Label, LabelGroup, Skeleton, Title } from '@patternfly/react-core';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';

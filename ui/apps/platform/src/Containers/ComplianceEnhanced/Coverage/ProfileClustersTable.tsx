@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Divider, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';

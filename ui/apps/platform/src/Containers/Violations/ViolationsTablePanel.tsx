@@ -5,25 +5,25 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     Divider,
-    Title,
+    MenuToggle,
     PageSection,
     Pagination,
-    pluralize,
+    Select,
+    SelectList,
+    SelectOption,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Select,
-    SelectOption,
-    SelectList,
-    MenuToggle,
+    pluralize,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
-import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import get from 'lodash/get';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { VIOLATION_STATES } from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import TableCell from 'Components/PatternFly/TableCell';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
@@ -33,13 +33,31 @@ import useToasts from 'hooks/patternfly/useToasts';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import type { ListAlert } from 'types/alert.proto';
-import type { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { SearchFilter } from 'types/search';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
+
+type TableColumn = {
+    Header: string;
+    accessor: string;
+    Cell?: ({ original, value }) => ReactElement | string;
+    sortField?: string;
+};
+
+function TableCell({ row, column }): ReactElement {
+    let value = get(row, column.accessor);
+    if (column.Cell) {
+        value = column.Cell({ original: row, value });
+    }
+    return (
+        <Td key={column.Header} dataLabel={column.Header}>
+            {value || '-'}
+        </Td>
+    );
+}
 
 export type ActionItem = {
     title: string | ReactElement;

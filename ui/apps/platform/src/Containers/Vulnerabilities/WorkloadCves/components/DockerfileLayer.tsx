@@ -1,6 +1,5 @@
-import React from 'react';
-import { CodeBlock, Flex, CodeBlockCode } from '@patternfly/react-core';
-import { TableDataRow } from '../Tables/table.utils';
+import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
+import type { TableDataRow } from '../Tables/table.utils';
 
 export type DockerfileLayerProps = {
     layer: TableDataRow['layer'];

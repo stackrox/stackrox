@@ -1,10 +1,9 @@
-import React from 'react';
 import {
     Bullseye,
     DatePicker,
+    Flex,
     FormGroup,
     FormHelperText,
-    Flex,
     HelperText,
     HelperTextItem,
     Radio,
@@ -12,13 +11,14 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { addDays } from 'date-fns';
-import { useFormik } from 'formik';
+import type { useFormik } from 'formik';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchVulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { DeferralValues, futureDateValidator } from './utils';
+import { futureDateValidator } from './utils';
+import type { DeferralValues } from './utils';
 
 /**
  * Returns the date portion of an ISO date string

@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 
 import { createReportConfiguration } from 'services/ReportsService';
-import { ReportConfiguration } from 'services/ReportsService.types';
+import type { ReportConfiguration } from 'services/ReportsService.types';
 import useAnalytics, { VULNERABILITY_REPORT_CREATED } from 'hooks/useAnalytics';
-import { ReportFormValues } from '../forms/useReportFormValues';
+import type { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
 export type UseCreateReportProps = {

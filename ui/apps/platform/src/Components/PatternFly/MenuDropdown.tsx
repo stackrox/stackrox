@@ -43,7 +43,10 @@ function MenuDropdown({
         setIsOpen(!isOpen);
     }
 
-    function onSelectHandler(event, value) {
+    function onSelectHandler(
+        event?: ReactMouseEvent<Element, MouseEvent>,
+        value?: string | number
+    ) {
         setIsOpen(false);
         if (onSelect) {
             onSelect(event, value);

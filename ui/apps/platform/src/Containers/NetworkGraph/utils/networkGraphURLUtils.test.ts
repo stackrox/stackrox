@@ -1,4 +1,4 @@
-import { getURLLinkToDeployment, getPropertiesForAnalytics } from './networkGraphURLUtils';
+import { getPropertiesForAnalytics, getURLLinkToDeployment } from './networkGraphURLUtils';
 
 describe('networkGraphURLUtils', () => {
     describe('getURLLinkToDeployment', () => {

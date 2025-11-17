@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func createResults(num int) []Result {
@@ -35,4 +37,98 @@ func TestRemoveMissingResults_All(t *testing.T) {
 	results := createResults(8)
 	filtered := RemoveMissingResults(results, []int{0, 1, 2, 3, 4, 5, 6, 7})
 	assert.Empty(t, filtered)
+}
+
+// TestResultsToSearchResultProtos tests the conversion from search Results to SearchResult protos
+func TestResultsToSearchResultProtos(t *testing.T) {
+	// Create test results with field values
+	results := []Result{
+		{
+			ID:       "id1",
+			Name:     "test-deployment",
+			Location: "cluster1/namespace1/test-deployment",
+			Score:    0.95,
+			Matches: map[string][]string{
+				"Deployment Name": {"test-deployment"},
+			},
+			FieldValues: map[string]string{
+				"Deployment Name": "test-deployment",
+				"Cluster":         "cluster1",
+			},
+		},
+		{
+			ID:       "id2",
+			Name:     "prod-deployment",
+			Location: "cluster2/namespace2/prod-deployment",
+			Score:    0.87,
+			Matches: map[string][]string{
+				"Deployment Name": {"prod-deployment"},
+			},
+			FieldValues: map[string]string{
+				"Deployment Name": "prod-deployment",
+				"Cluster":         "cluster2",
+			},
+		},
+	}
+
+	// Create a test converter
+	converter := &DefaultSearchResultConverter{
+		Category: v1.SearchCategory_DEPLOYMENTS,
+	}
+
+	// Convert to proto
+	protos := ResultsToSearchResultProtos(results, converter)
+
+	// Verify the conversion
+	require.Len(t, protos, 2)
+
+	assert.Equal(t, "id1", protos[0].GetId())
+	assert.Equal(t, "test-deployment", protos[0].GetName())
+	assert.Equal(t, "cluster1/namespace1/test-deployment", protos[0].GetLocation())
+	assert.Equal(t, 0.95, protos[0].GetScore())
+	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[0].GetCategory())
+	assert.NotNil(t, protos[0].GetFieldToMatches())
+	assert.Len(t, protos[0].GetFieldToMatches(), 1)
+
+	assert.Equal(t, "id2", protos[1].GetId())
+	assert.Equal(t, "prod-deployment", protos[1].GetName())
+	assert.Equal(t, "cluster2/namespace2/prod-deployment", protos[1].GetLocation())
+	assert.Equal(t, 0.87, protos[1].GetScore())
+	assert.Equal(t, v1.SearchCategory_DEPLOYMENTS, protos[1].GetCategory())
+}
+
+// TestDefaultSearchResultConverter tests the DefaultSearchResultConverter implementation
+func TestDefaultSearchResultConverter(t *testing.T) {
+	converter := &DefaultSearchResultConverter{
+		Category: v1.SearchCategory_IMAGES,
+	}
+
+	result := &Result{
+		Name:     "nginx:latest",
+		Location: "registry.io/nginx:latest",
+	}
+
+	assert.Equal(t, "nginx:latest", converter.BuildName(result))
+	assert.Equal(t, "registry.io/nginx:latest", converter.BuildLocation(result))
+	assert.Equal(t, v1.SearchCategory_IMAGES, converter.GetCategory())
+}
+
+// TestResultsWithFieldValues tests that field values are properly stored and retrieved
+func TestResultsWithFieldValues(t *testing.T) {
+	result := Result{
+		ID: "test-id",
+		FieldValues: map[string]string{
+			"Name":      "test-name",
+			"Registry":  "docker.io",
+			"Count":     "42",
+			"IsScanned": "true",
+		},
+	}
+
+	// Verify field values are accessible
+	assert.Equal(t, "test-name", result.FieldValues["Name"])
+	assert.Equal(t, "docker.io", result.FieldValues["Registry"])
+	assert.Equal(t, "42", result.FieldValues["Count"])
+	assert.Equal(t, "true", result.FieldValues["IsScanned"])
+	assert.Equal(t, "test-id", result.ID)
 }

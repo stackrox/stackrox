@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Bullseye } from '@patternfly/react-core';
-import { Tbody, Tr, Td } from '@patternfly/react-table';
+import { Tbody, Td, Tr } from '@patternfly/react-table';
 
 export type TbodyFullCenteredProps = {
     colSpan: number;

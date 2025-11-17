@@ -4,8 +4,8 @@ import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/
 import {
     CheckCircleIcon,
     MinusCircleIcon,
-    PlusCircleIcon,
     PencilAltIcon,
+    PlusCircleIcon,
     TimesCircleIcon,
 } from '@patternfly/react-icons';
 import { Td, Tr } from '@patternfly/react-table';

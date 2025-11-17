@@ -1,10 +1,9 @@
-import React from 'react';
 import { Divider, Flex, FlexItem, Label, PageSection, Text } from '@patternfly/react-core';
-import { Table, TableText, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import DateDistance from 'Components/DateDistance';
-import { SignatureVerificationResult, VerifiedStatus } from '../../types';
+import type { SignatureVerificationResult, VerifiedStatus } from '../../types';
 
 export type ImagePageSignatureVerificationProps = {
     results?: SignatureVerificationResult[];

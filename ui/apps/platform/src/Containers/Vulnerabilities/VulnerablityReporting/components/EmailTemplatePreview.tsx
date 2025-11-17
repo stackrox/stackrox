@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -11,12 +12,11 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from '@patternfly/react-core';
-import React, { useState } from 'react';
 
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { fixabilityLabels } from 'constants/reportConstants';
 import { defaultEmailBody, defaultEmailBodyWithNoCVEsFound } from '../forms/emailTemplateFormUtils';
-import { ReportParametersFormValues } from '../forms/useReportFormValues';
+import type { ReportParametersFormValues } from '../forms/useReportFormValues';
 import { getCVEsDiscoveredSinceText, imageTypeLabelMap } from '../utils';
 
 export type EmailTemplatePreviewProps = {

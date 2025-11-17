@@ -126,18 +126,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             sortable: false,
         },
         {
-            Header: `Active`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return original.activeState?.state || 'Undetermined';
-            },
-            id: cveSortFields.ACTIVE,
-            accessor: 'isActive',
-            sortField: cveSortFields.ACTIVE,
-            sortable: false,
-        },
-        {
             Header: `Fixed in`,
             headerClassName: `w-1/12 ${defaultHeaderClassName}`,
             className: `w-1/12 word-break-all ${defaultColumnClassName}`,

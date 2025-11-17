@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { getWidth, getHeight } from 'utils/d3Utils';
+import { getHeight, getWidth } from 'utils/d3Utils';
 import Axis, { AXIS_HEIGHT } from '../Axis';
 import EventsGraph from '../EventsGraph';
 

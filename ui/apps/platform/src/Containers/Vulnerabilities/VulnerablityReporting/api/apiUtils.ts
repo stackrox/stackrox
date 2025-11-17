@@ -1,4 +1,4 @@
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 export function getRequestQueryString(searchFilter: SearchFilter): string {
     return Object.entries(searchFilter)

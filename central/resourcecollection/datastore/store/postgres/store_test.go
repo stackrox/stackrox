@@ -95,6 +95,11 @@ func (s *CollectionsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, resourceCollections))
 
+	foundResourceCollections, missing, err := store.GetMany(ctx, resourceCollectionIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), resourceCollections, foundResourceCollections)
+
 	resourceCollectionCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, resourceCollectionCount)

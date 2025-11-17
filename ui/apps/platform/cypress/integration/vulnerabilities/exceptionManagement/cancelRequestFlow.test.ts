@@ -1,10 +1,10 @@
 import withAuth from '../../../helpers/basicAuth';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
+    approveRequest,
     deferAndVisitRequestDetails,
     markFalsePositiveAndVisitRequestDetails,
     visitPendingRequestsTab,
-    approveRequest,
 } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
 

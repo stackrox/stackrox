@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Flex, FlexItem, Spinner, TreeView } from '@patternfly/react-core';
 import type { TreeViewDataItem } from '@patternfly/react-core';

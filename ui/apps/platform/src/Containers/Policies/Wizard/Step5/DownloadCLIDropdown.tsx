@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { DropdownItem } from '@patternfly/react-core';
 
 import downloadCLI from 'services/CLIService';

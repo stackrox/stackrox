@@ -96,6 +96,11 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, processIndicators))
 
+	foundProcessIndicators, missing, err := store.GetMany(ctx, processIndicatorIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), processIndicators, foundProcessIndicators)
+
 	processIndicatorCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)

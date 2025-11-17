@@ -7,11 +7,11 @@ import {
     Button,
     Divider,
     EmptyState,
+    EmptyStateHeader,
+    SelectOption,
     Spinner,
     Stack,
     StackItem,
-    EmptyStateHeader,
-    SelectOption,
 } from '@patternfly/react-core';
 
 import download from 'utils/download';

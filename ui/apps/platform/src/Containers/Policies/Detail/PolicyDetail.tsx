@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
@@ -7,16 +7,16 @@ import {
     AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
+    Divider,
+    DropdownItem,
+    Flex,
+    FlexItem,
     Label,
+    PageSection,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Divider,
-    PageSection,
-    Flex,
-    FlexItem,
-    DropdownItem,
 } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';

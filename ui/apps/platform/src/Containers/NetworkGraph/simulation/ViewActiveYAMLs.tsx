@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import {
     Bullseye,
     EmptyState,
-    Stack,
-    StackItem,
     EmptyStateHeader,
     SelectOption,
+    Stack,
+    StackItem,
 } from '@patternfly/react-core';
 import type { DropEvent } from '@patternfly/react-core';
 import type { NetworkPolicy } from 'types/networkPolicy.proto';

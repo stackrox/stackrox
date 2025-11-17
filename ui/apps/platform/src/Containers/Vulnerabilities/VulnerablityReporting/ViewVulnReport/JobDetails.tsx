@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import { getDateTime } from 'utils/dateUtils';
-import { ReportStatus } from 'types/reportJob';
+import type { ReportStatus } from 'types/reportJob';
 import { getReportStatusText } from '../utils';
 
 export type JobDetailsProps = {

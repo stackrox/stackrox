@@ -1,9 +1,9 @@
 /* eslint-disable react/no-array-index-key */
 import type { FormEvent, ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useFormik, FormikProvider, FieldArray } from 'formik';
+import { FieldArray, FormikProvider, useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
@@ -43,12 +43,12 @@ import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups from './RuleGroups';
 import type { RuleGroupErrors } from './RuleGroups';
 import {
+    getDefaultRoleByAuthProviderId,
+    getGroupsByAuthProviderId,
     getInitialAuthProviderValues,
+    isDefaultGroupModifiable,
     transformInitialValues,
     transformValuesBeforeSaving,
-    getGroupsByAuthProviderId,
-    getDefaultRoleByAuthProviderId,
-    isDefaultGroupModifiable,
 } from './authProviders.utils';
 import type { AccessControlQueryAction } from '../accessControlPaths';
 

@@ -20,6 +20,7 @@ type ExternalUserClaim struct {
 // RoxClaims are the claims used for authentication by the StackRox Kubernetes security platform.
 type RoxClaims struct {
 	// Role represents the claim that the user identified by the token has the given role.
+	//
 	// Deprecated: Use RoleNames instead.
 	RoleName string `json:"role,omitempty"`
 	// RoleNames represents the claim that the user identified by the token has the given roles.

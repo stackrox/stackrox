@@ -26,7 +26,6 @@ function PolicyCategoriesFilterSelect({
             isDisabled={isDisabled}
             placeholderText="Select category filter"
             toggleAriaLabel="Policy categories filter"
-            maxWidth="100%"
         >
             <SelectOption key={0} value="All categories">
                 All categories

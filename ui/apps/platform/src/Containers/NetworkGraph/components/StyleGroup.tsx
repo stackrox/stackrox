@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import { DefaultGroup, observer, ScaleDetailsLevel } from '@patternfly/react-topology';
+import { DefaultGroup, ScaleDetailsLevel, observer } from '@patternfly/react-topology';
 import type {
     Node,
     ShapeProps,
@@ -88,12 +88,6 @@ const StyleGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
     className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
 
     return (
-        /*
-        (dv 2024-05-01)
-        Upgrading to React types 18 causes a type error below as React 18 no longer includes `children`
-        as a prop of `React.FC` by default
-
-        @ts-expect-error DefaultGroup does not expect children as a prop */
         <DefaultGroup
             element={element}
             collapsedWidth={collapsedWidth}

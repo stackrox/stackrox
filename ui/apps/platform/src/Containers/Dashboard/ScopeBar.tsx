@@ -84,9 +84,7 @@ function ScopeBar() {
     return (
         <Toolbar className="pf-v5-u-p-0">
             <ToolbarContent className="pf-v5-u-p-0">
-                <ToolbarItem>
-                    <div>Resources:</div>
-                </ToolbarItem>
+                <ToolbarItem variant="label">Resources:</ToolbarItem>
                 <ToolbarItem>
                     <ClusterSelect
                         clusters={data?.clusters ?? []}

@@ -13,6 +13,7 @@ import (
 type Message = proto.Message
 
 // Clone returns a deep copy of a protocol buffer.
+//
 // Deprecated: Use CloneVT or CloneMessageVT instead.
 func Clone(msg proto.Message) proto.Message {
 	if vtMsg, ok := msg.(interface{ CloneMessageVT() proto.Message }); ok {

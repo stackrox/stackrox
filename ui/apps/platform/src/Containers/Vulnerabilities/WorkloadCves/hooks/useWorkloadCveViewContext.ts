@@ -1,5 +1,6 @@
 import { useContext } from 'react';
-import { WorkloadCveView, WorkloadCveViewContext } from '../WorkloadCveViewContext';
+import { WorkloadCveViewContext } from '../WorkloadCveViewContext';
+import type { WorkloadCveView } from '../WorkloadCveViewContext';
 
 export default function useWorkloadCveViewContext(): WorkloadCveView {
     const value = useContext(WorkloadCveViewContext);

@@ -14,7 +14,7 @@ function AccessControl(): ReactElement {
     return (
         <>
             <Routes>
-                <Route index element={<Navigate to={entityPathSegment.AUTH_PROVIDER} />} />
+                <Route index element={<Navigate to={entityPathSegment.AUTH_PROVIDER} replace />} />
                 <Route
                     path={`${entityPathSegment.AUTH_PROVIDER}/${paramId}`}
                     element={<AuthProviders />}

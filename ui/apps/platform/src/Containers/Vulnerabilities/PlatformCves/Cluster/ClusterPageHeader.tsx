@@ -1,4 +1,4 @@
-import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
 import { getDateTime } from 'utils/dateUtils';

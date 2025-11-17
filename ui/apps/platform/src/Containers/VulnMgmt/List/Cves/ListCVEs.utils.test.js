@@ -11,10 +11,7 @@ import { WorkflowState } from 'utils/WorkflowState';
 import { getCveTableColumns } from './VulnMgmtListCves';
 import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
-function mockIsFeatureFlagEnabled(flag) {
-    if (flag === 'ROX_ACTIVE_VULN_MGMT') {
-        return true;
-    }
+function mockIsFeatureFlagEnabled() {
     return false;
 }
 

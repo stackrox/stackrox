@@ -1,4 +1,3 @@
-import React from 'react';
 import { MemoryRouter } from 'react-router-dom-v5-compat';
 import { render } from '@testing-library/react';
 

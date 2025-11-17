@@ -1,6 +1,5 @@
-import React from 'react';
 import { gql } from '@apollo/client';
-import { Flex, Title, LabelGroup, Label } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 import { getDateTime } from 'utils/dateUtils';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import { Spinner } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';

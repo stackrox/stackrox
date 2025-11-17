@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import isEqual from 'lodash/isEqual';
 

@@ -1,15 +1,15 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { Divider, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
 
-import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
+import type { ReportFormValues } from './useReportFormValues';
 
 export type ReportReviewFormProps = {
     title: string;

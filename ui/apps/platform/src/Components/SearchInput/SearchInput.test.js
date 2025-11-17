@@ -1,4 +1,4 @@
-import { getLastCategoryInSearchOptions, createSearchModifiers } from './SearchInput';
+import { createSearchModifiers, getLastCategoryInSearchOptions } from './SearchInput';
 
 describe('SearchInput', () => {
     describe('getLastCategoryInSearchOptions', () => {

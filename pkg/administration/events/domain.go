@@ -10,12 +10,12 @@ const (
 )
 
 var moduleToDomain = map[*regexp.Regexp]string{
-	regexp.MustCompile(`^apitoken/creation`):         AuthenticationDomain,
-	regexp.MustCompile(`^apitoken/expiration`):       AuthenticationDomain,
-	regexp.MustCompile(`(^|/)externalbackups(/|$)`):  IntegrationDomain,
-	regexp.MustCompile(`(^|/)cloudsources(/|$)`):     IntegrationDomain,
-	regexp.MustCompile(`(^|/)notifiers(/|$)`):        IntegrationDomain,
-	regexp.MustCompile(`^reprocessor|image/service`): ImageScanningDomain,
+	regexp.MustCompile(`^apitoken/creation`):                                      AuthenticationDomain,
+	regexp.MustCompile(`^apitoken/expiration`):                                    AuthenticationDomain,
+	regexp.MustCompile(`(^|/)externalbackups(/|$)`):                               IntegrationDomain,
+	regexp.MustCompile(`(^|/)cloudsources(/|$)`):                                  IntegrationDomain,
+	regexp.MustCompile(`(^|/)notifiers(/|$)`):                                     IntegrationDomain,
+	regexp.MustCompile(`^reprocessor|image/service|detection/service|enrichment`): ImageScanningDomain,
 }
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be

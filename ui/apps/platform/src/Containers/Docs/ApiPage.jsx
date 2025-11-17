@@ -1,4 +1,3 @@
-import React from 'react';
 import SwaggerBrowser from './SwaggerBrowser';
 
 function ApiPage() {

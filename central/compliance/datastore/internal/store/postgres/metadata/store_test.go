@@ -96,6 +96,11 @@ func (s *ComplianceRunMetadataStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, complianceRunMetadatas))
 
+	foundComplianceRunMetadatas, missing, err := store.GetMany(ctx, complianceRunMetadataIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), complianceRunMetadatas, foundComplianceRunMetadatas)
+
 	complianceRunMetadataCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceRunMetadataCount)

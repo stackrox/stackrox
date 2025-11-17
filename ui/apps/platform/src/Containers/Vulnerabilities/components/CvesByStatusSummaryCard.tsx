@@ -1,19 +1,18 @@
-import React from 'react';
 import {
     Card,
-    CardTitle,
     CardBody,
+    CardTitle,
     Flex,
     Grid,
     GridItem,
-    pluralize,
     Text,
+    pluralize,
 } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
 import { gql } from '@apollo/client';
 import sumBy from 'lodash/sumBy';
 
-import { FixableStatus } from '../types';
+import type { FixableStatus } from '../types';
 
 export type ResourceCountByCveSeverityAndStatus = {
     critical: { total: number; fixable: number };

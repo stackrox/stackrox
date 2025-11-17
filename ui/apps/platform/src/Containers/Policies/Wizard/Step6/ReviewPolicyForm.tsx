@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Alert, Flex, FlexItem, Spinner, Title, Divider, Button } from '@patternfly/react-core';
+import { Alert, Button, Divider, Flex, FlexItem, Spinner, Title } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { checkDryRun, startDryRun } from 'services/PoliciesService';

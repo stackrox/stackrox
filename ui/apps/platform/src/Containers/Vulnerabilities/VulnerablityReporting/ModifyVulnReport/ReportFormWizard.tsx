@@ -1,7 +1,6 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import { Button, Modal, Wizard, WizardStep } from '@patternfly/react-core';
-import { FormikProps } from 'formik';
+import type { FormikProps } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
 import useModal from 'hooks/useModal';
@@ -10,7 +9,7 @@ import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import DeliveryDestinationsForm from '../forms/DeliveryDestinationsForm';
 import ReportParametersForm from '../forms/ReportParametersForm';
 import ReportReviewForm from '../forms/ReportReviewForm';
-import { ReportFormValues } from '../forms/useReportFormValues';
+import type { ReportFormValues } from '../forms/useReportFormValues';
 
 const wizardStepNames = [
     'Configure report parameters',

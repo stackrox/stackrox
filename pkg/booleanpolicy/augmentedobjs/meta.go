@@ -11,6 +11,7 @@ const (
 	kubeEventAugKey           = "KubernetesEvent"
 	networkFlowAugKey         = "NetworkFlow"
 	networkPoliciesAppliedKey = "NetworkPoliciesApplied"
+	fileAccessKey             = "FileAccess"
 
 	// Custom augments
 	dockerfileLineAugmentKey      = "DockerfileLine"
@@ -45,4 +46,9 @@ var (
 	NetworkFlowMeta = pathutil.NewAugmentedObjMeta((*NetworkFlowDetails)(nil))
 
 	NetworkPoliciesAppliedMeta = pathutil.NewAugmentedObjMeta((*NetworkPoliciesApplied)(nil))
+
+	FileAccessMeta = pathutil.NewAugmentedObjMeta((*storage.FileAccess)(nil))
+
+	NodeMeta = pathutil.NewAugmentedObjMeta((*NodeDetails)(nil)).
+			AddAugmentedObjectAt([]string{fileAccessKey}, FileAccessMeta)
 )

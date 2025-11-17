@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
-import { Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
 import EmailTemplateModal from 'Components/EmailTemplate/EmailTemplateModal';

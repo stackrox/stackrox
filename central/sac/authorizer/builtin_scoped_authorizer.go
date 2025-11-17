@@ -28,13 +28,11 @@ var (
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
-	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
-
-	clusters, err := clusterStore.Singleton().GetClustersForSAC(adminCtx)
+	clusters, err := clusterStore.Singleton().GetClustersForSAC()
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC(adminCtx)
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC()
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -42,7 +40,7 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 	return newGlobalScopeCheckerCore(clusters, namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
 }
 
-func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
+func newGlobalScopeCheckerCore(clusters []effectiveaccessscope.Cluster, namespaces []effectiveaccessscope.Namespace, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
 	scc := &globalScopeChecker{
 		roles: roles,
 		trace: trace,
@@ -283,8 +281,8 @@ func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeChecke
 
 type authorizerDataCache struct {
 	lock                      sync.RWMutex
-	clusters                  []*storage.Cluster
-	namespaces                []*storage.NamespaceMetadata
+	clusters                  []effectiveaccessscope.Cluster
+	namespaces                []effectiveaccessscope.Namespace
 	effectiveAccessScopesByID map[string]*effectiveaccessscope.ScopeTree
 
 	// Should be nil unless authorization tracing is enabled for this instance.

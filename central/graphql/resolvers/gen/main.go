@@ -75,9 +75,7 @@ var (
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			protocompat.TimestampType,
 			reflect.TypeOf(storage.NodeVulnerability{}),
-			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
-			reflect.TypeOf((*storage.ImageComponent)(nil)),
 			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
 		},
 		SkipFields: []generator.TypeAndField{
@@ -117,9 +115,6 @@ var (
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "CvssV3",
 			},
-			// TODO(ROX-28123): Need to skip these to keep the interfaces the same
-			// during the transition.  Once that is complete, these can become
-			// generated.
 			{
 				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
 				FieldName:  "Location",

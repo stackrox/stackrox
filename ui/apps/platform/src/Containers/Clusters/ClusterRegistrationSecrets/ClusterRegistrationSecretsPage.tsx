@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Bullseye, Button, Divider, PageSection, Spinner } from '@patternfly/react-core';
 

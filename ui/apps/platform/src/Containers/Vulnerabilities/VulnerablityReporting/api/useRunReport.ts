@@ -6,7 +6,7 @@ import useAnalytics, {
 } from 'hooks/useAnalytics';
 import { runReportRequest } from 'services/ReportsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ReportNotificationMethod } from 'types/reportJob';
+import type { ReportNotificationMethod } from 'types/reportJob';
 
 export type UseSaveReportProps = {
     onCompleted: (context: { reportNotificationMethod: ReportNotificationMethod }) => void;

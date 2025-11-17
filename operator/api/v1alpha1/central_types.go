@@ -340,7 +340,7 @@ type DBPersistence struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Persistent volume claim",order=1
 	PersistentVolumeClaim *DBPersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
 
-	// Stores persistent data on a directory on the host. This is not recommended, and should only
+	// Stores persistent data in a directory on the host. This is not recommended, and should only
 	// be used together with a node selector (only available in YAML view).
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
 	HostPath *HostPathSpec `json:"hostPath,omitempty"`
@@ -497,7 +497,7 @@ type ExposureRouteReencryptTLS struct {
 
 // Telemetry defines telemetry settings for Central.
 type Telemetry struct {
-	// Specifies if Telemetry is enabled.
+	// Specifies whether Telemetry is enabled.
 	// The default is: true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled *bool `json:"enabled,omitempty"`

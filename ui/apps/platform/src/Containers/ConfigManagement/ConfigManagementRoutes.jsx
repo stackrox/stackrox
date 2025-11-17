@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
 import PageNotFound from 'Components/PageNotFound';

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';

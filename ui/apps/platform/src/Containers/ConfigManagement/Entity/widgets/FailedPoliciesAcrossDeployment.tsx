@@ -1,6 +1,5 @@
-import React from 'react';
 import entityTypes from 'constants/entityTypes';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';

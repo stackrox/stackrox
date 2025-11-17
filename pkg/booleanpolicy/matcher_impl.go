@@ -54,7 +54,7 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, indicator, processNotInBaseline)
-	}, indicator, nil, nil, nil)
+	}, indicator, nil, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -75,7 +75,7 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
-	}, nil, event, nil, nil)
+	}, nil, event, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -89,7 +89,7 @@ type auditLogEventMatcherImpl struct {
 func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, event *storage.KubernetesEvent) (Violations, error) {
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructAuditEvent(event, event.GetImpersonatedUser() != nil)
-	}, nil, event, nil, nil)
+	}, nil, event, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -172,10 +172,25 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, flow)
-	}, nil, nil, flow, nil)
+	}, nil, nil, flow, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
+	return *violations, nil
+}
+
+type nodeEventMatcher struct {
+	matcherImpl
+}
+
+func (m *nodeEventMatcher) MatchNodeWithFileAccess(cache *CacheReceptacle, node *storage.Node, access *storage.FileAccess) (Violations, error) {
+	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructNodeWithFileAccess(node, access)
+	}, nil, nil, nil, nil, access)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+
 	return *violations, nil
 }
 
@@ -194,7 +209,7 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructImage(image, image.GetName().GetFullName())
-	}, nil, nil, nil, nil)
+	}, nil, nil, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -225,6 +240,7 @@ func (m *matcherImpl) getViolations(
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
 	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
+	fileAccess *storage.FileAccess,
 ) (*Violations, error) {
 	obj, err := getOrConstructAugmentedObj(cache, constructor)
 	if err != nil {
@@ -232,7 +248,7 @@ func (m *matcherImpl) getViolations(
 	}
 	v := &Violations{}
 	var atLeastOneMatched bool
-	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched, networkPolicyMatched bool
+	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched, networkPolicyMatched, fileAccessMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
@@ -242,8 +258,8 @@ func (m *matcherImpl) getViolations(
 			continue
 		}
 
-		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, err :=
-			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy)
+		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, isFileAccessViolation, err :=
+			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy, fileAccess)
 		if err != nil {
 			return nil, err
 		}
@@ -258,11 +274,13 @@ func (m *matcherImpl) getViolations(
 			networkFlowMatched = true
 		} else if isNetworkPolicyViolation {
 			networkPolicyMatched = true
+		} else if isFileAccessViolation {
+			fileAccessMatched = true
 		}
 
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
-	if !atLeastOneMatched && !processIndicatorMatched && !kubeOrAuditEventMatched && !networkFlowMatched && !networkPolicyMatched {
+	if !atLeastOneMatched && !processIndicatorMatched && !kubeOrAuditEventMatched && !networkFlowMatched && !networkPolicyMatched && !fileAccessMatched {
 		return nil, nil
 	}
 
@@ -279,6 +297,11 @@ func (m *matcherImpl) getViolations(
 		v.AlertViolations = append(v.AlertViolations, networkFlowViolationMsg)
 	} else if networkPolicyMatched {
 		v.AlertViolations = printer.EnhanceNetworkPolicyViolations(v.AlertViolations, networkPolicy)
+	} else if fileAccessMatched {
+		v.FileAccessViolation = &storage.Alert_FileAccessViolation{
+			Accesses: []*storage.FileAccess{fileAccess},
+		}
+		printer.UpdateFileAccessAlertViolationMessage(v.FileAccessViolation)
 	}
 	return v, nil
 }
@@ -287,7 +310,7 @@ func (m *matcherImpl) getViolations(
 func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
-	}, nil, nil, nil, enhancedDeployment.NetworkPoliciesApplied)
+	}, nil, nil, nil, enhancedDeployment.NetworkPoliciesApplied, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}

@@ -96,6 +96,11 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
 
+	foundNamespaceMetadatas, missing, err := store.GetMany(ctx, namespaceMetadataIDs)
+	s.NoError(err)
+	s.Empty(missing)
+	protoassert.ElementsMatch(s.T(), namespaceMetadatas, foundNamespaceMetadatas)
+
 	namespaceMetadataCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, namespaceMetadataCount)

@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import { Button, ChipGroup, Chip, Flex, FlexItem } from '@patternfly/react-core';
+import { Button, Chip, ChipGroup, Flex, FlexItem } from '@patternfly/react-core';
 import type { ToolbarChip } from '@patternfly/react-core';
 import { Globe } from 'react-feather';
 

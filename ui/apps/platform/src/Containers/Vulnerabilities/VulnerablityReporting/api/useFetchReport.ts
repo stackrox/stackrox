@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportConfiguration } from 'services/ReportsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ReportConfiguration } from 'services/ReportsService.types';
+import type { ReportConfiguration } from 'services/ReportsService.types';
 
 type FetchReportResult = {
     reportConfiguration: ReportConfiguration | null;

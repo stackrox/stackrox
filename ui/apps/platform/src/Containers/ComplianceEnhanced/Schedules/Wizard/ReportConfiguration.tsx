@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ReactElement } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';

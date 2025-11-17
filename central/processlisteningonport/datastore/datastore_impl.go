@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -34,6 +35,10 @@ type datastoreImpl struct {
 var (
 	plopSAC = sac.ForResource(resources.DeploymentExtension)
 	log     = logging.LoggerForModule()
+)
+
+const (
+	getBatchSize = 1000
 )
 
 func newDatastoreImpl(
@@ -73,10 +78,15 @@ func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) strin
 }
 
 func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
-	indicatorIds := make([]string, 0)
+	seen := make(map[string]struct{})
+	indicatorIds := make([]string, 0, len(plops))
+
 	for _, plop := range plops {
 		indicatorID := getIndicatorIDForPlop(plop)
-		indicatorIds = append(indicatorIds, indicatorID)
+		if _, ok := seen[indicatorID]; !ok {
+			seen[indicatorID] = struct{}{}
+			indicatorIds = append(indicatorIds, indicatorID)
+		}
 	}
 
 	return indicatorIds
@@ -145,7 +155,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 	}
 
-	existingPLOPMap, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
+	existingPLOPMap, err := ds.fetchExistingPLOPsMap(ctx, indicatorIds)
 	if err != nil {
 		return err
 	}
@@ -315,7 +325,25 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 	return ds.storage.DeleteMany(ctx, ids)
 }
 
-// fetchExistingPLOPs: Query already existing PLOP objects belonging to the
+func (ds *datastoreImpl) fetchExistingPLOPs(
+	ctx context.Context,
+	indicatorIds []string,
+) ([]*storage.ProcessListeningOnPortStorage, error) {
+
+	existingPlops := make([]*storage.ProcessListeningOnPortStorage, 0, len(indicatorIds))
+	for idsBatch := range slices.Chunk(indicatorIds, getBatchSize) {
+		batchExistingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+			AddStrings(search.ProcessID, idsBatch...).ProtoQuery())
+		if err != nil {
+			return nil, err
+		}
+		existingPlops = append(existingPlops, batchExistingPLOPs...)
+	}
+
+	return existingPlops, nil
+}
+
+// fetchExistingPLOPsMap: Query already existing PLOP objects belonging to the
 // specified process indicators.
 //
 // XXX: This function queries all PLOP, no matter if they are matching port +
@@ -324,7 +352,7 @@ func (ds *datastoreImpl) removePLOP(ctx context.Context, ids []string) error {
 // introduce filtering by port and protocol to the query, and even without
 // extra indices PostgreSQL will be able to do it relatively efficiently using
 // bitmap scan.
-func (ds *datastoreImpl) fetchExistingPLOPs(
+func (ds *datastoreImpl) fetchExistingPLOPsMap(
 	ctx context.Context,
 	indicatorIds []string,
 ) (map[string]*storage.ProcessListeningOnPortStorage, error) {
@@ -338,8 +366,7 @@ func (ds *datastoreImpl) fetchExistingPLOPs(
 	// If no corresponding processes found, we can't verify if the PLOP
 	// object is opening/closing an existing one. Collect existingPLOPMap
 	// only if there are some matching indicators.
-	existingPLOPs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-		AddStrings(search.ProcessID, indicatorIds...).ProtoQuery())
+	existingPLOPs, err := ds.fetchExistingPLOPs(ctx, indicatorIds)
 	if err != nil {
 		return nil, err
 	}

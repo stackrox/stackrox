@@ -1,8 +1,8 @@
 module github.com/stackrox/rox/operator/tools/yq
 
-go 1.24
+go 1.24.0
 
-require github.com/mikefarah/yq/v4 v4.47.2
+require github.com/mikefarah/yq/v4 v4.48.1
 
 require (
 	github.com/a8m/envsubst v1.4.3 // indirect
@@ -23,8 +23,8 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 )

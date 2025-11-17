@@ -1,4 +1,3 @@
-import React from 'react';
 import noop from 'lodash/noop';
 import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 

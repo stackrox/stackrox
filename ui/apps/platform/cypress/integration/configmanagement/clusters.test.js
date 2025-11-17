@@ -1,16 +1,16 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
     hasCountWidgetsFor,
     hasTabsFor,
     interactAndWaitForConfigurationManagementScan,
+    navigateToSingleEntityPage,
     verifyTableLinkToSidePanelTable,
     verifyWidgetLinkToTableFromSidePanel,
     verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementDashboard,
     visitConfigurationManagementEntities,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 import { selectors } from './ConfigurationManagement.selectors';
 

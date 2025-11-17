@@ -87,6 +87,12 @@ div#topology-resize-panel table td {
     overflow-y: auto;
 }
 
+/*
+ * Override badge text fill from the following for PatternFly 5.4 update.
+ * However, it might not be needed after PatternFly 6 upgrade.
+ * https://github.com/patternfly/react-topology/commit/b4272629eac37a1f69f14b50d47ea2a01dcb33ca#diff-ee5c4c2bcd78618a0cde7050148a97ef748104f9adaf56bd1753a1eaca4ddc7bR568-R570
+ */
+.pf-topology__node__label__badge > text,
 .pf-topology__node__label__badge {
     fill: #ffffff;
 }

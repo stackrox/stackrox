@@ -11,8 +11,8 @@ import {
     TdHealthy,
     TdTotal,
     TdUnavailable,
-    TdUninitialized,
     TdUnhealthy,
+    TdUninitialized,
     TheadClustersHealth,
 } from './ClustersHealthTable';
 

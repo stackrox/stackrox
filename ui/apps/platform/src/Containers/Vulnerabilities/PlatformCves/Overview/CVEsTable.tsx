@@ -4,11 +4,11 @@ import {
     ActionsColumn,
     ExpandableRowContent,
     Table,
-    Thead,
-    Tr,
-    Th,
     Tbody,
     Td,
+    Th,
+    Thead,
+    Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';

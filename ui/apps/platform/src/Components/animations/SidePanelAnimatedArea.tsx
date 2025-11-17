@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const variants = {
     open: { x: 0 },

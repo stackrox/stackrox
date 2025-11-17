@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import useModal from 'hooks/useModal';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { Empty } from 'services/types';
+import type { Empty } from 'services/types';
 
 export type UseDeleteDownloadModalProps = {
     deleteDownloadFunc: (reportId: string) => Promise<Empty>;

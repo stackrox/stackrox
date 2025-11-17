@@ -2,14 +2,8 @@ import uniq from 'lodash/uniq';
 
 import entityTypes from 'constants/entityTypes';
 
-export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabled) {
-    const shouldKeepActiveColumn =
-        isFeatureFlagEnabled('ROX_ACTIVE_VULN_MGMT') &&
-        (workflowState.isCurrentSingle(entityTypes.DEPLOYMENT) ||
-            workflowState.isPrecedingSingle(entityTypes.DEPLOYMENT) ||
-            (workflowState.getSingleAncestorOfType(entityTypes.DEPLOYMENT) &&
-                workflowState.getSingleAncestorOfType(entityTypes.IMAGE)));
-
+// eslint-disable-next-line no-unused-vars
+export function getFilteredCVEColumns(columns, workflowState, _isFeatureFlagEnabled) {
     const shouldKeepFixedByColumn =
         workflowState.isPreceding(entityTypes.IMAGE_COMPONENT) ||
         workflowState.isCurrentSingle(entityTypes.IMAGE_COMPONENT) ||
@@ -43,9 +37,6 @@ export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabl
         switch (col.accessor) {
             case 'vulnerabilityTypes': {
                 return !!shouldKeepCveType;
-            }
-            case 'isActive': {
-                return !!shouldKeepActiveColumn;
             }
             case 'fixedByVersion': {
                 return shouldKeepFixedByColumn;

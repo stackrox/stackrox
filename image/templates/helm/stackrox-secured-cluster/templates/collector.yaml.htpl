@@ -125,6 +125,10 @@ spec:
         env:
         - name: FACT_LOGLEVEL
           value: 'debug'
+        - name: FACT_URL
+          value: "https://{{ ._rox.sensor.endpoint }}"
+        - name: FACT_CERTS
+          value: "/var/run/secrets/stackrox.io/certs/"
         {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
         resources:
           {{- ._rox.fact._resources | nindent 10 }}

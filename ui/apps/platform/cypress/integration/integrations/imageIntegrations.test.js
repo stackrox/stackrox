@@ -1,9 +1,9 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
+    generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
-    generateNameWithDate,
     getToggleGroupItem,
 } from '../../helpers/formHelpers';
 
