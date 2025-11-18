@@ -771,11 +771,10 @@ module.exports = [
         },
     },
     {
-        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration includes cypress and src folders
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/WorkloadCves/**',
         ],
 
         // languageOptions from previous configuration object
@@ -791,34 +790,10 @@ module.exports = [
         },
     },
     {
-        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/WorkloadCves/**',
-            'src/Containers/Workflow/**', // deprecated
-        ],
-
-        // languageOptions from previous configuration object
-
-        // Key of plugin is namespace of its rules.
-        plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
-            limited: pluginLimited,
-        },
-        rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
-            'limited/no-qualified-name-react': 'error',
-            'limited/no-absolute-path-within-container-in-import': 'error',
-            'limited/no-relative-path-to-src-in-import': 'error',
-        },
-    },
-    {
-        files: ['**/*.{js,jsx,ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Vulnerabilities/WorkloadCves/**',
             'src/Containers/Workflow/**', // deprecated
         ],
 
@@ -842,10 +817,115 @@ module.exports = [
             react: pluginReact,
         },
         rules: {
-            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
-            'limited/no-default-import-react': 'error',
+            'limited/no-qualified-name-react': 'error',
             'react/jsx-uses-react': 'off',
             'react/react-in-jsx-scope': 'off',
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/*.{js,jsx}', // deprecated
+            'src/Components/Menu.tsx', // deprecated
+
+            'src/Components/BinderTabs/**', // deprecated
+            'src/Components/Button/**', // deprecated
+            'src/Components/ButtonLink/**', // deprecated
+            'src/Components/CVEStackedPill/**', // deprecated
+            'src/Components/CollapsibleSection/**', // deprecated
+            'src/Components/CveType/**', // deprecated
+            'src/Components/DashboardLayout/**', // deprecated
+            'src/Components/DashboardMenu/**', // deprecated
+            'src/Components/FixableCVECount/**', // deprecated
+            'src/Components/HeaderWithSubText/**', // deprecated
+            'src/Components/Labeled/**', // deprecated
+            'src/Components/KeyValue/**', // fix errors, and then delete
+            'src/Components/Menu/**', // deprecated
+            'src/Components/Metadata/**', // deprecated
+            'src/Components/MetadataStatsList/**', // deprecated
+            'src/Components/NoComponentVulnMessage/**', // deprecated
+            'src/Components/PageHeader/**', // deprecated
+            'src/Components/Pagination/**', // deprecated
+            'src/Components/PanelButton/**', // deprecated
+            'src/Components/RiskScore/**', // deprecated
+            'src/Components/RowActionButton/**', // deprecated
+            'src/Components/StatsList/**', // deprecated
+            'src/Components/RadioButtonGroup/**', // deprecated
+            'src/Components/ReactSelect/**', // deprecated
+            'src/Components/ResourceCountPopper/**', // deprecated
+            'src/Components/SidePanelAbsoluteArea.tsx', // deprecated
+            'src/Components/SidePanelAdjacentArea.tsx', // deprecated
+            'src/Components/TableCellLink/**', // deprecated
+            'src/Components/TextSelect/**', // deprecated
+            'src/Components/TileContent/**', // deprecated
+            'src/Components/TileLink/**', // deprecated
+            'src/Components/TimelineGraph/**', // deprecated
+            'src/Components/TimelineOverview/**', // deprecated
+            'src/Components/ToggleSwitch/**', // deprecated
+            'src/Components/TooltipFieldValue/**', // deprecated
+            'src/Components/TopCvssLabel/**', // deprecated
+            'src/Components/Widget/**', // deprecated
+            'src/Components/animations/**', // deprecated
+            'src/Components/forms/**', // replace when we rewrite Login in PatternFly, and then delete
+            'src/Components/visuals/**', // deprecated
+            'src/Components/workflow/**', // deprecated
+
+            'src/Containers/Clusters/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
+            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-Tailwind': 'error',
         },
     },
     {

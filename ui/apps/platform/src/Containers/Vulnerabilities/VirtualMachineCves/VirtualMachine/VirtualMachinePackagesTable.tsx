@@ -30,8 +30,8 @@ function VirtualMachinePackagesTable({
             <Thead>
                 <Tr>
                     <Th sort={getSortParams(COMPONENT_SORT_FIELD)}>Name</Th>
-                    <Th>Status</Th>
                     <Th>Version</Th>
+                    <Th>Status</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -50,10 +50,10 @@ function VirtualMachinePackagesTable({
                             return (
                                 <Tr key={`${packageRow.name}-${packageRow.version}`}>
                                     <Td dataLabel="Name">{packageRow.name} </Td>
+                                    <Td dataLabel="Version">{packageRow.version}</Td>
                                     <Td dataLabel="Status">
                                         {packageRow.isScannable ? 'Scanned' : 'Not scanned'}
                                     </Td>
-                                    <Td dataLabel="Version">{packageRow.version}</Td>
                                 </Tr>
                             );
                         })}

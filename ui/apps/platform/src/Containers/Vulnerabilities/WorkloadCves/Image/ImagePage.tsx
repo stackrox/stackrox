@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -12,8 +13,8 @@ import {
     PageSection,
     Skeleton,
     Tab,
-    Tabs,
     TabTitleText,
+    Tabs,
     Title,
     Tooltip,
 } from '@patternfly/react-core';
@@ -43,16 +44,14 @@ import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
-import ImageDetailBadges, {
-    ImageDetails,
-    imageDetailsFragment,
-} from '../components/ImageDetailBadges';
+import ImageDetailBadges, { imageDetailsFragment } from '../components/ImageDetailBadges';
+import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
+import type { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 

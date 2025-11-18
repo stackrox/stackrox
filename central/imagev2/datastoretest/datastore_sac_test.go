@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package datastore
+package datastoretest
 
 import (
 	"context"
@@ -9,10 +9,12 @@ import (
 	imageCVEEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
+	imageDataStoreV2 "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,6 +24,10 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestImageV2DataStoreSAC(t *testing.T) {
@@ -37,7 +43,7 @@ type imageV2DatastoreSACSuite struct {
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
 
-	datastore DataStore
+	datastore imageDataStoreV2.DataStore
 
 	imageVulnDatastore  imageCVEEV2DataStore.DataStore
 	deploymentDatastore deploymentDataStore.DataStore
@@ -55,7 +61,7 @@ func (s *imageV2DatastoreSACSuite) SetupSuite() {
 	var err error
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
-	s.datastore = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.datastore = imageDataStoreV2.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.imageVulnDatastore = imageCVEEV2DataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.Require().NoError(err)

@@ -8,7 +8,7 @@ import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Compon
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import TimelineLegend from 'Components/TimelineLegend';
-import ExportMenu from 'Containers/ExportMenu';
+import ExportMenu from '../ExportMenu';
 import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
 import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';

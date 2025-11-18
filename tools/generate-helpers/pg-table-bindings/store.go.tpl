@@ -330,21 +330,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 
 // endregion Helper functions
 
-// region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
-
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
-
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-    {{template "dropTableFunctionName" .Schema}}(ctx, db)
-}
 
 {{- define "dropTable"}}
 {{- $schema := . }}
@@ -356,6 +342,21 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db post
 {{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
+{{ if .GenerateDataModelHelpers -}}
+// region Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing.
+func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
+}
+
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db postgres.DB) {
+    {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
 {{template "dropTable" .Schema}}
 
 // endregion Used for testing
+{{- end }}

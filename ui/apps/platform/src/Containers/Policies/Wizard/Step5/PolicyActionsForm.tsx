@@ -1,4 +1,13 @@
-import { Divider, Flex, FlexItem, Form, FormGroup, Radio, Title } from '@patternfly/react-core';
+import {
+    Alert,
+    Divider,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
+    Radio,
+    Title,
+} from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 
@@ -9,6 +18,8 @@ import NotifiersForm from './NotifiersForm';
 
 function PolicyActionsForm() {
     const { setFieldValue, values }: FormikContextType<ClientPolicy> = useFormikContext();
+    const isEnforcementDisabled =
+        values.eventSource === 'AUDIT_LOG_EVENT' || values.eventSource === 'NODE_EVENT';
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
@@ -16,6 +27,15 @@ function PolicyActionsForm() {
                 <div className="pf-v5-u-mt-sm">
                     Configure activation state, enforcement, and notifiers of this policy.
                 </div>
+                {isEnforcementDisabled && (
+                    <Alert
+                        isInline
+                        variant="info"
+                        title="The selected event source does not support enforcement."
+                        component="p"
+                        className="pf-v5-u-mt-md"
+                    />
+                )}
             </FlexItem>
             <Divider component="div" />
             <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">

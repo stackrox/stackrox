@@ -8230,6 +8230,11 @@
                 "id": 5,
                 "name": "process",
                 "type": "ProcessIndicator"
+              },
+              {
+                "id": 6,
+                "name": "hostname",
+                "type": "string"
               }
             ],
             "messages": [
@@ -8268,12 +8273,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "path",
+                    "name": "mounted_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "host_path",
+                    "name": "node_path",
                     "type": "string"
                   },
                   {

@@ -22,6 +22,7 @@ import PolicySectionDropTarget from './PolicySectionDropTarget';
 import PolicyCriteriaModal from './PolicyCriteriaModal';
 
 import './PolicySection.css';
+import { PolicySectionValidationError } from './PolicySectionValidationError';
 
 type PolicySectionProps = {
     sectionIndex: number;
@@ -32,7 +33,7 @@ type PolicySectionProps = {
 function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySectionProps) {
     const [isEditingName, setIsEditingName] = useState(false);
     const { isModalOpen, openModal, closeModal } = useModal();
-    const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
+    const { values, errors, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -124,6 +125,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                     </CardTitle>
                 </CardHeader>
                 <CardBody className="policy-section-card-body">
+                    {errors.policySections && (
+                        <PolicySectionValidationError
+                            sectionIndex={sectionIndex}
+                            errors={errors.policySections}
+                            className="pf-v5-u-mb-md"
+                        />
+                    )}
                     {policyGroups.map((group, groupIndex) => {
                         const descriptor = descriptors.find(
                             (descriptorField) =>

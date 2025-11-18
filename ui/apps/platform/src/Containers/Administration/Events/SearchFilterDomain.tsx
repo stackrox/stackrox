@@ -16,17 +16,17 @@ function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomai
         setDomain(selection === optionAll ? undefined : selection);
     }
 
-    const options = domains.map((domainArg) => (
-        <SelectOption key={domainArg} value={domainArg}>
-            {domainArg}
-        </SelectOption>
-    ));
-    options.push(
-        <Divider key="Divider" />,
+    const options = [
         <SelectOption key="All" value={optionAll}>
             {optionAll}
-        </SelectOption>
-    );
+        </SelectOption>,
+        <Divider key="Divider" />,
+        ...domains.map((domainArg) => (
+            <SelectOption key={domainArg} value={domainArg}>
+                {domainArg}
+            </SelectOption>
+        )),
+    ];
 
     return (
         <SelectSingle

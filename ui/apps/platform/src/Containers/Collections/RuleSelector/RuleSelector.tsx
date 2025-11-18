@@ -80,7 +80,6 @@ function RuleSelector({
                 value={selection}
                 handleSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}
-                maxWidth="100%"
             >
                 <SelectOption value="NoneSpecified">
                     No {pluralEntity.toLowerCase()} specified

@@ -12,6 +12,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
+	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -42,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -311,8 +313,8 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
-func (ds *datastoreImpl) GetClustersForSAC() ([]*storage.Cluster, error) {
-	return ds.clusterStorage.GetAllFromCacheForSAC(), nil
+func (ds *datastoreImpl) GetClustersForSAC() ([]effectiveaccessscope.Cluster, error) {
+	return storagetoeffectiveaccessscope.Clusters(ds.clusterStorage.GetAllFromCacheForSAC()), nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {

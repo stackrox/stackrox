@@ -38,8 +38,8 @@ function SelectSingle({
     onBlur,
     menuAppendTo = undefined,
     footer,
-    maxHeight = '300px',
-    maxWidth = '30ch',
+    maxHeight = '50vh',
+    maxWidth = '100%',
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {

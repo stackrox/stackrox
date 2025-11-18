@@ -1,5 +1,3 @@
-import React from 'react';
-
 import DeploymentPage from './DeploymentPage';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 

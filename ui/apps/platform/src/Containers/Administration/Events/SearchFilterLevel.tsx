@@ -26,17 +26,17 @@ function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelPro
         }
     }
 
-    const options = levels.map((levelArg) => (
-        <SelectOption key={levelArg} value={getLevelText(levelArg)}>
-            {getLevelText(levelArg)}
-        </SelectOption>
-    ));
-    options.push(
-        <Divider key="Divider" />,
+    const options = [
         <SelectOption key="All" value={optionAll}>
             {optionAll}
-        </SelectOption>
-    );
+        </SelectOption>,
+        <Divider key="Divider" />,
+        ...levels.map((levelArg) => (
+            <SelectOption key={levelArg} value={getLevelText(levelArg)}>
+                {getLevelText(levelArg)}
+            </SelectOption>
+        )),
+    ];
 
     return (
         <SelectSingle
