@@ -65,7 +65,7 @@ function invoke_go() {
   tool="$1"
   shift
   if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    CGO_ENABLED=0 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   else
     go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   fi

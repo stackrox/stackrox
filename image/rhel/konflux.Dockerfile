@@ -22,7 +22,7 @@ ENV CI=1
 # CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
 RUN make cli-build
 
-ENV CGO_ENABLED=1
+ENV CGO_ENABLED=0
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS="release,strictfipsruntime"
 ENV GOEXPERIMENT=strictfipsruntime

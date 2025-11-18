@@ -127,8 +127,8 @@ jobs:
           echo "Building non-amd binary (CGO_ENABLED=0)"
           make -C scanner CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
         else
-          echo "Building amd binary (CGO_ENABLED=1)"
-          make -C scanner CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
+          echo "Building amd binary (CGO_ENABLED=0)"
+          make -C scanner CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
         fi
 
     - name: Archive Go binary to preserve permissions

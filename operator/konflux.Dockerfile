@@ -12,7 +12,7 @@ ENV BUILD_TAG="$BUILD_TAG"
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS="release,strictfipsruntime"
 ENV GOEXPERIMENT=strictfipsruntime
-ENV CI=1 GOFLAGS="" CGO_ENABLED=1
+ENV CI=1 GOFLAGS="" CGO_ENABLED=0
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 

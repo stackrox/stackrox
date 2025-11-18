@@ -22,14 +22,14 @@ SILENT ?= @
 #    gcc_arm64.S:34: Error: too many memory references for `mov'
 #
 # This flag must be overridden in commercial/downstream builds in arguments to `make`.
-#    make CGO_ENABLED=1 blah          # Correct - flips it to 1.
-#    CGO_ENABLED=1 make blah          # Wrong! This has no effect. Don't do this.
-#    export CGO_ENABLED=1; make blah  # Wrong! This has no effect. Don't do this.
+#    make CGO_ENABLED=0 blah          # Correct - flips it to 1.
+#    CGO_ENABLED=0 make blah          # Wrong! This has no effect. Don't do this.
+#    export CGO_ENABLED=0; make blah  # Wrong! This has no effect. Don't do this.
 # Similarly, don't do the following in Dockerfile
-#    ENV CGO_ENABLED=1                # Wrong!..
+#    ENV CGO_ENABLED=0                # Wrong!..
 #    RUN make blah                    # because it has no effect. Don't do this.
 # If you need to separate the declaration and the usage in Dockerfile, do this instead
-#    ARG CGO_ENABLED=1
+#    ARG CGO_ENABLED=0
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
 CGO_ENABLED = 0
 RACE_FLAG =
