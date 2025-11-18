@@ -210,7 +210,7 @@ func (m *fileAccessMatcherImpl) checkFileAccessMatches(cache *CacheReceptacle, f
 			return false, err
 		}
 		if cache != nil {
-			cache.augmentedNetworkFlow = augmentedFileAccess
+			cache.augmentedFileAccess = augmentedFileAccess
 		}
 	}
 	for _, eval := range m.fileAccessOnlyEvaluators {
