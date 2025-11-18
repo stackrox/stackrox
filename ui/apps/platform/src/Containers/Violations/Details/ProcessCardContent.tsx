@@ -41,7 +41,7 @@ function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
             >
                 <DescriptionListItem term="Container ID" desc={containerId} />
                 <DescriptionListItem term="Time" desc={timeFormat} />
-                <DescriptionListItem term="User ID" desc={uid.toString()} />
+                <DescriptionListItem term="User ID" desc={uid} />
             </DescriptionList>
             <DescriptionList className="pf-v5-u-mb-md">
                 <DescriptionListItem term="Arguments" desc={args} />
