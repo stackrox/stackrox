@@ -25,6 +25,7 @@ type CompiledPolicy interface {
 	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -106,6 +107,7 @@ func (cp *compiledPolicy) noMatchersSet() bool {
 		cp.deploymentWithProcessMatcher == nil &&
 		cp.kubeEventsMatcher == nil &&
 		cp.deploymentWithNetworkFlowMatcher == nil &&
+		cp.deploymentWithFileAccessMatcher == nil &&
 		cp.nodeMatcher == nil
 }
 
@@ -151,6 +153,10 @@ func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
 		err = cp.setNetworkFlowEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
+		}
+		err = cp.setFileAccessEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building file access matcher for policy %q", policy.GetName())
 		}
 	}
 
@@ -217,12 +223,26 @@ func (cp *compiledPolicy) setNetworkFlowEventMatcher(policy *storage.Policy) err
 	return nil
 }
 
+func (cp *compiledPolicy) setFileAccessEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		cp.hasFileAccessSection = true
+		deploymentWithFileAccessMatcher, err := booleanpolicy.BuildDeploymentWithFileAccessMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.deploymentWithFileAccessMatcher = deploymentWithFileAccessMatcher
+	}
+	return nil
+}
+
 func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
 		return booleanpolicy.SectionContainsEventSource(section, storage.EventSource_NODE_EVENT)
 	})
 	if len(filtered.GetPolicySections()) > 0 {
-		cp.hasNodeSection = true
 		nodeMatcher, err := booleanpolicy.BuildNodeEventMatcher(filtered)
 		if err != nil {
 			return err
@@ -243,6 +263,9 @@ func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 	if cp.deploymentWithNetworkFlowMatcher != nil {
 		numMatchers++
 	}
+	if cp.deploymentWithFileAccessMatcher != nil {
+		numMatchers++
+	}
 	if cp.auditLogEventMatcher != nil {
 		numMatchers++
 	}
@@ -261,6 +284,7 @@ type compiledPolicy struct {
 	kubeEventsMatcher                booleanpolicy.KubeEventMatcher
 	deploymentWithProcessMatcher     booleanpolicy.DeploymentWithProcessMatcher
 	deploymentWithNetworkFlowMatcher booleanpolicy.DeploymentWithNetworkFlowMatcher
+	deploymentWithFileAccessMatcher  booleanpolicy.DeploymentWithFileAccessMatcher
 	deploymentMatcher                booleanpolicy.DeploymentMatcher
 	imageMatcher                     booleanpolicy.ImageMatcher
 	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
@@ -270,7 +294,7 @@ type compiledPolicy struct {
 	hasKubeEventsSection  bool
 	hasNetworkFlowSection bool
 	hasAuditEventsSection bool
-	hasNodeSection        bool
+	hasFileAccessSection  bool
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -350,6 +374,16 @@ func (cp *compiledPolicy) MatchAgainstNodeAndFileAccess(cache *booleanpolicy.Cac
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against nodes", cp.Policy().GetName())
 	}
 	return cp.nodeMatcher.MatchNodeWithFileAccess(cache, node, access)
+}
+
+func (cp *compiledPolicy) MatchAgainstDeploymentAndFileAccess(cache *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, fileAccess *storage.FileAccess) (booleanpolicy.Violations, error) {
+	if !cp.hasFileAccessSection {
+		return booleanpolicy.Violations{}, nil
+	}
+	if cp.deploymentWithFileAccessMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and file accesses", cp.Policy().GetName())
+	}
+	return cp.deploymentWithFileAccessMatcher.MatchDeploymentWithFileAccess(cache, enhancedDeployment, fileAccess)
 }
 
 // Policy returns the policy that was compiled.

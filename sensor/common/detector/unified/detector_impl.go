@@ -76,3 +76,12 @@ func (d *detectorImpl) DetectNodeFileAccess(node *storage.Node, access *storage.
 	}
 	return alerts
 }
+
+func (d *detectorImpl) DetectFileAccessForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, fileAccess *storage.FileAccess) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndFileAccess(enhancedDeployment, fileAccess)
+	if err != nil {
+		log.Errorf("Error evaluating runtime policies for deployment file accesses: %q", err)
+		return nil
+	}
+	return alerts
+}

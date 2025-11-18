@@ -16,6 +16,7 @@ var (
 	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
 	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
 	nodeEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
+	fileAccessFactory     = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -35,6 +36,9 @@ type CacheReceptacle struct {
 
 	// Used only by MatchDeploymentWithNetworkFlow
 	augmentedNetworkFlow *pathutil.AugmentedObj
+
+	// Used only by MatchDeploymentWithFileAccess
+	augmentedFileAccess *pathutil.AugmentedObj
 }
 
 // EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
@@ -84,6 +88,10 @@ type DeploymentWithNetworkFlowMatcher interface {
 // A NodeEventMatcher matches file events from a node against a policy.
 type NodeEventMatcher interface {
 	MatchNodeWithFileAccess(cache *CacheReceptacle, node *storage.Node, access *storage.FileAccess) (Violations, error)
+}
+
+type DeploymentWithFileAccessMatcher interface {
+	MatchDeploymentWithFileAccess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, fileAccess *storage.FileAccess) (Violations, error)
 }
 
 type sectionAndEvaluator struct {
@@ -231,6 +239,45 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 			evaluators: sectionsAndEvals,
 		},
 		networkFlowOnlyEvaluators: networkFlowOnlyEvaluators,
+	}, nil
+}
+
+func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithFileAccessMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	fileAccessOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionTypeToFieldQueries(section, FileAccess)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		eval, err := fileAccessFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating file access evaluator for section %q", section.GetSectionName())
+		}
+		fileAccessOnlyEvaluators = append(fileAccessOnlyEvaluators, eval)
+	}
+
+	// Although the struct implementation is the same as matcherImpl, we should still use networkFlowMatcher
+	// since it implements another check func MatchDeploymentWithNetworkFlowInfo
+	return &fileAccessMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
+		fileAccessOnlyEvaluators: fileAccessOnlyEvaluators,
 	}, nil
 }
 
