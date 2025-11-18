@@ -42,6 +42,13 @@ assertAll:
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
 - celExpr: "central_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.message.contains('installed'))"
+- celExpr: |
+    central_cr.status.central.adminPassword.adminPasswordSecretReference
+    ==
+    (has(central_cr.spec.central.adminPasswordSecret)
+       ? central_cr.spec.central.adminPasswordSecret.name
+       : 'central-htpasswd')
 timeout: 1500
 ---
 apiVersion: apps/v1
