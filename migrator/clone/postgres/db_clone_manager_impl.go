@@ -382,7 +382,7 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	defer conn.Release()
 
 	// Start a transaction
-	tx, err := conn.Begin(ctx)
+	tx, ctx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}

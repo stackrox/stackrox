@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
-	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,7 +30,7 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbstore := store.New(pool)
 	return newNetworkBaselineDataStore(dbstore), nil
 }
 
@@ -173,4 +172,8 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.Netw
 	}
 	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, f)
+}
+
+func (ds *dataStoreImpl) Begin(ctx context.Context) (context.Context, Tx, error) {
+	return ds.storage.Begin(ctx)
 }
