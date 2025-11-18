@@ -140,6 +140,21 @@ func (mr *MockDataStoreMockRecorder) GetImageMetadata(ctx, id any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockDataStore)(nil).GetImageMetadata), ctx, id)
 }
 
+// GetImageNamesWithDigest mocks base method.
+func (m *MockDataStore) GetImageNamesWithDigest(ctx context.Context, digest string) ([]*storage.ImageName, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageNamesWithDigest", ctx, digest)
+	ret0, _ := ret[0].([]*storage.ImageName)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageNamesWithDigest indicates an expected call of GetImageNamesWithDigest.
+func (mr *MockDataStoreMockRecorder) GetImageNamesWithDigest(ctx, digest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageNamesWithDigest", reflect.TypeOf((*MockDataStore)(nil).GetImageNamesWithDigest), ctx, digest)
+}
+
 // GetImagesBatch mocks base method.
 func (m *MockDataStore) GetImagesBatch(ctx context.Context, ids []string) ([]*storage.ImageV2, error) {
 	m.ctrl.T.Helper()

@@ -63,7 +63,7 @@ func (s *ImageV2DataStoreTestSuite) SetupSuite() {
 func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
-	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
@@ -499,6 +499,57 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageIdsAndDigest() {
 	s.Len(results, 1)
 	s.Equal(testImage1.GetId(), results[0].ImageID)
 	s.Equal(testImage1.GetDigest(), results[0].Digest)
+}
+
+func (s *ImageV2DataStoreTestSuite) TestGetImageNamesWithDigest() {
+	ctx := sac.WithAllAccess(context.Background())
+	img1 := getTestImageV2("img1")
+
+	img2 := img1.CloneVT()
+	img2.Name = &storage.ImageName{
+		Registry: "registry.test.io",
+		Remote:   "img2",
+		Tag:      "latest",
+		FullName: "registry.test.io/img2:latest",
+	}
+	img2.Id = uuid.NewV5FromNonUUIDs(img2.GetName().GetFullName(), img2.GetDigest()).String()
+
+	img3 := img1.CloneVT()
+	img3.Name = &storage.ImageName{
+		Registry: "registry.test.io",
+		Remote:   "img3",
+		Tag:      "latest",
+		FullName: "registry.test.io/img3:latest",
+	}
+	img3.Id = uuid.NewV5FromNonUUIDs(img3.GetName().GetFullName(), img3.GetDigest()).String()
+
+	s.NoError(s.datastore.UpsertImage(ctx, img1))
+	s.NoError(s.datastore.UpsertImage(ctx, img2))
+	s.NoError(s.datastore.UpsertImage(ctx, img3))
+
+	expectedImageNames := []*storage.ImageName{
+		{
+			Registry: "registry.test.io",
+			Remote:   "img1",
+			Tag:      "latest",
+			FullName: "registry.test.io/img1:latest",
+		},
+		{
+			Registry: "registry.test.io",
+			Remote:   "img2",
+			Tag:      "latest",
+			FullName: "registry.test.io/img2:latest",
+		},
+		{
+			Registry: "registry.test.io",
+			Remote:   "img3",
+			Tag:      "latest",
+			FullName: "registry.test.io/img3:latest",
+		},
+	}
+	imageNames, err := s.datastore.GetImageNamesWithDigest(ctx, img1.GetDigest())
+	s.NoError(err)
+	s.ElementsMatch(expectedImageNames, imageNames)
 }
 
 func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {

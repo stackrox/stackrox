@@ -2,7 +2,6 @@ package reprocessor
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -539,7 +538,15 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
 			// Gather all known image names with the same SHA to ensure backward compatibility
-			allNames := l.getImageNamesWithSameSHA(image)
+			allNames, err := l.imagesV2.GetImageNamesWithDigest(allAccessCtx, image.GetDigest())
+			if err != nil {
+				log.Warnw("Failed to retrieve image names by digest",
+					logging.ImageName(image.GetName().GetFullName()),
+					logging.ImageID(image.GetId()),
+					logging.String("digest", image.GetDigest()),
+					logging.Err(err),
+				)
+			}
 			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
@@ -838,47 +845,6 @@ func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.Enri
 func (l *loopImpl) enrichImageV2(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
 	return l.imageEnricherV2.EnrichImage(ctx, enrichCtx, image)
-}
-
-// getImageNamesWithSameSHA retrieves all known image names with the same SHA as the given image from the datastore.
-// This is used to ensure backward compatibility when sending image data to sensors that don't
-// have the FlattenImageDataOnSensor capability.
-func (l *loopImpl) getImageNamesWithSameSHA(img *storage.ImageV2) []*storage.ImageName {
-	if img.GetDigest() == "" {
-		return nil
-	}
-
-	// Query all images with this digest
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, img.GetDigest()).
-		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
-		ProtoQuery()
-	results, err := l.imagesV2.Search(allAccessCtx, query)
-	if err != nil {
-		log.Warnw("Failed to retrieve image names by digest",
-			logging.ImageName(img.GetName().GetFullName()),
-			logging.ImageID(img.GetId()),
-			logging.String("digest", img.GetDigest()),
-			logging.Err(err),
-		)
-		return nil
-	}
-
-	// Collect all image names
-	allNames := make([]*storage.ImageName, 0, len(results))
-	for _, res := range results {
-		if res.FieldValues != nil {
-			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
-				allNames = append(allNames, &storage.ImageName{
-					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
-					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
-					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
-					FullName: nameVal,
-				})
-			}
-		}
-	}
-
-	return allNames
 }
 
 func (l *loopImpl) enrichLoop() {
