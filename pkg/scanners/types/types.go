@@ -88,3 +88,12 @@ type OrchestratorScanner interface {
 	OpenShiftScan(string) ([]*storage.EmbeddedVulnerability, error)
 	IstioScan(string) ([]*storage.EmbeddedVulnerability, error)
 }
+
+// VirtualMachineScanner is the interface all virtual machine scanners must implement
+//
+//go:generate mockgen-wrapper
+type VirtualMachineScanner interface {
+	Name() string
+	GetVirtualMachineScan(vm *storage.VirtualMachine, indexReport *v4.IndexReport) (*storage.VirtualMachineScan, error)
+	Type() string
+}
