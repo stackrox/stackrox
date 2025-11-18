@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { DescriptionList, Divider, Flex } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import KeyValue from 'Components/KeyValue';
 import { getDateTime } from 'utils/dateUtils';
 import type { ProcessIndicator } from 'types/processIndicator.proto';
 
@@ -13,14 +12,6 @@ type ProcessCardContentProps = {
 function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
     const { time, args, execFilePath, containerId, lineage, uid } = event.signal;
     const timeFormat = time ? getDateTime(new Date(time)) : 'N/A';
-    let ancestors: ReactElement | null = null;
-    if (Array.isArray(lineage) && lineage.length) {
-        ancestors = (
-            <div className="flex flex-1 text-base-600 px-4 py-2">
-                <KeyValue label="Ancestors:" value={lineage.join(', ')} />
-            </div>
-        );
-    }
 
     return (
         <div>
@@ -45,8 +36,10 @@ function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
             </DescriptionList>
             <DescriptionList className="pf-v5-u-mb-md">
                 <DescriptionListItem term="Arguments" desc={args} />
+                {Array.isArray(lineage) && lineage.length && (
+                    <DescriptionListItem term="Ancestors" desc={lineage.join(', ')} />
+                )}
             </DescriptionList>
-            {ancestors}
         </div>
     );
 }
