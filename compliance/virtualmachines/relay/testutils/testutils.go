@@ -1,0 +1,120 @@
+package relaytest
+
+import (
+	"context"
+	"io"
+	"net"
+	"os"
+	"time"
+
+	"github.com/mdlayher/vsock"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+)
+
+// MockVsockConn implements net.Conn and allows tests to craft vsock-backed connections easily.
+type MockVsockConn struct {
+	data         []byte
+	delay        time.Duration
+	remoteAddr   net.Addr
+	readDeadline time.Time
+}
+
+func NewMockVsockConn() *MockVsockConn {
+	return &MockVsockConn{}
+}
+
+func (c *MockVsockConn) WithVsockCID(vsockCID uint32) *MockVsockConn {
+	c.remoteAddr = &vsock.Addr{ContextID: vsockCID}
+	return c
+}
+
+func (c *MockVsockConn) WithData(data []byte) *MockVsockConn {
+	c.data = data
+	return c
+}
+
+func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
+	data, err := proto.Marshal(indexReport)
+	if err != nil {
+		return nil, err
+	}
+	c.data = data
+	return c, nil
+}
+
+func (c *MockVsockConn) WithDelay(delay time.Duration) *MockVsockConn {
+	c.delay = delay
+	return c
+}
+
+func (c *MockVsockConn) Read(b []byte) (int, error) {
+	time.Sleep(c.delay)
+	if !c.readDeadline.IsZero() && time.Now().After(c.readDeadline) {
+		return 0, os.ErrDeadlineExceeded
+	}
+	n := copy(b, c.data)
+	if n == len(c.data) {
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+func (c *MockVsockConn) RemoteAddr() net.Addr {
+	return c.remoteAddr
+}
+
+func (c *MockVsockConn) Close() error {
+	return nil
+}
+
+func (c *MockVsockConn) Write([]byte) (int, error)         { return 0, nil }
+func (c *MockVsockConn) LocalAddr() net.Addr               { return nil }
+func (c *MockVsockConn) SetDeadline(time.Time) error       { return nil }
+func (c *MockVsockConn) SetReadDeadline(t time.Time) error { c.readDeadline = t; return nil }
+func (c *MockVsockConn) SetWriteDeadline(time.Time) error  { return nil }
+
+// MockSensorClient captures UpsertVirtualMachineIndexReport calls and allows injecting delays or errors.
+type MockSensorClient struct {
+	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
+	delay            time.Duration
+	err              error
+	response         *sensor.UpsertVirtualMachineIndexReportResponse
+}
+
+func NewMockSensorClient() *MockSensorClient {
+	return &MockSensorClient{
+		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
+	}
+}
+
+func (m *MockSensorClient) WithDelay(delay time.Duration) *MockSensorClient {
+	m.delay = delay
+	return m
+}
+
+func (m *MockSensorClient) WithError(err error) *MockSensorClient {
+	m.err = err
+	return m
+}
+
+func (m *MockSensorClient) WithUnsuccessfulResponse() *MockSensorClient {
+	m.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
+	return m
+}
+
+func (m *MockSensorClient) CapturedRequests() []*sensor.UpsertVirtualMachineIndexReportRequest {
+	return m.capturedRequests
+}
+
+func (m *MockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
+	select {
+	case <-time.After(m.delay):
+		m.capturedRequests = append(m.capturedRequests, req)
+		return m.response, m.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}

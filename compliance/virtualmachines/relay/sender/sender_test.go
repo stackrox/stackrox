@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -29,7 +28,7 @@ func (s *senderTestSuite) SetupTest() {
 }
 
 func (s *senderTestSuite) TestSendReportToSensor_HandlesContextCancellation() {
-	client := newMockSensorClient()
+	client := relaytest.NewMockSensorClient()
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
@@ -62,9 +61,9 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 	for name, c := range cases {
 		s.Run(name, func() {
-			client := newMockSensorClient().withError(c.err)
+			client := relaytest.NewMockSensorClient().WithError(c.err)
 			if !c.respSuccess {
-				client = client.withUnsuccessfulResponse()
+				client = client.WithUnsuccessfulResponse()
 			}
 
 			// The retry logic uses withExponentialBackoff, which currently has an initial delay between retries of
@@ -75,41 +74,8 @@ func (s *senderTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 			err := SendReportToSensor(ctx, &v1.IndexReport{}, client)
 			s.Require().Error(err)
 
-			retried := len(client.capturedRequests) > 1
+			retried := len(client.CapturedRequests()) > 1
 			s.Equal(c.shouldRetry, retried)
 		})
-	}
-}
-
-type mockSensorClient struct {
-	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
-	delay            time.Duration
-	err              error
-	response         *sensor.UpsertVirtualMachineIndexReportResponse
-}
-
-func newMockSensorClient() *mockSensorClient {
-	return &mockSensorClient{
-		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
-	}
-}
-
-func (m *mockSensorClient) withError(err error) *mockSensorClient {
-	m.err = err
-	return m
-}
-
-func (m *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
-	m.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
-	return m
-}
-
-func (m *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
-	select {
-	case <-time.After(m.delay):
-		m.capturedRequests = append(m.capturedRequests, req)
-		return m.response, m.err
-	case <-ctx.Done():
-		return nil, ctx.Err()
 	}
 }
