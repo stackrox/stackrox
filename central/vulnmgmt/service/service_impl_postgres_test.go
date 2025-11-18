@@ -166,7 +166,7 @@ func (s *servicePostgresTestSuite) TestExport() {
 		},
 	}
 	for _, c := range cases {
-		s.Run(c.name, func() {
+		s.T().Run(c.name, func(t *testing.T) {
 			s.upsertDeployments(c.deploymentsByID)
 			s.upsertPods(c.pods)
 
@@ -182,7 +182,7 @@ func (s *servicePostgresTestSuite) TestExport() {
 			defer closeFunc()
 			client := v1.NewVulnMgmtServiceClient(conn)
 			results, err := receiveWorkloads(s.helper.Ctx, s.T(), client, request, false)
-			s.NoError(err)
+			s.Require().NoError(err)
 
 			// The images are the same for all deployments to simplify the assertions.
 			expectedImages := fixtures.DeploymentImages()
@@ -190,22 +190,19 @@ func (s *servicePostgresTestSuite) TestExport() {
 
 			// We cannot perform a full assert on the response because it contains variable data
 			// and timestamps.
-			if len(results) != len(c.expectedDeploymentIDs) {
-				s.T().Logf("MISMATCH: Test '%s' expected %d results, got %d", c.name, len(c.expectedDeploymentIDs), len(results))
-			}
-			s.Len(results, len(c.expectedDeploymentIDs))
+			s.Require().Len(results, len(c.expectedDeploymentIDs))
 			for i := range results {
 				depID := results[i].GetDeployment().GetId()
-				s.Contains(c.expectedDeploymentIDs, depID)
+				s.Assert().Contains(c.expectedDeploymentIDs, depID)
 				protoassert.Equal(s.T(), c.deploymentsByID[depID], results[i].GetDeployment())
 
-				s.Equal(c.expectedLivePodsByDepID[depID], results[i].GetLivePods())
+				s.Assert().Equal(c.expectedLivePodsByDepID[depID], results[i].GetLivePods())
 
 				var imageIDs []string
 				for _, image := range results[i].GetImages() {
 					imageIDs = append(imageIDs, image.GetId())
 				}
-				s.ElementsMatch(expectedImageIDs, imageIDs)
+				s.Assert().ElementsMatch(expectedImageIDs, imageIDs)
 			}
 		})
 	}
