@@ -110,8 +110,11 @@ var (
 	// This must be enabled in Central and Scanner V4 Matcher to have any effect.
 	KnownExploitedVulnerabilities = registerFeature("Display CISA Known Exploited Vulnerabilities (KEV) data", "ROX_CISA_KEV")
 
-	// SFA enables monitoring of sensitive files.
+	// SensitiveFileActivity enables monitoring of sensitive files.
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY")
+
+	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
+	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
 )
 
 // The following feature flags are related to Scanner V4.
