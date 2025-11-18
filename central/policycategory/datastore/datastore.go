@@ -31,6 +31,8 @@ type DataStore interface {
 	RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error)
 	DeletePolicyCategory(ctx context.Context, id string) error
 	GetDuplicatePolicyCategories(ctx context.Context) ([]*views.DuplicateCategoryView, error)
+
+	CleanupCategories(ctx context.Context) error
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.

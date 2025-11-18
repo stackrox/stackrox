@@ -16,7 +16,7 @@ func GetCategoryNameToIDs(categories []*storage.PolicyCategory) map[string]strin
 	lowerNameIDMap := make(map[string]*storage.PolicyCategory)
 	nameIDMap := make(map[string]string, len(categories))
 	for _, c := range categories {
-		if entry, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && isMoreUppercase(entry, c) {
+		if entry, found := lowerNameIDMap[strings.ToLower(c.GetName())]; found && IsMoreUppercase(entry.GetName(), c.GetName()) {
 			lowerNameIDMap[strings.ToLower(entry.GetName())] = c
 		} else if !found {
 			lowerNameIDMap[strings.ToLower(c.GetName())] = c
@@ -37,6 +37,6 @@ func GetCategoryIDToNames(categories []*storage.PolicyCategory) map[string]strin
 	return idNameMap
 }
 
-func isMoreUppercase(current *storage.PolicyCategory, contender *storage.PolicyCategory) bool {
-	return len(uppercaseRegex.FindAllStringIndex(contender.GetName(), -1)) >= len(uppercaseRegex.FindAllStringIndex(current.GetName(), -1))
+func IsMoreUppercase(current string, contender string) bool {
+	return len(uppercaseRegex.FindAllStringIndex(contender, -1)) >= len(uppercaseRegex.FindAllStringIndex(current, -1))
 }

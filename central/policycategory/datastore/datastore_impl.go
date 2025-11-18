@@ -7,6 +7,7 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/store"
+	"github.com/stackrox/rox/central/policycategory/utils"
 	"github.com/stackrox/rox/central/policycategory/views"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,10 +54,7 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 		categoryNames[i] = titleCase.String(categoryName)
 	}
 
-	fmt.Println("Category names:", categoryNames)
-
 	edges, err := ds.policyCategoryEdgeDS.SearchRawEdges(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery())
-	fmt.Println("Edges found:", edges)
 	if err != nil {
 		return err
 	}
@@ -64,9 +62,7 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	for _, e := range edges {
 		existingCategoryIDs = append(existingCategoryIDs, e.GetCategoryId())
 	}
-	fmt.Println("Existing Category IDs:", existingCategoryIDs)
 	existingCategories, _, err := ds.storage.GetMany(ctx, existingCategoryIDs)
-	fmt.Println("Existing Categories:", existingCategories)
 	if err != nil {
 		return err
 	}
@@ -82,7 +78,6 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 		return nil
 	}
 
-	fmt.Println("Categories to update:", categoriesToUpdate)
 	// disassociate all categories from given policy
 	if err := ds.policyCategoryEdgeDS.DeleteByQuery(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery()); err != nil {
 		return err
@@ -106,7 +101,6 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 			categoryIds = append(categoryIds, newCategory.GetId())
 		}
 	}
-	fmt.Println("Categories to Add:", categoriesToAdd)
 
 	err = ds.storage.UpsertMany(ctx, categoriesToAdd)
 	if err != nil {
@@ -125,7 +119,6 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 			CategoryId: id,
 		})
 	}
-	fmt.Println("New edges:", policyCategoryEdges)
 	return ds.policyCategoryEdgeDS.UpsertMany(ctx, policyCategoryEdges)
 }
 
@@ -359,6 +352,42 @@ func (ds *datastoreImpl) GetDuplicatePolicyCategories(ctx context.Context) ([]*v
 		}
 	}
 	return res, err
+}
+
+func (ds *datastoreImpl) CleanupCategories(ctx context.Context) error {
+	categories := make(map[string]*struct {
+		mostUppercase string
+		list          []*storage.PolicyCategory
+	})
+	err := ds.storage.Walk(ctx, func(c *storage.PolicyCategory) error {
+		lowerName := strings.ToLower(c.GetName())
+		if _, found := categories[lowerName]; !found {
+			categories[lowerName] = &struct {
+				mostUppercase string
+				list          []*storage.PolicyCategory
+			}{
+				mostUppercase: "",
+				list:          make([]*storage.PolicyCategory, 0),
+			}
+		}
+		if utils.IsMoreUppercase(categories[lowerName].mostUppercase, c.GetName()) {
+			categories[lowerName].mostUppercase = c.GetName()
+		}
+		categories[lowerName].list = append(categories[lowerName].list, c)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	toDelete := make([]string, 0)
+	for _, entry := range categories {
+		for _, category := range entry.list {
+			if category.GetName() != entry.mostUppercase {
+				toDelete = append(toDelete, category.GetId())
+			}
+		}
+	}
+	return ds.storage.DeleteMany(ctx, toDelete)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result

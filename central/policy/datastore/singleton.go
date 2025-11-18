@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -28,7 +27,6 @@ var (
 
 func initialize() {
 	storage := policyStore.New(globaldb.GetPostgres())
-	fmt.Println("in policy singleton initializer")
 
 	clusterDatastore := clusterDS.Singleton()
 	notifierDatastore := notifierDS.Singleton()
@@ -40,7 +38,6 @@ func initialize() {
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
-	fmt.Println("in policy singleton")
 	once.Do(initialize)
 	return ad
 }
@@ -52,7 +49,6 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 	// This is unrelated to default policies, but since we're already looping through all the policies here,
 	// this was a good place to add it.
 	duplicateCategories, err := categoriesDS.GetDuplicatePolicyCategories(workflowAdministrationCtx)
-	fmt.Printf("Duplicate categories: %v \n", duplicateCategories)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +58,6 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 			lowerCategoryNameToProperName[strings.ToLower(category.Name)] = category.Name
 		}
 	}
-	fmt.Printf("True category names: %v \n", lowerCategoryNameToProperName)
 	toReupsert := make([]*storage.Policy, 0)
 	policyIDSet := set.NewStringSet()
 	err = s.Walk(workflowAdministrationCtx, func(p *storage.Policy) error {
@@ -73,12 +68,9 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 		}
 		var categories []*storage.PolicyCategory
 		categories, err = categoriesDS.GetPolicyCategoriesForPolicy(workflowAdministrationCtx, p.GetId())
-		fmt.Println("Inspecting policy", p.GetName())
 		shouldReupsert := false
 		for _, category := range categories {
-			fmt.Println("Currently looking at", strings.ToLower(category.GetName()))
 			if correctCategory, found := lowerCategoryNameToProperName[strings.ToLower(category.GetName())]; found {
-				fmt.Printf("Found a category: %v", category)
 				p.Categories = append(p.Categories, correctCategory)
 				shouldReupsert = true
 			} else {
@@ -93,13 +85,13 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore, fullS
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("To reupsert policies: %v", toReupsert)
 	for _, policy := range toReupsert {
 		err = fullStore.UpdatePolicy(sac.WithAllAccess(context.Background()), policy)
 		if err != nil {
 			panic(err)
 		}
 	}
+	categoriesDS.CleanupCategories(sac.WithAllAccess(context.Background()))
 
 	// Preload the default policies.
 	defaultPolicies, err := policies.DefaultPolicies()
