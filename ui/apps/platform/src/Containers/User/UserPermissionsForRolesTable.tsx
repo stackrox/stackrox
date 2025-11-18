@@ -5,8 +5,8 @@ import RolesForResourceAccess from './RolesForResourceAccess';
 
 // Normal horizontal padding to separate icons from text in the preceding cell.
 const style = {
-    '--pf-v5-c-table--m-compact--cell--PaddingLeft': 'var(--pf-v5-global--spacer--md)',
-    '--pf-v5-c-table--m-compact--cell--PaddingRight': 'var(--pf-v5-global--spacer--md)',
+    '--pf-v5-c-table--m-compact--cell--PaddingLeft': 'var(--pf-t--global--spacer--md)',
+    '--pf-v5-c-table--m-compact--cell--PaddingRight': 'var(--pf-t--global--spacer--md)',
 } as CSSProperties;
 
 export type PermissionByRole = {

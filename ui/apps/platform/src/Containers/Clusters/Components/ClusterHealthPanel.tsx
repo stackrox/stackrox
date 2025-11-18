@@ -8,7 +8,7 @@ type ClusterHealthPanelProps = {
 
 function ClusterHealthPanel({ children, header }: ClusterHealthPanelProps): ReactElement {
     return (
-        <Panel variant="bordered" className="pf-v5-u-h-100">
+        <Panel variant="bordered" className="pf-v6-u-h-100">
             <PanelHeader>{header}</PanelHeader>
             <Divider />
             <PanelMain>

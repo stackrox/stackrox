@@ -3,8 +3,6 @@ import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Button,
     Checkbox,
-    Chip,
-    ChipGroup,
     DatePicker,
     Flex,
     FlexItem,
@@ -13,6 +11,8 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
+    Label,
+    LabelGroup,
     MenuToggle,
     Select,
     SelectList,
@@ -22,6 +22,7 @@ import {
     TextInputGroupUtilities,
     TimePicker,
 } from '@patternfly/react-core';
+
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
@@ -116,30 +117,30 @@ function DiagnosticBundleForm({
                     isExpanded={clusterSelectOpen}
                     aria-controls="filterByClusters-listbox"
                 >
-                    <ChipGroup>
+                    <LabelGroup>
                         {values.filterByClusters.map((cluster) => (
-                            <Chip
+                            <Label
+                                variant="outline"
                                 key={cluster}
-                                onClick={(event: ReactMouseEvent) => {
+                                onClose={(event: ReactMouseEvent) => {
                                     event.stopPropagation();
                                     onRemoveChip(cluster);
                                 }}
                                 aria-label={`Remove ${cluster}`}
                             >
                                 {cluster}
-                            </Chip>
+                            </Label>
                         ))}
-                    </ChipGroup>
+                    </LabelGroup>
                 </TextInputGroupMain>
                 <TextInputGroupUtilities>
                     {values.filterByClusters.length > 0 && (
                         <Button
+                            icon={<TimesIcon />}
                             variant="plain"
                             onClick={clearSelection}
                             aria-label="Clear all selections"
-                        >
-                            <TimesIcon />
-                        </Button>
+                        />
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>

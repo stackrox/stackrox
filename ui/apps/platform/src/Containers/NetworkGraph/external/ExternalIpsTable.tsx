@@ -44,15 +44,15 @@ function ExternalIpsTable({
 
     return (
         <>
-            <Toolbar className="pf-v5-u-pb-md pf-v5-u-pt-0">
-                <ToolbarContent className="pf-v5-u-px-0">
-                    <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
+            <Toolbar className="pf-v6-u-pb-md pf-v6-u-pt-0">
+                <ToolbarContent className="pf-v6-u-px-0">
+                    <ToolbarItem className="pf-v6-u-w-100 pf-v6-u-mr-0">
                         <IPMatchFilter
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                         />
                     </ToolbarItem>
-                    <ToolbarItem className="pf-v5-u-w-100">
+                    <ToolbarItem className="pf-v6-u-w-100">
                         <SearchFilterChips
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
@@ -69,7 +69,7 @@ function ExternalIpsTable({
             <Divider />
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             itemCount={totalEntities}
                             page={page}

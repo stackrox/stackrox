@@ -97,14 +97,13 @@ function ConditionNumber({ value, onChange, onSearch }: ConditionNumberProps) {
                 plusBtnAriaLabel="Condition value plus button"
             />
             <Button
+                icon={<ArrowRightIcon />}
                 variant="control"
                 aria-label="Apply condition and number input to search"
                 onClick={() => {
                     onSearch(value);
                 }}
-            >
-                <ArrowRightIcon />
-            </Button>
+            ></Button>
         </>
     );
 }

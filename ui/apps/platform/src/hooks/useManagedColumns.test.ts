@@ -472,9 +472,9 @@ test('should correctly generate visibility classes', () => {
 
     const getVisibilityClass = generateVisibilityForColumns(result.current.columns);
 
-    expect(getVisibilityClass('Name')).toEqual('pf-v5-u-display-none');
+    expect(getVisibilityClass('Name')).toEqual('pf-v6-u-display-none');
     expect(getVisibilityClass('CVSS')).toEqual('');
-    expect(getVisibilityClass('NVD CVSS')).toEqual('pf-v5-u-display-none');
+    expect(getVisibilityClass('NVD CVSS')).toEqual('pf-v6-u-display-none');
     // Check that a column that doesn't exist returns an empty string and that attempting call the function
     // with an invalid key is not permitted when using TypeScript with a correctly inferred type
     // @ts-expect-error Should see a type error here when using an invalid key

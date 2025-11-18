@@ -78,7 +78,7 @@ function ApprovedFalsePositives() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -88,7 +88,7 @@ function ApprovedFalsePositives() {
     }
 
     return (
-        <PageSection>
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Exception Management - Approved False Positives" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -97,7 +97,7 @@ function ApprovedFalsePositives() {
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
             >
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         toggleTemplate={({ firstIndex, lastIndex }) => (
                             <span>

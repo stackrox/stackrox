@@ -6,10 +6,10 @@ import {
     FlexItem,
     List,
     ListItem,
-    Modal,
     SearchInput,
     pluralize,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import useModal from 'hooks/useModal';
 
@@ -78,7 +78,7 @@ function KeyValueListModal({ type, keyValues }: KeyValueListModalProps) {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         {filteredKeyValues.length === 0 && <Bullseye>No results</Bullseye>}
                         {filteredKeyValues.length !== 0 && (
-                            <List isPlain isBordered className="pf-v5-u-py-sm pf-m-scrollable">
+                            <List isPlain isBordered className="pf-v6-u-py-sm pf-m-scrollable">
                                 {filteredKeyValues.map(({ key, value }) => {
                                     const labelText = `${key}: ${value}`;
                                     return <ListItem key={labelText}>{labelText}</ListItem>;

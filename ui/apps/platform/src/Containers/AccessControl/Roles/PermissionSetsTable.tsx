@@ -32,7 +32,7 @@ function PermissionSetsTable({
             <Tbody>
                 {permissionSets.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td className="pf-v5-c-table__check">
+                        <Td className="pf-v6-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}
