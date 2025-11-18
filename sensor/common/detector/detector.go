@@ -857,6 +857,7 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 			return
 		}
 		item.Deployment = deployment
+		item.Netpols = d.getNetworkPoliciesApplied(deployment)
 	} else {
 		node := d.nodeStore.GetNode(access.GetHostname())
 		if node == nil {
@@ -886,9 +887,12 @@ func (d *detectorImpl) processFileAccess() {
 			if item.Node != nil {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
 			} else if item.Deployment != nil {
-				// TODO(ROX-30806): wire up deployment-based detection
-				log.Debug("Deployment-based file access detection not yet implemented")
-				continue
+				images := d.enricher.getImages(item.Ctx, item.Deployment)
+				alerts = d.unifiedDetector.DetectFileAccessForDeployment(booleanpolicy.EnhancedDeployment{
+					Deployment:             item.Deployment,
+					Images:                 images,
+					NetworkPoliciesApplied: item.Netpols,
+				}, item.Access)
 			}
 
 			if len(alerts) == 0 {
