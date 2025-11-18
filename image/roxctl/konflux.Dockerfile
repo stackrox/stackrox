@@ -19,8 +19,8 @@ ENV BUILD_TAG="$BUILD_TAG"
 ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release"
+ENV GOEXPERIMENT=""
 
 RUN RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl

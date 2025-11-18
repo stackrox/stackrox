@@ -24,8 +24,8 @@ RUN make cli-build
 
 ENV CGO_ENABLED=0
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release"
+ENV GOEXPERIMENT=""
 
 RUN make main-build-nodeps
 
