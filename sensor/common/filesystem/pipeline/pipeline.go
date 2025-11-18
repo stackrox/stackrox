@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/store"
 )
 
 var (
@@ -24,19 +23,17 @@ type Pipeline struct {
 
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
-	nodeStore       store.NodeStore
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, nodeStore store.NodeStore, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
 		activityChan:    activityChan,
 		clusterEntities: clusterEntities,
-		nodeStore:       nodeStore,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
 	}
