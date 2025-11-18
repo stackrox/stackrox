@@ -24,6 +24,7 @@ type Detector interface {
 	DetectNetworkFlowForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
 	DetectAuditLogEvents(auditEvent *sensor.AuditEvents) []*storage.Alert
 	DetectNodeFileAccess(node *storage.Node, access *storage.FileAccess) []*storage.Alert
+	DetectFileAccessForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, fileAccess *storage.FileAccess) []*storage.Alert
 }
 
 // NewDetector returns a new detector.
