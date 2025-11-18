@@ -97,6 +97,7 @@
         "start": "vite serve",
         "start:ocp-plugin": "NODE_ENV=development webpack serve --config webpack.ocp-plugin.config.js",
         "build": "tsc && NODE_OPTIONS=--max_old_space_size=4096 vite build",
+        "build:debug": "rm -rf node_modules/.vite && tsc && DEBUG=vite:* NODE_OPTIONS=--max_old_space_size=4096 vite build",
         "build:ocp-plugin": "tsc && NODE_ENV=production webpack --config webpack.ocp-plugin.config.js",
         "test": "TZ=UTC vitest",
         "test-coverage": "TZ=UTC vitest run --coverage",
