@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -136,16 +135,8 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	for _, p := range policies {
-		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
-		if err != nil {
-			log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
-			continue
-		}
-		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
-		}
-	}
+	ds.fillCategoryNames(ctx, policies...)
+
 	return policies, nil
 }
 
@@ -167,16 +158,35 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
+// fillCategoryNames presumes that both policyCategoryEdgeDatastore and categoriesDatastore to be cacheStore
+// if those stores get changed and are not cached anymore we're sending a DB query per PolicyCategoryEdge
 func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*storage.Policy) error {
-	for _, p := range policies {
-		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
+	allEdges, err := ds.policyCategoryEdgeDatastore.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	policyIDToCategoryNames := make(map[string][]string, len(policies))
+	for _, edge := range allEdges {
+		policyID := edge.PolicyId
+		if _, keyExists := policyIDToCategoryNames[policyID]; !keyExists {
+			policyIDToCategoryNames[policyID] = []string{}
+		}
+
+		category, exist, err := ds.categoriesDatastore.GetPolicyCategory(ctx, edge.CategoryId)
 		if err != nil {
 			return err
 		}
-		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
+
+		if exist {
+			policyIDToCategoryNames[policyID] = append(policyIDToCategoryNames[policyID], category.GetName())
 		}
 	}
+
+	for _, p := range policies {
+		p.Categories = policyIDToCategoryNames[p.Id]
+	}
+
 	return nil
 }
 func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
@@ -196,67 +206,26 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 	return policies, missingIndices, nil
 }
 
-const getAllPoliciesWithCategoriesStmt = `
-  SELECT 
-      p.serialized,
-      COALESCE(
-          array_agg(pc.name ORDER BY pc.name) FILTER (WHERE pc.name IS NOT NULL), 
-          '{}'
-      ) as category_names
-  FROM policies p
-  LEFT JOIN policy_category_edges pce ON p.id = pce.policyid
-  LEFT JOIN policy_categories pc ON pce.categoryid = pc.id
-  GROUP BY p.id, p.serialized
-  `
-
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
-	// the tx.begin is only to get easy access to a raw DB object for now
-	// refactor this to be a function of the store, which would remove the transaction overhead
-	// leading to even better performance
-	_, tx, err := ds.storage.Begin(ctx)
-	defer tx.Commit(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := tx.Query(ctx, getAllPoliciesWithCategoriesStmt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var policies []*storage.Policy
-	for rows.Next() {
-		var serialized []byte
-		var categoryNames []string
-
-		if err := rows.Scan(&serialized, &categoryNames); err != nil {
-			return nil, err
-		}
-
-		policy := &storage.Policy{}
-		if err := proto.Unmarshal(serialized, policy); err != nil {
-			return nil, err
-		}
-
-		// Fill the categories array
-		policy.Categories = categoryNames
-
+	err := ds.storage.Walk(ctx, func(policy *storage.Policy) error {
 		policies = append(policies, policy)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return policies, rows.Err()
-	// err = ds.fillCategoryNames(ctx, policies...)
-	// if err != nil {
-	// 	return nil, errorsPkg.Wrap(err, "failed to fill category names")
-	// }
+	err = ds.fillCategoryNames(ctx, policies...)
+	if err != nil {
+		return nil, errorsPkg.Wrap(err, "failed to fill category names")
+	}
 
-	// return policies, err
+	return policies, err
 }
 
 // GetPolicyByName returns policy with given name.

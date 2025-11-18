@@ -120,13 +120,6 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	return ds.policyCategoryEdgeDS.UpsertMany(ctx, policyCategoryEdges)
 }
 
-func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
-	ds.categoryMutex.Lock()
-	defer ds.categoryMutex.Unlock()
-
-	return ds.SearchRawPolicyCategories(ctx, searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, policyID).ProtoQuery())
-}
-
 // Search returns policy category related search results for the provided query
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
