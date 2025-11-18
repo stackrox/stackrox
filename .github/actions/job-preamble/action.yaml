@@ -4,7 +4,7 @@ inputs:
   free-disk-space:
     description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
     required: false
-    default: 25
+    default: 30
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
