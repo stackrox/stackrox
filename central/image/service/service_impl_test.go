@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -448,28 +447,9 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 			Id:   "fake-id_1",
 			Scan: nil, // A nil scan should trigger a re-scan.
 		}, true, nil)
-	imageDSMock.EXPECT().Search(gomock.Any(), gomock.Any()).
+	imageDSMock.EXPECT().GetImageNamesWithDigest(gomock.Any(), gomock.Any()).
 		AnyTimes().
-		Return([]search.Result{
-			{
-				ID: "fake-id_2",
-				FieldValues: map[string]string{
-					strings.ToLower(search.ImageName.String()):     "fake/image:A",
-					strings.ToLower(search.ImageRegistry.String()): "fake",
-					strings.ToLower(search.ImageRemote.String()):   "image",
-					strings.ToLower(search.ImageTag.String()):      "A",
-				},
-			},
-			{
-				ID: "fake-id_3",
-				FieldValues: map[string]string{
-					strings.ToLower(search.ImageName.String()):     "fake/image:B",
-					strings.ToLower(search.ImageRegistry.String()): "fake",
-					strings.ToLower(search.ImageRemote.String()):   "image",
-					strings.ToLower(search.ImageTag.String()):      "B",
-				},
-			},
-		}, nil)
+		Return([]*storage.ImageName{genImageName("fake/image:A"), genImageName("fake/image:B")}, nil)
 
 	riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
 	riskManagerMock.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).
