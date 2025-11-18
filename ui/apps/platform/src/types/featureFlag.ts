@@ -1,5 +1,5 @@
 // Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
-// However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
+// However, add strings in alphabetical order to minimize merge conflicts when multiple people add or delete strings.
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_CISA_KEV'
