@@ -43,7 +43,9 @@ func TestMultiplexingChannels(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			mp := NewMultiplexer[string]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			mp := NewMultiplexer[string](WithContext[string](ctx))
 			for _, ch := range c.inputChannels {
 				mp.AddChannel(ch)
 			}
