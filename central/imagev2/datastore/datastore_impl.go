@@ -219,6 +219,41 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, ids []string) ([]*s
 	return imgs, nil
 }
 
+// GetImageNamesWithDigest returns all image names with the same digest.
+func (ds *datastoreImpl) GetImageNamesWithDigest(ctx context.Context, digest string) ([]*storage.ImageName, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageNamesWithDigest")
+
+	if digest == "" {
+		return nil, nil
+	}
+
+	// Query all images with this digest
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, digest).
+		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
+		ProtoQuery()
+	results, err := ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect all image names
+	allNames := make([]*storage.ImageName, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
+				allNames = append(allNames, &storage.ImageName{
+					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
+					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
+					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
+					FullName: nameVal,
+				})
+			}
+		}
+	}
+
+	return allNames, nil
+}
+
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "UpsertImage")
