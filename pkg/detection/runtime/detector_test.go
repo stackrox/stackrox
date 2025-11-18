@@ -6,10 +6,13 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -428,6 +431,11 @@ func (s *RuntimeDetectorTestSuite) TestNodeFileAccess() {
 			},
 		},
 	} {
+		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+		booleanpolicy.ResetFieldMetadataSingleton(s.T())
+		defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
 		s.Run(tc.description, func() {
 			policySet := detection.NewPolicySet()
 			err := policySet.UpsertPolicy(tc.policy)
