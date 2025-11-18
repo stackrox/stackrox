@@ -35,8 +35,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ActiveComponent)(nil)), "active_components")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Deployment":     DeploymentsSchema,
-			"storage.ImageComponent": ImageComponentsSchema,
+			"storage.Deployment": DeploymentsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
