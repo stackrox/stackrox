@@ -2,18 +2,13 @@ package handler
 
 import (
 	"context"
-	"io"
-	"net"
-	"os"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/mdlayher/vsock"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -81,27 +76,27 @@ func (s *handlerTestSuite) TestHandle_RejectsMismatchingVsockCID() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			indexReport := &v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
-			conn, err := newMockVsockConn().withVsockCID(uint32(c.connVsockCID)).withIndexReport(indexReport)
+			conn, err := relaytest.NewMockVsockConn().WithVsockCID(uint32(c.connVsockCID)).WithIndexReport(indexReport)
 			s.Require().NoError(err)
-			client := newMockSensorClient()
+			client := relaytest.NewMockSensorClient()
 
 			handler := New(client)
 			err = handler.Handle(s.ctx, conn)
 			if c.shouldError {
 				s.Require().Error(err)
 				s.Contains(err.Error(), "mismatch")
-				s.Empty(client.capturedRequests)
+				s.Empty(client.CapturedRequests())
 			} else {
 				s.Require().NoError(err)
-				s.Len(client.capturedRequests, 1)
+				s.Len(client.CapturedRequests(), 1)
 			}
 		})
 	}
 }
 
 func (s *handlerTestSuite) TestHandle_RejectsMalformedData() {
-	conn := newMockVsockConn().withVsockCID(1234).withData([]byte("malformed-data"))
-	client := newMockSensorClient()
+	conn := relaytest.NewMockVsockConn().WithVsockCID(1234).WithData([]byte("malformed-data"))
+	client := relaytest.NewMockSensorClient()
 	handler := New(client)
 
 	err := handler.Handle(s.ctx, conn)
@@ -110,11 +105,11 @@ func (s *handlerTestSuite) TestHandle_RejectsMalformedData() {
 
 func (s *handlerTestSuite) TestHandle_HandlesContextCancellation() {
 	indexReport := &v1.IndexReport{VsockCid: "1234"}
-	conn, err := newMockVsockConn().withVsockCID(1234).withIndexReport(indexReport)
+	conn, err := relaytest.NewMockVsockConn().WithVsockCID(1234).WithIndexReport(indexReport)
 	s.Require().NoError(err)
 
 	// Set up a sensor client that only returns after 500 ms
-	client := newMockSensorClient().withDelay(500 * time.Millisecond)
+	client := relaytest.NewMockSensorClient().WithDelay(500 * time.Millisecond)
 
 	// Set up a context that will be canceled after 100 ms
 	cancellableCtx, cancel := context.WithCancel(s.ctx)
@@ -130,92 +125,4 @@ func (s *handlerTestSuite) TestHandle_HandlesContextCancellation() {
 	err = handler.Handle(cancellableCtx, conn)
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
-}
-
-// mockVsockConn for integration tests
-type mockVsockConn struct {
-	closed       bool
-	data         []byte
-	delay        time.Duration
-	remoteAddr   net.Addr
-	readDeadline time.Time
-}
-
-func newMockVsockConn() *mockVsockConn {
-	return &mockVsockConn{}
-}
-
-func (c *mockVsockConn) withVsockCID(vsockCID uint32) *mockVsockConn {
-	c.remoteAddr = &vsock.Addr{ContextID: vsockCID}
-	return c
-}
-
-func (c *mockVsockConn) withData(data []byte) *mockVsockConn {
-	c.data = data
-	return c
-}
-
-func (c *mockVsockConn) withIndexReport(indexReport *v1.IndexReport) (*mockVsockConn, error) {
-	data, err := proto.Marshal(indexReport)
-	if err != nil {
-		return nil, err
-	}
-	c.data = data
-	return c, nil
-}
-
-func (c *mockVsockConn) Read(b []byte) (n int, err error) {
-	time.Sleep(c.delay)
-	if !c.readDeadline.IsZero() && time.Now().After(c.readDeadline) {
-		return 0, os.ErrDeadlineExceeded
-	}
-	n = copy(b, c.data)
-	if n == len(c.data) {
-		return n, io.EOF
-	}
-	return n, nil
-}
-
-func (c *mockVsockConn) RemoteAddr() net.Addr {
-	return c.remoteAddr
-}
-
-func (c *mockVsockConn) Close() error {
-	c.closed = true
-	return nil
-}
-
-func (c *mockVsockConn) Write([]byte) (int, error)         { return 0, nil }
-func (c *mockVsockConn) LocalAddr() net.Addr               { return nil }
-func (c *mockVsockConn) SetDeadline(time.Time) error       { return nil }
-func (c *mockVsockConn) SetReadDeadline(t time.Time) error { c.readDeadline = t; return nil }
-func (c *mockVsockConn) SetWriteDeadline(time.Time) error  { return nil }
-
-// mockSensorClient for integration tests
-type mockSensorClient struct {
-	capturedRequests []*sensor.UpsertVirtualMachineIndexReportRequest
-	delay            time.Duration
-	err              error
-	response         *sensor.UpsertVirtualMachineIndexReportResponse
-}
-
-func newMockSensorClient() *mockSensorClient {
-	return &mockSensorClient{
-		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
-	}
-}
-
-func (m *mockSensorClient) withDelay(delay time.Duration) *mockSensorClient {
-	m.delay = delay
-	return m
-}
-
-func (m *mockSensorClient) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest, _ ...grpc.CallOption) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
-	select {
-	case <-time.After(m.delay):
-		m.capturedRequests = append(m.capturedRequests, req)
-		return m.response, m.err
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
 }
