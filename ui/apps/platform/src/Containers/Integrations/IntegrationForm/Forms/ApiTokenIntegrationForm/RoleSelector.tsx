@@ -80,7 +80,7 @@ function RoleSelector({
             </MenuSearch>
             <Divider className="pf-v5-u-m-0" />
             <MenuContent>
-                <MenuList className="api-token-role-select">
+                <MenuList className="api-token-role-menu-list">
                     {filteredRoleSelectMenuItems.length === 0 && (
                         <MenuItem isDisabled key="no result">
                             No roles found
