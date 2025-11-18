@@ -76,7 +76,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
-	fileAccessQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAcessBufferSize)
+	fileAccessQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAccessBufferSize)
 	deploymentQueueSize := 0
 	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
 		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)

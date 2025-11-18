@@ -78,12 +78,12 @@ var (
 	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
 	DetectorDeploymentBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_DEPLOYMENT_BUFFER_SIZE", 20000)
 
-	// DetectorFileAcessBufferSize size indicates how many file access will be kept in Sensor while offline in the detector.
+	// DetectorFileAccessBufferSize size indicates how many file access will be kept in Sensor while offline in the detector.
 	// 1 Item in the buffer = ~1000 bytes
 	// 20000 * 1000 = 20 MB
 	// Notice: the actual size of each item is ~40 bytes since it holds pointers to the actual objects.
 	// Multiple items can hold a pointer to the same object (e.g. same Deployment) so these numbers are pessimistic because we assume all items hold different objects.
-	DetectorFileAcessBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_FILE_ACCESS_BUFFER_SIZE", 20000)
+	DetectorFileAccessBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_FILE_ACCESS_BUFFER_SIZE", 20000)
 
 	// BufferScaleCeiling sets the upper limit queue.ScaleSize will scale buffers and queues to.
 	// In its default, the ceiling is defined as triple the relative size.
