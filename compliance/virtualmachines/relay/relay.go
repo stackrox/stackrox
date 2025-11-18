@@ -2,6 +2,7 @@ package relay
 
 import (
 	"context"
+	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/handler"
@@ -14,9 +15,19 @@ import (
 
 var log = logging.LoggerForModule()
 
+// Handler processes connections carrying virtual machine index reports.
+type Handler interface {
+	Handle(ctx context.Context, conn net.Conn) error
+}
+
+// Server accepts and manages connections with concurrency control.
+type Server interface {
+	Run(ctx context.Context, handler server.ConnectionHandler) error
+}
+
 type Relay struct {
-	handler handler.Handler
-	server  server.Server
+	handler Handler
+	server  Server
 }
 
 func NewRelay(conn grpc.ClientConnInterface) (*Relay, error) {

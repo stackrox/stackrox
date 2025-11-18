@@ -22,18 +22,19 @@ var log = logging.LoggerForModule()
 // Implementations should handle errors internally; returned errors are logged but don't stop the server.
 type ConnectionHandler func(ctx context.Context, conn net.Conn) error
 
+// Server accepts and manages connections with concurrency control.
 type Server interface {
 	Run(ctx context.Context, handler ConnectionHandler) error
 }
 
-type server struct {
+type serverImpl struct {
 	listener              net.Listener
 	semaphore             *semaphore.Weighted
 	semaphoreTimeout      time.Duration
 	waitAfterFailedAccept time.Duration
 }
 
-var _ Server = (*server)(nil)
+var _ Server = (*serverImpl)(nil)
 
 // New creates a connection server. Concurrency limits are read from env vars
 // VirtualMachinesMaxConcurrentVsockConnections and VirtualMachinesConcurrencyTimeout.
@@ -41,7 +42,7 @@ var _ Server = (*server)(nil)
 func New(listener net.Listener) Server {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
-	return &server{
+	return &serverImpl{
 		listener:              listener,
 		semaphore:             semaphore.NewWeighted(int64(maxConcurrentConnections)),
 		semaphoreTimeout:      semaphoreTimeout,
@@ -51,7 +52,7 @@ func New(listener net.Listener) Server {
 
 // Run accepts connections until ctx is canceled. Handler errors are logged but don't stop the server.
 // Transient accept errors are retried after 1 second to avoid making failures invisible.
-func (s *server) Run(ctx context.Context, handler ConnectionHandler) error {
+func (s *serverImpl) Run(ctx context.Context, handler ConnectionHandler) error {
 	log.Info("Starting relay server")
 
 	if s.listener == nil {
@@ -122,7 +123,7 @@ func (s *server) Run(ctx context.Context, handler ConnectionHandler) error {
 	}
 }
 
-func (s *server) stop() {
+func (s *serverImpl) stop() {
 	log.Info("Stopping connection server")
 	if s.listener != nil {
 		if err := s.listener.Close(); err != nil {
@@ -131,7 +132,7 @@ func (s *server) stop() {
 	}
 }
 
-func (s *server) acquireSemaphore(parentCtx context.Context) error {
+func (s *serverImpl) acquireSemaphore(parentCtx context.Context) error {
 	semCtx, cancel := context.WithTimeout(parentCtx, s.semaphoreTimeout)
 	defer cancel()
 
@@ -153,7 +154,7 @@ func (s *server) acquireSemaphore(parentCtx context.Context) error {
 	return nil
 }
 
-func (s *server) releaseSemaphore() {
+func (s *serverImpl) releaseSemaphore() {
 	s.semaphore.Release(1)
 	metrics.SemaphoreHoldingSize.Dec()
 }
