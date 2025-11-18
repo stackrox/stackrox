@@ -127,7 +127,13 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	// Get Image Risk
 	imageRisks := make([]*storage.Risk, 0, len(deployment.GetContainers()))
 	for _, container := range deployment.GetContainers() {
-		if imgID := container.GetImage().GetId(); imgID != "" {
+		var imgID string
+		if features.FlattenImageData.Enabled() {
+			imgID = container.GetImage().GetIdV2()
+		} else {
+			imgID = container.GetImage().GetId()
+		}
+		if imgID != "" {
 			risk, exists, err := e.riskStorage.GetRisk(allAccessCtx, imgID, storage.RiskSubjectType_IMAGE)
 			if err != nil {
 				log.Errorf("error getting risk for image %s: %v", imgID, err)
