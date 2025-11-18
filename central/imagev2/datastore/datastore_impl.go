@@ -319,6 +319,11 @@ func (ds *datastoreImpl) initializeRankers() {
 	log.Infof("Initialized image ranking with %d images", len(results))
 }
 
+func (ds *datastoreImpl) GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageIDsAndDigest")
+	return ds.storage.GetImagesIdAndDigestView(ctx, q)
+}
+
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())

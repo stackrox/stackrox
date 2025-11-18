@@ -16,6 +16,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 
 ### Removed Features
+- ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
+  - The `/v2/vulnerability-exceptions/` APIs must be used.
 
 ### Deprecated Features
 
