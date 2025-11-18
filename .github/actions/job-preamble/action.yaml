@@ -26,10 +26,22 @@ runs:
         set -x
         cleanup=(
           /usr/share/dotnet
-          /usr/local/lib/android
+          /usr/share/miniconda
+          /usr/share/swift
+          /usr/share/kotlinc
           /opt/ghc
           /opt/hostedtoolcache/CodeQL
           /opt/hostedtoolcache/Ruby
+          /opt/az
+          /usr/local/lib/android
+          # container jobs are lower priority: they are already slowed by container image pulls
+          /__t/CodeQL
+          /__t/Ruby
+          /__t/PyPy
+          /__t/Python
+          /__t/go
+          /__t/node
+          /__t/gcloud
         )
         for d in "${cleanup[@]}"; do
           if [[ -d "/mnt${d}" ]]; then
