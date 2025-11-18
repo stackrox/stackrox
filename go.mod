@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.14.2
 	cloud.google.com/go/securitycenter v1.38.1
-	cloud.google.com/go/storage v1.57.1
+	cloud.google.com/go/storage v1.57.2
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0
@@ -54,7 +54,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
-	github.com/godbus/dbus/v5 v5.1.0
+	github.com/godbus/dbus/v5 v5.2.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/certificate-transparency-go v1.3.2
 	github.com/google/gnostic-models v0.7.0
@@ -162,14 +162,14 @@ require (
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 	helm.sh/helm/v3 v3.18.6
-	k8s.io/api v0.33.5
-	k8s.io/apiextensions-apiserver v0.33.5
-	k8s.io/apimachinery v0.33.5
-	k8s.io/apiserver v0.33.5
-	k8s.io/cli-runtime v0.33.5
-	k8s.io/client-go v0.33.5
-	k8s.io/kubectl v0.33.5
-	k8s.io/kubelet v0.32.9
+	k8s.io/api v0.33.6
+	k8s.io/apiextensions-apiserver v0.33.6
+	k8s.io/apimachinery v0.33.6
+	k8s.io/apiserver v0.33.6
+	k8s.io/cli-runtime v0.33.6
+	k8s.io/client-go v0.33.6
+	k8s.io/kubectl v0.33.6
+	k8s.io/kubelet v0.32.10
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	kubevirt.io/api v1.6.3
 	sigs.k8s.io/controller-runtime v0.21.0
@@ -184,7 +184,7 @@ require (
 	cloud.google.com/go/auth v0.17.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
-	cloud.google.com/go/longrunning v0.6.7 // indirect
+	cloud.google.com/go/longrunning v0.7.0 // indirect
 	cloud.google.com/go/monitoring v1.24.2 // indirect
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
@@ -512,9 +512,9 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/code-generator v0.33.5 // indirect
-	k8s.io/component-base v0.33.5 // indirect
-	k8s.io/component-helpers v0.33.5 // indirect
+	k8s.io/code-generator v0.33.6 // indirect
+	k8s.io/component-base v0.33.6 // indirect
+	k8s.io/component-helpers v0.33.6 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911 // indirect

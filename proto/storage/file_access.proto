@@ -61,4 +61,7 @@ message FileAccess {
   // The process that performed the action. May contain deployment/namespace
   // information.
   ProcessIndicator process = 5;
+
+  // The hostname/name of the node where the file activity occurred
+  string hostname = 6;
 }
