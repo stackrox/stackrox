@@ -1,5 +1,5 @@
-// Package connutil provides utilities for reading from network connections with size and timeout constraints.
-// This package is transport-agnostic and works with any net.Conn implementation.
+// Package connutil contains helpers for bounded reads on generic net.Conn
+// implementations.
 package connutil
 
 import (
@@ -13,6 +13,8 @@ import (
 
 var log = logging.LoggerForModule()
 
+// ReadFromConn reads from conn with a deadline and rejects payloads above
+// maxSize bytes.
 func ReadFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, error) {
 	log.Debugf("Reading from connection (max bytes: %d, timeout: %s)", maxSize, timeout)
 

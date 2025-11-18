@@ -1,6 +1,5 @@
-// Package handler provides handling logic for connections carrying virtual machine index reports.
-// It coordinates reading, validating, and forwarding VM index reports to sensor.
-// The validation is vsock-specific, since we ensure the reported vsock CID matches the real vsock CID.
+// Package handler processes vsock connections carrying virtual machine index
+// reports and forwards valid reports to Sensor.
 package handler
 
 import (
@@ -35,6 +34,7 @@ type handlerImpl struct {
 
 var _ Handler = (*handlerImpl)(nil)
 
+// New returns a Handler that validates vsock metadata before forwarding reports.
 func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) Handler {
 	return &handlerImpl{
 		connectionReadTimeout: 10 * time.Second,
@@ -97,7 +97,7 @@ func parseIndexReport(data []byte) (*v1.IndexReport, error) {
 	return report, nil
 }
 
-// validateReportedVsockCID prevents spoofing by ensuring the reported CID matches the connection's CID
+// validateReportedVsockCID ensures the report's vsock CID matches the connection.
 func validateReportedVsockCID(indexReport *v1.IndexReport, connVsockCID uint32) error {
 	if indexReport.GetVsockCid() != strconv.FormatUint(uint64(connVsockCID), 10) {
 		metrics.IndexReportsMismatchingVsockCID.Inc()

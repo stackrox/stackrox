@@ -2,6 +2,7 @@ package relaytest
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestMockVsockConn(t *testing.T) {
 
 	buf := make([]byte, 5)
 	n, err := conn.Read(buf)
-	require.NoError(t, err)
+	require.ErrorAs(t, err, &io.EOF)
 	require.Equal(t, 5, n)
 	require.Equal(t, []byte("hello"), buf)
 }
