@@ -4,7 +4,7 @@ import services.GraphQLService
 import services.ImageService
 import util.Env
 
-import spock.lang.IgnoreIf
+import spock.lang.Ignore
 import spock.lang.Tag
 import spock.lang.Unroll
 

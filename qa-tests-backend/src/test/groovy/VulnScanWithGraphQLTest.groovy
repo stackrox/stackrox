@@ -4,7 +4,7 @@ import objects.Deployment
 import services.GraphQLService
 import util.Timer
 
-import spock.lang.IgnoreIf
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
