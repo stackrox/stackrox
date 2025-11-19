@@ -152,6 +152,7 @@ func (c *endpointsTestCase) verifyDialResult(t testutils.T, conn *tls.Conn, err 
 			if err == nil {
 				break
 			}
+			t.Logf("Connection handshake attempt %d of %d failed, retrying", i+1, dialRetries)
 			continue
 		}
 
