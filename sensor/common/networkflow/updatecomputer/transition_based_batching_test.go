@@ -13,47 +13,93 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestTransitionBasedConnectionBatching tests the connection batching behavior.
-// The test enables the ROX_NETFLOW_BATCHING feature flag via t.Setenv(), so no
-// command-line environment variables are required to run this test.
-func TestTransitionBasedConnectionBatching(t *testing.T) {
-	t.Setenv("ROX_NETFLOW_BATCHING", "true")
-	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
-	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
-
+var (
 	// Test data setup
-	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
-	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
-	entity3 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
-	entity4 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
-	entity5 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-5"}
+	entity1 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
+	entity2 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
+	entity3 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
+	entity4 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
+	entity5 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-5"}
+	entity6 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-6"}
+	entity7 = networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-7"}
 
-	conn12 := indicator.NetworkConn{
+	conn12 = indicator.NetworkConn{
 		SrcEntity: entity1,
 		DstEntity: entity2,
 		DstPort:   8012,
 		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
-	conn23 := indicator.NetworkConn{
+	conn23 = indicator.NetworkConn{
 		SrcEntity: entity2,
 		DstEntity: entity3,
 		DstPort:   8023,
 		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
-	conn34 := indicator.NetworkConn{
+	conn34 = indicator.NetworkConn{
 		SrcEntity: entity3,
 		DstEntity: entity4,
 		DstPort:   8034,
 		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
-	conn45 := indicator.NetworkConn{
+	conn45 = indicator.NetworkConn{
 		SrcEntity: entity4,
 		DstEntity: entity5,
 		DstPort:   8045,
 		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
 	}
+	conn56 = indicator.NetworkConn{
+		SrcEntity: entity5,
+		DstEntity: entity6,
+		DstPort:   8056,
+		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	conn67 = indicator.NetworkConn{
+		SrcEntity: entity6,
+		DstEntity: entity7,
+		DstPort:   8067,
+		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
 
-	open := timestamp.InfiniteFuture
+	ep1 = indicator.ContainerEndpoint{
+		Entity:   entity1,
+		Port:     8080,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	ep2 = indicator.ContainerEndpoint{
+		Entity:   entity2,
+		Port:     8081,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	ep3 = indicator.ContainerEndpoint{
+		Entity:   entity3,
+		Port:     8082,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	ep4 = indicator.ContainerEndpoint{
+		Entity:   entity4,
+		Port:     8083,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	ep5 = indicator.ContainerEndpoint{
+		Entity:   entity5,
+		Port:     8084,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+	ep6 = indicator.ContainerEndpoint{
+		Entity:   entity6,
+		Port:     8085,
+		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	}
+
+	open = timestamp.InfiniteFuture
+	closed = timestamp.Now()
+)
+
+// TestTransitionBasedConnectionBatching tests the connection batching behavior.
+func TestTransitionBasedConnectionBatching(t *testing.T) {
+	t.Setenv("ROX_NETFLOW_BATCHING", "true")
+	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
+	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("batching returns at most maxUpdateSize flows from cache", func(t *testing.T) {
 		uc := NewTransitionBased()
@@ -110,32 +156,6 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
-
-	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
-	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
-	entity3 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
-	entity4 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
-
-	conn12 := indicator.NetworkConn{
-		SrcEntity: entity1,
-		DstEntity: entity2,
-		DstPort:   8012,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn23 := indicator.NetworkConn{
-		SrcEntity: entity2,
-		DstEntity: entity3,
-		DstPort:   8023,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn34 := indicator.NetworkConn{
-		SrcEntity: entity3,
-		DstEntity: entity4,
-		DstPort:   8034,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	open := timestamp.InfiniteFuture
 
 	t.Run("failure handler re-adds unsent flows to front of cache", func(t *testing.T) {
 		uc := NewTransitionBased()
@@ -204,55 +224,6 @@ func TestTransitionBasedCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
-
-	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
-	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
-	entity3 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
-	entity4 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
-	entity5 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-5"}
-	entity6 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-6"}
-	entity7 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-7"}
-
-	conn12 := indicator.NetworkConn{
-		SrcEntity: entity1,
-		DstEntity: entity2,
-		DstPort:   8012,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn23 := indicator.NetworkConn{
-		SrcEntity: entity2,
-		DstEntity: entity3,
-		DstPort:   8023,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn34 := indicator.NetworkConn{
-		SrcEntity: entity3,
-		DstEntity: entity4,
-		DstPort:   8034,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn45 := indicator.NetworkConn{
-		SrcEntity: entity4,
-		DstEntity: entity5,
-		DstPort:   8045,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn56 := indicator.NetworkConn{
-		SrcEntity: entity5,
-		DstEntity: entity6,
-		DstPort:   8056,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn67 := indicator.NetworkConn{
-		SrcEntity: entity6,
-		DstEntity: entity7,
-		DstPort:   8067,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	now := timestamp.Now()
-	closed := now
-	open := timestamp.InfiniteFuture
 
 	t.Run("cache limiting discards open flows when exceeding maxCacheSize", func(t *testing.T) {
 		uc := NewTransitionBased()
@@ -326,34 +297,6 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
-	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
-	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
-	entity3 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
-	entity4 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
-
-	ep1 := indicator.ContainerEndpoint{
-		Entity:   entity1,
-		Port:     8080,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep2 := indicator.ContainerEndpoint{
-		Entity:   entity2,
-		Port:     8081,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep3 := indicator.ContainerEndpoint{
-		Entity:   entity3,
-		Port:     8082,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep4 := indicator.ContainerEndpoint{
-		Entity:   entity4,
-		Port:     8083,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	open := timestamp.InfiniteFuture
-
 	t.Run("batching returns at most maxUpdateSize endpoints from cache", func(t *testing.T) {
 		uc := NewTransitionBased()
 
@@ -415,48 +358,6 @@ func TestTransitionBasedEndpointCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
-
-	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
-	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
-	entity3 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-3"}
-	entity4 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-4"}
-	entity5 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-5"}
-	entity6 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-6"}
-
-	ep1 := indicator.ContainerEndpoint{
-		Entity:   entity1,
-		Port:     8080,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep2 := indicator.ContainerEndpoint{
-		Entity:   entity2,
-		Port:     8081,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep3 := indicator.ContainerEndpoint{
-		Entity:   entity3,
-		Port:     8082,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep4 := indicator.ContainerEndpoint{
-		Entity:   entity4,
-		Port:     8083,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep5 := indicator.ContainerEndpoint{
-		Entity:   entity5,
-		Port:     8084,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	ep6 := indicator.ContainerEndpoint{
-		Entity:   entity6,
-		Port:     8085,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-
-	now := timestamp.Now()
-	closed := now
-	open := timestamp.InfiniteFuture
 
 	t.Run("cache limiting discards open endpoints when exceeding maxCacheSize", func(t *testing.T) {
 		uc := NewTransitionBased()
@@ -560,8 +461,6 @@ func TestLimitCacheSize(t *testing.T) {
 	})
 
 	t.Run("discards open items first when limit is exceeded", func(t *testing.T) {
-		closed := timestamp.Now()
-
 		cache := []*storage.NetworkFlow{
 			{LastSeenTimestamp: nil}, // open - should be discarded
 			{LastSeenTimestamp: nil}, // open - should be discarded
@@ -575,8 +474,6 @@ func TestLimitCacheSize(t *testing.T) {
 	})
 
 	t.Run("handles all closed items correctly", func(t *testing.T) {
-		closed := timestamp.Now()
-
 		cache := []*storage.NetworkFlow{
 			{LastSeenTimestamp: protoconv.ConvertMicroTSToProtobufTS(closed)},
 			{LastSeenTimestamp: protoconv.ConvertMicroTSToProtobufTS(closed)},
