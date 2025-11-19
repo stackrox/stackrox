@@ -609,6 +609,17 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'Days Since CVE Fix Available',
+        name: 'Days Since CVE Fix Available',
+        shortName: 'Days since CVE fix available',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'number',
+        placeholder: '0',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
+    },
+    {
         label: 'Days Since CVE Was First Discovered In Image',
         name: 'Days Since CVE Was First Discovered In Image',
         shortName: 'Days since CVE was first discovered in image',
