@@ -62,16 +62,16 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
 				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
 		}
+
 		// set predicates
-		// Only add deployment predicate for deployment-based runtime events, not for node events
-		if policy.GetEventSource() != storage.EventSource_NODE_EVENT {
-			compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
-		}
-		if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
-			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
-		}
-		if policy.GetEventSource() == storage.EventSource_NODE_EVENT {
+		switch policy.GetEventSource() {
+		case storage.EventSource_NODE_EVENT:
 			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
+		case storage.EventSource_AUDIT_LOG_EVENT:
+			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
+			fallthrough
+		default:
+			compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
 		}
 	}
 
@@ -127,23 +127,18 @@ func (cp *compiledPolicy) setDeployTimeMatchers(policy *storage.Policy) error {
 }
 
 func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
-	if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
+	switch policy.GetEventSource() {
+	case storage.EventSource_AUDIT_LOG_EVENT:
 		err := cp.setAuditLogEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building audit log event matcher for policy %q", policy.GetName())
 		}
-		return nil
-	}
-
-	if policy.GetEventSource() == storage.EventSource_NODE_EVENT {
+	case storage.EventSource_NODE_EVENT:
 		err := cp.setNodeEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building node event matcher for policy %q", policy.GetName())
 		}
-		return nil
-	}
-
-	if policy.GetEventSource() == storage.EventSource_DEPLOYMENT_EVENT {
+	case storage.EventSource_DEPLOYMENT_EVENT:
 		err := cp.setProcessEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building process event matcher for policy %q", policy.GetName())
@@ -157,6 +152,7 @@ func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
 			return errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
 		}
 	}
+
 	return nil
 }
 

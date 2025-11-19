@@ -25,11 +25,15 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 	return alert
 }
 
+// constructFileAccessAlert constructs an alert for a FileAccess violation.
+// It assumes one of node or deployment is non-nil and constructs an alert based
+// on this.
 func constructFileAccessAlert(policy *storage.Policy, node *storage.Node, deployment *storage.Deployment, violations booleanpolicy.Violations) *storage.Alert {
 	if len(violations.AlertViolations) == 0 && violations.FileAccessViolation == nil {
 		return nil
 	}
 
+	// file access alerts can be for node or for deployment but not both
 	if node != nil && deployment != nil {
 		return nil
 	}
