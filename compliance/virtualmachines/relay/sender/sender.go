@@ -51,6 +51,10 @@ func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		return err
 	}
 
+	onFailedAttemptsFunc := func(e error) {
+		log.Warnf("Error sending index report to sensor, retrying. Error was: %v", e)
+	}
+
 	tries := 10 // With default backoff logic in pkg/retry, this takes around 50 s (without considering timeouts)
 
 	// Considering a timeout of 5 seconds and 10 tries with exponential backoff, the maximum time until running out of
@@ -59,9 +63,7 @@ func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 	err := retry.WithRetry(
 		sendFunc,
 		retry.WithContext(ctx),
-		retry.OnFailedAttempts(func(e error) {
-			log.Warnf("Error sending index report to sensor, retrying. Error was: %v", e)
-		}),
+		retry.OnFailedAttempts(onFailedAttemptsFunc),
 		retry.Tries(tries),
 		retry.OnlyRetryableErrors(),
 		retry.WithExponentialBackoff())
