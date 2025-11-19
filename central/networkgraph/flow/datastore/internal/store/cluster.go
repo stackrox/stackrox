@@ -3,6 +3,8 @@ package store
 import "context"
 
 // ClusterStore stores the network edges per cluster.
+//
+//go:generate mockgen-wrapper
 type ClusterStore interface {
 	GetFlowStore(clusterID string) FlowStore
 
