@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/vm-relay-split-relay-go",
     "hash": "372a904a7e638c0fa53e096cbfc4427e83bf5f5c"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/relay-refactor-send-sensor"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 17869,
+        "gqlID": "PR_kwDOGd6UEM60Uy6n"
+      }
+    }
   }
 }
