@@ -549,7 +549,7 @@ func (s *ImageV2DataStoreTestSuite) TestGetImageNamesWithDigest() {
 	}
 	imageNames, err := s.datastore.GetImageNamesWithDigest(ctx, img1.GetDigest())
 	s.NoError(err)
-	s.ElementsMatch(expectedImageNames, imageNames)
+	protoassert.ElementsMatch(s.T(), expectedImageNames, imageNames)
 }
 
 func (s *ImageV2DataStoreTestSuite) truncateTable(name string) {
