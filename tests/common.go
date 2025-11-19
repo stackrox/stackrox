@@ -602,7 +602,7 @@ func teardownDeploymentInternal(t *testing.T, deploymentName string, namespace s
 		err := retry.WithRetry(
 			func() error {
 				if err := deleteFunc(); err != nil {
-					return err
+					return retry.MakeRetryable(err)
 				}
 				// Verify deployment is actually deleted from Kubernetes
 				return waitForK8sDeploymentDeletion(t, client, deploymentName, namespace, 15*time.Second)
