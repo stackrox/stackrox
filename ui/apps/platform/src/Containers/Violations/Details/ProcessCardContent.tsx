@@ -36,9 +36,9 @@ function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
             </DescriptionList>
             <DescriptionList className="pf-v5-u-mb-md">
                 <DescriptionListItem term="Arguments" desc={args} />
-                {Array.isArray(lineage) && lineage.length && (
+                {Array.isArray(lineage) && lineage.length ? (
                     <DescriptionListItem term="Ancestors" desc={lineage.join(', ')} />
-                )}
+                ) : null}
             </DescriptionList>
         </div>
     );
