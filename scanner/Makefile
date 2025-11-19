@@ -31,6 +31,7 @@ SILENT ?= @
 # If you need to separate the declaration and the usage in Dockerfile, do this instead
 #    ARG CGO_ENABLED=0
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
+GODEBUG = fips140=only
 CGO_ENABLED = 0
 RACE_FLAG =
 ifeq ($(RACE),true)
@@ -45,7 +46,7 @@ ifeq ($(shell uname -s),Darwin)
 endif
 GOOS := $(HOST_OS)
 
-GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO_BUILD_FLAGS = GODEBUG=$(GODEBUG) CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG) -X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
