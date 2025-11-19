@@ -47,6 +47,11 @@ type ExportServicePostgresTestHelper struct {
 	DeploymentView deploymentsView.DeploymentView
 }
 
+// GetDB returns the postgres database connection.
+func (h *ExportServicePostgresTestHelper) GetDB() *pgtest.TestPostgres {
+	return h.pool
+}
+
 // SetupTest prepares the ExportServicePostgresTestHelper struct for testing.
 func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	h.Ctx = sac.WithGlobalAccessScopeChecker(
