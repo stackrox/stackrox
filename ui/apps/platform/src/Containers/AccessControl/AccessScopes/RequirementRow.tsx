@@ -95,7 +95,7 @@ function RequirementRow({
                                             icon={
                                                 <Icon>
                                                     <MinusCircleIcon
-                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                                        color="var(--pf-t--global--color--status--danger--default)"
                                                     />
                                                 </Icon>
                                             }
@@ -131,7 +131,7 @@ function RequirementRow({
                                             icon={
                                                 <Icon>
                                                     <PlusCircleIcon
-                                                        color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                                        color="var(--pf-t--global--icon--color--brand--default)"
                                                     />
                                                 </Icon>
                                             }
@@ -167,7 +167,7 @@ function RequirementRow({
                                     icon={
                                         <Icon>
                                             <CheckCircleIcon
-                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                                color="var(--pf-t--global--icon--color--brand--default)"
                                             />
                                         </Icon>
                                     }
@@ -200,7 +200,7 @@ function RequirementRow({
                                         icon={
                                             <Icon>
                                                 <PencilAltIcon
-                                                    color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--primary-color--100 */
+                                                    color="var(--pf-t--global--icon--color--brand--default)"
                                                 />
                                             </Icon>
                                         }
@@ -217,7 +217,7 @@ function RequirementRow({
                                     icon={
                                         <Icon>
                                             <MinusCircleIcon
-                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                                color="var(--pf-t--global--color--status--danger--default)"
                                             />
                                         </Icon>
                                     }

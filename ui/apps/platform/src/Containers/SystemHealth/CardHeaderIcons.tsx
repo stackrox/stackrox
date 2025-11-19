@@ -21,21 +21,21 @@ export const ErrorIcon = <MinusIcon />;
 export const DangerIcon = (
     <Icon>
         <ExclamationCircleIcon
-            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+            color="var(--pf-t--global--color--status--danger--default)"
         />
     </Icon>
 );
 export const SuccessIcon = (
     <Icon>
         <CheckCircleIcon
-            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+            color="var(--pf-t--global--icon--color--status--success--default)"
         />
     </Icon>
 );
 export const WarningIcon = (
     <Icon>
         <ExclamationTriangleIcon
-            color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+            color="var(--pf-t--global--icon--color--status--warning--hover)"
         />
     </Icon>
 );

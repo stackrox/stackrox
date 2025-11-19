@@ -88,7 +88,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+                                    ? 'var(--pf-t--global--icon--color--status--warning--hover)'
                                     : 'transparent',
                         }}
                     >
@@ -104,7 +104,7 @@ function ClusterLabelsTable({
                                     <Button
                                         icon={
                                             <TimesCircleIcon
-                                                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                                                color="var(--pf-t--global--color--status--danger--default)"
                                             />
                                         }
                                         aria-label="Delete value"
@@ -162,8 +162,8 @@ function ClusterLabelsTable({
                                             <PlusCircleIcon
                                                 color={
                                                     isReplace
-                                                        ? 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
-                                                        : 'var(--pf-t--temp--dev--tbd)' /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+                                                        ? 'var(--pf-t--global--icon--color--status--warning--hover)'
+                                                        : 'var(--pf-t--global--icon--color--status--success--default)'
                                                 }
                                             />
                                         </Icon>

@@ -17,21 +17,21 @@ const iconMap: Record<AdministrationEventLevel, ReactElement> = {
     ADMINISTRATION_EVENT_LEVEL_ERROR: (
         <Icon>
             <ExclamationCircleIcon
-                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--danger-color--100 */
+                color="var(--pf-t--global--color--status--danger--default)"
             />
         </Icon>
     ),
     ADMINISTRATION_EVENT_LEVEL_INFO: (
         <Icon>
             <InfoCircleIcon
-                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--info-color--100 */
+                color="var(--pf-t--global--color--status--info--default)"
             />
         </Icon>
     ),
     ADMINISTRATION_EVENT_LEVEL_SUCCESS: (
         <Icon>
             <CheckCircleIcon
-                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--success-color--100 */
+                color="var(--pf-t--global--icon--color--status--success--default)"
             />
         </Icon>
     ),
@@ -43,7 +43,7 @@ const iconMap: Record<AdministrationEventLevel, ReactElement> = {
     ADMINISTRATION_EVENT_LEVEL_WARNING: (
         <Icon>
             <ExclamationTriangleIcon
-                color="var(--pf-t--temp--dev--tbd)" /* CODEMODS: original v5 color was --pf-v5-global--warning-color--100 */
+                color="var(--pf-t--global--icon--color--status--warning--hover)"
             />
         </Icon>
     ),
