@@ -741,6 +741,8 @@ func (m *manager) initFromStore() error {
 	walkFn := func() error {
 		seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
 		m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
+		// We will make multiple queries we need a transaction that will be used in walk and queries
+		// so we will work on a single connection.
 		ctxWithTx, tx, err := m.ds.Begin(managerCtx)
 		if err != nil {
 			return err
