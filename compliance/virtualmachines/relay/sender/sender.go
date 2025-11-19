@@ -19,19 +19,20 @@ import (
 
 var log = logging.LoggerForModule()
 
+// SendReportToSensor sends the passed report to sensor using the provided VirtualMachineIndexReportServiceClient,
+// retrying when applicable.
 func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
-	req := &sensor.UpsertVirtualMachineIndexReportRequest{
-		IndexReport: report,
-	}
-
-	// Considering a timeout of 5 seconds and 10 tries with exponential backoff, the maximum time spent in this function
-	// is around 1 min 40 s. Given that each virtual machine sends an index report every 4 hours, these retries seem
-	// reasonable and are unlikely to cause issues.
-	err := retry.WithRetry(func() error {
+	// This is the sending logic that will be retried if needed
+	sendFunc := func() error {
 		sendToSensorCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
+
+		req := &sensor.UpsertVirtualMachineIndexReportRequest{
+			IndexReport: report,
+		}
+
 		resp, err := sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)
 
 		if resp != nil && !resp.GetSuccess() {
@@ -48,12 +49,22 @@ func SendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClien
 		}
 
 		return err
-	},
+	}
+
+	onFailedAttemptsFunc := func(e error) {
+		log.Warnf("Error sending index report to sensor, retrying. Error was: %v", e)
+	}
+
+	tries := 10 // With default backoff logic in pkg/retry, this takes around 50 s (without considering timeouts)
+
+	// Considering a timeout of 5 seconds and 10 tries with exponential backoff, the maximum time until running out of
+	// tries is around 1 min 40 s. Given that each virtual machine sends an index report every 4 hours, these retries
+	// seem reasonable and are unlikely to cause issues.
+	err := retry.WithRetry(
+		sendFunc,
 		retry.WithContext(ctx),
-		retry.OnFailedAttempts(func(e error) {
-			log.Warnf("Error sending index report to sensor, retrying. Error was: %v", e)
-		}),
-		retry.Tries(10), // With current wait values in exponential backoff logic, this takes around 50 s
+		retry.OnFailedAttempts(onFailedAttemptsFunc),
+		retry.Tries(tries),
 		retry.OnlyRetryableErrors(),
 		retry.WithExponentialBackoff())
 
