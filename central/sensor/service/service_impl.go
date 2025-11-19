@@ -138,6 +138,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.ClusterRegistrationSecrets.Enabled() {
 			capabilities = append(capabilities, centralsensor.ClusterRegistrationSecretSupported)
 		}
+		if features.FlattenImageData.Enabled() {
+			capabilities = append(capabilities, string(centralsensor.FlattenImageDataOnCentral))
+		}
 
 		preferences := s.manager.GetConnectionPreference(clusterID)
 

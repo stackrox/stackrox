@@ -563,7 +563,17 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			utils.FilterSuppressedCVEsNoCloneV2(image)
 			utils.StripCVEDescriptionsNoCloneV2(image)
 
-			convertedImage := utils.ConvertToV1(image)
+			// Gather all known image names with the same SHA to ensure backward compatibility
+			allNames, err := l.imagesV2.GetImageNamesWithDigest(allAccessCtx, image.GetDigest())
+			if err != nil {
+				log.Warnw("Failed to retrieve image names by digest",
+					logging.ImageName(image.GetName().GetFullName()),
+					logging.ImageID(image.GetId()),
+					logging.String("digest", image.GetDigest()),
+					logging.Err(err),
+				)
+			}
+			convertedImage := utils.ConvertToV1(image, allNames...)
 			// Send the updated image to relevant clusters.
 			for clusterID := range clusterIDs {
 				conn := l.connManager.GetConnection(clusterID)
