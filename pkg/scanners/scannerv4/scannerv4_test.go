@@ -310,7 +310,9 @@ func TestGetVirtualMachineScan_Errors(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			var scanner *scannerv4
+			scanner := &scannerv4{
+				name: "test scanner",
+			}
 			if tt.useNilClient {
 				scanner.scannerClient = nil
 			} else {
