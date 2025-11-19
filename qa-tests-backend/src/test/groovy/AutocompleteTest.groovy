@@ -3,7 +3,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
 
 import services.SearchService
-import util.Env
 
 import spock.lang.Tag
 import spock.lang.Unroll
