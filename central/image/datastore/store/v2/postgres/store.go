@@ -556,20 +556,25 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
-	if err != nil {
-		return nil, false, err
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+		if err != nil {
+			return nil, false, err
+		}
+		defer release()
+		tx, ctx, err = conn.Begin(ctx)
+		if err != nil {
+			return nil, false, err
+		}
 	}
-	defer release()
 
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
 	image, found, err := s.getFullImage(ctx, tx, id)
 	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
+	if !parentTxExists {
+		if err := tx.Commit(ctx); err != nil {
+			return nil, false, err
+		}
 	}
 	return image, found, err
 }
@@ -815,15 +820,17 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 }
 
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
+		if err != nil {
+			return nil, err
+		}
+		defer release()
+		tx, ctx, err = conn.Begin(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	elems := make([]*storage.Image, 0, len(ids))
@@ -831,8 +838,10 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		msg, found, err := s.getFullImage(ctx, tx, id)
 		if err != nil {
 			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
+			if !parentTxExists {
+				if err := tx.Commit(ctx); err != nil {
+					return nil, err
+				}
 			}
 			return nil, err
 		}
@@ -843,8 +852,10 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	}
 
 	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
+	if !parentTxExists {
+		if err := tx.Commit(ctx); err != nil {
+			return nil, err
+		}
 	}
 	return elems, nil
 }

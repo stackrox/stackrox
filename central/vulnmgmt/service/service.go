@@ -8,6 +8,7 @@ import (
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // Service provides the interface to the vulnerability management service.
@@ -20,8 +21,9 @@ type Service interface {
 }
 
 // New returns a new vulnerability management service instance.
-func New(deployments deploymentDS.DataStore, images imageDS.DataStore, pods podDS.DataStore) Service {
+func New(db postgres.DB, deployments deploymentDS.DataStore, images imageDS.DataStore, pods podDS.DataStore) Service {
 	return &serviceImpl{
+		db:          db,
 		deployments: deployments,
 		images:      images,
 		pods:        pods,

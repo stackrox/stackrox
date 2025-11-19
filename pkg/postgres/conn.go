@@ -11,6 +11,12 @@ import (
 // Queryable is an interface to support both Tx and Conn
 type Queryable interface {
 	Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+}
+
+// Executable is an interface to support both Tx and Conn
+type Executable interface {
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
 }
 
 // Conn is a wrapper around pgxpool.Conn

@@ -34,7 +34,7 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.helper = &testutils.ExportServicePostgresTestHelper{}
 	err := s.helper.SetupTest(s.T())
 	s.Require().NoError(err)
-	s.service = New(s.helper.Deployments, s.helper.Images, s.helper.Pods)
+	s.service = New(s.helper.GetDB(), s.helper.Deployments, s.helper.Images, s.helper.Pods)
 }
 
 func (s *servicePostgresTestSuite) createDeployment(deployment *storage.Deployment, id string) *storage.Deployment {
@@ -166,7 +166,7 @@ func (s *servicePostgresTestSuite) TestExport() {
 		},
 	}
 	for _, c := range cases {
-		s.T().Run(c.name, func(t *testing.T) {
+		s.Run(c.name, func() {
 			s.upsertDeployments(c.deploymentsByID)
 			s.upsertPods(c.pods)
 
