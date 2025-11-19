@@ -31,7 +31,7 @@ SILENT ?= @
 # If you need to separate the declaration and the usage in Dockerfile, do this instead
 #    ARG CGO_ENABLED=0
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
-GODEBUG = fips140=only
+GODEBUG = fips140=on
 CGO_ENABLED = 0
 RACE_FLAG =
 ifeq ($(RACE),true)
