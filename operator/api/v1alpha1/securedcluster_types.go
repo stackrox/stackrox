@@ -521,6 +521,7 @@ type SecuredClusterStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{DaemonSet,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
 //+genclient
 
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
