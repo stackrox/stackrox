@@ -14,7 +14,7 @@
 }
 
 .pf-search-shim.react-select--is-disabled > div {
-  background-color: var(--pf-t--temp--dev--tbd /* CODEMODS: original v5 color was:--pf-v5-global--disabled-color--300 */) !important;
+  background-color: var(--pf-t--global--background--color--disabled--default) !important;
 }
 
 .pf-search-shim * {
