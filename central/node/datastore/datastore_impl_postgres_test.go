@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestNodeDataStoreWithPostgres(t *testing.T) {
@@ -45,7 +44,6 @@ type NodePostgresDataStoreTestSuite struct {
 
 	ctx                context.Context
 	db                 postgres.DB
-	gormDB             *gorm.DB
 	datastore          DataStore
 	mockCtrl           *gomock.Controller
 	mockRisk           *mockRisks.MockDataStore
@@ -56,38 +54,28 @@ type NodePostgresDataStoreTestSuite struct {
 func (suite *NodePostgresDataStoreTestSuite) SetupSuite() {
 
 	suite.ctx = context.Background()
-
-	source := pgtest.GetConnectionString(suite.T())
-	config, err := postgres.ParseConfig(source)
-	suite.Require().NoError(err)
-
-	pool, err := postgres.New(suite.ctx, config)
-	suite.NoError(err)
-	suite.gormDB = pgtest.OpenGormDB(suite.T(), source)
-	suite.db = pool
 }
 
 func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
-	pgStore.Destroy(suite.ctx, suite.db)
+	suite.db = pgtest.ForT(suite.T())
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
-	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
+	storage := pgStore.New(suite.db, false, concurrency.NewKeyFence())
 	suite.datastore = NewWithPostgres(storage, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
-	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	componentStorage := nodeComponentPostgres.New(suite.db)
 	suite.componentDataStore = nodeComponentDS.New(componentStorage, suite.mockRisk, ranking.NewRanker())
 
-	cveStorage := nodeCVEPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
+	cveStorage := nodeCVEPostgres.New(suite.db)
 	cveDataStore, err := nodeCVEDS.New(cveStorage, concurrency.NewKeyFence())
 	suite.NoError(err)
 	suite.nodeCVEDataStore = cveDataStore
 }
 
-func (suite *NodePostgresDataStoreTestSuite) TearDownSuite() {
+func (suite *NodePostgresDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 	suite.db.Close()
-	pgtest.CloseGormDB(suite.T(), suite.gormDB)
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {

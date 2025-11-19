@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -68,8 +67,6 @@ type managerImpl struct {
 	imageComponentRanker *ranking.Ranker
 	nodeComponentRanker  *ranking.Ranker
 
-	acUpdater acUpdater.Updater
-
 	iiSet integration.Set
 }
 
@@ -88,7 +85,6 @@ func New(nodeStorage nodeDS.DataStore,
 	nsRanker *ranking.Ranker,
 	componentRanker *ranking.Ranker,
 	nodeComponentRanker *ranking.Ranker,
-	acUpdater acUpdater.Updater,
 	iiSet integration.Set,
 ) Manager {
 	m := &managerImpl{
@@ -108,7 +104,6 @@ func New(nodeStorage nodeDS.DataStore,
 		nsRanker:             nsRanker,
 		imageComponentRanker: componentRanker,
 		nodeComponentRanker:  nodeComponentRanker,
-		acUpdater:            acUpdater,
 
 		iiSet: iiSet,
 	}
@@ -241,9 +236,6 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 		return errors.Wrapf(err, "upserting image %s", image.GetName().GetFullName())
 	}
 
-	if err := e.acUpdater.PopulateExecutableCache(riskReprocessorCtx, image); err != nil {
-		return errors.Wrapf(err, "populating executable cache for image %s", image.GetId())
-	}
 	return nil
 }
 

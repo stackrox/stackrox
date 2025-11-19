@@ -1,25 +1,20 @@
-import PropTypes from 'prop-types';
+import type { ReactElement } from 'react';
 import { DescriptionList, Divider, Flex } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import KeyValue from 'Components/KeyValue';
 import { getDateTime } from 'utils/dateUtils';
+import type { ProcessIndicator } from 'types/processIndicator.proto';
 
-function ProcessCardContent({ process }) {
-    const { time, args, execFilePath, containerId, lineage, uid } = process.signal;
-    const processTime = new Date(time);
-    const timeFormat = getDateTime(processTime);
-    let ancestors = null;
-    if (Array.isArray(lineage) && lineage.length) {
-        ancestors = (
-            <div className="flex flex-1 text-base-600 px-4 py-2">
-                <KeyValue label="Ancestors:" value={lineage.join(', ')} />
-            </div>
-        );
-    }
+type ProcessCardContentProps = {
+    event: ProcessIndicator;
+};
+
+function ProcessCardContent({ event }: ProcessCardContentProps): ReactElement {
+    const { time, args, execFilePath, containerId, lineage, uid } = event.signal;
+    const timeFormat = time ? getDateTime(new Date(time)) : 'N/A';
 
     return (
-        <div label={process.id}>
+        <div>
             <Flex
                 justifyContent={{ default: 'justifyContentSpaceBetween' }}
                 alignItems={{ default: 'alignItemsFlexStart' }}
@@ -41,26 +36,12 @@ function ProcessCardContent({ process }) {
             </DescriptionList>
             <DescriptionList className="pf-v5-u-mb-md">
                 <DescriptionListItem term="Arguments" desc={args} />
+                {Array.isArray(lineage) && lineage.length && (
+                    <DescriptionListItem term="Ancestors" desc={lineage.join(', ')} />
+                )}
             </DescriptionList>
-            {ancestors}
         </div>
     );
 }
-
-ProcessCardContent.propTypes = {
-    process: PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        deploymentId: PropTypes.string.isRequired,
-        containerName: PropTypes.string.isRequired,
-        signal: PropTypes.shape({
-            time: PropTypes.string.isRequired,
-            args: PropTypes.string.isRequired,
-            execFilePath: PropTypes.string.isRequired,
-            containerId: PropTypes.string.isRequired,
-            lineage: PropTypes.arrayOf(PropTypes.string).isRequired,
-            uid: PropTypes.string.isRequired,
-        }),
-    }).isRequired,
-};
 
 export default ProcessCardContent;

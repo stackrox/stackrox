@@ -60,7 +60,7 @@ func (s *NetworkflowStoreSuite) SetupSuite() {
 func (s *NetworkflowStoreSuite) SetupTest() {
 	s.pgDB = pgtest.ForT(s.T())
 
-	s.flowStore = postgresFlowStore.CreateTableAndNewStore(s.ctx, s.pgDB.DB, s.gormDB, clusterID, networktree.Singleton())
+	s.flowStore = postgresFlowStore.New(s.pgDB, clusterID, networktree.Singleton())
 	s.entityStore = entityStore.GetTestPostgresDataStore(s.T(), s.pgDB.DB)
 	s.entityStore.RegisterCluster(s.ctx, clusterID)
 }

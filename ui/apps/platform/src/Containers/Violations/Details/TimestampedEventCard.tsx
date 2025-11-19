@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
+import type { ComponentType, ReactElement } from 'react';
 import { getTime } from 'date-fns';
 import {
     Card,
@@ -11,23 +11,32 @@ import {
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { getDateTime } from 'utils/dateUtils';
-import ProcessCardContent from './ProcessCardContent';
 
-function ProcessCard({ processes, message }) {
-    const [selectedId, selectId] = useState(false);
+type TimestampedEventCardProps<T> = {
+    message: string;
+    events: T[];
+    getTimestamp: (event: T) => string | null;
+    ContentComponent: ComponentType<{ event: T }>;
+    getEventKey: (event: T) => string;
+};
+
+function TimestampedEventCard<T>({
+    message,
+    events,
+    getTimestamp,
+    ContentComponent,
+    getEventKey,
+}: TimestampedEventCardProps<T>): ReactElement {
     const [isExpanded, setIsExpanded] = useState(true);
 
     function onExpand() {
         setIsExpanded(!isExpanded);
     }
 
-    function onSelectIdHandler(id) {
-        // if the same process id is already selected, remove it
-        const result = selectedId && selectedId === id ? null : id;
-        selectId(result);
-    }
-
-    const timestamps = processes.map((process) => getTime(process.signal.time));
+    const timestamps = events
+        .map((event) => getTimestamp(event))
+        .filter((timestamp): timestamp is string => timestamp !== null)
+        .map((timestamp) => getTime(timestamp));
     const firstOccurrenceTimestamp = Math.min(...timestamps);
     const lastOccurrenceTimestamp = Math.max(...timestamps);
 
@@ -56,14 +65,8 @@ function ProcessCard({ processes, message }) {
                             desc={getDateTime(lastOccurrenceTimestamp)}
                         />
                     </DescriptionList>
-                    {processes.map((process) => (
-                        <>
-                            <ProcessCardContent
-                                key={process.id}
-                                process={process}
-                                selectProcessId={onSelectIdHandler}
-                            />
-                        </>
+                    {events.map((event) => (
+                        <ContentComponent key={getEventKey(event)} event={event} />
                     ))}
                 </CardBody>
             </CardExpandableContent>
@@ -71,13 +74,4 @@ function ProcessCard({ processes, message }) {
     );
 }
 
-ProcessCard.propTypes = {
-    message: PropTypes.string.isRequired,
-    processes: PropTypes.arrayOf(
-        PropTypes.shape({
-            id: PropTypes.string.isRequired,
-        })
-    ).isRequired,
-};
-
-export default ProcessCard;
+export default TimestampedEventCard;

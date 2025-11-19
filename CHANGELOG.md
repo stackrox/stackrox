@@ -18,6 +18,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Removed Features
 - ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
   - The `/v2/vulnerability-exceptions/` APIs must be used.
+- ROX-31728: Active Vulnerability Management has been removed.
 
 ### Deprecated Features
 
